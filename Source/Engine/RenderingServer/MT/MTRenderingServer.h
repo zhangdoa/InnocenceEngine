@@ -14,55 +14,55 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		MeshDataComponent* AddMeshDataComponent(const char* name) override;
-		TextureDataComponent* AddTextureDataComponent(const char* name) override;
-		MaterialDataComponent* AddMaterialDataComponent(const char* name) override;
-		RenderPassDataComponent* AddRenderPassDataComponent(const char* name) override;
+		MeshComponent* AddMeshComponent(const char* name) override;
+		TextureComponent* AddTextureComponent(const char* name) override;
+		MaterialComponent* AddMaterialComponent(const char* name) override;
+		RenderPassComponent* AddRenderPassComponent(const char* name) override;
 		ShaderProgramComponent* AddShaderProgramComponent(const char* name) override;
-		SamplerDataComponent* AddSamplerDataComponent(const char* name = "") override;
-		GPUBufferDataComponent* AddGPUBufferDataComponent(const char* name) override;
+		SamplerComponent* AddSamplerComponent(const char* name = "") override;
+		GPUBufferComponent* AddGPUBufferComponent(const char* name) override;
 
-		bool InitializeMeshDataComponent(MeshDataComponent* rhs) override;
-		bool InitializeTextureDataComponent(TextureDataComponent* rhs) override;
-		bool InitializeMaterialDataComponent(MaterialDataComponent* rhs) override;
-		bool InitializeRenderPassDataComponent(RenderPassDataComponent* rhs) override;
+		bool InitializeMeshComponent(MeshComponent* rhs) override;
+		bool InitializeTextureComponent(TextureComponent* rhs) override;
+		bool InitializeMaterialComponent(MaterialComponent* rhs) override;
+		bool InitializeRenderPassComponent(RenderPassComponent* rhs) override;
 		bool InitializeShaderProgramComponent(ShaderProgramComponent* rhs) override;
-		bool InitializeSamplerDataComponent(SamplerDataComponent* rhs) override;
-		bool InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs) override;
+		bool InitializeSamplerComponent(SamplerComponent* rhs) override;
+		bool InitializeGPUBufferComponent(GPUBufferComponent* rhs) override;
 
-		bool DeleteMeshDataComponent(MeshDataComponent* rhs) override;
-		bool DeleteTextureDataComponent(TextureDataComponent* rhs) override;
-		bool DeleteMaterialDataComponent(MaterialDataComponent* rhs) override;
-		bool DeleteRenderPassDataComponent(RenderPassDataComponent* rhs) override;
+		bool DeleteMeshComponent(MeshComponent* rhs) override;
+		bool DeleteTextureComponent(TextureComponent* rhs) override;
+		bool DeleteMaterialComponent(MaterialComponent* rhs) override;
+		bool DeleteRenderPassComponent(RenderPassComponent* rhs) override;
 		bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) override;
-		bool DeleteSamplerDataComponent(SamplerDataComponent* rhs) override;
-		bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) override;
+		bool DeleteSamplerComponent(SamplerComponent* rhs) override;
+		bool DeleteGPUBufferComponent(GPUBufferComponent* rhs) override;
 
-		bool ClearTextureDataComponent(TextureDataComponent* rhs) override;
-		bool CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs) override;
+		bool ClearTextureComponent(TextureComponent* rhs) override;
+		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
 
-		bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) override;
-		bool ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs) override;
+		bool UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) override;
+		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
 
-		bool CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex) override;
-		bool BindRenderPassDataComponent(RenderPassDataComponent* rhs) override;
-		bool CleanRenderTargets(RenderPassDataComponent* rhs) override;
-		bool BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
-		bool DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount) override;
-		bool DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount) override;
-		bool UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
-		bool CommandListEnd(RenderPassDataComponent* rhs) override;
-		bool ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType) override;
-		bool WaitForFrame(RenderPassDataComponent* rhs) override;
+		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
+		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
+		bool CleanRenderTargets(RenderPassComponent* rhs) override;
+		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
+		bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
+		bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
+		bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
+		bool CommandListEnd(RenderPassComponent* rhs) override;
+		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
+		bool WaitForFrame(RenderPassComponent* rhs) override;
 		bool SetUserPipelineOutput(GPUResourceComponent* rhs) override;
 		GPUResourceComponent* GetUserPipelineOutput() override;
 		bool Present() override;
 
-		bool Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
+		bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
-		Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
-		std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) override;
-		bool GenerateMipmap(TextureDataComponent* rhs) override;
+		Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
+		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
+		bool GenerateMipmap(TextureComponent* rhs) override;
 
 		bool Resize() override;
 

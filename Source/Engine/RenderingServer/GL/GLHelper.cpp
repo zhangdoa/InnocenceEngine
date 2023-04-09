@@ -375,46 +375,46 @@ GLsizei GLHelper::GetTexturePixelDataSize(TextureDesc textureDesc)
 	return l_singlePixelSize * l_channelSize;
 }
 
-bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent* GLRPDC)
+bool GLHelper::CreateFramebuffer(GLRenderPassComponent* GLRenderPassComp)
 {
 	// FBO
-	glGenFramebuffers(1, &GLRPDC->m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
+	glGenFramebuffers(1, &GLRenderPassComp->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRenderPassComp->m_FBO);
 
 #ifdef INNO_DEBUG
-	auto l_FBOName = std::string(GLRPDC->m_InstanceName.c_str());
+	auto l_FBOName = std::string(GLRenderPassComp->m_InstanceName.c_str());
 	l_FBOName += "_FBO";
-	glObjectLabel(GL_FRAMEBUFFER, GLRPDC->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
+	glObjectLabel(GL_FRAMEBUFFER, GLRenderPassComp->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
 #endif
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRPDC->m_InstanceName.c_str(), " FBO has been generated.");
+	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " FBO has been generated.");
 
 	// RBO
-	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+	if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		GLRPDC->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-		GLRPDC->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
+		GLRenderPassComp->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+		GLRenderPassComp->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
 
-		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+		if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
-			GLRPDC->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
-			GLRPDC->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
+			GLRenderPassComp->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
+			GLRenderPassComp->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
 		}
 
-		glGenRenderbuffers(1, &GLRPDC->m_RBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, GLRPDC->m_RBO);
+		glGenRenderbuffers(1, &GLRenderPassComp->m_RBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, GLRenderPassComp->m_RBO);
 
 #ifdef INNO_DEBUG
-		auto l_RBOName = std::string(GLRPDC->m_InstanceName.c_str());
+		auto l_RBOName = std::string(GLRenderPassComp->m_InstanceName.c_str());
 		l_RBOName += "_RBO";
-		glObjectLabel(GL_RENDERBUFFER, GLRPDC->m_RBO, (GLsizei)l_RBOName.size(), l_RBOName.c_str());
+		glObjectLabel(GL_RENDERBUFFER, GLRenderPassComp->m_RBO, (GLsizei)l_RBOName.size(), l_RBOName.c_str());
 #endif
 
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPDC->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRPDC->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GLRPDC->m_renderBufferInternalFormat, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRenderPassComp->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRenderPassComp->m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GLRenderPassComp->m_renderBufferInternalFormat, GLRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.Width, GLRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.Height);
 
 		std::vector<uint32_t> l_colorAttachments;
-		for (uint32_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; ++i)
+		for (uint32_t i = 0; i < GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; ++i)
 		{
 			l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 		}
@@ -423,87 +423,87 @@ bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent* GLRPDC)
 		auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (l_result != GL_FRAMEBUFFER_COMPLETE)
 		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", GLRPDC->m_InstanceName.c_str(), " Framebuffer is not completed: ", l_result);
+			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " Framebuffer is not completed: ", l_result);
 			return false;
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRPDC->m_InstanceName.c_str(), " RBO has been generated.");
+			InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " RBO has been generated.");
 		}
 	}
 
 	return true;
 }
 
-bool GLHelper::ReserveRenderTargets(GLRenderPassDataComponent* GLRPDC, IRenderingServer* renderingServer)
+bool GLHelper::ReserveRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer)
 {
-	GLRPDC->m_RenderTargets.reserve(GLRPDC->m_RenderPassDesc.m_RenderTargetCount);
+	GLRenderPassComp->m_RenderTargets.reserve(GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
 
-	for (uint32_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (uint32_t i = 0; i < GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		GLRPDC->m_RenderTargets.emplace_back();
-		GLRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		GLRenderPassComp->m_RenderTargets.emplace_back();
+		GLRenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(GLRenderPassComp->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 	}
 
 	return true;
 }
 
-bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent* GLRPDC, IRenderingServer* renderingServer)
+bool GLHelper::CreateRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer)
 {
 	// Color RT
-	for (uint32_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (uint32_t i = 0; i < GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		auto l_TDC = GLRPDC->m_RenderTargets[i];
+		auto l_TextureComp = GLRenderPassComp->m_RenderTargets[i];
 
-		l_TDC->m_TextureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TextureComp->m_TextureDesc = GLRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
 
-		l_TDC->m_TextureData = nullptr;
+		l_TextureComp->m_TextureData = nullptr;
 
-		renderingServer->InitializeTextureDataComponent(l_TDC);
+		renderingServer->InitializeTextureComponent(l_TextureComp);
 
-		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), GLRPDC, i);
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(l_TextureComp), GLRenderPassComp, i);
 	}
 
 	// DS RT
-	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+	if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		auto l_TDC = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_InstanceName.c_str()) + "_DS/").c_str());
+		auto l_TextureComp = renderingServer->AddTextureComponent((std::string(GLRenderPassComp->m_InstanceName.c_str()) + "_DS/").c_str());
 
-		l_TDC->m_TextureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TextureComp->m_TextureDesc = GLRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
 
-		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+		if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
-			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
-			l_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
+			l_TextureComp->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
+			l_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
+			l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
-			l_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+			l_TextureComp->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
+			l_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
+			l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
-		l_TDC->m_TextureData = nullptr;
+		l_TextureComp->m_TextureData = nullptr;
 
-		renderingServer->InitializeTextureDataComponent(l_TDC);
+		renderingServer->InitializeTextureComponent(l_TextureComp);
 
-		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), GLRPDC, 0);
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(l_TextureComp), GLRenderPassComp, 0);
 
-		GLRPDC->m_DepthStencilRenderTarget = l_TDC;
+		GLRenderPassComp->m_DepthStencilRenderTarget = l_TextureComp;
 	}
 
 	return true;
 }
 
-bool GLHelper::CreateStateObjects(GLRenderPassDataComponent* GLRPDC)
+bool GLHelper::CreateStateObjects(GLRenderPassComponent* GLRenderPassComp)
 {
-	auto l_PSO = reinterpret_cast<GLPipelineStateObject*>(GLRPDC->m_PipelineStateObject);
+	auto l_PSO = reinterpret_cast<GLPipelineStateObject*>(GLRenderPassComp->m_PipelineStateObject);
 
-	GenerateDepthStencilState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	GenerateBlendState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-	GenerateRasterizerState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-	GenerateViewportState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateDepthStencilState(GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendState(GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerState(GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportState(GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
 	return true;
 }
@@ -961,15 +961,15 @@ bool GLHelper::LinkProgramObject(GLuint& shaderProgram)
 	return true;
 }
 
-bool GLHelper::ActivateTexture(GLTextureDataComponent* GLTDC, int32_t activateIndex)
+bool GLHelper::ActivateTexture(GLTextureComponent* GLTextureComp, int32_t activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GLTDC->m_GLTextureDesc.TextureSampler, GLTDC->m_TO);
+	glBindTexture(GLTextureComp->m_GLTextureDesc.TextureSampler, GLTextureComp->m_TO);
 
 	return true;
 }
 
-bool GLHelper::BindTextureAsImage(GLTextureDataComponent* GLTDC, int32_t bindingSlot, Accessibility accessibility)
+bool GLHelper::BindTextureAsImage(GLTextureComponent* GLTextureComp, int32_t bindingSlot, Accessibility accessibility)
 {
 	GLenum l_accessibility;
 
@@ -990,22 +990,22 @@ bool GLHelper::BindTextureAsImage(GLTextureDataComponent* GLTDC, int32_t binding
 	default:
 		break;
 	}
-	glBindImageTexture(bindingSlot, GLTDC->m_TO, 0, false, 0, l_accessibility, GLTDC->m_GLTextureDesc.InternalFormat);
+	glBindImageTexture(bindingSlot, GLTextureComp->m_TO, 0, false, 0, l_accessibility, GLTextureComp->m_GLTextureDesc.InternalFormat);
 
 	return true;
 }
 
-bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent* GLTDC, GLRenderPassDataComponent* GLRPDC, uint32_t attachmentIndex, uint32_t textureIndex, uint32_t mipLevel, uint32_t layer)
+bool GLHelper::AttachTextureToFramebuffer(GLTextureComponent* GLTextureComp, GLRenderPassComponent* GLRenderPassComp, uint32_t attachmentIndex, uint32_t textureIndex, uint32_t mipLevel, uint32_t layer)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRenderPassComp->m_FBO);
 
 	GLenum l_attachmentType;
 
-	if (GLTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
+	if (GLTextureComp->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 	{
 		l_attachmentType = GL_DEPTH_ATTACHMENT;
 	}
-	else if (GLTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+	else if (GLTextureComp->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
 		l_attachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	}
@@ -1014,31 +1014,31 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent* GLTDC, GLRende
 		l_attachmentType = GL_COLOR_ATTACHMENT0 + attachmentIndex;
 	}
 
-	switch (GLTDC->m_TextureDesc.Sampler)
+	switch (GLTextureComp->m_TextureDesc.Sampler)
 	{
 	case TextureSampler::Sampler1D:
-		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
+		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTextureComp->m_TO, mipLevel);
 		break;
 	case TextureSampler::Sampler2D:
-		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_2D, GLTextureComp->m_TO, mipLevel);
 		break;
 	case TextureSampler::Sampler3D:
-		glFramebufferTexture3D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
+		glFramebufferTexture3D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_3D, GLTextureComp->m_TO, mipLevel, layer);
 		break;
 	case TextureSampler::Sampler1DArray:
-		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
+		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTextureComp->m_TO, mipLevel);
 		break;
 	case TextureSampler::Sampler2DArray:
-		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
+		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTextureComp->m_TO, mipLevel);
 		break;
 	case TextureSampler::SamplerCubemap:
 		if (textureIndex == -1)
 		{
-			glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
+			glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTextureComp->m_TO, mipLevel);
 		}
 		else
 		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTextureComp->m_TO, mipLevel);
 		}
 		break;
 	default:

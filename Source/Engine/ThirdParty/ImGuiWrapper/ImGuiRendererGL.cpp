@@ -1,6 +1,6 @@
 #include "ImGuiRendererGL.h"
 
-#include "../../Component/GLRenderPassDataComponent.h"
+#include "../../Component/GLRenderPassComponent.h"
 #include "../ImGui/imgui_impl_opengl3.cpp"
 
 #include "../../Interface/IEngine.h"
@@ -37,10 +37,10 @@ bool ImGuiRendererGL::NewFrame()
 bool ImGuiRendererGL::Render()
 {
 	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
-	auto l_userPipelineOutputRPDC = reinterpret_cast<GLRenderPassDataComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
+	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<GLRenderPassComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
 
 	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_userPipelineOutputRPDC->m_FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_userPipelineOutputRenderPassComp->m_FBO);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

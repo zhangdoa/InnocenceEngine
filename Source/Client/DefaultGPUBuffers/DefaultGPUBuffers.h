@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Engine/Component/GPUBufferDataComponent.h"
+#include "../../Engine/Component/GPUBufferComponent.h"
 
 using namespace Inno;
 namespace DefaultGPUBuffers
@@ -23,5 +23,5 @@ namespace DefaultGPUBuffers
 	bool Upload();
 	bool Terminate();
 
-	GPUBufferDataComponent* GetGPUBufferDataComponent(GPUBufferUsageType usageType);
+	GPUBufferComponent* GetGPUBufferComponent(GPUBufferUsageType usageType);
 };

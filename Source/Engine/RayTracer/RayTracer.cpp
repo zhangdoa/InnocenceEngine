@@ -14,7 +14,7 @@ namespace InnoRayTracerNS
 	std::default_random_engine m_generator;
 	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
 
-	TextureDataComponent* m_TDC;
+	TextureComponent* m_TextureComp;
 }
 
 using namespace InnoRayTracerNS;
@@ -379,8 +379,8 @@ bool ExecuteRayTracing()
 	l_hitableList->m_List = l_hitableListVector.data();
 	l_hitableList->m_Size = (uint32_t)l_hitableListVector.size();
 
-	int32_t nx = m_TDC->m_TextureDesc.Width;
-	int32_t ny = m_TDC->m_TextureDesc.Height;
+	int32_t nx = m_TextureComp->m_TextureDesc.Width;
+	int32_t ny = m_TextureComp->m_TextureDesc.Height;
 	int32_t totalWorkload = nx * ny;
 
 	std::vector<TVec4<uint8_t>> l_result;
@@ -415,10 +415,10 @@ bool ExecuteRayTracing()
 		}
 	}
 
-	m_TDC->m_TextureData = &l_result[0];
+	m_TextureComp->m_TextureData = &l_result[0];
 
 	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->getTimeSystem()->getCurrentTimeFromEpoch());
-	g_Engine->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
+	g_Engine->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TextureComp);
 
 	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Ray tracing finished.");
 
@@ -437,14 +437,14 @@ bool InnoRayTracer::Initialize()
 
 	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
-	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("RayTracingResult/");
+	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("RayTracingResult/");
 
-	m_TDC->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-	m_TDC->m_TextureDesc.Usage = TextureUsage::Sample;
-	m_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_TDC->m_TextureDesc.Width = l_screenResolution.x / l_denom;
-	m_TDC->m_TextureDesc.Height = l_screenResolution.y / l_denom;
-	m_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UByte;
+	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_TextureComp->m_TextureDesc.Width = l_screenResolution.x / l_denom;
+	m_TextureComp->m_TextureDesc.Height = l_screenResolution.y / l_denom;
+	m_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::UByte;
 
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Activated;
 	return true;

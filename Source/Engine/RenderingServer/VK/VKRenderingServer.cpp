@@ -1,11 +1,11 @@
 #include "VKRenderingServer.h"
-#include "../../Component/VKMeshDataComponent.h"
-#include "../../Component/VKTextureDataComponent.h"
-#include "../../Component/VKMaterialDataComponent.h"
-#include "../../Component/VKRenderPassDataComponent.h"
+#include "../../Component/VKMeshComponent.h"
+#include "../../Component/VKTextureComponent.h"
+#include "../../Component/VKMaterialComponent.h"
+#include "../../Component/VKRenderPassComponent.h"
 #include "../../Component/VKShaderProgramComponent.h"
-#include "../../Component/VKSamplerDataComponent.h"
-#include "../../Component/VKGPUBufferDataComponent.h"
+#include "../../Component/VKSamplerComponent.h"
+#include "../../Component/VKGPUBufferComponent.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 
@@ -57,20 +57,20 @@ namespace VKRenderingServerNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	TObjectPool<VKMeshDataComponent> *m_MeshDataComponentPool = 0;
-	TObjectPool<VKMaterialDataComponent> *m_MaterialDataComponentPool = 0;
-	TObjectPool<VKTextureDataComponent> *m_TextureDataComponentPool = 0;
-	TObjectPool<VKRenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
+	TObjectPool<VKMeshComponent> *m_MeshComponentPool = 0;
+	TObjectPool<VKMaterialComponent> *m_MaterialComponentPool = 0;
+	TObjectPool<VKTextureComponent> *m_TextureComponentPool = 0;
+	TObjectPool<VKRenderPassComponent> *m_RenderPassComponentPool = 0;
 	TObjectPool<VKPipelineStateObject> *m_PSOPool = 0;
 	TObjectPool<VKCommandList> *m_CommandListPool = 0;
 	TObjectPool<VKSemaphore> *m_SemaphorePool = 0;
 	TObjectPool<VKShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
-	TObjectPool<VKSamplerDataComponent> *m_SamplerDataComponentPool = 0;
-	TObjectPool<VKGPUBufferDataComponent> *m_GPUBufferDataComponentPool = 0;
+	TObjectPool<VKSamplerComponent> *m_SamplerComponentPool = 0;
+	TObjectPool<VKGPUBufferComponent> *m_GPUBufferComponentPool = 0;
 
-	std::unordered_set<MeshDataComponent *> m_initializedMeshes;
-	std::unordered_set<TextureDataComponent *> m_initializedTextures;
-	std::unordered_set<MaterialDataComponent *> m_initializedMaterials;
+	std::unordered_set<MeshComponent *> m_initializedMeshes;
+	std::unordered_set<TextureComponent *> m_initializedTextures;
+	std::unordered_set<MaterialComponent *> m_initializedMaterials;
 
 	VkInstance m_instance;
 	VkSurfaceKHR m_windowSurface;
@@ -121,9 +121,9 @@ namespace VKRenderingServerNS
 	VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
 	GPUResourceComponent *m_userPipelineOutput = 0;
-	VKRenderPassDataComponent *m_SwapChainRPDC = 0;
+	VKRenderPassComponent *m_SwapChainRenderPassComp = 0;
 	VKShaderProgramComponent *m_SwapChainSPC = 0;
-	VKSamplerDataComponent *m_SwapChainSDC = 0;
+	VKSamplerComponent *m_SwapChainSamplerComp = 0;
 } // namespace VKRenderingServerNS
 
 std::vector<const char *> VKRenderingServerNS::GetRequiredExtensions()
@@ -627,20 +627,20 @@ bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = TObjectPool<VKMeshDataComponent>::Create(l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = TObjectPool<VKTextureDataComponent>::Create(l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = TObjectPool<VKMaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = TObjectPool<VKRenderPassDataComponent>::Create(128);
+	m_MeshComponentPool = TObjectPool<VKMeshComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureComponentPool = TObjectPool<VKTextureComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialComponentPool = TObjectPool<VKMaterialComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassComponentPool = TObjectPool<VKRenderPassComponent>::Create(128);
 	m_PSOPool = TObjectPool<VKPipelineStateObject>::Create(128);
 	m_CommandListPool = TObjectPool<VKCommandList>::Create(256);
 	m_SemaphorePool = TObjectPool<VKSemaphore>::Create(512);
 	m_ShaderProgramComponentPool = TObjectPool<VKShaderProgramComponent>::Create(256);
-	m_SamplerDataComponentPool = TObjectPool<VKSamplerDataComponent>::Create(256);
-	m_GPUBufferDataComponentPool = TObjectPool<VKGPUBufferDataComponent>::Create(256);
+	m_SamplerComponentPool = TObjectPool<VKSamplerComponent>::Create(256);
+	m_GPUBufferComponentPool = TObjectPool<VKGPUBufferComponent>::Create(256);
 
-	m_SwapChainRPDC = reinterpret_cast<VKRenderPassDataComponent *>(AddRenderPassDataComponent("SwapChain/"));
+	m_SwapChainRenderPassComp = reinterpret_cast<VKRenderPassComponent *>(AddRenderPassComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent *>(AddShaderProgramComponent("SwapChain/"));
-	m_SwapChainSDC = reinterpret_cast<VKSamplerDataComponent *>(AddSamplerDataComponent("SwapChain/"));
+	m_SwapChainSamplerComp = reinterpret_cast<VKSamplerComponent *>(AddSamplerComponent("SwapChain/"));
 
 	CreateVkInstance();
 	CreateDebugCallback();
@@ -670,87 +670,87 @@ bool VKRenderingServer::Initialize()
 
 	l_result &= InitializeShaderProgramComponent(m_SwapChainSPC);
 
-	l_result &= InitializeSamplerDataComponent(m_SwapChainSDC);
+	l_result &= InitializeSamplerComponent(m_SwapChainSamplerComp);
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = m_swapChainImages.size();
 
-	m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
-	m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames = true;
-	m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
-	m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+	m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_UseMultiFrames = true;
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs.resize(2);
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 1;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 1;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
-	m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
+	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainSPC;
 
-	l_result &= ReserveRenderTargets(m_SwapChainRPDC, this);
+	l_result &= ReserveRenderTargets(m_SwapChainRenderPassComp, this);
 
 	// use device created swap chain textures
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
-		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[i]);
-		l_VKTDC->m_TextureDesc = m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc;
-		l_VKTDC->m_image = m_swapChainImages[i];
-		l_VKTDC->m_VKTextureDesc = GetVKTextureDesc(l_VKTDC->m_TextureDesc);
-		l_VKTDC->m_VKTextureDesc.format = m_presentSurfaceFormat;
-		l_VKTDC->m_WriteImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		l_VKTDC->m_ReadImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		
-		CreateImageView(m_device, l_VKTDC);
-		l_VKTDC->m_GPUResourceType = GPUResourceType::Image;
-		l_VKTDC->m_ObjectStatus = ObjectStatus::Activated;
+		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
+		l_VKTextureComp->m_TextureDesc = m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
+		l_VKTextureComp->m_image = m_swapChainImages[i];
+		l_VKTextureComp->m_VKTextureDesc = GetVKTextureDesc(l_VKTextureComp->m_TextureDesc);
+		l_VKTextureComp->m_VKTextureDesc.format = m_presentSurfaceFormat;
+		l_VKTextureComp->m_WriteImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		l_VKTextureComp->m_ReadImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		
+		CreateImageView(m_device, l_VKTextureComp);
+		l_VKTextureComp->m_GPUResourceType = GPUResourceType::Image;
+		l_VKTextureComp->m_ObjectStatus = ObjectStatus::Activated;
 	}
 
-	m_SwapChainRPDC->m_PipelineStateObject = addPSO();
-	m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = static_cast<float>(m_presentSurfaceExtent.width);
-	m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = static_cast<float>(m_presentSurfaceExtent.height);
+	m_SwapChainRenderPassComp->m_PipelineStateObject = addPSO();
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = static_cast<float>(m_presentSurfaceExtent.width);
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = static_cast<float>(m_presentSurfaceExtent.height);
 
-	l_result &= CreateRenderPass(m_device, m_SwapChainRPDC, &m_presentSurfaceFormat);
-	l_result &= CreateViewportAndScissor(m_SwapChainRPDC);
+	l_result &= CreateRenderPass(m_device, m_SwapChainRenderPassComp, &m_presentSurfaceFormat);
+	l_result &= CreateViewportAndScissor(m_SwapChainRenderPassComp);
 
-	l_result &= CreateMultipleFramebuffers(m_device, m_SwapChainRPDC);
+	l_result &= CreateMultipleFramebuffers(m_device, m_SwapChainRenderPassComp);
 
-	l_result &= CreateDescriptorSetLayout(m_device, m_dummyEmptyDescriptorLayout, m_SwapChainRPDC);
+	l_result &= CreateDescriptorSetLayout(m_device, m_dummyEmptyDescriptorLayout, m_SwapChainRenderPassComp);
 
-	l_result &= CreateDescriptorPool(m_device, m_SwapChainRPDC);
+	l_result &= CreateDescriptorPool(m_device, m_SwapChainRenderPassComp);
 
-	l_result &= CreateDescriptorSets(m_device, m_SwapChainRPDC);
+	l_result &= CreateDescriptorSets(m_device, m_SwapChainRenderPassComp);
 
-	l_result &= CreatePipelineLayout(m_device, m_SwapChainRPDC);
+	l_result &= CreatePipelineLayout(m_device, m_SwapChainRenderPassComp);
 
-	l_result &= CreateGraphicsPipelines(m_device, m_SwapChainRPDC);
+	l_result &= CreateGraphicsPipelines(m_device, m_SwapChainRenderPassComp);
 
-	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Graphics, m_SwapChainRPDC->m_GraphicsCommandPool);
+	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Graphics, m_SwapChainRenderPassComp->m_GraphicsCommandPool);
 
-	m_SwapChainRPDC->m_CommandLists.resize(m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetCount);
+	m_SwapChainRenderPassComp->m_CommandLists.resize(m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
 
-	for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
+	for (size_t i = 0; i < m_SwapChainRenderPassComp->m_CommandLists.size(); i++)
 	{
-		m_SwapChainRPDC->m_CommandLists[i] = addCommandList();
+		m_SwapChainRenderPassComp->m_CommandLists[i] = addCommandList();
 	}
 
-	l_result &= CreateCommandBuffers(m_device, m_SwapChainRPDC);
+	l_result &= CreateCommandBuffers(m_device, m_SwapChainRenderPassComp);
 
-	m_SwapChainRPDC->m_Semaphores.resize(m_SwapChainRPDC->m_Framebuffers.size());
+	m_SwapChainRenderPassComp->m_Semaphores.resize(m_SwapChainRenderPassComp->m_Framebuffers.size());
 
-	for (size_t i = 0; i < m_SwapChainRPDC->m_Semaphores.size(); i++)
+	for (size_t i = 0; i < m_SwapChainRenderPassComp->m_Semaphores.size(); i++)
 	{
-		m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
+		m_SwapChainRenderPassComp->m_Semaphores[i] = addSemaphore();
 	}
 
-	l_result &= CreateSyncPrimitives(m_device, m_SwapChainRPDC);
-	m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
+	l_result &= CreateSyncPrimitives(m_device, m_SwapChainRenderPassComp);
+	m_SwapChainRenderPassComp->m_ObjectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -768,13 +768,13 @@ ObjectStatus VKRenderingServer::GetStatus()
 	return m_ObjectStatus;
 }
 
-AddComponent(VK, MeshData);
-AddComponent(VK, TextureData);
-AddComponent(VK, MaterialData);
-AddComponent(VK, RenderPassData);
+AddComponent(VK, Mesh);
+AddComponent(VK, Texture);
+AddComponent(VK, Material);
+AddComponent(VK, RenderPass);
 AddComponent(VK, ShaderProgram);
-AddComponent(VK, SamplerData);
-AddComponent(VK, GPUBufferData);
+AddComponent(VK, Sampler);
+AddComponent(VK, GPUBuffer);
 
 bool CreateHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer &buffer, VkDeviceMemory &deviceMemory)
 {
@@ -832,14 +832,14 @@ bool InitializeDeviceLocalBuffer(Array<T> &hostMemory, VkBuffer &buffer, VkDevic
 	return InitializeDeviceLocalBuffer(&hostMemory[0], l_bufferSize, buffer, deviceMemory);
 }
 
-bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
+bool VKRenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<VKMeshDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKMeshComponent *>(rhs);
 
 	auto l_VBSize = sizeof(Vertex) * l_rhs->m_vertices.size();
 	auto l_IBSize = sizeof(Index) * l_rhs->m_indices.size();
@@ -865,14 +865,14 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent *rhs)
+bool VKRenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<VKTextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKTextureComponent *>(rhs);
 	l_rhs->m_VKTextureDesc = GetVKTextureDesc(rhs->m_TextureDesc);
 	l_rhs->m_ImageCreateInfo = GetImageCreateInfo(rhs->m_TextureDesc, l_rhs->m_VKTextureDesc);
 	l_rhs->m_WriteImageLayout = GetTextureWriteImageLayout(l_rhs->m_TextureDesc);
@@ -933,30 +933,30 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent *rhs
 	return true;
 }
 
-bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent *rhs)
+bool VKRenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<VKMaterialDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKMaterialComponent *>(rhs);
 
-	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
-		auto l_texture = reinterpret_cast<VKTextureDataComponent *>(l_rhs->m_TextureSlots[i].m_Texture);
+		auto l_texture = reinterpret_cast<VKTextureComponent *>(l_rhs->m_TextureSlots[i].m_Texture);
 
 		if (l_texture)
 		{
-			InitializeTextureDataComponent(l_texture);
+			InitializeTextureComponent(l_texture);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 			l_rhs->m_TextureSlots[i].m_Activate = true;
 		}
 		else
 		{
-			auto l_texture = reinterpret_cast<VKTextureDataComponent *>(l_defaultMaterial->m_TextureSlots[i].m_Texture);
+			auto l_texture = reinterpret_cast<VKTextureComponent *>(l_defaultMaterial->m_TextureSlots[i].m_Texture);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 		}
 	}
@@ -968,9 +968,9 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent *r
 	return true;
 }
 
-bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent *rhs)
+bool VKRenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 
 	bool l_result = true;
 
@@ -1108,9 +1108,9 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent *rhs)
+bool VKRenderingServer::InitializeSamplerComponent(SamplerComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKSamplerDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKSamplerComponent *>(rhs);
 
 	l_rhs->m_samplerCInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	l_rhs->m_samplerCInfo.minFilter = GetFilter(l_rhs->m_SamplerDesc.m_MinFilterMethod);
@@ -1147,9 +1147,9 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent *rhs
 	return true;
 }
 
-bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+bool VKRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 
@@ -1182,22 +1182,22 @@ bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 	return true;
 }
 
-bool VKRenderingServer::DeleteMeshDataComponent(MeshDataComponent *rhs)
+bool VKRenderingServer::DeleteMeshComponent(MeshComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteTextureDataComponent(TextureDataComponent *rhs)
+bool VKRenderingServer::DeleteTextureComponent(TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent *rhs)
+bool VKRenderingServer::DeleteMaterialComponent(MaterialComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent *rhs)
+bool VKRenderingServer::DeleteRenderPassComponent(RenderPassComponent *rhs)
 {
 	return true;
 }
@@ -1207,29 +1207,29 @@ bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent *rhs
 	return true;
 }
 
-bool VKRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent *rhs)
+bool VKRenderingServer::DeleteSamplerComponent(SamplerComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+bool VKRenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
+bool VKRenderingServer::ClearTextureComponent(TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::CopyTextureDataComponent(TextureDataComponent *lhs, TextureDataComponent *rhs)
+bool VKRenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent *rhs, const void *GPUBufferValue, size_t startOffset, size_t range)
+bool VKRenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent *rhs, const void *GPUBufferValue, size_t startOffset, size_t range)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
 
 	auto l_size = l_rhs->m_TotalSize;
 	if (range != SIZE_MAX)
@@ -1250,9 +1250,9 @@ bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent 
 	return true;
 }
 
-bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+bool VKRenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
 
 	auto l_commandBuffer = OpenTemporaryCommandBuffer(m_device, m_globalCommandPool);
 
@@ -1267,9 +1267,9 @@ bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::CommandListBegin(RenderPassDataComponent *rhs, size_t frameIndex)
+bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameIndex)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	VkCommandBufferBeginInfo l_beginInfo = {};
@@ -1285,7 +1285,7 @@ bool VKRenderingServer::CommandListBegin(RenderPassDataComponent *rhs, size_t fr
 	return true;
 }
 
-bool TryToTransitImageLayout(VKTextureDataComponent *rhs, VKCommandList *commandList, const VkImageLayout& newImageLayout, ShaderStage shaderStage = ShaderStage::Invalid)
+bool TryToTransitImageLayout(VKTextureComponent *rhs, VKCommandList *commandList, const VkImageLayout& newImageLayout, ShaderStage shaderStage = ShaderStage::Invalid)
 {
 	if (rhs->m_CurrentImageLayout != newImageLayout)
 	{
@@ -1297,13 +1297,13 @@ bool TryToTransitImageLayout(VKTextureDataComponent *rhs, VKCommandList *command
 	return false;
 }
 
-bool PrepareRenderTargets(VKRenderPassDataComponent *renderPass, VKCommandList *commandList)
+bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *commandList)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			auto l_rhs = reinterpret_cast<VKTextureDataComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
+			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
 
 			TryToTransitImageLayout(l_rhs, commandList, l_rhs->m_WriteImageLayout);
 		}
@@ -1311,7 +1311,7 @@ bool PrepareRenderTargets(VKRenderPassDataComponent *renderPass, VKCommandList *
 		{
 			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				auto l_rhs = reinterpret_cast<VKTextureDataComponent *>(renderPass->m_RenderTargets[i]);
+				auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[i]);
 
 				TryToTransitImageLayout(l_rhs, commandList, l_rhs->m_WriteImageLayout);
 			}
@@ -1319,7 +1319,7 @@ bool PrepareRenderTargets(VKRenderPassDataComponent *renderPass, VKCommandList *
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 		{
-			auto l_rhs = reinterpret_cast<VKTextureDataComponent *>(renderPass->m_DepthStencilRenderTarget);
+			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_DepthStencilRenderTarget);
 
 			TryToTransitImageLayout(l_rhs, commandList, l_rhs->m_WriteImageLayout);
 		}
@@ -1328,9 +1328,9 @@ bool PrepareRenderTargets(VKRenderPassDataComponent *renderPass, VKCommandList *
 	return true;
 }
 
-bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *rhs)
+bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
@@ -1386,14 +1386,14 @@ bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *rhs
 	return true;
 }
 
-bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
+bool VKRenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
-	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
 	if (resource == nullptr)
@@ -1410,26 +1410,26 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 	switch (resource->m_GPUResourceType)
 	{
 	case GPUResourceType::Sampler:
-		l_descriptorImageInfo.sampler = reinterpret_cast<VKSamplerDataComponent *>(resource)->m_sampler;
+		l_descriptorImageInfo.sampler = reinterpret_cast<VKSamplerComponent *>(resource)->m_sampler;
 		l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_SAMPLER, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
 	case GPUResourceType::Image:
 	{
-		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(resource);
+		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(resource);
 
-		l_descriptorImageInfo.imageView = l_VKTDC->m_imageView;
+		l_descriptorImageInfo.imageView = l_VKTextureComp->m_imageView;
 		if (accessibility != Accessibility::ReadOnly)
 		{
 			// @TODO: potentially would be transited twice here if the image is bound to the output merger
 			l_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-			TryToTransitImageLayout(l_VKTDC, l_commandList, VK_IMAGE_LAYOUT_GENERAL, shaderStage);
+			TryToTransitImageLayout(l_VKTextureComp, l_commandList, VK_IMAGE_LAYOUT_GENERAL, shaderStage);
 			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		}
 		else
 		{
-			l_descriptorImageInfo.imageLayout = l_VKTDC->m_ReadImageLayout;
-			TryToTransitImageLayout(l_VKTDC, l_commandList, l_VKTDC->m_ReadImageLayout, shaderStage);
+			l_descriptorImageInfo.imageLayout = l_VKTextureComp->m_ReadImageLayout;
+			TryToTransitImageLayout(l_VKTextureComp, l_commandList, l_VKTextureComp->m_ReadImageLayout, shaderStage);
 			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		}
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
@@ -1444,7 +1444,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 			}
 			else
 			{
-				l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferDataComponent *>(resource)->m_HostStagingBuffer;
+				l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferComponent *>(resource)->m_HostStagingBuffer;
 				l_descriptorBufferInfo.offset = startOffset;
 				l_descriptorBufferInfo.range = elementCount;
 				l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
@@ -1456,7 +1456,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 			//if (accessibility != Accessibility::ReadOnly)
 			//{
 			VkDescriptorBufferInfo l_descriptorBufferInfo = {};
-			l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferDataComponent *>(resource)->m_DeviceLocalBuffer;
+			l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferComponent *>(resource)->m_DeviceLocalBuffer;
 			l_descriptorBufferInfo.offset = startOffset;
 			l_descriptorBufferInfo.range = elementCount;
 			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
@@ -1474,11 +1474,11 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 	return true;
 }
 
-bool VKRenderingServer::DrawIndexedInstanced(RenderPassDataComponent *renderPass, MeshDataComponent *mesh, size_t instanceCount)
+bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent *renderPass, MeshComponent *mesh, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	auto l_mesh = reinterpret_cast<VKMeshDataComponent *>(mesh);
+	auto l_mesh = reinterpret_cast<VKMeshComponent *>(mesh);
 
 	VkBuffer vertexBuffers[] = {l_mesh->m_VBO};
 	VkDeviceSize offsets[] = {0};
@@ -1490,9 +1490,9 @@ bool VKRenderingServer::DrawIndexedInstanced(RenderPassDataComponent *renderPass
 	return true;
 }
 
-bool VKRenderingServer::DrawInstanced(RenderPassDataComponent *renderPass, size_t instanceCount)
+bool VKRenderingServer::DrawInstanced(RenderPassComponent *renderPass, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
 	vkCmdDraw(l_commandList->m_CommandBuffer, 1, static_cast<uint32_t>(instanceCount), 0, 0);
@@ -1500,14 +1500,14 @@ bool VKRenderingServer::DrawInstanced(RenderPassDataComponent *renderPass, size_
 	return true;
 }
 
-bool VKRenderingServer::UnbindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
+bool VKRenderingServer::CommandListEnd(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 	
@@ -1525,9 +1525,9 @@ bool VKRenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
+bool VKRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 	l_semaphore->m_WaitValue = l_semaphore->m_SignalValue;
@@ -1574,9 +1574,9 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngi
 	return true;
 }
 
-bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool VKRenderingServer::WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {	
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 
@@ -1591,7 +1591,7 @@ bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngine
 	return true;
 }
 
-bool VKRenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
+bool VKRenderingServer::WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
 {	
 	if (GPUEngineType == GPUEngineType::Compute)
 	{
@@ -1618,30 +1618,30 @@ GPUResourceComponent *VKRenderingServer::GetUserPipelineOutput()
 
 bool VKRenderingServer::Present()
 {
-	auto l_commandList = reinterpret_cast<VKCommandList *>(m_SwapChainRPDC->m_CommandLists[m_SwapChainRPDC->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(m_SwapChainRPDC->m_PipelineStateObject);
-	auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
-	auto l_semaphore = reinterpret_cast<VKSemaphore *>(m_SwapChainRPDC->m_Semaphores[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(m_SwapChainRenderPassComp->m_CommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(m_SwapChainRenderPassComp->m_PipelineStateObject);
+	auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_semaphore = reinterpret_cast<VKSemaphore *>(m_SwapChainRenderPassComp->m_Semaphores[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
-	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
+	CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);
 
-	BindRenderPassDataComponent(m_SwapChainRPDC);
+	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
-	CleanRenderTargets(m_SwapChainRPDC);
+	CleanRenderTargets(m_SwapChainRenderPassComp);
 
-	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square);
 
-	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
+	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 	
-	TryToTransitImageLayout(l_VKTDC, l_commandList, l_VKTDC->m_ReadImageLayout);
+	TryToTransitImageLayout(l_VKTextureComp, l_commandList, l_VKTextureComp->m_ReadImageLayout);
 	
-	CommandListEnd(m_SwapChainRPDC);
+	CommandListEnd(m_SwapChainRenderPassComp);
 
 	// acquire an image from swap chain
 	thread_local uint32_t imageIndex;
@@ -1649,7 +1649,7 @@ bool VKRenderingServer::Present()
 		m_device,
 		m_swapChain,
 		std::numeric_limits<uint64_t>::max(),
-		m_imageAvailableSemaphores[m_SwapChainRPDC->m_CurrentFrame],
+		m_imageAvailableSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame],
 		VK_NULL_HANDLE,
 		&imageIndex);
 
@@ -1662,7 +1662,7 @@ bool VKRenderingServer::Present()
 	};
 	const VkSemaphore signalSemaphores[2] = {
 		l_semaphore->m_Semaphore,
-		m_swapChainRenderedSemaphores[m_SwapChainRPDC->m_CurrentFrame]};
+		m_swapChainRenderedSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame]};
 
 	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
 	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
@@ -1676,7 +1676,7 @@ bool VKRenderingServer::Present()
 	l_submitInfo.commandBufferCount = 1;
 	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
 	l_submitInfo.waitSemaphoreCount = 1;
-	l_submitInfo.pWaitSemaphores = &m_imageAvailableSemaphores[m_SwapChainRPDC->m_CurrentFrame];
+	l_submitInfo.pWaitSemaphores = &m_imageAvailableSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame];
 	l_submitInfo.signalSemaphoreCount = 2;
 	l_submitInfo.pSignalSemaphores =  &signalSemaphores[0];
 
@@ -1689,7 +1689,7 @@ bool VKRenderingServer::Present()
 	vkResetFences(m_device, 1, &fence);
 	if (vkQueueSubmit(queue, 1, &l_submitInfo, fence) != VK_SUCCESS)
 	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer for the swap chain RPDC!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer for the swap chain RenderPassComp!");
 		return false;
 	}
 
@@ -1703,7 +1703,7 @@ bool VKRenderingServer::Present()
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &m_swapChainRenderedSemaphores[m_SwapChainRPDC->m_CurrentFrame];
+	presentInfo.pWaitSemaphores = &m_swapChainRenderedSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame];
 
 	// swap chain
 	VkSwapchainKHR swapChains[] = { m_swapChain };
@@ -1713,27 +1713,27 @@ bool VKRenderingServer::Present()
 
 	vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-	m_SwapChainRPDC->m_CurrentFrame = imageIndex;
+	m_SwapChainRenderPassComp->m_CurrentFrame = imageIndex;
 
 	return true;
 }
 
-bool VKRenderingServer::Dispatch(RenderPassDataComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool VKRenderingServer::Dispatch(RenderPassComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	return true;
 }
 
-Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent *canvas, TextureDataComponent *TDC)
+std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassComponent *canvas, TextureComponent *TextureComp)
 {
 	return std::vector<Vec4>();
 }
 
-bool VKRenderingServer::GenerateMipmap(TextureDataComponent *rhs)
+bool VKRenderingServer::GenerateMipmap(TextureComponent *rhs)
 {
 	return true;
 }

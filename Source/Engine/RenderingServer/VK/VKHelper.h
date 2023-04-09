@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Common/STL17.h"
-#include "../../Component/VKTextureDataComponent.h"
-#include "../../Component/VKRenderPassDataComponent.h"
+#include "../../Component/VKTextureComponent.h"
+#include "../../Component/VKRenderPassComponent.h"
 #include "../../Component/VKShaderProgramComponent.h"
 #include "../IRenderingServer.h"
 
@@ -94,37 +94,37 @@ namespace Inno
 		VkPipelineStageFlags GetPipelineStageFlags(const VkImageLayout& imageLayout, ShaderStage shaderStage);
 		bool TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout, ShaderStage shaderStage = ShaderStage::Invalid);
 		bool CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
-		bool CreateImageView(VkDevice device, VKTextureDataComponent* VKTDC);
+		bool CreateImageView(VkDevice device, VKTextureComponent* VKTextureComp);
 
-		bool CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorSetLayoutBindings(VKRenderPassComponent* VKRenderPassComp);
 		bool CreateDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
-		bool CreateDescriptorPool(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorPool(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
 		bool CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
-		bool CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayout& dummyEmptyDescriptorLayout, VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayout& dummyEmptyDescriptorLayout, VKRenderPassComponent* VKRenderPassComp);
 		bool CreateDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout* setLayout, VkDescriptorSet& setHandle, uint32_t count);
-		bool CreateDescriptorSets(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorSets(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
 		bool UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
-		bool ReserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
-		bool CreateRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
-		bool CreateRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC, VkFormat* overrideFormat = nullptr);
-		bool CreateViewportAndScissor(VKRenderPassDataComponent* VKRPDC);
-		bool CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool ReserveRenderTargets(VKRenderPassComponent* VKRenderPassComp, IRenderingServer* renderingServer);
+		bool CreateRenderTargets(VKRenderPassComponent* VKRenderPassComp, IRenderingServer* renderingServer);
+		bool CreateRenderPass(VkDevice device, VKRenderPassComponent* VKRenderPassComp, VkFormat* overrideFormat = nullptr);
+		bool CreateViewportAndScissor(VKRenderPassComponent* VKRenderPassComp);
+		bool CreateSingleFramebuffer(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
+		bool CreateMultipleFramebuffers(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
 
 		VkCompareOp GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);
 		VkStencilOp GetStencilOperationEnum(StencilOperation stencilOperation);
 		VkBlendFactor GetBlendFactorEnum(BlendFactor blendFactor);
 		VkBlendOp GetBlendOperation(BlendOperation blendOperation);
 
-		bool CreatePipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreatePipelineLayout(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
 		bool GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject* PSO);
 		bool GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject* PSO);
 		bool GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject* PSO);
 		bool GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject* PSO);
-		bool CreateGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool CreateComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool CreateCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool CreateSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateGraphicsPipelines(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
+		bool CreateComputePipelines(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
+		bool CreateCommandBuffers(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
+		bool CreateSyncPrimitives(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
 
 		bool CreateShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
 

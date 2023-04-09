@@ -32,8 +32,8 @@ namespace Inno
 
 		bool resize() override;
 
-		bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) override;
-		bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;
+		bool initializeMTMeshComponent(MTMeshComponent* rhs) override;
+		bool initializeMTTextureComponent(MTTextureComponent* rhs) override;
 
 	private:
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;

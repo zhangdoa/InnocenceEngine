@@ -9,7 +9,7 @@
 #include <QMenu>
 #include "icomponentpropertyeditor.h"
 #include "../../Engine/Component/VisibleComponent.h"
-#include "materialdatacomponentpropertyeditor.h"
+#include "materialComponentpropertyeditor.h"
 #include "innodirectoryviewer.h"
 
 class VisibleComponentPropertyEditor : public IComponentPropertyEditor
@@ -40,7 +40,7 @@ private:
 	QLabel* m_modelListLabel;
 	QTableWidget* m_modelList;
 
-	MaterialDataComponentPropertyEditor* m_MDCEditor;
+	MaterialComponentPropertyEditor* m_MaterialCompEditor;
 	InnoDirectoryViewer* m_dirViewer;
 
 	VisibleComponent* m_component;

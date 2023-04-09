@@ -17,20 +17,20 @@ namespace Inno
 
 		bool runRayTrace() override;
 
-		MeshDataComponent* addMeshDataComponent() override;
-		TextureDataComponent* addTextureDataComponent() override;
-		MaterialDataComponent* addMaterialDataComponent() override;
-		SkeletonDataComponent* addSkeletonDataComponent() override;
-		AnimationDataComponent* addAnimationDataComponent() override;
+		MeshComponent* addMeshComponent() override;
+		TextureComponent* addTextureComponent() override;
+		MaterialComponent* addMaterialComponent() override;
+		SkeletonComponent* addSkeletonComponent() override;
+		AnimationComponent* addAnimationComponent() override;
 
-		bool registerMeshDataComponent(MeshDataComponent* rhs, bool AsyncUploadToGPU) override;
-		bool registerMaterialDataComponent(MaterialDataComponent* rhs, bool AsyncUploadToGPU) override;
-		bool registerSkeletonDataComponent(SkeletonDataComponent* rhs, bool AsyncUploadToGPU) override;
-		bool registerAnimationDataComponent(AnimationDataComponent* rhs, bool AsyncUploadToGPU) override;
+		bool registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU) override;
+		bool registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU) override;
+		bool registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU) override;
+		bool registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU) override;
 
-		MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) override;
-		TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
-		MaterialDataComponent* getDefaultMaterialDataComponent() override;
+		MeshComponent* getMeshComponent(ProceduralMeshShape shape) override;
+		TextureComponent* getTextureComponent(WorldEditorIconType iconType) override;
+		MaterialComponent* getDefaultMaterialComponent() override;
 
 		bool transferDataToGPU() override;
 

@@ -20,7 +20,7 @@
 - (void)createLibrary;
 - (void)createPipeline;
 - (void)createBuffer;
-- (void)submitGPUData:(void*)MDC;
+- (void)submitGPUData:(void*)MeshComp;
 - (void)render;
 @end
 

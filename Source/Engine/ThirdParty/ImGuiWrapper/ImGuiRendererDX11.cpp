@@ -3,7 +3,7 @@
 #include "../ImGui/imgui_impl_dx11.cpp"
 
 #include "../../RenderingServer/DX11/DX11RenderingServer.h"
-#include "../../Component/DX11RenderPassDataComponent.h"
+#include "../../Component/DX11RenderPassComponent.h"
 
 #include "../../Interface/IEngine.h"
 using namespace Inno;
@@ -42,11 +42,11 @@ bool ImGuiRendererDX11::NewFrame()
 
 bool ImGuiRendererDX11::Render()
 {
-	auto l_userPipelineOutputRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
+	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<DX11RenderPassComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
 	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_Engine->getRenderingServer());
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
 
-	l_deviceContext->OMSetRenderTargets(1, &l_userPipelineOutputRPDC->m_RTVs[l_userPipelineOutputRPDC->m_CurrentFrame], NULL);
+	l_deviceContext->OMSetRenderTargets(1, &l_userPipelineOutputRenderPassComp->m_RTVs[l_userPipelineOutputRenderPassComp->m_CurrentFrame], NULL);
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	return true;

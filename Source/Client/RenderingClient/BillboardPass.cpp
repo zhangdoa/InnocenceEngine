@@ -17,7 +17,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 	m_SPC->m_ShaderFilePaths.m_VSPath = "billboardPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "billboardPass.frag/";
 
-	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("BillboardPass/");
+	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BillboardPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -29,50 +29,50 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBindingLayoutDescs.resize(4);
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(4);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 12;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 12;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 2;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RPDC->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_SPC;
 
-	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("BillboardPass/");
+	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("BillboardPass/");
 
 	return true;
 }
 
 bool BillboardPass::Initialize()
 {
-	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::Get().GetRPDC()->m_DepthStencilRenderTarget;
+	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 
 	return true;
 }
 
 bool BillboardPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -86,17 +86,17 @@ ObjectStatus BillboardPass::GetStatus()
 
 bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_BillboardGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Billboard);
+	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_BillboardGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Billboard);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 3);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 3);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square);
 
 	auto& l_billboardPassDrawCallInfo = g_Engine->getRenderingFrontend()->getBillboardPassDrawCallInfo();
 	auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
@@ -107,21 +107,21 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 		auto l_offset = l_billboardPassDrawCallInfo[i].meshConstantBufferOffset;
 		auto l_instanceCount = l_billboardPassDrawCallInfo[i].instanceCount;
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC, 1, Accessibility::ReadOnly, l_offset, l_instanceCount);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_BillboardGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, l_instanceCount);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_iconTexture, 2);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
 
-		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_mesh, l_instanceCount);
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_mesh, l_instanceCount);
 
-		g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, l_iconTexture, 2);
+		g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
 	}
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }
 
-RenderPassDataComponent* BillboardPass::GetRPDC()
+RenderPassComponent* BillboardPass::GetRenderPassComp()
 {
-	return m_RPDC;
+	return m_RenderPassComp;
 }

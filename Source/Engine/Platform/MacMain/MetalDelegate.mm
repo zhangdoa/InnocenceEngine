@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 #import <simd/simd.h>
 #include "../../Common/GPUDataStructure.h"
-#include "../../Component/MTMeshDataComponent.h"
+#include "../../Component/MTMeshComponent.h"
 
 #include "../../Interface/IEngine.h"
 
@@ -39,7 +39,7 @@ extern IEngine* g_Engine;
         memcpy(uniformTgt, data, size);
     }
 
-    static void encodeDrawCall(id<MTLRenderCommandEncoder> commandEncoder, MTMeshDataComponent* rhs)
+    static void encodeDrawCall(id<MTLRenderCommandEncoder> commandEncoder, MTMeshComponent* rhs)
     {
         id<MTLBuffer> l_vertexBuffer = (__bridge_transfer id<MTLBuffer>)(rhs->m_VBO);
         id<MTLBuffer> l_indexBuffer = (__bridge_transfer id<MTLBuffer>)(rhs->m_IBO);
@@ -132,8 +132,8 @@ extern IEngine* g_Engine;
         [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [commandEncoder setCullMode:MTLCullModeFront];
     
-        auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square));
-        encodeDrawCall(commandEncoder, l_MDC);
+        auto l_MeshComp = reinterpret_cast<MTMeshComponent*>(g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square));
+        encodeDrawCall(commandEncoder, l_MeshComp);
         [commandEncoder endEncoding];
         [commandBuffer presentDrawable:drawable];
         [commandBuffer commit];
@@ -143,26 +143,26 @@ extern IEngine* g_Engine;
     return _view;
 }
 
-- (void)submitGPUData:(void *)MDC{
-    auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(MDC);
+- (void)submitGPUData:(void *)MeshComp{
+    auto l_MeshComp = reinterpret_cast<MTMeshComponent*>(MeshComp);
     
-    void* vertices = &l_MDC->m_vertices[0];
-    auto verticesSize =l_MDC->m_vertices.size() * sizeof(Vertex);
+    void* vertices = &l_MeshComp->m_vertices[0];
+    auto verticesSize =l_MeshComp->m_vertices.size() * sizeof(Vertex);
     id<MTLBuffer> l_vertexBuffer = [_device newBufferWithBytes:vertices
                          length:verticesSize
                         options:MTLResourceCPUCacheModeDefaultCache];
     NSLog(@"VBO has been generated: %@", l_vertexBuffer);
     
-    void* indices = &l_MDC->m_indices[0];
-    auto indicesSize =l_MDC->m_indices.size() * sizeof(Index);
+    void* indices = &l_MeshComp->m_indices[0];
+    auto indicesSize =l_MeshComp->m_indices.size() * sizeof(Index);
     id<MTLBuffer> l_indexBuffer = [_device newBufferWithBytes:indices
                                                         length:indicesSize
                                                        options:MTLResourceCPUCacheModeDefaultCache];
     NSLog(@"IBO has been generated: %@", l_indexBuffer);
     
-    l_MDC->m_VBO = (__bridge_retained void*)l_vertexBuffer;
-    l_MDC->m_IBO = (__bridge_retained void*)l_indexBuffer;
-    l_MDC->m_ObjectStatus = ObjectStatus::Activated;
+    l_MeshComp->m_VBO = (__bridge_retained void*)l_vertexBuffer;
+    l_MeshComp->m_IBO = (__bridge_retained void*)l_indexBuffer;
+    l_MeshComp->m_ObjectStatus = ObjectStatus::Activated;
 }
 
 @end

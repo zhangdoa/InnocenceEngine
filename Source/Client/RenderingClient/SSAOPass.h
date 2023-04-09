@@ -14,23 +14,23 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		SamplerDataComponent *m_SDC;	
-		TextureDataComponent* m_TDC;	
-		SamplerDataComponent *m_SDC_RandomRot;
+		SamplerComponent *m_SamplerComp;	
+		TextureComponent* m_TextureComp;	
+		SamplerComponent *m_SamplerComp_RandomRot;
 
 		uint32_t m_kernelSize = 64;
 		std::vector<InnoMath::Vec4> m_SSAOKernel;
 		std::vector<InnoMath::Vec4> m_SSAONoise;
 
-		GPUBufferDataComponent *m_SSAOKernelGPUBuffer;
-		TextureDataComponent *m_SSAONoiseTDC;
+		GPUBufferComponent *m_SSAOKernelGPUBuffer;
+		TextureComponent *m_SSAONoiseTextureComp;
 	};
 } // namespace Inno

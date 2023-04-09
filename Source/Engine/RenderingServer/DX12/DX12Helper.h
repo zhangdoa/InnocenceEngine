@@ -1,6 +1,6 @@
 #pragma once
-#include "../../Component/DX12TextureDataComponent.h"
-#include "../../Component/DX12RenderPassDataComponent.h"
+#include "../../Component/DX12TextureComponent.h"
+#include "../../Component/DX12RenderPassComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
 #include "../IRenderingServer.h"
 
@@ -48,12 +48,12 @@ namespace Inno
 		D3D12_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
 		D3D12_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, bool stencilEnable);
 
-		bool ReserveRenderTargets(DX12RenderPassDataComponent *DX12RPDC, IRenderingServer *renderingServer);
-		bool CreateRenderTargets(DX12RenderPassDataComponent *DX12RPDC, IRenderingServer *renderingServer);
-		bool CreateViews(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
-		bool CreateRootSignature(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
-		bool CreatePSO(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
-		bool CreateFenceEvents(DX12RenderPassDataComponent *DX12RPDC);
+		bool ReserveRenderTargets(DX12RenderPassComponent *DX12RenderPassComp, IRenderingServer *renderingServer);
+		bool CreateRenderTargets(DX12RenderPassComponent *DX12RenderPassComp, IRenderingServer *renderingServer);
+		bool CreateViews(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
+		bool CreateRootSignature(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
+		bool CreatePSO(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
+		bool CreateFenceEvents(DX12RenderPassComponent *DX12RenderPassComp);
 
 		D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 		D3D12_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);

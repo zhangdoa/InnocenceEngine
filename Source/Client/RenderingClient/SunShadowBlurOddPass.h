@@ -14,15 +14,15 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		TextureDataComponent *m_TDC;
+		TextureComponent *m_TextureComp;
 		InnoMath::TVec4<uint32_t> m_numThreads;
 		InnoMath::TVec4<uint32_t> m_numThreadGroups;
 	};

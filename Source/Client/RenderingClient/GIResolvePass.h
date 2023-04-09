@@ -11,7 +11,7 @@ namespace GIResolvePass
 	bool InitializeGPUBuffers();
 	bool DeleteGPUBuffers();
 
-	RenderPassDataComponent* GetRPDC();
+	RenderPassComponent* GetRenderPassComp();
 	ShaderProgramComponent* GetSPC();
 	GPUResourceComponent* GetProbeVolume();
 	GPUResourceComponent* GetIrradianceVolume();

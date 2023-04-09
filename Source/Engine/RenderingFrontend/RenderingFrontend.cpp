@@ -62,30 +62,30 @@ namespace InnoRenderingFrontendNS
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
-	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
-	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
-	ThreadSafeQueue<AnimationDataComponent*> m_uninitializedAnimations;
+	ThreadSafeQueue<MeshComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
+	ThreadSafeQueue<AnimationComponent*> m_uninitializedAnimations;
 
 	ThreadSafeUnorderedMap<std::string, AnimationData> m_animationDataInfosLUT;
 
-	TextureDataComponent* m_iconTemplate_DirectionalLight;
-	TextureDataComponent* m_iconTemplate_PointLight;
-	TextureDataComponent* m_iconTemplate_SphereLight;
+	TextureComponent* m_iconTemplate_DirectionalLight;
+	TextureComponent* m_iconTemplate_PointLight;
+	TextureComponent* m_iconTemplate_SphereLight;
 
-	MeshDataComponent* m_unitTriangleMesh;
-	MeshDataComponent* m_unitSquareMesh;
-	MeshDataComponent* m_unitPentagonMesh;
-	MeshDataComponent* m_unitHexagonMesh;
+	MeshComponent* m_unitTriangleMesh;
+	MeshComponent* m_unitSquareMesh;
+	MeshComponent* m_unitPentagonMesh;
+	MeshComponent* m_unitHexagonMesh;
 
-	MeshDataComponent* m_unitTetrahedronMesh;
-	MeshDataComponent* m_unitCubeMesh;
-	MeshDataComponent* m_unitOctahedronMesh;
-	MeshDataComponent* m_unitDodecahedronMesh;
-	MeshDataComponent* m_unitIcosahedronMesh;
-	MeshDataComponent* m_unitSphereMesh;
-	MeshDataComponent* m_terrainMesh;
+	MeshComponent* m_unitTetrahedronMesh;
+	MeshComponent* m_unitCubeMesh;
+	MeshComponent* m_unitOctahedronMesh;
+	MeshComponent* m_unitDodecahedronMesh;
+	MeshComponent* m_unitIcosahedronMesh;
+	MeshComponent* m_unitSphereMesh;
+	MeshComponent* m_terrainMesh;
 
-	MaterialDataComponent* m_defaultMaterial;
+	MaterialComponent* m_defaultMaterial;
 
 	bool Setup(ISystemConfig* systemConfig);
 	bool loadDefaultAssets();
@@ -95,7 +95,7 @@ namespace InnoRenderingFrontendNS
 
 	float radicalInverse(uint32_t n, uint32_t base);
 	void initializeHaltonSampler();
-	void initializeAnimation(AnimationDataComponent* rhs);
+	void initializeAnimation(AnimationComponent* rhs);
 	AnimationData getAnimationData(const char* animationName);
 
 	bool updatePerFrameConstantBuffer();
@@ -132,18 +132,18 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 	}
 }
 
-void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
+void InnoRenderingFrontendNS::initializeAnimation(AnimationComponent* rhs)
 {
 	std::string l_name = rhs->m_InstanceName.c_str();
 
-	auto l_keyData = g_Engine->getRenderingServer()->AddGPUBufferDataComponent((l_name + "_KeyData").c_str());
+	auto l_keyData = g_Engine->getRenderingServer()->AddGPUBufferComponent((l_name + "_KeyData").c_str());
 	l_keyData->m_Owner = rhs->m_Owner;
 	l_keyData->m_ElementCount = rhs->m_KeyData.capacity();
 	l_keyData->m_ElementSize = sizeof(KeyData);
 	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(l_keyData);
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_keyData, &rhs->m_KeyData[0]);
+	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(l_keyData);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_keyData, &rhs->m_KeyData[0]);
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -233,9 +233,9 @@ bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 	{
 		// @TODO:
 		std::vector<BillboardPassDrawCallInfo> l_billboardPassDrawCallInfoVectorA(3);
-		l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-		l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT);
-		l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT);
+		l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->getRenderingFrontend()->getTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
+		l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->getRenderingFrontend()->getTextureComponent(WorldEditorIconType::POINT_LIGHT);
+		l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->getRenderingFrontend()->getTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
 		auto l_billboardPassDrawCallInfoVectorB = l_billboardPassDrawCallInfoVectorA;
 
 		m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorA));
@@ -273,7 +273,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_defaultMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
+	m_defaultMaterial = m_renderingServer->AddMaterialComponent("BasicMaterial/");
 	m_defaultMaterial->m_TextureSlots[0].m_Texture = m_basicNormalTexture;
 	m_defaultMaterial->m_TextureSlots[1].m_Texture = m_basicAlbedoTexture;
 	m_defaultMaterial->m_TextureSlots[2].m_Texture = m_basicMetallicTexture;
@@ -296,61 +296,61 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_unitTriangleMesh = m_renderingServer->AddMeshDataComponent("UnitTriangleMesh/");
+	m_unitTriangleMesh = m_renderingServer->AddMeshComponent("UnitTriangleMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Triangle, m_unitTriangleMesh);
 	m_unitTriangleMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitTriangleMesh->m_proceduralMeshShape = ProceduralMeshShape::Triangle;
 	m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitSquareMesh = m_renderingServer->AddMeshDataComponent("UnitSquareMesh/");
+	m_unitSquareMesh = m_renderingServer->AddMeshComponent("UnitSquareMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Square, m_unitSquareMesh);
 	m_unitSquareMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSquareMesh->m_proceduralMeshShape = ProceduralMeshShape::Square;
 	m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitPentagonMesh = m_renderingServer->AddMeshDataComponent("UnitPentagonMesh/");
+	m_unitPentagonMesh = m_renderingServer->AddMeshComponent("UnitPentagonMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Pentagon, m_unitPentagonMesh);
 	m_unitPentagonMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitPentagonMesh->m_proceduralMeshShape = ProceduralMeshShape::Pentagon;
 	m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitHexagonMesh = m_renderingServer->AddMeshDataComponent("UnitHexagonMesh/");
+	m_unitHexagonMesh = m_renderingServer->AddMeshComponent("UnitHexagonMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Hexagon, m_unitHexagonMesh);
 	m_unitHexagonMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitHexagonMesh->m_proceduralMeshShape = ProceduralMeshShape::Hexagon;
 	m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitTetrahedronMesh = m_renderingServer->AddMeshDataComponent("UnitTetrahedronMesh/");
+	m_unitTetrahedronMesh = m_renderingServer->AddMeshComponent("UnitTetrahedronMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Tetrahedron, m_unitTetrahedronMesh);
 	m_unitTetrahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitTetrahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Tetrahedron;
 	m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
+	m_unitCubeMesh = m_renderingServer->AddMeshComponent("UnitCubeMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Cube, m_unitCubeMesh);
 	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitCubeMesh->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitOctahedronMesh = m_renderingServer->AddMeshDataComponent("UnitOctahedronMesh/");
+	m_unitOctahedronMesh = m_renderingServer->AddMeshComponent("UnitOctahedronMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Octahedron, m_unitOctahedronMesh);
 	m_unitOctahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitOctahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Octahedron;
 	m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitDodecahedronMesh = m_renderingServer->AddMeshDataComponent("UnitDodecahedronMesh/");
+	m_unitDodecahedronMesh = m_renderingServer->AddMeshComponent("UnitDodecahedronMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Dodecahedron, m_unitDodecahedronMesh);
 	m_unitDodecahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitDodecahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Dodecahedron;
 	m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitIcosahedronMesh = m_renderingServer->AddMeshDataComponent("UnitIcosahedronMesh/");
+	m_unitIcosahedronMesh = m_renderingServer->AddMeshComponent("UnitIcosahedronMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Icosahedron, m_unitIcosahedronMesh);
 	m_unitIcosahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitIcosahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Icosahedron;
 	m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
+	m_unitSphereMesh = m_renderingServer->AddMeshComponent("UnitSphereMesh/");
 	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Sphere, m_unitSphereMesh);
 	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSphereMesh->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
@@ -358,29 +358,29 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 
 	auto l_DefaultAssetInitializeTask = g_Engine->getTaskSystem()->Submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
-			m_renderingServer->InitializeMeshDataComponent(m_unitTriangleMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitSquareMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitPentagonMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitHexagonMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitTriangleMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitSquareMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitPentagonMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitHexagonMesh);
 
-			m_renderingServer->InitializeMeshDataComponent(m_unitTetrahedronMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitOctahedronMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitDodecahedronMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitIcosahedronMesh);
-			m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitTetrahedronMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitCubeMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitOctahedronMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitDodecahedronMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitIcosahedronMesh);
+			m_renderingServer->InitializeMeshComponent(m_unitSphereMesh);
 
-			m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
-			m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
-			m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
-			m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
-			m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
+			m_renderingServer->InitializeTextureComponent(m_basicNormalTexture);
+			m_renderingServer->InitializeTextureComponent(m_basicAlbedoTexture);
+			m_renderingServer->InitializeTextureComponent(m_basicMetallicTexture);
+			m_renderingServer->InitializeTextureComponent(m_basicRoughnessTexture);
+			m_renderingServer->InitializeTextureComponent(m_basicAOTexture);
 
-			m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
-			m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
-			m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
+			m_renderingServer->InitializeTextureComponent(m_iconTemplate_DirectionalLight);
+			m_renderingServer->InitializeTextureComponent(m_iconTemplate_PointLight);
+			m_renderingServer->InitializeTextureComponent(m_iconTemplate_SphereLight);
 
-			m_renderingServer->InitializeMaterialDataComponent(m_defaultMaterial);
+			m_renderingServer->InitializeMaterialComponent(m_defaultMaterial);
 		});
 
 	l_DefaultAssetInitializeTask.m_Future->Get();
@@ -822,8 +822,8 @@ bool InnoRenderingFrontendNS::Terminate()
 
 bool InnoRenderingFrontend::Setup(ISystemConfig* systemConfig)
 {	
-	g_Engine->getComponentManager()->RegisterType<SkeletonDataComponent>(2048, this);
-	g_Engine->getComponentManager()->RegisterType<AnimationDataComponent>(16384, this);
+	g_Engine->getComponentManager()->RegisterType<SkeletonComponent>(2048, this);
+	g_Engine->getComponentManager()->RegisterType<AnimationComponent>(16384, this);
 	
 	return InnoRenderingFrontendNS::Setup(systemConfig);
 }
@@ -853,26 +853,26 @@ bool InnoRenderingFrontend::runRayTrace()
 	return InnoRenderingFrontendNS::m_rayTracer->Execute();
 }
 
-MeshDataComponent* InnoRenderingFrontend::addMeshDataComponent()
+MeshComponent* InnoRenderingFrontend::addMeshComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddMeshDataComponent();
+	return InnoRenderingFrontendNS::m_renderingServer->AddMeshComponent();
 }
 
-TextureDataComponent* InnoRenderingFrontend::addTextureDataComponent()
+TextureComponent* InnoRenderingFrontend::addTextureComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddTextureDataComponent();
+	return InnoRenderingFrontendNS::m_renderingServer->AddTextureComponent();
 }
 
-MaterialDataComponent* InnoRenderingFrontend::addMaterialDataComponent()
+MaterialComponent* InnoRenderingFrontend::addMaterialComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddMaterialDataComponent();
+	return InnoRenderingFrontendNS::m_renderingServer->AddMaterialComponent();
 }
 
-SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
+SkeletonComponent* InnoRenderingFrontend::addSkeletonComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_parentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
-	auto l_SDC = g_Engine->getComponentManager()->Spawn<SkeletonDataComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
+	auto l_SDC = g_Engine->getComponentManager()->Spawn<SkeletonComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
 	l_SDC->m_Owner = l_parentEntity;
 	l_SDC->m_Serializable = false;
 	l_SDC->m_ObjectStatus = ObjectStatus::Created;
@@ -881,11 +881,11 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 	return l_SDC;
 }
 
-AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
+AnimationComponent* InnoRenderingFrontend::addAnimationComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_parentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
-	auto l_ADC = g_Engine->getComponentManager()->Spawn<AnimationDataComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
+	auto l_ADC = g_Engine->getComponentManager()->Spawn<AnimationComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
 	l_ADC->m_Owner = l_parentEntity;
 	l_ADC->m_Serializable = false;
 	l_ADC->m_ObjectStatus = ObjectStatus::Created;
@@ -894,7 +894,7 @@ AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 	return l_ADC;
 }
 
-MeshDataComponent* InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshShape shape)
+MeshComponent* InnoRenderingFrontend::getMeshComponent(ProceduralMeshShape shape)
 {
 	switch (shape)
 	{
@@ -935,7 +935,7 @@ MeshDataComponent* InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshSha
 	}
 }
 
-TextureDataComponent* InnoRenderingFrontend::getTextureDataComponent(WorldEditorIconType iconType)
+TextureComponent* InnoRenderingFrontend::getTextureComponent(WorldEditorIconType iconType)
 {
 	switch (iconType)
 	{
@@ -950,7 +950,7 @@ TextureDataComponent* InnoRenderingFrontend::getTextureDataComponent(WorldEditor
 	}
 }
 
-MaterialDataComponent* InnoRenderingFrontend::getDefaultMaterialDataComponent()
+MaterialComponent* InnoRenderingFrontend::getDefaultMaterialComponent()
 {
 	return m_defaultMaterial;
 }
@@ -959,29 +959,29 @@ bool InnoRenderingFrontend::transferDataToGPU()
 {
 	while (m_uninitializedMeshes.size() > 0)
 	{
-		MeshDataComponent* l_Mesh;
+		MeshComponent* l_Mesh;
 		m_uninitializedMeshes.tryPop(l_Mesh);
 
 		if (l_Mesh)
 		{
-			auto l_result = m_renderingServer->InitializeMeshDataComponent(l_Mesh);
+			auto l_result = m_renderingServer->InitializeMeshComponent(l_Mesh);
 		}
 	}
 
 	while (m_uninitializedMaterials.size() > 0)
 	{
-		MaterialDataComponent* l_Material;
+		MaterialComponent* l_Material;
 		m_uninitializedMaterials.tryPop(l_Material);
 
 		if (l_Material)
 		{
-			auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Material);
+			auto l_result = m_renderingServer->InitializeMaterialComponent(l_Material);
 		}
 	}
 
 	while (m_uninitializedAnimations.size() > 0)
 	{
-		AnimationDataComponent* l_Animations;
+		AnimationComponent* l_Animations;
 		m_uninitializedAnimations.tryPop(l_Animations);
 
 		if (l_Animations)
@@ -993,7 +993,7 @@ bool InnoRenderingFrontend::transferDataToGPU()
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent* rhs, bool AsyncUploadToGPU)
+bool InnoRenderingFrontend::registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1001,15 +1001,15 @@ bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent* rhs, bo
 	}
 	else
 	{
-		auto l_MeshDataComponentInitializeTask = g_Engine->getTaskSystem()->Submit("MeshDataComponentInitializeTask", 2, nullptr,
-			[=]() { m_renderingServer->InitializeMeshDataComponent(rhs); });
-		l_MeshDataComponentInitializeTask.m_Future->Get();
+		auto l_MeshComponentInitializeTask = g_Engine->getTaskSystem()->Submit("MeshComponentInitializeTask", 2, nullptr,
+			[=]() { m_renderingServer->InitializeMeshComponent(rhs); });
+		l_MeshComponentInitializeTask.m_Future->Get();
 	}
 
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent* rhs, bool AsyncUploadToGPU)
+bool InnoRenderingFrontend::registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1017,22 +1017,22 @@ bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent*
 	}
 	else
 	{
-		auto l_MaterialDataComponentInitializeTask = g_Engine->getTaskSystem()->Submit("MaterialDataComponentInitializeTask", 2, nullptr,
-			[=]() { m_renderingServer->InitializeMaterialDataComponent(rhs); });
-		l_MaterialDataComponentInitializeTask.m_Future->Get();
+		auto l_MaterialComponentInitializeTask = g_Engine->getTaskSystem()->Submit("MaterialComponentInitializeTask", 2, nullptr,
+			[=]() { m_renderingServer->InitializeMaterialComponent(rhs); });
+		l_MaterialComponentInitializeTask.m_Future->Get();
 	}
 
 	return true;
 }
 
-bool InnoRenderingFrontend::registerSkeletonDataComponent(SkeletonDataComponent* rhs, bool AsyncUploadToGPU)
+bool InnoRenderingFrontend::registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU)
 {
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool InnoRenderingFrontend::registerAnimationDataComponent(AnimationDataComponent* rhs, bool AsyncUploadToGPU)
+bool InnoRenderingFrontend::registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1040,9 +1040,9 @@ bool InnoRenderingFrontend::registerAnimationDataComponent(AnimationDataComponen
 	}
 	else
 	{
-		auto l_AnimationDataComponentInitializeTask = g_Engine->getTaskSystem()->Submit("AnimationDataComponentInitializeTask", 2, nullptr,
+		auto l_AnimationComponentInitializeTask = g_Engine->getTaskSystem()->Submit("AnimationComponentInitializeTask", 2, nullptr,
 			[=]() { initializeAnimation(rhs); });
-		l_AnimationDataComponentInitializeTask.m_Future->Get();
+		l_AnimationComponentInitializeTask.m_Future->Get();
 	}
 
 	return true;

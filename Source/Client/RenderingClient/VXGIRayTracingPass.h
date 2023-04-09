@@ -21,19 +21,19 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext *renderingContext) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		SamplerDataComponent *m_SDC;
-		TextureDataComponent *m_TDC;
+		SamplerComponent *m_SamplerComp;
+		TextureComponent *m_TextureComp;
 
-		GPUBufferDataComponent *m_RaySBufferGBDC;
-		GPUBufferDataComponent *m_ProbeIndexSBufferGBDC;
+		GPUBufferComponent *m_RaySBufferGPUBufferComp;
+		GPUBufferComponent *m_ProbeIndexSBufferGPUBufferComp;
 
 		std::vector<InnoMath::Vec4> m_Ray;
 		std::vector<InnoMath::TVec4<uint32_t>> m_ProbeIndex;

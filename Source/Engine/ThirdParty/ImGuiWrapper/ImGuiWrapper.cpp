@@ -430,10 +430,10 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 		l_rhs->m_modelFileName = modelFileName;
 	}
 
-	static MaterialDataComponent* selectedComponent = nullptr;
+	static MaterialComponent* selectedComponent = nullptr;
 
 	{
-		ImGui::BeginChild("Children MaterialDataComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+		ImGui::BeginChild("Children MaterialComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 		{
 			for (uint64_t j = 0; j < l_rhs->m_model->meshMaterialPairs.m_count; j++)
 			{
@@ -453,7 +453,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 	{
 		if (selectedComponent)
 		{
-			ImGui::BeginChild("MaterialDataComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::BeginChild("MaterialComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			{
 				auto l_material = &selectedComponent->m_materialAttributes;
 

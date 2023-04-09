@@ -61,7 +61,7 @@ MTRenderingServerBridgeImpl::MTRenderingServerBridgeImpl(MacWindowDelegate* macW
 MTRenderingServerBridgeImpl::~MTRenderingServerBridgeImpl() {
 }
 
-bool MTRenderingServerBridgeImpl::initializeMTMeshDataComponent(MTMeshDataComponent *rhs) {
+bool MTRenderingServerBridgeImpl::initializeMTMeshComponent(MTMeshComponent *rhs) {
     if (rhs->m_ObjectStatus == ObjectStatus::Activated)
     {
         return true;
@@ -73,6 +73,6 @@ bool MTRenderingServerBridgeImpl::initializeMTMeshDataComponent(MTMeshDataCompon
     }
 }
 
-bool MTRenderingServerBridgeImpl::initializeMTTextureDataComponent(MTTextureDataComponent *rhs) {
+bool MTRenderingServerBridgeImpl::initializeMTTextureComponent(MTTextureComponent *rhs) {
         return true;
 }

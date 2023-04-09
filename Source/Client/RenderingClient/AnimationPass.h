@@ -14,12 +14,12 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		SamplerDataComponent *m_SDC;
+		SamplerComponent *m_SamplerComp;
 	};
 } // namespace Inno

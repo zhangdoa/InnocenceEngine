@@ -14,16 +14,16 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetTiledFrustum();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		TextureDataComponent *m_TDC;
-		GPUBufferDataComponent* m_tiledFrustum;
+		TextureComponent *m_TextureComp;
+		GPUBufferComponent* m_tiledFrustum;
 		const uint32_t m_tileSize = 16;
 		const uint32_t m_numThreadPerGroup = 16;
 		InnoMath::TVec4<uint32_t> m_numThreads;

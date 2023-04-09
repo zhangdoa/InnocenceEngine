@@ -20,7 +20,7 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetResult();
 		GPUResourceComponent* GetLightGrid();
@@ -29,15 +29,15 @@ namespace Inno
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		SamplerDataComponent *m_SDC;
+		SamplerComponent *m_SamplerComp;
 
-		GPUBufferDataComponent* m_lightListIndexCounter;
-		GPUBufferDataComponent* m_lightIndexList;
+		GPUBufferComponent* m_lightListIndexCounter;
+		GPUBufferComponent* m_lightIndexList;
 
-		TextureDataComponent* m_lightGrid;
-		TextureDataComponent* m_heatMap;
+		TextureComponent* m_lightGrid;
+		TextureComponent* m_heatMap;
 
 		const uint32_t m_tileSize = 16;
 		InnoMath::TVec4<uint32_t> m_numThreads;

@@ -14,7 +14,7 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("BRDFLUTMSPass/");
 	m_SPC->m_ShaderFilePaths.m_CSPath = "BRDFLUTMSPass.comp/";
 
-	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("BRDFLUTMSPass/");
+	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BRDFLUTMSPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -23,29 +23,29 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 512;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 512;
 
-	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBindingLayoutDescs.resize(2);
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
-	m_RPDC->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_SPC;
 
-	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("BRDFLUTMSPass/");
-	m_TDC->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("BRDFLUTMSPass/");
+	m_TextureComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -55,8 +55,8 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 bool BRDFLUTMSPass::Initialize()
 {
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -65,8 +65,8 @@ bool BRDFLUTMSPass::Initialize()
 
 bool BRDFLUTMSPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -80,28 +80,28 @@ ObjectStatus BRDFLUTMSPass::GetStatus()
 
 bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 1, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RPDC, 32, 32, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, 32, 32, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 1, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }
 
-RenderPassDataComponent *BRDFLUTMSPass::GetRPDC()
+RenderPassComponent *BRDFLUTMSPass::GetRenderPassComp()
 {
-	return m_RPDC;
+	return m_RenderPassComp;
 }
 
 GPUResourceComponent *BRDFLUTMSPass::GetResult()
 {
-	return m_TDC;
+	return m_TextureComp;
 }

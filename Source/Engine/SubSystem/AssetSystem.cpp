@@ -39,17 +39,17 @@ bool InnoAssetSystem::findLoaded##funcName(const char * fileName, type value) \
 
 namespace InnoAssetSystemNS
 {
-	void addTriangle(MeshDataComponent* meshDataComponent);
-	void addSquare(MeshDataComponent* meshDataComponent);
-	void addPentagon(MeshDataComponent* meshDataComponent);
-	void addHexagon(MeshDataComponent* meshDataComponent);
-	void addTetrahedron(MeshDataComponent* meshDataComponent);
-	void addCube(MeshDataComponent* meshDataComponent);
-	void addOctahedron(MeshDataComponent* meshDataComponent);
-	void addDodecahedron(MeshDataComponent* meshDataComponent);
-	void addIcosahedron(MeshDataComponent* meshDataComponent);
-	void addSphere(MeshDataComponent* meshDataComponent);
-	void addTerrain(MeshDataComponent* meshDataComponent);
+	void addTriangle(MeshComponent* meshComponent);
+	void addSquare(MeshComponent* meshComponent);
+	void addPentagon(MeshComponent* meshComponent);
+	void addHexagon(MeshComponent* meshComponent);
+	void addTetrahedron(MeshComponent* meshComponent);
+	void addCube(MeshComponent* meshComponent);
+	void addOctahedron(MeshComponent* meshComponent);
+	void addDodecahedron(MeshComponent* meshComponent);
+	void addIcosahedron(MeshComponent* meshComponent);
+	void addSphere(MeshComponent* meshComponent);
+	void addTerrain(MeshComponent* meshComponent);
 
 	std::function<void(VisibleComponent*, bool)> f_LoadModelTask;
 	std::function<void(VisibleComponent*, bool)> f_AssignProceduralModelTask;
@@ -61,9 +61,9 @@ namespace InnoAssetSystemNS
 
 	std::unordered_map<std::string, MeshMaterialPair*> m_loadedMeshMaterialPair;
 	std::unordered_map<std::string, Model*> m_loadedModel;
-	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
-	std::unordered_map<std::string, AnimationDataComponent*> m_loadedAnimation;
-	std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSkeleton;
+	std::unordered_map<std::string, TextureComponent*> m_loadedTexture;
+	std::unordered_map<std::string, AnimationComponent*> m_loadedAnimation;
+	std::unordered_map<std::string, SkeletonComponent*> m_loadedSkeleton;
 
 	std::atomic<uint64_t> m_currentMeshMaterialPairIndex = 0;
 	std::shared_mutex m_mutexMeshMaterialPair;
@@ -74,10 +74,10 @@ namespace InnoAssetSystemNS
 
 using namespace InnoAssetSystemNS;
 
-void generateVerticesForPolygon(MeshDataComponent* meshDataComponent, uint32_t sectorCount)
+void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
 {
-	meshDataComponent->m_vertices.reserve(sectorCount);
-	meshDataComponent->m_vertices.fulfill();
+	meshComponent->m_vertices.reserve(sectorCount);
+	meshComponent->m_vertices.fulfill();
 
 	auto l_sectorCount = (float)sectorCount;
 	auto l_sectorStep = 2.0f * PI<float> / l_sectorCount;
@@ -85,90 +85,90 @@ void generateVerticesForPolygon(MeshDataComponent* meshDataComponent, uint32_t s
 	for (size_t i = 0; i < sectorCount; i++)
 	{
 		auto l_pos = Vec4(-sinf(l_sectorStep * (float)i), cosf(l_sectorStep * (float)i), 0.0f, 1.0f);
-		meshDataComponent->m_vertices[i].m_pos = l_pos;
-		meshDataComponent->m_vertices[i].m_texCoord = Vec2(l_pos.x, l_pos.y) * 0.5f + 0.5f;
+		meshComponent->m_vertices[i].m_pos = l_pos;
+		meshComponent->m_vertices[i].m_texCoord = Vec2(l_pos.x, l_pos.y) * 0.5f + 0.5f;
 	}
 }
 
-void generateIndicesForPolygon(MeshDataComponent* meshDataComponent, uint32_t sectorCount)
+void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
 {
-	meshDataComponent->m_indices.reserve((sectorCount - 2) * 3);
-	meshDataComponent->m_indices.fulfill();
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.capacity();
+	meshComponent->m_indices.reserve((sectorCount - 2) * 3);
+	meshComponent->m_indices.fulfill();
+	meshComponent->m_indicesSize = meshComponent->m_indices.capacity();
 
 	uint32_t l_currentIndex = 0;
 
-	for (size_t i = 0; i < meshDataComponent->m_indicesSize; i += 3)
+	for (size_t i = 0; i < meshComponent->m_indicesSize; i += 3)
 	{
-		meshDataComponent->m_indices[i] = l_currentIndex;
-		meshDataComponent->m_indices[i + 1] = l_currentIndex + 1;
-		meshDataComponent->m_indices[i + 2] = sectorCount - 1;
+		meshComponent->m_indices[i] = l_currentIndex;
+		meshComponent->m_indices[i + 1] = l_currentIndex + 1;
+		meshComponent->m_indices[i + 2] = sectorCount - 1;
 		l_currentIndex++;
 	}
 }
 
-void InnoAssetSystemNS::addTriangle(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addTriangle(MeshComponent* meshComponent)
 {
-	generateVerticesForPolygon(meshDataComponent, 3);
-	generateIndicesForPolygon(meshDataComponent, 3);
+	generateVerticesForPolygon(meshComponent, 3);
+	generateIndicesForPolygon(meshComponent, 3);
 }
 
-void InnoAssetSystemNS::addSquare(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addSquare(MeshComponent* meshComponent)
 {
-	meshDataComponent->m_vertices.reserve(4);
-	meshDataComponent->m_vertices.fulfill();
+	meshComponent->m_vertices.reserve(4);
+	meshComponent->m_vertices.fulfill();
 
-	meshDataComponent->m_vertices[0].m_pos = Vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
+	meshComponent->m_vertices[0].m_pos = Vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	meshComponent->m_vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
 
-	meshDataComponent->m_vertices[1].m_pos = Vec4(1.0f, -1.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
+	meshComponent->m_vertices[1].m_pos = Vec4(1.0f, -1.0f, 0.0f, 1.0f);
+	meshComponent->m_vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
 
-	meshDataComponent->m_vertices[2].m_pos = Vec4(-1.0f, -1.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
+	meshComponent->m_vertices[2].m_pos = Vec4(-1.0f, -1.0f, 0.0f, 1.0f);
+	meshComponent->m_vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
 
-	meshDataComponent->m_vertices[3].m_pos = Vec4(-1.0f, 1.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
+	meshComponent->m_vertices[3].m_pos = Vec4(-1.0f, 1.0f, 0.0f, 1.0f);
+	meshComponent->m_vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
 
-	meshDataComponent->m_indices.reserve(6);
-	meshDataComponent->m_indices.fulfill();
+	meshComponent->m_indices.reserve(6);
+	meshComponent->m_indices.fulfill();
 
-	meshDataComponent->m_indices[0] = 0;
-	meshDataComponent->m_indices[1] = 1;
-	meshDataComponent->m_indices[2] = 3;
-	meshDataComponent->m_indices[3] = 1;
-	meshDataComponent->m_indices[4] = 2;
-	meshDataComponent->m_indices[5] = 3;
+	meshComponent->m_indices[0] = 0;
+	meshComponent->m_indices[1] = 1;
+	meshComponent->m_indices[2] = 3;
+	meshComponent->m_indices[3] = 1;
+	meshComponent->m_indices[4] = 2;
+	meshComponent->m_indices[5] = 3;
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	meshComponent->m_indicesSize = meshComponent->m_indices.size();
 }
 
-void InnoAssetSystemNS::addPentagon(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addPentagon(MeshComponent* meshComponent)
 {
-	generateVerticesForPolygon(meshDataComponent, 5);
-	generateIndicesForPolygon(meshDataComponent, 5);
+	generateVerticesForPolygon(meshComponent, 5);
+	generateIndicesForPolygon(meshComponent, 5);
 }
 
-void InnoAssetSystemNS::addHexagon(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addHexagon(MeshComponent* meshComponent)
 {
-	generateVerticesForPolygon(meshDataComponent, 6);
-	generateIndicesForPolygon(meshDataComponent, 6);
+	generateVerticesForPolygon(meshComponent, 6);
+	generateIndicesForPolygon(meshComponent, 6);
 }
 
-void generateVertexBasedNormal(MeshDataComponent* meshDataComponent)
+void generateVertexBasedNormal(MeshComponent* meshComponent)
 {
-	auto l_verticesCount = meshDataComponent->m_vertices.size();
+	auto l_verticesCount = meshComponent->m_vertices.size();
 	for (size_t i = 0; i < l_verticesCount; i++)
 	{
-		meshDataComponent->m_vertices[i].m_normal = meshDataComponent->m_vertices[i].m_pos;
-		meshDataComponent->m_vertices[i].m_normal.w = 0.0f;
-		meshDataComponent->m_vertices[i].m_normal = meshDataComponent->m_vertices[i].m_normal.normalize();
+		meshComponent->m_vertices[i].m_normal = meshComponent->m_vertices[i].m_pos;
+		meshComponent->m_vertices[i].m_normal.w = 0.0f;
+		meshComponent->m_vertices[i].m_normal = meshComponent->m_vertices[i].m_normal.normalize();
 	}
 }
 
-void generateFaceBasedNormal(MeshDataComponent* meshDataComponent, uint32_t verticesPerFace)
+void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
 {
-	auto l_face = meshDataComponent->m_indices.size() / verticesPerFace;
+	auto l_face = meshComponent->m_indices.size() / verticesPerFace;
 
 	for (size_t i = 0; i < l_face; i++)
 	{
@@ -176,7 +176,7 @@ void generateFaceBasedNormal(MeshDataComponent* meshDataComponent, uint32_t vert
 
 		for (size_t j = 0; j < verticesPerFace; j++)
 		{
-			l_normal = l_normal + meshDataComponent->m_vertices[i * verticesPerFace + j].m_pos;
+			l_normal = l_normal + meshComponent->m_vertices[i * verticesPerFace + j].m_pos;
 		}
 		l_normal = l_normal / (float)verticesPerFace;
 		l_normal.w = 0.0f;
@@ -184,42 +184,42 @@ void generateFaceBasedNormal(MeshDataComponent* meshDataComponent, uint32_t vert
 
 		for (size_t j = 0; j < verticesPerFace; j++)
 		{
-			meshDataComponent->m_vertices[i * verticesPerFace + j].m_normal = l_normal;
+			meshComponent->m_vertices[i * verticesPerFace + j].m_normal = l_normal;
 		}
 	}
 }
 
-void fulfillVerticesAndIndicesForPolyhedron(MeshDataComponent* meshDataComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace = 0)
+void fulfillVerticesAndIndicesForPolyhedron(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace = 0)
 {
-	meshDataComponent->m_vertices.reserve(indices.size());
-	meshDataComponent->m_vertices.fulfill();
+	meshComponent->m_vertices.reserve(indices.size());
+	meshComponent->m_vertices.fulfill();
 
 	for (uint32_t i = 0; i < indices.size(); i++)
 	{
-		meshDataComponent->m_vertices[i].m_pos = vertices[indices[i]];
+		meshComponent->m_vertices[i].m_pos = vertices[indices[i]];
 	}
 
-	meshDataComponent->m_indices.reserve(indices.size());
-	meshDataComponent->m_indices.fulfill();
+	meshComponent->m_indices.reserve(indices.size());
+	meshComponent->m_indices.fulfill();
 
 	for (uint32_t i = 0; i < indices.size(); i++)
 	{
-		meshDataComponent->m_indices[i] = i;
+		meshComponent->m_indices[i] = i;
 	}
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	meshComponent->m_indicesSize = meshComponent->m_indices.size();
 
 	if (verticesPerFace)
 	{
-		generateFaceBasedNormal(meshDataComponent, verticesPerFace);
+		generateFaceBasedNormal(meshComponent, verticesPerFace);
 	}
 	else
 	{
-		generateVertexBasedNormal(meshDataComponent);
+		generateVertexBasedNormal(meshComponent);
 	}
 }
 
-void InnoAssetSystemNS::addTetrahedron(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addTetrahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -235,10 +235,10 @@ void InnoAssetSystemNS::addTetrahedron(MeshDataComponent* meshDataComponent)
 		Vec4(-1.0f, -1.0f, 1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 3);
+	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 3);
 }
 
-void InnoAssetSystemNS::addCube(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addCube(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -262,10 +262,10 @@ void InnoAssetSystemNS::addCube(MeshDataComponent* meshDataComponent)
 		Vec4(-1.0f, 1.0f, -1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 6);
+	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 6);
 }
 
-void InnoAssetSystemNS::addOctahedron(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addOctahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -285,10 +285,10 @@ void InnoAssetSystemNS::addOctahedron(MeshDataComponent* meshDataComponent)
 		Vec4(0.0f, 0.0f, -1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 3);
+	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 3);
 }
 
-void InnoAssetSystemNS::addDodecahedron(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -332,10 +332,10 @@ void InnoAssetSystemNS::addDodecahedron(MeshDataComponent* meshDataComponent)
 		Vec4(-1.61803398875f, -0.61803398875f, 0.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 9);
+	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 9);
 }
 
-void InnoAssetSystemNS::addIcosahedron(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -367,10 +367,10 @@ void InnoAssetSystemNS::addIcosahedron(MeshDataComponent* meshDataComponent)
 		Vec4(-1.0f, 0.0f, 0.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 3);
+	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 3);
 }
 
-void InnoAssetSystemNS::addSphere(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
 {
 	auto radius = 1.0f;
 	auto sectorCount = 64;
@@ -384,7 +384,7 @@ void InnoAssetSystemNS::addSphere(MeshDataComponent* meshDataComponent)
 	float stackStep = PI<float> / stackCount;
 	float sectorAngle, stackAngle;
 
-	meshDataComponent->m_vertices.reserve((stackCount + 1) * (sectorCount + 1));
+	meshComponent->m_vertices.reserve((stackCount + 1) * (sectorCount + 1));
 
 	for (int32_t i = 0; i <= stackCount; ++i)
 	{
@@ -415,11 +415,11 @@ void InnoAssetSystemNS::addSphere(MeshDataComponent* meshDataComponent)
 			t = (float)i / stackCount;
 			l_VertexData.m_texCoord = Vec2(s, t);
 
-			meshDataComponent->m_vertices.emplace_back(l_VertexData);
+			meshComponent->m_vertices.emplace_back(l_VertexData);
 		}
 	}
 
-	meshDataComponent->m_indices.reserve(stackCount * (sectorCount - 1) * 6);
+	meshComponent->m_indices.reserve(stackCount * (sectorCount - 1) * 6);
 
 	int32_t k1, k2;
 	for (int32_t i = 0; i < stackCount; ++i)
@@ -433,31 +433,31 @@ void InnoAssetSystemNS::addSphere(MeshDataComponent* meshDataComponent)
 			// k1 => k2 => k1+1
 			if (i != 0)
 			{
-				meshDataComponent->m_indices.emplace_back(k1);
-				meshDataComponent->m_indices.emplace_back(k2);
-				meshDataComponent->m_indices.emplace_back(k1 + 1);
+				meshComponent->m_indices.emplace_back(k1);
+				meshComponent->m_indices.emplace_back(k2);
+				meshComponent->m_indices.emplace_back(k1 + 1);
 			}
 
 			// k1+1 => k2 => k2+1
 			if (i != (stackCount - 1))
 			{
-				meshDataComponent->m_indices.emplace_back(k1 + 1);
-				meshDataComponent->m_indices.emplace_back(k2);
-				meshDataComponent->m_indices.emplace_back(k2 + 1);
+				meshComponent->m_indices.emplace_back(k1 + 1);
+				meshComponent->m_indices.emplace_back(k2);
+				meshComponent->m_indices.emplace_back(k2 + 1);
 			}
 		}
 	}
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	meshComponent->m_indicesSize = meshComponent->m_indices.size();
 }
 
-void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addTerrain(MeshComponent* meshComponent)
 {
 	auto l_gridSize = 1024;
 	auto l_gridSize2 = l_gridSize * l_gridSize;
 	auto l_gridSizehalf = l_gridSize / 2;
-	meshDataComponent->m_vertices.reserve(l_gridSize2 * 4);
-	meshDataComponent->m_indices.reserve(l_gridSize2 * 6);
+	meshComponent->m_vertices.reserve(l_gridSize2 * 4);
+	meshComponent->m_indices.reserve(l_gridSize2 * 6);
 
 	for (auto j = 0; j < l_gridSize; j++)
 	{
@@ -476,33 +476,33 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
 			Vertex l_VertexData_1;
 			l_VertexData_1.m_pos = Vec4(l_px0, 0.0f, l_pz0, 1.0f);
 			l_VertexData_1.m_texCoord = Vec2(l_tx0, l_tz0);
-			meshDataComponent->m_vertices.emplace_back(l_VertexData_1);
+			meshComponent->m_vertices.emplace_back(l_VertexData_1);
 
 			Vertex l_VertexData_2;
 			l_VertexData_2.m_pos = Vec4(l_px0, 0.0f, l_pz1, 1.0f);
 			l_VertexData_2.m_texCoord = Vec2(l_tx0, l_tz1);
-			meshDataComponent->m_vertices.emplace_back(l_VertexData_2);
+			meshComponent->m_vertices.emplace_back(l_VertexData_2);
 
 			Vertex l_VertexData_3;
 			l_VertexData_3.m_pos = Vec4(l_px1, 0.0f, l_pz1, 1.0f);
 			l_VertexData_3.m_texCoord = Vec2(l_tx1, l_tz1);
-			meshDataComponent->m_vertices.emplace_back(l_VertexData_3);
+			meshComponent->m_vertices.emplace_back(l_VertexData_3);
 
 			Vertex l_VertexData_4;
 			l_VertexData_4.m_pos = Vec4(l_px1, 0.0f, l_pz0, 1.0f);
 			l_VertexData_4.m_texCoord = Vec2(l_tx1, l_tz0);
-			meshDataComponent->m_vertices.emplace_back(l_VertexData_4);
+			meshComponent->m_vertices.emplace_back(l_VertexData_4);
 
 			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);
-			meshDataComponent->m_indices.emplace_back(0 + l_gridIndex);
-			meshDataComponent->m_indices.emplace_back(1 + l_gridIndex);
-			meshDataComponent->m_indices.emplace_back(3 + l_gridIndex);
-			meshDataComponent->m_indices.emplace_back(1 + l_gridIndex);
-			meshDataComponent->m_indices.emplace_back(2 + l_gridIndex);
-			meshDataComponent->m_indices.emplace_back(3 + l_gridIndex);
+			meshComponent->m_indices.emplace_back(0 + l_gridIndex);
+			meshComponent->m_indices.emplace_back(1 + l_gridIndex);
+			meshComponent->m_indices.emplace_back(3 + l_gridIndex);
+			meshComponent->m_indices.emplace_back(1 + l_gridIndex);
+			meshComponent->m_indices.emplace_back(2 + l_gridIndex);
+			meshComponent->m_indices.emplace_back(3 + l_gridIndex);
 		}
 	}
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	meshComponent->m_indicesSize = meshComponent->m_indices.size();
 }
 
 bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
@@ -518,7 +518,7 @@ bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
 	{
 		i->m_model = addProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
 		auto l_pair = getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
-		g_Engine->getRenderingFrontend()->registerMaterialDataComponent(l_pair->material, AsyncLoad);
+		g_Engine->getRenderingFrontend()->registerMaterialComponent(l_pair->material, AsyncLoad);
 	};
 
 	// @TODO: Concurrency
@@ -623,28 +623,28 @@ Model* InnoAssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResou
 	}
 }
 
-TextureDataComponent* InnoAssetSystem::loadTexture(const char* fileName)
+TextureComponent* InnoAssetSystem::loadTexture(const char* fileName)
 {
-	TextureDataComponent* l_TDC;
+	TextureComponent* l_TextureComp;
 
-	if (findLoadedTexture(fileName, l_TDC))
+	if (findLoadedTexture(fileName, l_TextureComp))
 	{
-		return l_TDC;
+		return l_TextureComp;
 	}
 	else
 	{
-		l_TDC = STBWrapper::loadTexture(fileName);
-		if (l_TDC)
+		l_TextureComp = STBWrapper::loadTexture(fileName);
+		if (l_TextureComp)
 		{
-			recordLoadedTexture(fileName, l_TDC);
+			recordLoadedTexture(fileName, l_TextureComp);
 		}
-		return l_TDC;
+		return l_TextureComp;
 	}
 }
 
-bool InnoAssetSystem::saveTexture(const char* fileName, TextureDataComponent* TDC)
+bool InnoAssetSystem::saveTexture(const char* fileName, TextureComponent* TextureComp)
 {
-	return STBWrapper::saveTexture(fileName, TDC);
+	return STBWrapper::saveTexture(fileName, TextureComp);
 }
 
 bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
@@ -698,14 +698,14 @@ findLoaded(MeshMaterialPair, MeshMaterialPair*&, pair)
 recordLoaded(Model, Model*, model)
 findLoaded(Model, Model*&, model)
 
-recordLoaded(Texture, TextureDataComponent*, texture)
-findLoaded(Texture, TextureDataComponent*&, texture)
+recordLoaded(Texture, TextureComponent*, texture)
+findLoaded(Texture, TextureComponent*&, texture)
 
-recordLoaded(Skeleton, SkeletonDataComponent*, skeleton)
-findLoaded(Skeleton, SkeletonDataComponent*&, skeleton)
+recordLoaded(Skeleton, SkeletonComponent*, skeleton)
+findLoaded(Skeleton, SkeletonComponent*&, skeleton)
 
-recordLoaded(Animation, AnimationDataComponent*, animation)
-findLoaded(Animation, AnimationDataComponent*&, animation)
+recordLoaded(Animation, AnimationComponent*, animation)
+findLoaded(Animation, AnimationComponent*&, animation)
 
 ArrayRangeInfo InnoAssetSystem::addMeshMaterialPairs(uint64_t count)
 {
@@ -739,8 +739,8 @@ Model* InnoAssetSystem::addModel()
 
 Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(shape);
-	auto l_material = g_Engine->getRenderingFrontend()->addMaterialDataComponent();
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(shape);
+	auto l_material = g_Engine->getRenderingFrontend()->addMaterialComponent();
 	l_material->m_ShaderModel = shaderModel;
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 
@@ -754,39 +754,39 @@ Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderMode
 	return l_result;
 }
 
-bool InnoAssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshDataComponent* meshDataComponent)
+bool InnoAssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent)
 {
 	switch (shape)
 	{
 	case InnoType::ProceduralMeshShape::Triangle:
-		addTriangle(meshDataComponent);
+		addTriangle(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Square:
-		addSquare(meshDataComponent);
+		addSquare(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Pentagon:
-		addPentagon(meshDataComponent);
+		addPentagon(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Hexagon:
-		addHexagon(meshDataComponent);
+		addHexagon(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Tetrahedron:
-		addTetrahedron(meshDataComponent);
+		addTetrahedron(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Cube:
-		addCube(meshDataComponent);
+		addCube(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Octahedron:
-		addOctahedron(meshDataComponent);
+		addOctahedron(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Dodecahedron:
-		addDodecahedron(meshDataComponent);
+		addDodecahedron(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Icosahedron:
-		addIcosahedron(meshDataComponent);
+		addIcosahedron(meshComponent);
 		break;
 	case InnoType::ProceduralMeshShape::Sphere:
-		addSphere(meshDataComponent);
+		addSphere(meshComponent);
 		break;
 	default:
 		break;

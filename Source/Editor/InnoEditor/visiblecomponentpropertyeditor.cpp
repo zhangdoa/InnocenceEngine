@@ -10,8 +10,8 @@ VisibleComponentPropertyEditor::VisibleComponentPropertyEditor()
 
 void VisibleComponentPropertyEditor::initialize()
 {
-    m_MDCEditor = new MaterialDataComponentPropertyEditor();
-    m_MDCEditor->initialize();
+    m_MaterialCompEditor = new MaterialComponentPropertyEditor();
+    m_MaterialCompEditor->initialize();
 
     m_dirViewer = new InnoDirectoryViewer();
     m_dirViewer->Initialize();
@@ -167,12 +167,12 @@ void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
     auto item = m_modelList->item(row,column);
     if(column == 0)
     {
-        auto l_mesh = static_cast<MeshDataComponent*>(item->data(Qt::UserRole).value<void*>());
+        auto l_mesh = static_cast<MeshComponent*>(item->data(Qt::UserRole).value<void*>());
     }
     else
     {
-        auto l_material = static_cast<MaterialDataComponent*>(item->data(Qt::UserRole).value<void*>());
-        m_MDCEditor->edit(l_material);
+        auto l_material = static_cast<MaterialComponent*>(item->data(Qt::UserRole).value<void*>());
+        m_MeshCompEditor->edit(l_material);
     }
 }
 

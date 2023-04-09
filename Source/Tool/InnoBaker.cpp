@@ -71,14 +71,14 @@ namespace InnoBakerNS
 	const TVec4<double> m_brickSize = TVec4<double>(4.0, 4.0, 4.0, 0.0);
 	const TVec4<double> m_halfBrickSize = m_brickSize / 2.0;
 
-	RenderPassDataComponent* m_RPDC_Probe;
+	RenderPassComponent* m_RenderPassComp_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
 
-	RenderPassDataComponent* m_RPDC_Surfel;
+	RenderPassComponent* m_RenderPassComp_Surfel;
 	ShaderProgramComponent* m_SPC_Surfel;
-	SamplerDataComponent* m_SDC_Surfel;
+	SamplerComponent* m_SamplerComp_Surfel;
 
-	RenderPassDataComponent* m_RPDC_BrickFactor;
+	RenderPassComponent* m_RenderPassComp_BrickFactor;
 	ShaderProgramComponent* m_SPC_BrickFactor;
 }
 
@@ -151,11 +151,11 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: There are ", m_staticMeshDrawCallCount, " static meshes in current scene.");
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_staticMeshPerObjectConstantBuffer, 0, m_staticMeshPerObjectConstantBuffer.size());
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_staticMeshMaterialConstantBuffer, 0, m_staticMeshMaterialConstantBuffer.size());
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MeshGPUBufferComp, m_staticMeshPerObjectConstantBuffer, 0, m_staticMeshPerObjectConstantBuffer.size());
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MaterialGPUBufferComp, m_staticMeshMaterialConstantBuffer, 0, m_staticMeshMaterialConstantBuffer.size());
 
 	return true;
 }
@@ -177,16 +177,16 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	l_GICameraConstantBuffer[1] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	l_GICameraConstantBuffer[7] = InnoMath::getInvertTranslationMatrix(l_eyePos);
 
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
 	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to draw probe height map...");
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_Probe, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_Probe);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp_Probe);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -196,30 +196,30 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 		if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, 1);
 
-			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_Probe, l_staticPerObjectConstantBuffer.mesh);
+			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp_Probe, l_staticPerObjectConstantBuffer.mesh);
 		}
 
 		l_offset++;
 	}
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp_Probe);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe, GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp_Probe, GPUEngineType::Graphics);
 
 	
 
 	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate probe location...");
 
 	// Read back results and generate probes
-	auto l_probePosTextureResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
+	auto l_probePosTextureResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0]);
 
 	//#ifdef DEBUG_
-	auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_TextureDesc = m_RPDC_Probe->m_RenderTargets[0]->m_TextureDesc;
-	l_TDC->m_TextureData = l_probePosTextureResults.data();
-	g_Engine->getAssetSystem()->saveTexture("..//Res//Intermediate//ProbePosTexture", l_TDC);
+	auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
+	l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0]->m_TextureDesc;
+	l_TextureComp->m_TextureData = l_probePosTextureResults.data();
+	g_Engine->getAssetSystem()->saveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
 	//#endif // DEBUG_
 
 	auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
@@ -503,16 +503,16 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 	}
 	l_GICameraConstantBuffer[7] = l_t;
 
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_Surfel, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_Surfel);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel, 8);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_Surfel, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_Surfel);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp_Surfel);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, m_SamplerComp_Surfel, 8);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -522,36 +522,36 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 
 		if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
-			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC, 2, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_offset, 1);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
 			}
 
-			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
+			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
 			}
 		}
 
 		l_offset++;
 	}
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp_Surfel);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel, GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
 
 	
 
@@ -562,15 +562,15 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 {
 	static uint32_t l_index = 0;
 
-	auto l_posWSMetallic = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
-	auto l_normalRoughness = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
-	auto l_albedoAO = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[2]);
-	auto l_depthStencilRT = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
+	auto l_posWSMetallic = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[0]);
+	auto l_normalRoughness = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[1]);
+	auto l_albedoAO = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[2]);
+	auto l_depthStencilRT = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget);
 
-	auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
-	l_TDC->m_TextureData = l_albedoAO.data();
-	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
+	auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
+	l_TextureComp->m_TextureDesc = m_RenderPassComp_Surfel->m_RenderTargets[0]->m_TextureDesc;
+	l_TextureComp->m_TextureData = l_albedoAO.data();
+	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TextureComp);
 
 	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
 	auto l_sampleStep = m_captureResolution / m_surfelSampleCountPerFace;
@@ -592,7 +592,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 
 	auto l_depthStencilRTSize = l_depthStencilRT.size();
 
-	std::vector<Vec4> l_DSTDCData(l_depthStencilRTSize);
+	std::vector<Vec4> l_DSTextureCompData(l_depthStencilRTSize);
 
 	l_depthStencilRTSize /= 6;
 
@@ -606,17 +606,17 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 			if (l_depthStencil.y == 1.0f)
 			{
 				l_stencil++;
-				l_DSTDCData[i * l_depthStencilRTSize + j] = Vec4(1.0f, 1.0f, 1.0f, 0.0f);
+				l_DSTextureCompData[i * l_depthStencilRTSize + j] = Vec4(1.0f, 1.0f, 1.0f, 0.0f);
 			}
 		}
 
 		probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
 	}
 
-	auto l_DSTDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
-	l_DSTDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
-	l_DSTDC->m_TextureData = l_DSTDCData.data();
-	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
+	auto l_DSTextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
+	l_DSTextureComp->m_TextureDesc = m_RenderPassComp_Surfel->m_RenderTargets[0]->m_TextureDesc;
+	l_DSTextureComp->m_TextureData = l_DSTextureCompData.data();
+	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTextureComp);
 
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
@@ -978,8 +978,8 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 		l_bricksCubePerObjectConstantBuffer[i].UUID = (float)i + 1.0f;
 	}
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
 	// assign bricks to probe by the depth test result
 	auto l_probesCount = probes.size();
@@ -1015,31 +1015,31 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 	}
 	l_GICameraConstantBuffer[7] = InnoMath::getInvertTranslationMatrix(pos);
 
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Cube);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Cube);
 
 	uint32_t l_offset = 0;
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_BrickFactor, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_BrickFactor);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp_BrickFactor);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
 	for (uint32_t i = 0; i < bricksCount; i++)
 	{
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, 1);
 
-		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_BrickFactor, l_mesh);
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp_BrickFactor, l_mesh);
 
 		l_offset++;
 	}
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp_BrickFactor);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor, GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp_BrickFactor, GPUEngineType::Graphics);
 
 	
 
@@ -1050,12 +1050,12 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 {
 	static int l_index = 0;
 
-	auto l_brickIDResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
+	auto l_brickIDResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_BrickFactor, m_RenderPassComp_BrickFactor->m_RenderTargets[0]);
 
-	auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_TextureDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_TextureDesc;
-	l_TDC->m_TextureData = l_brickIDResults.data();
-	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
+	auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
+	l_TextureComp->m_TextureDesc = m_RenderPassComp_BrickFactor->m_RenderTargets[0]->m_TextureDesc;
+	l_TextureComp->m_TextureData = l_brickIDResults.data();
+	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
 	l_index++;
 
 	auto l_brickIDResultSize = l_brickIDResults.size();
@@ -1205,36 +1205,36 @@ void InnoBaker::Setup()
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Probe);
 
-	m_RPDC_Probe = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIBakeProbePass/");
+	m_RenderPassComp_Probe = g_Engine->getRenderingServer()->AddRenderPassComponent("GIBakeProbePass/");
 
-	m_RPDC_Probe->m_RenderPassDesc = l_RenderPassDesc;
-	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
-	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapResolution;
-	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapResolution;
-	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float32;
+	m_RenderPassComp_Probe->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapResolution;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapResolution;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
 
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapResolution;
-	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapResolution;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapResolution;
+	m_RenderPassComp_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapResolution;
 
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs.resize(2);
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs.resize(2);
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
 
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_Probe->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_Probe->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_RPDC_Probe->m_ShaderProgram = m_SPC_Probe;
+	m_RenderPassComp_Probe->m_ShaderProgram = m_SPC_Probe;
 
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp_Probe);
 
 	////
 	m_SPC_Surfel = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIBakeSurfelPass/");
@@ -1245,88 +1245,88 @@ void InnoBaker::Setup()
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Surfel);
 
-	m_RPDC_Surfel = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIBakeSurfelPass/");
+	m_RenderPassComp_Surfel = g_Engine->getRenderingServer()->AddRenderPassComponent("GIBakeSurfelPass/");
 
-	m_RPDC_Surfel->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp_Surfel->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetCount = 3;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_RenderTargetCount = 3;
 
-	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
-	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Width = m_captureResolution;
-	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Height = m_captureResolution;
-	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float32;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Width = m_captureResolution;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Height = m_captureResolution;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference = 0x01;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilPassOperation = StencilOperation::Replace;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilPassOperation = StencilOperation::Replace;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference = 0x01;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilPassOperation = StencilOperation::Replace;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilPassOperation = StencilOperation::Replace;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
 
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_captureResolution;
-	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_captureResolution;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_captureResolution;
+	m_RenderPassComp_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_captureResolution;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs.resize(9);
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs.resize(9);
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 2;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_SubresourceCount = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 2;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[5].m_SubresourceCount = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 3;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 3;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 4;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 1;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 4;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
-	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_IndirectBinding = true;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
+	m_RenderPassComp_Surfel->m_ResourceBindingLayoutDescs[8].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ShaderProgram = m_SPC_Surfel;
+	m_RenderPassComp_Surfel->m_ShaderProgram = m_SPC_Surfel;
 
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp_Surfel);
 
-	m_SDC_Surfel = g_Engine->getRenderingServer()->AddSamplerDataComponent("GIBakeSurfelPass/");
+	m_SamplerComp_Surfel = g_Engine->getRenderingServer()->AddSamplerComponent("GIBakeSurfelPass/");
 
-	m_SDC_Surfel->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
-	m_SDC_Surfel->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
+	m_SamplerComp_Surfel->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
+	m_SamplerComp_Surfel->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_Surfel);
+	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp_Surfel);
 
 	////
 	m_SPC_BrickFactor = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIBakeBrickFactorPass/");
@@ -1337,42 +1337,42 @@ void InnoBaker::Setup()
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_BrickFactor);
 
-	m_RPDC_BrickFactor = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIBakeBrickFactorPass/");
+	m_RenderPassComp_BrickFactor = g_Engine->getRenderingServer()->AddRenderPassComponent("GIBakeBrickFactorPass/");
 
-	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = 64;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = 64;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float32;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = 64;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = 64;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference = 0x01;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilPassOperation = StencilOperation::Replace;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilPassOperation = StencilOperation::Replace;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference = 0x01;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilPassOperation = StencilOperation::Replace;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilPassOperation = StencilOperation::Replace;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
 
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 64;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 64;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 64;
+	m_RenderPassComp_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 64;
 
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs.resize(2);
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs.resize(2);
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
 
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp_BrickFactor->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_RPDC_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
+	m_RenderPassComp_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp_BrickFactor);
 }
 
 void InnoBaker::BakeProbeCache(const char* sceneName)

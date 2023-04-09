@@ -3,11 +3,11 @@
 
 #include "../RenderingServer/IRenderingServer.h"
 
-#include "../Component/MeshDataComponent.h"
-#include "../Component/TextureDataComponent.h"
-#include "../Component/MaterialDataComponent.h"
-#include "../Component/SkeletonDataComponent.h"
-#include "../Component/AnimationDataComponent.h"
+#include "../Component/MeshComponent.h"
+#include "../Component/TextureComponent.h"
+#include "../Component/MaterialComponent.h"
+#include "../Component/SkeletonComponent.h"
+#include "../Component/AnimationComponent.h"
 
 #include "../Common/GPUDataStructure.h"
 
@@ -41,8 +41,8 @@ namespace Inno
 
 	struct AnimationData
 	{
-		AnimationDataComponent* ADC;
-		GPUBufferDataComponent* keyData;
+		AnimationComponent* ADC;
+		GPUBufferComponent* keyData;
 	};
 
 	struct AnimationInstance
@@ -75,20 +75,20 @@ namespace Inno
 
 		virtual bool runRayTrace() = 0;
 
-		virtual MeshDataComponent* addMeshDataComponent() = 0;
-		virtual TextureDataComponent* addTextureDataComponent() = 0;
-		virtual MaterialDataComponent* addMaterialDataComponent() = 0;
-		virtual SkeletonDataComponent* addSkeletonDataComponent() = 0;
-		virtual AnimationDataComponent* addAnimationDataComponent() = 0;
+		virtual MeshComponent* addMeshComponent() = 0;
+		virtual TextureComponent* addTextureComponent() = 0;
+		virtual MaterialComponent* addMaterialComponent() = 0;
+		virtual SkeletonComponent* addSkeletonComponent() = 0;
+		virtual AnimationComponent* addAnimationComponent() = 0;
 
-		virtual bool registerMeshDataComponent(MeshDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
-		virtual bool registerMaterialDataComponent(MaterialDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
-		virtual bool registerSkeletonDataComponent(SkeletonDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
-		virtual bool registerAnimationDataComponent(AnimationDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU = true) = 0;
 
-		virtual MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) = 0;
-		virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
-		virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
+		virtual MeshComponent* getMeshComponent(ProceduralMeshShape shape) = 0;
+		virtual TextureComponent* getTextureComponent(WorldEditorIconType iconType) = 0;
+		virtual MaterialComponent* getDefaultMaterialComponent() = 0;
 
 		virtual bool transferDataToGPU() = 0;
 

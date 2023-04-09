@@ -1,0 +1,20 @@
+#pragma once
+#include "../Common/InnoObject.h"
+#include "../Common/InnoMathHelper.h"
+
+namespace Inno
+{
+	struct BoneData
+	{
+		Mat4 m_L2B;
+	};
+
+	class SkeletonComponent : public InnoComponent
+	{
+	public:
+		static uint32_t GetTypeID() { return 9; };
+		static const char* GetTypeName() { return "SkeletonComponent"; };
+
+		Array<BoneData> m_BoneData;
+	};
+}

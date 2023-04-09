@@ -25,23 +25,23 @@ namespace VolumetricPass
 	bool rayMarching();
 	bool visualization(GPUResourceComponent *input);
 
-	SamplerDataComponent *m_SDC;
+	SamplerComponent *m_SamplerComp;
 
-	RenderPassDataComponent *m_froxelizationRPDC;
+	RenderPassComponent *m_froxelizationRenderPassComp;
 	ShaderProgramComponent *m_froxelizationSPC;
 
-	RenderPassDataComponent *m_visualizationRPDC;
+	RenderPassComponent *m_visualizationRenderPassComp;
 	ShaderProgramComponent *m_visualizationSPC;
 
-	RenderPassDataComponent *m_irraidanceInjectionRPDC;
+	RenderPassComponent *m_irraidanceInjectionRenderPassComp;
 	ShaderProgramComponent *m_irraidanceInjectionSPC;
 
-	RenderPassDataComponent *m_rayMarchingRPDC;
+	RenderPassComponent *m_rayMarchingRenderPassComp;
 	ShaderProgramComponent *m_rayMarchingSPC;
 
-	TextureDataComponent *m_irraidanceInjectionResult;
-	TextureDataComponent *m_rayMarchingResult_A;
-	TextureDataComponent *m_rayMarchingResult_B;
+	TextureComponent *m_irraidanceInjectionResult;
+	TextureComponent *m_rayMarchingResult_A;
+	TextureComponent *m_rayMarchingResult_B;
 
 	TVec4<uint32_t> m_voxelizationResolution = TVec4<uint32_t>(160, 90, 64, 0);
 	static bool m_isPassA = true;
@@ -56,7 +56,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 	m_froxelizationSPC->m_ShaderFilePaths.m_GSPath = "volumetricGeometryProcessPass.geom/";
 	m_froxelizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricGeometryProcessPass.frag/";
 
-	m_froxelizationRPDC = l_renderingServer->AddRenderPassDataComponent("VolumetricGeometryProcessPass/");
+	m_froxelizationRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricGeometryProcessPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -75,36 +75,36 @@ bool VolumetricPass::setupGeometryProcessPass()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_voxelizationResolution.x;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_voxelizationResolution.y;
 
-	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_froxelizationRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs.resize(5);
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
-	m_froxelizationRPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
+	m_froxelizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_froxelizationRPDC->m_ShaderProgram = m_froxelizationSPC;
+	m_froxelizationRenderPassComp->m_ShaderProgram = m_froxelizationSPC;
 
 	return true;
 }
@@ -121,67 +121,67 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
-	m_irraidanceInjectionRPDC = l_renderingServer->AddRenderPassDataComponent("VolumetricIrraidanceInjectionPass/");
+	m_irraidanceInjectionRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricIrraidanceInjectionPass/");
 
-	m_irraidanceInjectionRPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_irraidanceInjectionRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs.resize(10);
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs.resize(10);
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 3;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 3;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 5;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 5;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 6;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 6;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 1;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 1;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadOnly;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadOnly;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 2;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 1;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 2;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 1;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[8].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 2;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[8].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 2;
 
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Sampler;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 3;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 0;
-	m_irraidanceInjectionRPDC->m_ResourceBindingLayoutDescs[9].m_IndirectBinding = true;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Sampler;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 3;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 0;
+	m_irraidanceInjectionRenderPassComp->m_ResourceBindingLayoutDescs[9].m_IndirectBinding = true;
 
-	m_irraidanceInjectionRPDC->m_ShaderProgram = m_irraidanceInjectionSPC;
+	m_irraidanceInjectionRenderPassComp->m_ShaderProgram = m_irraidanceInjectionSPC;
 
 	return true;
 }
@@ -198,60 +198,60 @@ bool VolumetricPass::setupRayMarchingPass()
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
-	m_rayMarchingRPDC = l_renderingServer->AddRenderPassDataComponent("VolumetricRayMarchingPass/");
+	m_rayMarchingRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricRayMarchingPass/");
 
-	m_rayMarchingRPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_rayMarchingRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs.resize(8);
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs.resize(8);
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 6;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 6;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 3;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 3;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Sampler;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 3;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Sampler;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 3;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 0;
+	m_rayMarchingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ShaderProgram = m_rayMarchingSPC;
+	m_rayMarchingRenderPassComp->m_ShaderProgram = m_rayMarchingSPC;
 
 	return true;
 }
@@ -264,7 +264,7 @@ bool VolumetricPass::setupVisualizationPass()
 	m_visualizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricVisualizationPass.vert/";
 	m_visualizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricVisualizationPass.frag/";
 
-	m_visualizationRPDC = l_renderingServer->AddRenderPassDataComponent("VolumetricVisualizationPass/");
+	m_visualizationRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricVisualizationPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
@@ -283,34 +283,34 @@ bool VolumetricPass::setupVisualizationPass()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_viewportSize.x;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_viewportSize.y;
 
-	m_visualizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_visualizationRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs.resize(5);
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
-	m_visualizationRPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
+	m_visualizationRenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_visualizationRPDC->m_ShaderProgram = m_visualizationSPC;
+	m_visualizationRenderPassComp->m_ShaderProgram = m_visualizationSPC;
 
 	return true;
 }
@@ -318,7 +318,7 @@ bool VolumetricPass::setupVisualizationPass()
 bool VolumetricPass::Setup()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	m_SDC = l_renderingServer->AddSamplerDataComponent("VolumetricPass/");
+	m_SamplerComp = l_renderingServer->AddSamplerComponent("VolumetricPass/");
 
 	setupGeometryProcessPass();
 	setupIrradianceInjectionPass();
@@ -336,13 +336,13 @@ bool VolumetricPass::Setup()
 	l_textureDesc.DepthOrArraySize = m_voxelizationResolution.z;
 	l_textureDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_irraidanceInjectionResult = l_renderingServer->AddTextureDataComponent("VolumetricIrraidanceInjectionResult/");
+	m_irraidanceInjectionResult = l_renderingServer->AddTextureComponent("VolumetricIrraidanceInjectionResult/");
 	m_irraidanceInjectionResult->m_TextureDesc = l_textureDesc;
 
-	m_rayMarchingResult_A = l_renderingServer->AddTextureDataComponent("VolumetricRayMarchingResult_A/");
+	m_rayMarchingResult_A = l_renderingServer->AddTextureComponent("VolumetricRayMarchingResult_A/");
 	m_rayMarchingResult_A->m_TextureDesc = l_textureDesc;
 
-	m_rayMarchingResult_B = l_renderingServer->AddTextureDataComponent("VolumetricRayMarchingResult_B/");
+	m_rayMarchingResult_B = l_renderingServer->AddTextureComponent("VolumetricRayMarchingResult_B/");
 	m_rayMarchingResult_B->m_TextureDesc = l_textureDesc;
 
 	return true;
@@ -351,23 +351,23 @@ bool VolumetricPass::Setup()
 bool VolumetricPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	l_renderingServer->InitializeSamplerDataComponent(m_SDC);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
 	l_renderingServer->InitializeShaderProgramComponent(m_froxelizationSPC);
-	l_renderingServer->InitializeRenderPassDataComponent(m_froxelizationRPDC);
+	l_renderingServer->InitializeRenderPassComponent(m_froxelizationRenderPassComp);
 
 	l_renderingServer->InitializeShaderProgramComponent(m_irraidanceInjectionSPC);
-	l_renderingServer->InitializeRenderPassDataComponent(m_irraidanceInjectionRPDC);
+	l_renderingServer->InitializeRenderPassComponent(m_irraidanceInjectionRenderPassComp);
 
 	l_renderingServer->InitializeShaderProgramComponent(m_rayMarchingSPC);
-	l_renderingServer->InitializeRenderPassDataComponent(m_rayMarchingRPDC);
+	l_renderingServer->InitializeRenderPassComponent(m_rayMarchingRenderPassComp);
 
 	l_renderingServer->InitializeShaderProgramComponent(m_visualizationSPC);
-	l_renderingServer->InitializeRenderPassDataComponent(m_visualizationRPDC);
+	l_renderingServer->InitializeRenderPassComponent(m_visualizationRenderPassComp);
 
-	l_renderingServer->InitializeTextureDataComponent(m_irraidanceInjectionResult);
-	l_renderingServer->InitializeTextureDataComponent(m_rayMarchingResult_A);
-	l_renderingServer->InitializeTextureDataComponent(m_rayMarchingResult_B);
+	l_renderingServer->InitializeTextureComponent(m_irraidanceInjectionResult);
+	l_renderingServer->InitializeTextureComponent(m_rayMarchingResult_A);
+	l_renderingServer->InitializeTextureComponent(m_rayMarchingResult_B);
 
 	return true;
 }
@@ -375,17 +375,17 @@ bool VolumetricPass::Initialize()
 bool VolumetricPass::froxelization()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->CommandListBegin(m_froxelizationRPDC, 0);
-	l_renderingServer->BindRenderPassDataComponent(m_froxelizationRPDC);
-	l_renderingServer->CleanRenderTargets(m_froxelizationRPDC);
+	l_renderingServer->CommandListBegin(m_froxelizationRenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_froxelizationRenderPassComp);
+	l_renderingServer->CleanRenderTargets(m_froxelizationRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_froxelizationRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargets[0], 3, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargets[1], 4, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1], 4, Accessibility::ReadWrite);
 
 	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -399,19 +399,19 @@ bool VolumetricPass::froxelization()
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					l_renderingServer->BindGPUResource(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					l_renderingServer->DrawIndexedInstanced(m_froxelizationRPDC, l_drawCallData.mesh);
+					l_renderingServer->DrawIndexedInstanced(m_froxelizationRenderPassComp, l_drawCallData.mesh);
 				}
 			}
 		}
 	}
 
-	l_renderingServer->UnbindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargets[0], 3, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargets[1], 4, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1], 4, Accessibility::ReadWrite);
 
-	l_renderingServer->CommandListEnd(m_froxelizationRPDC);
+	l_renderingServer->CommandListEnd(m_froxelizationRenderPassComp);
 
 	return true;
 }
@@ -419,10 +419,10 @@ bool VolumetricPass::froxelization()
 bool VolumetricPass::irraidanceInjection()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_PointLightGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PointLight);
-	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PointLightGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PointLight);
+	auto l_CSMGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	auto l_dispatchParamsGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
@@ -435,33 +435,33 @@ bool VolumetricPass::irraidanceInjection()
 	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_irraidanceInjectionWorkload, 6, 1);
+	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
 
-	l_renderingServer->CommandListBegin(m_irraidanceInjectionRPDC, 0);
-	l_renderingServer->BindRenderPassDataComponent(m_irraidanceInjectionRPDC);
-	l_renderingServer->CleanRenderTargets(m_irraidanceInjectionRPDC);
+	l_renderingServer->CommandListBegin(m_irraidanceInjectionRenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp);
+	l_renderingServer->CleanRenderTargets(m_irraidanceInjectionRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_SDC, 9);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_SamplerComp, 9);
 
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, l_PointLightGBDC, 1, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, l_CSMGBDC, 2, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 3, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[0], 5, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 2, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 3, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0], 5, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
 
-	l_renderingServer->Dispatch(m_irraidanceInjectionRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
+	l_renderingServer->Dispatch(m_irraidanceInjectionRenderPassComp, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[0], 5, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0], 5, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
 
-	l_renderingServer->CommandListEnd(m_irraidanceInjectionRPDC);
+	l_renderingServer->CommandListEnd(m_irraidanceInjectionRenderPassComp);
 
 	return true;
 }
@@ -485,8 +485,8 @@ bool VolumetricPass::rayMarching()
 		m_isPassA = true;
 	}
 
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_dispatchParamsGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
@@ -499,31 +499,31 @@ bool VolumetricPass::rayMarching()
 	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_rayMarchingWorkload, 7, 1);
+	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
 
-	l_renderingServer->CommandListBegin(m_rayMarchingRPDC, 0);
-	l_renderingServer->BindRenderPassDataComponent(m_rayMarchingRPDC);
-	l_renderingServer->CleanRenderTargets(m_rayMarchingRPDC);
+	l_renderingServer->CommandListBegin(m_rayMarchingRenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp);
+	l_renderingServer->CleanRenderTargets(m_rayMarchingRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_SDC, 7, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_SamplerComp, 7, Accessibility::ReadOnly);
 
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 1, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult, 2, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[0], 3, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[1], 4, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, l_historyResultBinder, 5, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, l_currentResultBinder, 6, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 2, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0], 3, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[1], 4, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6, Accessibility::ReadWrite);
 
-	l_renderingServer->Dispatch(m_rayMarchingRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
+	l_renderingServer->Dispatch(m_rayMarchingRenderPassComp, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult, 2, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[0], 3, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[1], 4, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, l_historyResultBinder, 5, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRPDC, ShaderStage::Compute, l_currentResultBinder, 6, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 2, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0], 3, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[1], 4, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6, Accessibility::ReadWrite);
 
-	l_renderingServer->CommandListEnd(m_rayMarchingRPDC);
+	l_renderingServer->CommandListEnd(m_rayMarchingRenderPassComp);
 
 	return true;
 }
@@ -531,19 +531,19 @@ bool VolumetricPass::rayMarching()
 bool VolumetricPass::visualization(GPUResourceComponent *input)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->CommandListBegin(m_visualizationRPDC, 0);
-	l_renderingServer->BindRenderPassDataComponent(m_visualizationRPDC);
-	l_renderingServer->CleanRenderTargets(m_visualizationRPDC);
+	l_renderingServer->CommandListBegin(m_visualizationRenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_visualizationRenderPassComp);
+	l_renderingServer->CleanRenderTargets(m_visualizationRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, m_SDC, 4);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
-	l_renderingServer->BindGPUResource(m_visualizationRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
 
 	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -557,18 +557,18 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					l_renderingServer->BindGPUResource(m_visualizationRPDC, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, l_MaterialGBDC, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					l_renderingServer->DrawIndexedInstanced(m_visualizationRPDC, l_drawCallData.mesh);
+					l_renderingServer->DrawIndexedInstanced(m_visualizationRenderPassComp, l_drawCallData.mesh);
 				}
 			}
 		}
 	}
 
-	l_renderingServer->UnbindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
 
-	l_renderingServer->CommandListEnd(m_visualizationRPDC);
+	l_renderingServer->CommandListEnd(m_visualizationRenderPassComp);
 
 	return true;
 }
@@ -586,19 +586,19 @@ bool VolumetricPass::Render(bool visualize)
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->ExecuteCommandList(m_froxelizationRPDC, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_froxelizationRPDC, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->ExecuteCommandList(m_froxelizationRenderPassComp, GPUEngineType::Graphics);
+	l_renderingServer->WaitCommandQueue(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 
-	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRPDC, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRPDC, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics);
+	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 
-	l_renderingServer->ExecuteCommandList(m_rayMarchingRPDC, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_rayMarchingRPDC, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Graphics);
+	l_renderingServer->WaitCommandQueue(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 
 	if (visualize)
 	{
-		l_renderingServer->ExecuteCommandList(m_visualizationRPDC, GPUEngineType::Graphics);
-		l_renderingServer->WaitCommandQueue(m_visualizationRPDC, GPUEngineType::Graphics, GPUEngineType::Graphics);
+		l_renderingServer->ExecuteCommandList(m_visualizationRenderPassComp, GPUEngineType::Graphics);
+		l_renderingServer->WaitCommandQueue(m_visualizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	}
 
 	return true;
@@ -607,10 +607,10 @@ bool VolumetricPass::Render(bool visualize)
 bool VolumetricPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	l_renderingServer->DeleteRenderPassDataComponent(m_froxelizationRPDC);
-	l_renderingServer->DeleteRenderPassDataComponent(m_irraidanceInjectionRPDC);
-	l_renderingServer->DeleteRenderPassDataComponent(m_rayMarchingRPDC);
-	l_renderingServer->DeleteRenderPassDataComponent(m_visualizationRPDC);
+	l_renderingServer->DeleteRenderPassComponent(m_froxelizationRenderPassComp);
+	l_renderingServer->DeleteRenderPassComponent(m_irraidanceInjectionRenderPassComp);
+	l_renderingServer->DeleteRenderPassComponent(m_rayMarchingRenderPassComp);
+	l_renderingServer->DeleteRenderPassComponent(m_visualizationRenderPassComp);
 
 	return true;
 }
@@ -629,5 +629,5 @@ GPUResourceComponent *VolumetricPass::GetRayMarchingResult()
 
 GPUResourceComponent *VolumetricPass::GetVisualizationResult()
 {
-	return m_visualizationRPDC->m_RenderTargets[0];
+	return m_visualizationRenderPassComp->m_RenderTargets[0];
 }

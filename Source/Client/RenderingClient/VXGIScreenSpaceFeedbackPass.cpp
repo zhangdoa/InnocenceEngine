@@ -18,58 +18,58 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 
 	m_SPC->m_ShaderFilePaths.m_CSPath = "voxelScreenSpaceFeedBackPass.comp/";
 
-	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("VoxelScreenSpaceFeedbackPass/");
+	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelScreenSpaceFeedbackPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("VoxelScreenSpaceFeedbackVolume/");
-	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelScreenSpaceFeedbackVolume/");
+	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_TDC->m_TextureDesc.Width = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
-	m_TDC->m_TextureDesc.Height = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
-	m_TDC->m_TextureDesc.DepthOrArraySize = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
-	m_TDC->m_TextureDesc.Usage = TextureUsage::Sample;
-	m_TDC->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-	m_TDC->m_TextureDesc.UseMipMap = true;
+	m_TextureComp->m_TextureDesc.Width = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Height = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.DepthOrArraySize = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
+	m_TextureComp->m_TextureDesc.UseMipMap = true;
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
-	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBindingLayoutDescs.resize(5);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
 
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 9;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 9;
 
-	m_RPDC->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_SPC;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -79,8 +79,8 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 bool VXGIScreenSpaceFeedbackPass::Initialize()
 {
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
 	
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -89,7 +89,7 @@ bool VXGIScreenSpaceFeedbackPass::Initialize()
 
 bool VXGIScreenSpaceFeedbackPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -105,35 +105,35 @@ bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderin
 {
 	auto l_renderingContext = reinterpret_cast<VXGIScreenSpaceFeedbackPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
-	auto l_perFrameGBDC = DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+	auto l_perFrameGPUBufferComp = DefaultGPUBuffers::GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_perFrameGBDC, 3, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::Get().GetRPDC()->m_RenderTargets[0], 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_renderingContext->m_output, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::Get().GetRPDC()->m_RenderTargets[0], 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, l_renderingContext->m_output, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }
 
-RenderPassDataComponent* VXGIScreenSpaceFeedbackPass::GetRPDC()
+RenderPassComponent* VXGIScreenSpaceFeedbackPass::GetRenderPassComp()
 {
-	return m_RPDC;
+	return m_RenderPassComp;
 }
 
 GPUResourceComponent* VXGIScreenSpaceFeedbackPass::GetResult()
 {
-	return m_TDC;
+	return m_TextureComp;
 }

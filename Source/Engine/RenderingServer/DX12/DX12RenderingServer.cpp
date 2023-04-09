@@ -1,12 +1,12 @@
 #include "DX12RenderingServer.h"
 
-#include "../../Component/DX12MeshDataComponent.h"
-#include "../../Component/DX12TextureDataComponent.h"
-#include "../../Component/DX12MaterialDataComponent.h"
-#include "../../Component/DX12RenderPassDataComponent.h"
+#include "../../Component/DX12MeshComponent.h"
+#include "../../Component/DX12TextureComponent.h"
+#include "../../Component/DX12MaterialComponent.h"
+#include "../../Component/DX12RenderPassComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
-#include "../../Component/DX12SamplerDataComponent.h"
-#include "../../Component/DX12GPUBufferDataComponent.h"
+#include "../../Component/DX12SamplerComponent.h"
+#include "../../Component/DX12GPUBufferComponent.h"
 
 #include "../../Platform/WinWindow/WinWindowSystem.h"
 
@@ -48,25 +48,25 @@ namespace DX12RenderingServerNS
 	bool CreateMipmapGenerator();
 	bool CreateSwapChain();
 
-	bool CreateCommandLists(DX12RenderPassDataComponent *DX12RPDC);
-	bool GenerateMipmap(DX12TextureDataComponent *DX12TDC);
+	bool CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
+	bool GenerateMipmap(DX12TextureComponent *DX12TextureComp);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	TObjectPool<DX12MeshDataComponent> *m_MeshDataComponentPool = 0;
-	TObjectPool<DX12MaterialDataComponent> *m_MaterialDataComponentPool = 0;
-	TObjectPool<DX12TextureDataComponent> *m_TextureDataComponentPool = 0;
-	TObjectPool<DX12RenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
+	TObjectPool<DX12MeshComponent> *m_MeshComponentPool = 0;
+	TObjectPool<DX12MaterialComponent> *m_MaterialComponentPool = 0;
+	TObjectPool<DX12TextureComponent> *m_TextureComponentPool = 0;
+	TObjectPool<DX12RenderPassComponent> *m_RenderPassComponentPool = 0;
 	TObjectPool<DX12PipelineStateObject> *m_PSOPool = 0;
 	TObjectPool<DX12CommandList> *m_CommandListPool = 0;
 	TObjectPool<DX12Semaphore> *m_SemaphorePool = 0;
 	TObjectPool<DX12ShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
-	TObjectPool<DX12SamplerDataComponent> *m_SamplerDataComponentPool = 0;
-	TObjectPool<DX12GPUBufferDataComponent> *m_GPUBufferDataComponentPool = 0;
+	TObjectPool<DX12SamplerComponent> *m_SamplerComponentPool = 0;
+	TObjectPool<DX12GPUBufferComponent> *m_GPUBufferComponentPool = 0;
 
-	std::unordered_set<MeshDataComponent *> m_initializedMeshes;
-	std::unordered_set<TextureDataComponent *> m_initializedTextures;
-	std::unordered_set<MaterialDataComponent *> m_initializedMaterials;
+	std::unordered_set<MeshComponent *> m_initializedMeshes;
+	std::unordered_set<TextureComponent *> m_initializedTextures;
+	std::unordered_set<MaterialComponent *> m_initializedMaterials;
 
 	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
@@ -118,9 +118,9 @@ namespace DX12RenderingServerNS
 	D3D12_GPU_DESCRIPTOR_HANDLE m_SamplerDescHeapGPUHandle;
 
 	GPUResourceComponent *m_userPipelineOutput = 0;
-	DX12RenderPassDataComponent *m_SwapChainRPDC = 0;
+	DX12RenderPassComponent *m_SwapChainRenderPassComp = 0;
 	DX12ShaderProgramComponent *m_SwapChainSPC = 0;
-	DX12SamplerDataComponent *m_SwapChainSDC = 0;
+	DX12SamplerComponent *m_SwapChainSamplerComp = 0;
 
 	ID3D12RootSignature *m_2DMipmapRootSignature = 0;
 	ID3D12RootSignature *m_3DMipmapRootSignature = 0;
@@ -128,14 +128,14 @@ namespace DX12RenderingServerNS
 	ID3D12PipelineState *m_3DMipmapPSO = 0;
 } // namespace DX12RenderingServerNS
 
-bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassDataComponent *DX12RPDC)
+bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp)
 {
-	auto l_tempName = std::string(DX12RPDC->m_InstanceName.c_str());
+	auto l_tempName = std::string(DX12RenderPassComp->m_InstanceName.c_str());
 	auto l_tempNameL = std::wstring(l_tempName.begin(), l_tempName.end());
 
-	for (size_t i = 0; i < DX12RPDC->m_CommandLists.size(); i++)
+	for (size_t i = 0; i < DX12RenderPassComp->m_CommandLists.size(); i++)
 	{
-		auto l_CommandList = reinterpret_cast<DX12CommandList *>(DX12RPDC->m_CommandLists[i]);
+		auto l_CommandList = reinterpret_cast<DX12CommandList *>(DX12RenderPassComp->m_CommandLists[i]);
 
 		l_CommandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[i].Get(), (l_tempNameL + L"_DirectCommandList_" + std::to_wstring(i)).c_str());
 		l_CommandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[i].Get(), (l_tempNameL + L"_ComputeCommandList_" + std::to_wstring(i)).c_str());
@@ -148,7 +148,7 @@ bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassDataComponent *DX12
 
 	return true;
 }
-bool TryToTransitState(DX12TextureDataComponent *rhs, DX12CommandList *commandList, const D3D12_RESOURCE_STATES& newState)
+bool TryToTransitState(DX12TextureComponent *rhs, DX12CommandList *commandList, const D3D12_RESOURCE_STATES& newState)
 {
 	if (rhs->m_CurrentState != newState)
 	{
@@ -643,7 +643,7 @@ bool DX12RenderingServerNS::CreateSwapChain()
 	return true;
 }
 
-bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent *DX12TDC)
+bool DX12RenderingServerNS::GenerateMipmap(DX12TextureComponent *DX12TextureComp)
 {
 	struct DWParam
 	{
@@ -660,7 +660,7 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent *DX12TDC)
 		};
 	};
 
-	if (!DX12TDC->m_TextureDesc.UseMipMap)
+	if (!DX12TextureComp->m_TextureDesc.UseMipMap)
 	{
 		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Attempt to generate mipmaps for texture without mipmaps requirement.");
 
@@ -671,9 +671,9 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent *DX12TDC)
 
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
 
-	auto commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+	auto commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
-	if (DX12TDC->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+	if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 	{
 		commandList->SetComputeRootSignature(m_3DMipmapRootSignature);
 		commandList->SetPipelineState(m_3DMipmapPSO);
@@ -685,27 +685,27 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent *DX12TDC)
 	}
 	commandList->SetDescriptorHeaps(1, l_heaps);
 
-	if (!(DX12TDC->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
+	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TDC->m_ResourceHandle.Get(), DX12TDC->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_ResourceHandle.Get(), DX12TextureComp->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	}
 
-	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = DX12TDC->m_SRV.GPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = DX12TextureComp->m_SRV.GPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE l_UAV;
-	l_UAV.ptr = DX12TDC->m_UAV.ShaderVisibleGPUHandle.ptr + l_CSUDescSize;
+	l_UAV.ptr = DX12TextureComp->m_UAV.ShaderVisibleGPUHandle.ptr + l_CSUDescSize;
 
 	for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
 	{
-		uint32_t dstWidth = std::max(DX12TDC->m_TextureDesc.Width >> (TopMip + 1), (uint32_t)1);
-		uint32_t dstHeight = std::max(DX12TDC->m_TextureDesc.Height >> (TopMip + 1), (uint32_t)1);
+		uint32_t dstWidth = std::max(DX12TextureComp->m_TextureDesc.Width >> (TopMip + 1), (uint32_t)1);
+		uint32_t dstHeight = std::max(DX12TextureComp->m_TextureDesc.Height >> (TopMip + 1), (uint32_t)1);
 		uint32_t dstDepth = 1;
 
 		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
 		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
 
-		if (DX12TDC->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+		if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			dstDepth = std::max(DX12TDC->m_TextureDesc.DepthOrArraySize >> (TopMip + 1), (uint32_t)1);
+			dstDepth = std::max(DX12TextureComp->m_TextureDesc.DepthOrArraySize >> (TopMip + 1), (uint32_t)1);
 			commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
 		}
 
@@ -718,9 +718,9 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent *DX12TDC)
 		l_UAV.ptr += l_CSUDescSize;
 	}
 
-	if (!(DX12TDC->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
+	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TDC->m_ResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TDC->m_CurrentState));
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_ResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TextureComp->m_CurrentState));
 	}
 
 	CloseTemporaryCommandList(commandList, m_device, m_computeCommandQueue);
@@ -749,16 +749,16 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = TObjectPool<DX12MeshDataComponent>::Create(l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = TObjectPool<DX12TextureDataComponent>::Create(l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = TObjectPool<DX12MaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = TObjectPool<DX12RenderPassDataComponent>::Create(128);
+	m_MeshComponentPool = TObjectPool<DX12MeshComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureComponentPool = TObjectPool<DX12TextureComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialComponentPool = TObjectPool<DX12MaterialComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassComponentPool = TObjectPool<DX12RenderPassComponent>::Create(128);
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
 	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
 	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
 	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
-	m_SamplerDataComponentPool = TObjectPool<DX12SamplerDataComponent>::Create(256);
-	m_GPUBufferDataComponentPool = TObjectPool<DX12GPUBufferDataComponent>::Create(256);
+	m_SamplerComponentPool = TObjectPool<DX12SamplerComponent>::Create(256);
+	m_GPUBufferComponentPool = TObjectPool<DX12GPUBufferComponent>::Create(256);
 
 	bool l_result = true;
 
@@ -774,9 +774,9 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	l_result &= CreateMipmapGenerator();
 	l_result &= CreateSwapChain();
 
-	m_SwapChainRPDC = reinterpret_cast<DX12RenderPassDataComponent *>(AddRenderPassDataComponent("SwapChain/"));
+	m_SwapChainRenderPassComp = reinterpret_cast<DX12RenderPassComponent *>(AddRenderPassComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<DX12ShaderProgramComponent *>(AddShaderProgramComponent("SwapChain/"));
-	m_SwapChainSDC = reinterpret_cast<DX12SamplerDataComponent *>(AddSamplerDataComponent("SwapChain/"));
+	m_SwapChainSamplerComp = reinterpret_cast<DX12SamplerComponent *>(AddSamplerComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer Setup finished.");
@@ -793,33 +793,33 @@ bool DX12RenderingServer::Initialize()
 
 		InitializeShaderProgramComponent(m_SwapChainSPC);
 
-		InitializeSamplerDataComponent(m_SwapChainSDC);
+		InitializeSamplerComponent(m_SwapChainSamplerComp);
 
 		// Create command queue first
 		auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = m_swapChainImageCount;
 
-		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
-		m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames = true;
-		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
-		m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+		m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
+		m_SwapChainRenderPassComp->m_RenderPassDesc.m_UseMultiFrames = true;
+		m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
+		m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs.resize(2);
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 1;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 1;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-		m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+		m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
-		m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
+		m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainSPC;
 
-		ReserveRenderTargets(m_SwapChainRPDC, this);
+		ReserveRenderTargets(m_SwapChainRenderPassComp, this);
 
 		// use device created swap chain textures as render targets
 		for (size_t i = 0; i < m_swapChainImageCount; i++)
@@ -830,41 +830,41 @@ bool DX12RenderingServer::Initialize()
 				InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
 				return false;
 			}
-			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[i]);
+			auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
 
-			l_DX12TDC->m_ResourceHandle = m_swapChainImages[i];
-			l_DX12TDC->m_DX12TextureDesc = l_DX12TDC->m_ResourceHandle->GetDesc();
-			l_DX12TDC->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			l_DX12TDC->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
-			l_DX12TDC->m_CurrentState = l_DX12TDC->m_ReadState;
-			l_DX12TDC->m_ObjectStatus = ObjectStatus::Activated;
+			l_DX12TextureComp->m_ResourceHandle = m_swapChainImages[i];
+			l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_ResourceHandle->GetDesc();
+			l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
+			l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
+			l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
 		}
 
-		CreateViews(m_SwapChainRPDC, m_device);
+		CreateViews(m_SwapChainRenderPassComp, m_device);
 
-		CreateRootSignature(m_SwapChainRPDC, m_device);
+		CreateRootSignature(m_SwapChainRenderPassComp, m_device);
 
-		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
+		m_SwapChainRenderPassComp->m_PipelineStateObject = addPSO();
 
-		CreatePSO(m_SwapChainRPDC, m_device);
+		CreatePSO(m_SwapChainRenderPassComp, m_device);
 
-		m_SwapChainRPDC->m_CommandLists.resize(m_swapChainImageCount);
-		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
+		m_SwapChainRenderPassComp->m_CommandLists.resize(m_swapChainImageCount);
+		for (size_t i = 0; i < m_SwapChainRenderPassComp->m_CommandLists.size(); i++)
 		{
-			m_SwapChainRPDC->m_CommandLists[i] = addCommandList();
+			m_SwapChainRenderPassComp->m_CommandLists[i] = addCommandList();
 		}
 
-		CreateCommandLists(m_SwapChainRPDC);
+		CreateCommandLists(m_SwapChainRenderPassComp);
 
-		m_SwapChainRPDC->m_Semaphores.resize(m_SwapChainRPDC->m_CommandLists.size());
-		for (size_t i = 0; i < m_SwapChainRPDC->m_Semaphores.size(); i++)
+		m_SwapChainRenderPassComp->m_Semaphores.resize(m_SwapChainRenderPassComp->m_CommandLists.size());
+		for (size_t i = 0; i < m_SwapChainRenderPassComp->m_Semaphores.size(); i++)
 		{
-			m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
+			m_SwapChainRenderPassComp->m_Semaphores[i] = addSemaphore();
 		}
 
-		CreateFenceEvents(m_SwapChainRPDC);
+		CreateFenceEvents(m_SwapChainRenderPassComp);
 
-		m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
+		m_SwapChainRenderPassComp->m_ObjectStatus = ObjectStatus::Activated;
 	}
 
 	return true;
@@ -872,9 +872,9 @@ bool DX12RenderingServer::Initialize()
 
 bool DX12RenderingServer::Terminate()
 {
-	DeleteSamplerDataComponent(m_SwapChainSDC);
+	DeleteSamplerComponent(m_SwapChainSamplerComp);
 	DeleteShaderProgramComponent(m_SwapChainSPC);
-	// DeleteRenderPassDataComponent(m_SwapChainRPDC);
+	// DeleteRenderPassComponent(m_SwapChainRenderPassComp);
 
 #ifdef INNO_DEBUG
 	IDXGIDebug1 *pDebug = nullptr;
@@ -896,15 +896,15 @@ ObjectStatus DX12RenderingServer::GetStatus()
 	return m_ObjectStatus;
 }
 
-AddComponent(DX12, MeshData);
-AddComponent(DX12, TextureData);
-AddComponent(DX12, MaterialData);
-AddComponent(DX12, RenderPassData);
+AddComponent(DX12, Mesh);
+AddComponent(DX12, Texture);
+AddComponent(DX12, Material);
+AddComponent(DX12, RenderPass);
 AddComponent(DX12, ShaderProgram);
-AddComponent(DX12, SamplerData);
-AddComponent(DX12, GPUBufferData);
+AddComponent(DX12, Sampler);
+AddComponent(DX12, GPUBuffer);
 
-bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
+bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
@@ -917,7 +917,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
 		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
 
-	auto l_rhs = reinterpret_cast<DX12MeshDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
 
 	// vertices
 	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * l_rhs->m_vertices.size());
@@ -936,7 +936,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
 
 	auto l_vertexUploadHeapBuffer = CreateUploadHeapBuffer(&l_verticesResourceDesc, m_device);
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 	// main memory ----> upload heap
 	D3D12_SUBRESOURCE_DATA l_verticesSubResourceData = {};
@@ -1002,14 +1002,14 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent *rhs)
+bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
 	l_rhs->m_DX12TextureDesc = GetDX12TextureDesc(l_rhs->m_TextureDesc);
 	l_rhs->m_PixelDataSize = GetTexturePixelDataSize(l_rhs->m_TextureDesc);
@@ -1073,7 +1073,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent *r
 
 		std::vector<ComPtr<ID3D12Resource>> l_uploadBuffers;
 
-		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 		// main memory ----> upload heap
 		if (l_rhs->m_TextureData)
@@ -1160,23 +1160,23 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent *r
 	return true;
 }
 
-bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent *rhs)
+bool DX12RenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent *>(rhs);
-	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
+	auto l_rhs = reinterpret_cast<DX12MaterialComponent *>(rhs);
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
-		auto l_texture = reinterpret_cast<DX12TextureDataComponent *>(l_rhs->m_TextureSlots[i].m_Texture);
+		auto l_texture = reinterpret_cast<DX12TextureComponent *>(l_rhs->m_TextureSlots[i].m_Texture);
 
 		if (l_texture)
 		{
-			InitializeTextureDataComponent(l_texture);
+			InitializeTextureComponent(l_texture);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 			l_rhs->m_TextureSlots[i].m_Activate = true;
 		}
@@ -1193,9 +1193,9 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	return true;
 }
 
-bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 
 	bool l_result = true;
 
@@ -1302,9 +1302,9 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	return true;
 }
 
-bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent *rhs)
+bool DX12RenderingServer::InitializeSamplerComponent(SamplerComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12SamplerDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12SamplerComponent *>(rhs);
 
 	l_rhs->m_Sampler.SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod, l_rhs->m_SamplerDesc.m_MagFilterMethod);
 	l_rhs->m_Sampler.SamplerDesc.AddressU = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
@@ -1336,9 +1336,9 @@ bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent *r
 	return true;
 }
 
-bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+bool DX12RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 	l_rhs->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
@@ -1360,7 +1360,7 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			auto l_defaultHeapResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 			l_rhs->m_DefaultHeapResourceHandle = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc, m_device);
 
-			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 			l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 			CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
 
@@ -1381,7 +1381,7 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	if (l_rhs->m_InitialData)
 	{
-		UploadGPUBufferDataComponent(l_rhs, l_rhs->m_InitialData);
+		UploadGPUBufferComponent(l_rhs, l_rhs->m_InitialData);
 	}
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
@@ -1390,57 +1390,57 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	return true;
 }
 
-bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent *rhs)
+bool DX12RenderingServer::DeleteMeshComponent(MeshComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12MeshDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
 
-	m_MeshDataComponentPool->Destroy(l_rhs);
+	m_MeshComponentPool->Destroy(l_rhs);
 
 	m_initializedMeshes.erase(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent *rhs)
+bool DX12RenderingServer::DeleteTextureComponent(TextureComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
-	m_TextureDataComponentPool->Destroy(l_rhs);
+	m_TextureComponentPool->Destroy(l_rhs);
 
 	m_initializedTextures.erase(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent *rhs)
+bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12MaterialComponent *>(rhs);
 
-	m_MaterialDataComponentPool->Destroy(l_rhs);
+	m_MaterialComponentPool->Destroy(l_rhs);
 
 	m_initializedMaterials.erase(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::DeleteRenderPassComponent(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
 	m_PSOPool->Destroy(l_PSO);
 
 	if (l_rhs->m_DepthStencilRenderTarget)
 	{
-		DeleteTextureDataComponent(l_rhs->m_DepthStencilRenderTarget);
+		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget);
 	}
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
-		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
+		DeleteTextureComponent(l_rhs->m_RenderTargets[i]);
 	}
 
-	m_RenderPassDataComponentPool->Destroy(l_rhs);
+	m_RenderPassComponentPool->Destroy(l_rhs);
 
 	return true;
 }
@@ -1454,29 +1454,29 @@ bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent *r
 	return true;
 }
 
-bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent *rhs)
+bool DX12RenderingServer::DeleteSamplerComponent(SamplerComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12SamplerDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12SamplerComponent *>(rhs);
 
-	m_SamplerDataComponentPool->Destroy(l_rhs);
+	m_SamplerComponentPool->Destroy(l_rhs);
 
 	return false;
 }
 
-bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
-	m_GPUBufferDataComponentPool->Destroy(l_rhs);
+	m_GPUBufferComponentPool->Destroy(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
+bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 	
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
@@ -1511,12 +1511,12 @@ bool DX12RenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::CopyTextureDataComponent(TextureDataComponent *lhs, TextureDataComponent *rhs)
+bool DX12RenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureComponent *rhs)
 {
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
-	auto l_src = reinterpret_cast<DX12TextureDataComponent *>(lhs);
-	auto l_dest = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_src = reinterpret_cast<DX12TextureComponent *>(lhs);
+	auto l_dest = reinterpret_cast<DX12TextureComponent *>(rhs);
 
 	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle.Get(), l_src->m_CurrentState, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
@@ -1533,9 +1533,9 @@ bool DX12RenderingServer::CopyTextureDataComponent(TextureDataComponent *lhs, Te
 	return true;
 }
 
-bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent *rhs, const void *GPUBufferValue, size_t startOffset, size_t range)
+bool DX12RenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent *rhs, const void *GPUBufferValue, size_t startOffset, size_t range)
 {
-	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
 	auto l_size = l_rhs->m_TotalSize;
 	if (range != SIZE_MAX)
@@ -1547,7 +1547,7 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 
 	if (l_rhs->m_DefaultHeapResourceHandle)
 	{
-		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
 		l_commandList->CopyResource(l_rhs->m_DefaultHeapResourceHandle.Get(), l_rhs->m_UploadHeapResourceHandle.Get());
@@ -1559,12 +1559,12 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	return true;
 }
 
-bool DX12RenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 {
 	const uint32_t zero = 0;
-	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
@@ -1582,9 +1582,9 @@ bool DX12RenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rh
 	return true;
 }
 
-bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent *rhs, size_t frameIndex)
+bool DX12RenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameIndex)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[frameIndex]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
@@ -1596,13 +1596,13 @@ bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent *rhs, size_t 
 	return true;
 }
 
-bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandList *commandList)
+bool PrepareRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *commandList)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
+			auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
 
 			TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 		}
@@ -1610,7 +1610,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 		{
 			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_RenderTargets[i]);
+				auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_RenderTargets[i]);
 
 				TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 			}
@@ -1618,7 +1618,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 		{
-			auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_DepthStencilRenderTarget);
+			auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_DepthStencilRenderTarget);
 
 			TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 		}
@@ -1627,7 +1627,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 	return true;
 }
 
-bool PreparePipeline(DX12RenderPassDataComponent *renderPass, DX12CommandList *commandList, DX12PipelineStateObject *PSO)
+bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *commandList, DX12PipelineStateObject *PSO)
 {
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get(), m_samplerHeap.Get()};
 
@@ -1692,9 +1692,9 @@ bool PreparePipeline(DX12RenderPassDataComponent *renderPass, DX12CommandList *c
 	return true;
 }
 
-bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
@@ -1704,11 +1704,11 @@ bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *r
 	return true;
 }
 
-bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics && rhs->m_RenderPassDesc.m_RenderTargetCount)
 	{
-		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+		auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 		auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 		if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
@@ -1732,7 +1732,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 				// @TODO: SOOO verbose API DX12 it is!
 				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					auto l_RT = reinterpret_cast<DX12TextureDataComponent *>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+					auto l_RT = reinterpret_cast<DX12TextureComponent *>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
 
 					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 					{
@@ -1759,7 +1759,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 				{
 					for (auto i : l_rhs->m_RenderTargets)
 					{
-						auto l_RT = reinterpret_cast<DX12TextureDataComponent *>(i);
+						auto l_RT = reinterpret_cast<DX12TextureComponent *>(i);
 
 						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 						{
@@ -1800,9 +1800,9 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
-	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent *>(renderPass);
+	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
 	if ((l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && shaderStage != ShaderStage::Compute) || (l_renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Compute && shaderStage == ShaderStage::Compute))
@@ -1819,20 +1819,20 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 			switch (resource->m_GPUResourceType)
 			{
 			case GPUResourceType::Sampler:
-				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent *>(resource)->m_Sampler.GPUHandle);
+				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent *>(resource)->m_Sampler.GPUHandle);
 				break;
 			case GPUResourceType::Image:
 			{
-				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(resource);
+				auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(resource);
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_WriteState);
-					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
+					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_WriteState);
+					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_ReadState);
-					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_SRV.GPUHandle);
+					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
+					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_SRV.GPUHandle);
 				}
 				break;
 			}
@@ -1845,25 +1845,25 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 					}
 					else
 					{
-						l_commandList->m_ComputeCommandList->SetComputeRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
+						l_commandList->m_ComputeCommandList->SetComputeRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						if (reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_isAtomicCounter)
+						if (reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_isAtomicCounter)
 						{
-							l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
+							l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 						}
 						else
 						{
-							l_commandList->m_ComputeCommandList->SetComputeRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
+							l_commandList->m_ComputeCommandList->SetComputeRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
 						}
 					}
 					else
 					{
-						l_commandList->m_ComputeCommandList->SetComputeRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
+						l_commandList->m_ComputeCommandList->SetComputeRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
 					}
 				}
 
@@ -1877,20 +1877,20 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 			switch (resource->m_GPUResourceType)
 			{
 			case GPUResourceType::Sampler:
-				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent *>(resource)->m_Sampler.GPUHandle);
+				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent *>(resource)->m_Sampler.GPUHandle);
 				break;
 			case GPUResourceType::Image:
 			{
-				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(resource);
+				auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(resource);
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_WriteState);
-					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
+					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_WriteState);
+					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_ReadState);
-					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_SRV.GPUHandle);
+					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
+					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_SRV.GPUHandle);
 				}
 				break;
 			}
@@ -1903,25 +1903,25 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 					}
 					else
 					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
+						l_commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						if (reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_isAtomicCounter)
+						if (reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_isAtomicCounter)
 						{
-							l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
+							l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 						}
 						else
 						{
-							l_commandList->m_DirectCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
+							l_commandList->m_DirectCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
 						}
 					}
 					else
 					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
+						l_commandList->m_DirectCommandList->SetGraphicsRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
 					}
 				}
 				break;
@@ -1937,12 +1937,12 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 	return true;
 }
 
-bool DX12RenderingServer::DrawIndexedInstanced(RenderPassDataComponent *renderPass, MeshDataComponent *mesh, size_t instanceCount)
+bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent *renderPass, MeshComponent *mesh, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent *>(renderPass);
+	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_renderPass->m_PipelineStateObject);
-	auto l_mesh = reinterpret_cast<DX12MeshDataComponent *>(mesh);
+	auto l_mesh = reinterpret_cast<DX12MeshComponent *>(mesh);
 
 	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
@@ -1952,9 +1952,9 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassDataComponent *renderPa
 	return true;
 }
 
-bool DX12RenderingServer::DrawInstanced(RenderPassDataComponent *renderPass, size_t instanceCount)
+bool DX12RenderingServer::DrawInstanced(RenderPassComponent *renderPass, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent *>(renderPass);
+	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_renderPass->m_PipelineStateObject);
 
@@ -1966,14 +1966,14 @@ bool DX12RenderingServer::DrawInstanced(RenderPassDataComponent *renderPass, siz
 	return true;
 }
 
-bool DX12RenderingServer::UnbindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::CommandListEnd(RenderPassComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	l_commandList->m_DirectCommandList->Close();
@@ -1982,9 +1982,9 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 
@@ -2014,9 +2014,9 @@ bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs, GPUEn
 	return true;
 }
 
-bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool DX12RenderingServer::WaitCommandQueue(RenderPassComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 	ID3D12CommandQueue *commandQueue = nullptr;
 	ID3D12Fence *fence = nullptr;
@@ -2050,7 +2050,7 @@ bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent *rhs, GPUEngi
 	return true;
 }
 
-bool DX12RenderingServer::WaitFence(RenderPassDataComponent *rhs, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
 {
 	UINT64 semaphore = 0;
 	HANDLE fenceEvent = 0;
@@ -2070,7 +2070,7 @@ bool DX12RenderingServer::WaitFence(RenderPassDataComponent *rhs, GPUEngineType 
 	}
 	else
 	{
-		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+		auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 		auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 
 		if (GPUEngineType == GPUEngineType::Graphics)
@@ -2119,30 +2119,30 @@ GPUResourceComponent *DX12RenderingServer::GetUserPipelineOutput()
 
 bool DX12RenderingServer::Present()
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRPDC->m_CommandLists[m_SwapChainRPDC->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(m_SwapChainRPDC->m_PipelineStateObject);
-	auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
-	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(m_SwapChainRPDC->m_Semaphores[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRenderPassComp->m_CommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(m_SwapChainRenderPassComp->m_PipelineStateObject);
+	auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(m_SwapChainRenderPassComp->m_Semaphores[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
-	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
+	CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);
 
-	BindRenderPassDataComponent(m_SwapChainRPDC);
+	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
-	CleanRenderTargets(m_SwapChainRPDC);
+	CleanRenderTargets(m_SwapChainRenderPassComp);
 
-	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square);
 
-	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
+	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	TryToTransitState(l_DX12TDC, l_commandList,l_DX12TDC->m_ReadState);
+	TryToTransitState(l_DX12TextureComp, l_commandList,l_DX12TextureComp->m_ReadState);
 
-	CommandListEnd(m_SwapChainRPDC);
+	CommandListEnd(m_SwapChainRenderPassComp);
 
 	ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
 	m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
@@ -2157,18 +2157,18 @@ bool DX12RenderingServer::Present()
 	WaitFence(nullptr, GPUEngineType::Graphics);
 	WaitFence(nullptr, GPUEngineType::Compute);
 
-	m_SwapChainRPDC->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
-	m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
-	m_computeCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
+	m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]->Reset();
+	m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]->Reset();
 	m_copyCommandAllocator->Reset();
 
 	return true;
 }
 
-bool DX12RenderingServer::Dispatch(RenderPassDataComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool DX12RenderingServer::Dispatch(RenderPassComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(renderPass);
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	l_commandList->m_ComputeCommandList->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
@@ -2176,91 +2176,91 @@ bool DX12RenderingServer::Dispatch(RenderPassDataComponent *renderPass, uint32_t
 	return true;
 }
 
-Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent *canvas, TextureDataComponent *TDC)
+std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent *canvas, TextureComponent *TextureComp)
 {
 	// @TODO: Support different pixel data type
-	auto l_srcTDC = reinterpret_cast<DX12TextureDataComponent *>(TDC);
+	auto l_srcTextureComp = reinterpret_cast<DX12TextureComponent *>(TextureComp);
 
 	size_t l_pixelCount = 0;
 
-	switch (l_srcTDC->m_TextureDesc.Sampler)
+	switch (l_srcTextureComp->m_TextureDesc.Sampler)
 	{
 	case TextureSampler::Sampler1D:
-		l_pixelCount = l_srcTDC->m_TextureDesc.Width;
+		l_pixelCount = l_srcTextureComp->m_TextureDesc.Width;
 		break;
 	case TextureSampler::Sampler2D:
-		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height;
+		l_pixelCount = l_srcTextureComp->m_TextureDesc.Width * l_srcTextureComp->m_TextureDesc.Height;
 		break;
 	case TextureSampler::Sampler3D:
-		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
+		l_pixelCount = l_srcTextureComp->m_TextureDesc.Width * l_srcTextureComp->m_TextureDesc.Height * l_srcTextureComp->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::Sampler1DArray:
-		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.DepthOrArraySize;
+		l_pixelCount = l_srcTextureComp->m_TextureDesc.Width * l_srcTextureComp->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::Sampler2DArray:
-		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
+		l_pixelCount = l_srcTextureComp->m_TextureDesc.Width * l_srcTextureComp->m_TextureDesc.Height * l_srcTextureComp->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::SamplerCubemap:
-		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * 6;
+		l_pixelCount = l_srcTextureComp->m_TextureDesc.Width * l_srcTextureComp->m_TextureDesc.Height * 6;
 		break;
 	default:
 		break;
 	}
 
-	auto f_readBackCommand = [](DX12TextureDataComponent *l_srcTDC, DX12TextureDataComponent *l_destTDC, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex)
+	auto f_readBackCommand = [](DX12TextureComponent *l_srcTextureComp, DX12TextureComponent *l_destTextureComp, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex)
 	{
 		D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
-		l_srcLocation.pResource = l_srcTDC->m_ResourceHandle.Get();
+		l_srcLocation.pResource = l_srcTextureComp->m_ResourceHandle.Get();
 		l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		l_srcLocation.SubresourceIndex = srcIndex;
 
 		// @TODO: It seems invalid to read back texture array which has RowPitch < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, for example a R8 32*32 2D array/cubemap texture
-		auto l_rowWidth = (uint32_t)l_srcTDC->m_TextureDesc.Width * l_pixelDataSize;
+		auto l_rowWidth = (uint32_t)l_srcTextureComp->m_TextureDesc.Width * l_pixelDataSize;
 		l_rowWidth = l_rowWidth < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT ? D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : l_rowWidth;
 
 		D3D12_TEXTURE_COPY_LOCATION l_destLocation;
-		l_destLocation.pResource = l_destTDC->m_ResourceHandle.Get();
+		l_destLocation.pResource = l_destTextureComp->m_ResourceHandle.Get();
 		l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		l_destLocation.PlacedFootprint.Offset = destIndex * l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_pixelDataSize;
+		l_destLocation.PlacedFootprint.Offset = destIndex * l_srcTextureComp->m_TextureDesc.Width * l_srcTextureComp->m_TextureDesc.Height * l_pixelDataSize;
 		l_destLocation.PlacedFootprint.Footprint.Format = l_format;
-		l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDesc.Width;
-		l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDesc.Height;
-		l_destLocation.PlacedFootprint.Footprint.Depth = l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 1 : (uint32_t)l_srcTDC->m_DX12TextureDesc.DepthOrArraySize;
+		l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTextureComp->m_DX12TextureDesc.Width;
+		l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTextureComp->m_DX12TextureDesc.Height;
+		l_destLocation.PlacedFootprint.Footprint.Depth = l_srcTextureComp->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 1 : (uint32_t)l_srcTextureComp->m_DX12TextureDesc.DepthOrArraySize;
 		l_destLocation.PlacedFootprint.Footprint.RowPitch = l_rowWidth;
 
 		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator);
 
 		l_commandList->ResourceBarrier(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle.Get(),
-												  l_srcTDC->m_CurrentState,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTextureComp->m_ResourceHandle.Get(),
+												  l_srcTextureComp->m_CurrentState,
 												  D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 		l_commandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
 
 		l_commandList->ResourceBarrier(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle.Get(),
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTextureComp->m_ResourceHandle.Get(),
 												  D3D12_RESOURCE_STATE_COPY_SOURCE,
-												  l_srcTDC->m_CurrentState));
+												  l_srcTextureComp->m_CurrentState));
 
 		CloseTemporaryCommandList(l_commandList, m_device, m_copyCommandQueue);
 	};
 
-	auto f_copyCommand = [](DX12TextureDataComponent *l_srcTDC, DX12TextureDataComponent *l_destTDC, size_t l_pixelCount) -> std::vector<unsigned char>
+	auto f_copyCommand = [](DX12TextureComponent *l_srcTextureComp, DX12TextureComponent *l_destTextureComp, size_t l_pixelCount) -> std::vector<unsigned char>
 	{
 		std::vector<unsigned char> l_result;
 
-		l_result.resize(l_pixelCount * l_srcTDC->m_PixelDataSize);
+		l_result.resize(l_pixelCount * l_srcTextureComp->m_PixelDataSize);
 
 		CD3DX12_RANGE m_ReadRange(0, l_result.size());
 		void *l_pData;
-		auto l_HResult = l_destTDC->m_ResourceHandle->Map(0, &m_ReadRange, &l_pData);
+		auto l_HResult = l_destTextureComp->m_ResourceHandle->Map(0, &m_ReadRange, &l_pData);
 
 		if (FAILED(l_HResult))
 		{
@@ -2268,40 +2268,40 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		}
 
 		std::memcpy(l_result.data(), l_pData, l_result.size());
-		l_destTDC->m_ResourceHandle->Unmap(0, 0);
+		l_destTextureComp->m_ResourceHandle->Unmap(0, 0);
 
 		return l_result;
 	};
 
 	// Copy from default heap to readback heap, then copy from readback heap to application's heap region
-	auto l_destTDC = reinterpret_cast<DX12TextureDataComponent *>(AddTextureDataComponent("ReadBackTemp/"));
-	l_destTDC->m_TextureDesc = TDC->m_TextureDesc;
-	l_destTDC->m_TextureDesc.CPUAccessibility = Accessibility::ReadOnly;
+	auto l_destTextureComp = reinterpret_cast<DX12TextureComponent *>(AddTextureComponent("ReadBackTemp/"));
+	l_destTextureComp->m_TextureDesc = TextureComp->m_TextureDesc;
+	l_destTextureComp->m_TextureDesc.CPUAccessibility = Accessibility::ReadOnly;
 
-	InitializeTextureDataComponent(l_destTDC);
+	InitializeTextureComponent(l_destTextureComp);
 
 	DXGI_FORMAT l_format;
 	std::vector<Vec4> l_result;
 
-	if (l_srcTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+	if (l_srcTextureComp->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
 		std::vector<uint32_t> l_depthResult;
 		std::vector<uint8_t> l_stencilResult;
 
 		l_format = DXGI_FORMAT_R32_TYPELESS;
-		if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		if (l_srcTextureComp->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				f_readBackCommand(l_srcTDC, l_destTDC, l_format, 4, i, i);
+				f_readBackCommand(l_srcTextureComp, l_destTextureComp, l_format, 4, i, i);
 			}
 		}
 		else
 		{
-			f_readBackCommand(l_srcTDC, l_destTDC, l_format, 4, 0, 0);
+			f_readBackCommand(l_srcTextureComp, l_destTextureComp, l_format, 4, 0, 0);
 		}
 
-		auto l_rawResult = f_copyCommand(l_srcTDC, l_destTDC, l_pixelCount);
+		auto l_rawResult = f_copyCommand(l_srcTextureComp, l_destTextureComp, l_pixelCount);
 		auto l_validSampleCount = l_rawResult.size() / 4;
 		l_depthResult.resize(l_validSampleCount);
 		l_result.resize(l_validSampleCount);
@@ -2314,19 +2314,19 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		}
 
 		l_format = DXGI_FORMAT_R8_TYPELESS;
-		if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		if (l_srcTextureComp->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				f_readBackCommand(l_srcTDC, l_destTDC, l_format, sizeof(uint8_t), i + 6, i);
+				f_readBackCommand(l_srcTextureComp, l_destTextureComp, l_format, sizeof(uint8_t), i + 6, i);
 			}
 		}
 		else
 		{
-			f_readBackCommand(l_srcTDC, l_destTDC, l_format, sizeof(uint8_t), 1, 0);
+			f_readBackCommand(l_srcTextureComp, l_destTextureComp, l_format, sizeof(uint8_t), 1, 0);
 		}
 
-		l_rawResult = f_copyCommand(l_srcTDC, l_destTDC, l_pixelCount);
+		l_rawResult = f_copyCommand(l_srcTextureComp, l_destTextureComp, l_pixelCount);
 		l_stencilResult.resize(l_validSampleCount);
 		std::memcpy(l_stencilResult.data(), l_rawResult.data(), l_stencilResult.size());
 
@@ -2337,33 +2337,33 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	}
 	else
 	{
-		l_format = l_srcTDC->m_DX12TextureDesc.Format;
+		l_format = l_srcTextureComp->m_DX12TextureDesc.Format;
 
-		if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		if (l_srcTextureComp->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				f_readBackCommand(l_srcTDC, l_destTDC, l_format, l_srcTDC->m_PixelDataSize, i, i);
+				f_readBackCommand(l_srcTextureComp, l_destTextureComp, l_format, l_srcTextureComp->m_PixelDataSize, i, i);
 			}
 		}
 		else
 		{
-			f_readBackCommand(l_srcTDC, l_destTDC, l_format, l_srcTDC->m_PixelDataSize, 0, 0);
+			f_readBackCommand(l_srcTextureComp, l_destTextureComp, l_format, l_srcTextureComp->m_PixelDataSize, 0, 0);
 		}
 
 		l_result.resize(l_pixelCount);
-		auto l_rawResult = f_copyCommand(l_srcTDC, l_destTDC, l_pixelCount);
+		auto l_rawResult = f_copyCommand(l_srcTextureComp, l_destTextureComp, l_pixelCount);
 		std::memcpy(l_result.data(), l_rawResult.data(), l_rawResult.size());
 	}
 
-	DeleteTextureDataComponent(l_destTDC);
+	DeleteTextureComponent(l_destTextureComp);
 
 	return l_result;
 }
 
-bool DX12RenderingServer::GenerateMipmap(TextureDataComponent *rhs)
+bool DX12RenderingServer::GenerateMipmap(TextureComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
 	// @TODO: support sRGB
 	// if (!l_rhs->m_TextureDesc.IsSRGB)
@@ -2379,9 +2379,9 @@ bool DX12RenderingServer::Resize()
 	return true;
 }
 
-DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent *rhs, uint32_t mostDetailedMip)
+DX12SRV DX12RenderingServer::CreateSRV(TextureComponent *rhs, uint32_t mostDetailedMip)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	DX12SRV l_result = {};
@@ -2420,18 +2420,18 @@ DX12UAV createUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resour
 	return l_result;
 }
 
-DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent *rhs, uint32_t mipSlice)
+DX12UAV DX12RenderingServer::CreateUAV(TextureComponent *rhs, uint32_t mipSlice)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
 	auto l_desc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mipSlice);
 
 	return createUAVImpl(l_desc, l_rhs->m_ResourceHandle, false);
 }
 
-DX12UAV DX12RenderingServer::CreateUAV(GPUBufferDataComponent *rhs)
+DX12UAV DX12RenderingServer::CreateUAV(GPUBufferComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
 	l_desc.Format = l_rhs->m_isAtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
 	l_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -2441,9 +2441,9 @@ DX12UAV DX12RenderingServer::CreateUAV(GPUBufferDataComponent *rhs)
 	return createUAVImpl(l_desc, l_rhs->m_DefaultHeapResourceHandle, l_rhs->m_isAtomicCounter);
 }
 
-DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent *rhs)
+DX12CBV DX12RenderingServer::CreateCBV(GPUBufferComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent *>(rhs);
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
 	DX12CBV l_result;
 

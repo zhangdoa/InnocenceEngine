@@ -1,6 +1,6 @@
 #pragma once
-#include "../../Component/GLTextureDataComponent.h"
-#include "../../Component/GLRenderPassDataComponent.h"
+#include "../../Component/GLTextureComponent.h"
+#include "../../Component/GLRenderPassComponent.h"
 #include "../IRenderingServer.h"
 
 namespace Inno
@@ -16,10 +16,10 @@ namespace Inno
 		GLenum GetTexturePixelDataType(TextureDesc textureDesc);
 		GLsizei GetTexturePixelDataSize(TextureDesc textureDesc);
 
-		bool CreateFramebuffer(GLRenderPassDataComponent* GLRPDC);
-		bool ReserveRenderTargets(GLRenderPassDataComponent* GLRPDC, IRenderingServer* renderingServer);
-		bool CreateRenderTargets(GLRenderPassDataComponent* GLRPDC, IRenderingServer* renderingServer);
-		bool CreateStateObjects(GLRenderPassDataComponent* GLRPDC);
+		bool CreateFramebuffer(GLRenderPassComponent* GLRenderPassComp);
+		bool ReserveRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer);
+		bool CreateRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer);
+		bool CreateStateObjects(GLRenderPassComponent* GLRenderPassComp);
 
 		GLenum GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);
 		GLenum GetStencilOperationEnum(StencilOperation stencilOperation);
@@ -34,13 +34,13 @@ namespace Inno
 
 		bool AddShaderObject(GLuint& shaderID, GLuint shaderStage, const ShaderFilePath& shaderFilePath);
 		bool LinkProgramObject(GLuint& shaderProgram);
-		bool ActivateTexture(GLTextureDataComponent* GLTDC, int32_t activateIndex);
-		bool BindTextureAsImage(GLTextureDataComponent* GLTDC, int32_t bindingSlot, Accessibility accessibility);
+		bool ActivateTexture(GLTextureComponent* GLTextureComp, int32_t activateIndex);
+		bool BindTextureAsImage(GLTextureComponent* GLTextureComp, int32_t bindingSlot, Accessibility accessibility);
 
 		/*
 		attachmentIndex: GL_COLOR_ATTACHMENT0 to GL_MAX_COLOR_ATTACHMENTS
 		textureIndex : Only valid for layered texture, include texture array and cubemap; default value -1 means attach all layers to the framebuffer
 		*/
-		bool AttachTextureToFramebuffer(GLTextureDataComponent* GLTDC, GLRenderPassDataComponent* GLRPDC, uint32_t attachmentIndex, uint32_t textureIndex = -1, uint32_t mipLevel = 0, uint32_t layer = 0);
+		bool AttachTextureToFramebuffer(GLTextureComponent* GLTextureComp, GLRenderPassComponent* GLRenderPassComp, uint32_t attachmentIndex, uint32_t textureIndex = -1, uint32_t mipLevel = 0, uint32_t layer = 0);
 	}
 }

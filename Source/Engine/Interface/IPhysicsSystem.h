@@ -1,7 +1,7 @@
 #pragma once
 #include "ISystem.h"
 
-#include "../Component/PhysicsDataComponent.h"
+#include "../Component/PhysicsComponent.h"
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
@@ -11,8 +11,8 @@ namespace Inno
 		Mat4 m = Mat4();
 		Mat4 m_prev = Mat4();
 		Mat4 normalMat = Mat4();
-		MeshDataComponent* mesh = 0;
-		MaterialDataComponent* material = 0;
+		MeshComponent* mesh = 0;
+		MaterialComponent* material = 0;
 		MeshUsage meshUsage = MeshUsage::Invalid;
 		VisibilityMask visibilityMask = VisibilityMask::Invalid;
 		uint64_t UUID = 0;
@@ -27,7 +27,7 @@ namespace Inno
 		std::vector<BVHNode>::iterator rightChildNode;
 		size_t depth = 0;
 
-		PhysicsDataComponent* PDC = 0;
+		PhysicsComponent* PDC = 0;
 
 		bool operator==(const BVHNode& other) const
 		{

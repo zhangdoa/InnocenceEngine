@@ -1,8 +1,8 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../Component/MeshDataComponent.h"
-#include "../Component/MaterialDataComponent.h"
-#include "../Component/TextureDataComponent.h"
+#include "../Component/MeshComponent.h"
+#include "../Component/MaterialComponent.h"
+#include "../Component/TextureComponent.h"
 #include "../Component/VisibleComponent.h"
 
 namespace Inno
@@ -150,8 +150,8 @@ namespace Inno
 
 	struct DrawCallInfo
 	{
-		MeshDataComponent* mesh = 0;
-		MaterialDataComponent* material = 0;
+		MeshComponent* mesh = 0;
+		MaterialComponent* material = 0;
 		uint32_t meshConstantBufferIndex = 0;
 		uint32_t materialConstantBufferIndex = 0;
 		VisibilityMask visibilityMask = VisibilityMask::Invalid;
@@ -160,14 +160,14 @@ namespace Inno
 
 	struct BillboardPassDrawCallInfo
 	{
-		TextureDataComponent* iconTexture;
+		TextureComponent* iconTexture;
 		uint32_t meshConstantBufferOffset;
 		uint32_t instanceCount;
 	};
 
 	struct DebugPassDrawCallInfo
 	{
-		MeshDataComponent* mesh;
+		MeshComponent* mesh;
 	};
 
 	// Sample point on geometry surface

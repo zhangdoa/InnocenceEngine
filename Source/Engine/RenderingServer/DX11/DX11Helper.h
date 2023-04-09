@@ -1,6 +1,6 @@
 #pragma once
-#include "../../Component/DX11TextureDataComponent.h"
-#include "../../Component/DX11RenderPassDataComponent.h"
+#include "../../Component/DX11TextureComponent.h"
+#include "../../Component/DX11RenderPassComponent.h"
 #include "../../Component/DX11ShaderProgramComponent.h"
 #include "../IRenderingServer.h"
 
@@ -39,10 +39,10 @@ namespace Inno
 		D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
 		D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, bool stencilEnable);
 
-		bool ReserveRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer);
-		bool CreateRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer);
-		bool CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device* device);
-		bool CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device* device);
+		bool ReserveRenderTargets(DX11RenderPassComponent* DX11RenderPassComp, IRenderingServer* renderingServer);
+		bool CreateRenderTargets(DX11RenderPassComponent* DX11RenderPassComp, IRenderingServer* renderingServer);
+		bool CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11Device* device);
+		bool CreateStateObjects(DX11RenderPassComponent* DX11RenderPassComp, ID3D10Blob* dummyILShaderBuffer, ID3D11Device* device);
 
 		D3D11_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 		D3D11_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);

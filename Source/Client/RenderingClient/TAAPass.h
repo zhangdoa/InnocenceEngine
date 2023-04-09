@@ -20,17 +20,17 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
 
-		TextureDataComponent *m_oddTDC;
-		TextureDataComponent *m_evenTDC;
+		TextureComponent *m_oddTextureComp;
+		TextureComponent *m_evenTextureComp;
 		bool m_isPassOdd = true;
 	};
 } // namespace Inno

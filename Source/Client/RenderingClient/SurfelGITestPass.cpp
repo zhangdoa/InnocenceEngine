@@ -14,10 +14,10 @@ using namespace DefaultGPUBuffers;
 
 bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 {
-	m_probeSphereMeshGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("ProbeSphereMeshGPUBuffer/");
-	m_probeSphereMeshGBDC->m_ElementCount = 4096;
-	m_probeSphereMeshGBDC->m_ElementSize = sizeof(ProbeMeshData);
-	m_probeSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_probeSphereMeshGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("ProbeSphereMeshGPUBuffer/");
+	m_probeSphereMeshGPUBufferComp->m_ElementCount = 4096;
+	m_probeSphereMeshGPUBufferComp->m_ElementSize = sizeof(ProbeMeshData);
+	m_probeSphereMeshGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	m_probeSphereMeshData.reserve(4096);
 
@@ -27,7 +27,7 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 	m_SPC->m_ShaderFilePaths.m_VSPath = "GIResolveTestProbePass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "GIResolveTestProbePass.frag/";
 
-	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("SurfelGITestPass/");
+	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SurfelGITestPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -46,36 +46,36 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
 
-	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBindingLayoutDescs.resize(5);
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 8;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 8;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_RPDC->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_SPC;
 
-	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("SurfelGITestPass/");
+	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("SurfelGITestPass/");
 	
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -84,12 +84,12 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 
 bool SurfelGITestPass::Initialize()
 {
-	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::Get().GetRPDC()->m_DepthStencilRenderTarget;
+	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeSphereMeshGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_probeSphereMeshGPUBufferComp);
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -107,8 +107,8 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (l_probes.size() > 0)
 	{
-		auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-		auto l_GIGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GI);
+		auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+		auto l_GIGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 		m_probeSphereMeshData.clear();
 
@@ -196,28 +196,28 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 			m_probeSphereMeshData.emplace_back(l_probeMeshData);
 		}
 
-		auto l_sphere = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
+		auto l_sphere = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Sphere);
 
-		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_probeSphereMeshGBDC, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
+		g_Engine->getRenderingServer()->UploadGPUBufferComponent(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 
-		g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-		g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-		g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
+		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+		g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 4);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_GIGBDC, 1, Accessibility::ReadOnly);
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC, 2, Accessibility::ReadOnly);
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_GIGPUBufferComp, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_probeSphereMeshGPUBufferComp, 2, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, Accessibility::ReadOnly);
 
-		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_sphere, m_probeSphereMeshData.size());
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_probeSphereMeshData.size());
 
-		g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, Accessibility::ReadOnly);
 
-		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+		g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp, GPUEngineType::Graphics);
 
 		
 	}
@@ -227,14 +227,14 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 bool SurfelGITestPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
 
-RenderPassDataComponent* SurfelGITestPass::GetRPDC()
+RenderPassComponent* SurfelGITestPass::GetRenderPassComp()
 {
-	return m_RPDC;
+	return m_RenderPassComp;
 }

@@ -5,7 +5,7 @@
 using json = nlohmann::json;
 
 #include "../../Common/ComponentHeaders.h"
-#include "../../Component/RenderPassDataComponent.h"
+#include "../../Component/RenderPassComponent.h"
 
 namespace Inno
 {
@@ -23,7 +23,7 @@ namespace Inno
 		void to_json(json& j, const VisibleComponent& p);
 		void to_json(json& j, const LightComponent& p);
 		void to_json(json& j, const CameraComponent& p);
-		void to_json(json& j, const RenderPassDataComponent& p);
+		void to_json(json& j, const RenderPassComponent& p);
 
 		void from_json(const json& j, Vec4& p);
 		void from_json(const json& j, Mat4& p);
@@ -33,7 +33,7 @@ namespace Inno
 		void from_json(const json& j, VisibleComponent& p);
 		void from_json(const json& j, LightComponent& p);
 		void from_json(const json& j, CameraComponent& p);
-		void from_json(const json& j, RenderPassDataComponent& p);
+		void from_json(const json& j, RenderPassComponent& p);
 
 		Model* loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource = true);
 

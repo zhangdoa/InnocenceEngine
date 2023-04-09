@@ -2,8 +2,8 @@
 #define MTRenderingServerBridge_h
 
 #include "../../Common/InnoType.h"
-#include "../../Component/MTMeshDataComponent.h"
-#include "../../Component/MTTextureDataComponent.h"
+#include "../../Component/MTMeshComponent.h"
+#include "../../Component/MTTextureComponent.h"
 
 namespace Inno
 {
@@ -24,8 +24,8 @@ namespace Inno
 
 		virtual bool resize() = 0;
 
-		virtual bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) = 0;
-		virtual bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) = 0;
+		virtual bool initializeMTMeshComponent(MTMeshComponent* rhs) = 0;
+		virtual bool initializeMTTextureComponent(MTTextureComponent* rhs) = 0;
 	};
 }
 #endif /* MTRenderingSystemBridge_h */

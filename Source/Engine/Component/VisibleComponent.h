@@ -1,14 +1,14 @@
 #pragma once
 #include "../Common/InnoObject.h"
-#include "MeshDataComponent.h"
-#include "MaterialDataComponent.h"
+#include "MeshComponent.h"
+#include "MaterialComponent.h"
 
 namespace Inno
 {
 	struct MeshMaterialPair
 	{
-		MeshDataComponent* mesh;
-		MaterialDataComponent* material;
+		MeshComponent* mesh;
+		MaterialComponent* material;
 	};
 
 	struct Model

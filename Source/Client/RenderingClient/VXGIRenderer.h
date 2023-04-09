@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Engine/Interface/IRenderingClient.h"
 #include "../../Engine/Component/GPUResourceComponent.h"
-#include "../../Engine/Component/GPUBufferDataComponent.h"
+#include "../../Engine/Component/GPUBufferComponent.h"
 
 namespace Inno
 {
@@ -40,7 +40,7 @@ namespace Inno
 		ObjectStatus m_ObjectStatus;
 		
 		VXGIRenderingConfig m_VXGIRenderingConfig = VXGIRenderingConfig{};
-		GPUBufferDataComponent *m_VXGICBuffer;
+		GPUBufferComponent *m_VXGICBuffer;
 
 		GPUResourceComponent *m_result;
 

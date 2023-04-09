@@ -16,10 +16,10 @@ namespace InnoPhysicsSystemNS
 	bool Setup();
 	bool Update();
 
-	PhysicsDataComponent* AddPhysicsDataComponent(InnoEntity* parentEntity);
+	PhysicsComponent* AddPhysicsComponent(InnoEntity* parentEntity);
 
-	PhysicsDataComponent* generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair);
-	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m);
+	PhysicsComponent* generatePhysicsComponent(MeshMaterialPair* meshMaterialPair);
+	bool generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m);
 	ArrayRangeInfo generatePhysicsProxy(VisibleComponent* VC);
 
 	void updateVisibleSceneBoundary(const AABB& rhs);
@@ -40,11 +40,11 @@ namespace InnoPhysicsSystemNS
 	Vec4 m_staticSceneBoundMax;
 	Vec4 m_staticSceneBoundMin;
 	InnoEntity* m_RootPDCEntity = 0;
-	PhysicsDataComponent* m_RootPhysicsDataComponent = 0;
+	PhysicsComponent* m_RootPhysicsComponent = 0;
 
 	std::shared_mutex m_mutex;
 
-	std::vector<PhysicsDataComponent*> m_Components;
+	std::vector<PhysicsComponent*> m_Components;
 	std::vector<BVHNode> m_BVHNodes;
 	std::vector<BVHNode> m_TempBVHNodes;
 
@@ -81,11 +81,11 @@ bool InnoPhysicsSystemNS::Setup()
 		m_BVHNodes.clear();
 		m_TempBVHNodes.clear();
 
-		if (m_RootPhysicsDataComponent)
+		if (m_RootPhysicsComponent)
 		{
-			g_Engine->getComponentManager()->Destroy(m_RootPhysicsDataComponent);
+			g_Engine->getComponentManager()->Destroy(m_RootPhysicsComponent);
 		}
-		m_RootPhysicsDataComponent = AddPhysicsDataComponent(m_RootPDCEntity);
+		m_RootPhysicsComponent = AddPhysicsComponent(m_RootPDCEntity);
 
 		m_totalSceneBoundMax = InnoMath::minVec4<float>;
 		m_totalSceneBoundMax.w = 1.0f;
@@ -113,26 +113,26 @@ bool InnoPhysicsSystemNS::Update()
 	return true;
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* parentEntity)
+PhysicsComponent* InnoPhysicsSystemNS::AddPhysicsComponent(InnoEntity* parentEntity)
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutex };
 
-	auto l_PDC = g_Engine->getComponentManager()->Spawn<PhysicsDataComponent>(parentEntity, false, ObjectLifespan::Persistence);
+	auto l_PDC = g_Engine->getComponentManager()->Spawn<PhysicsComponent>(parentEntity, false, ObjectLifespan::Persistence);
 
 	return l_PDC;
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair)
+PhysicsComponent* InnoPhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair* meshMaterialPair)
 {
-	auto l_MDC = meshMaterialPair->mesh;
-	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_Owner);
+	auto l_MeshComp = meshMaterialPair->mesh;
+	auto l_PDC = AddPhysicsComponent(l_MeshComp->m_Owner);
 
-	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MDC->m_vertices[0], l_MDC->m_vertices.size());
+	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MeshComp->m_vertices[0], l_MeshComp->m_vertices.size());
 	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
 
 	l_PDC->m_MeshMaterialPair = meshMaterialPair;
 
-	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_Owner->m_InstanceName.c_str(), ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsComponent has been generated for MeshComponent:", l_MeshComp->m_Owner->m_InstanceName.c_str(), ".");
 
 	m_Components.emplace_back(l_PDC);
 
@@ -145,7 +145,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshMate
 	return l_PDC;
 }
 
-bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m)
+bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m)
 {
 	PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, m);
 	PDC->m_SphereWS = InnoMath::generateBoundSphere(PDC->m_AABBWS);
@@ -166,7 +166,7 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 	{
 		auto l_meshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
 
-		auto l_PDC = generatePhysicsDataComponent(l_meshMaterialPair);
+		auto l_PDC = generatePhysicsComponent(l_meshMaterialPair);
 		l_PDC->m_TransformComponent = l_transformComponent;
 		l_PDC->m_VisibleComponent = VC;
 		l_PDC->m_MeshUsage = VC->m_meshUsage;
@@ -246,13 +246,13 @@ void InnoPhysicsSystemNS::updateStaticSceneBoundary(const AABB& rhs)
 	m_staticSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_staticSceneBoundMax);
 	m_staticSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_staticSceneBoundMin);
 
-	m_RootPhysicsDataComponent->m_AABBWS = InnoMath::generateAABB(m_staticSceneBoundMax, m_staticSceneBoundMin);
-	m_RootPhysicsDataComponent->m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsDataComponent->m_AABBWS);
+	m_RootPhysicsComponent->m_AABBWS = InnoMath::generateAABB(m_staticSceneBoundMax, m_staticSceneBoundMin);
+	m_RootPhysicsComponent->m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsComponent->m_AABBWS);
 }
 
 bool InnoPhysicsSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount, this);
+	g_Engine->getComponentManager()->RegisterType<PhysicsComponent>(m_MaxComponentCount, this);
 	return InnoPhysicsSystemNS::Setup();
 }
 
@@ -494,7 +494,7 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 	}
 }
 
-CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PDC)
+CullingData generateCullingData(const Frustum& frustum, PhysicsComponent* PDC)
 {
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(PDC->m_VisibleComponent->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -604,7 +604,7 @@ AABB InnoPhysicsSystem::getVisibleSceneAABB()
 
 AABB InnoPhysicsSystem::getStaticSceneAABB()
 {
-	return InnoPhysicsSystemNS::m_RootPhysicsDataComponent->m_AABBWS;
+	return InnoPhysicsSystemNS::m_RootPhysicsComponent->m_AABBWS;
 }
 
 AABB InnoPhysicsSystem::getTotalSceneAABB()

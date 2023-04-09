@@ -18,7 +18,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 	m_SPC->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
-	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("BSDFTestPass/");
+	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BSDFTestPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -36,39 +36,39 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBindingLayoutDescs.resize(6);
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(6);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
-	m_RPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
-	m_RPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
 
-	m_RPDC->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_SPC;
 
-	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("BSDFTestPass/");
+	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("BSDFTestPass/");
 
 	//
 	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
@@ -109,8 +109,8 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 bool BSDFTestPass::Initialize()
 {
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -119,7 +119,7 @@ bool BSDFTestPass::Initialize()
 
 bool BSDFTestPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -133,46 +133,46 @@ ObjectStatus BSDFTestPass::GetStatus()
 
 bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshConstantBuffer);
-	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_materialConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MeshGPUBufferComp, m_meshConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MaterialGPUBufferComp, m_materialConstantBuffer);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 5);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
+	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 5);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Sphere);
 
 	uint32_t l_offset = 0;
 
 	for (size_t i = 0; i < m_shpereCount * m_shpereCount; i++)
 	{
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC, 2, Accessibility::ReadOnly, l_offset, 1);
-		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_mesh);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_mesh);
 
 		l_offset++;
 	}
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }
 
-RenderPassDataComponent* BSDFTestPass::GetRPDC()
+RenderPassComponent* BSDFTestPass::GetRenderPassComp()
 {
-	return m_RPDC;
+	return m_RenderPassComp;
 }

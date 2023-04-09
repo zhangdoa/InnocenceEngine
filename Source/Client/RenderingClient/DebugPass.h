@@ -27,21 +27,21 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassDataComponent *GetRPDC() override;
+		RenderPassComponent *GetRenderPassComp() override;
 
 		GPUResourceComponent *GetResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassDataComponent *m_RPDC;
+		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
-		SamplerDataComponent *m_SDC;
+		SamplerComponent *m_SamplerComp;
 
 		bool AddBVHData(const BVHNode& node);
 
-		GPUBufferDataComponent* m_debugSphereMeshGBDC;
-		GPUBufferDataComponent* m_debugCubeMeshGBDC;
-		GPUBufferDataComponent* m_debugMaterialGBDC;
+		GPUBufferComponent* m_debugSphereMeshGPUBufferComp;
+		GPUBufferComponent* m_debugCubeMeshGPUBufferComp;
+		GPUBufferComponent* m_debugMaterialGPUBufferComp;
 
 		const size_t m_maxDebugMeshes = 65536;
 		const size_t m_maxDebugMaterial = 512;

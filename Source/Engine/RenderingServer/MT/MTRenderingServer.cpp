@@ -30,22 +30,22 @@ ObjectStatus MTRenderingServer::GetStatus()
 	return ObjectStatus();
 }
 
-MeshDataComponent* MTRenderingServer::AddMeshDataComponent(const char* name)
+MeshComponent* MTRenderingServer::AddMeshComponent(const char* name)
 {
 	return nullptr;
 }
 
-TextureDataComponent* MTRenderingServer::AddTextureDataComponent(const char* name)
+TextureComponent* MTRenderingServer::AddTextureComponent(const char* name)
 {
 	return nullptr;
 }
 
-MaterialDataComponent* MTRenderingServer::AddMaterialDataComponent(const char* name)
+MaterialComponent* MTRenderingServer::AddMaterialComponent(const char* name)
 {
 	return nullptr;
 }
 
-RenderPassDataComponent* MTRenderingServer::AddRenderPassDataComponent(const char* name)
+RenderPassComponent* MTRenderingServer::AddRenderPassComponent(const char* name)
 {
 	return nullptr;
 }
@@ -55,32 +55,32 @@ ShaderProgramComponent* MTRenderingServer::AddShaderProgramComponent(const char*
 	return nullptr;
 }
 
-SamplerDataComponent* MTRenderingServer::AddSamplerDataComponent(const char* name)
+SamplerComponent* MTRenderingServer::AddSamplerComponent(const char* name)
 {
 	return nullptr;
 }
 
-GPUBufferDataComponent* MTRenderingServer::AddGPUBufferDataComponent(const char* name)
+GPUBufferComponent* MTRenderingServer::AddGPUBufferComponent(const char* name)
 {
 	return nullptr;
 }
 
-bool MTRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
+bool MTRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs)
+bool MTRenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* rhs)
+bool MTRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent* rhs)
+bool MTRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
 {
 	return true;
 }
@@ -90,32 +90,32 @@ bool MTRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	return true;
 }
 
-bool MTRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
+bool MTRenderingServer::InitializeSamplerComponent(SamplerComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+bool MTRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
+bool MTRenderingServer::DeleteMeshComponent(MeshComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
+bool MTRenderingServer::DeleteTextureComponent(TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
+bool MTRenderingServer::DeleteMaterialComponent(MaterialComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* rhs)
+bool MTRenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
 {
 	return true;
 }
@@ -125,82 +125,82 @@ bool MTRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs
 	return true;
 }
 
-bool MTRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
+bool MTRenderingServer::DeleteSamplerComponent(SamplerComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+bool MTRenderingServer::DeleteGPUBufferComponent(GPUBufferComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
+bool MTRenderingServer::ClearTextureComponent(TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs)
+bool MTRenderingServer::CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
+bool MTRenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	return true;
 }
 
-bool MTRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+bool MTRenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
+bool MTRenderingServer::CommandListBegin(RenderPassComponent* rhs, size_t frameIndex)
 {
 	return true;
 }
 
-bool MTRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
+bool MTRenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
+bool MTRenderingServer::CleanRenderTargets(RenderPassComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool MTRenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool MTRenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool MTRenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount)
 {
 	return true;
 }
 
-bool MTRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
+bool MTRenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount)
 {
 	return true;
 }
 
-bool MTRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool MTRenderingServer::UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool MTRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
+bool MTRenderingServer::CommandListEnd(RenderPassComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
+bool MTRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
 {
 	return true;
 }
 
-bool MTRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
+bool MTRenderingServer::WaitForFrame(RenderPassComponent* rhs)
 {
 	return true;
 }
@@ -220,22 +220,22 @@ bool MTRenderingServer::Present()
 	return true;
 }
 
-bool MTRenderingServer::Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool MTRenderingServer::Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	return true;
 }
 
-Vec4 MTRenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 MTRenderingServer::ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> MTRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
+std::vector<Vec4> MTRenderingServer::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
 {
 	return std::vector<Vec4>();
 }
 
-bool MTRenderingServer::GenerateMipmap(TextureDataComponent* rhs)
+bool MTRenderingServer::GenerateMipmap(TextureComponent* rhs)
 {
 	return true;
 }
