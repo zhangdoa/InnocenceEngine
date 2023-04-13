@@ -8,7 +8,9 @@ namespace Inno
 	class DX12TextureComponent : public TextureComponent
 	{
 	public:
-		ComPtr<ID3D12Resource> m_ResourceHandle = 0;
+		ComPtr<ID3D12Resource> m_DefaultHeapBuffer = 0;
+		std::vector<ComPtr<ID3D12Resource>> m_UploadHeapBuffers;
+		ComPtr<ID3D12Resource> m_ReadBackHeapBuffer = 0;
 		D3D12_RESOURCE_DESC m_DX12TextureDesc = {};
 		uint32_t m_PixelDataSize = 0;
 		DX12SRV m_SRV = {};

@@ -886,7 +886,7 @@ bool DX12Helper::CreateViews(DX12RenderPassComponent* DX12RenderPassComp, ComPtr
 
 		for (size_t i = 0; i < DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(DX12RenderPassComp->m_RenderTargets[i])->m_ResourceHandle;
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(DX12RenderPassComp->m_RenderTargets[i])->m_DefaultHeapBuffer;
 			device->CreateRenderTargetView(l_ResourceHandle.Get(), &DX12RenderPassComp->m_RTVDesc, DX12RenderPassComp->m_RTVDescriptorCPUHandles[i]);
 		}
 
@@ -922,7 +922,7 @@ bool DX12Helper::CreateViews(DX12RenderPassComponent* DX12RenderPassComp, ComPtr
 
 			DX12RenderPassComp->m_DSVDesc = GetDSVDesc(DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc, DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
 
-			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(DX12RenderPassComp->m_DepthStencilRenderTarget)->m_ResourceHandle;
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(DX12RenderPassComp->m_DepthStencilRenderTarget)->m_DefaultHeapBuffer;
 			device->CreateDepthStencilView(l_ResourceHandle.Get(), &DX12RenderPassComp->m_DSVDesc, DX12RenderPassComp->m_DSVDescriptorCPUHandle);
 
 			InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " DSV has been created.");
