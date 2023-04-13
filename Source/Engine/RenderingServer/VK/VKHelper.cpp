@@ -1297,6 +1297,7 @@ bool VKHelper::CreateDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolS
 	l_poolCInfo.poolSizeCount = poolSizeCount;
 	l_poolCInfo.pPoolSizes = poolSize;
 	l_poolCInfo.maxSets = maxSets;
+	l_poolCInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
 	if (vkCreateDescriptorPool(device, &l_poolCInfo, nullptr, &poolHandle) != VK_SUCCESS)
 	{
@@ -1350,6 +1351,7 @@ bool VKHelper::CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutB
 	l_layoutCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	l_layoutCInfo.bindingCount = setLayoutBindingsCount;
 	l_layoutCInfo.pBindings = setLayoutBindings;
+	l_layoutCInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
 	if (vkCreateDescriptorSetLayout(device, &l_layoutCInfo, nullptr, &setLayout) != VK_SUCCESS)
 	{
@@ -1602,7 +1604,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassComponent *VKRender
 
 	l_PSO->m_RenderPassCInfo.pSubpasses = &l_PSO->m_SubpassDesc;
 
-	l_PSO->m_SubpassDeps.resize(3);
+	l_PSO->m_SubpassDeps.resize(4);
 
 	l_PSO->m_SubpassDeps[0].srcSubpass = 0;
 	l_PSO->m_SubpassDeps[0].dstSubpass = 0;
@@ -1627,7 +1629,15 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassComponent *VKRender
 	l_PSO->m_SubpassDeps[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	l_PSO->m_SubpassDeps[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	l_PSO->m_SubpassDeps[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
+	
+	l_PSO->m_SubpassDeps[3].srcSubpass = VK_SUBPASS_EXTERNAL;
+	l_PSO->m_SubpassDeps[3].dstSubpass = 0;
+	l_PSO->m_SubpassDeps[3].srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	l_PSO->m_SubpassDeps[3].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	l_PSO->m_SubpassDeps[3].srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[3].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+ 
 	l_PSO->m_RenderPassCInfo.dependencyCount = l_PSO->m_SubpassDeps.size();
 	l_PSO->m_RenderPassCInfo.pDependencies = &l_PSO->m_SubpassDeps[0];
 
@@ -2207,30 +2217,40 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassComponent *VKRe
 
 	for (size_t i = 0; i < VKRenderPassComp->m_CommandLists.size(); i++)
 	{
-		VkCommandBufferAllocateInfo l_allocInfo = {};
-		l_allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		if (VKRenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-		{
-			l_allocInfo.commandPool = VKRenderPassComp->m_GraphicsCommandPool;
-		}
-		else if (VKRenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-		{
-			l_allocInfo.commandPool = VKRenderPassComp->m_ComputeCommandPool;
-		}
-
-		l_allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		l_allocInfo.commandBufferCount = 1;
-
 		auto l_VKCommandList = reinterpret_cast<VKCommandList *>(VKRenderPassComp->m_CommandLists[i]);
-		if (vkAllocateCommandBuffers(device, &l_allocInfo, &l_VKCommandList->m_CommandBuffer) != VK_SUCCESS)
+		
+		VkCommandBufferAllocateInfo l_graphicsAllocInfo = {};
+		l_graphicsAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		l_graphicsAllocInfo.commandPool = VKRenderPassComp->m_GraphicsCommandPool;
+		l_graphicsAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		l_graphicsAllocInfo.commandBufferCount = 1;
+		
+		if (vkAllocateCommandBuffers(device, &l_graphicsAllocInfo, &l_VKCommandList->m_GraphicsCommandBuffer) != VK_SUCCESS)
 		{
-			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkCommandBuffer!");
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate Graphics VkCommandBuffer!");
 			return false;
 		}
 
 #ifdef INNO_DEBUG
-	auto l_name = "CommandBuffer_" + std::to_string(i);
-	SetObjectName(device, VKRenderPassComp, l_VKCommandList->m_CommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_name.c_str());
+	auto l_graphicsName = "GraphicsCommandBuffer_" + std::to_string(i);
+	SetObjectName(device, VKRenderPassComp, l_VKCommandList->m_GraphicsCommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_graphicsName.c_str());
+#endif //  INNO_DEBUG
+
+		VkCommandBufferAllocateInfo l_computeAllocInfo = {};
+		l_computeAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		l_computeAllocInfo.commandPool = VKRenderPassComp->m_ComputeCommandPool;
+		l_computeAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		l_computeAllocInfo.commandBufferCount = 1;
+
+		if (vkAllocateCommandBuffers(device, &l_computeAllocInfo, &l_VKCommandList->m_ComputeCommandBuffer) != VK_SUCCESS)
+		{
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate Compute VkCommandBuffer!");
+			return false;
+		}
+
+#ifdef INNO_DEBUG
+	auto l_computeName = "ComputeCommandBuffer_" + std::to_string(i);
+	SetObjectName(device, VKRenderPassComp, l_VKCommandList->m_ComputeCommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_computeName.c_str());
 #endif //  INNO_DEBUG
 	}
 
@@ -2257,15 +2277,26 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassComponent *VKRe
 	{
 		auto l_VKSemaphore = reinterpret_cast<VKSemaphore *>(VKRenderPassComp->m_Semaphores[i]);
 
-		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_Semaphore) != VK_SUCCESS)
+		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_GraphicsSemaphore) != VK_SUCCESS)
 		{
-			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create synchronization primitives!");
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create Graphics semaphore!");
 			return false;
 		}
 		
 #ifdef INNO_DEBUG
-	auto l_name = "Semaphore_" + std::to_string(i);
-	SetObjectName(device, VKRenderPassComp, l_VKSemaphore->m_Semaphore, VK_OBJECT_TYPE_SEMAPHORE, l_name.c_str());
+	auto l_graphicsName = "GraphicsSemaphore_" + std::to_string(i);
+	SetObjectName(device, VKRenderPassComp, l_VKSemaphore->m_GraphicsSemaphore, VK_OBJECT_TYPE_SEMAPHORE, l_graphicsName.c_str());
+#endif //  INNO_DEBUG
+
+		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_ComputeSemaphore) != VK_SUCCESS)
+		{
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create Compute semaphore!");
+			return false;
+		}
+		
+#ifdef INNO_DEBUG
+	auto l_computeName = "ComputeSemaphore_" + std::to_string(i);
+	SetObjectName(device, VKRenderPassComp, l_VKSemaphore->m_ComputeSemaphore, VK_OBJECT_TYPE_SEMAPHORE, l_computeName.c_str());
 #endif //  INNO_DEBUG
 	}
 

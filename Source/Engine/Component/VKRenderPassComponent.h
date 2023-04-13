@@ -38,15 +38,19 @@ namespace Inno
 	class VKCommandList : public ICommandList
 	{
 	public:
-		VkCommandBuffer m_CommandBuffer;
+		VkCommandBuffer m_GraphicsCommandBuffer;
+		VkCommandBuffer m_ComputeCommandBuffer;
 	};
 
 	class VKSemaphore : public ISemaphore
 	{
 	public:
-		VkSemaphore m_Semaphore;
-		uint64_t m_WaitValue = 0;
-		uint64_t m_SignalValue = 0;
+		VkSemaphore m_GraphicsSemaphore;
+		VkSemaphore m_ComputeSemaphore;
+		uint64_t m_GraphicsWaitValue = 0;
+		uint64_t m_GraphicsSignalValue = 0;
+		uint64_t m_ComputeWaitValue = 0;
+		uint64_t m_ComputeSignalValue = 0;
 	};
 
 	struct VKDescriptorSetLayoutBindingIndex

@@ -86,7 +86,7 @@ namespace VKRenderingServerNS
 	std::atomic<uint64_t> m_graphicCommandQueueSemaphore = 0;
 	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 0;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
-	std::vector<VkSemaphore> m_swapChainRenderedSemaphores;	
+	std::vector<VkSemaphore> m_swapChainRenderedSemaphores;
 	VkSwapchainKHR m_swapChain = 0;
 	VkExtent2D m_presentSurfaceExtent = {};
 	VkFormat m_presentSurfaceFormat = {};
@@ -361,14 +361,14 @@ bool VKRenderingServerNS::CreateTextureSamplers()
 	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
-	//if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_deferredRTSampler) != VK_SUCCESS)
+	// if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_deferredRTSampler) != VK_SUCCESS)
 	//{
 	//	m_ObjectStatus = ObjectStatus::Suspended;
 	//	InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSampler for deferred pass render target sampling!");
 	//	return false;
-	//}
+	// }
 
-	//InnoLogger::Log(LogLevel::Success, "VKRenderingServer: VkSampler for deferred pass render target sampling has been created.");
+	// InnoLogger::Log(LogLevel::Success, "VKRenderingServer: VkSampler for deferred pass render target sampling has been created.");
 	return true;
 }
 
@@ -465,7 +465,7 @@ bool VKRenderingServerNS::CreateGlobalCommandPool()
 }
 
 bool VKRenderingServerNS::CreateSyncPrimitives()
-{	
+{
 	VkFenceCreateInfo l_fenceInfo = {};
 	l_fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	l_fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -493,28 +493,24 @@ bool VKRenderingServerNS::CreateSyncPrimitives()
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
 		if (vkCreateSemaphore(
-			m_device,
-			&semaphoreInfo,
-			nullptr,
-			&m_imageAvailableSemaphores[i])
-			!= VK_SUCCESS)
+				m_device,
+				&semaphoreInfo,
+				nullptr,
+				&m_imageAvailableSemaphores[i]) != VK_SUCCESS)
 		{
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image available semaphores!");
 			return false;
 		}
 
 		if (vkCreateSemaphore(
-			m_device,
-			&semaphoreInfo,
-			nullptr,
-			&m_swapChainRenderedSemaphores[i])
-			!= VK_SUCCESS)
+				m_device,
+				&semaphoreInfo,
+				nullptr,
+				&m_swapChainRenderedSemaphores[i]) != VK_SUCCESS)
 		{
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image rendered semaphores!");
 			return false;
 		}
-
-		
 	}
 
 	return true;
@@ -706,7 +702,7 @@ bool VKRenderingServer::Initialize()
 		l_VKTextureComp->m_VKTextureDesc = GetVKTextureDesc(l_VKTextureComp->m_TextureDesc);
 		l_VKTextureComp->m_VKTextureDesc.format = m_presentSurfaceFormat;
 		l_VKTextureComp->m_WriteImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		l_VKTextureComp->m_ReadImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		
+		l_VKTextureComp->m_ReadImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		CreateImageView(m_device, l_VKTextureComp);
 		l_VKTextureComp->m_GPUResourceType = GPUResourceType::Image;
 		l_VKTextureComp->m_ObjectStatus = ObjectStatus::Activated;
@@ -732,6 +728,7 @@ bool VKRenderingServer::Initialize()
 	l_result &= CreateGraphicsPipelines(m_device, m_SwapChainRenderPassComp);
 
 	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Graphics, m_SwapChainRenderPassComp->m_GraphicsCommandPool);
+	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Compute, m_SwapChainRenderPassComp->m_ComputeCommandPool);
 
 	m_SwapChainRenderPassComp->m_CommandLists.resize(m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
 
@@ -912,6 +909,10 @@ bool VKRenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 		CopyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
 		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, l_rhs->m_CurrentImageLayout);
 	}
+	else
+	{
+		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, l_rhs->m_CurrentImageLayout);
+	}
 
 	CloseTemporaryCommandBuffer(m_device, m_globalCommandPool, m_graphicsQueue, l_commandBuffer);
 
@@ -1005,13 +1006,14 @@ bool VKRenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		l_result &= CreateGraphicsPipelines(m_device, l_rhs);
-		l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Graphics, l_rhs->m_GraphicsCommandPool);
 	}
 	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 	{
 		l_result &= CreateComputePipelines(m_device, l_rhs);
-		l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Compute, l_rhs->m_ComputeCommandPool);
 	}
+
+	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Graphics, l_rhs->m_GraphicsCommandPool);
+	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, GPUEngineType::Compute, l_rhs->m_ComputeCommandPool);
 
 	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 	{
@@ -1276,7 +1278,13 @@ bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameI
 	l_beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	l_beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	if (vkBeginCommandBuffer(l_commandList->m_CommandBuffer, &l_beginInfo) != VK_SUCCESS)
+	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_commandBuffer = l_commandList->m_ComputeCommandBuffer;
+	}
+
+	if (vkBeginCommandBuffer(l_commandBuffer, &l_beginInfo) != VK_SUCCESS)
 	{
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to begin recording command buffer!");
 		return false;
@@ -1285,11 +1293,11 @@ bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameI
 	return true;
 }
 
-bool TryToTransitImageLayout(VKTextureComponent *rhs, VKCommandList *commandList, const VkImageLayout& newImageLayout, ShaderStage shaderStage = ShaderStage::Invalid)
+bool TryToTransitImageLayout(VKTextureComponent *rhs, const VkCommandBuffer &commandBuffer, const VkImageLayout &newImageLayout, ShaderStage shaderStage = ShaderStage::Invalid)
 {
 	if (rhs->m_CurrentImageLayout != newImageLayout)
 	{
-		TransitImageLayout(commandList->m_CommandBuffer, rhs->m_image, rhs->m_ImageCreateInfo.format, rhs->m_VKTextureDesc.aspectFlags, rhs->m_CurrentImageLayout, newImageLayout, shaderStage);
+		TransitImageLayout(commandBuffer, rhs->m_image, rhs->m_ImageCreateInfo.format, rhs->m_VKTextureDesc.aspectFlags, rhs->m_CurrentImageLayout, newImageLayout, shaderStage);
 		rhs->m_CurrentImageLayout = newImageLayout;
 		return true;
 	}
@@ -1305,7 +1313,7 @@ bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *comm
 		{
 			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
 
-			TryToTransitImageLayout(l_rhs, commandList, l_rhs->m_WriteImageLayout);
+			TryToTransitImageLayout(l_rhs, commandList->m_GraphicsCommandBuffer, l_rhs->m_WriteImageLayout);
 		}
 		else
 		{
@@ -1313,7 +1321,7 @@ bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *comm
 			{
 				auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[i]);
 
-				TryToTransitImageLayout(l_rhs, commandList, l_rhs->m_WriteImageLayout);
+				TryToTransitImageLayout(l_rhs, commandList->m_GraphicsCommandBuffer, l_rhs->m_WriteImageLayout);
 			}
 		}
 
@@ -1321,7 +1329,7 @@ bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *comm
 		{
 			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_DepthStencilRenderTarget);
 
-			TryToTransitImageLayout(l_rhs, commandList, l_rhs->m_WriteImageLayout);
+			TryToTransitImageLayout(l_rhs, commandList->m_GraphicsCommandBuffer, l_rhs->m_WriteImageLayout);
 		}
 	}
 
@@ -1367,21 +1375,14 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 			l_renderPassBeginInfo.pClearValues = &l_clearValues[0];
 		}
 
-		vkCmdBeginRenderPass(l_commandList->m_CommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(l_commandList->m_GraphicsCommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
+		vkCmdBindPipeline(l_commandList->m_GraphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
 	}
 	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 	{
-		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
+		vkCmdBindPipeline(l_commandList->m_ComputeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
-
-	vkCmdBindDescriptorSets(l_commandList->m_CommandBuffer,
-							VK_PIPELINE_BIND_POINT_GRAPHICS,
-							l_PSO->m_PipelineLayout,
-							0,
-							l_rhs->m_DescriptorSets.size(),
-							&l_rhs->m_DescriptorSets[0], 0, nullptr);
 
 	return true;
 }
@@ -1393,13 +1394,24 @@ bool VKRenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 
 bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
-	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-
 	if (resource == nullptr)
 	{
 		InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Empty GPU resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
 		return false;
+	}
+
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_bindingPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	if (l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_bindingPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+	}
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_renderPass->m_PipelineStateObject);
+	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
+	if (l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_commandBuffer = l_commandList->m_ComputeCommandBuffer;
 	}
 
 	VkWriteDescriptorSet l_writeDescriptorSet = {};
@@ -1407,13 +1419,16 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 	VkDescriptorBufferInfo l_descriptorBufferInfo = {};
 	auto l_descriptorSetIndex = (uint32_t)l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorSetIndex;
 	auto l_descriptorIndex = (uint32_t)l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorIndex;
+
 	switch (resource->m_GPUResourceType)
 	{
 	case GPUResourceType::Sampler:
+	{
 		l_descriptorImageInfo.sampler = reinterpret_cast<VKSamplerComponent *>(resource)->m_sampler;
 		l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_SAMPLER, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
+	}
 	case GPUResourceType::Image:
 	{
 		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(resource);
@@ -1421,15 +1436,12 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 		l_descriptorImageInfo.imageView = l_VKTextureComp->m_imageView;
 		if (accessibility != Accessibility::ReadOnly)
 		{
-			// @TODO: potentially would be transited twice here if the image is bound to the output merger
-			l_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-			TryToTransitImageLayout(l_VKTextureComp, l_commandList, VK_IMAGE_LAYOUT_GENERAL, shaderStage);
+			l_descriptorImageInfo.imageLayout = l_VKTextureComp->m_WriteImageLayout;
 			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		}
 		else
 		{
 			l_descriptorImageInfo.imageLayout = l_VKTextureComp->m_ReadImageLayout;
-			TryToTransitImageLayout(l_VKTextureComp, l_commandList, l_VKTextureComp->m_ReadImageLayout, shaderStage);
 			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		}
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
@@ -1453,7 +1465,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 		}
 		else
 		{
-			//if (accessibility != Accessibility::ReadOnly)
+			// if (accessibility != Accessibility::ReadOnly)
 			//{
 			VkDescriptorBufferInfo l_descriptorBufferInfo = {};
 			l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferComponent *>(resource)->m_DeviceLocalBuffer;
@@ -1471,6 +1483,28 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 		break;
 	}
 
+	if (resource->m_GPUResourceType == GPUResourceType::Image)
+	{
+		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(resource);
+
+		l_descriptorImageInfo.imageView = l_VKTextureComp->m_imageView;
+		if (accessibility != Accessibility::ReadOnly)
+		{
+			TryToTransitImageLayout(l_VKTextureComp, l_commandBuffer, VK_IMAGE_LAYOUT_GENERAL, shaderStage);
+		}
+		else
+		{
+			TryToTransitImageLayout(l_VKTextureComp, l_commandBuffer, l_VKTextureComp->m_ReadImageLayout, shaderStage);
+		}
+	}
+
+	vkCmdBindDescriptorSets(l_commandBuffer,
+							l_bindingPoint,
+							l_PSO->m_PipelineLayout,
+							l_descriptorSetIndex,
+							1,
+							&l_renderPass->m_DescriptorSets[l_descriptorSetIndex], 0, nullptr);
+
 	return true;
 }
 
@@ -1483,9 +1517,9 @@ bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent *renderPass, Me
 	VkBuffer vertexBuffers[] = {l_mesh->m_VBO};
 	VkDeviceSize offsets[] = {0};
 
-	vkCmdBindVertexBuffers(l_commandList->m_CommandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(l_commandList->m_CommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(l_commandList->m_CommandBuffer, static_cast<uint32_t>(l_mesh->m_indicesSize), 1, 0, 0, 0);
+	vkCmdBindVertexBuffers(l_commandList->m_GraphicsCommandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(l_commandList->m_GraphicsCommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(l_commandList->m_GraphicsCommandBuffer, static_cast<uint32_t>(l_mesh->m_indicesSize), 1, 0, 0, 0);
 
 	return true;
 }
@@ -1495,7 +1529,7 @@ bool VKRenderingServer::DrawInstanced(RenderPassComponent *renderPass, size_t in
 	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
-	vkCmdDraw(l_commandList->m_CommandBuffer, 1, static_cast<uint32_t>(instanceCount), 0, 0);
+	vkCmdDraw(l_commandList->m_GraphicsCommandBuffer, 1, static_cast<uint32_t>(instanceCount), 0, 0);
 
 	return true;
 }
@@ -1510,13 +1544,19 @@ bool VKRenderingServer::CommandListEnd(RenderPassComponent *rhs)
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
-	
+
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
-		vkCmdEndRenderPass(l_commandList->m_CommandBuffer);
+		vkCmdEndRenderPass(l_commandList->m_GraphicsCommandBuffer);
 	}
 
-	if (vkEndCommandBuffer(l_commandList->m_CommandBuffer) != VK_SUCCESS)
+	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_commandBuffer = l_commandList->m_ComputeCommandBuffer;
+	}
+
+	if (vkEndCommandBuffer(l_commandBuffer) != VK_SUCCESS)
 	{
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to end recording command buffer!");
 		return false;
@@ -1525,42 +1565,59 @@ bool VKRenderingServer::CommandListEnd(RenderPassComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
+bool VKRenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
 {
+	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType)
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-	l_semaphore->m_WaitValue = l_semaphore->m_SignalValue;
-	l_semaphore->m_SignalValue = l_semaphore->m_WaitValue + 1;
 
 	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
 	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 	timelineInfo.pNext = NULL;
 	timelineInfo.waitSemaphoreValueCount = 1;
-	timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_WaitValue;
 	timelineInfo.signalSemaphoreValueCount = 1;
-	timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_SignalValue;
 
 	VkSubmitInfo l_submitInfo = {};
 	l_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	l_submitInfo.pNext = &timelineInfo;
 	l_submitInfo.commandBufferCount = 1;
-	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
 	l_submitInfo.signalSemaphoreCount = 1;
-	l_submitInfo.pSignalSemaphores = &l_semaphore->m_Semaphore;
 	l_submitInfo.waitSemaphoreCount = 1;
-	l_submitInfo.pWaitSemaphores = &l_semaphore->m_Semaphore;
 
-	VkQueue& queue = m_graphicsQueue;
-	VkFence& fence = m_graphicsQueueFence;
-	
-	VkPipelineStageFlags waitDstStageMask[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
+	VkQueue &queue = m_graphicsQueue;
+	VkFence &fence = m_graphicsQueueFence;
+	VkPipelineStageFlags waitDstStageMask[] = {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
 	l_submitInfo.pWaitDstStageMask = &waitDstStageMask[0];
 
-	if (GPUEngineType == GPUEngineType::Compute)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
+		l_semaphore->m_GraphicsWaitValue = l_semaphore->m_GraphicsSignalValue;
+		l_semaphore->m_GraphicsSignalValue = l_semaphore->m_GraphicsWaitValue + 1;
+		timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_GraphicsWaitValue;
+		timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_GraphicsSignalValue;
+		l_submitInfo.pSignalSemaphores = &l_semaphore->m_GraphicsSemaphore;
+		l_submitInfo.pWaitSemaphores = &l_semaphore->m_GraphicsSemaphore;
+		l_submitInfo.pCommandBuffers = &l_commandList->m_GraphicsCommandBuffer;
+	}
+	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_semaphore->m_ComputeWaitValue = l_semaphore->m_ComputeSignalValue;
+		l_semaphore->m_ComputeSignalValue = l_semaphore->m_ComputeWaitValue + 1;
+		timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_ComputeWaitValue;
+		timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_ComputeSignalValue;
+		l_submitInfo.pSignalSemaphores = &l_semaphore->m_ComputeSemaphore;
+		l_submitInfo.pWaitSemaphores = &l_semaphore->m_ComputeSemaphore;
+		l_submitInfo.pCommandBuffers = &l_commandList->m_ComputeCommandBuffer;
+
 		queue = m_computeQueue;
 		fence = m_computeQueueFence;
+
 		waitDstStageMask[0] = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	}
 
@@ -1574,26 +1631,44 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineTy
 	return true;
 }
 
-bool VKRenderingServer::WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
-{	
+bool VKRenderingServer::WaitCommandQueue(RenderPassComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+{
+	if (rhs->m_RenderPassDesc.m_GPUEngineType != semaphoreType)
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 
 	VkSemaphoreWaitInfo waitInfo = {};
 	waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-	waitInfo.pSemaphores = &l_semaphore->m_Semaphore;
 	waitInfo.semaphoreCount = 1;
-	waitInfo.pValues = &l_semaphore->m_SignalValue;
+	if (semaphoreType == GPUEngineType::Graphics)
+	{
+		waitInfo.pSemaphores = &l_semaphore->m_GraphicsSemaphore;
+		waitInfo.pValues = &l_semaphore->m_GraphicsSignalValue;
+	}
+	else if (semaphoreType == GPUEngineType::Compute)
+	{
+		waitInfo.pSemaphores = &l_semaphore->m_ComputeSemaphore;
+		waitInfo.pValues = &l_semaphore->m_ComputeSignalValue;
+	}
 
 	vkWaitSemaphores(m_device, &waitInfo, std::numeric_limits<uint64_t>::max());
 
 	return true;
 }
 
-bool VKRenderingServer::WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
-{	
-	if (GPUEngineType == GPUEngineType::Compute)
+bool VKRenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
+{
+	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType)
+	{
+		return true;
+	}
+
+	if (GPUEngineType == GPUEngineType::Graphics)
 	{
 		vkWaitForFences(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 	}
@@ -1638,9 +1713,9 @@ bool VKRenderingServer::Present()
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
 	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
-	
-	TryToTransitImageLayout(l_VKTextureComp, l_commandList, l_VKTextureComp->m_ReadImageLayout);
-	
+
+	TryToTransitImageLayout(l_VKTextureComp, l_commandList->m_GraphicsCommandBuffer, l_VKTextureComp->m_ReadImageLayout);
+
 	CommandListEnd(m_SwapChainRenderPassComp);
 
 	// acquire an image from swap chain
@@ -1653,15 +1728,15 @@ bool VKRenderingServer::Present()
 		VK_NULL_HANDLE,
 		&imageIndex);
 
-	l_semaphore->m_WaitValue = l_semaphore->m_SignalValue;
-	l_semaphore->m_SignalValue = l_semaphore->m_WaitValue + 1;
+	l_semaphore->m_GraphicsWaitValue = l_semaphore->m_GraphicsSignalValue;
+	l_semaphore->m_GraphicsSignalValue = l_semaphore->m_GraphicsWaitValue + 1;
 
 	const uint64_t signalSemaphoreValues[2] = {
-		l_semaphore->m_SignalValue,
+		l_semaphore->m_GraphicsSignalValue,
 		0 // ignored for the swapchain
 	};
 	const VkSemaphore signalSemaphores[2] = {
-		l_semaphore->m_Semaphore,
+		l_semaphore->m_GraphicsSemaphore,
 		m_swapChainRenderedSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame]};
 
 	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
@@ -1674,17 +1749,17 @@ bool VKRenderingServer::Present()
 	l_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	l_submitInfo.pNext = &timelineInfo;
 	l_submitInfo.commandBufferCount = 1;
-	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
+	l_submitInfo.pCommandBuffers = &l_commandList->m_GraphicsCommandBuffer;
 	l_submitInfo.waitSemaphoreCount = 1;
 	l_submitInfo.pWaitSemaphores = &m_imageAvailableSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame];
 	l_submitInfo.signalSemaphoreCount = 2;
-	l_submitInfo.pSignalSemaphores =  &signalSemaphores[0];
+	l_submitInfo.pSignalSemaphores = &signalSemaphores[0];
 
-	VkPipelineStageFlags waitDstStageMask[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+	VkPipelineStageFlags waitDstStageMask[] = {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
 	l_submitInfo.pWaitDstStageMask = &waitDstStageMask[0];
 
-	VkQueue& queue = m_graphicsQueue;
-	VkFence& fence = m_graphicsQueueFence;
+	VkQueue &queue = m_graphicsQueue;
+	VkFence &fence = m_graphicsQueueFence;
 
 	vkResetFences(m_device, 1, &fence);
 	if (vkQueueSubmit(queue, 1, &l_submitInfo, fence) != VK_SUCCESS)
@@ -1698,7 +1773,7 @@ bool VKRenderingServer::Present()
 	swapChainTimelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 	swapChainTimelineInfo.pNext = NULL;
 	swapChainTimelineInfo.waitSemaphoreValueCount = 1;
-	swapChainTimelineInfo.pWaitSemaphoreValues = &l_semaphore->m_WaitValue;
+	swapChainTimelineInfo.pWaitSemaphoreValues = &l_semaphore->m_GraphicsWaitValue;
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -1706,7 +1781,7 @@ bool VKRenderingServer::Present()
 	presentInfo.pWaitSemaphores = &m_swapChainRenderedSemaphores[m_SwapChainRenderPassComp->m_CurrentFrame];
 
 	// swap chain
-	VkSwapchainKHR swapChains[] = { m_swapChain };
+	VkSwapchainKHR swapChains[] = {m_swapChain};
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
@@ -1720,6 +1795,11 @@ bool VKRenderingServer::Present()
 
 bool VKRenderingServer::Dispatch(RenderPassComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(renderPass);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+
+	vkCmdDispatch(l_commandList->m_ComputeCommandBuffer, threadGroupX, threadGroupY, threadGroupZ);
+
 	return true;
 }
 
