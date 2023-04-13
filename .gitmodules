@@ -34,3 +34,7 @@
 	path = Source/External/GitSubmodules/DirectX-Headers
 	url = https://github.com/microsoft/DirectX-Headers
 	ignore = dirty
+[submodule "Source/External/GitSubmodules/llvm-project"]
+	path = Source/External/GitSubmodules/llvm-project
+	url = https://github.com/llvm/llvm-project
+	ignore = dirty
