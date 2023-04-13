@@ -281,6 +281,52 @@ namespace Inno
 			return (a * alpha + b * (one<T> -alpha)).normalize();
 		}
 
+		auto float16ToFloat32(unsigned short float16) -> float
+		{
+			// Extract the sign bit, exponent, and mantissa from the 16-bit value
+			const int sign = (float16 >> 15) & 1;
+			const int exponent = (float16 >> 10) & 0x1f;
+			const int mantissa = float16 & 0x3ff;
+
+			// Convert the half-precision value to single-precision
+			if (exponent == 0)
+			{
+				if (mantissa == 0)
+				{
+					// Zero
+					return sign ? -0.0f : 0.0f;
+				}
+				else
+				{
+					// Denormalized number
+					const float mantissaFloat = static_cast<float>(mantissa) / 1024.0f;
+					const float signFloat = sign ? -1.0f : 1.0f;
+					return signFloat * mantissaFloat * powf(2.0f, -14.0f);
+				}
+			}
+			else if (exponent == 31)
+			{
+				if (mantissa == 0)
+				{
+					// Infinity
+					return sign ? -INFINITY : INFINITY;
+				}
+				else
+				{
+					// NaN
+					return NAN;
+				}
+			}
+			else
+			{
+				// Normalized number
+				const float mantissaFloat = static_cast<float>(mantissa) / 1024.0f;
+				const float exponentFloat = static_cast<float>(exponent - 15);
+				const float signFloat = sign ? -1.0f : 1.0f;
+				return signFloat * mantissaFloat * powf(2.0f, exponentFloat);
+			}
+		}
+
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 		template<class T>
 		auto mul(const TVec4<T>& lhs, const TMat4<T>& rhs) -> TVec4<T>
