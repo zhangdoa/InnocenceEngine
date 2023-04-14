@@ -281,7 +281,7 @@ namespace Inno
 			return (a * alpha + b * (one<T> -alpha)).normalize();
 		}
 
-		auto float16ToFloat32(unsigned short float16) -> float
+		inline auto float16ToFloat32(unsigned short float16) -> float
 		{
 			// Extract the sign bit, exponent, and mantissa from the 16-bit value
 			const int sign = (float16 >> 15) & 1;
