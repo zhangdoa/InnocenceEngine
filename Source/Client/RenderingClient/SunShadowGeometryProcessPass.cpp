@@ -10,6 +10,8 @@ using namespace DefaultGPUBuffers;
 
 bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
+	m_shadowMapResolution = g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution;
+
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
