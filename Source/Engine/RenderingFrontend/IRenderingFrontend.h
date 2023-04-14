@@ -18,6 +18,7 @@ namespace Inno
 		bool VSync = false;
 		int32_t MSAAdepth = 4;
 		bool useCSM = false;
+		int32_t shadowMapResolution = 1024;
 		bool useMotionBlur = false;
 		bool useTAA = false;
 		bool useBloom = false;

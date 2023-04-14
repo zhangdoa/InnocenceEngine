@@ -23,6 +23,8 @@ namespace Inno
 		float m_aperture = 2.2f;
 		float m_shutterTime = 1.0f / 2000.0f;
 		float m_ISO = 100.0f;
+
+		std::vector<Vertex> m_splitFrustumVerticesWS;
 	};
 
 	class ICameraSystem : public IComponentSystem

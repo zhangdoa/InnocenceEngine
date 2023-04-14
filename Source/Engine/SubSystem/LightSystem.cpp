@@ -15,13 +15,10 @@ namespace LightSystemNS
 
 	AABB ExtendAABBToBoundingSphere(const AABB& rhs);
 	AABB SnapAABBToShadowMap(const AABB& rhs, float shadowMapResolution);
-	void SplitVertices(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<Vertex> &splitVertices);
 	void UpdateSingleSMData(LightComponent* rhs);
 	void UpdateCSMData(LightComponent* rhs);
 	void UpdateColorTemperature(LightComponent* rhs);
 	void UpdateAttenuationRadius(LightComponent* rhs);
-
-	std::vector<float> m_CSMSplitFactors = { 0.05f, 0.15f, 0.35f, 1.0f };
 }
 
 AABB LightSystemNS::ExtendAABBToBoundingSphere(const AABB &rhs)
@@ -54,60 +51,6 @@ AABB LightSystemNS::SnapAABBToShadowMap(const AABB &rhs, float shadowMapResoluti
 	return InnoMath::generateAABB(l_boundMax, l_boundMin);
 }
 
-void LightSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, const std::vector<float> &splitFactors, std::vector<Vertex> &splitVertices)
-{
-	std::vector<Vec4> l_frustumsCornerPos;
-	l_frustumsCornerPos.reserve(20);
-
-	//1. first 4 corner
-	for (size_t i = 0; i < 4; i++)
-	{
-		l_frustumsCornerPos.emplace_back(frustumsVertices[i].m_pos);
-	}
-
-	//2. other 16 corner based on the split factors
-	for (size_t i = 0; i < 4; i++)
-	{
-		for (size_t j = 0; j < 4; j++)
-		{
-			auto l_direction = (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos);
-			auto l_splitPlaneCornerPos = frustumsVertices[j].m_pos + l_direction * splitFactors[i];
-			l_frustumsCornerPos.emplace_back(l_splitPlaneCornerPos);
-		}
-	}
-
-	//https://docs.microsoft.com/windows/desktop/DxTechArts/common-techniques-to-improve-shadow-depth-maps
-	//3. assemble split frustum corners
-	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
-
-	if (l_renderingConfig.CSMFitToScene)
-	{
-		for (size_t i = 0; i < 4; i++)
-		{
-			splitVertices[i * 8].m_pos = l_frustumsCornerPos[0];
-			splitVertices[i * 8 + 1].m_pos = l_frustumsCornerPos[1];
-			splitVertices[i * 8 + 2].m_pos = l_frustumsCornerPos[2];
-			splitVertices[i * 8 + 3].m_pos = l_frustumsCornerPos[3];
-
-			for (size_t j = 4; j < 8; j++)
-			{
-				splitVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
-			}
-		}
-	}
-	// fit to cascade
-	else
-	{
-		for (size_t i = 0; i < 4; i++)
-		{
-			for (size_t j = 0; j < 8; j++)
-			{
-				splitVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
-			}
-		}
-	}
-}
-
 void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 {
 	rhs->m_ViewMatrices.clear();
@@ -136,30 +79,15 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 	rhs->m_SplitAABBWS.clear();
 
-	// get frustum vertices in view space
 	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 	if (l_cameraComponent == nullptr)
 	{
 		return;
 	}
-	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
-	if (l_cameraTransformComponent == nullptr)
-	{
-		return;
-	}
 
+	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-
-	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
-	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
-	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
-
-	// calculate split vertices in world space and assemble AABBs
-	auto l_frustumVerticesWS = InnoMath::viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
-	std::vector<Vertex> l_splitFrustumVerticesWS;
-	l_splitFrustumVerticesWS.resize(32);
-	SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, l_splitFrustumVerticesWS);
 
 	// calculate AABBs in light space and generate the matrices
 	for (size_t i = 0; i < 4; i++)
@@ -177,7 +105,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 
 		rhs->m_ViewMatrices.emplace_back(l_r.inverse());
 		rhs->m_SplitAABBWS.emplace_back(l_aabbWS);
-		l_aabbLS = SnapAABBToShadowMap(l_aabbLS, 1024.0f);
+		l_aabbLS = SnapAABBToShadowMap(l_aabbLS, static_cast<float>(g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution));
 		Mat4 p = InnoMath::generateOrthographicMatrix(l_aabbLS.m_boundMin.x, l_aabbLS.m_boundMax.x, l_aabbLS.m_boundMin.y, l_aabbLS.m_boundMax.y, l_aabbLS.m_boundMin.z, l_aabbLS.m_boundMax.z);
 		rhs->m_ProjectionMatrices.emplace_back(p);
 	}

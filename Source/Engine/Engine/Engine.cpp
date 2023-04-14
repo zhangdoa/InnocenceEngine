@@ -596,8 +596,8 @@ bool EngineNS::Update()
 	}
 
 	SystemUpdate(TransformSystem);
-	SystemUpdate(LightSystem);
 	SystemUpdate(CameraSystem);
+	SystemUpdate(LightSystem);
 
 	SystemUpdate(AssetSystem);
 
