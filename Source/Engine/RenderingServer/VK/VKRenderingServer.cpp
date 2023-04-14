@@ -1219,6 +1219,11 @@ bool VKRenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 	return true;
 }
 
+bool VKRenderingServer::UpdateMeshComponent(MeshComponent* rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::ClearTextureComponent(TextureComponent *rhs)
 {
 	return true;

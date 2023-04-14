@@ -997,6 +997,11 @@ bool DX11RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent* rhs)
 	return true;
 }
 
+bool DX11RenderingServer::UpdateMeshComponent(MeshComponent* rhs)
+{
+	return true;
+}
+
 bool DX11RenderingServer::ClearTextureComponent(TextureComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11TextureComponent*>(rhs);

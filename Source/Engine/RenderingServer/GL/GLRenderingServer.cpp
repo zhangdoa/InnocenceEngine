@@ -752,6 +752,11 @@ bool GLRenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, co
 	return true;
 }
 
+bool GLRenderingServer::UpdateMeshComponent(MeshComponent* rhs)
+{
+	return true;
+}
+
 bool GLRenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
 {
 	const GLuint zero = 0;

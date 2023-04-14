@@ -38,6 +38,8 @@ namespace Inno
 		bool DeleteSamplerComponent(SamplerComponent* rhs) override;
 		bool DeleteGPUBufferComponent(GPUBufferComponent* rhs) override;
 
+		bool UpdateMeshComponent(MeshComponent* rhs) override;
+
 		bool ClearTextureComponent(TextureComponent* rhs) override;
 		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
 

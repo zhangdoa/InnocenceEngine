@@ -40,6 +40,8 @@ namespace Inno
 		virtual	bool DeleteSamplerComponent(SamplerComponent* rhs) = 0;
 		virtual	bool DeleteGPUBufferComponent(GPUBufferComponent* rhs) = 0;
 
+		virtual bool UpdateMeshComponent(MeshComponent* rhs) = 0;
+
 		virtual bool ClearTextureComponent(TextureComponent* rhs) = 0;
 		virtual bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) = 0;
 

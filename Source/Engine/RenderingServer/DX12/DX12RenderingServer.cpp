@@ -911,12 +911,6 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 		return true;
 	}
 
-	// Flip y texture coordinate
-	for (auto &i : rhs->m_Vertices)
-	{
-		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
-	}
-
 	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
 
 	// vertices
@@ -942,16 +936,12 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	SetObjectName(l_rhs, l_rhs->m_UploadHeapBuffer_VB, "UploadHeap_VB");
 #endif //  INNO_DEBUG
 	
-	CD3DX12_RANGE m_readRange(0, 0);
-	l_rhs->m_UploadHeapBuffer_VB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_VB);
-	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_VB, &l_rhs->m_Vertices[0], l_verticesDataSize);
-
 	// Initialize the vertex buffer view.
 	l_rhs->m_VBV.BufferLocation = l_rhs->m_DefaultHeapBuffer_VB->GetGPUVirtualAddress();
 	l_rhs->m_VBV.StrideInBytes = sizeof(Vertex);
 	l_rhs->m_VBV.SizeInBytes = l_verticesDataSize;
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: VBO ", l_rhs->m_DefaultHeapBuffer_VB, " is initialized.");
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Vertex Buffer ", l_rhs->m_DefaultHeapBuffer_VB, " is initialized.");
 
 	// indices
 	auto l_indicesDataSize = uint32_t(sizeof(Index) * l_rhs->m_Indices.size());
@@ -976,22 +966,14 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	SetObjectName(l_rhs, l_rhs->m_DefaultHeapBuffer_IB, "UploadHeap_IB");
 #endif //  INNO_DEBUG
 
-	l_rhs->m_UploadHeapBuffer_IB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_IB);
-	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_IB, &l_rhs->m_Indices[0], l_indicesDataSize);
-
 	// Initialize the index buffer view.
 	l_rhs->m_IBV.Format = DXGI_FORMAT_R32_UINT;
 	l_rhs->m_IBV.BufferLocation = l_rhs->m_DefaultHeapBuffer_IB->GetGPUVirtualAddress();
 	l_rhs->m_IBV.SizeInBytes = l_indicesDataSize;
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
-	l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer_VB.Get(), l_rhs->m_UploadHeapBuffer_VB.Get());
-	l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer_IB.Get(), l_rhs->m_UploadHeapBuffer_IB.Get());
-	l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-	l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
-	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Index Buffer ", l_rhs->m_DefaultHeapBuffer_IB, " is initialized.");
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: IBO ", l_rhs->m_DefaultHeapBuffer_IB, " is initialized.");
+	UpdateMeshComponent(l_rhs);
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -1447,6 +1429,38 @@ bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
 	m_GPUBufferComponentPool->Destroy(l_rhs);
+
+	return true;
+}
+
+bool DX12RenderingServer::UpdateMeshComponent(MeshComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
+	
+	// Flip y texture coordinate
+	for (auto &i : rhs->m_Vertices)
+	{
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
+	}
+
+	CD3DX12_RANGE m_readRange(0, 0);
+	l_rhs->m_UploadHeapBuffer_VB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_VB);
+	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_VB, &l_rhs->m_Vertices[0], l_rhs->m_Vertices.size() * sizeof(Vertex));
+
+	l_rhs->m_UploadHeapBuffer_IB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_IB);
+	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_IB, &l_rhs->m_Indices[0], l_rhs->m_Indices.size() * sizeof(Index));
+
+	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	if(l_rhs->m_ObjectStatus == ObjectStatus::Activated)
+	{
+		l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+		l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+	}
+	l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer_VB.Get(), l_rhs->m_UploadHeapBuffer_VB.Get());
+	l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer_IB.Get(), l_rhs->m_UploadHeapBuffer_IB.Get());
+	l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+	l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
 
 	return true;
 }
