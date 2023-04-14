@@ -42,11 +42,15 @@ namespace Inno
 		GPUBufferComponent* m_debugSphereMeshGPUBufferComp;
 		GPUBufferComponent* m_debugCubeMeshGPUBufferComp;
 		GPUBufferComponent* m_debugMaterialGPUBufferComp;
+		GPUBufferComponent* m_debugCameraFrustumGPUBufferComp;
+
+		std::vector<MeshComponent*> m_debugCameraFrustumMeshComps;
 
 		const size_t m_maxDebugMeshes = 65536;
 		const size_t m_maxDebugMaterial = 512;
 		std::vector<DebugPerObjectConstantBuffer> m_debugSphereConstantBuffer;
 		std::vector<DebugPerObjectConstantBuffer> m_debugCubeConstantBuffer;
+		std::vector<DebugPerObjectConstantBuffer> m_debugCameraFrustumConstantBuffer;
 		std::vector<DebugMaterialConstantBuffer> m_debugMaterialConstantBuffer;
 	};
 } // namespace Inno

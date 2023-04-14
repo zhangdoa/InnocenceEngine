@@ -13,6 +13,17 @@ using namespace DefaultGPUBuffers;
 
 bool DebugPass::Setup(ISystemConfig *systemConfig)
 {	
+	auto l_cameraFrustumMeshCount = g_Engine->getRenderingFrontend()->getRenderingConfig().useCSM ? 4 : 1;
+	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
+	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
+	{
+		m_debugCameraFrustumMeshComps[i] = g_Engine->getRenderingServer()->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
+		g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
+		m_debugCameraFrustumMeshComps[i]->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+		m_debugCameraFrustumMeshComps[i]->m_ProceduralMeshShape = ProceduralMeshShape::Cube;
+		m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
+	}
+	
 	m_debugSphereMeshGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("DebugSphereMeshGPUBuffer/");
 	m_debugSphereMeshGPUBufferComp->m_ElementCount = m_maxDebugMeshes;
 	m_debugSphereMeshGPUBufferComp->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
@@ -22,6 +33,11 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_debugCubeMeshGPUBufferComp->m_ElementCount = m_maxDebugMeshes;
 	m_debugCubeMeshGPUBufferComp->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugCubeMeshGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+
+	m_debugCameraFrustumGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("DebugCameraFrustumGPUBuffer/");
+	m_debugCameraFrustumGPUBufferComp->m_ElementCount = l_cameraFrustumMeshCount;
+	m_debugCameraFrustumGPUBufferComp->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
+	m_debugCameraFrustumGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	m_debugMaterialGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("DebugMaterialGPUBuffer/");
 	m_debugMaterialGPUBufferComp->m_ElementCount = m_maxDebugMaterial;
@@ -79,9 +95,16 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 
 bool DebugPass::Initialize()
 {	
+	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
+	{
+		g_Engine->getRenderingServer()->InitializeMeshComponent(m_debugCameraFrustumMeshComps[i]);
+	}
+
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_debugSphereMeshGPUBufferComp);
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_debugCubeMeshGPUBufferComp);
+	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_debugCameraFrustumGPUBufferComp);
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_debugMaterialGPUBufferComp);
+
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
@@ -116,6 +139,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		m_debugSphereConstantBuffer.clear();
 		m_debugCubeConstantBuffer.clear();
+		m_debugCameraFrustumConstantBuffer.clear();
 		m_debugMaterialConstantBuffer.clear();
 
 		for (size_t i = 0; i < 5; i++)
@@ -215,9 +239,36 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 			auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 			if(l_cameraComponent)
 			{
+				
 				auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_translationMat;
+				for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
+				{
+					std::vector<Vec4> l_vertices;
+					std::vector<Index> l_indices =
+					{
+						0, 3, 1, 1, 3, 2,
+						4, 0, 5, 5, 0, 1,
+						7, 4, 6, 6, 4, 5,
+						3, 7, 2, 2, 7, 6,
+						4, 7, 0, 0, 7, 3,
+						1, 2, 5, 5, 2, 6
+					};
 
+					l_vertices.resize(8);
+					for (size_t j = 0; j < 8; j++)
+					{
+						l_vertices[j] = l_cameraComponent->m_splitFrustumVerticesWS[i * 8 + j].m_pos;
+					}
+					g_Engine->getAssetSystem()->fulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
+					g_Engine->getRenderingServer()->UpdateMeshComponent(m_debugCameraFrustumMeshComps[i]);
+
+					DebugPerObjectConstantBuffer l_meshData;
+					l_meshData.m = InnoMath::generateIdentityMatrix<float>();
+					l_meshData.materialID = 3;
+					m_debugCameraFrustumConstantBuffer.emplace_back(l_meshData);
+				}
+				
 				auto l_pCamera = l_cameraComponent->m_projectionMatrix;
 				auto l_rCamera = InnoMath::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
 				auto l_tCamera = InnoMath::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
@@ -227,7 +278,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 				for (auto& j : l_vertices)
 				{
 					DebugPerObjectConstantBuffer l_meshData;
-					auto l_s = InnoMath::toScaleMatrix(Vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					auto l_s = InnoMath::toScaleMatrix(Vec4(0.1f, 0.1f, 0.1f, 0.1f));
 					l_meshData.m = InnoMath::toTranslationMatrix(j.m_pos);
 					l_meshData.m = l_meshData.m * l_s;
 					l_meshData.materialID = 4;
@@ -303,6 +354,10 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		{
 			g_Engine->getRenderingServer()->UploadGPUBufferComponent(m_debugCubeMeshGPUBufferComp, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
 		}
+		if (m_debugCameraFrustumConstantBuffer.size())
+		{
+			g_Engine->getRenderingServer()->UploadGPUBufferComponent(m_debugCameraFrustumGPUBufferComp, m_debugCameraFrustumConstantBuffer, 0, m_debugCameraFrustumConstantBuffer.size());
+		}
 
 		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
@@ -312,16 +367,25 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_debugMaterialGPUBufferComp, 2, Accessibility::ReadOnly);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_debugSphereMeshGPUBufferComp, 1, Accessibility::ReadOnly);
 		if (m_debugSphereConstantBuffer.size())
 		{
+			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_debugSphereMeshGPUBufferComp, 1, Accessibility::ReadOnly);
 			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_debugSphereConstantBuffer.size());
 		}
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_debugCubeMeshGPUBufferComp, 1, Accessibility::ReadOnly);
 		if (m_debugCubeConstantBuffer.size())
 		{
+			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_debugCubeMeshGPUBufferComp, 1, Accessibility::ReadOnly);
 			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_cube, m_debugCubeConstantBuffer.size());
+		}
+
+		if (m_debugCameraFrustumConstantBuffer.size())
+		{
+			for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
+			{
+				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_debugCameraFrustumGPUBufferComp, 1, Accessibility::ReadOnly, i, 1);
+				g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, m_debugCameraFrustumMeshComps[i], 1);
+			}
 		}
 
 		g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
