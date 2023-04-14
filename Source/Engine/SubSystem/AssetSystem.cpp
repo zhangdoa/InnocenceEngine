@@ -39,6 +39,9 @@ bool InnoAssetSystem::findLoaded##funcName(const char * fileName, type value) \
 
 namespace InnoAssetSystemNS
 {
+	void generateVertexBasedNormal(MeshComponent* meshComponent);
+	void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
+	void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace = 0);
 	void addTriangle(MeshComponent* meshComponent);
 	void addSquare(MeshComponent* meshComponent);
 	void addPentagon(MeshComponent* meshComponent);
@@ -155,7 +158,7 @@ void InnoAssetSystemNS::addHexagon(MeshComponent* meshComponent)
 	generateIndicesForPolygon(meshComponent, 6);
 }
 
-void generateVertexBasedNormal(MeshComponent* meshComponent)
+void InnoAssetSystemNS::generateVertexBasedNormal(MeshComponent* meshComponent)
 {
 	auto l_verticesCount = meshComponent->m_Vertices.size();
 	for (size_t i = 0; i < l_verticesCount; i++)
@@ -166,7 +169,7 @@ void generateVertexBasedNormal(MeshComponent* meshComponent)
 	}
 }
 
-void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
+void InnoAssetSystemNS::generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
 {
 	auto l_face = meshComponent->m_Indices.size() / verticesPerFace;
 
@@ -189,7 +192,7 @@ void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerF
 	}
 }
 
-void fulfillVerticesAndIndicesForPolyhedron(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace = 0)
+void InnoAssetSystemNS::fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace)
 {
 	meshComponent->m_Vertices.reserve(indices.size());
 	meshComponent->m_Vertices.fulfill();
@@ -235,7 +238,7 @@ void InnoAssetSystemNS::addTetrahedron(MeshComponent* meshComponent)
 		Vec4(-1.0f, -1.0f, 1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 3);
+	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
 void InnoAssetSystemNS::addCube(MeshComponent* meshComponent)
@@ -262,7 +265,7 @@ void InnoAssetSystemNS::addCube(MeshComponent* meshComponent)
 		Vec4(-1.0f, 1.0f, -1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 6);
+	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 6);
 }
 
 void InnoAssetSystemNS::addOctahedron(MeshComponent* meshComponent)
@@ -285,7 +288,7 @@ void InnoAssetSystemNS::addOctahedron(MeshComponent* meshComponent)
 		Vec4(0.0f, 0.0f, -1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 3);
+	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
 void InnoAssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
@@ -332,7 +335,7 @@ void InnoAssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
 		Vec4(-1.61803398875f, -0.61803398875f, 0.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 9);
+	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 9);
 }
 
 void InnoAssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
@@ -367,7 +370,7 @@ void InnoAssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
 		Vec4(-1.0f, 0.0f, 0.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndicesForPolyhedron(meshComponent, l_indices, l_vertices, 3);
+	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
 void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
@@ -792,4 +795,9 @@ bool InnoAssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComp
 		break;
 	}
 	return true;
+}
+
+void InnoAssetSystem::fulfillVerticesAndIndices(MeshComponent *meshComponent, const std::vector<Index> &indices, const std::vector<Vec4> &vertices, uint32_t verticesPerFace)
+{
+	 InnoAssetSystemNS::fulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
 }
