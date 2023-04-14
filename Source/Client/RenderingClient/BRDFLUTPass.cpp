@@ -34,11 +34,12 @@ bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_SPC;
 
-	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("BRDFLUTPass/");
+	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("BRDFLUTPass_Result/");
 	m_TextureComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-
+	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
+	
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;

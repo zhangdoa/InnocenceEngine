@@ -46,6 +46,7 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 	m_TextureComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
 
 	m_ObjectStatus = ObjectStatus::Created;
 
