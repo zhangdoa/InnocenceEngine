@@ -332,11 +332,11 @@ bool GLRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: VAO ", l_rhs->m_VAO, " is initialized.");
 
-	glBufferData(GL_ARRAY_BUFFER, l_rhs->m_vertices.size() * sizeof(Vertex), &l_rhs->m_vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, l_rhs->m_Vertices.size() * sizeof(Vertex), &l_rhs->m_Vertices[0], GL_STATIC_DRAW);
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_indices.size() * sizeof(Index), &l_rhs->m_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_Indices.size() * sizeof(Index), &l_rhs->m_Indices[0], GL_STATIC_DRAW);
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
@@ -878,7 +878,7 @@ bool GLRenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, Me
 	auto l_mesh = reinterpret_cast<GLMeshComponent*>(mesh);
 
 	glBindVertexArray(l_mesh->m_VAO);
-	glDrawElementsInstanced(l_GLPSO->m_GLPrimitiveTopology, (GLsizei)l_mesh->m_indicesSize, GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
+	glDrawElementsInstanced(l_GLPSO->m_GLPrimitiveTopology, (GLsizei)l_mesh->m_IndexCount, GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
 
 	return true;
 }

@@ -466,17 +466,17 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				size_t l_verticesNumber = i["VerticesNumber"];
 				size_t l_indicesNumber = i["IndicesNumber"];
 
-				l_mesh->m_vertices.reserve(l_verticesNumber);
-				l_mesh->m_vertices.fulfill();
-				l_mesh->m_indices.reserve(l_indicesNumber);
-				l_mesh->m_indices.fulfill();
+				l_mesh->m_Vertices.reserve(l_verticesNumber);
+				l_mesh->m_Vertices.fulfill();
+				l_mesh->m_Indices.reserve(l_indicesNumber);
+				l_mesh->m_Indices.fulfill();
 
-				IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_vertices);
-				IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_indices);
+				IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_Vertices);
+				IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_Indices);
 
 				l_meshFile.close();
 
-				l_mesh->m_indicesSize = l_mesh->m_indices.size();
+				l_mesh->m_IndexCount = l_mesh->m_Indices.size();
 
 				l_currentMeshMaterialPair->mesh = l_mesh;
 
@@ -485,10 +485,10 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				{
 					std::string l_skeletonName = i["Name"];
 					l_skeletonName += "_Skeleton";
-					l_currentMeshMaterialPair->mesh->m_SamplerComp = processSkeletonJsonData(i, l_skeletonName.c_str(), AsyncUploadGPUResource);
+					l_currentMeshMaterialPair->mesh->m_SkeletonComp = processSkeletonJsonData(i, l_skeletonName.c_str(), AsyncUploadGPUResource);
 				}
 
-				l_currentMeshMaterialPair->mesh->m_meshSource = MeshSource::Customized;
+				l_currentMeshMaterialPair->mesh->m_MeshSource = MeshSource::Customized;
 				l_currentMeshMaterialPair->mesh->m_ObjectStatus = ObjectStatus::Created;
 
 				g_Engine->getRenderingFrontend()->registerMeshComponent(l_mesh, AsyncUploadGPUResource);

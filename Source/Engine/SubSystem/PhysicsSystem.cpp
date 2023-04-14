@@ -127,7 +127,7 @@ PhysicsComponent* InnoPhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair
 	auto l_MeshComp = meshMaterialPair->mesh;
 	auto l_PDC = AddPhysicsComponent(l_MeshComp->m_Owner);
 
-	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MeshComp->m_vertices[0], l_MeshComp->m_vertices.size());
+	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MeshComp->m_Vertices[0], l_MeshComp->m_Vertices.size());
 	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
 
 	l_PDC->m_MeshMaterialPair = meshMaterialPair;
@@ -181,38 +181,38 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 #if defined INNO_PLATFORM_WIN
 		if (VC->m_simulatePhysics)
 		{
-			if (l_meshMaterialPair->mesh->m_meshSource == MeshSource::Customized)
+			if (l_meshMaterialPair->mesh->m_MeshSource == MeshSource::Customized)
 			{
 				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), false);
 			}
 			else
 			{
-				switch (l_meshMaterialPair->mesh->m_proceduralMeshShape)
+				switch (l_meshMaterialPair->mesh->m_ProceduralMeshShape)
 				{
-				case InnoType::ProceduralMeshShape::Triangle:
+				case Type::ProceduralMeshShape::Triangle:
 					break;
-				case InnoType::ProceduralMeshShape::Square:
+				case Type::ProceduralMeshShape::Square:
 					break;
-				case InnoType::ProceduralMeshShape::Pentagon:
+				case Type::ProceduralMeshShape::Pentagon:
 					break;
-				case InnoType::ProceduralMeshShape::Hexagon:
+				case Type::ProceduralMeshShape::Hexagon:
 					break;
-				case InnoType::ProceduralMeshShape::Tetrahedron:
+				case Type::ProceduralMeshShape::Tetrahedron:
 					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
 					break;
-				case InnoType::ProceduralMeshShape::Cube:
+				case Type::ProceduralMeshShape::Cube:
 					PhysXWrapper::get().createPxBox(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
-				case InnoType::ProceduralMeshShape::Octahedron:
+				case Type::ProceduralMeshShape::Octahedron:
 					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
 					break;
-				case InnoType::ProceduralMeshShape::Dodecahedron:
+				case Type::ProceduralMeshShape::Dodecahedron:
 					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
 					break;
-				case InnoType::ProceduralMeshShape::Icosahedron:
+				case Type::ProceduralMeshShape::Icosahedron:
 					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
 					break;
-				case InnoType::ProceduralMeshShape::Sphere:
+				case Type::ProceduralMeshShape::Sphere:
 					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				default:

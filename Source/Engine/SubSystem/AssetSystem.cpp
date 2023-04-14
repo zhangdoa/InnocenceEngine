@@ -76,8 +76,8 @@ using namespace InnoAssetSystemNS;
 
 void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
 {
-	meshComponent->m_vertices.reserve(sectorCount);
-	meshComponent->m_vertices.fulfill();
+	meshComponent->m_Vertices.reserve(sectorCount);
+	meshComponent->m_Vertices.fulfill();
 
 	auto l_sectorCount = (float)sectorCount;
 	auto l_sectorStep = 2.0f * PI<float> / l_sectorCount;
@@ -85,24 +85,24 @@ void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCou
 	for (size_t i = 0; i < sectorCount; i++)
 	{
 		auto l_pos = Vec4(-sinf(l_sectorStep * (float)i), cosf(l_sectorStep * (float)i), 0.0f, 1.0f);
-		meshComponent->m_vertices[i].m_pos = l_pos;
-		meshComponent->m_vertices[i].m_texCoord = Vec2(l_pos.x, l_pos.y) * 0.5f + 0.5f;
+		meshComponent->m_Vertices[i].m_pos = l_pos;
+		meshComponent->m_Vertices[i].m_texCoord = Vec2(l_pos.x, l_pos.y) * 0.5f + 0.5f;
 	}
 }
 
 void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
 {
-	meshComponent->m_indices.reserve((sectorCount - 2) * 3);
-	meshComponent->m_indices.fulfill();
-	meshComponent->m_indicesSize = meshComponent->m_indices.capacity();
+	meshComponent->m_Indices.reserve((sectorCount - 2) * 3);
+	meshComponent->m_Indices.fulfill();
+	meshComponent->m_IndexCount = meshComponent->m_Indices.capacity();
 
 	uint32_t l_currentIndex = 0;
 
-	for (size_t i = 0; i < meshComponent->m_indicesSize; i += 3)
+	for (size_t i = 0; i < meshComponent->m_IndexCount; i += 3)
 	{
-		meshComponent->m_indices[i] = l_currentIndex;
-		meshComponent->m_indices[i + 1] = l_currentIndex + 1;
-		meshComponent->m_indices[i + 2] = sectorCount - 1;
+		meshComponent->m_Indices[i] = l_currentIndex;
+		meshComponent->m_Indices[i + 1] = l_currentIndex + 1;
+		meshComponent->m_Indices[i + 2] = sectorCount - 1;
 		l_currentIndex++;
 	}
 }
@@ -115,32 +115,32 @@ void InnoAssetSystemNS::addTriangle(MeshComponent* meshComponent)
 
 void InnoAssetSystemNS::addSquare(MeshComponent* meshComponent)
 {
-	meshComponent->m_vertices.reserve(4);
-	meshComponent->m_vertices.fulfill();
+	meshComponent->m_Vertices.reserve(4);
+	meshComponent->m_Vertices.fulfill();
 
-	meshComponent->m_vertices[0].m_pos = Vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	meshComponent->m_vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
+	meshComponent->m_Vertices[0].m_pos = Vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	meshComponent->m_Vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
 
-	meshComponent->m_vertices[1].m_pos = Vec4(1.0f, -1.0f, 0.0f, 1.0f);
-	meshComponent->m_vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
+	meshComponent->m_Vertices[1].m_pos = Vec4(1.0f, -1.0f, 0.0f, 1.0f);
+	meshComponent->m_Vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
 
-	meshComponent->m_vertices[2].m_pos = Vec4(-1.0f, -1.0f, 0.0f, 1.0f);
-	meshComponent->m_vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
+	meshComponent->m_Vertices[2].m_pos = Vec4(-1.0f, -1.0f, 0.0f, 1.0f);
+	meshComponent->m_Vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
 
-	meshComponent->m_vertices[3].m_pos = Vec4(-1.0f, 1.0f, 0.0f, 1.0f);
-	meshComponent->m_vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
+	meshComponent->m_Vertices[3].m_pos = Vec4(-1.0f, 1.0f, 0.0f, 1.0f);
+	meshComponent->m_Vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
 
-	meshComponent->m_indices.reserve(6);
-	meshComponent->m_indices.fulfill();
+	meshComponent->m_Indices.reserve(6);
+	meshComponent->m_Indices.fulfill();
 
-	meshComponent->m_indices[0] = 0;
-	meshComponent->m_indices[1] = 1;
-	meshComponent->m_indices[2] = 3;
-	meshComponent->m_indices[3] = 1;
-	meshComponent->m_indices[4] = 2;
-	meshComponent->m_indices[5] = 3;
+	meshComponent->m_Indices[0] = 0;
+	meshComponent->m_Indices[1] = 1;
+	meshComponent->m_Indices[2] = 3;
+	meshComponent->m_Indices[3] = 1;
+	meshComponent->m_Indices[4] = 2;
+	meshComponent->m_Indices[5] = 3;
 
-	meshComponent->m_indicesSize = meshComponent->m_indices.size();
+	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 }
 
 void InnoAssetSystemNS::addPentagon(MeshComponent* meshComponent)
@@ -157,18 +157,18 @@ void InnoAssetSystemNS::addHexagon(MeshComponent* meshComponent)
 
 void generateVertexBasedNormal(MeshComponent* meshComponent)
 {
-	auto l_verticesCount = meshComponent->m_vertices.size();
+	auto l_verticesCount = meshComponent->m_Vertices.size();
 	for (size_t i = 0; i < l_verticesCount; i++)
 	{
-		meshComponent->m_vertices[i].m_normal = meshComponent->m_vertices[i].m_pos;
-		meshComponent->m_vertices[i].m_normal.w = 0.0f;
-		meshComponent->m_vertices[i].m_normal = meshComponent->m_vertices[i].m_normal.normalize();
+		meshComponent->m_Vertices[i].m_normal = meshComponent->m_Vertices[i].m_pos;
+		meshComponent->m_Vertices[i].m_normal.w = 0.0f;
+		meshComponent->m_Vertices[i].m_normal = meshComponent->m_Vertices[i].m_normal.normalize();
 	}
 }
 
 void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
 {
-	auto l_face = meshComponent->m_indices.size() / verticesPerFace;
+	auto l_face = meshComponent->m_Indices.size() / verticesPerFace;
 
 	for (size_t i = 0; i < l_face; i++)
 	{
@@ -176,7 +176,7 @@ void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerF
 
 		for (size_t j = 0; j < verticesPerFace; j++)
 		{
-			l_normal = l_normal + meshComponent->m_vertices[i * verticesPerFace + j].m_pos;
+			l_normal = l_normal + meshComponent->m_Vertices[i * verticesPerFace + j].m_pos;
 		}
 		l_normal = l_normal / (float)verticesPerFace;
 		l_normal.w = 0.0f;
@@ -184,30 +184,30 @@ void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerF
 
 		for (size_t j = 0; j < verticesPerFace; j++)
 		{
-			meshComponent->m_vertices[i * verticesPerFace + j].m_normal = l_normal;
+			meshComponent->m_Vertices[i * verticesPerFace + j].m_normal = l_normal;
 		}
 	}
 }
 
 void fulfillVerticesAndIndicesForPolyhedron(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace = 0)
 {
-	meshComponent->m_vertices.reserve(indices.size());
-	meshComponent->m_vertices.fulfill();
+	meshComponent->m_Vertices.reserve(indices.size());
+	meshComponent->m_Vertices.fulfill();
 
 	for (uint32_t i = 0; i < indices.size(); i++)
 	{
-		meshComponent->m_vertices[i].m_pos = vertices[indices[i]];
+		meshComponent->m_Vertices[i].m_pos = vertices[indices[i]];
 	}
 
-	meshComponent->m_indices.reserve(indices.size());
-	meshComponent->m_indices.fulfill();
+	meshComponent->m_Indices.reserve(indices.size());
+	meshComponent->m_Indices.fulfill();
 
 	for (uint32_t i = 0; i < indices.size(); i++)
 	{
-		meshComponent->m_indices[i] = i;
+		meshComponent->m_Indices[i] = i;
 	}
 
-	meshComponent->m_indicesSize = meshComponent->m_indices.size();
+	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 
 	if (verticesPerFace)
 	{
@@ -384,7 +384,7 @@ void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
 	float stackStep = PI<float> / stackCount;
 	float sectorAngle, stackAngle;
 
-	meshComponent->m_vertices.reserve((stackCount + 1) * (sectorCount + 1));
+	meshComponent->m_Vertices.reserve((stackCount + 1) * (sectorCount + 1));
 
 	for (int32_t i = 0; i <= stackCount; ++i)
 	{
@@ -415,11 +415,11 @@ void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
 			t = (float)i / stackCount;
 			l_VertexData.m_texCoord = Vec2(s, t);
 
-			meshComponent->m_vertices.emplace_back(l_VertexData);
+			meshComponent->m_Vertices.emplace_back(l_VertexData);
 		}
 	}
 
-	meshComponent->m_indices.reserve(stackCount * (sectorCount - 1) * 6);
+	meshComponent->m_Indices.reserve(stackCount * (sectorCount - 1) * 6);
 
 	int32_t k1, k2;
 	for (int32_t i = 0; i < stackCount; ++i)
@@ -433,22 +433,22 @@ void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
 			// k1 => k2 => k1+1
 			if (i != 0)
 			{
-				meshComponent->m_indices.emplace_back(k1);
-				meshComponent->m_indices.emplace_back(k2);
-				meshComponent->m_indices.emplace_back(k1 + 1);
+				meshComponent->m_Indices.emplace_back(k1);
+				meshComponent->m_Indices.emplace_back(k2);
+				meshComponent->m_Indices.emplace_back(k1 + 1);
 			}
 
 			// k1+1 => k2 => k2+1
 			if (i != (stackCount - 1))
 			{
-				meshComponent->m_indices.emplace_back(k1 + 1);
-				meshComponent->m_indices.emplace_back(k2);
-				meshComponent->m_indices.emplace_back(k2 + 1);
+				meshComponent->m_Indices.emplace_back(k1 + 1);
+				meshComponent->m_Indices.emplace_back(k2);
+				meshComponent->m_Indices.emplace_back(k2 + 1);
 			}
 		}
 	}
 
-	meshComponent->m_indicesSize = meshComponent->m_indices.size();
+	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 }
 
 void InnoAssetSystemNS::addTerrain(MeshComponent* meshComponent)
@@ -456,8 +456,8 @@ void InnoAssetSystemNS::addTerrain(MeshComponent* meshComponent)
 	auto l_gridSize = 1024;
 	auto l_gridSize2 = l_gridSize * l_gridSize;
 	auto l_gridSizehalf = l_gridSize / 2;
-	meshComponent->m_vertices.reserve(l_gridSize2 * 4);
-	meshComponent->m_indices.reserve(l_gridSize2 * 6);
+	meshComponent->m_Vertices.reserve(l_gridSize2 * 4);
+	meshComponent->m_Indices.reserve(l_gridSize2 * 6);
 
 	for (auto j = 0; j < l_gridSize; j++)
 	{
@@ -476,33 +476,33 @@ void InnoAssetSystemNS::addTerrain(MeshComponent* meshComponent)
 			Vertex l_VertexData_1;
 			l_VertexData_1.m_pos = Vec4(l_px0, 0.0f, l_pz0, 1.0f);
 			l_VertexData_1.m_texCoord = Vec2(l_tx0, l_tz0);
-			meshComponent->m_vertices.emplace_back(l_VertexData_1);
+			meshComponent->m_Vertices.emplace_back(l_VertexData_1);
 
 			Vertex l_VertexData_2;
 			l_VertexData_2.m_pos = Vec4(l_px0, 0.0f, l_pz1, 1.0f);
 			l_VertexData_2.m_texCoord = Vec2(l_tx0, l_tz1);
-			meshComponent->m_vertices.emplace_back(l_VertexData_2);
+			meshComponent->m_Vertices.emplace_back(l_VertexData_2);
 
 			Vertex l_VertexData_3;
 			l_VertexData_3.m_pos = Vec4(l_px1, 0.0f, l_pz1, 1.0f);
 			l_VertexData_3.m_texCoord = Vec2(l_tx1, l_tz1);
-			meshComponent->m_vertices.emplace_back(l_VertexData_3);
+			meshComponent->m_Vertices.emplace_back(l_VertexData_3);
 
 			Vertex l_VertexData_4;
 			l_VertexData_4.m_pos = Vec4(l_px1, 0.0f, l_pz0, 1.0f);
 			l_VertexData_4.m_texCoord = Vec2(l_tx1, l_tz0);
-			meshComponent->m_vertices.emplace_back(l_VertexData_4);
+			meshComponent->m_Vertices.emplace_back(l_VertexData_4);
 
 			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);
-			meshComponent->m_indices.emplace_back(0 + l_gridIndex);
-			meshComponent->m_indices.emplace_back(1 + l_gridIndex);
-			meshComponent->m_indices.emplace_back(3 + l_gridIndex);
-			meshComponent->m_indices.emplace_back(1 + l_gridIndex);
-			meshComponent->m_indices.emplace_back(2 + l_gridIndex);
-			meshComponent->m_indices.emplace_back(3 + l_gridIndex);
+			meshComponent->m_Indices.emplace_back(0 + l_gridIndex);
+			meshComponent->m_Indices.emplace_back(1 + l_gridIndex);
+			meshComponent->m_Indices.emplace_back(3 + l_gridIndex);
+			meshComponent->m_Indices.emplace_back(1 + l_gridIndex);
+			meshComponent->m_Indices.emplace_back(2 + l_gridIndex);
+			meshComponent->m_Indices.emplace_back(3 + l_gridIndex);
 		}
 	}
-	meshComponent->m_indicesSize = meshComponent->m_indices.size();
+	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 }
 
 bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
@@ -758,34 +758,34 @@ bool InnoAssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComp
 {
 	switch (shape)
 	{
-	case InnoType::ProceduralMeshShape::Triangle:
+	case Type::ProceduralMeshShape::Triangle:
 		addTriangle(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Square:
+	case Type::ProceduralMeshShape::Square:
 		addSquare(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Pentagon:
+	case Type::ProceduralMeshShape::Pentagon:
 		addPentagon(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Hexagon:
+	case Type::ProceduralMeshShape::Hexagon:
 		addHexagon(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Tetrahedron:
+	case Type::ProceduralMeshShape::Tetrahedron:
 		addTetrahedron(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Cube:
+	case Type::ProceduralMeshShape::Cube:
 		addCube(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Octahedron:
+	case Type::ProceduralMeshShape::Octahedron:
 		addOctahedron(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Dodecahedron:
+	case Type::ProceduralMeshShape::Dodecahedron:
 		addDodecahedron(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Icosahedron:
+	case Type::ProceduralMeshShape::Icosahedron:
 		addIcosahedron(meshComponent);
 		break;
-	case InnoType::ProceduralMeshShape::Sphere:
+	case Type::ProceduralMeshShape::Sphere:
 		addSphere(meshComponent);
 		break;
 	default:

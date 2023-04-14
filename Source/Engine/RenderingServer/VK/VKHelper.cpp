@@ -2017,13 +2017,13 @@ bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipeline
 
 	switch (rasterizerDesc.m_RasterizerFillMode)
 	{
-	case InnoType::RasterizerFillMode::Point:
+	case Type::RasterizerFillMode::Point:
 		PSO->m_RasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_POINT;
 		break;
-	case InnoType::RasterizerFillMode::Wireframe:
+	case Type::RasterizerFillMode::Wireframe:
 		PSO->m_RasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_LINE;
 		break;
-	case InnoType::RasterizerFillMode::Solid:
+	case Type::RasterizerFillMode::Solid:
 		PSO->m_RasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		break;
 	default:

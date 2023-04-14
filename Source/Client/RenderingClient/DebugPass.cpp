@@ -268,7 +268,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
 					{
 						auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
-						auto l_skeleton = l_pair->mesh->m_SamplerComp;
+						auto l_skeleton = l_pair->mesh->m_SkeletonComp;
 
 						for (auto k : l_skeleton->m_BoneData)
 						{

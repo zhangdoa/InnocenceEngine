@@ -838,16 +838,16 @@ bool VKRenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 
 	auto l_rhs = reinterpret_cast<VKMeshComponent *>(rhs);
 
-	auto l_VBSize = sizeof(Vertex) * l_rhs->m_vertices.size();
-	auto l_IBSize = sizeof(Index) * l_rhs->m_indices.size();
+	auto l_VBSize = sizeof(Vertex) * l_rhs->m_Vertices.size();
+	auto l_IBSize = sizeof(Index) * l_rhs->m_Indices.size();
 
 	CreateDeviceLocalBuffer(l_VBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_VBO, l_rhs->m_VBMemory);
 	CreateDeviceLocalBuffer(l_IBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_IBO, l_rhs->m_IBMemory);
 
-	InitializeDeviceLocalBuffer(l_rhs->m_vertices, l_rhs->m_VBO, l_rhs->m_VBMemory);
+	InitializeDeviceLocalBuffer(l_rhs->m_Vertices, l_rhs->m_VBO, l_rhs->m_VBMemory);
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
-	InitializeDeviceLocalBuffer(l_rhs->m_indices, l_rhs->m_IBO, l_rhs->m_IBMemory);
+	InitializeDeviceLocalBuffer(l_rhs->m_Indices, l_rhs->m_IBO, l_rhs->m_IBMemory);
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 #ifdef INNO_DEBUG
@@ -1519,7 +1519,7 @@ bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent *renderPass, Me
 
 	vkCmdBindVertexBuffers(l_commandList->m_GraphicsCommandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(l_commandList->m_GraphicsCommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(l_commandList->m_GraphicsCommandBuffer, static_cast<uint32_t>(l_mesh->m_indicesSize), 1, 0, 0, 0);
+	vkCmdDrawIndexed(l_commandList->m_GraphicsCommandBuffer, static_cast<uint32_t>(l_mesh->m_IndexCount), 1, 0, 0, 0);
 
 	return true;
 }

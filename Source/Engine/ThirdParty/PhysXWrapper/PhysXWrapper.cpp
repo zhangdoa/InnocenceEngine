@@ -294,8 +294,8 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 	PxConvexMeshDesc desc;
 
 	// We provide points only, therefore the PxConvexFlag::eCOMPUTE_CONVEX flag must be specified
-	desc.points.data = &rhs->m_MeshMaterialPair->mesh->m_vertices[0];
-	desc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_vertices.size();
+	desc.points.data = &rhs->m_MeshMaterialPair->mesh->m_Vertices[0];
+	desc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
 	desc.points.stride = sizeof(Vertex);
 	desc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
@@ -383,11 +383,11 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 
 	PxTriangleMeshDesc meshDesc;
-	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_vertices.size();
-	meshDesc.points.data = &rhs->m_MeshMaterialPair->mesh->m_vertices[0];
+	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
+	meshDesc.points.data = &rhs->m_MeshMaterialPair->mesh->m_Vertices[0];
 	meshDesc.points.stride = sizeof(PxVec4);
-	meshDesc.triangles.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_indicesSize / 3;
-	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_indices[0];
+	meshDesc.triangles.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3;
+	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_Indices[0];
 	meshDesc.triangles.stride = 3 * sizeof(PxU32);
 
 	PxCookingParams params = gCooking->getParams();
@@ -450,7 +450,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 	auto elapsedTime = stopTime - startTime;
 	InnoLogger::Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
-	InnoLogger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_indicesSize / 3);
+	InnoLogger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
 	cookingPerformance ? InnoLogger::Log(LogLevel::Verbose, "\t\t Cooking performance on\n") : InnoLogger::Log(LogLevel::Verbose, "\t\t Cooking performance off\n");
 	inserted ? InnoLogger::Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : InnoLogger::Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
 	!skipEdgeData ? InnoLogger::Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : InnoLogger::Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
@@ -479,11 +479,11 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 
 	PxTriangleMeshDesc meshDesc;
-	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_vertices.size();
-	meshDesc.points.data = &rhs->m_MeshMaterialPair->mesh->m_vertices[0];
+	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
+	meshDesc.points.data = &rhs->m_MeshMaterialPair->mesh->m_Vertices[0];
 	meshDesc.points.stride = sizeof(Vertex);
-	meshDesc.triangles.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_indicesSize / 3;
-	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_indices[0];
+	meshDesc.triangles.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3;
+	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_Indices[0];
 	meshDesc.triangles.stride = 3 * sizeof(Index);
 
 	PxCookingParams params = gCooking->getParams();
@@ -532,7 +532,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 	auto elapsedTime = stopTime - startTime;
 	InnoLogger::Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
-	InnoLogger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_indicesSize / 3);
+	InnoLogger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
 	inserted ? InnoLogger::Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : InnoLogger::Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
 	!skipEdgeData ? InnoLogger::Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : InnoLogger::Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
 	!skipMeshCleanup ? InnoLogger::Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : InnoLogger::Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");

@@ -2,7 +2,7 @@
 
 namespace Inno
 {
-	namespace InnoType
+	namespace Type
 	{
 		enum class Accessibility
 		{
@@ -199,7 +199,7 @@ namespace Inno
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 		};
 
-		class IPipelineStateObject {};
+		struct IPipelineStateObject {};
 
 		enum class GPUResourceType 
 		{
@@ -208,6 +208,16 @@ namespace Inno
 			Image,
 			Buffer
 		};
+
+		enum class GPUMemoryType
+		{
+			Invalid,
+			Default,
+			Upload,
+			Readback
+		};
+
+		struct IGPUMemory {};
 
 		struct ResourceBindingLayoutDesc
 		{
@@ -221,9 +231,9 @@ namespace Inno
 		};
 	}
 
-	class ICommandList {};
-	// For GPU - GPU synchronization
-	class ISemaphore {};
+	struct ICommandList {};
+
+	struct ISemaphore {};
 }
 
-using namespace Inno::InnoType;
+using namespace Inno::Type;

@@ -11,5 +11,9 @@ namespace Inno
 		GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
 		Accessibility m_CPUAccessibility = Accessibility::WriteOnly;
 		Accessibility m_GPUAccessibility = Accessibility::ReadOnly;
+
+		IGPUMemory* m_DefaultHeapBuffer = nullptr;
+		IGPUMemory* m_UploadHeapBuffer = nullptr;
+		IGPUMemory* m_ReadbackHeapBuffer = nullptr;
 	};
 }

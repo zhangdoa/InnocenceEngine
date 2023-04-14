@@ -912,7 +912,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	}
 
 	// Flip y texture coordinate
-	for (auto &i : rhs->m_vertices)
+	for (auto &i : rhs->m_Vertices)
 	{
 		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
@@ -920,7 +920,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
 
 	// vertices
-	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * l_rhs->m_vertices.size());
+	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * l_rhs->m_Vertices.size());
 	auto l_verticesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize);
 	l_rhs->m_DefaultHeapBuffer_VB = CreateDefaultHeapBuffer(&l_verticesResourceDesc, m_device);
 	if (l_rhs->m_DefaultHeapBuffer_VB == nullptr)
@@ -944,7 +944,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	
 	CD3DX12_RANGE m_readRange(0, 0);
 	l_rhs->m_UploadHeapBuffer_VB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_VB);
-	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_VB, &l_rhs->m_vertices[0], l_verticesDataSize);
+	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_VB, &l_rhs->m_Vertices[0], l_verticesDataSize);
 
 	// Initialize the vertex buffer view.
 	l_rhs->m_VBV.BufferLocation = l_rhs->m_DefaultHeapBuffer_VB->GetGPUVirtualAddress();
@@ -954,7 +954,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: VBO ", l_rhs->m_DefaultHeapBuffer_VB, " is initialized.");
 
 	// indices
-	auto l_indicesDataSize = uint32_t(sizeof(Index) * l_rhs->m_indices.size());
+	auto l_indicesDataSize = uint32_t(sizeof(Index) * l_rhs->m_Indices.size());
 	auto l_indicesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_indicesDataSize);
 	l_rhs->m_DefaultHeapBuffer_IB = CreateDefaultHeapBuffer(&l_indicesResourceDesc, m_device);
 	if (l_rhs->m_DefaultHeapBuffer_IB == nullptr)
@@ -977,7 +977,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 #endif //  INNO_DEBUG
 
 	l_rhs->m_UploadHeapBuffer_IB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_IB);
-	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_IB, &l_rhs->m_indices[0], l_indicesDataSize);
+	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_IB, &l_rhs->m_Indices[0], l_indicesDataSize);
 
 	// Initialize the index buffer view.
 	l_rhs->m_IBV.Format = DXGI_FORMAT_R32_UINT;
@@ -1926,7 +1926,7 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent *renderPass, 
 	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
 	l_commandList->m_DirectCommandList->IASetIndexBuffer(&l_mesh->m_IBV);
-	l_commandList->m_DirectCommandList->DrawIndexedInstanced((uint32_t)l_mesh->m_indicesSize, (uint32_t)instanceCount, 0, 0, 0);
+	l_commandList->m_DirectCommandList->DrawIndexedInstanced((uint32_t)l_mesh->m_IndexCount, (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }

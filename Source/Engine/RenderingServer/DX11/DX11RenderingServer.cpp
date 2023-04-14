@@ -400,7 +400,7 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	}
 
 	// Flip y texture coordinate
-	for (auto& i : rhs->m_vertices)
+	for (auto& i : rhs->m_Vertices)
 	{
 		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
@@ -411,7 +411,7 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	D3D11_BUFFER_DESC l_vertexBufferDesc;
 	ZeroMemory(&l_vertexBufferDesc, sizeof(l_vertexBufferDesc));
 	l_vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_vertexBufferDesc.ByteWidth = sizeof(Vertex) * (uint32_t)l_rhs->m_vertices.size();
+	l_vertexBufferDesc.ByteWidth = sizeof(Vertex) * (uint32_t)l_rhs->m_Vertices.size();
 	l_vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	l_vertexBufferDesc.CPUAccessFlags = 0;
 	l_vertexBufferDesc.MiscFlags = 0;
@@ -420,7 +420,7 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	// Give the subresource structure a pointer to the vertex data.
 	D3D11_SUBRESOURCE_DATA l_vertexSubresourceData;
 	ZeroMemory(&l_vertexSubresourceData, sizeof(l_vertexSubresourceData));
-	l_vertexSubresourceData.pSysMem = &l_rhs->m_vertices[0];
+	l_vertexSubresourceData.pSysMem = &l_rhs->m_Vertices[0];
 	l_vertexSubresourceData.SysMemPitch = 0;
 	l_vertexSubresourceData.SysMemSlicePitch = 0;
 
@@ -442,7 +442,7 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	D3D11_BUFFER_DESC l_indexBufferDesc;
 	ZeroMemory(&l_indexBufferDesc, sizeof(l_indexBufferDesc));
 	l_indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_indexBufferDesc.ByteWidth = (uint32_t)(l_rhs->m_indices.size() * sizeof(uint32_t));
+	l_indexBufferDesc.ByteWidth = (uint32_t)(l_rhs->m_Indices.size() * sizeof(uint32_t));
 	l_indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	l_indexBufferDesc.CPUAccessFlags = 0;
 	l_indexBufferDesc.MiscFlags = 0;
@@ -451,7 +451,7 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	// Give the subresource structure a pointer to the index data.
 	D3D11_SUBRESOURCE_DATA l_indexSubresourceData;
 	ZeroMemory(&l_indexSubresourceData, sizeof(l_indexSubresourceData));
-	l_indexSubresourceData.pSysMem = &l_rhs->m_indices[0];
+	l_indexSubresourceData.pSysMem = &l_rhs->m_Indices[0];
 	l_indexSubresourceData.SysMemPitch = 0;
 	l_indexSubresourceData.SysMemSlicePitch = 0;
 
@@ -1475,7 +1475,7 @@ bool DX11RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 
 	m_deviceContext->IASetIndexBuffer(l_rhs->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	m_deviceContext->DrawIndexedInstanced((uint32_t)l_rhs->m_indicesSize, (uint32_t)instanceCount, 0, 0, 0);
+	m_deviceContext->DrawIndexedInstanced((uint32_t)l_rhs->m_IndexCount, (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }
