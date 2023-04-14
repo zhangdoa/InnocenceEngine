@@ -401,12 +401,12 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		if (m_saveScreenCapture)
 		{
 			auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
-
-			auto l_textureData = l_renderingServer->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), FinalBlendPass::Get().GetRenderPassComp()->m_RenderTargets[0]);
-			auto l_TextureComp = l_renderingServer->AddTextureComponent();
-			l_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-			l_TextureComp->m_TextureData = l_textureData.data();
-			g_Engine->getAssetSystem()->saveTexture("ScreenCapture", l_TextureComp);
+			auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+			auto l_textureData = l_renderingServer->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
+			auto l_destTextureComp = l_renderingServer->AddTextureComponent();
+			l_destTextureComp->m_TextureDesc = l_srcTextureComp->m_TextureDesc;
+			l_destTextureComp->m_TextureData = l_textureData.data();
+			g_Engine->getAssetSystem()->saveTexture("ScreenCapture", l_destTextureComp);
 			//l_renderingServer->DeleteTextureComponent(l_TextureComp);
 			m_saveScreenCapture = false;
 		}
