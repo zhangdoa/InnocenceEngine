@@ -3,6 +3,7 @@
 
 namespace Inno
 {
+	class DefaultLogicClientImpl;
 	class DefaultLogicClient : public ILogicClient
 	{
 	public:
@@ -16,5 +17,9 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		std::string getApplicationName() override;
+
+	private:
+		DefaultLogicClientImpl* GetImpl();
+		DefaultLogicClientImpl* m_Impl = nullptr;
 	};
 }
