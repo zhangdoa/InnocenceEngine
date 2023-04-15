@@ -2,7 +2,7 @@
     "version": "0.0.0",
     "configurations": [
         {
-            "name": "(Windows) Launch",
+            "name": "(Windows) Launch Main",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Bin/Debug/InnoMain.exe",
@@ -11,6 +11,16 @@
                 "-renderer 2",
                 "-loglevel 1"
             ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) Launch Test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/Debug/InnoTest.exe",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
