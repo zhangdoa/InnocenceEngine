@@ -94,7 +94,8 @@ float SunShadowResolver(float3 fragPos, Texture2DArray shadowMap, SamplerState i
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
-		shadow = VSMResolver(projCoords, shadowMap, in_sampler, splitIndex, currentDepth);
+		//shadow = VSMResolver(projCoords, shadowMap, in_sampler, splitIndex, currentDepth);
+		shadow = PCFResolver(projCoords, shadowMap, in_sampler, splitIndex, currentDepth, texelSize);
 	}
 
 	return shadow;

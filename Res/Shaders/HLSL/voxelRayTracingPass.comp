@@ -18,13 +18,13 @@ RWTexture3D<float4> out_luminanceVolume : register(u0);
 [[vk::binding(1, 2)]]
 RWStructuredBuffer<float4> in_ray : register(u1);
 [[vk::binding(2, 2)]]
-RWStructuredBuffer<uint4> in_index : register(u2);
+RWStructuredBuffer<uint4> in_probeIndex : register(u2);
 [[vk::binding(0, 3)]]
 SamplerState in_samplerTypePoint : register(s0);
 
 groupshared float4 result;
-groupshared uint3 writeCoord;
-groupshared float3 posWS;
+groupshared uint3 probeIndex;
+groupshared float3 texCoord_orig;
 
 [numthreads(4, 4, 4)]
 void main(ComputeInputType input)
@@ -32,22 +32,21 @@ void main(ComputeInputType input)
 	if (input.groupIndex == 0)
 	{
 		uint flattenIndex = input.groupID.x + input.groupID.y * 8 + input.groupID.z * 8 * 8;
-		writeCoord = in_index[flattenIndex].xyz;
-		posWS = float3(writeCoord) / 128.0f;
-		//posWS = posWS * 2.0 - 1.0;
+		probeIndex = in_probeIndex[flattenIndex].xyz;
+		texCoord_orig = float3(probeIndex) / voxelizationPassCBuffer.volumeResolution;
 
-		//posWS *= (voxelizationPassCBuffer.volumeExtend / 2.0);
-		//posWS += voxelizationPassCBuffer.volumeCenter.xyz;
-		//posWS += normal * voxelizationPassCBuffer.voxelSize * SQRT2;
+		//texCoord_orig *= (voxelizationPassCBuffer.volumeExtend / 2.0);
+		//texCoord_orig += voxelizationPassCBuffer.volumeCenter.xyz;
+		//texCoord_orig += normal * voxelizationPassCBuffer.voxelSize * SQRT2;
 
 		result = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		out_luminanceVolume[writeCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		out_luminanceVolume[probeIndex] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
-	float maxDist = 64.0f;
+	float maxDist = voxelizationPassCBuffer.volumeResolution / 2.0f;
 
 	bool sampled = false;
 	float dist = 1.0f;
@@ -56,17 +55,17 @@ void main(ComputeInputType input)
 
 	while (!sampled && (dist < maxDist))
 	{
-		float3 tc = posWS + ray.xyz * dist;
+		float3 texCoord = texCoord_orig + ray.xyz * dist;
 
-		int is_saturated = (tc.x > 1.0) || (tc.y > 1.0) || (tc.z > 1.0);
+		int is_saturated = (texCoord.x > 1.0) || (texCoord.y > 1.0) || (texCoord.z > 1.0);
 
 		if (!is_saturated)
 		{
-			float4 sam = in_luminanceVolume.SampleLevel(in_samplerTypePoint, tc, 0);
+			float4 sample = in_luminanceVolume.SampleLevel(in_samplerTypePoint, texCoord, 0);
 
-			if (sam.a)
+			if (sample.a)
 			{
-				result.xyz += sam.xyz / dist;
+				result.xyz += sample.xyz / (dist * dist);
 				sampled = true;
 				break;
 			}

@@ -319,6 +319,6 @@ void main(ComputeInputType input)
 #endif
 
 		out_lightPassRT0[input.dispatchThreadID.xy] = float4(Lo, 1.0);
-		//out_lightPassRT1[input.dispatchThreadID.xy] = float4(indirectDiffuse + sunLo * shadowFactor, 1.0);
+		out_lightPassRT1[input.dispatchThreadID.xy] = float4(indirectDiffuse + sunLo * shadowFactor, 1.0);
 	}
 }

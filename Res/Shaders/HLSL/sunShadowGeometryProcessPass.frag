@@ -22,7 +22,7 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	float depth = input.posCS.z;
+	float depth = input.posCS.z / input.posCS.w;
 	depth = depth * 0.5 + 0.5;
 
 	float transparency;
