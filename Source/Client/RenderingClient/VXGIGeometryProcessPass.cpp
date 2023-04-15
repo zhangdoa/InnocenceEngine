@@ -2,7 +2,7 @@
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "VXGIRenderer.h"
-#include "SunShadowBlurEvenPass.h"
+#include "SunShadowGeometryProcessPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
@@ -171,7 +171,7 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowBlurEvenPass::Get().GetResult(), 10, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowGeometryProcessPass::Get().GetResult(), 10, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_CSMGPUBufferComp, 12, Accessibility::ReadOnly);
 
 	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
@@ -208,7 +208,7 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	}
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowBlurEvenPass::Get().GetResult(), 10, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowGeometryProcessPass::Get().GetResult(), 10, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
