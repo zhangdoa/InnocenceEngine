@@ -830,15 +830,13 @@ namespace Inno
 				m_ElementSize = sizeof(T);
 				m_ElementCount = elementCount;
 				m_HeapAddress = reinterpret_cast<T *>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+				std::memset(m_HeapAddress, 0, m_ElementCount * m_ElementSize);
 				m_CurrentFreeIndex = 0;
 			}
 
 			auto fulfill()
 			{
-				for (size_t i = 0; i < m_ElementCount; i++)
-				{
-					*(m_HeapAddress + i) = T();
-				}
+				std::fill(m_HeapAddress, m_HeapAddress + m_ElementCount, T());
 				m_CurrentFreeIndex = m_ElementCount;
 			}
 

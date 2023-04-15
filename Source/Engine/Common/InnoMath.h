@@ -361,7 +361,6 @@ namespace Inno
 			}
 
 			TVec3<T> xyz() const { return TVec3<T>(x, y, z); }
-			TVec3<T> rgb() const { return TVec3<T>(r, g, b); }
 
 			TVec4(const TVec3<T>& rhs, T rhs_w = zero<T>)
 			{
