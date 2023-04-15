@@ -73,6 +73,7 @@ namespace Inno
 		bool EndCapture() override;
 
 		DX12SRV CreateSRV(TextureComponent* rhs, uint32_t mostDetailedMip);
+		DX12SRV CreateSRV(GPUBufferComponent* rhs);
 		DX12UAV CreateUAV(TextureComponent* rhs, uint32_t mipSlice);
 		DX12UAV CreateUAV(GPUBufferComponent* rhs);
 		DX12CBV CreateCBV(GPUBufferComponent* rhs);

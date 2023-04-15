@@ -1351,6 +1351,8 @@ bool DX12RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 		}
 	}
 
+	l_rhs->m_SRV = CreateSRV(l_rhs);
+
 	CD3DX12_RANGE m_readRange(0, 0);
 	l_rhs->m_UploadHeapBuffer->Map(0, &m_readRange, &l_rhs->m_MappedMemory);
 
@@ -1815,132 +1817,158 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 	if ((l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && shaderStage != ShaderStage::Compute) || (l_renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Compute && shaderStage == ShaderStage::Compute))
 	{
 		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Trying to activate resource at : ", resourceBindingLayoutDescIndex, " with incompatible render pass: ", renderPass->m_InstanceName.c_str());
-
 		return false;
 	}
 
-	if (resource)
+	if (!resource)
 	{
-		if (shaderStage == ShaderStage::Compute)
-		{
-			switch (resource->m_GPUResourceType)
-			{
-			case GPUResourceType::Sampler:
-				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent *>(resource)->m_Sampler.GPUHandle);
-				break;
-			case GPUResourceType::Image:
-			{
-				auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(resource);
-				if (accessibility != Accessibility::ReadOnly)
-				{
-					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_WriteState);
-					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
-				}
-				else
-				{
-					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
-					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_SRV.GPUHandle);
-				}
-				break;
-			}
-			case GPUResourceType::Buffer:
-				if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
-				{
-					if (accessibility != Accessibility::ReadOnly)
-					{
-						InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
-					}
-					else
-					{
-						l_commandList->m_ComputeCommandList->SetComputeRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
-					}
-				}
-				else
-				{
-					if (accessibility != Accessibility::ReadOnly)
-					{
-						if (reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_isAtomicCounter)
-						{
-							l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
-						}
-						else
-						{
-							l_commandList->m_ComputeCommandList->SetComputeRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
-						}
-					}
-					else
-					{
-						l_commandList->m_ComputeCommandList->SetComputeRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
-					}
-				}
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
+		return false;
+	}
 
-				break;
-			default:
-				break;
-			}
+	auto l_accessibility = l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_BindingAccessibility;
+	auto l_bindingType = l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_GPUResourceType;
+	auto l_resourceType = resource->m_GPUResourceType;
+
+	DX12UAV l_UAV = {};
+	DX12SRV l_SRV = {};
+
+	if (l_resourceType == GPUResourceType::Image)
+	{
+		auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(resource);
+
+		l_UAV = l_DX12TextureComp->m_UAV;
+		l_SRV = l_DX12TextureComp->m_SRV;
+
+		if (l_accessibility != Accessibility::ReadOnly)
+		{
+			// @TODO: Let the client do these
+			TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_WriteState);
 		}
 		else
 		{
-			switch (resource->m_GPUResourceType)
+			TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
+		}
+	}
+	else if (l_resourceType == GPUResourceType::Buffer)
+	{
+		auto l_DX12GPUBufferComp = reinterpret_cast<DX12GPUBufferComponent*>(resource);
+
+		l_UAV = l_DX12GPUBufferComp->m_UAV;
+		l_SRV = l_DX12GPUBufferComp->m_SRV;
+	}
+
+	if (shaderStage == ShaderStage::Compute)
+	{
+		switch (l_bindingType)
+		{
+		case GPUResourceType::Sampler:
+			l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.GPUHandle);
+			break;
+		case GPUResourceType::Image:
+		{
+			if (l_accessibility != Accessibility::ReadOnly)
 			{
-			case GPUResourceType::Sampler:
-				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent *>(resource)->m_Sampler.GPUHandle);
-				break;
-			case GPUResourceType::Image:
+				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+			}
+			else
 			{
-				auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(resource);
-				if (accessibility != Accessibility::ReadOnly)
+				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_SRV.GPUHandle);
+			}
+			break;
+		}
+		case GPUResourceType::Buffer:
+			if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
+			{
+				if (l_accessibility != Accessibility::ReadOnly)
 				{
-					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_WriteState);
-					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
+					InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
 				}
 				else
 				{
-					TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
-					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureComponent *>(resource)->m_SRV.GPUHandle);
+					l_commandList->m_ComputeCommandList->SetComputeRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_ElementSize);
 				}
-				break;
 			}
-			case GPUResourceType::Buffer:
-				if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
+			else
+			{
+				if (l_accessibility != Accessibility::ReadOnly)
 				{
-					if (accessibility != Accessibility::ReadOnly)
+					if (reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_isAtomicCounter)
 					{
-						InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
+						l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
 					}
 					else
 					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
+						l_commandList->m_ComputeCommandList->SetComputeRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_ElementSize);
 					}
 				}
 				else
 				{
-					if (accessibility != Accessibility::ReadOnly)
-					{
-						if (reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_isAtomicCounter)
-						{
-							l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
-						}
-						else
-						{
-							l_commandList->m_DirectCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
-						}
-					}
-					else
-					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent *>(resource)->m_ElementSize);
-					}
+					l_commandList->m_ComputeCommandList->SetComputeRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_ElementSize);
 				}
-				break;
-			default:
-				break;
 			}
+
+			break;
+		default:
+			break;
 		}
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
+		switch (l_bindingType)
+		{
+		case GPUResourceType::Sampler:
+			l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.GPUHandle);
+			break;
+		case GPUResourceType::Image:
+		{
+			if (accessibility != Accessibility::ReadOnly)
+			{
+				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+			}
+			else
+			{
+				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_SRV.GPUHandle);
+			}
+			break;
+		}
+		case GPUResourceType::Buffer:
+			if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
+			{
+				if (l_accessibility != Accessibility::ReadOnly)
+				{
+					InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
+				}
+				else
+				{
+					l_commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_ElementSize);
+				}
+			}
+			else
+			{
+				if (l_accessibility != Accessibility::ReadOnly)
+				{
+					if (reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_isAtomicCounter)
+					{
+						l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+					}
+					else
+					{
+						l_commandList->m_DirectCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_ElementSize);
+					}
+				}
+				else
+				{
+					l_commandList->m_DirectCommandList->SetGraphicsRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_ElementSize);
+				}
+			}
+			break;
+		default:
+			break;
+		}
 	}
+
+
 	return true;
 }
 
@@ -2453,24 +2481,41 @@ bool DX12RenderingServer::Resize()
 	return true;
 }
 
-DX12SRV DX12RenderingServer::CreateSRV(TextureComponent *rhs, uint32_t mostDetailedMip)
+DX12SRV createSRVImpl(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	DX12SRV l_result = {};
-
-	l_result.SRVDesc = GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mostDetailedMip);
-
+	l_result.SRVDesc = desc;
 	l_result.CPUHandle = m_CSUDescHeapCPUHandle;
 	l_result.GPUHandle = m_CSUDescHeapGPUHandle;
 
 	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
 	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
 
-	m_device->CreateShaderResourceView(l_rhs->m_DefaultHeapBuffer.Get(), &l_result.SRVDesc, l_result.CPUHandle);
+	m_device->CreateShaderResourceView(resourceHandle.Get(), &l_result.SRVDesc, l_result.CPUHandle);
 
 	return l_result;
+}
+
+DX12SRV DX12RenderingServer::CreateSRV(TextureComponent *rhs, uint32_t mostDetailedMip)
+{
+	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
+	return createSRVImpl(GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mostDetailedMip), l_rhs->m_DefaultHeapBuffer);
+}
+
+DX12SRV Inno::DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC l_desc = {};
+	l_desc.Format = l_rhs->m_isAtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
+	l_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	l_desc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
+	l_desc.Buffer.StructureByteStride = l_rhs->m_isAtomicCounter ? (uint32_t)l_rhs->m_ElementSize : 0;
+	l_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+    return createSRVImpl(l_desc, l_rhs->m_DefaultHeapBuffer);
 }
 
 DX12UAV createUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter)
