@@ -49,7 +49,7 @@ namespace DX12RenderingServerNS
 	bool CreateSwapChain();
 
 	bool CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
-	bool GenerateMipmap(DX12TextureComponent *DX12TextureComp);
+	bool GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -344,6 +344,16 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
+        if (SUCCEEDED(m_device->CheckFeatureSupport(
+            D3D12_FEATURE_D3D12_OPTIONS,
+            &options,
+            sizeof(options))))
+        {
+            if(!options.TypedUAVLoadAdditionalFormats)
+				InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: TypedUAVLoadAdditionalFormats is not supported, can't generate mipmap for sRGB textures.");
+        }
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: D3D device has been created.");
 
@@ -643,7 +653,7 @@ bool DX12RenderingServerNS::CreateSwapChain()
 	return true;
 }
 
-bool DX12RenderingServerNS::GenerateMipmap(DX12TextureComponent *DX12TextureComp)
+bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp)
 {
 	struct DWParam
 	{
@@ -667,28 +677,30 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureComponent *DX12TextureComp
 		return false;
 	}
 
+	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
+	{
+		auto directCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_DefaultHeapBuffer.Get(), DX12TextureComp->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		CloseTemporaryCommandList(directCommandList, m_device, m_directCommandQueue);
+	}
+
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
 
-	auto commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto computeCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 	if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 	{
-		commandList->SetComputeRootSignature(m_3DMipmapRootSignature);
-		commandList->SetPipelineState(m_3DMipmapPSO);
+		computeCommandList->SetComputeRootSignature(m_3DMipmapRootSignature);
+		computeCommandList->SetPipelineState(m_3DMipmapPSO);
 	}
 	else
 	{
-		commandList->SetComputeRootSignature(m_2DMipmapRootSignature);
-		commandList->SetPipelineState(m_2DMipmapPSO);
+		computeCommandList->SetComputeRootSignature(m_2DMipmapRootSignature);
+		computeCommandList->SetPipelineState(m_2DMipmapPSO);
 	}
-	commandList->SetDescriptorHeaps(1, l_heaps);
-
-	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
-	{
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_DefaultHeapBuffer.Get(), DX12TextureComp->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-	}
+	computeCommandList->SetDescriptorHeaps(1, l_heaps);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = DX12TextureComp->m_SRV.GPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE l_UAV;
@@ -700,30 +712,32 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureComponent *DX12TextureComp
 		uint32_t dstHeight = std::max(DX12TextureComp->m_TextureDesc.Height >> (TopMip + 1), (uint32_t)1);
 		uint32_t dstDepth = 1;
 
-		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
-		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
+		computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
+		computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
 
 		if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 		{
 			dstDepth = std::max(DX12TextureComp->m_TextureDesc.DepthOrArraySize >> (TopMip + 1), (uint32_t)1);
-			commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
+			computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
 		}
 
-		commandList->SetComputeRootDescriptorTable(1, l_SRV);
-		commandList->SetComputeRootDescriptorTable(2, l_UAV);
+		computeCommandList->SetComputeRootDescriptorTable(1, l_SRV);
+		computeCommandList->SetComputeRootDescriptorTable(2, l_UAV);
 
-		commandList->Dispatch(std::max(dstWidth / 8, 1u), std::max(dstHeight / 8, 1u), std::max(dstDepth / 8, 1u));
+		computeCommandList->Dispatch(std::max(dstWidth / 8, 1u), std::max(dstHeight / 8, 1u), std::max(dstDepth / 8, 1u));
 
 		l_SRV.ptr += l_CSUDescSize;
 		l_UAV.ptr += l_CSUDescSize;
 	}
 
+	CloseTemporaryCommandList(computeCommandList, m_device, m_computeCommandQueue);
+
 	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TextureComp->m_CurrentState));
+		auto directCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TextureComp->m_CurrentState));
+		CloseTemporaryCommandList(directCommandList, m_device, m_directCommandQueue);
 	}
-
-	CloseTemporaryCommandList(commandList, m_device, m_computeCommandQueue);
 
 	return true;
 }
@@ -2400,13 +2414,38 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
-	// @TODO: support sRGB
-	// if (!l_rhs->m_TextureDesc.IsSRGB)
-	//{
-	//	return DX12RenderingServerNS::GenerateMipmap(l_rhs);
-	//}
+	if(l_rhs->m_TextureDesc.IsSRGB)
+	{
+		auto l_copy = reinterpret_cast<DX12TextureComponent*>(AddTextureComponent((l_rhs->m_InstanceName.c_str() + std::string("_MipCopy/")).c_str()));
+		l_copy->m_TextureDesc = l_rhs->m_TextureDesc;
+		l_copy->m_TextureData = l_rhs->m_TextureData;
+		l_copy->m_TextureDesc.IsSRGB = false;
+		InitializeTextureComponent(l_copy);
 
-	return false;
+		D3D12_RESOURCE_BARRIER barrier[2] = {};
+		barrier[0].Type = barrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier[0].Transition.Subresource = barrier[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier[0].Transition.pResource = l_copy->m_DefaultHeapBuffer.Get();
+		barrier[0].Transition.StateBefore = l_copy->m_CurrentState;
+		barrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+
+		barrier[1].Transition.pResource = l_rhs->m_DefaultHeapBuffer.Get();
+		barrier[1].Transition.StateBefore = l_rhs->m_CurrentState;
+		barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+
+		auto directCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		directCommandList->ResourceBarrier(2, barrier);
+
+		// Copy the entire resource back
+		directCommandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_copy->m_DefaultHeapBuffer.Get());
+		directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
+
+		CloseTemporaryCommandList(directCommandList, m_device, m_directCommandQueue);
+
+		return true;
+	}
+
+	return GenerateMipmapImpl(l_rhs);
 }
 
 bool DX12RenderingServer::Resize()
