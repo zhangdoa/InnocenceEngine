@@ -78,7 +78,6 @@ void main(ComputeInputType input)
 
 	if (input.groupIndex == 0)
 	{
-		out_luminanceVolume[writeCoord] = result;
-		out_luminanceVolume[writeCoord] /= 64.0f;
+		out_luminanceVolume[probeIndex] = result / 64.0f;
 	}
 }
