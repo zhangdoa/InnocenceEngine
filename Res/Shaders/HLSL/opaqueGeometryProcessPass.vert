@@ -1,15 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-struct VertexInputType
-{
-	float4 posLS : POSITION;
-	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
-};
-
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
@@ -18,6 +9,7 @@ struct PixelInputType
 	float3 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
 	float3 normalWS : NORMAL;
+	float3 tangentWS : TANGENT;
 };
 
 PixelInputType main(VertexInputType input)
@@ -37,7 +29,8 @@ PixelInputType main(VertexInputType input)
 
 	output.posWS = posWS.xyz;
 	output.texCoord = input.texCoord;
-	output.normalWS = mul(input.normalLS, perObjectCBuffer.normalMat).xyz;
+	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCBuffer.normalMat).xyz;
+	output.tangentWS = mul(float4(input.tangentLS, 0.0f), perObjectCBuffer.normalMat).xyz;
 
 	return output;
 }

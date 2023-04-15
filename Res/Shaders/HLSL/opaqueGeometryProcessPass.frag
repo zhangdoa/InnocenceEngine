@@ -22,6 +22,7 @@ struct PixelInputType
 	float3 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
 	float3 normalWS : NORMAL;
+	float3 tangentWS : TANGENT;
 };
 
 struct PixelOutputType
@@ -39,20 +40,9 @@ PixelOutputType main(PixelInputType input)
 	float3 normalWS = normalize(input.normalWS);
 	if (materialCBuffer.textureSlotMask & 0x00000001)
 	{
-		// get edge vectors of the pixel triangle
-		float3 dp1 = ddx_fine(input.posWS);
-		float3 dp2 = ddy_fine(input.posWS);
-		float2 duv1 = ddx_fine(input.texCoord);
-		float2 duv2 = ddy_fine(input.texCoord);
-
-		// solve the linear system
 		float3 N = normalize(input.normalWS);
-
-		float3 dp2perp = cross(dp2, N);
-		float3 dp1perp = cross(N, dp1);
-		float3 T = -normalize(dp2perp * duv1.x + dp1perp * duv2.x);
-		float3 B = -normalize(dp2perp * duv1.y + dp1perp * duv2.y);
-
+		float3 T = normalize(input.tangentWS);
+		float3 B = cross(N, T);
 		float3x3 TBN = float3x3(T, B, N);
 
 		float3 normalTS = normalize(t2d_normal.Sample(in_samplerTypeWrap, input.texCoord).rgb * 2.0f - 1.0f);

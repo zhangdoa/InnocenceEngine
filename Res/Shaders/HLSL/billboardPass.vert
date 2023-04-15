@@ -13,16 +13,6 @@ struct billboardMeshData
 [[vk::binding(12, 0)]]
 StructuredBuffer<billboardMeshData> billboardSBuffer : register(t12);
 
-struct VertexInputType
-{
-	float4 posLS : POSITION;
-	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
-	uint instanceId : SV_InstanceID;
-};
-
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;

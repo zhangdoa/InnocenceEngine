@@ -31,6 +31,16 @@ static const float4 debugColors[16] = {
 	float4(1.0, 1.0, 1.0, 0.0)          // white
 };
 
+struct VertexInputType
+{
+	float3 posLS : POSITION;
+	float3 normalLS : NORMAL;
+	float3 tangentLS : TANGENT;
+	float2 texCoord : TEXCOORD;
+	float4 pad1 : PAD_A;
+	uint instanceId : SV_InstanceID;
+};
+
 #define BLOCK_SIZE 16
 
 struct PerFrame_CB

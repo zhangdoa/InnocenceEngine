@@ -1,10 +1,11 @@
 struct VertexInputType
 {
-	float4 posLS : POSITION;
+	float3 posLS : POSITION;
+	float3 normalLS : NORMAL;
+	float3 tangentLS : TANGENT;
 	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
+	float4 pad1 : PAD_A;
+	uint instanceId : SV_InstanceID;
 };
 
 struct PixelInputType

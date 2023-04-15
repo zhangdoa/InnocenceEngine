@@ -1,15 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-struct VertexInputType
-{
-	float4 posLS : POSITION;
-	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
-};
-
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
@@ -20,7 +11,7 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	output.position = input.posLS;
+	output.position = float4(input.posLS, 1.0f);
 	output.texCoord = input.texCoord;
 
 	return output;

@@ -182,9 +182,24 @@ void InnoAssetSystemNS::generateFaceBasedNormal(MeshComponent* meshComponent, ui
 		l_normal = l_normal / (float)verticesPerFace;
 		l_normal = l_normal.normalize();
 
+		auto l_up = Vec3(0.0f, 1.0f, 0.0f);
+		auto l_tangent = Vec3();
+		if (l_normal != l_up)
+		{
+			l_tangent = l_up.cross(l_normal);
+			l_tangent = l_tangent.normalize();
+		}
+		else
+		{
+			auto l_right = Vec3(1.0f, 0.0f, 0.0f);
+			l_tangent = l_normal.cross(l_right);
+			l_tangent = l_tangent.normalize();
+		}
+
 		for (size_t j = 0; j < verticesPerFace; j++)
 		{
 			meshComponent->m_Vertices[i * verticesPerFace + j].m_normal = l_normal;
+			meshComponent->m_Vertices[i * verticesPerFace + j].m_tangent = l_tangent;
 		}
 	}
 }

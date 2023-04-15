@@ -1,16 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-struct VertexInputType
-{
-	float4 posLS : POSITION;
-	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
-	uint instanceId : SV_InstanceID;
-};
-
 struct GeometryInputType
 {
 	float4 posCS : SV_POSITION;

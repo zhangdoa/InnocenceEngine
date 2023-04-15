@@ -9,15 +9,6 @@ struct AnimationKeyData_SB
 
 StructuredBuffer<AnimationKeyData_SB> animationKeyDataSBuffer : register(t5);
 
-struct VertexInputType
-{
-	float4 posBS : POSITION;
-	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
-};
-
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
@@ -26,6 +17,7 @@ struct PixelInputType
 	float3 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
 	float3 normalWS : NORMAL;
+	float3 tangentWS : TANGENT;
 };
 
 PixelInputType main(VertexInputType input)
@@ -37,23 +29,17 @@ PixelInputType main(VertexInputType input)
 	int currentTickInInt = int(trunc(currentTickInFloat));
 	int currentTickGlobalIndex = currentTickInInt * animationPassCBuffer.numChannels;
 
-	int boneID1 = int(input.pada.x);
-	float weight1 = input.pada.y;
-	int boneID2 = int(input.padb.x);
-	float weight2 = input.padb.y;
-	int boneID3 = int(input.padb.z);
-	float weight3 = input.padb.w;
-	int boneID4 = int(input.posBS.w);
-	float weight4 = input.normalLS.w;
+	int boneID1 = int(input.pad1.x);
+	float weight1 = input.pad1.y;
+	int boneID2 = int(input.pad1.z);
+	float weight2 = input.pad1.w;
 
 	float4x4 m1 = animationKeyDataSBuffer[currentTickGlobalIndex + boneID1].m;
 	float4x4 m2 = animationKeyDataSBuffer[currentTickGlobalIndex + boneID2].m;
-	float4x4 m3 = animationKeyDataSBuffer[currentTickGlobalIndex + boneID3].m;
-	float4x4 m4 = animationKeyDataSBuffer[currentTickGlobalIndex + boneID4].m;
 
-	float4x4 m = m1 * weight1 + m2 * weight2 + m3 * weight3 + m4 * weight4;
+	float4x4 m = m1 * weight1 + m2 * weight2;
 
-	float4 posBS = float4(input.posBS.xyz, 1.0f);
+	float4 posBS = float4(input.posLS.xyz, 1.0f);
 	float4 posLS = mul(posBS, m);
 
 	float4 posWS = mul(posLS, perObjectCBuffer.m);
@@ -68,8 +54,8 @@ PixelInputType main(VertexInputType input)
 
 	output.posWS = posWS.xyz;
 	output.texCoord = input.texCoord;
-	float4 normalLS = float4(input.normalLS.xyz, 0.0f);
-	output.normalWS = mul(input.normalLS, perObjectCBuffer.normalMat).xyz;
+	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCBuffer.normalMat).xyz;
+	output.tangentWS = mul(float4(input.tangentLS, 0.0f), perObjectCBuffer.normalMat).xyz;
 
 	return output;
 }

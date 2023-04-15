@@ -244,7 +244,6 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 	l_vertices.reserve(l_numVertices);
 	l_vertices.fulfill();
 
-	// positions
 	for (uint32_t i = 0; i < l_numVertices; i++)
 	{
 		Vertex l_Vertex;
@@ -256,9 +255,12 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 		l_vertices[i].m_normal.x = 0.0f;
 		l_vertices[i].m_normal.y = 0.0f;
 		l_vertices[i].m_normal.z = 1.0f;
+
+		l_vertices[i].m_tangent.x = 1.0f;
+		l_vertices[i].m_tangent.y = 0.0f;
+		l_vertices[i].m_tangent.z = 0.0f;
 	}
 
-	// texture coordinates
 	if (mesh->mTextureCoords[0])
 	{
 		for (uint32_t i = 0; i < l_numVertices; i++)
@@ -268,7 +270,6 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 		}
 	}
 
-	// normals
 	if (mesh->mNormals)
 	{
 		for (uint32_t i = 0; i < l_numVertices; i++)
@@ -276,6 +277,16 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 			l_vertices[i].m_normal.x = mesh->mNormals[i].x;
 			l_vertices[i].m_normal.y = mesh->mNormals[i].y;
 			l_vertices[i].m_normal.z = mesh->mNormals[i].z;
+		}
+	}
+
+	if (mesh->mTangents)
+	{
+		for (uint32_t i = 0; i < l_numVertices; i++)
+		{
+			l_vertices[i].m_tangent.x = mesh->mTangents[i].x;
+			l_vertices[i].m_tangent.y = mesh->mTangents[i].y;
+			l_vertices[i].m_tangent.z = mesh->mTangents[i].z;
 		}
 	}
 

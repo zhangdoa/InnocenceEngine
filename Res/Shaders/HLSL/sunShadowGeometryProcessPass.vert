@@ -1,15 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-struct VertexInputType
-{
-	float4 posLS : POSITION;
-	float2 texCoord : TEXCOORD;
-	float2 pada : PADA;
-	float4 normalLS : NORMAL;
-	float4 padb : PADB;
-};
-
 struct GeometryInputType
 {
 	float4 posWS : SV_POSITION;
@@ -20,7 +11,7 @@ GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	output.posWS = mul(input.posLS, perObjectCBuffer.m);
+	output.posWS = mul(float4(input.posLS, 1.0f), perObjectCBuffer.m);
 	output.texCoord = input.texCoord;
 
 	return output;
