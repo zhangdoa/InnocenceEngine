@@ -33,7 +33,7 @@ void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 
 void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, const std::vector<float> &splitFactors, std::vector<Vertex> &splitVertices)
 {
-	std::vector<Vec4> l_frustumsCornerPos;
+	std::vector<Vec3> l_frustumsCornerPos;
 	l_frustumsCornerPos.reserve(20);
 
 	//1. first 4 corner

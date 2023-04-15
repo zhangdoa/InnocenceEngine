@@ -252,7 +252,7 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 		l_vertices[i].m_pos.x = mesh->mVertices[i].x;
 		l_vertices[i].m_pos.y = mesh->mVertices[i].y;
 		l_vertices[i].m_pos.z = mesh->mVertices[i].z;
-		l_vertices[i].m_pos.w = 1.0f;
+		
 		l_vertices[i].m_normal.x = 0.0f;
 		l_vertices[i].m_normal.y = 0.0f;
 		l_vertices[i].m_normal.z = 1.0f;
@@ -328,51 +328,24 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 		for (uint32_t j = 0; j < l_bone->mNumWeights; j++)
 		{
 			auto l_vertexWeight = l_bone->mWeights[j];
-			auto l_Id = l_vertexWeight.mVertexId;
 			auto l_weight = l_vertexWeight.mWeight;
+			auto& l_vertex = l_vertices[l_vertexWeight.mVertexId];
 
-			// Only the first 4 most weighted bones will be stored
-			if (l_weight > l_vertices[l_Id].m_pad1.y)
+			// Only the first 2 most weighted bones will be stored
+			if (l_weight > l_vertex.m_pad1[1])
 			{
-				// Old 3rd to 4th
-				l_vertices[l_Id].m_pos.w = l_vertices[l_Id].m_pad2.z;
-				l_vertices[l_Id].m_normal.w = l_vertices[l_Id].m_pad2.w;
-				// Old 2nd to 3rd
-				l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
-				l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
 				// Old 1st to 2nd
-				l_vertices[l_Id].m_pad2.x = l_vertices[l_Id].m_pad1.x;
-				l_vertices[l_Id].m_pad2.y = l_vertices[l_Id].m_pad1.y;
+				l_vertex.m_pad1[2] = l_vertex.m_pad1[0];
+				l_vertex.m_pad1[3] = l_vertex.m_pad1[1];
 				// New as 1st
-				l_vertices[l_Id].m_pad1.x = (float)i;
-				l_vertices[l_Id].m_pad1.y = l_weight;
+				l_vertex.m_pad1[0] = (float)i;
+				l_vertex.m_pad1[1] = l_weight;
 			}
-			else if (l_weight > l_vertices[l_Id].m_pad2.y)
+			else if (l_weight > l_vertex.m_pad1[3])
 			{
-				// Old 3rd to 4th
-				l_vertices[l_Id].m_pos.w = l_vertices[l_Id].m_pad2.z;
-				l_vertices[l_Id].m_normal.w = l_vertices[l_Id].m_pad2.w;
-				// Old 2nd to 3rd
-				l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
-				l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
 				// New as 2nd
-				l_vertices[l_Id].m_pad2.x = (float)i;
-				l_vertices[l_Id].m_pad2.y = l_weight;
-			}
-			else if (l_weight > l_vertices[l_Id].m_pad2.w)
-			{
-				// Old 3rd to 4th
-				l_vertices[l_Id].m_pos.w = l_vertices[l_Id].m_pad2.z;
-				l_vertices[l_Id].m_normal.w = l_vertices[l_Id].m_pad2.w;
-				// New as 3rd
-				l_vertices[l_Id].m_pad2.z = (float)i;
-				l_vertices[l_Id].m_pad2.w = l_weight;
-			}
-			else if (l_weight > l_vertices[l_Id].m_normal.w)
-			{
-				// New as 4th
-				l_vertices[l_Id].m_pos.w = (float)i;
-				l_vertices[l_Id].m_normal.w = l_weight;
+				l_vertex.m_pad1[2] = (float)i;
+				l_vertex.m_pad1[3] = l_weight;
 			}
 		}
 	}

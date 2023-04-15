@@ -327,7 +327,7 @@ bool ExecuteRayTracing()
 					l_hitable->m_Material->MRAT.x = l_pair->material->m_materialAttributes.Metallic;
 					l_hitable->m_Material->MRAT.y = l_pair->material->m_materialAttributes.Roughness;
 
-					l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos;
+					l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos.xyz();
 					l_hitable->m_Sphere.m_radius = 1.0f;
 
 					l_hitableListVector.emplace_back(l_hitable);
@@ -345,7 +345,7 @@ bool ExecuteRayTracing()
 	l_hitable->m_Material->MRAT.x = 0.0f;
 	l_hitable->m_Material->MRAT.y = 1.0f;
 
-	l_hitable->m_Sphere.m_center = Vec4(0.0f, -200.0f, 0.0f, 1.0f);
+	l_hitable->m_Sphere.m_center = Vec3(0.0f, -200.0f, 0.0f);
 	l_hitable->m_Sphere.m_radius = 200.0f;
 
 	l_hitableListVector.emplace_back(l_hitable);
@@ -370,7 +370,7 @@ bool ExecuteRayTracing()
 		l_hitable->m_Material->MRAT.y = 1.0f;
 
 		l_hitable->m_Sphere.m_radius = (m_randomDirDelta(m_generator) + 1.5f);
-		l_hitable->m_Sphere.m_center = Vec4(m_randomDirDelta(m_generator) * 10.0f, l_hitable->m_Sphere.m_radius, m_randomDirDelta(m_generator) * 10.0f, 1.0f);
+		l_hitable->m_Sphere.m_center = Vec3(m_randomDirDelta(m_generator) * 10.0f, l_hitable->m_Sphere.m_radius, m_randomDirDelta(m_generator) * 10.0f);
 
 		l_hitableListVector.emplace_back(l_hitable);
 	}

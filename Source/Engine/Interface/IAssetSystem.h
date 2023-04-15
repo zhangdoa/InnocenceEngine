@@ -44,6 +44,6 @@ namespace Inno
 
 		virtual Model* addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel = ShaderModel::Opaque) = 0;
 		virtual bool generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent) = 0;
-		virtual void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace) = 0;
+		virtual void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace) = 0;
 	};
 }

@@ -470,7 +470,7 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 	{
 		if (PDC->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			auto l_spherePosLS = InnoMath::mul(l_sunRotationInv, PDC->m_SphereWS.m_center);
+			auto l_spherePosLS = InnoMath::mul(l_sunRotationInv, Vec4(PDC->m_SphereWS.m_center, 1.0f));
 			auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
 
 			if (l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius)

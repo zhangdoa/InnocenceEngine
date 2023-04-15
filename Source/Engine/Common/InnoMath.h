@@ -3,7 +3,7 @@
 #include "../Common/Config.h"
 #include "../Common/InnoType.h"
 
-//typedef __m128 TVec4;
+// typedef __m128 TVec4;
 
 #undef max
 #undef min
@@ -12,77 +12,73 @@ namespace Inno
 {
 	namespace InnoMath
 	{
-		template<class T>
+		template <class T>
 		const static T PI = T(3.14159265358979323846264338327950288L);
 
-		template<class T>
+		template <class T>
 		const static T E = T(2.71828182845904523536028747135266249L);
 
-		template<class T, size_t precision>
+		template <class T, size_t precision>
 		T epsilon = T(0.00000001L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 1> = T(0.1L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 2> = T(0.01L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 3> = T(0.001L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 4> = T(0.0001L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 5> = T(0.00001L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 6> = T(0.000001L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 7> = T(0.0000001L);
 
-		template<class T>
+		template <class T>
 		T epsilon<T, 8> = T(0.00000001L);
 
-		template<class T>
+		template <class T>
 		T zero = T(0.0L);
 
-		template<class T>
+		template <class T>
 		T half = T(0.5L);
 
-		template<class T>
+		template <class T>
 		T one = T(1.0L);
 
-		template<class T>
+		template <class T>
 		T two = T(2.0L);
 
-		template<class T>
+		template <class T>
 		T halfCircumference = T(180.0L);
 
-		template<class T>
+		template <class T>
 		T fullCircumference = T(360.0L);
 
-		template<class T>
+		template <class T>
 		class TVec2
 		{
 		public:
 			T x;
 			T y;
 
-			TVec2() noexcept
+			TVec2(): x(), y()
 			{
-				x = T();
-				y = T();
 			}
 
-			TVec2(T rhsX, T rhsY)
+			TVec2(T rhsX, T rhsY): x(rhsX), y(rhsY)
 			{
-				x = rhsX;
-				y = rhsY;
 			}
 
-			TVec2(const TVec2<T>& rhs)
+			TVec2(const TVec2& rhs)
 			{
 				x = rhs.x;
 				y = rhs.y;
@@ -92,6 +88,7 @@ namespace Inno
 			{
 				x = rhs.x;
 				y = rhs.y;
+
 				return *this;
 			}
 
@@ -157,12 +154,172 @@ namespace Inno
 			auto normalize() const -> TVec2<T>
 			{
 				auto l_length = length();
-				if(l_length != T())
+				if (l_length != T())
 				{
 					return TVec2<T>(x / l_length, y / l_length);
 				}
 
 				return TVec2<T>();
+			}
+		};
+
+		template <class T>
+		class TVec4;
+
+		template <class T>
+		class TVec3
+		{
+			friend class TVec4<T>;
+
+		public:
+			T x;
+			T y;
+			T z;
+
+			TVec3(): x(), y(), z()
+			{
+			}
+
+			TVec3(T rhsX, T rhsY, T rhsZ): x(rhsX), y(rhsY), z(rhsZ)
+			{
+			}
+
+			TVec3(const TVec3& rhs)
+			{
+				x = rhs.x;
+				y = rhs.y;
+				z = rhs.z;
+			}
+
+			auto operator=(const TVec3<T>& rhs) -> TVec3<T>&
+			{
+				x = rhs.x;
+				y = rhs.y;
+				z = rhs.z;
+
+				return *this;
+			}
+
+			auto operator[](size_t i) -> T&
+			{
+				return (&x)[i];
+			}
+
+			~TVec3()
+			{
+			}
+
+			auto operator+(const TVec3<T>& rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
+			}
+
+			auto operator+(T rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x + rhs, y + rhs, z + rhs);
+			}
+
+			auto operator-(const TVec3<T>& rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
+			}
+
+			auto operator-(T rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x - rhs, y - rhs, z - rhs);
+			}
+
+			auto operator*(const TVec3<T>& rhs) const -> T
+			{
+				return x * rhs.x + y * rhs.y + z * rhs.z;
+			}
+
+			auto cross(const TVec3<T>& rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+			}
+
+			auto scale(const TVec3<T>& rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
+			}
+
+			auto operator*(T rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x * rhs, y * rhs, z * rhs);
+			}
+
+			auto operator/(T rhs) const -> TVec3<T>
+			{
+				assert(rhs);
+				return TVec3<T>(x / rhs, y / rhs, z / rhs);
+			}
+
+			auto reciprocal() const -> TVec3<T>
+			{
+				T result_x = T();
+				T result_y = T();
+				T result_z = T();
+
+				if (x != T())
+				{
+					result_x = one<T> / x;
+				}
+				if (y != T())
+				{
+					result_y = one<T> / y;
+				}
+				if (z != T())
+				{
+					result_z = one<T> / z;
+				}
+
+				return TVec3<T>(result_x, result_y, result_z);
+			}
+
+			auto length() const -> T
+			{
+				// @TODO: replace with SIMD impl
+				return std::sqrt(x * x + y * y + z * z);
+			}
+
+			auto normalize() const -> TVec3<T>
+			{
+				// @TODO: replace with SIMD impl
+				auto l_length = length();
+				if (l_length != T())
+				{
+					return TVec3(x / l_length, y / l_length, z / l_length);
+				}
+
+				return TVec3<T>();
+			}
+
+			bool operator!=(const TVec3<T>& rhs) const
+			{
+				// @TODO: replace with SIMD impl
+				if (x != rhs.x)
+				{
+					return true;
+				}
+				else if (y != rhs.y)
+				{
+					return true;
+				}
+				else if (z != rhs.z)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			bool operator==(const TVec3<T>& rhs) const
+			{
+				// @TODO: replace with SIMD impl
+				return !(*this != rhs);
 			}
 		};
 
@@ -177,20 +334,12 @@ namespace Inno
 			T z;
 			T w;
 
-			TVec4() noexcept
+			TVec4(): x(), y(), z(), w()
 			{
-				x = T();
-				y = T();
-				z = T();
-				w = T();
 			}
 
-			TVec4(T rhsX, T rhsY, T rhsZ, T rhsW)
+			TVec4(T rhsX, T rhsY, T rhsZ, T rhsW): x(rhsX), y(rhsY), z(rhsZ), w(rhsW)
 			{
-				x = rhsX;
-				y = rhsY;
-				z = rhsZ;
-				w = rhsW;
 			}
 
 			TVec4(const TVec4& rhs)
@@ -207,6 +356,27 @@ namespace Inno
 				y = rhs.y;
 				z = rhs.z;
 				w = rhs.w;
+
+				return *this;
+			}
+
+			TVec3<T> xyz() const { return TVec3<T>(x, y, z); }
+			TVec3<T> rgb() const { return TVec3<T>(r, g, b); }
+
+			TVec4(const TVec3<T>& rhs, T rhs_w = zero<T>)
+			{
+				x = rhs.x;
+				y = rhs.y;
+				z = rhs.z;
+				w = rhs_w;
+			}
+
+			auto operator=(const TVec3<T>& rhs) -> TVec4<T>&
+			{
+				x = rhs.x;
+				y = rhs.y;
+				z = rhs.z;
+				w = zero<T>;
 				return *this;
 			}
 
@@ -239,7 +409,7 @@ namespace Inno
 				return TVec4<T>(x - rhs, y - rhs, z - rhs, w - rhs);
 			}
 
-			auto operator*(const TVec4<T>& rhs)const -> T
+			auto operator*(const TVec4<T>& rhs) const -> T
 			{
 				return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 			}
@@ -271,8 +441,7 @@ namespace Inno
 					w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
 					w * rhs.y - x * rhs.z + y * rhs.w + z * rhs.x,
 					w * rhs.z + x * rhs.y - y * rhs.x + z * rhs.w,
-					w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
-					);
+					w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z);
 				return l_result.normalize();
 			}
 
@@ -363,33 +532,33 @@ namespace Inno
 
 				// naive version
 				// get Q * V by hand
-				//TVec4 l_hiddenRotatedQuat;
-				//l_hiddenRotatedQuat.w = -m_rot.x * l_directionTVec4.x - m_rot.y * l_directionTVec4.y - m_rot.z * l_directionTVec4.z;
-				//l_hiddenRotatedQuat.x = m_rot.w * l_directionTVec4.x + m_rot.y * l_directionTVec4.z - m_rot.z * l_directionTVec4.y;
-				//l_hiddenRotatedQuat.y = m_rot.w * l_directionTVec4.y + m_rot.z * l_directionTVec4.x - m_rot.x * l_directionTVec4.z;
-				//l_hiddenRotatedQuat.z = m_rot.w * l_directionTVec4.z + m_rot.x * l_directionTVec4.y - m_rot.y * l_directionTVec4.x;
+				// TVec4 l_hiddenRotatedQuat;
+				// l_hiddenRotatedQuat.w = -m_rot.x * l_directionTVec4.x - m_rot.y * l_directionTVec4.y - m_rot.z * l_directionTVec4.z;
+				// l_hiddenRotatedQuat.x = m_rot.w * l_directionTVec4.x + m_rot.y * l_directionTVec4.z - m_rot.z * l_directionTVec4.y;
+				// l_hiddenRotatedQuat.y = m_rot.w * l_directionTVec4.y + m_rot.z * l_directionTVec4.x - m_rot.x * l_directionTVec4.z;
+				// l_hiddenRotatedQuat.z = m_rot.w * l_directionTVec4.z + m_rot.x * l_directionTVec4.y - m_rot.y * l_directionTVec4.x;
 
 				// get conjugated quaternion
-				//TVec4 l_conjugatedQuat;
-				//l_conjugatedQuat = conjugate(m_rot);
+				// TVec4 l_conjugatedQuat;
+				// l_conjugatedQuat = conjugate(m_rot);
 
 				// then QV * Q^-1
-				//TVec4 l_directionQuat;
-				//l_directionQuat = l_hiddenRotatedQuat * l_conjugatedQuat;
-				//l_directionTVec4.x = l_directionQuat.x;
-				//l_directionTVec4.y = l_directionQuat.y;
-				//l_directionTVec4.z = l_directionQuat.z;
+				// TVec4 l_directionQuat;
+				// l_directionQuat = l_hiddenRotatedQuat * l_conjugatedQuat;
+				// l_directionTVec4.x = l_directionQuat.x;
+				// l_directionTVec4.y = l_directionQuat.y;
+				// l_directionTVec4.z = l_directionQuat.z;
 
 				// traditional version, change direction vector to quaternion representation
 
-				//TVec4 l_directionQuat = TVec4(0.0, l_directionTVec4);
-				//l_directionQuat = m_rot * l_directionQuat * conjugate(m_rot);
-				//l_directionTVec4.x = l_directionQuat.x;
-				//l_directionTVec4.y = l_directionQuat.y;
-				//l_directionTVec4.z = l_directionQuat.z;
+				// TVec4 l_directionQuat = TVec4(0.0, l_directionTVec4);
+				// l_directionQuat = m_rot * l_directionQuat * conjugate(m_rot);
+				// l_directionTVec4.x = l_directionQuat.x;
+				// l_directionTVec4.y = l_directionQuat.y;
+				// l_directionTVec4.z = l_directionQuat.z;
 
 				// optimized version ([Kavan et al. ] Lemma 4)
-				//V' = V + 2 * Qv x (Qv x V + Qs * V)
+				// V' = V + 2 * Qv x (Qv x V + Qs * V)
 				auto result = *this + rhs.cross(rhs.cross(*this) + *this * rhs.w) * two<T>;
 
 				return result.normalize();
@@ -465,7 +634,7 @@ namespace Inno
 		m00 <-> x m01 <-> y m02 <-> z m03 <-> w  (best choice)
 		*/
 
-		template<class T>
+		template <class T>
 		class TMat4
 		{
 		public:
@@ -548,7 +717,7 @@ namespace Inno
 				return *this;
 			}
 
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
+#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 			auto TMat4::operator*(const TMat4<T>& rhs) const -> TMat4<T>
 			{
 				// @TODO: replace with SIMD impl
@@ -576,7 +745,7 @@ namespace Inno
 
 				return l_m;
 			}
-#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
+#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 			auto operator*(const TMat4<T>& rhs) const -> TMat4<T>
 			{
 				// @TODO: replace with SIMD impl
@@ -698,60 +867,63 @@ namespace Inno
 			}
 		};
 
-		template<class T>
+#pragma pack(push, 1)
+		template <class T>
 		class TVertex
 		{
 		public:
-			TVertex() noexcept :
-				m_pos(TVec4<T>(T(), T(), T(), one<T>)),
-				m_texCoord(TVec2<T>(T(), T())),
-				m_pad1(TVec2<T>(T(), T())),
-				m_normal(TVec4<T>(T(), T(), one<T>, T())),
-				m_pad2(TVec4<T>(T(), T(), T(), T())) {};
+			TVertex() noexcept: m_pos(),
+				m_normal(T(), T(), one<T>),
+				m_tangent(one<T>, T(), T()),
+				m_texCoord(),
+				m_pad1(),
+				m_pad2() {
+				std::fill(m_pad1, m_pad1 + 4, T());
+			};
 
-			TVertex(const TVertex& rhs) :
-				m_pos(rhs.m_pos),
-				m_pad1(TVec2<T>(T(), T())),
-				m_texCoord(rhs.m_texCoord),
+			TVertex(const TVertex& rhs): m_pos(rhs.m_pos),
 				m_normal(rhs.m_normal),
-				m_pad2(TVec4<T>(T(), T(), T(), T())) {};
+				m_tangent(rhs.m_tangent),
+				m_texCoord(rhs.m_texCoord),
+				m_pad2(rhs.m_pad2) {
+				std::memcpy(m_pad1, rhs.m_pad1, sizeof(T) * 4);
+			};
 
-			TVertex(const TVec4<T>& pos, const TVec2<T>& texCoord, const TVec4<T>& normal) :
-				m_pos(pos),
-				m_pad1(TVec2<T>(T(), T())),
-				m_texCoord(texCoord),
+			TVertex(const TVec3<T>& pos, const TVec3<T>& normal, const TVec3<T>& tangent, const TVec2<T>& texCoord): m_pos(pos),
 				m_normal(normal),
-				m_pad2(TVec4<T>(T(), T(), T(), T())) {};
+				m_tangent(tangent),
+				m_texCoord(texCoord) {};
 
 			auto operator=(const TVertex& rhs) -> TVertex<T>&
 			{
 				m_pos = rhs.m_pos;
-				m_pad1 = TVec2<T>(T(), T());
-				m_texCoord = rhs.m_texCoord;
 				m_normal = rhs.m_normal;
-				m_pad2 = TVec4<T>(T(), T(), T(), T());
+				m_tangent = rhs.m_tangent;
+				m_texCoord = rhs.m_texCoord;
+				std::memcpy(m_pad1, rhs.m_pad1, sizeof(T) * 4);
+				m_pad2 = rhs.m_pad2;
 				return *this;
 			}
 
 			~TVertex() {};
 
-			TVec4<T> m_pos; // 4 * sizeof(T)
+			TVec3<T> m_pos;		 // 3 * sizeof(T)
+			TVec3<T> m_normal;	 // 3 * sizeof(T)
+			TVec3<T> m_tangent;	 // 3 * sizeof(T)
 			TVec2<T> m_texCoord; // 2 * sizeof(T)
-			TVec2<T> m_pad1; // 2 * sizeof(T)
-			TVec4<T> m_normal; // 4 * sizeof(T)
-			TVec4<T> m_pad2; // 4 * sizeof(T)
+			T m_pad1[4];		 // 4 * sizeof(T)
+			T m_pad2;			 // 1 * sizeof(T)
 		};
+#pragma pack(pop)
 
-		template<class T>
+		template <class T>
 		class TRay
 		{
 		public:
-			TRay() noexcept :
-				m_origin(TVec4<T>(T(), T(), T(), one<T>)),
+			TRay() noexcept: m_origin(TVec4<T>(T(), T(), T(), one<T>)),
 				m_direction(TVec4<T>(T(), T(), T(), T())) {};
 
-			TRay(const TRay<T>& rhs) :
-				m_origin(rhs.m_origin),
+			TRay(const TRay<T>& rhs): m_origin(rhs.m_origin),
 				m_direction(rhs.m_direction) {};
 
 			auto operator=(const TRay<T>& rhs) -> TRay<T>&
@@ -764,20 +936,19 @@ namespace Inno
 
 			~TRay() {};
 
-			TVec4<T> m_origin; // 4 * sizeof(T)
+			TVec4<T> m_origin;	  // 4 * sizeof(T)
 			TVec4<T> m_direction; // 4 * sizeof(T)
 		};
 
-		template<class T>
+#pragma pack(push, 1)
+		template <class T>
 		class TSphere
 		{
 		public:
-			TSphere() noexcept :
-				m_center(TVec4<T>(T(), T(), T(), one<T>)),
+			TSphere() noexcept: m_center(TVec3<T>(T(), T(), T())),
 				m_radius(T()) {};
 
-			TSphere(const TSphere<T>& rhs) :
-				m_center(rhs.m_center),
+			TSphere(const TSphere<T>& rhs): m_center(rhs.m_center),
 				m_radius(rhs.m_radius) {};
 
 			auto operator=(const TSphere<T>& rhs) -> TSphere<T>&
@@ -789,20 +960,18 @@ namespace Inno
 
 			~TSphere() {};
 
-			TVec4<T> m_center; // 4 * sizeof(T)
-			T m_radius; // 1 * sizeof(T)
+			TVec3<T> m_center; // 3 * sizeof(T)
+			T m_radius;		   // 1 * sizeof(T)
 		};
 
-		template<class T>
+		template <class T>
 		class TPlane
 		{
 		public:
-			TPlane() noexcept :
-				m_normal(TVec4<T>(T(), T(), T(), one<T>)),
+			TPlane() noexcept: m_normal(TVec3<T>(T(), T(), one<T>)),
 				m_distance(T()) {};
 
-			TPlane(const TPlane<T>& rhs) :
-				m_normal(rhs.m_normal),
+			TPlane(const TPlane<T>& rhs): m_normal(rhs.m_normal),
 				m_distance(rhs.m_distance) {};
 
 			auto operator=(const TPlane<T>& rhs) -> TPlane<T>&
@@ -814,22 +983,22 @@ namespace Inno
 
 			~TPlane() {};
 
-			TVec4<T> m_normal; // 4 * sizeof(T)
-			T m_distance; // 1 * sizeof(T)
+			TVec3<T> m_normal; // 3 * sizeof(T)
+			T m_distance;	   // 1 * sizeof(T)
 		};
+#pragma pack(pop)
 
-		template<class T>
+		template <class T>
 		class TAABB
 		{
 		public:
-			TAABB() noexcept :
-				m_center(TVec4<T>(T(), T(), T(), one<T>)),
+			TAABB()
+				noexcept: m_center(TVec4<T>(T(), T(), T(), one<T>)),
 				m_extend(TVec4<T>(T(), T(), T(), one<T>)),
 				m_boundMin(TVec4<T>(T(), T(), T(), one<T>)),
 				m_boundMax(TVec4<T>(T(), T(), T(), one<T>)) {};
 
-			TAABB(const TAABB<T>& rhs) :
-				m_center(rhs.m_center),
+			TAABB(const TAABB<T>& rhs): m_center(rhs.m_center),
 				m_extend(rhs.m_extend),
 				m_boundMin(rhs.m_boundMin),
 				m_boundMax(rhs.m_boundMax) {};
@@ -845,20 +1014,19 @@ namespace Inno
 
 			~TAABB() {};
 
-			TVec4<T> m_center; // 4 * sizeof(T)
-			TVec4<T> m_extend; // 4 * sizeof(T)
+			TVec4<T> m_center;	 // 4 * sizeof(T)
+			TVec4<T> m_extend;	 // 4 * sizeof(T)
 			TVec4<T> m_boundMin; // 4 * sizeof(T)
 			TVec4<T> m_boundMax; // 4 * sizeof(T)
 		};
 
-		template<class T>
+		template <class T>
 		class TFrustum
 		{
 		public:
 			TFrustum() noexcept {};
 
-			TFrustum(const TFrustum<T>& rhs) :
-				m_px(rhs.m_px),
+			TFrustum(const TFrustum<T>& rhs): m_px(rhs.m_px),
 				m_nx(rhs.m_nx),
 				m_py(rhs.m_py),
 				m_ny(rhs.m_ny),
@@ -878,53 +1046,53 @@ namespace Inno
 
 			~TFrustum() {};
 
-			TPlane<T> m_px; // 5 * sizeof(T)
-			TPlane<T> m_nx; // 5 * sizeof(T)
-			TPlane<T> m_py; // 5 * sizeof(T)
-			TPlane<T> m_ny; // 5 * sizeof(T)
-			TPlane<T> m_pz; // 5 * sizeof(T)
-			TPlane<T> m_nz; // 5 * sizeof(T)
+			TPlane<T> m_px; // 4 * sizeof(T)
+			TPlane<T> m_nx; // 4 * sizeof(T)
+			TPlane<T> m_py; // 4 * sizeof(T)
+			TPlane<T> m_ny; // 4 * sizeof(T)
+			TPlane<T> m_pz; // 4 * sizeof(T)
+			TPlane<T> m_nz; // 4 * sizeof(T)
 		};
 
-		template<class T>
+		template <class T>
 		class TTransformVector
 		{
 		public:
-			TTransformVector() noexcept :
-				m_pos(TVec4<T>(T(), T(), T(), one<T>)),
+			TTransformVector() noexcept: m_pos(TVec4<T>(T(), T(), T(), one<T>)),
 				m_rot(TVec4<T>(T(), T(), T(), one<T>)),
 				m_scale(TVec4<T>(one<T>, one<T>, one<T>, one<T>)),
 				m_pad1(T(), T(), T(), T()) {}
 
 			~TTransformVector() {};
 
-			TVec4<T> m_pos; // 4 * sizeof(T)
-			TVec4<T> m_rot; // 4 * sizeof(T)
+			TVec4<T> m_pos;	  // 4 * sizeof(T)
+			TVec4<T> m_rot;	  // 4 * sizeof(T)
 			TVec4<T> m_scale; // 4 * sizeof(T)
-			TVec4<T> m_pad1; // 4 * sizeof(T)
+			TVec4<T> m_pad1;  // 4 * sizeof(T)
 		};
 
-		template<class T>
+		template <class T>
 		class TTransformMatrix
 		{
 		public:
 			TTransformMatrix() noexcept {}
 			~TTransformMatrix() {};
 
-			TMat4<T> m_translationMat; // 16 * sizeof(T)
-			TMat4<T> m_rotationMat; // 16 * sizeof(T)
-			TMat4<T> m_scaleMat; // 16 * sizeof(T)
+			TMat4<T> m_translationMat;	  // 16 * sizeof(T)
+			TMat4<T> m_rotationMat;		  // 16 * sizeof(T)
+			TMat4<T> m_scaleMat;		  // 16 * sizeof(T)
 			TMat4<T> m_transformationMat; // 16 * sizeof(T)
 		};
 
-		template<class T>
+		template <class T>
 		class TSH9
 		{
 		public:
-			TSH9() noexcept {}
+			TSH9()
+				noexcept {}
 			~TSH9() {};
 
-			auto operator+= (const TSH9<T>& rhs) -> TSH9<T>
+			auto operator+=(const TSH9<T>& rhs) -> TSH9<T>
 			{
 				L00 = L00 + rhs.L00;
 				L11 = L11 + rhs.L11;
@@ -939,7 +1107,7 @@ namespace Inno
 				return *this;
 			}
 
-			auto operator/= (T rhs) -> TSH9<T>
+			auto operator/=(T rhs) -> TSH9<T>
 			{
 				L00 = L00 / rhs;
 				L11 = L11 / rhs;
@@ -965,9 +1133,18 @@ namespace Inno
 			TVec4<T> L22;
 		};
 
-		enum class Direction { Forward, Backward, Up, Down, Right, Left };
+		enum class Direction
+		{
+			Forward,
+			Backward,
+			Up,
+			Down,
+			Right,
+			Left
+		};
 
 		using Vec2 = TVec2<float>;
+		using Vec3 = TVec3<float>;
 		using Vec4 = TVec4<float>;
 		using Mat4 = TMat4<float>;
 		using Vertex = TVertex<float>;

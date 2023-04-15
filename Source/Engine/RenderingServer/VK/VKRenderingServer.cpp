@@ -114,7 +114,7 @@ namespace VKRenderingServerNS
 	VkDebugUtilsMessengerEXT m_messengerCallback;
 
 	VkVertexInputBindingDescription m_vertexBindingDescription;
-	std::array<VkVertexInputAttributeDescription, 5> m_vertexAttributeDescriptions;
+	std::array<VkVertexInputAttributeDescription, 6> m_vertexAttributeDescriptions;
 
 	VkDescriptorPool m_materialDescriptorPool;
 	VkDescriptorSetLayout m_materialDescriptorLayout;
@@ -383,28 +383,33 @@ bool VKRenderingServerNS::CreateVertexInputAttributions()
 
 	m_vertexAttributeDescriptions[0].binding = 0;
 	m_vertexAttributeDescriptions[0].location = 0;
-	m_vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 	m_vertexAttributeDescriptions[0].offset = offsetof(Vertex, m_pos);
 
 	m_vertexAttributeDescriptions[1].binding = 0;
 	m_vertexAttributeDescriptions[1].location = 1;
-	m_vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-	m_vertexAttributeDescriptions[1].offset = offsetof(Vertex, m_texCoord);
+	m_vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	m_vertexAttributeDescriptions[1].offset = offsetof(Vertex, m_normal);
 
 	m_vertexAttributeDescriptions[2].binding = 0;
 	m_vertexAttributeDescriptions[2].location = 2;
-	m_vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-	m_vertexAttributeDescriptions[2].offset = offsetof(Vertex, m_pad1);
+	m_vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+	m_vertexAttributeDescriptions[2].offset = offsetof(Vertex, m_tangent);
 
 	m_vertexAttributeDescriptions[3].binding = 0;
 	m_vertexAttributeDescriptions[3].location = 3;
-	m_vertexAttributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	m_vertexAttributeDescriptions[3].offset = offsetof(Vertex, m_normal);
+	m_vertexAttributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+	m_vertexAttributeDescriptions[3].offset = offsetof(Vertex, m_texCoord);
 
 	m_vertexAttributeDescriptions[4].binding = 0;
 	m_vertexAttributeDescriptions[4].location = 4;
 	m_vertexAttributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	m_vertexAttributeDescriptions[4].offset = offsetof(Vertex, m_pad2);
+	m_vertexAttributeDescriptions[4].offset = offsetof(Vertex, m_pad1);
+
+	m_vertexAttributeDescriptions[5].binding = 0;
+	m_vertexAttributeDescriptions[5].location = 5;
+	m_vertexAttributeDescriptions[5].format = VK_FORMAT_R32_SFLOAT;
+	m_vertexAttributeDescriptions[5].offset = offsetof(Vertex, m_pad2);
 
 	return true;
 }

@@ -244,7 +244,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_translationMat;
 				for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 				{
-					std::vector<Vec4> l_vertices;
+					std::vector<Vec3> l_vertices;
 					std::vector<Index> l_indices =
 					{
 						0, 3, 1, 1, 3, 2,
@@ -279,7 +279,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 				{
 					DebugPerObjectConstantBuffer l_meshData;
 					auto l_s = InnoMath::toScaleMatrix(Vec4(0.1f, 0.1f, 0.1f, 0.1f));
-					l_meshData.m = InnoMath::toTranslationMatrix(j.m_pos);
+					l_meshData.m = InnoMath::toTranslationMatrix(Vec4(j.m_pos, 1.0f));
 					l_meshData.m = l_meshData.m * l_s;
 					l_meshData.materialID = 4;
 					m_debugSphereConstantBuffer.emplace_back(l_meshData);

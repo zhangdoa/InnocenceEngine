@@ -44,6 +44,6 @@ namespace Inno
 
 		Model* addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel) override;
 		bool generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent) override;
-		void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace) override;
+		void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace) override;
 	};
 }
