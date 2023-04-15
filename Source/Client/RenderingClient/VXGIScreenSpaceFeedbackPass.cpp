@@ -14,6 +14,8 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 {
+	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
+
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelScreenSpaceFeedbackPass/");
 
 	m_SPC->m_ShaderFilePaths.m_CSPath = "voxelScreenSpaceFeedBackPass.comp/";
@@ -25,9 +27,9 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelScreenSpaceFeedbackVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_TextureComp->m_TextureDesc.Width = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
-	m_TextureComp->m_TextureDesc.Height = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
-	m_TextureComp->m_TextureDesc.DepthOrArraySize = VXGIRenderer::Get().GetVXGIRenderingConfig().m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.UseMipMap = true;

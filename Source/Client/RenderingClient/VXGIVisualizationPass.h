@@ -3,19 +3,19 @@
 
 namespace Inno
 {
-	class VXGIVisualizationPassRenderingContext : public IRenderingContext
+	class VXGIVisualizationPassRenderingContext: public IRenderingContext
 	{
-		public:
+	public:
 		GPUResourceComponent* m_input;
 		uint32_t m_resolution;
 	};
 
-	class VXGIVisualizationPass : public IRenderPass
+	class VXGIVisualizationPass: public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIVisualizationPass)
 
-		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;

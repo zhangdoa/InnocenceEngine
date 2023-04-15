@@ -13,7 +13,7 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {
-	auto l_VXGIRenderingConfig = VXGIRenderer::Get().GetVXGIRenderingConfig();
+	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VXGIGeometryProcessPass/");
 
@@ -34,13 +34,13 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::R;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UInt32;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = l_VXGIRenderingConfig.m_voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = l_VXGIRenderingConfig.m_voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = l_VXGIRenderingConfig.m_voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.UseMipMap = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_VXGIRenderingConfig.m_voxelizationResolution;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_VXGIRenderingConfig.m_voxelizationResolution;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_VXGIRenderingConfig->m_voxelizationResolution;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_VXGIRenderingConfig->m_voxelizationResolution;
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -119,7 +119,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
 	m_result = g_Engine->getRenderingServer()->AddGPUBufferComponent("VoxelGeometryProcessSBuffer/");
-	m_result->m_ElementCount = l_VXGIRenderingConfig.m_voxelizationResolution * l_VXGIRenderingConfig.m_voxelizationResolution * l_VXGIRenderingConfig.m_voxelizationResolution * 2;
+	m_result->m_ElementCount = l_VXGIRenderingConfig->m_voxelizationResolution * l_VXGIRenderingConfig->m_voxelizationResolution * l_VXGIRenderingConfig->m_voxelizationResolution * 2;
 	m_result->m_ElementSize = sizeof(uint32_t);
 	m_result->m_GPUAccessibility = Accessibility::ReadWrite;
 

@@ -3,6 +3,7 @@
 
 namespace Inno
 {
+	class DefaultRenderingClientImpl;
 	class DefaultRenderingClient : public IRenderingClient
 	{
 	public:
@@ -17,6 +18,6 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 	private:
-		ObjectStatus m_ObjectStatus;
+		DefaultRenderingClientImpl* m_Impl;
 	};
 }

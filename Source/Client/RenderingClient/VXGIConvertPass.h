@@ -3,7 +3,14 @@
 
 namespace Inno
 {
-	class VXGIConvertPass : IRenderPass
+	class VXGIConvertPassRenderingContext: public IRenderingContext
+	{
+	public:
+		GPUResourceComponent* m_input;
+		uint32_t m_resolution;
+	};
+
+	class VXGIConvertPass: IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIConvertPass)

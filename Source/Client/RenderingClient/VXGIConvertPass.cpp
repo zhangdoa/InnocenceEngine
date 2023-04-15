@@ -2,7 +2,6 @@
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "VXGIRenderer.h"
-#include "VXGIGeometryProcessPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
@@ -13,16 +12,16 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 {
-	auto l_VXGIRenderingConfig = VXGIRenderer::Get().GetVXGIRenderingConfig();
+	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	m_luminanceVolume = g_Engine->getRenderingServer()->AddTextureComponent("VoxelLuminanceVolume/");
 	m_luminanceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_luminanceVolume->m_TextureDesc.Width = l_VXGIRenderingConfig.m_voxelizationResolution;
-	m_luminanceVolume->m_TextureDesc.Height = l_VXGIRenderingConfig.m_voxelizationResolution;
-	m_luminanceVolume->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig.m_voxelizationResolution;
+	m_luminanceVolume->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_luminanceVolume->m_TextureDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_luminanceVolume->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_luminanceVolume->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_luminanceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_luminanceVolume->m_TextureDesc.UseMipMap = true;
@@ -102,22 +101,22 @@ ObjectStatus VXGIConvertPass::GetStatus()
 }
 
 bool VXGIConvertPass::PrepareCommandList(IRenderingContext* renderingContext)
-{	
-	auto l_VXGIRenderingConfig = VXGIRenderer::Get().GetVXGIRenderingConfig();
-	auto l_numThreadGroup = l_VXGIRenderingConfig.m_voxelizationResolution / 8;
+{
+	auto l_renderingContext = reinterpret_cast<VXGIConvertPassRenderingContext*>(renderingContext);
+	auto l_numThreadGroup = l_renderingContext->m_resolution / 8;
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIGeometryProcessPass::Get().GetResult(), 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceVolume, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_normalVolume, 2, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp,l_numThreadGroup, l_numThreadGroup, l_numThreadGroup);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIGeometryProcessPass::Get().GetResult(), 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceVolume, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_normalVolume, 2, Accessibility::ReadWrite);
 

@@ -14,14 +14,14 @@ using namespace DefaultGPUBuffers;
 bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
-	auto l_VXGIRenderingConfig = VXGIRenderer::Get().GetVXGIRenderingConfig();
+	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelMultiBounceVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig.m_voxelizationResolution;
-	m_TextureComp->m_TextureDesc.Height = l_VXGIRenderingConfig.m_voxelizationResolution;
-	m_TextureComp->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig.m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.UseMipMap = true;
@@ -111,8 +111,8 @@ ObjectStatus VXGIMultiBouncePass::GetStatus()
 bool VXGIMultiBouncePass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
 	auto l_renderingContext = reinterpret_cast<VXGIMultiBouncePassRenderingContext*>(renderingContext);
-	auto l_VXGIRenderingConfig = VXGIRenderer::Get().GetVXGIRenderingConfig();
-	auto l_numThreadGroup = l_VXGIRenderingConfig.m_voxelizationResolution / 8;
+	auto l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(l_renderingContext);
+	auto l_numThreadGroup = l_VXGIRenderingConfig->m_voxelizationResolution / 8;
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);

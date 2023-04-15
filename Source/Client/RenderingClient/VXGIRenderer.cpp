@@ -58,9 +58,10 @@ bool VXGIRenderer::Initialize()
 
 bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 {
+	VXGIRenderingConfig* l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(renderingConfig);
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	if (m_VXGIRenderingConfig.m_screenFeedback)
+	if (l_VXGIRenderingConfig->m_screenFeedback)
 	{
 		auto l_cameraPos = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer().camera_posWS;
 		VoxelizationConstantBuffer l_voxelPassCB;
@@ -68,14 +69,14 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		l_voxelPassCB.volumeCenter = l_cameraPos;
 		l_voxelPassCB.volumeExtend = 128.0f;
 		l_voxelPassCB.volumeExtendRcp = 1.0f / l_voxelPassCB.volumeExtend;
-		l_voxelPassCB.volumeResolution = (float)m_VXGIRenderingConfig.m_voxelizationResolution;
+		l_voxelPassCB.volumeResolution = (float)l_VXGIRenderingConfig->m_voxelizationResolution;
 		l_voxelPassCB.volumeResolutionRcp = 1.0f / l_voxelPassCB.volumeResolution;
 		l_voxelPassCB.voxelSize = l_voxelPassCB.volumeExtend / l_voxelPassCB.volumeResolution;
 		l_voxelPassCB.voxelSizeRcp = 1.0f / l_voxelPassCB.voxelSize;
-		l_voxelPassCB.numCones = (float)m_VXGIRenderingConfig.m_numCones;
+		l_voxelPassCB.numCones = (float)l_VXGIRenderingConfig->m_numCones;
 		l_voxelPassCB.numConesRcp = 1.0f / l_voxelPassCB.numCones;
-		l_voxelPassCB.coneTracingStep = (float)m_VXGIRenderingConfig.m_coneTracingStep;
-		l_voxelPassCB.coneTracingMaxDistance = m_VXGIRenderingConfig.m_coneTracingMaxDistance;
+		l_voxelPassCB.coneTracingStep = (float)l_VXGIRenderingConfig->m_coneTracingStep;
+		l_voxelPassCB.coneTracingMaxDistance = l_VXGIRenderingConfig->m_coneTracingMaxDistance;
 
 		l_renderingServer->UploadGPUBufferComponent(m_VXGICBuffer, &l_voxelPassCB);
 
@@ -84,7 +85,12 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 			m_isInitialLoadScene = false;
 
 			VXGIGeometryProcessPass::Get().PrepareCommandList();
-			VXGIConvertPass::Get().PrepareCommandList();
+
+			VXGIConvertPassRenderingContext l_VXGIConvertPassRenderingContext;
+			l_VXGIConvertPassRenderingContext.m_input = VXGIGeometryProcessPass::Get().GetResult();
+			l_VXGIConvertPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
+
+			VXGIConvertPass::Get().PrepareCommandList(&l_VXGIConvertPassRenderingContext);
 
 			l_renderingServer->ExecuteCommandList(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 
@@ -104,12 +110,13 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 			l_renderingServer->ExecuteCommandList(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 		}
 
-		VXGIRayTracingPassRenderingContext l_VXGIRayTracingPassRenderingContext;
 		l_renderingServer->WaitCommandQueue(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-		l_VXGIRayTracingPassRenderingContext.m_input = VXGIScreenSpaceFeedbackPass::Get().GetResult();
 
 		// @TODO: Investigate if we really needs a dynamic output target or not
 		l_renderingServer->WaitCommandQueue(VXGIRayTracingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+
+		VXGIRayTracingPassRenderingContext l_VXGIRayTracingPassRenderingContext;
+		l_VXGIRayTracingPassRenderingContext.m_input = VXGIScreenSpaceFeedbackPass::Get().GetResult();
 		l_VXGIRayTracingPassRenderingContext.m_output = VXGIRayTracingPass::Get().GetResult();
 
 		VXGIRayTracingPass::Get().PrepareCommandList(&l_VXGIRayTracingPassRenderingContext);
@@ -131,14 +138,14 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		l_voxelPassCB.volumeCenter = l_adjustedCenter;
 		l_voxelPassCB.volumeExtend = l_maxExtend;
 		l_voxelPassCB.volumeExtendRcp = 1.0f / l_voxelPassCB.volumeExtend;
-		l_voxelPassCB.volumeResolution = (float)m_VXGIRenderingConfig.m_voxelizationResolution;
+		l_voxelPassCB.volumeResolution = (float)l_VXGIRenderingConfig->m_voxelizationResolution;
 		l_voxelPassCB.volumeResolutionRcp = 1.0f / l_voxelPassCB.volumeResolution;
 		l_voxelPassCB.voxelSize = l_voxelPassCB.volumeExtend / l_voxelPassCB.volumeResolution;
 		l_voxelPassCB.voxelSizeRcp = 1.0f / l_voxelPassCB.voxelSize;
-		l_voxelPassCB.numCones = (float)m_VXGIRenderingConfig.m_numCones;
+		l_voxelPassCB.numCones = (float)l_VXGIRenderingConfig->m_numCones;
 		l_voxelPassCB.numConesRcp = 1.0f / l_voxelPassCB.numCones;
-		l_voxelPassCB.coneTracingStep = (float)m_VXGIRenderingConfig.m_coneTracingStep;
-		l_voxelPassCB.coneTracingMaxDistance = m_VXGIRenderingConfig.m_coneTracingMaxDistance;
+		l_voxelPassCB.coneTracingStep = (float)l_VXGIRenderingConfig->m_coneTracingStep;
+		l_voxelPassCB.coneTracingMaxDistance = l_VXGIRenderingConfig->m_coneTracingMaxDistance;
 
 		l_renderingServer->UploadGPUBufferComponent(m_VXGICBuffer, &l_voxelPassCB);
 
@@ -147,22 +154,26 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		l_renderingServer->ClearGPUBufferComponent(reinterpret_cast<GPUBufferComponent*>(VXGIGeometryProcessPass::Get().GetResult()));
 
 		VXGIGeometryProcessPass::Get().PrepareCommandList();
+		VXGIConvertPassRenderingContext l_VXGIConvertPassRenderingContext;
+		l_VXGIConvertPassRenderingContext.m_input = VXGIGeometryProcessPass::Get().GetResult();
+		l_VXGIConvertPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
+		VXGIConvertPass::Get().PrepareCommandList(&l_VXGIConvertPassRenderingContext);
+		
 		l_renderingServer->ExecuteCommandList(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 
 		l_renderingServer->WaitCommandQueue(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-		VXGIConvertPass::Get().PrepareCommandList();
 		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 
-		if (m_VXGIRenderingConfig.m_multiBounceCount)
+		if (l_VXGIRenderingConfig->m_multiBounceCount)
 		{
-			VXGIMultiBouncePassRenderingContext l_VXGIMultiBouncePassRenderingContext;
 			l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			
+			VXGIMultiBouncePassRenderingContext l_VXGIMultiBouncePassRenderingContext;
 			l_VXGIMultiBouncePassRenderingContext.m_input = VXGIConvertPass::Get().GetLuminanceVolume();
-
 			// @TODO: Investigate if we really needs a dynamic output target or not
 			l_VXGIMultiBouncePassRenderingContext.m_output = VXGIMultiBouncePass::Get().GetResult();	
 
-			for (uint32_t i = 0; i < m_VXGIRenderingConfig.m_multiBounceCount; i++)
+			for (uint32_t i = 0; i < l_VXGIRenderingConfig->m_multiBounceCount; i++)
 			{
 				VXGIMultiBouncePass::Get().PrepareCommandList(&l_VXGIMultiBouncePassRenderingContext);
 
@@ -182,10 +193,10 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		}
 	}
 
-	if (m_VXGIRenderingConfig.m_visualize)
+	if (l_VXGIRenderingConfig->m_visualize)
 	{
 		VXGIVisualizationPassRenderingContext l_VXGIVisualizationPassRenderingContext;
-		l_VXGIVisualizationPassRenderingContext.m_input = m_result;
+		l_VXGIVisualizationPassRenderingContext.m_input = VXGIGeometryProcessPass::Get().GetResult();
 
 		VXGIVisualizationPass::Get().PrepareCommandList(&l_VXGIVisualizationPassRenderingContext);
 		l_renderingServer->ExecuteCommandList(VXGIVisualizationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
@@ -204,11 +215,6 @@ bool VXGIRenderer::Terminate()
 ObjectStatus VXGIRenderer::GetStatus()
 {
 	return m_ObjectStatus;
-}
-
-const VXGIRenderingConfig& VXGIRenderer::GetVXGIRenderingConfig()
-{
-	return m_VXGIRenderingConfig;
 }
 
 GPUResourceComponent *VXGIRenderer::GetVoxelizationCBuffer()

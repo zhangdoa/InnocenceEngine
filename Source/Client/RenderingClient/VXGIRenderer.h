@@ -5,9 +5,9 @@
 
 namespace Inno
 {
-	class VXGIRenderingConfig : public IRenderingConfig
+	class VXGIRenderingConfig: public IRenderingConfig
 	{
-		public:
+	public:
 		uint32_t m_voxelizationResolution = 128;
 		uint32_t m_numCones = 16;
 		uint32_t m_coneTracingStep = 2;
@@ -17,6 +17,12 @@ namespace Inno
 		bool m_visualize = false;
 		uint32_t m_multiBounceCount = 0;
 		bool m_screenFeedback = false;
+	};
+
+	class VXGIRendererSystemConfig: public ISystemConfig
+	{
+	public:
+		VXGIRenderingConfig m_VXGIRenderingConfig = {};
 	};
 
 	class VXGIRenderer : public IRenderingClient
@@ -31,7 +37,6 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		const VXGIRenderingConfig& GetVXGIRenderingConfig();
 		GPUResourceComponent *GetVoxelizationCBuffer();
 		GPUResourceComponent *GetResult();
 		GPUResourceComponent *GetVisualizationResult();
@@ -39,9 +44,7 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		
-		VXGIRenderingConfig m_VXGIRenderingConfig = VXGIRenderingConfig{};
 		GPUBufferComponent *m_VXGICBuffer;
-
 		GPUResourceComponent *m_result;
 
 		bool m_isInitialLoadScene = true;

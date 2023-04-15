@@ -14,14 +14,14 @@ using namespace DefaultGPUBuffers;
 bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
-	auto l_VXGIRenderingConfig = VXGIRenderer::Get().GetVXGIRenderingConfig();
+	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelRayTracingVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig.m_voxelizationResolution;
-	m_TextureComp->m_TextureDesc.Height = l_VXGIRenderingConfig.m_voxelizationResolution;
-	m_TextureComp->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig.m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_TextureComp->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.UseMipMap = true;
@@ -90,13 +90,13 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodW = TextureWrapMethod::Repeat;
 
-	m_Ray.reserve(l_VXGIRenderingConfig.m_maxRay * l_VXGIRenderingConfig.m_maxRay);
-	m_ProbeIndex.reserve(l_VXGIRenderingConfig.m_maxProbe * l_VXGIRenderingConfig.m_maxProbe * l_VXGIRenderingConfig.m_maxProbe);
-	m_randomInt = std::uniform_int_distribution<uint32_t>(0, l_VXGIRenderingConfig.m_voxelizationResolution);
+	m_Ray.reserve(l_VXGIRenderingConfig->m_maxRay * l_VXGIRenderingConfig->m_maxRay);
+	m_ProbeIndex.reserve(l_VXGIRenderingConfig->m_maxProbe * l_VXGIRenderingConfig->m_maxProbe * l_VXGIRenderingConfig->m_maxProbe);
+	m_randomInt = std::uniform_int_distribution<uint32_t>(0, l_VXGIRenderingConfig->m_voxelizationResolution);
 
 	auto radius = 1.0f;
-	auto sectorCount = l_VXGIRenderingConfig.m_maxRay;
-	auto stackCount = l_VXGIRenderingConfig.m_maxRay;
+	auto sectorCount = l_VXGIRenderingConfig->m_maxRay;
+	auto stackCount = l_VXGIRenderingConfig->m_maxRay;
 
 	float x, y, z, xy;
 
@@ -124,14 +124,14 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 	}
 
 	m_RaySBufferGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("VoxelRayTracingRaySBuffer/");
-	m_RaySBufferGPUBufferComp->m_ElementCount = l_VXGIRenderingConfig.m_maxRay * l_VXGIRenderingConfig.m_maxRay;
+	m_RaySBufferGPUBufferComp->m_ElementCount = l_VXGIRenderingConfig->m_maxRay * l_VXGIRenderingConfig->m_maxRay;
 	m_RaySBufferGPUBufferComp->m_ElementSize = sizeof(Vec4);
 	m_RaySBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_RaySBufferGPUBufferComp->m_InitialData = &m_Ray[0];
 
 	////
 	m_ProbeIndexSBufferGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("VoxelRayTracingProbeIndexSBuffer/");
-	m_ProbeIndexSBufferGPUBufferComp->m_ElementCount = l_VXGIRenderingConfig.m_maxProbe * l_VXGIRenderingConfig.m_maxProbe * l_VXGIRenderingConfig.m_maxProbe;
+	m_ProbeIndexSBufferGPUBufferComp->m_ElementCount = l_VXGIRenderingConfig->m_maxProbe * l_VXGIRenderingConfig->m_maxProbe * l_VXGIRenderingConfig->m_maxProbe;
 	m_ProbeIndexSBufferGPUBufferComp->m_ElementSize = sizeof(TVec4<uint32_t>);
 	m_ProbeIndexSBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
