@@ -1490,7 +1490,8 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
 	
-	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), l_rhs->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	if(l_rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), l_rhs->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 	if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
 	{
@@ -1513,7 +1514,8 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 			NULL);
 	}
 
-	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, l_rhs->m_CurrentState));
+	if(l_rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, l_rhs->m_CurrentState));
 
 	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
 
