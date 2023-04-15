@@ -161,8 +161,14 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		
 		l_renderingServer->ExecuteCommandList(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 
-		l_renderingServer->WaitCommandQueue(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+		l_renderingServer->WaitCommandQueue(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+
+		g_Engine->getRenderingServer()->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetLuminanceVolume()));
+		g_Engine->getRenderingServer()->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetNormalVolume()));
 
 		if (l_VXGIRenderingConfig->m_multiBounceCount)
 		{
@@ -196,7 +202,8 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 	if (l_VXGIRenderingConfig->m_visualize)
 	{
 		VXGIVisualizationPassRenderingContext l_VXGIVisualizationPassRenderingContext;
-		l_VXGIVisualizationPassRenderingContext.m_input = VXGIGeometryProcessPass::Get().GetResult();
+		l_VXGIVisualizationPassRenderingContext.m_input = m_result;
+		l_VXGIVisualizationPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
 
 		VXGIVisualizationPass::Get().PrepareCommandList(&l_VXGIVisualizationPassRenderingContext);
 		l_renderingServer->ExecuteCommandList(VXGIVisualizationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);

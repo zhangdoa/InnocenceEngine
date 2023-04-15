@@ -122,9 +122,6 @@ bool VXGIConvertPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->GenerateMipmap(m_luminanceVolume);
-	g_Engine->getRenderingServer()->GenerateMipmap(m_normalVolume);
-
 	return true;
 }
 
