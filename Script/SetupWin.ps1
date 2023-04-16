@@ -3,10 +3,6 @@ git submodule update
 mkdir ../Source/External/GitSubmodules/assimp/build
 mkdir ../Source/External/GitSubmodules/GLAD/build
 mkdir ../Source/External/Include/GL
-mkdir ../Source/External/Include/vulkan
-mkdir ../Source/External/Include/DX12
-mkdir ../Source/External/Include/json
-mkdir ../Source/External/Include/stb
 mkdir ../Source/External/DLL/Win/Debug
 mkdir ../Source/External/Lib/Win/Debug
 mkdir ../Source/External/DLL/Win/Release
@@ -20,15 +16,6 @@ mkdir ../Res/Intermediate
 
 Set-Location ../Source/External/GitSubmodules
 
-Copy-Item -Recurse -Force Vulkan-Headers\include\* ..\Include\vulkan\
-Copy-Item -Recurse -Force DirectX-Headers\include\* ..\Include\DX12\
-
-Copy-Item -Recurse -Force assimp\include\assimp\* ..\Include\assimp\
-Copy-Item -Force assimp\include\assimp\* ..\Include\assimp\
-
-Copy-Item -Force stb\stb_image.h ..\Include\stb\
-Copy-Item -Force stb\stb_image_write.h ..\Include\stb\
-
 Copy-Item -Force imgui\*.h ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\*.cpp ..\..\Engine\ThirdParty\ImGui\
 
@@ -41,11 +28,6 @@ Copy-Item -Force imgui\backends\imgui_impl_dx11.cpp ..\..\Engine\ThirdParty\ImGu
 Copy-Item -Force imgui\backends\imgui_impl_opengl3.h ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\backends\imgui_impl_opengl3.cpp ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\backends\imgui_impl_opengl3_loader.h ..\..\Engine\ThirdParty\ImGui\
-
-Copy-Item -Recurse -Force json\single_include\nlohmann\json.hpp ..\Include\json\
-
-Copy-Item -Recurse -Force PhysX\physx\include\* ..\Include\PhysX\
-Copy-Item -Recurse -Force PhysX\pxshared\include\* ..\Include\PhysX\
 
 Copy-Item -Recurse -Force QDarkStyleSheet\qdarkstyle\rc\* ..\..\Editor\InnoEditor\qdarkstyle\rc\
 Copy-Item -Force QDarkStyleSheet\qdarkstyle\style.qss ..\..\Editor\InnoEditor\qdarkstyle\

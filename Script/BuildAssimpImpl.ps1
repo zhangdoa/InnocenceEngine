@@ -30,8 +30,6 @@ Start-Process $msbuildPath -ArgumentList $msbuildArgs -NoNewWindow -Wait
 
 Write-Output "Copy files..."
 
-xcopy /s/e/y include\assimp\config.h ..\..\..\..\Include\assimp\
-
 xcopy /s/e/y bin\$buildType\*.dll ..\..\..\..\DLL\Win\$buildType\
 xcopy /s/e/y lib\$buildType\*.lib ..\..\..\..\Lib\Win\$buildType\
 
