@@ -56,10 +56,40 @@ Invoke-WebRequest -Uri https://www.khronos.org/registry/OpenGL/api/GL/glext.h -O
 
 Set-Location ../
 mkdir Tools
-# Find the latest release
-$(Invoke-WebRequest "https://github.com/microsoft/vswhere/releases/latest").BaseResponse.RequestMessage.RequestUri -match "tag/(.*)$"
+Set-Location Tools
+
+$headers = @{
+    "Accept" = "application/vnd.github.v3+json"
+    "User-Agent" = "PowerShell"
+}
+
+# Find the latest release version number
+$url = "https://api.github.com/repos/microsoft/vswhere/releases/latest"
+$response = Invoke-RestMethod -Uri $url -Headers $headers
+$version = $response.tag_name
 
 # Download the vswhere.exe
-Invoke-WebRequest "https://github.com/microsoft/vswhere/releases/download/$($Matches[1])/vswhere.exe" -OutFile "vswhere.exe"
+$downloadUrl = "https://github.com/microsoft/vswhere/releases/download/$version/vswhere.exe"
+Invoke-WebRequest $downloadUrl -OutFile "vswhere.exe"
 
-Set-Location ../../Script
+# Find the latest release version
+$url = "https://api.github.com/repos/microsoft/DirectXShaderCompiler/releases/latest"
+$response = Invoke-RestMethod -Uri $url -Headers $headers
+$version = $response.tag_name
+
+# Find the asset download URL
+foreach ($asset in $response.assets) {
+    if ($asset.name -like "dxc_*") {
+        $downloadUrl = $asset.browser_download_url
+        break
+    }
+}
+
+# Download the DXIL compiler binaries
+Invoke-WebRequest $downloadUrl -OutFile "dxc.zip"
+
+# Extract the contents of the archive
+Expand-Archive "dxc.zip"
+Copy-Item -Recurse -Force dxc\bin\x64\* .
+
+Set-Location ../../../Script
