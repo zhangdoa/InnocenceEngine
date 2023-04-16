@@ -19,7 +19,7 @@ namespace Inno
 
         ObjectStatus GetStatus() override;
 
-        std::string getApplicationName() override;
+        const char* GetApplicationName() override;
 
     private:
     	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
@@ -71,8 +71,8 @@ namespace Inno
         return m_ObjectStatus;
     }
 
-    std::string DefaultLogicClientImpl::getApplicationName()
+    const char* DefaultLogicClientImpl::GetApplicationName()
     {
-        return std::string("InnoLogicClient/");
+        return "InnoLogicClient/";
     }
 }

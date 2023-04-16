@@ -9,6 +9,6 @@ namespace Inno
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(ILogicClient);
 
-		virtual std::string getApplicationName() = 0;
+		virtual const char* GetApplicationName() = 0;
 	};
 }

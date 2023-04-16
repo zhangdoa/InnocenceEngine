@@ -16,7 +16,7 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		std::string getApplicationName() override;
+		const char* GetApplicationName() override;
 
 	private:
 		DefaultLogicClientImpl* GetImpl();

@@ -33,9 +33,9 @@ ObjectStatus DefaultLogicClient::GetStatus()
 	return GetImpl()->GetStatus();
 }
 
-std::string Inno::DefaultLogicClient::getApplicationName()
+const char* Inno::DefaultLogicClient::GetApplicationName()
 {
-	return GetImpl()->getApplicationName();
+	return GetImpl()->GetApplicationName();
 }
 
 DefaultLogicClientImpl* Inno::DefaultLogicClient::GetImpl()

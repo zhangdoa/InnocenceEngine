@@ -419,7 +419,7 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	m_RenderingClient = renderingClient;
 	m_LogicClient = logicClient;
 
-	m_applicationName = m_LogicClient->getApplicationName().c_str();
+	m_applicationName = m_LogicClient->GetApplicationName();
 
 	if (!createSystemInstance(appHook, extraHook, pScmdline))
 	{
