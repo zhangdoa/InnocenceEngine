@@ -76,22 +76,22 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 INCLUDEPATH += $$PWD/../../../Source/External/Include
 
-win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoApplicationEntry
-else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoApplicationEntry
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/LibArchive/Release/ -lInnoApplicationEntry
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/LibArchive/Debug/ -lInnoApplicationEntry
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoApplicationEntry
 
-win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoCore
-else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoCore
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/LibArchive/Release/ -lInnoCore
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/LibArchive/Debug/ -lInnoCore
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoCore
 
-win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoEngine
-else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoEngine
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/LibArchive/Release/ -lInnoEngine
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/LibArchive/Debug/ -lInnoEngine
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoEngine
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoDefaultRenderingClient
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoDefaultRenderingClient
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/LibArchive/Release/ -lInnoDefaultRenderingClient
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/LibArchive/Debug/ -lInnoDefaultRenderingClient
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoDefaultRenderingClient
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoDefaultLogicClient
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoDefaultLogicClient
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/LibArchive/Release/ -lInnoDefaultLogicClient
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/LibArchive/Debug/ -lInnoDefaultLogicClient
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoDefaultLogicClient
