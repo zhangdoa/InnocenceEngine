@@ -83,6 +83,7 @@ endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 configure_file ("${CMAKE_SOURCE_DIR}/Engine/Common/Config.h.in" "${CMAKE_SOURCE_DIR}/Engine/Common/Config.h" @ONLY)
 set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/External/Lib/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE})
 
+set(INNO_BUILD_TOOLS ON)
 add_subdirectory("Engine")
 add_subdirectory("Test")
 add_subdirectory("Client")

@@ -1,5 +1,5 @@
 #include "InnoBaker.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "../../Engine/Common/InnoMathHelper.h"
 

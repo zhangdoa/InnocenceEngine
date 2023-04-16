@@ -25,7 +25,7 @@ class InnoBakerLogicClient : public ILogicClient
 	{
 		return ObjectStatus();
 	}
-	std::string getApplicationName() override
+	const char* GetApplicationName() override
 	{
 		return "InnoBaker/";
 	}
