@@ -3,6 +3,12 @@
 
 namespace Inno
 {
+	class PostTAAPassRenderingContext: public IRenderingContext
+	{
+	public:
+		GPUResourceComponent* m_input;	
+	};
+
 	class PostTAAPass : IRenderPass
 	{
 	public:

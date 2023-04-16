@@ -1,8 +1,6 @@
 #include "PostTAAPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "TAAPass.h"
-
 #include "../../Engine/Interface/IEngine.h"
 
 using namespace Inno;
@@ -75,23 +73,22 @@ ObjectStatus PostTAAPass::GetStatus()
 
 bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);	
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TAAPass::Get().GetResult(), 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TAAPass::Get().GetResult(), 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
-
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp, GPUEngineType::Compute);
 
 	return true;
 }

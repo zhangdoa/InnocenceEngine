@@ -25,10 +25,15 @@ void main(ComputeInputType input)
 	float2 MotionVector = in_motionVector[input.dispatchThreadID.xy].xy;
 	int2 historyTexCoords = input.dispatchThreadID.xy - MotionVector * perFrameCBuffer.viewportSize.xy;
 
-	float3 currentColor = in_current[input.dispatchThreadID.xy].rgb;
-	float lumaCurrentColor = GetLuma(currentColor);
-
 	float3 historyColor = in_history[input.dispatchThreadID.xy].rgb;
+	float3 currentColor = in_current[input.dispatchThreadID.xy].rgb;
+	bool3 hasNan = isnan(currentColor);
+	if(hasNan.x || hasNan.y || hasNan.z)
+	{
+		currentColor = historyColor;
+	}
+
+	float lumaCurrentColor = GetLuma(currentColor);
 	float lumaHistoryColor = GetLuma(historyColor);
 
 	float3 maxNeighbor = float3(FLT_MIN, FLT_MIN, FLT_MIN);

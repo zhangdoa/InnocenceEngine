@@ -1,8 +1,6 @@
 #include "TAAPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "OpaquePass.h"
-
 #include "../../Engine/Interface/IEngine.h"
 
 using namespace Inno;
@@ -97,40 +95,22 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	TextureComponent *l_writeTextureComp;
-	TextureComponent *l_ReadTextureComp;
-
-	if (m_isPassOdd)
-	{
-		l_ReadTextureComp = m_oddTextureComp;
-		l_writeTextureComp = m_evenTextureComp;
-
-		m_isPassOdd = false;
-	}
-	else
-	{
-		l_ReadTextureComp = m_evenTextureComp;
-		l_writeTextureComp = m_oddTextureComp;
-
-		m_isPassOdd = true;
-	}
-
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_ReadTextureComp, 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_writeTextureComp, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 2);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 3, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_ReadTextureComp, 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 2);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_writeTextureComp, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 2);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 3, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
@@ -142,14 +122,12 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 	return m_RenderPassComp;
 }
 
-GPUResourceComponent *TAAPass::GetResult()
+GPUResourceComponent *TAAPass::GetOddResult()
 {
-	if (m_isPassOdd)
-	{
-		return m_evenTextureComp;
-	}
-	else
-	{
-		return m_oddTextureComp;
-	}
+	return m_oddTextureComp;
+}
+
+GPUResourceComponent *TAAPass::GetEvenResult()
+{
+	return m_evenTextureComp;
 }

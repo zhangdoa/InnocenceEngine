@@ -71,6 +71,7 @@ namespace Inno
 		bool m_drawBRDFTest = false;
 
 		VXGIRendererSystemConfig m_VXGIRendererSystemConfig = {};
+		bool m_isPassOdd = false;
 
 	private:
 		ObjectStatus m_ObjectStatus;
@@ -358,15 +359,33 @@ namespace Inno
 			l_renderingServer->ExecuteCommandList(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 
 			if (l_renderingConfig.useTAA)
-			{
+			{	
 				TAAPassRenderingContext l_TAAPassRenderingContext;
+				if (m_isPassOdd)
+				{
+					l_TAAPassRenderingContext.m_readTexture = TAAPass::Get().GetOddResult();
+					l_TAAPassRenderingContext.m_writeTexture = TAAPass::Get().GetEvenResult();
+
+					m_isPassOdd = false;
+				}
+				else
+				{
+					l_TAAPassRenderingContext.m_readTexture = TAAPass::Get().GetEvenResult();
+					l_TAAPassRenderingContext.m_writeTexture = TAAPass::Get().GetOddResult();
+
+					m_isPassOdd = true;
+				}
+
 				l_TAAPassRenderingContext.m_input = l_canvas;
+				l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3];
 
 				TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
 
-				PostTAAPass::Get().PrepareCommandList();
+				PostTAAPassRenderingContext l_PostTAAPassRenderingContext;
+				l_PostTAAPassRenderingContext.m_input = l_TAAPassRenderingContext.m_writeTexture;
+				PostTAAPass::Get().PrepareCommandList(&l_PostTAAPassRenderingContext);
 
-				l_renderingServer->WaitCommandQueue(l_canvasOwner, GPUEngineType::Graphics, GPUEngineType::Compute);
+				l_renderingServer->WaitCommandQueue(l_canvasOwner, GPUEngineType::Graphics, l_canvasOwner->m_RenderPassDesc.m_GPUEngineType);
 				l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 				l_renderingServer->WaitCommandQueue(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 				l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
@@ -386,7 +405,7 @@ namespace Inno
 				l_MotionBlurPassRenderingContext.m_input = l_canvas;
 				MotionBlurPass::Get().PrepareCommandList(&l_MotionBlurPassRenderingContext);
 
-				l_renderingServer->WaitCommandQueue(l_canvasOwner, GPUEngineType::Graphics, GPUEngineType::Compute);
+				l_renderingServer->WaitCommandQueue(l_canvasOwner, GPUEngineType::Graphics,  l_canvasOwner->m_RenderPassDesc.m_GPUEngineType);
 				l_renderingServer->ExecuteCommandList(MotionBlurPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 				l_renderingServer->WaitCommandQueue(MotionBlurPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 				l_renderingServer->ExecuteCommandList(MotionBlurPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
@@ -405,7 +424,7 @@ namespace Inno
 			l_FinalBlendPassRenderingContext.m_input = l_canvas;
 			FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
 
-			l_renderingServer->WaitCommandQueue(l_canvasOwner, GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_renderingServer->WaitCommandQueue(l_canvasOwner, GPUEngineType::Graphics,  l_canvasOwner->m_RenderPassDesc.m_GPUEngineType);
 			l_renderingServer->WaitCommandQueue(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_renderingServer->WaitCommandQueue(BillboardPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			l_renderingServer->WaitCommandQueue(DebugPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
