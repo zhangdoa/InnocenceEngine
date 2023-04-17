@@ -331,11 +331,11 @@ namespace Inno
             m_playerCameraTransformComponent->m_localTransformVector.m_pos = l_gp;
         }
 
-        auto l_targetCameraRotY = InnoMath::getQuatRotator(
-            Vec4(1.0f, 0.0f, 0.0f, 0.0f),
-            ((-30.0f) / 180.0f) * PI<float>);
+        // auto l_targetCameraRotY = InnoMath::getQuatRotator(
+        //     Vec4(1.0f, 0.0f, 0.0f, 0.0f),
+        //     ((-30.0f) / 180.0f) * PI<float>);
 
-        m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = l_targetCameraRotY.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
+        // m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = l_targetCameraRotY.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
 
         return true;
     }
