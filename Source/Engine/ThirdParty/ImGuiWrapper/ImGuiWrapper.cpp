@@ -14,7 +14,7 @@
 #endif
 
 #if defined INNO_RENDERER_DIRECTX
-#include "ImGuiRendererDX11.h"
+#include "ImGuiRendererDX12.h"
 #endif
 
 #if defined INNO_RENDERER_OPENGL
@@ -82,12 +82,12 @@ bool ImGuiWrapper::Setup()
 		break;
 	case RenderingServer::DX11:
 #if defined INNO_RENDERER_DIRECTX
-		m_rendererImpl = new ImGuiRendererDX11();
+		ImGuiWrapperNS::m_isParity = false;
 #endif
 		break;
 	case RenderingServer::DX12:
 #if defined INNO_RENDERER_DIRECTX
-		ImGuiWrapperNS::m_isParity = false;
+		m_rendererImpl = new ImGuiRendererDX12();
 #endif
 		break;
 	case RenderingServer::VK:

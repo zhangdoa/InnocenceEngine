@@ -25,6 +25,9 @@ Copy-Item -Force imgui\backends\imgui_impl_win32.cpp ..\..\Engine\ThirdParty\ImG
 Copy-Item -Force imgui\backends\imgui_impl_dx11.h ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\backends\imgui_impl_dx11.cpp ..\..\Engine\ThirdParty\ImGui\
 
+Copy-Item -Force imgui\backends\imgui_impl_dx12.h ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_dx12.cpp ..\..\Engine\ThirdParty\ImGui\
+
 Copy-Item -Force imgui\backends\imgui_impl_opengl3.h ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\backends\imgui_impl_opengl3.cpp ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\backends\imgui_impl_opengl3_loader.h ..\..\Engine\ThirdParty\ImGui\
