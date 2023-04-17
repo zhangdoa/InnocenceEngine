@@ -77,5 +77,9 @@ namespace Inno
 		DX12UAV CreateUAV(TextureComponent* rhs, uint32_t mipSlice);
 		DX12UAV CreateUAV(GPUBufferComponent* rhs);
 		DX12CBV CreateCBV(GPUBufferComponent* rhs);
+
+		ID3D12Device* GetDevice();
+		ID3D12DescriptorHeap* GetCSUDescHeap();
+		uint32_t GetSwapChainImageCount();
 	};
 }

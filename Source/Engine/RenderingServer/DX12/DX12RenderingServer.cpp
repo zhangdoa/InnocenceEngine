@@ -2584,6 +2584,21 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferComponent *rhs)
 	return l_result;
 }
 
+ID3D12Device* Inno::DX12RenderingServer::GetDevice()
+{
+    return m_device.Get();
+}
+
+ID3D12DescriptorHeap* Inno::DX12RenderingServer::GetCSUDescHeap()
+{
+    return m_CSUHeap.Get();
+}
+
+uint32_t Inno::DX12RenderingServer::GetSwapChainImageCount()
+{
+    return m_swapChainImageCount;
+}
+
 bool DX12RenderingServer::BeginCapture()
 {
 	if (m_graphicsAnalysis != nullptr)
