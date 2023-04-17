@@ -38,7 +38,8 @@ namespace Inno
 		SamplerComponent *m_SamplerComp;
 
 		bool AddBVHData(const BVHNode& node);
-
+		DebugPerObjectConstantBuffer AddAABB(const AABB& aabb);
+		
 		GPUBufferComponent* m_debugSphereMeshGPUBufferComp;
 		GPUBufferComponent* m_debugCubeMeshGPUBufferComp;
 		GPUBufferComponent* m_debugMaterialGPUBufferComp;

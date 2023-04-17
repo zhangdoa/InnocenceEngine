@@ -142,7 +142,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		m_debugCameraFrustumConstantBuffer.clear();
 		m_debugMaterialConstantBuffer.clear();
 
-		for (size_t i = 0; i < 5; i++)
+		for (size_t i = 0; i < 6; i++)
 		{
 			m_debugMaterialConstantBuffer.emplace_back();
 		}
@@ -152,6 +152,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		m_debugMaterialConstantBuffer[2].color = Vec4(0.9f, 0.1f, 0.0f, 1.0f);
 		m_debugMaterialConstantBuffer[3].color = Vec4(0.8f, 0.1f, 0.1f, 1.0f);
 		m_debugMaterialConstantBuffer[4].color = Vec4(0.1f, 0.6f, 0.2f, 1.0f);
+		m_debugMaterialConstantBuffer[5].color = Vec4(0.1f, 0.3f, 0.5f, 1.0f);
 
 		static bool l_drawProbes = false;
 		if (l_drawProbes)
@@ -209,12 +210,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 			{
 				for (size_t i = 0; i < l_bricks.size(); i++)
 				{
-					DebugPerObjectConstantBuffer l_meshData;
-
-					l_meshData.m = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
-					l_meshData.m.m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
-					l_meshData.m.m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
-					l_meshData.m.m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
+					auto l_meshData = AddAABB(l_bricks[i].boundBox);
 					l_meshData.materialID = 1;
 
 					m_debugCubeConstantBuffer.emplace_back(l_meshData);
@@ -235,11 +231,15 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		static bool l_drawCameraFrustums = true;
 		if (l_drawCameraFrustums)
-		{
+		{	
+			auto l_visibleSceneAABBMeshData = AddAABB(g_Engine->getPhysicsSystem()->getVisibleSceneAABB());
+			l_visibleSceneAABBMeshData.materialID = 3;
+
+			m_debugCubeConstantBuffer.emplace_back(l_visibleSceneAABBMeshData);
+
 			auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 			if(l_cameraComponent)
-			{
-				
+			{			
 				auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_translationMat;
 				for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
@@ -293,11 +293,9 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 				{
 					for(auto& j : i->m_SplitAABBWS)
 					{
-						DebugPerObjectConstantBuffer l_meshData;
-						auto l_s = InnoMath::toScaleMatrix(j.m_extend);
-						l_meshData.m = InnoMath::toTranslationMatrix(j.m_center);
-						l_meshData.m = l_meshData.m * l_s;
+						auto l_meshData = AddAABB(j);
 						l_meshData.materialID = 4;
+
 						m_debugCubeConstantBuffer.emplace_back(l_meshData);
 					}
 				}
@@ -407,15 +405,26 @@ RenderPassComponent* DebugPass::GetRenderPassComp()
 	return m_RenderPassComp;
 }
 
+DebugPerObjectConstantBuffer DebugPass::AddAABB(const AABB& aabb)
+{
+	DebugPerObjectConstantBuffer l_result;
+		
+	l_result.m = InnoMath::toTranslationMatrix(aabb.m_center);
+	l_result.m.m00 *= aabb.m_extend.x / 2.0f;
+	l_result.m.m11 *= aabb.m_extend.y / 2.0f;
+	l_result.m.m22 *= aabb.m_extend.z / 2.0f;
+
+	return l_result;
+}
+
 bool DebugPass::AddBVHData(const BVHNode& node)
 {
-	DebugPerObjectConstantBuffer l_cubeMeshData;
+	static bool drawIntermediateBB = false;
+	if(node.PDC == nullptr && !drawIntermediateBB)
+		return true;
 
-	l_cubeMeshData.m = InnoMath::toTranslationMatrix(node.m_AABB.m_center);
-	l_cubeMeshData.m.m00 *= node.m_AABB.m_extend.x / 2.0f;
-	l_cubeMeshData.m.m11 *= node.m_AABB.m_extend.y / 2.0f;
-	l_cubeMeshData.m.m22 *= node.m_AABB.m_extend.z / 2.0f;
-	l_cubeMeshData.materialID = node.PDC == nullptr ? 4 : 3;
+	auto l_cubeMeshData = AddAABB(node.m_AABB);
+	l_cubeMeshData.materialID = node.PDC == nullptr ? 3 : 5;
 
 	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
 
