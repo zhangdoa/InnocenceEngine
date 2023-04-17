@@ -81,13 +81,6 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	auto l_exportFileName = IOService::getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
 
-	// Check if the file was converted already
-	if (IOService::isFileExist(l_exportFileRelativePath.c_str()))
-	{
-		InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", fileName, " has already been converted!");
-		return true;
-	}
-
 	// read file via ASSIMP
 	Assimp::Importer l_importer;
 	const aiScene* l_scene;
