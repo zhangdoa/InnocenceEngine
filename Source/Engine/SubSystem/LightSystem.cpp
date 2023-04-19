@@ -13,23 +13,11 @@ namespace LightSystemNS
 {
 	const size_t m_MaxComponentCount = 8192;
 
-	AABB ExtendAABBToBoundingSphere(const AABB& rhs);
 	AABB SnapAABBToShadowMap(const AABB& rhs, float shadowMapResolution);
 	void UpdateSingleSMData(LightComponent* rhs);
 	void UpdateCSMData(LightComponent* rhs);
 	void UpdateColorTemperature(LightComponent* rhs);
 	void UpdateAttenuationRadius(LightComponent* rhs);
-}
-
-AABB LightSystemNS::ExtendAABBToBoundingSphere(const AABB &rhs)
-{
-		auto l_sphereRadius = (rhs.m_boundMax - rhs.m_center).length();
-		auto l_boundMax = rhs.m_center + l_sphereRadius;
-		auto l_boundMin = rhs.m_center - l_sphereRadius;
-
-		l_boundMax.w = 1.0f;
-		l_boundMin.w = 1.0f;
-		return InnoMath::generateAABB(l_boundMax, l_boundMin);
 }
 
 AABB LightSystemNS::SnapAABBToShadowMap(const AABB &rhs, float shadowMapResolution)
@@ -57,19 +45,32 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 	rhs->m_SplitAABBWS.clear();
 
+	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
+	if (l_cameraComponent == nullptr)
+	{
+		return;
+	}
+
 	auto l_totalSceneAABB = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
 	if(l_totalSceneAABB.m_extend.x == 0.0f || l_totalSceneAABB.m_extend.y == 0.0f || l_totalSceneAABB.m_extend.z == 0.0f)
 		return;
-		
-	l_totalSceneAABB = ExtendAABBToBoundingSphere(l_totalSceneAABB);
-	l_totalSceneAABB = SnapAABBToShadowMap(l_totalSceneAABB, 1024.0f);
-	rhs->m_SplitAABBWS.emplace_back(l_totalSceneAABB);
+	
+	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
+	auto l_frustumAABB = InnoMath::generateAABB(&l_splitFrustumVerticesWS[0], 8);
+
+	auto l_min = InnoMath::elementWiseMin(l_frustumAABB.m_boundMin, l_totalSceneAABB.m_boundMin);
+	auto l_max = InnoMath::elementWiseMax(l_frustumAABB.m_boundMax, l_totalSceneAABB.m_boundMax);
+
+	auto l_AABB = InnoMath::generateAABB(l_max, l_min);
+	l_AABB = InnoMath::extendAABBToBoundingSphere(l_AABB);
+	l_AABB = SnapAABBToShadowMap(l_AABB, static_cast<float>(g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution));
+	rhs->m_SplitAABBWS.emplace_back(l_AABB);
 
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	rhs->m_ViewMatrices.emplace_back(l_r.inverse());
 
-	Mat4 l_p = InnoMath::generateOrthographicMatrix(l_totalSceneAABB.m_boundMin.x, l_totalSceneAABB.m_boundMax.x, l_totalSceneAABB.m_boundMin.y, l_totalSceneAABB.m_boundMax.y, l_totalSceneAABB.m_boundMin.z, l_totalSceneAABB.m_boundMax.z);
+	Mat4 l_p = InnoMath::generateOrthographicMatrix(l_AABB.m_boundMin.x, l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z, l_AABB.m_boundMax.z);
 	rhs->m_ProjectionMatrices.emplace_back(l_p);
 }
 
@@ -78,6 +79,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	rhs->m_ViewMatrices.clear();
 	rhs->m_ProjectionMatrices.clear();
 	rhs->m_SplitAABBWS.clear();
+	rhs->m_SplitAABBLS.clear();
 
 	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 	if (l_cameraComponent == nullptr)
@@ -85,27 +87,38 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 		return;
 	}
 
-	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
+	auto l_totalSceneAABBWS = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
+	if(l_totalSceneAABBWS.m_extend.x == 0.0f || l_totalSceneAABBWS.m_extend.y == 0.0f || l_totalSceneAABBWS.m_extend.z == 0.0f)
+		return;
+
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+	auto l_rInv = l_r.inverse();
+	auto l_totalSceneAABBLS = InnoMath::extendAABBToBoundingSphere(l_totalSceneAABBWS);
+	l_totalSceneAABBLS = InnoMath::rotateAABBToNewSpace(l_totalSceneAABBLS, l_rInv);
+
+	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
 
 	// calculate AABBs in light space and generate the matrices
 	for (size_t i = 0; i < 4; i++)
 	{
-		AABB l_aabbWS = InnoMath::generateAABB(&l_splitFrustumVerticesWS[i * 8], 8);	
-		AABB l_aabbLS = ExtendAABBToBoundingSphere(l_aabbWS);
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_aabbLS.m_center = InnoMath::mul(l_aabbLS.m_center, l_r.inverse());
-#endif
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_aabbLS.m_center = InnoMath::mul(l_r.inverse(), l_aabbLS.m_center);
-#endif
-		l_aabbLS.m_boundMin = l_aabbLS.m_center - l_aabbLS.m_extend * 0.5f;
-		l_aabbLS.m_boundMax = l_aabbLS.m_center + l_aabbLS.m_extend * 0.5f;
-
-		rhs->m_ViewMatrices.emplace_back(l_r.inverse());
+		AABB l_aabbWS = InnoMath::generateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
 		rhs->m_SplitAABBWS.emplace_back(l_aabbWS);
+
+		AABB l_aabbLS = InnoMath::extendAABBToBoundingSphere(l_aabbWS);
+		l_aabbLS = InnoMath::rotateAABBToNewSpace(l_aabbLS, l_rInv);
+
+		l_aabbLS.m_boundMin.z = l_totalSceneAABBLS.m_boundMin.z;
+		l_aabbLS.m_boundMax.z = l_totalSceneAABBLS.m_boundMax.z;
+		l_aabbLS.m_extend = l_aabbLS.m_boundMax - l_aabbLS.m_boundMin;
+		l_aabbLS.m_center = l_aabbLS.m_boundMax - l_aabbLS.m_extend * 0.5f;
+
 		l_aabbLS = SnapAABBToShadowMap(l_aabbLS, static_cast<float>(g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution));
+		rhs->m_SplitAABBLS.emplace_back(l_aabbLS);
+
+		auto l_v = l_rInv;
+		rhs->m_ViewMatrices.emplace_back(l_v);
+
 		Mat4 p = InnoMath::generateOrthographicMatrix(l_aabbLS.m_boundMin.x, l_aabbLS.m_boundMax.x, l_aabbLS.m_boundMin.y, l_aabbLS.m_boundMax.y, l_aabbLS.m_boundMin.z, l_aabbLS.m_boundMax.z);
 		rhs->m_ProjectionMatrices.emplace_back(p);
 	}
