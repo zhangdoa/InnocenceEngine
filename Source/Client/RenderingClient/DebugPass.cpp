@@ -218,7 +218,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 			}
 		}
 
-		static bool l_drawBVHNodes = true;
+		static bool l_drawBVHNodes = false;
 		if (l_drawBVHNodes)
 		{
 			auto l_BVHNodes = g_Engine->getPhysicsSystem()->getBVHNodes();
@@ -232,8 +232,9 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		static bool l_drawCameraFrustums = true;
 		if (l_drawCameraFrustums)
 		{	
-			auto l_visibleSceneAABBMeshData = AddAABB(g_Engine->getPhysicsSystem()->getVisibleSceneAABB());
-			l_visibleSceneAABBMeshData.materialID = 3;
+			auto l_visibleSceneAABBWS = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
+			auto l_visibleSceneAABBMeshData = AddAABB(l_visibleSceneAABBWS);
+			l_visibleSceneAABBMeshData.materialID = 2;
 
 			m_debugCubeConstantBuffer.emplace_back(l_visibleSceneAABBMeshData);
 
@@ -291,12 +292,57 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 			{
 				if(i->m_LightType == LightType::Directional)
 				{
-					for(auto& j : i->m_SplitAABBWS)
-					{
-						auto l_meshData = AddAABB(j);
-						l_meshData.materialID = 4;
+					auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
+					auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+					auto l_rInv = l_r.inverse();
 
-						m_debugCubeConstantBuffer.emplace_back(l_meshData);
+					DebugPerObjectConstantBuffer l_meshData;
+
+					auto l_visibleSceneAABBWS_Extended = InnoMath::extendAABBToBoundingSphere(l_visibleSceneAABBWS);
+
+					auto l_t = InnoMath::toTranslationMatrix(l_visibleSceneAABBWS_Extended.m_center);
+					auto l_s = InnoMath::generateIdentityMatrix<float>();
+					l_s.m00 *= l_visibleSceneAABBWS_Extended.m_extend.x / 2.0f;
+					l_s.m11 *= l_visibleSceneAABBWS_Extended.m_extend.y / 2.0f;
+					l_s.m22 *= l_visibleSceneAABBWS_Extended.m_extend.z / 2.0f;
+
+					l_meshData.m = l_t * l_r * l_s;
+					l_meshData.materialID = 2;
+
+					m_debugCubeConstantBuffer.emplace_back(l_meshData);
+
+					auto l_visibleSceneAABBLS = InnoMath::rotateAABBToNewSpace(l_visibleSceneAABBWS_Extended, l_rInv);
+
+					for (size_t j = 0; j < i->m_SplitAABBWS.size(); j++)
+					{
+						{
+							DebugPerObjectConstantBuffer l_meshData;
+
+							auto l_aabbLS = i->m_SplitAABBLS[j];
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+							auto l_centerWS = InnoMath::mul(l_aabbLS.m_center, l_r);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+							auto l_centerWS = InnoMath::mul(l_r, l_aabbLS.m_center);
+#endif
+
+							auto l_t = InnoMath::toTranslationMatrix(l_centerWS);
+							auto l_s = InnoMath::generateIdentityMatrix<float>();
+							l_s.m00 *= l_aabbLS.m_extend.x / 2.0f;
+							l_s.m11 *= l_aabbLS.m_extend.y / 2.0f;
+							l_s.m22 *= l_aabbLS.m_extend.z / 2.0f;
+
+							l_meshData.m = l_t * l_r * l_s;
+							l_meshData.materialID = 5;
+
+							m_debugCubeConstantBuffer.emplace_back(l_meshData);
+						}
+						{
+							auto l_meshData = AddAABB(i->m_SplitAABBWS[j]);
+							l_meshData.materialID = 4;
+
+							m_debugCubeConstantBuffer.emplace_back(l_meshData);
+						}
 					}
 				}
 			}
