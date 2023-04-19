@@ -252,9 +252,9 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	m_adapter->GetDesc3(&l_adapter_desc);
 	std::wstring l_descL = std::wstring(l_adapter_desc.Description);
 
-	using convert_type = std::codecvt_utf8<wchar_t>;
-	std::wstring_convert<convert_type, wchar_t> converter;
-	std::string l_desc = converter.to_bytes(l_descL);
+    int length = WideCharToMultiByte(CP_UTF8, 0, l_descL.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string l_desc(length, 0);
+    WideCharToMultiByte(CP_UTF8, 0, l_descL.c_str(), -1, l_desc.data(), length, nullptr, nullptr);
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Adapter for: ", l_desc.c_str(), " has been created.");
 
