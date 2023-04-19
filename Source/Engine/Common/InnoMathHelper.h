@@ -1689,6 +1689,34 @@ namespace Inno
 		}
 
 		template <class T>
+		inline auto extendAABBToBoundingSphere(const TAABB<T>& rhs) -> TAABB<T>
+		{
+			auto l_sphereRadius = (rhs.m_boundMax - rhs.m_center).length();
+			auto l_boundMax = rhs.m_center + l_sphereRadius;
+			auto l_boundMin = rhs.m_center - l_sphereRadius;
+
+			l_boundMax.w = one<T>;
+			l_boundMin.w = one<T>;
+			return generateAABB<T>(l_boundMax, l_boundMin);
+		}
+
+		template <class T>
+		inline auto rotateAABBToNewSpace(const TAABB<T>& lhs, const TMat4<T>& rhs) -> TAABB<T>
+		{
+			auto l_lhs = lhs;
+			#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+			l_lhs.m_center = InnoMath::mul(l_lhs.m_center, rhs);
+	#endif
+	#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+			l_lhs.m_center = InnoMath::mul(rhs, l_lhs.m_center);
+	#endif
+			l_lhs.m_boundMin = l_lhs.m_center - l_lhs.m_extend * 0.5f;
+			l_lhs.m_boundMax = l_lhs.m_center + l_lhs.m_extend * 0.5f;
+
+			return l_lhs;
+		}
+
+		template <class T>
 		inline auto makeFrustum(const TVertex<T>* vertices) -> TFrustum<T>
 		{
 			TFrustum<T> l_result;
