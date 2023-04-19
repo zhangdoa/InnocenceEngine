@@ -176,7 +176,7 @@ bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 
 	m_renderingConfig.useCSM = true;
 	m_renderingConfig.useMotionBlur = true;
-	//m_renderingConfig.useTAA = true;
+	m_renderingConfig.useTAA = true;
 	//m_renderingConfig.useBloom = true;
 	m_renderingConfig.drawSky = true;
 	//m_renderingConfig.drawTerrain = true;
