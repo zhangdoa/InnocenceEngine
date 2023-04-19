@@ -21,7 +21,7 @@ namespace CameraSystemNS
 	CameraComponent* m_MainCamera;
 	CameraComponent* m_ActiveCamera;
 	
-	std::vector<float> m_CSMSplitFactors = { 0.05f, 0.15f, 0.35f, 1.0f };
+	std::vector<float> m_CSMSplitFactors = { 0.02f, 0.08f, 0.15f, 1.0f };
 }
 
 void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
