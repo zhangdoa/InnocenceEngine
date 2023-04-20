@@ -2,6 +2,7 @@ git submodule update
 
 mkdir ../Source/External/GitSubmodules/assimp/build
 mkdir ../Source/External/GitSubmodules/GLAD/build
+mkdir ../Source/External/GitSubmodules/llvm-project/build
 mkdir ../Source/External/Include/GL
 mkdir ../Source/External/DLL/Win/Debug
 mkdir ../Source/External/Lib/Win/Debug
