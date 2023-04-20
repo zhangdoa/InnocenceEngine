@@ -2261,24 +2261,30 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 
 	auto f_DefaultToReadbackHeap = [](ComPtr<ID3D12Resource> l_defaultHeapBuffer, ComPtr<ID3D12Resource> l_readbackHeapBuffer, TextureDesc textureDesc, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex, D3D12_RESOURCE_STATES currentState)
 	{
+		auto l_srcDesc = l_defaultHeapBuffer->GetDesc();
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint = {};
+		UINT pNumRows = 0;
+		UINT64 pRowSizeInBytes = 0;
+		UINT64 pTotalBytes = 0;
+
+		m_device->GetCopyableFootprints(&l_srcDesc, srcIndex, 1, 0, &footprint, NULL, NULL, NULL);
+
+		// @TODO: It seems invalid to read back texture array which has RowPitch < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, for example a R8 32*32 2D array/cubemap texture
+		// auto l_rowWidth = (uint32_t)l_srcDesc.Width * l_pixelDataSize;
+		// l_rowWidth = l_rowWidth < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT ? D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : l_rowWidth;
+
 		D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
 		l_srcLocation.pResource = l_defaultHeapBuffer.Get();
 		l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		l_srcLocation.SubresourceIndex = srcIndex;
-
-		// @TODO: It seems invalid to read back texture array which has RowPitch < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, for example a R8 32*32 2D array/cubemap texture
-		auto l_rowWidth = (uint32_t)textureDesc.Width * l_pixelDataSize;
-		l_rowWidth = l_rowWidth < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT ? D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : l_rowWidth;
-
+		l_srcLocation.PlacedFootprint = footprint;
+		
 		D3D12_TEXTURE_COPY_LOCATION l_destLocation;
 		l_destLocation.pResource = l_readbackHeapBuffer.Get();
 		l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		l_destLocation.PlacedFootprint.Offset = destIndex * textureDesc.Width * textureDesc.Height * l_pixelDataSize;
+		l_destLocation.SubresourceIndex = destIndex;
+		l_destLocation.PlacedFootprint = footprint;
 		l_destLocation.PlacedFootprint.Footprint.Format = l_format;
-		l_destLocation.PlacedFootprint.Footprint.Width = textureDesc.Width;
-		l_destLocation.PlacedFootprint.Footprint.Height = textureDesc.Height;
-		l_destLocation.PlacedFootprint.Footprint.Depth = textureDesc.Sampler == TextureSampler::SamplerCubemap ? textureDesc.DepthOrArraySize : 1;
-		l_destLocation.PlacedFootprint.Footprint.RowPitch = l_rowWidth;
 
 		{
 			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
@@ -2292,17 +2298,21 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 		}
 		{
 			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator);
-						l_commandList->ResourceBarrier(
+
+			l_commandList->ResourceBarrier(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer.Get(),
-													  D3D12_RESOURCE_STATE_COMMON,
-													  D3D12_RESOURCE_STATE_COPY_SOURCE));
+					D3D12_RESOURCE_STATE_COMMON,
+					D3D12_RESOURCE_STATE_COPY_SOURCE));
+
 			l_commandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
-						l_commandList->ResourceBarrier(
+
+			l_commandList->ResourceBarrier(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer.Get(),
-													  D3D12_RESOURCE_STATE_COPY_SOURCE,
-													  D3D12_RESOURCE_STATE_COMMON));
+					D3D12_RESOURCE_STATE_COPY_SOURCE,
+					D3D12_RESOURCE_STATE_COMMON));
+
 			CloseTemporaryCommandList(l_commandList, m_device, m_copyCommandQueue);
 		}
 		{
@@ -2342,9 +2352,6 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 
 	if (textureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
-		std::vector<uint32_t> l_depthResult;
-		std::vector<uint8_t> l_stencilResult;
-
 		l_format = DXGI_FORMAT_R32_TYPELESS;
 		if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
@@ -2359,37 +2366,20 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 		}
 
 		auto l_rawResult = f_ReadbackToHostHeap(l_rhs->m_ReadBackHeapBuffer, l_rhs->m_PixelDataSize, l_pixelCount);
-		auto l_validSampleCount = l_rawResult.size() / 4;
-		l_depthResult.resize(l_validSampleCount);
-		l_result.resize(l_validSampleCount);
+		auto l_pixelCount = l_rawResult.size() / 4;
+		
+		std::vector<uint32_t> l_resultUint32;
+		l_resultUint32.resize(l_pixelCount);
+		l_result.resize(l_pixelCount);
 
-		std::memcpy(l_depthResult.data(), l_rawResult.data(), l_rawResult.size());
-		for (size_t i = 0; i < l_validSampleCount; i++)
+		std::memcpy(l_resultUint32.data(), l_rawResult.data(), l_rawResult.size());
+		for (size_t i = 0; i < l_pixelCount; i++)
 		{
-			auto l_depth = l_depthResult[i];
+			auto l_value = l_resultUint32[i];
+			auto l_depth = l_value & 0x00FFFFFF;
+			auto l_stencil = l_value & 0xFF000000;
 			l_result[i].x = float(l_depth) / float(0x00FFFFFF);
-		}
-
-		l_format = DXGI_FORMAT_R8_TYPELESS;
-		if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
-		{
-			for (uint32_t i = 0; i < 6; i++)
-			{
-				f_DefaultToReadbackHeap(l_rhs->m_DefaultHeapBuffer, l_rhs->m_ReadBackHeapBuffer, textureDesc, l_format, sizeof(uint8_t), i + 6, i, l_rhs->m_CurrentState);
-			}
-		}
-		else
-		{
-			f_DefaultToReadbackHeap(l_rhs->m_DefaultHeapBuffer, l_rhs->m_ReadBackHeapBuffer, textureDesc, l_format, sizeof(uint8_t), 1, 0, l_rhs->m_CurrentState);
-		}
-
-		l_rawResult = f_ReadbackToHostHeap(l_rhs->m_ReadBackHeapBuffer, l_rhs->m_PixelDataSize, l_pixelCount);
-		l_stencilResult.resize(l_validSampleCount);
-		std::memcpy(l_stencilResult.data(), l_rawResult.data(), l_stencilResult.size());
-
-		for (size_t i = 0; i < l_validSampleCount; i++)
-		{
-			l_result[i].y = float(l_stencilResult[i]);
+			l_result[i].y = float(l_stencil);
 		}
 	}
 	else
