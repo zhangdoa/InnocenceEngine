@@ -224,16 +224,17 @@ void AddComponentToSceneHierarchyMap()
 	auto l_Components = g_Engine->getComponentManager()->GetAll<T>();
 	for (auto i : l_Components)
 	{
+		auto l_componentPair = std::make_pair(i->GetTypeID(), i);
 		auto l_result = m_SceneHierarchyMap.find(i->m_Owner);
 		if (l_result != m_SceneHierarchyMap.end())
 		{
-			l_result->second.emplace(i);
+			l_result->second.emplace(l_componentPair);
 		}
 		else
 		{
-			m_SceneHierarchyMap.emplace(i->m_Owner, std::set<InnoComponent*>{ i });
+			m_SceneHierarchyMap.emplace(i->m_Owner, std::set<ComponentPair>{ l_componentPair });
 		}
-	}\
+	}
 }
 
 const SceneHierarchyMap& InnoSceneSystem::getSceneHierarchyMap()

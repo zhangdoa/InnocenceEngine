@@ -318,10 +318,10 @@ void ImGuiWrapperNS::showWorldExplorer()
 				{
 					for (auto& j : i.second)
 					{
-						if (ImGui::Selectable(j->m_InstanceName.c_str(), selectedComponent == j))
+						if (ImGui::Selectable(j.second->m_InstanceName.c_str(), selectedComponent == j.second))
 						{
-							selectedComponent = j;
-							//selectedComponentType = j->GetTypeID();
+							selectedComponent = j.second;
+							selectedComponentType = j.first;
 						}
 					}
 					ImGui::TreePop();

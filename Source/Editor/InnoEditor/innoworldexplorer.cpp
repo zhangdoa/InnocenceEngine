@@ -38,10 +38,10 @@ void InnoWorldExplorer::buildTree()
             for (auto& j : i.second)
             {
                 QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-                l_componentItem->setText(0, j->m_InstanceName.c_str());
+                l_componentItem->setText(0, j.second->m_InstanceName.c_str());
 
-                l_componentItem->setData(0, Qt::UserRole, QVariant(j->m_UUID));
-                l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)j));
+                l_componentItem->setData(0, Qt::UserRole, QVariant(j.first));
+                l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)j.second));
                 addChild(l_entityItem, l_componentItem);
             }
         }
@@ -166,98 +166,54 @@ void InnoWorldExplorer::deleteEntity()
     }
 }
 
-void InnoWorldExplorer::addTransformComponent()
+template<class T>
+T* InnoWorldExplorer::addComponent()
 {
-    auto l_items = this->selectedItems();
+    auto l_items = selectedItems();
     QTreeWidgetItem* item;
     if (l_items.count() != 0)
     {
         item = l_items[0];
         auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
 
-        auto l_componentPtr = g_Engine->getComponentManager()->Spawn<TransformComponent>(l_entityPtr, true, ObjectLifespan::Scene);
-        auto l_rootTranformComponent = static_cast<ITransformSystem*>(g_Engine->getComponentManager()->GetComponentSystem<TransformComponent>())->GetRootTransformComponent();
-        l_componentPtr->m_parentTransformComponent = const_cast<TransformComponent*>(l_rootTranformComponent);
+        auto l_componentPtr = g_Engine->getComponentManager()->Spawn<T>(l_entityPtr, true, ObjectLifespan::Scene);
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
         l_componentItem->setText(0, l_componentPtr->m_InstanceName.c_str());
-        l_componentItem->setData(0, Qt::UserRole, QVariant(1));
+        l_componentItem->setData(0, Qt::UserRole, QVariant(T::GetTypeID()));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
         addChild(item, l_componentItem);
-        this->setCurrentItem(l_componentItem);
+        setCurrentItem(l_componentItem);
         startRename();
+
+        return l_componentPtr;
     }
+
+    return nullptr;
+}
+
+void InnoWorldExplorer::addTransformComponent()
+{
+    auto l_componentPtr = addComponent<TransformComponent>();
+    auto l_rootTranformComponent = static_cast<ITransformSystem*>(g_Engine->getComponentManager()->GetComponentSystem<TransformComponent>())->GetRootTransformComponent();
+    l_componentPtr->m_parentTransformComponent = const_cast<TransformComponent*>(l_rootTranformComponent);
 }
 
 void InnoWorldExplorer::addVisibleComponent()
 {
-    auto l_items = this->selectedItems();
-    QTreeWidgetItem* item;
-    if (l_items.count() != 0)
-    {
-        item = l_items[0];
-        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
-
-        auto l_componentPtr = g_Engine->getComponentManager()->Spawn<VisibleComponent>(l_entityPtr, true, ObjectLifespan::Scene);
-
-        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-
-        l_componentItem->setText(0, l_componentPtr->m_InstanceName.c_str());
-        l_componentItem->setData(0, Qt::UserRole, QVariant(2));
-        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
-
-        addChild(item, l_componentItem);
-        this->setCurrentItem(l_componentItem);
-        startRename();
-    }
+    addComponent<VisibleComponent>();
 }
 
 void InnoWorldExplorer::addLightComponent()
 {
-    auto l_items = this->selectedItems();
-    QTreeWidgetItem* item;
-    if (l_items.count() != 0)
-    {
-        item = l_items[0];
-        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
-
-        auto l_componentPtr = g_Engine->getComponentManager()->Spawn<LightComponent>(l_entityPtr, true, ObjectLifespan::Scene);
-
-        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-
-        l_componentItem->setText(0, l_componentPtr->m_InstanceName.c_str());
-        l_componentItem->setData(0, Qt::UserRole, QVariant(3));
-        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
-
-        addChild(item, l_componentItem);
-        this->setCurrentItem(l_componentItem);
-        startRename();
-    }
+    addComponent<LightComponent>();
 }
 
 void InnoWorldExplorer::addCameraComponent()
 {
-    auto l_items = this->selectedItems();
-    QTreeWidgetItem* item;
-    if (l_items.count() != 0)
-    {
-        item = l_items[0];
-        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
-
-        auto l_componentPtr = g_Engine->getComponentManager()->Spawn<CameraComponent>(l_entityPtr, true, ObjectLifespan::Scene);
-
-        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-
-        l_componentItem->setText(0, l_componentPtr->m_InstanceName.c_str());
-        l_componentItem->setData(0, Qt::UserRole, QVariant(4));
-        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
-
-        addChild(item, l_componentItem);
-        this->setCurrentItem(l_componentItem);
-        startRename();
-    }
+    addComponent<CameraComponent>();
 }
 
 void InnoWorldExplorer::destroyComponent(InnoComponent *component)

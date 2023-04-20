@@ -34,7 +34,11 @@ private slots:
     void addCameraComponent();
 
 	void deleteComponent();
+
 private:
+    template<class T>
+    T* addComponent();
+
     void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
     void destroyComponent(Inno::InnoComponent* component);
 
