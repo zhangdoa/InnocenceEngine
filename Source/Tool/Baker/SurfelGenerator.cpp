@@ -223,6 +223,8 @@ namespace Inno
             g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp_Surfel);
 
             g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
+            g_Engine->getRenderingServer()->WaitCommandQueue(m_RenderPassComp_Surfel, GPUEngineType::Graphics, GPUEngineType::Graphics);
+            g_Engine->getRenderingServer()->WaitFence(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
 
             return true;
         }
