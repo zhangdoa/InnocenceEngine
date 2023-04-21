@@ -612,21 +612,21 @@ bool JSONWrapper::saveScene(const char* fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->getComponentManager()->GetAll<TransformComponent>())
+	for (auto i : g_Engine->getComponentManager()->GetAll<VisibleComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->getComponentManager()->GetAll<TransformComponent>())
+	for (auto i : g_Engine->getComponentManager()->GetAll<LightComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->getComponentManager()->GetAll<TransformComponent>())
+	for (auto i : g_Engine->getComponentManager()->GetAll<CameraComponent>())
 	{
 		if (i->m_Serializable)
 		{
