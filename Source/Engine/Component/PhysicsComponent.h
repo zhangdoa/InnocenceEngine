@@ -1,12 +1,12 @@
 #pragma once
-#include "../Common/InnoObject.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Common/Object.h"
+#include "../Common/MathHelper.h"
 #include "TransformComponent.h"
 #include "VisibleComponent.h"
 
 namespace Inno
 {
-	class PhysicsComponent : public InnoComponent
+	class PhysicsComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 5; };

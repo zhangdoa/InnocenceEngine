@@ -98,13 +98,13 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 				auto l_bricksCount = l_bricks.size();
 
-				auto l_min = InnoMath::maxVec4<float>;
-				auto l_max = InnoMath::minVec4<float>;
+				auto l_min = Math::maxVec4<float>;
+				auto l_max = Math::minVec4<float>;
 
 				for (size_t i = 0; i < l_bricksCount; i++)
 				{
-					l_min = InnoMath::elementWiseMin(l_min, l_bricks[i].boundBox.m_boundMin);
-					l_max = InnoMath::elementWiseMax(l_max, l_bricks[i].boundBox.m_boundMax);
+					l_min = Math::elementWiseMin(l_min, l_bricks[i].boundBox.m_boundMin);
+					l_max = Math::elementWiseMax(l_max, l_bricks[i].boundBox.m_boundMax);
 				}
 				m_irradianceVolumeRange = l_max - l_min;
 				m_irradianceVolumePosOffset = l_min;

@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoFileSystem : public IFileSystem
+	class FileSystem : public IFileSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoFileSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(FileSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

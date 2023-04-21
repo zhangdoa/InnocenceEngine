@@ -1,6 +1,6 @@
 #pragma once
-#include "../Common/InnoObject.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Common/Object.h"
+#include "../Common/MathHelper.h"
 
 namespace Inno
 {
@@ -9,7 +9,7 @@ namespace Inno
 		Mat4 m_L2B;
 	};
 
-	class SkeletonComponent : public InnoComponent
+	class SkeletonComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 9; };

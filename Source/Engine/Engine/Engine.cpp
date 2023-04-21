@@ -1,5 +1,5 @@
 #include "Engine.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 #include "../SubSystem/TimeSystem.h"
 #include "../SubSystem/LogSystem.h"
 #include "../SubSystem/MemorySystem.h"
@@ -50,7 +50,7 @@ using namespace Inno;
 INNO_ENGINE_API IEngine* g_Engine;
 
 #define createSystemInstanceDefi( className ) \
-m_##className = std::make_unique<Inno##className>(); \
+m_##className = std::make_unique<##className>(); \
 if (!m_##className.get()) \
 { \
 	return false; \
@@ -61,7 +61,7 @@ if (!m_##className->Setup()) \
 { \
 	return false; \
 } \
-InnoLogger::Log(LogLevel::Success, "Engine: ", #className, " Setup finished."); \
+Logger::Log(LogLevel::Success, "Engine: ", #className, " Setup finished."); \
 
 #define SystemInit( className ) \
 if (!m_##className->Initialize()) \
@@ -120,9 +120,9 @@ namespace Inno
 
 		std::unique_ptr<IEntityManager> m_EntityManager;
 		std::unique_ptr<ComponentManager> m_ComponentManager;
-		std::unique_ptr<InnoTransformSystem> m_TransformSystem;
-		std::unique_ptr<InnoLightSystem> m_LightSystem;
-		std::unique_ptr<InnoCameraSystem> m_CameraSystem;
+		std::unique_ptr<TransformSystem> m_TransformSystem;
+		std::unique_ptr<LightSystem> m_LightSystem;
+		std::unique_ptr<CameraSystem> m_CameraSystem;
 
 		std::unique_ptr<ISceneSystem> m_SceneSystem;
 		std::unique_ptr<IAssetSystem> m_AssetSystem;
@@ -161,7 +161,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 
 	if (arg == "")
 	{
-		InnoLogger::Log(LogLevel::Warning, "Engine: No arguments found, use default settings.");
+		Logger::Log(LogLevel::Warning, "Engine: No arguments found, use default settings.");
 		return l_result;
 	}
 
@@ -169,7 +169,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		InnoLogger::Log(LogLevel::Warning, "Engine: No engine mode argument found, use default game mode.");
+		Logger::Log(LogLevel::Warning, "Engine: No engine mode argument found, use default game mode.");
 	}
 	else
 	{
@@ -179,16 +179,16 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 		if (l_engineModeArguments == "0")
 		{
 			l_result.engineMode = EngineMode::Host;
-			InnoLogger::Log(LogLevel::Success, "Engine: Launch in host mode, engine will handle OS event.");
+			Logger::Log(LogLevel::Success, "Engine: Launch in host mode, engine will handle OS event.");
 		}
 		else if (l_engineModeArguments == "1")
 		{
 			l_result.engineMode = EngineMode::Slave;
-			InnoLogger::Log(LogLevel::Success, "Engine: Launch in slave mode, engine requires client handle OS event.");
+			Logger::Log(LogLevel::Success, "Engine: Launch in slave mode, engine requires client handle OS event.");
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "Engine: Unsupported engine mode.");
+			Logger::Log(LogLevel::Warning, "Engine: Unsupported engine mode.");
 		}
 	}
 
@@ -196,7 +196,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 
 	if (l_renderingServerArgPos == std::string::npos)
 	{
-		InnoLogger::Log(LogLevel::Warning, "Engine: No rendering backend argument found, use default OpenGL rendering backend.");
+		Logger::Log(LogLevel::Warning, "Engine: No rendering backend argument found, use default OpenGL rendering backend.");
 	}
 	else
 	{
@@ -208,7 +208,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_OPENGL
 			l_result.renderingServer = RenderingServer::GL;
 #else
-			InnoLogger::Log(LogLevel::Warning, "Engine: OpenGL is not supported on current platform, no rendering backend will be launched.");
+			Logger::Log(LogLevel::Warning, "Engine: OpenGL is not supported on current platform, no rendering backend will be launched.");
 #endif
 		}
 		else if (l_rendererArguments == "1")
@@ -216,7 +216,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX11;
 #else
-			InnoLogger::Log(LogLevel::Warning, "Engine: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
+			Logger::Log(LogLevel::Warning, "Engine: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "2")
@@ -224,7 +224,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX12;
 #else
-			InnoLogger::Log(LogLevel::Warning, "Engine: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
+			Logger::Log(LogLevel::Warning, "Engine: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "3")
@@ -232,7 +232,7 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_VULKAN
 			l_result.renderingServer = RenderingServer::VK;
 #else
-			InnoLogger::Log(LogLevel::Warning, "Engine: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
+			Logger::Log(LogLevel::Warning, "Engine: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "4")
@@ -240,19 +240,19 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_METAL
 			l_result.renderingServer = RenderingServer::MT;
 #else
-			InnoLogger::Log(LogLevel::Warning, "Engine: Metal is not supported on current platform, use default OpenGL rendering backend.");
+			Logger::Log(LogLevel::Warning, "Engine: Metal is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "Engine: Unsupported rendering backend, use default OpenGL rendering backend.");
+			Logger::Log(LogLevel::Warning, "Engine: Unsupported rendering backend, use default OpenGL rendering backend.");
 		}
 	}
 
 	auto l_logLevelArgPos = arg.find("loglevel");
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		InnoLogger::SetDefaultLogLevel(LogLevel::Success);
+		Logger::SetDefaultLogLevel(LogLevel::Success);
 	}
 	else
 	{
@@ -261,23 +261,23 @@ InitConfig EngineNS::parseInitConfig(const std::string& arg)
 
 		if (l_logLevelArguments == "0")
 		{
-			InnoLogger::SetDefaultLogLevel(LogLevel::Verbose);
+			Logger::SetDefaultLogLevel(LogLevel::Verbose);
 		}
 		else if (l_logLevelArguments == "1")
 		{
-			InnoLogger::SetDefaultLogLevel(LogLevel::Success);
+			Logger::SetDefaultLogLevel(LogLevel::Success);
 		}
 		else if (l_logLevelArguments == "2")
 		{
-			InnoLogger::SetDefaultLogLevel(LogLevel::Warning);
+			Logger::SetDefaultLogLevel(LogLevel::Warning);
 		}
 		else if (l_logLevelArguments == "3")
 		{
-			InnoLogger::SetDefaultLogLevel(LogLevel::Error);
+			Logger::SetDefaultLogLevel(LogLevel::Error);
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "Engine: Unsupported log level.");
+			Logger::Log(LogLevel::Warning, "Engine: Unsupported log level.");
 		}
 	}
 
@@ -330,13 +330,13 @@ bool EngineNS::createSystemInstance(void* appHook, void* extraHook, char* pScmdl
 	}
 #endif
 
-	m_RenderingFrontend = std::make_unique<InnoRenderingFrontend>();
+	m_RenderingFrontend = std::make_unique<RenderingFrontend>();
 	if (!m_RenderingFrontend.get())
 	{
 		return false;
 	}
 
-	m_GUISystem = std::make_unique<InnoGUISystem>();
+	m_GUISystem = std::make_unique<GUISystem>();
 	if (!m_GUISystem.get())
 	{
 		return false;
@@ -441,7 +441,7 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: WindowSystem Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: WindowSystem Setup finished.");
 
 	SystemSetup(AssetSystem);
 	SystemSetup(FileSystem);
@@ -450,7 +450,7 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: EntityManager Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: EntityManager Setup finished.");
 
 	SystemSetup(TransformSystem);
 	SystemSetup(LightSystem);
@@ -467,31 +467,31 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: RenderingFrontend Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: RenderingFrontend Setup finished.");
 
 	if (!m_GUISystem->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: GUISystem Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: GUISystem Setup finished.");
 
 	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: RenderingServer Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: RenderingServer Setup finished.");
 
 	if (!m_RenderingClient->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: RenderingClient Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: RenderingClient Setup finished.");
 
 	if (!m_LogicClient->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "Engine: LogicClient Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: LogicClient Setup finished.");
 
 	f_LogicClientUpdateJob = [&]() { m_LogicClient->Update(); };
 	f_PhysicsSystemUpdateBVHJob = [&]() { m_PhysicsSystem->updateBVH(); };
@@ -523,7 +523,7 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	};
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "Engine: Engine Setup finished.");
+	Logger::Log(LogLevel::Success, "Engine: Engine Setup finished.");
 
 	return true;
 }
@@ -573,7 +573,7 @@ bool EngineNS::Initialize()
 	f_RenderingFrontendUpdateJob();
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "Engine: Engine has been initialized.");
+	Logger::Log(LogLevel::Success, "Engine: Engine has been initialized.");
 	return true;
 }
 
@@ -624,7 +624,7 @@ bool EngineNS::Update()
 		else
 		{
 			m_ObjectStatus = ObjectStatus::Suspended;
-			InnoLogger::Log(LogLevel::Warning, "Engine: Engine is stand-by.");
+			Logger::Log(LogLevel::Warning, "Engine: Engine is stand-by.");
 			return false;
 		}
 	}
@@ -640,19 +640,19 @@ bool EngineNS::Terminate()
 
 	if (!m_RenderingClient->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "Engine: Rendering client can't be terminated!");
+		Logger::Log(LogLevel::Error, "Engine: Rendering client can't be terminated!");
 		return false;
 	}
 
 	if (!m_LogicClient->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "Engine: Logic client can't be terminated!");
+		Logger::Log(LogLevel::Error, "Engine: Logic client can't be terminated!");
 		return false;
 	}
 
 	if (!m_RenderingServer->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "Engine: RenderingServer can't be terminated!");
+		Logger::Log(LogLevel::Error, "Engine: RenderingServer can't be terminated!");
 		return false;
 	}
 
@@ -672,7 +672,7 @@ bool EngineNS::Terminate()
 
 	if (!m_EntityManager->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "Engine: EntityManager can't be terminated!");
+		Logger::Log(LogLevel::Error, "Engine: EntityManager can't be terminated!");
 		return false;
 	}
 
@@ -685,7 +685,7 @@ bool EngineNS::Terminate()
 	SystemTerm(TimeSystem);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "Engine has been terminated.");
+	Logger::Log(LogLevel::Success, "Engine has been terminated.");
 
 	return true;
 }

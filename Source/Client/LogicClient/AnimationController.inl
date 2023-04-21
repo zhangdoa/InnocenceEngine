@@ -16,7 +16,7 @@ namespace Inno
     private:
         ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-        InnoEntity* m_entity;
+        Entity* m_entity;
         VisibleComponent* m_visibleComponent;
         std::string m_currentState;
         bool m_isStateChanged;

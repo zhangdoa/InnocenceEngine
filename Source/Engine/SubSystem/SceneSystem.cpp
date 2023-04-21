@@ -1,5 +1,5 @@
 #include "SceneSystem.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 
 #include "../Interface/IEngine.h"
 using namespace Inno;
@@ -12,7 +12,7 @@ using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 
 namespace Inno
 {
-	namespace InnoSceneSystemNS
+	namespace SceneSystemNS
 	{
 		bool saveScene(const char* fileName);
 		bool loadScene(const char* fileName);
@@ -37,9 +37,9 @@ namespace Inno
 	}
 }
 
-using namespace InnoSceneSystemNS;
+using namespace SceneSystemNS;
 
-bool InnoSceneSystemNS::saveScene(const char* fileName)
+bool SceneSystemNS::saveScene(const char* fileName)
 {
 	if (!strcmp(fileName, ""))
 	{
@@ -51,7 +51,7 @@ bool InnoSceneSystemNS::saveScene(const char* fileName)
 	}
 }
 
-bool InnoSceneSystemNS::loadSceneAsync(const char* fileName)
+bool SceneSystemNS::loadSceneAsync(const char* fileName)
 {
 	if (!m_isLoadingScene)
 	{
@@ -62,7 +62,7 @@ bool InnoSceneSystemNS::loadSceneAsync(const char* fileName)
 	return true;
 }
 
-bool InnoSceneSystemNS::loadScene(const char* fileName)
+bool SceneSystemNS::loadScene(const char* fileName)
 {
 	m_isLoadingScene = true;
 	g_Engine->getTaskSystem()->WaitSync();
@@ -95,12 +95,12 @@ bool InnoSceneSystemNS::loadScene(const char* fileName)
 
 	m_isLoadingScene = false;
 
-	InnoLogger::Log(LogLevel::Success, "SceneSystem: Scene ", fileName, " has been loaded.");
+	Logger::Log(LogLevel::Success, "SceneSystem: Scene ", fileName, " has been loaded.");
 
 	return true;
 }
 
-bool InnoSceneSystem::Setup(ISystemConfig* systemConfig)
+bool SceneSystem::Setup(ISystemConfig* systemConfig)
 {
 	f_SceneLoadingStartCallback = [&]() {
 		m_SceneHierarchyMap.clear();
@@ -119,22 +119,22 @@ bool InnoSceneSystem::Setup(ISystemConfig* systemConfig)
 	return true;
 }
 
-bool InnoSceneSystem::Initialize()
+bool SceneSystem::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "SceneSystem has been initialized.");
+		Logger::Log(LogLevel::Success, "SceneSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "SceneSystem: Object is not created!");
+		Logger::Log(LogLevel::Error, "SceneSystem: Object is not created!");
 		return false;
 	}
 }
 
-bool InnoSceneSystem::Update()
+bool SceneSystem::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -142,7 +142,7 @@ bool InnoSceneSystem::Update()
 		{
 			m_prepareForLoadingScene = false;
 
-			InnoSceneSystemNS::loadScene(m_nextLoadingScene.c_str());
+			SceneSystemNS::loadScene(m_nextLoadingScene.c_str());
 		}
 		return true;
 	}
@@ -153,66 +153,66 @@ bool InnoSceneSystem::Update()
 	}
 }
 
-bool InnoSceneSystem::Terminate()
+bool SceneSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "SceneSystem has been terminated.");
+	Logger::Log(LogLevel::Success, "SceneSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus InnoSceneSystem::GetStatus()
+ObjectStatus SceneSystem::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-std::string InnoSceneSystem::getCurrentSceneName()
+std::string SceneSystem::getCurrentSceneName()
 {
-	auto l_currentSceneName = m_currentScene.substr(0, m_currentScene.find(".InnoScene"));
+	auto l_currentSceneName = m_currentScene.substr(0, m_currentScene.find(".Scene"));
 	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
 	return l_currentSceneName;
 }
 
-bool InnoSceneSystem::loadScene(const char* fileName, bool AsyncLoad)
+bool SceneSystem::loadScene(const char* fileName, bool AsyncLoad)
 {
 	if (m_currentScene == fileName)
 	{
-		InnoLogger::Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has already loaded now.");
+		Logger::Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has already loaded now.");
 		return true;
 	}
 
 	if (m_nextLoadingScene == fileName)
 	{
-		InnoLogger::Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has been scheduled for loading.");
+		Logger::Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has been scheduled for loading.");
 		return true;
 	}
 
 	if (AsyncLoad)
 	{
-		return InnoSceneSystemNS::loadSceneAsync(fileName);
+		return SceneSystemNS::loadSceneAsync(fileName);
 	}
 	else
 	{
-		return InnoSceneSystemNS::loadScene(fileName);
+		return SceneSystemNS::loadScene(fileName);
 	}
 }
 
-bool InnoSceneSystem::saveScene(const char* fileName)
+bool SceneSystem::saveScene(const char* fileName)
 {
-	return InnoSceneSystemNS::saveScene(fileName);
+	return SceneSystemNS::saveScene(fileName);
 }
 
-bool InnoSceneSystem::isLoadingScene()
+bool SceneSystem::isLoadingScene()
 {
 	return m_isLoadingScene;
 }
 
-bool InnoSceneSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority)
+bool SceneSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority)
 {
 	m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
 	return true;
 }
 
-bool InnoSceneSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority)
+bool SceneSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority)
 {
 	m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
 	return true;
@@ -237,7 +237,7 @@ void AddComponentToSceneHierarchyMap()
 	}
 }
 
-const SceneHierarchyMap& InnoSceneSystem::getSceneHierarchyMap()
+const SceneHierarchyMap& SceneSystem::getSceneHierarchyMap()
 {
 	if (m_needUpdate)
 	{

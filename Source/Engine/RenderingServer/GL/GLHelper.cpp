@@ -1,5 +1,5 @@
 #include "GLHelper.h"
-#include "../../Core/InnoLogger.h"
+#include "../../Core/Logger.h"
 
 #include "../../Interface/IEngine.h"
 
@@ -387,7 +387,7 @@ bool GLHelper::CreateFramebuffer(GLRenderPassComponent* GLRenderPassComp)
 	glObjectLabel(GL_FRAMEBUFFER, GLRenderPassComp->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
 #endif
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " FBO has been generated.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " FBO has been generated.");
 
 	// RBO
 	if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
@@ -423,12 +423,12 @@ bool GLHelper::CreateFramebuffer(GLRenderPassComponent* GLRenderPassComp)
 		auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (l_result != GL_FRAMEBUFFER_COMPLETE)
 		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " Framebuffer is not completed: ", l_result);
+			Logger::Log(LogLevel::Error, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " Framebuffer is not completed: ", l_result);
 			return false;
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " RBO has been generated.");
+			Logger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRenderPassComp->m_InstanceName.c_str(), " RBO has been generated.");
 		}
 	}
 
@@ -782,7 +782,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 
 	if (shaderID == 0)
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: Shader creation failed! Memory location is invalid when adding shader!");
+		Logger::Log(LogLevel::Error, "GLRenderingServer: Shader creation failed! Memory location is invalid when adding shader!");
 		glDeleteShader(shaderID);
 		return false;
 	}
@@ -864,7 +864,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 
 	if (l_shaderCodeContent.empty())
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
+		Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
 		return false;
 	}
 
@@ -885,7 +885,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 
 	if (l_shaderCodeContent.empty())
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
+		Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
 		return false;
 	}
 
@@ -904,26 +904,26 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 
 	if (!l_validationResult)
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " compile failed!");
+		Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " compile failed!");
 		glGetShaderiv(shaderID, GL_SHADER_SOURCE_LENGTH, &l_shaderFileLength);
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " file length is: ", l_shaderFileLength);
+		Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " file length is: ", l_shaderFileLength);
 		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0)
 		{
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetShaderInfoLog(shaderID, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_shaderErrorMessage[0], "\n -- --------------------------------------------------- -- ");
+			Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_shaderErrorMessage[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " compile error: no info log provided!");
+			Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " compile error: no info log provided!");
 		}
 
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 
 	return true;
 }
@@ -940,23 +940,23 @@ bool GLHelper::LinkProgramObject(GLuint& shaderProgram)
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &l_validationResult);
 	if (!l_validationResult)
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link failed!");
+		Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link failed!");
 		glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetProgramInfoLog(shaderProgram, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link error: ", &l_shaderErrorMessage[0], "\n -- --------------------------------------------------- -- ");
+			Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link error: ", &l_shaderErrorMessage[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link error: no info log provided!");
+			Logger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link error: no info log provided!");
 		}
 
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderProgram, " has been linked.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderProgram, " has been linked.");
 
 	return true;
 }

@@ -17,9 +17,9 @@ extern IEngine* g_Engine;
 #include "GLHelper.h"
 using namespace GLHelper;
 
-#include "../../Core/InnoLogger.h"
-#include "../../Core/InnoMemory.h"
-#include "../../Core/InnoRandomizer.h"
+#include "../../Core/Logger.h"
+#include "../../Core/Memory.h"
+#include "../../Core/Randomizer.h"
 #include "../../Template/ObjectPool.h"
 
 namespace GLRenderingServerNS
@@ -71,7 +71,7 @@ namespace GLRenderingServerNS
 				l_logLevel = LogLevel::Verbose;
 			}
 
-			InnoLogger::Log(l_logLevel, "GLRenderServer: ", l_typeStr, "ID: ", id, ": ", message);
+			Logger::Log(l_logLevel, "GLRenderServer: ", l_typeStr, "ID: ", id, ": ", message);
 		}
 	}
 
@@ -205,7 +205,7 @@ bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 	m_SwapChainSamplerComp = reinterpret_cast<GLSamplerComponent*>(AddSamplerComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "GLRenderingServer Setup finished.");
+	Logger::Log(LogLevel::Success, "GLRenderingServer Setup finished.");
 
 	return true;
 }
@@ -262,7 +262,7 @@ bool GLRenderingServer::Initialize()
 bool GLRenderingServer::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "GLRenderingServer has been terminated.");
+	Logger::Log(LogLevel::Success, "GLRenderingServer has been terminated.");
 
 	return true;
 }
@@ -330,15 +330,15 @@ bool GLRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)48);
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: VAO ", l_rhs->m_VAO, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: VAO ", l_rhs->m_VAO, " is initialized.");
 
 	glBufferData(GL_ARRAY_BUFFER, l_rhs->m_Vertices.size() * sizeof(Vertex), &l_rhs->m_Vertices[0], GL_STATIC_DRAW);
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_Indices.size() * sizeof(Index), &l_rhs->m_Indices[0], GL_STATIC_DRAW);
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -416,7 +416,7 @@ bool GLRenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 		glGenerateMipmap(l_rhs->m_GLTextureDesc.TextureSampler);
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;

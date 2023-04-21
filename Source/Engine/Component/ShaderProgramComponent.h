@@ -1,10 +1,10 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoObject.h"
+#include "../Common/Type.h"
+#include "../Common/Object.h"
 
 namespace Inno
 {
-	class ShaderProgramComponent : public InnoComponent
+	class ShaderProgramComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 12; };

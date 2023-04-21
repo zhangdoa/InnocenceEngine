@@ -1,6 +1,6 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoContainer.h"
+#include "../Common/Type.h"
+#include "../Common/Container.h"
 
 namespace Inno
 {

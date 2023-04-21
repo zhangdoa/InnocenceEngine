@@ -187,7 +187,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 		{
 			ProbeMeshData l_probeMeshData;
 
-			l_probeMeshData.m = InnoMath::toTranslationMatrix(l_probePos[i].pos);
+			l_probeMeshData.m = Math::toTranslationMatrix(l_probePos[i].pos);
 			l_probeMeshData.m.m00 *= 0.5f;
 			l_probeMeshData.m.m11 *= 0.5f;
 			l_probeMeshData.m.m22 *= 0.5f;

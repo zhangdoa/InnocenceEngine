@@ -18,7 +18,7 @@ namespace Inno
 			auto l_HResult = rhs->SetName(l_NameW.c_str());
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+				Logger::Log(LogLevel::Warning, "DX12RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
 				return false;
 			}
 			return true;

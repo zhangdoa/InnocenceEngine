@@ -1,7 +1,7 @@
 #include "AssetSystem.h"
 #include "../Common/ComponentHeaders.h"
-#include "../Common/InnoMathHelper.h"
-#include "../Core/InnoLogger.h"
+#include "../Common/MathHelper.h"
+#include "../Core/Logger.h"
 #include "../Core/IOService.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
@@ -12,7 +12,7 @@ using namespace Inno;
 extern IEngine* g_Engine;
 
 #define recordLoaded( funcName, type, value ) \
-bool InnoAssetSystem::recordLoaded##funcName(const char * fileName, type value) \
+bool AssetSystem::recordLoaded##funcName(const char * fileName, type value) \
 { \
 	m_loaded##funcName.emplace(fileName, value); \
 \
@@ -20,7 +20,7 @@ bool InnoAssetSystem::recordLoaded##funcName(const char * fileName, type value) 
 }
 
 #define findLoaded( funcName, type, value ) \
-bool InnoAssetSystem::findLoaded##funcName(const char * fileName, type value) \
+bool AssetSystem::findLoaded##funcName(const char * fileName, type value) \
 { \
 	auto l_loaded##funcName = m_loaded##funcName.find(fileName); \
 	if (l_loaded##funcName != m_loaded##funcName.end()) \
@@ -31,13 +31,13 @@ bool InnoAssetSystem::findLoaded##funcName(const char * fileName, type value) \
 	} \
 	else \
 	{ \
-	InnoLogger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded."); \
+	Logger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded."); \
 	\
 	return false; \
 	} \
 }
 
-namespace InnoAssetSystemNS
+namespace AssetSystemNS
 {
 	void generateVertexBasedNormal(MeshComponent* meshComponent);
 	void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
@@ -75,7 +75,7 @@ namespace InnoAssetSystemNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-using namespace InnoAssetSystemNS;
+using namespace AssetSystemNS;
 
 void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
 {
@@ -110,13 +110,13 @@ void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCoun
 	}
 }
 
-void InnoAssetSystemNS::addTriangle(MeshComponent* meshComponent)
+void AssetSystemNS::addTriangle(MeshComponent* meshComponent)
 {
 	generateVerticesForPolygon(meshComponent, 3);
 	generateIndicesForPolygon(meshComponent, 3);
 }
 
-void InnoAssetSystemNS::addSquare(MeshComponent* meshComponent)
+void AssetSystemNS::addSquare(MeshComponent* meshComponent)
 {
 	meshComponent->m_Vertices.reserve(4);
 	meshComponent->m_Vertices.fulfill();
@@ -146,19 +146,19 @@ void InnoAssetSystemNS::addSquare(MeshComponent* meshComponent)
 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 }
 
-void InnoAssetSystemNS::addPentagon(MeshComponent* meshComponent)
+void AssetSystemNS::addPentagon(MeshComponent* meshComponent)
 {
 	generateVerticesForPolygon(meshComponent, 5);
 	generateIndicesForPolygon(meshComponent, 5);
 }
 
-void InnoAssetSystemNS::addHexagon(MeshComponent* meshComponent)
+void AssetSystemNS::addHexagon(MeshComponent* meshComponent)
 {
 	generateVerticesForPolygon(meshComponent, 6);
 	generateIndicesForPolygon(meshComponent, 6);
 }
 
-void InnoAssetSystemNS::generateVertexBasedNormal(MeshComponent* meshComponent)
+void AssetSystemNS::generateVertexBasedNormal(MeshComponent* meshComponent)
 {
 	auto l_verticesCount = meshComponent->m_Vertices.size();
 	for (size_t i = 0; i < l_verticesCount; i++)
@@ -167,7 +167,7 @@ void InnoAssetSystemNS::generateVertexBasedNormal(MeshComponent* meshComponent)
 	}
 }
 
-void InnoAssetSystemNS::generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
+void AssetSystemNS::generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
 {
 	auto l_face = meshComponent->m_Indices.size() / verticesPerFace;
 
@@ -204,7 +204,7 @@ void InnoAssetSystemNS::generateFaceBasedNormal(MeshComponent* meshComponent, ui
 	}
 }
 
-void InnoAssetSystemNS::fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
+void AssetSystemNS::fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
 {
 	meshComponent->m_Vertices.reserve(indices.size());
 	meshComponent->m_Vertices.fulfill();
@@ -234,7 +234,7 @@ void InnoAssetSystemNS::fulfillVerticesAndIndices(MeshComponent* meshComponent, 
 	}
 }
 
-void InnoAssetSystemNS::addTetrahedron(MeshComponent* meshComponent)
+void AssetSystemNS::addTetrahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -253,7 +253,7 @@ void InnoAssetSystemNS::addTetrahedron(MeshComponent* meshComponent)
 	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
-void InnoAssetSystemNS::addCube(MeshComponent* meshComponent)
+void AssetSystemNS::addCube(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -280,7 +280,7 @@ void InnoAssetSystemNS::addCube(MeshComponent* meshComponent)
 	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 6);
 }
 
-void InnoAssetSystemNS::addOctahedron(MeshComponent* meshComponent)
+void AssetSystemNS::addOctahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -303,7 +303,7 @@ void InnoAssetSystemNS::addOctahedron(MeshComponent* meshComponent)
 	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
-void InnoAssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
+void AssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -350,7 +350,7 @@ void InnoAssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
 	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 9);
 }
 
-void InnoAssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
+void AssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
 {
 	std::vector<Index> l_indices =
 	{
@@ -385,7 +385,7 @@ void InnoAssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
 	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
-void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
+void AssetSystemNS::addSphere(MeshComponent* meshComponent)
 {
 	auto radius = 1.0f;
 	auto sectorCount = 64;
@@ -466,7 +466,7 @@ void InnoAssetSystemNS::addSphere(MeshComponent* meshComponent)
 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 }
 
-void InnoAssetSystemNS::addTerrain(MeshComponent* meshComponent)
+void AssetSystemNS::addTerrain(MeshComponent* meshComponent)
 {
 	auto l_gridSize = 1024;
 	auto l_gridSize2 = l_gridSize * l_gridSize;
@@ -520,7 +520,7 @@ void InnoAssetSystemNS::addTerrain(MeshComponent* meshComponent)
 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 }
 
-bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
+bool AssetSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->getComponentManager()->RegisterType<VisibleComponent>(32768, this);
 
@@ -551,22 +551,22 @@ bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
 	return true;
 }
 
-bool InnoAssetSystem::Initialize()
+bool AssetSystem::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "AssetSystem has been initialized.");
+		Logger::Log(LogLevel::Success, "AssetSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "AssetSystem: Object is not created!");
+		Logger::Log(LogLevel::Error, "AssetSystem: Object is not created!");
 		return false;
 	}
 }
 
-bool InnoAssetSystem::Update()
+bool AssetSystem::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -579,19 +579,19 @@ bool InnoAssetSystem::Update()
 	}
 }
 
-bool InnoAssetSystem::Terminate()
+bool AssetSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "AssetSystem has been terminated.");
+	Logger::Log(LogLevel::Success, "AssetSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus InnoAssetSystem::GetStatus()
+ObjectStatus AssetSystem::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-bool InnoAssetSystem::convertModel(const char* fileName, const char* exportPath)
+bool AssetSystem::convertModel(const char* fileName, const char* exportPath)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	std::string l_fileName = fileName;
@@ -606,13 +606,13 @@ bool InnoAssetSystem::convertModel(const char* fileName, const char* exportPath)
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: ", fileName, " is not supported!");
+		Logger::Log(LogLevel::Warning, "FileSystem: ", fileName, " is not supported!");
 
 		return false;
 	}
 }
 
-Model* InnoAssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
+Model* AssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
@@ -633,12 +633,12 @@ Model* InnoAssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResou
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "AssetSystem: ", fileName, " is not supported!");
+		Logger::Log(LogLevel::Warning, "AssetSystem: ", fileName, " is not supported!");
 		return nullptr;
 	}
 }
 
-TextureComponent* InnoAssetSystem::loadTexture(const char* fileName)
+TextureComponent* AssetSystem::loadTexture(const char* fileName)
 {
 	TextureComponent* l_TextureComp;
 
@@ -657,12 +657,12 @@ TextureComponent* InnoAssetSystem::loadTexture(const char* fileName)
 	}
 }
 
-bool InnoAssetSystem::saveTexture(const char* fileName, TextureComponent* TextureComp)
+bool AssetSystem::saveTexture(const char* fileName, TextureComponent* TextureComp)
 {
 	return STBWrapper::saveTexture(fileName, TextureComp);
 }
 
-bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
+bool AssetSystem::loadAssetsForComponents(bool AsyncLoad)
 {
 	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 
@@ -699,7 +699,7 @@ bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
+				Logger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
 			}
 		}
 	}
@@ -722,7 +722,7 @@ findLoaded(Skeleton, SkeletonComponent*&, skeleton)
 recordLoaded(Animation, AnimationComponent*, animation)
 findLoaded(Animation, AnimationComponent*&, animation)
 
-ArrayRangeInfo InnoAssetSystem::addMeshMaterialPairs(uint64_t count)
+ArrayRangeInfo AssetSystem::addMeshMaterialPairs(uint64_t count)
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutexMeshMaterialPair };
 
@@ -740,19 +740,19 @@ ArrayRangeInfo InnoAssetSystem::addMeshMaterialPairs(uint64_t count)
 	return l_result;
 }
 
-MeshMaterialPair* InnoAssetSystem::getMeshMaterialPair(uint64_t index)
+MeshMaterialPair* AssetSystem::getMeshMaterialPair(uint64_t index)
 {
 	return m_meshMaterialPairList[index];
 }
 
-Model* InnoAssetSystem::addModel()
+Model* AssetSystem::addModel()
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutexModel };
 
 	return m_modelPool->Spawn();
 }
 
-Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
+Model* AssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(shape);
 	auto l_material = g_Engine->getRenderingFrontend()->addMaterialComponent();
@@ -769,7 +769,7 @@ Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderMode
 	return l_result;
 }
 
-bool InnoAssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent)
+bool AssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent)
 {
 	switch (shape)
 	{
@@ -809,7 +809,7 @@ bool InnoAssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComp
 	return true;
 }
 
-void InnoAssetSystem::fulfillVerticesAndIndices(MeshComponent *meshComponent, const std::vector<Index> &indices, const std::vector<Vec3> &vertices, uint32_t verticesPerFace)
+void AssetSystem::fulfillVerticesAndIndices(MeshComponent *meshComponent, const std::vector<Index> &indices, const std::vector<Vec3> &vertices, uint32_t verticesPerFace)
 {
-	 InnoAssetSystemNS::fulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
+	 AssetSystemNS::fulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
 }

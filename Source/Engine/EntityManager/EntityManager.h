@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoEntityManager : public IEntityManager
+	class EntityManager : public IEntityManager
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoEntityManager);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(EntityManager);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
@@ -15,9 +15,9 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		InnoEntity* Spawn(bool serializable, ObjectLifespan objectLifespan, const char* entityName) override;
-		bool Destroy(InnoEntity* entity) override;
-		const std::vector<InnoEntity*>& GetEntities() override;
-		std::optional<InnoEntity*> Find(const char* entityName) override;
+		Entity* Spawn(bool serializable, ObjectLifespan objectLifespan, const char* entityName) override;
+		bool Destroy(Entity* entity) override;
+		const std::vector<Entity*>& GetEntities() override;
+		std::optional<Entity*> Find(const char* entityName) override;
 	};
 }

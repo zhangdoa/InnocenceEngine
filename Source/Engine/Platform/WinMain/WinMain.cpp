@@ -10,7 +10,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	errno_t err;
 	FILE* stream;
 	err = freopen_s(&stream, "CONOUT$", "w", stdout);
-	SetConsoleTitle("Innocence Engine Debug Console");
+	SetConsoleTitle("cence Engine Debug Console");
 
 	if (!Inno::ApplicationEntry::Setup(hInstance, nullptr, pScmdline))
 	{

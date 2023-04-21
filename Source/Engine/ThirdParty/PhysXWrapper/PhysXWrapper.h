@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Common/InnoMathHelper.h"
+#include "../../Common/MathHelper.h"
 #include "../../Component/PhysicsComponent.h"
 
 namespace Inno

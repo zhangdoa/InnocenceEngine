@@ -3,8 +3,8 @@
 
 namespace Inno
 {
-	using ComponentPair = std::pair<uint32_t, InnoComponent*>;
-	using SceneHierarchyMap = std::unordered_map<InnoEntity*, std::set<ComponentPair>>;
+	using ComponentPair = std::pair<uint32_t, Component*>;
+	using SceneHierarchyMap = std::unordered_map<Entity*, std::set<ComponentPair>>;
 
 	class ISceneSystem : public ISystem
 	{

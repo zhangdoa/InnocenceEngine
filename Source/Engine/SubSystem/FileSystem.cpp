@@ -1,5 +1,5 @@
 #include "FileSystem.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 
 #include "../Interface/IEngine.h"
 using namespace Inno;
@@ -7,14 +7,14 @@ extern IEngine* g_Engine;
 
 #include "../Core/IOService.h"
 
-namespace InnoFileSystemNS
+namespace FileSystemNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-using namespace InnoFileSystemNS;
+using namespace FileSystemNS;
 
-bool InnoFileSystem::Setup(ISystemConfig* systemConfig)
+bool FileSystem::Setup(ISystemConfig* systemConfig)
 {
 	IOService::setupWorkingDirectory();
 
@@ -22,22 +22,22 @@ bool InnoFileSystem::Setup(ISystemConfig* systemConfig)
 	return true;
 }
 
-bool InnoFileSystem::Initialize()
+bool FileSystem::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "FileSystem has been initialized.");
+		Logger::Log(LogLevel::Success, "FileSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: Object is not created!");
+		Logger::Log(LogLevel::Error, "FileSystem: Object is not created!");
 		return false;
 	}
 }
 
-bool InnoFileSystem::Update()
+bool FileSystem::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -52,34 +52,34 @@ bool InnoFileSystem::Update()
 	return true;
 }
 
-bool InnoFileSystem::Terminate()
+bool FileSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
 
-ObjectStatus InnoFileSystem::GetStatus()
+ObjectStatus FileSystem::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-std::string InnoFileSystem::getWorkingDirectory()
+std::string FileSystem::getWorkingDirectory()
 {
 	return IOService::getWorkingDirectory();
 }
 
-std::vector<char> InnoFileSystem::loadFile(const char* filePath, IOMode openMode)
+std::vector<char> FileSystem::loadFile(const char* filePath, IOMode openMode)
 {
 	return IOService::loadFile(filePath, openMode);
 }
 
-bool InnoFileSystem::saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
+bool FileSystem::saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
 {
 	return IOService::saveFile(filePath, content, saveMode);
 }
 
-bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc& desc)
+bool FileSystem::addCPPClassFiles(const CPPClassDesc& desc)
 {
 	// Build header file
 	auto l_headerFileName = desc.filePath + desc.className + ".h";
@@ -87,14 +87,14 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc& desc)
 
 	if (!l_headerFile.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: std::ofstream: can't open file ", l_headerFileName.c_str(), "!");
+		Logger::Log(LogLevel::Error, "FileSystem: std::ofstream: can't open file ", l_headerFileName.c_str(), "!");
 		return false;
 	}
 
 	// Common headers include
 	l_headerFile << "#pragma once" << std::endl;
-	l_headerFile << "#include \"Common/InnoType.h\"" << std::endl;
-	l_headerFile << "#include \"Common/InnoClassTemplate.h\"" << std::endl;
+	l_headerFile << "#include \"Common/Type.h\"" << std::endl;
+	l_headerFile << "#include \"Common/ClassTemplate.h\"" << std::endl;
 	l_headerFile << std::endl;
 
 	// Abstraction type
@@ -175,6 +175,6 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc& desc)
 
 	l_headerFile.close();
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: ", l_headerFileName.c_str(), " has been generated.");
+	Logger::Log(LogLevel::Success, "FileSystem: ", l_headerFileName.c_str(), " has been generated.");
 	return true;
 }

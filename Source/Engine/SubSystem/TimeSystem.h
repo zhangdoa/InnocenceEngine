@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoTimeSystem : public ITimeSystem
+	class TimeSystem : public ITimeSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTimeSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(TimeSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

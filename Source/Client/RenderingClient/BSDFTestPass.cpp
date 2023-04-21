@@ -85,8 +85,8 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 		for (size_t j = 0; j < m_shpereCount; j++)
 		{
 			PerObjectConstantBuffer l_meshConstantBuffer;
-			l_meshConstantBuffer.m = InnoMath::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
-			l_meshConstantBuffer.normalMat = InnoMath::generateIdentityMatrix<float>();
+			l_meshConstantBuffer.m = Math::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
+			l_meshConstantBuffer.normalMat = Math::generateIdentityMatrix<float>();
 
 			m_meshConstantBuffer[l_index] = l_meshConstantBuffer;
 

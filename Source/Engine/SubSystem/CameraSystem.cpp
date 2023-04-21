@@ -1,8 +1,8 @@
 #include "CameraSystem.h"
 #include "../Component/CameraComponent.h"
-#include "../Core/InnoRandomizer.h"
-#include "../Core/InnoLogger.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Core/Randomizer.h"
+#include "../Core/Logger.h"
+#include "../Common/MathHelper.h"
 
 #include "../Interface/IEngine.h"
 
@@ -28,7 +28,7 @@ void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 {
 	auto l_resolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
-	cameraComponent->m_projectionMatrix = InnoMath::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+	cameraComponent->m_projectionMatrix = Math::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
 void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, const std::vector<float> &splitFactors, std::vector<Vertex> &splitVertices)
@@ -91,18 +91,18 @@ void CameraSystemNS::GenerateFrustum(CameraComponent* cameraComponent)
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(cameraComponent->m_Owner);
 	if (l_transformComponent != nullptr)
 	{
-		auto l_rCamera = InnoMath::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
-		auto l_tCamera = InnoMath::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
-		auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(cameraComponent->m_projectionMatrix);
+		auto l_rCamera = Math::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
+		auto l_tCamera = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
+		auto l_frustumVerticesVS = Math::generateFrustumVerticesVS(cameraComponent->m_projectionMatrix);
 
 		// calculate split vertices in world space and assemble AABBs
-		auto l_frustumVerticesWS = InnoMath::viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
+		auto l_frustumVerticesWS = Math::viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
 		cameraComponent->m_splitFrustumVerticesWS.resize(32);
 		SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, cameraComponent->m_splitFrustumVerticesWS);
 
 		auto l_pCamera = cameraComponent->m_projectionMatrix;
-		auto l_vertices = InnoMath::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
-		cameraComponent->m_frustum = InnoMath::makeFrustum(&l_vertices[0]);
+		auto l_vertices = Math::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
+		cameraComponent->m_frustum = Math::makeFrustum(&l_vertices[0]);
 	}
 }
 
@@ -113,25 +113,25 @@ void CameraSystemNS::GenerateRayOfEye(CameraComponent* cameraComponent)
 	if (l_transformComponent != nullptr)
 	{
 		cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
-		cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(Direction::Backward, l_transformComponent->m_globalTransformVector.m_rot);
+		cameraComponent->m_rayOfEye.m_direction = Math::getDirection(Direction::Backward, l_transformComponent->m_globalTransformVector.m_rot);
 	}
 }
 
 using namespace CameraSystemNS;
 
-bool InnoCameraSystem::Setup(ISystemConfig* systemConfig)
+bool CameraSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->getComponentManager()->RegisterType<CameraComponent>(m_MaxComponentCount, this);
 
 	return true;
 }
 
-bool InnoCameraSystem::Initialize()
+bool CameraSystem::Initialize()
 {
 	return true;
 }
 
-bool InnoCameraSystem::Update()
+bool CameraSystem::Update()
 {
 	auto l_components = g_Engine->getComponentManager()->GetAll<CameraComponent>();
 
@@ -145,37 +145,37 @@ bool InnoCameraSystem::Update()
 	return true;
 }
 
-bool InnoCameraSystem::OnFrameEnd()
+bool CameraSystem::OnFrameEnd()
 {
 	return true;
 }
 
-bool InnoCameraSystem::Terminate()
+bool CameraSystem::Terminate()
 {
 	return true;
 }
 
-ObjectStatus InnoCameraSystem::GetStatus()
+ObjectStatus CameraSystem::GetStatus()
 {
 	return ObjectStatus();
 }
 
-void InnoCameraSystem::SetMainCamera(CameraComponent* cameraComponent)
+void CameraSystem::SetMainCamera(CameraComponent* cameraComponent)
 {
 	CameraSystemNS::m_MainCamera = cameraComponent;
 }
 
-CameraComponent* InnoCameraSystem::GetMainCamera()
+CameraComponent* CameraSystem::GetMainCamera()
 {
 	return CameraSystemNS::m_MainCamera;
 }
 
-void InnoCameraSystem::SetActiveCamera(CameraComponent* cameraComponent)
+void CameraSystem::SetActiveCamera(CameraComponent* cameraComponent)
 {
 	CameraSystemNS::m_ActiveCamera = cameraComponent;
 }
 
-CameraComponent* InnoCameraSystem::GetActiveCamera()
+CameraComponent* CameraSystem::GetActiveCamera()
 {
 	return CameraSystemNS::m_ActiveCamera;
 }

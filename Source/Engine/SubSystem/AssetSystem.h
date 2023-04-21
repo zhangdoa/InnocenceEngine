@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoAssetSystem : public IAssetSystem
+	class AssetSystem : public IAssetSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoAssetSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(AssetSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

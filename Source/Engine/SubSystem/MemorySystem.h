@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoMemorySystem : public IMemorySystem
+	class MemorySystem : public IMemorySystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoMemorySystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(MemorySystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

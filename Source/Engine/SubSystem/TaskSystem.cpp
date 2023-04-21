@@ -3,28 +3,28 @@
 using namespace Inno;
 namespace Inno
 {
-	namespace InnoTaskSystemNS
+	namespace TaskSystemNS
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	}
 }
 
-ObjectStatus InnoTaskSystem::GetStatus()
+ObjectStatus TaskSystem::GetStatus()
 {
-	return InnoTaskSystemNS::m_ObjectStatus;
+	return TaskSystemNS::m_ObjectStatus;
 }
 
-bool InnoTaskSystem::Setup(ISystemConfig* systemConfig)
+bool TaskSystem::Setup(ISystemConfig* systemConfig)
 {
-	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	TaskSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return TaskScheduler::Setup();
 }
 
-bool InnoTaskSystem::Initialize()
+bool TaskSystem::Initialize()
 {
-	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (TaskSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		TaskSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		return TaskScheduler::Initialize();
 	}
 	else
@@ -33,41 +33,41 @@ bool InnoTaskSystem::Initialize()
 	}
 }
 
-bool InnoTaskSystem::Update()
+bool TaskSystem::Update()
 {
-	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (TaskSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return 	TaskScheduler::Update();
 	}
 	else
 	{
-		InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		TaskSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
-bool InnoTaskSystem::Terminate()
+bool TaskSystem::Terminate()
 {
-	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	TaskSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return TaskScheduler::Terminate();
 }
 
-void InnoTaskSystem::WaitSync()
+void TaskSystem::WaitSync()
 {
 	TaskScheduler::WaitSync();
 }
 
-const RingBuffer<TaskReport, true>& InnoTaskSystem::GetTaskReport(int32_t threadID)
+const RingBuffer<TaskReport, true>& TaskSystem::GetTaskReport(int32_t threadID)
 {
 	return TaskScheduler::GetTaskReport(threadID);
 }
 
-size_t InnoTaskSystem::GetThreadCounts()
+size_t TaskSystem::GetThreadCounts()
 {
 	return TaskScheduler::GetThreadCounts();
 }
 
-std::shared_ptr<ITask> InnoTaskSystem::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)
+std::shared_ptr<ITask> TaskSystem::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)
 {
 	return TaskScheduler::AddTask(std::move(task), threadID);
 }

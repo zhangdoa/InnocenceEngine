@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoLogSystem : public ILogSystem
+	class LogSystem : public ILogSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLogSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(LogSystem);
 
 		// Inherited via ILogSystem
 		bool Setup(ISystemConfig* systemConfig) override;

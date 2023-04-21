@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoRayTracer : public IRayTracer
+	class RayTracer : public IRayTracer
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRayTracer);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(RayTracer);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

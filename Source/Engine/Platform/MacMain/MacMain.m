@@ -8,12 +8,12 @@
 
 #import <Foundation/Foundation.h>
 #import <Cocoa/Cocoa.h>
-#import "InnoNSApplication.h"
+#import "NSApplication.h"
 
 int main(int argc, const char * argv[]) {
     NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
     Class principalClass =
-    NSClassFromString(@"InnoNSApplication");
+    NSClassFromString(@"NSApplication");
     NSApplication *applicationObject = [principalClass sharedApplication];
     
     if ([applicationObject respondsToSelector:@selector(run)])

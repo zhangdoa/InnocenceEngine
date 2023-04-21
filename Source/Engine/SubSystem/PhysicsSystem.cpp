@@ -1,7 +1,7 @@
 #include "PhysicsSystem.h"
 
-#include "../Common/InnoMathHelper.h"
-#include "../Core/InnoLogger.h"
+#include "../Common/MathHelper.h"
+#include "../Core/Logger.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "../ThirdParty/PhysXWrapper/PhysXWrapper.h"
@@ -11,12 +11,12 @@
 using namespace Inno;
 extern IEngine* g_Engine;
 
-namespace InnoPhysicsSystemNS
+namespace PhysicsSystemNS
 {
 	bool Setup();
 	bool Update();
 
-	PhysicsComponent* AddPhysicsComponent(InnoEntity* parentEntity);
+	PhysicsComponent* AddPhysicsComponent(Entity* parentEntity);
 
 	PhysicsComponent* generatePhysicsComponent(MeshMaterialPair* meshMaterialPair);
 	bool generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m);
@@ -39,7 +39,7 @@ namespace InnoPhysicsSystemNS
 
 	Vec4 m_staticSceneBoundMax;
 	Vec4 m_staticSceneBoundMin;
-	InnoEntity* m_RootPDCEntity = 0;
+	Entity* m_RootPDCEntity = 0;
 	PhysicsComponent* m_RootPhysicsComponent = 0;
 
 	std::shared_mutex m_mutex;
@@ -58,9 +58,9 @@ namespace InnoPhysicsSystemNS
 	std::function<void()> f_sceneLoadingStartCallback;
 }
 
-using namespace InnoPhysicsSystemNS;
+using namespace PhysicsSystemNS;
 
-bool InnoPhysicsSystemNS::Setup()
+bool PhysicsSystemNS::Setup()
 {
 	m_RootPDCEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootPDCEntity/");
 	m_BVHNodes.reserve(m_MaxComponentCount);
@@ -87,14 +87,14 @@ bool InnoPhysicsSystemNS::Setup()
 		}
 		m_RootPhysicsComponent = AddPhysicsComponent(m_RootPDCEntity);
 
-		m_totalSceneBoundMax = InnoMath::minVec4<float>;
+		m_totalSceneBoundMax = Math::minVec4<float>;
 		m_totalSceneBoundMax.w = 1.0f;
-		m_totalSceneBoundMin = InnoMath::maxVec4<float>;
+		m_totalSceneBoundMin = Math::maxVec4<float>;
 		m_totalSceneBoundMin.w = 1.0f;
 
-		m_staticSceneBoundMax = InnoMath::minVec4<float>;
+		m_staticSceneBoundMax = Math::minVec4<float>;
 		m_staticSceneBoundMax.w = 1.0f;
-		m_staticSceneBoundMin = InnoMath::maxVec4<float>;
+		m_staticSceneBoundMin = Math::maxVec4<float>;
 		m_staticSceneBoundMin.w = 1.0f;
 	};
 
@@ -104,7 +104,7 @@ bool InnoPhysicsSystemNS::Setup()
 	return true;
 }
 
-bool InnoPhysicsSystemNS::Update()
+bool PhysicsSystemNS::Update()
 {
 #if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().Update();
@@ -113,7 +113,7 @@ bool InnoPhysicsSystemNS::Update()
 	return true;
 }
 
-PhysicsComponent* InnoPhysicsSystemNS::AddPhysicsComponent(InnoEntity* parentEntity)
+PhysicsComponent* PhysicsSystemNS::AddPhysicsComponent(Entity* parentEntity)
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutex };
 
@@ -122,17 +122,17 @@ PhysicsComponent* InnoPhysicsSystemNS::AddPhysicsComponent(InnoEntity* parentEnt
 	return l_PDC;
 }
 
-PhysicsComponent* InnoPhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair* meshMaterialPair)
+PhysicsComponent* PhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair* meshMaterialPair)
 {
 	auto l_MeshComp = meshMaterialPair->mesh;
 	auto l_PDC = AddPhysicsComponent(l_MeshComp->m_Owner);
 
-	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MeshComp->m_Vertices[0], l_MeshComp->m_Vertices.size());
-	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
+	l_PDC->m_AABBLS = Math::generateAABB(&l_MeshComp->m_Vertices[0], l_MeshComp->m_Vertices.size());
+	l_PDC->m_SphereLS = Math::generateBoundSphere(l_PDC->m_AABBLS);
 
 	l_PDC->m_MeshMaterialPair = meshMaterialPair;
 
-	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsComponent has been generated for MeshComponent:", l_MeshComp->m_Owner->m_InstanceName.c_str(), ".");
+	Logger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsComponent has been generated for MeshComponent:", l_MeshComp->m_Owner->m_InstanceName.c_str(), ".");
 
 	m_Components.emplace_back(l_PDC);
 
@@ -145,15 +145,15 @@ PhysicsComponent* InnoPhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair
 	return l_PDC;
 }
 
-bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m)
+bool PhysicsSystemNS::generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m)
 {
-	PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, m);
-	PDC->m_SphereWS = InnoMath::generateBoundSphere(PDC->m_AABBWS);
+	PDC->m_AABBWS = Math::transformAABBSpace(PDC->m_AABBLS, m);
+	PDC->m_SphereWS = Math::generateBoundSphere(PDC->m_AABBWS);
 
 	return true;
 }
 
-ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
+ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 {
 	ArrayRangeInfo l_result;
 	l_result.m_startOffset = m_Components.size();
@@ -216,7 +216,7 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				default:
-					InnoLogger::Log(LogLevel::Error, "PhysicsSystem: Invalid ProceduralMeshShape!");
+					Logger::Log(LogLevel::Error, "PhysicsSystem: Invalid ProceduralMeshShape!");
 					break;
 				}
 			}
@@ -229,77 +229,77 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 	return l_result;
 }
 
-void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
+void PhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
 {
-	m_visibleSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_visibleSceneBoundMax);
-	m_visibleSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_visibleSceneBoundMin);
+	m_visibleSceneBoundMax = Math::elementWiseMax(rhs.m_boundMax, m_visibleSceneBoundMax);
+	m_visibleSceneBoundMin = Math::elementWiseMin(rhs.m_boundMin, m_visibleSceneBoundMin);
 }
 
-void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
+void PhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
 {
-	m_totalSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_totalSceneBoundMax);
-	m_totalSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_totalSceneBoundMin);
+	m_totalSceneBoundMax = Math::elementWiseMax(rhs.m_boundMax, m_totalSceneBoundMax);
+	m_totalSceneBoundMin = Math::elementWiseMin(rhs.m_boundMin, m_totalSceneBoundMin);
 }
 
-void InnoPhysicsSystemNS::updateStaticSceneBoundary(const AABB& rhs)
+void PhysicsSystemNS::updateStaticSceneBoundary(const AABB& rhs)
 {
-	m_staticSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_staticSceneBoundMax);
-	m_staticSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_staticSceneBoundMin);
+	m_staticSceneBoundMax = Math::elementWiseMax(rhs.m_boundMax, m_staticSceneBoundMax);
+	m_staticSceneBoundMin = Math::elementWiseMin(rhs.m_boundMin, m_staticSceneBoundMin);
 
-	m_RootPhysicsComponent->m_AABBWS = InnoMath::generateAABB(m_staticSceneBoundMax, m_staticSceneBoundMin);
-	m_RootPhysicsComponent->m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsComponent->m_AABBWS);
+	m_RootPhysicsComponent->m_AABBWS = Math::generateAABB(m_staticSceneBoundMax, m_staticSceneBoundMin);
+	m_RootPhysicsComponent->m_SphereWS = Math::generateBoundSphere(m_RootPhysicsComponent->m_AABBWS);
 }
 
-bool InnoPhysicsSystem::Setup(ISystemConfig* systemConfig)
+bool PhysicsSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->getComponentManager()->RegisterType<PhysicsComponent>(m_MaxComponentCount, this);
-	return InnoPhysicsSystemNS::Setup();
+	return PhysicsSystemNS::Setup();
 }
 
-bool InnoPhysicsSystem::Initialize()
+bool PhysicsSystem::Initialize()
 {
-	if (InnoPhysicsSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (PhysicsSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoPhysicsSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been initialized.");
+		PhysicsSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		Logger::Log(LogLevel::Success, "PhysicsSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "PhysicsSystem: Object is not created!");
+		Logger::Log(LogLevel::Error, "PhysicsSystem: Object is not created!");
 		return false;
 	}
 	return true;
 }
 
-bool InnoPhysicsSystem::Update()
+bool PhysicsSystem::Update()
 {
-	return InnoPhysicsSystemNS::Update();
+	return PhysicsSystemNS::Update();
 }
 
-bool InnoPhysicsSystem::Terminate()
+bool PhysicsSystem::Terminate()
 {
-	InnoPhysicsSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
+	PhysicsSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	Logger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus InnoPhysicsSystem::GetStatus()
+ObjectStatus PhysicsSystem::GetStatus()
 {
-	return InnoPhysicsSystemNS::m_ObjectStatus;
+	return PhysicsSystemNS::m_ObjectStatus;
 }
 
 AABB generateAABB(std::vector<BVHNode>::iterator begin, std::vector<BVHNode>::iterator end)
 {
-	auto l_BoundMax = InnoMath::minVec4<float>;
+	auto l_BoundMax = Math::minVec4<float>;
 	l_BoundMax.w = 1.0f;
-	auto l_BoundMin = InnoMath::maxVec4<float>;
+	auto l_BoundMin = Math::maxVec4<float>;
 	l_BoundMin.w = 1.0f;
 
 	for (auto it = begin; it != end; it++)
 	{
-		l_BoundMax = InnoMath::elementWiseMax(it->m_AABB.m_boundMax, l_BoundMax);
-		l_BoundMin = InnoMath::elementWiseMin(it->m_AABB.m_boundMin, l_BoundMin);
+		l_BoundMax = Math::elementWiseMax(it->m_AABB.m_boundMax, l_BoundMax);
+		l_BoundMin = Math::elementWiseMin(it->m_AABB.m_boundMin, l_BoundMin);
 	}
 
 	return generateAABB(l_BoundMax, l_BoundMin);
@@ -390,7 +390,7 @@ bool generateBVH(std::vector<BVHNode>::iterator node, size_t begin, size_t end, 
 	return true;
 }
 
-void InnoPhysicsSystem::updateBVH()
+void PhysicsSystem::updateBVH()
 {
 	if (m_BVHWorkloadCount)
 	{
@@ -427,10 +427,10 @@ void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& culli
 
 			if (PDC->m_MeshUsage == MeshUsage::Dynamic)
 			{
-				PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
+				PDC->m_AABBWS = Math::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
 				PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
 			}
-			if (InnoMath::intersectCheck(l_cameraFrustum, PDC->m_SphereWS))
+			if (Math::intersectCheck(l_cameraFrustum, PDC->m_SphereWS))
 			{
 				CullingData l_cullingData;
 
@@ -470,7 +470,7 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 	{
 		if (PDC->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			auto l_spherePosLS = InnoMath::mul(l_sunRotationInv, Vec4(PDC->m_SphereWS.m_center, 1.0f));
+			auto l_spherePosLS = Math::mul(l_sunRotationInv, Vec4(PDC->m_SphereWS.m_center, 1.0f));
 			auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
 
 			if (l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius)
@@ -501,7 +501,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsComponent* PDC)
 
 	if (PDC->m_VisibleComponent->m_meshUsage == MeshUsage::Dynamic)
 	{
-		PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
+		PDC->m_AABBWS = Math::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
 		PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
 	}
 
@@ -515,7 +515,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsComponent* PDC)
 	l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
 	l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 
-	if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))
+	if (Math::intersectCheck(frustum, PDC->m_SphereWS))
 	{
 		updateVisibleSceneBoundary(PDC->m_AABBWS);
 		l_cullingData.visibilityMask = VisibilityMask::MainCamera;
@@ -531,7 +531,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsComponent* PDC)
 
 void BVHCulling(std::vector<BVHNode>::iterator node, const Frustum& frustum, std::vector<CullingData>& cullingDatas)
 {
-	if (InnoMath::intersectCheck(frustum, node->m_AABB))
+	if (Math::intersectCheck(frustum, node->m_AABB))
 	{
 		if (node->leftChildNode != m_TempBVHNodes.end())
 		{
@@ -551,7 +551,7 @@ void BVHCulling(std::vector<BVHNode>::iterator node, const Frustum& frustum, std
 	}
 }
 
-void InnoPhysicsSystem::updateCulling()
+void PhysicsSystem::updateCulling()
 {
 	auto l_mainCamera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 
@@ -567,10 +567,10 @@ void InnoPhysicsSystem::updateCulling()
 		return;
 	}
 
-	m_visibleSceneBoundMax = InnoMath::minVec4<float>;
+	m_visibleSceneBoundMax = Math::minVec4<float>;
 	m_visibleSceneBoundMax.w = 1.0f;
 
-	m_visibleSceneBoundMin = InnoMath::maxVec4<float>;
+	m_visibleSceneBoundMin = Math::maxVec4<float>;
 	m_visibleSceneBoundMin.w = 1.0f;
 
 	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
@@ -588,36 +588,36 @@ void InnoPhysicsSystem::updateCulling()
 
 	m_cullingData.SetValue(std::move(l_cullingDataVector));
 
-	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
-	m_totalSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
+	m_visibleSceneAABB = Math::generateAABB(PhysicsSystemNS::m_visibleSceneBoundMax, PhysicsSystemNS::m_visibleSceneBoundMin);
+	m_totalSceneAABB = Math::generateAABB(PhysicsSystemNS::m_totalSceneBoundMax, PhysicsSystemNS::m_totalSceneBoundMin);
 }
 
-const std::vector<CullingData>& InnoPhysicsSystem::getCullingData()
+const std::vector<CullingData>& PhysicsSystem::getCullingData()
 {
-	return InnoPhysicsSystemNS::m_cullingData.GetNewValue();
+	return PhysicsSystemNS::m_cullingData.GetNewValue();
 }
 
-AABB InnoPhysicsSystem::getVisibleSceneAABB()
+AABB PhysicsSystem::getVisibleSceneAABB()
 {
-	return InnoPhysicsSystemNS::m_visibleSceneAABB;
+	return PhysicsSystemNS::m_visibleSceneAABB;
 }
 
-AABB InnoPhysicsSystem::getStaticSceneAABB()
+AABB PhysicsSystem::getStaticSceneAABB()
 {
-	return InnoPhysicsSystemNS::m_RootPhysicsComponent->m_AABBWS;
+	return PhysicsSystemNS::m_RootPhysicsComponent->m_AABBWS;
 }
 
-AABB InnoPhysicsSystem::getTotalSceneAABB()
+AABB PhysicsSystem::getTotalSceneAABB()
 {
-	return InnoPhysicsSystemNS::m_totalSceneAABB;
+	return PhysicsSystemNS::m_totalSceneAABB;
 }
 
-const std::vector<BVHNode>& InnoPhysicsSystem::getBVHNodes()
+const std::vector<BVHNode>& PhysicsSystem::getBVHNodes()
 {
-	return InnoPhysicsSystemNS::m_TempBVHNodes;
+	return PhysicsSystemNS::m_TempBVHNodes;
 }
 
-bool InnoPhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
+bool PhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
 {
 #if defined INNO_PLATFORM_WIN
 	auto l_result = m_ComponentOwnerLUT.find(VC);
@@ -635,9 +635,9 @@ bool InnoPhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
 	return true;
 }
 
-bool InnoPhysicsSystem::generatePhysicsProxy(VisibleComponent* VC)
+bool PhysicsSystem::generatePhysicsProxy(VisibleComponent* VC)
 {
-	auto l_result = InnoPhysicsSystemNS::generatePhysicsProxy(VC);
+	auto l_result = PhysicsSystemNS::generatePhysicsProxy(VC);
 	m_ComponentOwnerLUT.emplace(VC, l_result);
 
 	return true;

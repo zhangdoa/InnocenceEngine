@@ -35,8 +35,8 @@ namespace Inno
 		GPUBufferComponent *m_RaySBufferGPUBufferComp;
 		GPUBufferComponent *m_ProbeIndexSBufferGPUBufferComp;
 
-		std::vector<InnoMath::Vec4> m_Ray;
-		std::vector<InnoMath::TVec4<uint32_t>> m_ProbeIndex;
+		std::vector<Math::Vec4> m_Ray;
+		std::vector<Math::TVec4<uint32_t>> m_ProbeIndex;
 		std::default_random_engine m_generator;
 		std::uniform_int_distribution<uint32_t> m_randomInt;
 	};

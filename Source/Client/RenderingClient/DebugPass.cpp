@@ -165,7 +165,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 				{
 					DebugPerObjectConstantBuffer l_meshData;
 
-					l_meshData.m = InnoMath::toTranslationMatrix(l_probes[i].pos);
+					l_meshData.m = Math::toTranslationMatrix(l_probes[i].pos);
 					l_meshData.m.m00 *= 0.5f;
 					l_meshData.m.m11 *= 0.5f;
 					l_meshData.m.m22 *= 0.5f;
@@ -265,22 +265,22 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 					g_Engine->getRenderingServer()->UpdateMeshComponent(m_debugCameraFrustumMeshComps[i]);
 
 					DebugPerObjectConstantBuffer l_meshData;
-					l_meshData.m = InnoMath::generateIdentityMatrix<float>();
+					l_meshData.m = Math::generateIdentityMatrix<float>();
 					l_meshData.materialID = 3;
 					m_debugCameraFrustumConstantBuffer.emplace_back(l_meshData);
 				}
 				
 				auto l_pCamera = l_cameraComponent->m_projectionMatrix;
-				auto l_rCamera = InnoMath::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
-				auto l_tCamera = InnoMath::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
+				auto l_rCamera = Math::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
+				auto l_tCamera = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
 
-				auto l_vertices = InnoMath::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
+				auto l_vertices = Math::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
 
 				for (auto& j : l_vertices)
 				{
 					DebugPerObjectConstantBuffer l_meshData;
-					auto l_s = InnoMath::toScaleMatrix(Vec4(0.1f, 0.1f, 0.1f, 0.1f));
-					l_meshData.m = InnoMath::toTranslationMatrix(Vec4(j.m_pos, 1.0f));
+					auto l_s = Math::toScaleMatrix(Vec4(0.1f, 0.1f, 0.1f, 0.1f));
+					l_meshData.m = Math::toTranslationMatrix(Vec4(j.m_pos, 1.0f));
 					l_meshData.m = l_meshData.m * l_s;
 					l_meshData.materialID = 4;
 					m_debugSphereConstantBuffer.emplace_back(l_meshData);
@@ -298,10 +298,10 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 					DebugPerObjectConstantBuffer l_meshData;
 
-					auto l_visibleSceneAABBWS_Extended = InnoMath::extendAABBToBoundingSphere(l_visibleSceneAABBWS);
+					auto l_visibleSceneAABBWS_Extended = Math::extendAABBToBoundingSphere(l_visibleSceneAABBWS);
 
-					auto l_t = InnoMath::toTranslationMatrix(l_visibleSceneAABBWS_Extended.m_center);
-					auto l_s = InnoMath::generateIdentityMatrix<float>();
+					auto l_t = Math::toTranslationMatrix(l_visibleSceneAABBWS_Extended.m_center);
+					auto l_s = Math::generateIdentityMatrix<float>();
 					l_s.m00 *= l_visibleSceneAABBWS_Extended.m_extend.x / 2.0f;
 					l_s.m11 *= l_visibleSceneAABBWS_Extended.m_extend.y / 2.0f;
 					l_s.m22 *= l_visibleSceneAABBWS_Extended.m_extend.z / 2.0f;
@@ -311,7 +311,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 					m_debugCubeConstantBuffer.emplace_back(l_meshData);
 
-					auto l_visibleSceneAABBLS = InnoMath::rotateAABBToNewSpace(l_visibleSceneAABBWS_Extended, l_rInv);
+					auto l_visibleSceneAABBLS = Math::rotateAABBToNewSpace(l_visibleSceneAABBWS_Extended, l_rInv);
 
 					for (size_t j = 0; j < i->m_SplitAABBWS.size(); j++)
 					{
@@ -320,14 +320,14 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 							auto l_aabbLS = i->m_SplitAABBLS[j];
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-							auto l_centerWS = InnoMath::mul(l_aabbLS.m_center, l_r);
+							auto l_centerWS = Math::mul(l_aabbLS.m_center, l_r);
 #endif
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-							auto l_centerWS = InnoMath::mul(l_r, l_aabbLS.m_center);
+							auto l_centerWS = Math::mul(l_r, l_aabbLS.m_center);
 #endif
 
-							auto l_t = InnoMath::toTranslationMatrix(l_centerWS);
-							auto l_s = InnoMath::generateIdentityMatrix<float>();
+							auto l_t = Math::toTranslationMatrix(l_centerWS);
+							auto l_s = Math::generateIdentityMatrix<float>();
 							l_s.m00 *= l_aabbLS.m_extend.x / 2.0f;
 							l_s.m11 *= l_aabbLS.m_extend.y / 2.0f;
 							l_s.m22 *= l_aabbLS.m_extend.z / 2.0f;
@@ -371,7 +371,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 							auto l_bm = k.m_L2B;
 							// Inverse-Joint-Matrix
 							l_bm = l_bm.inverse();
-							auto l_s = InnoMath::toScaleMatrix(Vec4(0.01f, 0.01f, 0.01f, 1.0f));
+							auto l_s = Math::toScaleMatrix(Vec4(0.01f, 0.01f, 0.01f, 1.0f));
 							l_bm = l_bm * l_s;
 							l_m.m00 = 1.0f;
 							l_m.m11 = 1.0f;
@@ -455,7 +455,7 @@ DebugPerObjectConstantBuffer DebugPass::AddAABB(const AABB& aabb)
 {
 	DebugPerObjectConstantBuffer l_result;
 		
-	l_result.m = InnoMath::toTranslationMatrix(aabb.m_center);
+	l_result.m = Math::toTranslationMatrix(aabb.m_center);
 	l_result.m.m00 *= aabb.m_extend.x / 2.0f;
 	l_result.m.m11 *= aabb.m_extend.y / 2.0f;
 	l_result.m.m22 *= aabb.m_extend.z / 2.0f;

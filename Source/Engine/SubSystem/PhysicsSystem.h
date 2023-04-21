@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoPhysicsSystem : public IPhysicsSystem
+	class PhysicsSystem : public IPhysicsSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoPhysicsSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(PhysicsSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

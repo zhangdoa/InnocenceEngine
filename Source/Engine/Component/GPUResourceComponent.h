@@ -1,11 +1,11 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoObject.h"
+#include "../Common/Type.h"
+#include "../Common/GraphicsPrimitive.h"
+#include "../Common/Object.h"
 
 namespace Inno
 {
-	class GPUResourceComponent : public InnoComponent
+	class GPUResourceComponent : public Component
 	{
 	public:
 		GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;

@@ -1,117 +1,117 @@
 #include "LogSystem.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 
 using namespace Inno;
 namespace Inno
 {
-	namespace InnoLogSystemNS
+	namespace LogSystemNS
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	}
 }
 
-ObjectStatus InnoLogSystem::GetStatus()
+ObjectStatus LogSystem::GetStatus()
 {
-	return InnoLogSystemNS::m_ObjectStatus;
+	return LogSystemNS::m_ObjectStatus;
 }
 
-void InnoLogSystem::SetDefaultLogLevel(LogLevel logLevel)
+void LogSystem::SetDefaultLogLevel(LogLevel logLevel)
 {
-	InnoLogger::SetDefaultLogLevel(logLevel);
+	Logger::SetDefaultLogLevel(logLevel);
 }
 
-LogLevel InnoLogSystem::GetDefaultLogLevel()
+LogLevel LogSystem::GetDefaultLogLevel()
 {
-	return InnoLogger::GetDefaultLogLevel();
+	return Logger::GetDefaultLogLevel();
 }
 
-void InnoLogSystem::LogStartOfLine(LogLevel logLevel)
+void LogSystem::LogStartOfLine(LogLevel logLevel)
 {
-	InnoLogger::LogStartOfLine(logLevel);
+	Logger::LogStartOfLine(logLevel);
 }
 
-void InnoLogSystem::LogEndOfLine()
+void LogSystem::LogEndOfLine()
 {
-	InnoLogger::LogEndOfLine();
+	Logger::LogEndOfLine();
 }
 
-void InnoLogSystem::LogImpl(const void* logMessage)
+void LogSystem::LogImpl(const void* logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(bool logMessage)
+void LogSystem::LogImpl(bool logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(uint8_t logMessage)
+void LogSystem::LogImpl(uint8_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(uint16_t logMessage)
+void LogSystem::LogImpl(uint16_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(uint32_t logMessage)
+void LogSystem::LogImpl(uint32_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(uint64_t logMessage)
+void LogSystem::LogImpl(uint64_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(int8_t logMessage)
+void LogSystem::LogImpl(int8_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(int16_t logMessage)
+void LogSystem::LogImpl(int16_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(int32_t logMessage)
+void LogSystem::LogImpl(int32_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(int64_t logMessage)
+void LogSystem::LogImpl(int64_t logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(float logMessage)
+void LogSystem::LogImpl(float logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(double logMessage)
+void LogSystem::LogImpl(double logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(const char* logMessage)
+void LogSystem::LogImpl(const char* logMessage)
 {
-	InnoLogger::LogImpl(logMessage);
+	Logger::LogImpl(logMessage);
 }
 
-bool InnoLogSystem::Setup(ISystemConfig* systemConfig)
+bool LogSystem::Setup(ISystemConfig* systemConfig)
 {
-	InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Created;
-	return InnoLogger::Setup();
+	LogSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	return Logger::Setup();
 }
 
-bool InnoLogSystem::Initialize()
+bool LogSystem::Initialize()
 {
-	if (InnoLogSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (LogSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		return InnoLogger::Initialize();
+		LogSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		return Logger::Initialize();
 	}
 	else
 	{
@@ -119,21 +119,21 @@ bool InnoLogSystem::Initialize()
 	}
 }
 
-bool InnoLogSystem::Update()
+bool LogSystem::Update()
 {
-	if (InnoLogSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (LogSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
-		return 	InnoLogger::Update();
+		return 	Logger::Update();
 	}
 	else
 	{
-		InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		LogSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
-bool InnoLogSystem::Terminate()
+bool LogSystem::Terminate()
 {
-	InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	return InnoLogger::Terminate();
+	LogSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	return Logger::Terminate();
 }

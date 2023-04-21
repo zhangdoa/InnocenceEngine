@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "../Common/Type.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/TextureComponent.h"

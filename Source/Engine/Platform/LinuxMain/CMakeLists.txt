@@ -1,9 +1,9 @@
-add_executable(InnoMain LinuxMain.cpp)
-set_target_properties(InnoMain PROPERTIES FOLDER Engine/ApplicationEntry)
-target_link_libraries(InnoMain InnoApplicationEntry)
+add_executable(Main LinuxMain.cpp)
+set_target_properties(Main PROPERTIES FOLDER Engine/ApplicationEntry)
+target_link_libraries(Main ApplicationEntry)
 
 add_custom_target(run
-    COMMAND InnoMain "-renderer 0 -mode 0"
-    DEPENDS InnoMain
+    COMMAND Main "-renderer 0 -mode 0"
+    DEPENDS Main
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )

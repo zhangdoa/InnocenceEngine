@@ -27,9 +27,9 @@ extern IEngine *g_Engine;
 #include "DX12Helper.h"
 using namespace DX12Helper;
 
-#include "../../Core/InnoLogger.h"
-#include "../../Core/InnoMemory.h"
-#include "../../Core/InnoRandomizer.h"
+#include "../../Core/Logger.h"
+#include "../../Core/Memory.h"
+#include "../../Core/Randomizer.h"
 #include "../../Template/ObjectPool.h"
 
 #pragma comment(lib, "d3d12.lib")
@@ -169,7 +169,7 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	auto l_HResult = D3D12GetDebugInterface(IID_PPV_ARGS(&l_debugInterface));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't get DirectX 12 debug interface!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't get DirectX 12 debug interface!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -177,7 +177,7 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	l_HResult = l_debugInterface->QueryInterface(IID_PPV_ARGS(&m_debugInterface));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't query DirectX 12 debug interface!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't query DirectX 12 debug interface!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -185,12 +185,12 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	m_debugInterface->EnableDebugLayer();
 	// m_debugInterface->SetEnableGPUBasedValidation(true);
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Debug layer and GPU based validation has been enabled.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: Debug layer and GPU based validation has been enabled.");
 
 	l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_graphicsAnalysis));
 	if (SUCCEEDED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: PIX attached.");
+		Logger::Log(LogLevel::Success, "DX12RenderingServer: PIX attached.");
 	}
 
 	return true;
@@ -207,12 +207,12 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	auto l_HResult = CreateDXGIFactory2(l_DXGIFlag, IID_PPV_ARGS(&m_factory));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DXGI factory!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DXGI factory!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: DXGI factory has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: DXGI factory has been created.");
 
 	// Choose a dedicated adapter
 	IDXGIAdapter1 *l_adapter;
@@ -220,11 +220,11 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	l_HResult = m_factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&l_adapter));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Can't find a high-performance GPU.");
+		Logger::Log(LogLevel::Warning, "DX12RenderingServer: Can't find a high-performance GPU.");
 		l_HResult = m_factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_UNSPECIFIED, IID_PPV_ARGS(&l_adapter));
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't find any capable GPU!");
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't find any capable GPU!");
 			m_ObjectStatus = ObjectStatus::Suspended;
 			return false;
 		}
@@ -234,14 +234,14 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	// actual device yet.
 	if (FAILED(D3D12CreateDevice(l_adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Adapter doesn't support DirectX 12!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Adapter doesn't support DirectX 12!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
 	if (l_adapter == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a suitable video card adapter!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a suitable video card adapter!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -256,14 +256,14 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
     std::string l_desc(length, 0);
     WideCharToMultiByte(CP_UTF8, 0, l_descL.c_str(), -1, l_desc.data(), length, nullptr, nullptr);
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Adapter for: ", l_desc.c_str(), " has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: Adapter for: ", l_desc.c_str(), " has been created.");
 
 	// Enumerate the primary adapter output (monitor).
 	IDXGIOutput *l_adapterOutput;
 	l_HResult = m_adapter->EnumOutputs(0, &l_adapterOutput);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: the primary output of the adapter is not connected.");
+		Logger::Log(LogLevel::Warning, "DX12RenderingServer: the primary output of the adapter is not connected.");
 		// @TODO: Find a way to enumerate until we get the actual monitor
 	}
 	else
@@ -278,7 +278,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	l_HResult = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, NULL);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -290,7 +290,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	l_HResult = m_adapterOutput->GetDisplayModeList1(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, &l_displayModeList[0]);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't fill the display mode list structures!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't fill the display mode list structures!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -313,7 +313,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	l_HResult = m_adapter->GetDesc(&m_adapterDesc);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't get the video card adapter description!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't get the video card adapter description!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -324,7 +324,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	// Convert the name of the video card to a character array and store it.
 	if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't convert the name of the video card to a character array!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't convert the name of the video card to a character array!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -340,7 +340,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	l_HResult = D3D12CreateDevice(m_adapter.Get(), featureLevel, IID_PPV_ARGS(&m_device));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -352,10 +352,10 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
             sizeof(options))))
         {
             if(!options.TypedUAVLoadAdditionalFormats)
-				InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: TypedUAVLoadAdditionalFormats is not supported, can't generate mipmap for sRGB textures.");
+				Logger::Log(LogLevel::Warning, "DX12RenderingServer: TypedUAVLoadAdditionalFormats is not supported, can't generate mipmap for sRGB textures.");
         }
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: D3D device has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: D3D device has been created.");
 
 	// Set debug report severity
 	ComPtr<ID3D12InfoQueue> l_pInfoQueue;
@@ -393,7 +393,7 @@ bool DX12RenderingServerNS::CreateGlobalCommandQueues()
 	m_computeCommandQueue = CreateCommandQueue(&l_computeCommandQueueDesc, m_device, L"ComputeCommandQueue");
 	m_copyCommandQueue = CreateCommandQueue(&l_copyCommandQueueDesc, m_device, L"CopyCommandQueue");
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Global CommandQueue has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: Global CommandQueue has been created.");
 
 	return true;
 }
@@ -415,17 +415,17 @@ bool DX12RenderingServerNS::CreateSyncPrimitives()
 {
 	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence))))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for direct CommandQueue!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for direct CommandQueue!");
 		return false;
 	}
 	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence))))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for compute CommandQueue!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for compute CommandQueue!");
 		return false;
 	}
 	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence))))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for copy CommandQueue!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for copy CommandQueue!");
 		return false;
 	}
 #ifdef INNO_DEBUG
@@ -434,7 +434,7 @@ bool DX12RenderingServerNS::CreateSyncPrimitives()
 	m_copyCommandQueueFence->SetName(L"CopyCommandQueueFence");
 #endif // INNO_DEBUG
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer:  Fences have been created.");
+	Logger::Log(LogLevel::Verbose, "DX12RenderingServer:  Fences have been created.");
 
 	return true;
 }
@@ -450,7 +450,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	auto l_result = m_device->CreateDescriptorHeap(&l_CSUHeapDesc, IID_PPV_ARGS(&m_CSUHeap));
 	if (FAILED(l_result))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-visible DescriptorHeap for CBV/SRV/UAV!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-visible DescriptorHeap for CBV/SRV/UAV!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -460,7 +460,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	m_CSUDescHeapCPUHandle = m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
 	m_CSUDescHeapGPUHandle = m_CSUHeap->GetGPUDescriptorHandleForHeapStart();
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Shader-visible DescriptorHeap for CBV/SRV/UAV has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: Shader-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
 	D3D12_DESCRIPTOR_HEAP_DESC l_ShaderNonVisibleCSUHeapDesc = {};
 
@@ -471,7 +471,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	l_result = m_device->CreateDescriptorHeap(&l_ShaderNonVisibleCSUHeapDesc, IID_PPV_ARGS(&m_ShaderNonVisibleCSUHeap));
 	if (FAILED(l_result))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-non-visible DescriptorHeap for CBV/SRV/UAV!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-non-visible DescriptorHeap for CBV/SRV/UAV!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -480,7 +480,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 
 	m_ShaderNonVisibleCSUDescHeapCPUHandle = m_ShaderNonVisibleCSUHeap->GetCPUDescriptorHandleForHeapStart();
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Shader-non-visible DescriptorHeap for CBV/SRV/UAV has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: Shader-non-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
 	return true;
 }
@@ -494,7 +494,7 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 	auto l_result = m_device->CreateDescriptorHeap(&m_samplerHeapDesc, IID_PPV_ARGS(&m_samplerHeap));
 	if (FAILED(l_result))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for Sampler!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for Sampler!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -504,7 +504,7 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 	m_SamplerDescHeapCPUHandle = m_samplerHeap->GetCPUDescriptorHandleForHeapStart();
 	m_SamplerDescHeapGPUHandle = m_samplerHeap->GetGPUDescriptorHandleForHeapStart();
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for Sampler has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for Sampler has been created.");
 
 	return true;
 }
@@ -558,7 +558,7 @@ bool DX12RenderingServerNS::CreateMipmapGenerator()
 #endif
 		m_device->CreateComputePipelineState(&l_3DPSODesc, IID_PPV_ARGS(&m_3DMipmapPSO));
 
-		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 3D texture has been created.");
+		Logger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 3D texture has been created.");
 	}
 	{
 		CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
@@ -591,7 +591,7 @@ bool DX12RenderingServerNS::CreateMipmapGenerator()
 #endif
 		m_device->CreateComputePipelineState(&l_2DPSODesc, IID_PPV_ARGS(&m_2DMipmapPSO));
 
-		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 2D texture has been created.");
+		Logger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 2D texture has been created.");
 	}
 
 	return true;
@@ -643,12 +643,12 @@ bool DX12RenderingServerNS::CreateSwapChain()
 
 	if (FAILED(l_hResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Swap chain has been created.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: Swap chain has been created.");
 
 	return true;
 }
@@ -672,7 +672,7 @@ bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12Texture
 
 	if (!DX12TextureComp->m_TextureDesc.UseMipMap)
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Attempt to generate mipmaps for texture without mipmaps requirement.");
+		Logger::Log(LogLevel::Warning, "DX12RenderingServer: Attempt to generate mipmaps for texture without mipmaps requirement.");
 
 		return false;
 	}
@@ -793,7 +793,7 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	m_SwapChainSamplerComp = reinterpret_cast<DX12SamplerComponent *>(AddSamplerComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer Setup finished.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer Setup finished.");
 
 	return l_result;
 }
@@ -841,7 +841,7 @@ bool DX12RenderingServer::Initialize()
 			auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
+				Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
 				return false;
 			}
 			auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
@@ -900,7 +900,7 @@ bool DX12RenderingServer::Terminate()
 #endif
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer has been terminated.");
+	Logger::Log(LogLevel::Success, "DX12RenderingServer has been terminated.");
 
 	return true;
 }
@@ -933,7 +933,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	l_rhs->m_DefaultHeapBuffer_VB = CreateDefaultHeapBuffer(&l_verticesResourceDesc, m_device);
 	if (l_rhs->m_DefaultHeapBuffer_VB == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create vertex buffer on Default Heap!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't create vertex buffer on Default Heap!");
 		return false;
 	}
 #ifdef INNO_DEBUG
@@ -943,7 +943,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	l_rhs->m_UploadHeapBuffer_VB = CreateUploadHeapBuffer(&l_verticesResourceDesc, m_device);
 	if (l_rhs->m_UploadHeapBuffer_VB == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create vertex buffer on Upload Heap!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't create vertex buffer on Upload Heap!");
 		return false;
 	}
 #ifdef INNO_DEBUG
@@ -955,7 +955,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	l_rhs->m_VBV.StrideInBytes = sizeof(Vertex);
 	l_rhs->m_VBV.SizeInBytes = l_verticesDataSize;
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Vertex Buffer ", l_rhs->m_DefaultHeapBuffer_VB, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: Vertex Buffer ", l_rhs->m_DefaultHeapBuffer_VB, " is initialized.");
 
 	// indices
 	auto l_indicesDataSize = uint32_t(sizeof(Index) * l_rhs->m_Indices.size());
@@ -963,7 +963,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	l_rhs->m_DefaultHeapBuffer_IB = CreateDefaultHeapBuffer(&l_indicesResourceDesc, m_device);
 	if (l_rhs->m_DefaultHeapBuffer_IB == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create index buffer on Default Heap!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't create index buffer on Default Heap!");
 		return false;
 	}
 #ifdef INNO_DEBUG
@@ -973,7 +973,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	l_rhs->m_UploadHeapBuffer_IB = CreateUploadHeapBuffer(&l_indicesResourceDesc, m_device);
 	if (l_rhs->m_UploadHeapBuffer_IB == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create index buffer on Upload Heap!");
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: can't create index buffer on Upload Heap!");
 		return false;
 	}
 #ifdef INNO_DEBUG
@@ -985,7 +985,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	l_rhs->m_IBV.BufferLocation = l_rhs->m_DefaultHeapBuffer_IB->GetGPUVirtualAddress();
 	l_rhs->m_IBV.SizeInBytes = l_indicesDataSize;
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Index Buffer ", l_rhs->m_DefaultHeapBuffer_IB, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: Index Buffer ", l_rhs->m_DefaultHeapBuffer_IB, " is initialized.");
 
 	UpdateMeshComponent(l_rhs);
 
@@ -1061,7 +1061,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 		if (l_rhs->m_DefaultHeapBuffer == nullptr)
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create texture!");
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: can't create texture!");
 			return false;
 		}
 #ifdef INNO_DEBUG
@@ -1131,7 +1131,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 	m_initializedTextures.emplace(l_rhs);
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: texture ", l_rhs, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: texture ", l_rhs, " is initialized.");
 
 	return true;
 }
@@ -1202,7 +1202,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 	}
 
 	CreateCommandLists(l_rhs);
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " CommandList has been created.");
+	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " CommandList has been created.");
 
 	l_rhs->m_Semaphores.resize(l_rhs->m_CommandLists.size());
 	for (size_t i = 0; i < l_rhs->m_Semaphores.size(); i++)
@@ -1210,7 +1210,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 		l_rhs->m_Semaphores[i] = addSemaphore();
 	}
 	
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " Semaphore has been created.");
+	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " Semaphore has been created.");
 
 	CreateFenceEvents(l_rhs);
 
@@ -1347,7 +1347,7 @@ bool DX12RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not support CPU-readable default heap GPU buffer currently.");
+			Logger::Log(LogLevel::Warning, "DX12RenderingServer: Not support CPU-readable default heap GPU buffer currently.");
 		}
 	}
 
@@ -1818,13 +1818,13 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 
 	if ((l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && shaderStage != ShaderStage::Compute) || (l_renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Compute && shaderStage == ShaderStage::Compute))
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Trying to activate resource at : ", resourceBindingLayoutDescIndex, " with incompatible render pass: ", renderPass->m_InstanceName.c_str());
+		Logger::Log(LogLevel::Warning, "DX12RenderingServer: Trying to activate resource at : ", resourceBindingLayoutDescIndex, " with incompatible render pass: ", renderPass->m_InstanceName.c_str());
 		return false;
 	}
 
 	if (!resource)
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
+		Logger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
 		return false;
 	}
 
@@ -1884,7 +1884,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 			{
 				if (l_accessibility != Accessibility::ReadOnly)
 				{
-					InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
+					Logger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
 				}
 				else
 				{
@@ -1939,7 +1939,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 			{
 				if (l_accessibility != Accessibility::ReadOnly)
 				{
-					InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
+					Logger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
 				}
 				else
 				{
@@ -2337,7 +2337,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't map texture for CPU to read!");
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't map texture for CPU to read!");
 		}
 
 		std::memcpy(l_result.data(), l_pData, l_result.size());
@@ -2414,7 +2414,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 					const unsigned char *floatBytes = &pixelData[j * 2];
 					unsigned short float16;
 					memcpy(&float16, floatBytes, sizeof(unsigned short));
-					floatData[j] = InnoMath::float16ToFloat32(float16);
+					floatData[j] = Math::float16ToFloat32(float16);
 				}
 
 				// Construct a Vec4 from the float values

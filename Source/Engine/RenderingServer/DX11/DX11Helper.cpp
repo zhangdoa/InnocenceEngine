@@ -1,5 +1,5 @@
 #include "DX11Helper.h"
-#include "../../Core/InnoLogger.h"
+#include "../../Core/Logger.h"
 
 #include "../../Interface/IEngine.h"
 
@@ -551,7 +551,7 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDesc textureDesc,
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
-		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for UAV of cubemap.");
+		Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for UAV of cubemap.");
 		break;
 	default:
 		break;
@@ -599,7 +599,7 @@ D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDesc textureDesc)
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
-		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for RTV of cubemap.");
+		Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for RTV of cubemap.");
 		break;
 	default:
 		break;
@@ -635,7 +635,7 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, bo
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
-		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for DSV of 3D texture.");
+		Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for DSV of 3D texture.");
 		break;
 	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1DARRAY;
@@ -651,7 +651,7 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, bo
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
-		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for DSV of cubemap.");
+		Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for DSV of cubemap.");
 		break;
 	default:
 		break;
@@ -737,7 +737,7 @@ bool DX11Helper::CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11
 			auto l_HResult = device->CreateRenderTargetView(l_DX11TextureComp->m_ResourceHandle, &DX11RenderPassComp->m_RTVDesc, &DX11RenderPassComp->m_RTVs[i]);
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
+				Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
 				return false;
 			}
 #ifdef  INNO_DEBUG
@@ -759,7 +759,7 @@ bool DX11Helper::CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11
 			auto l_HResult = device->CreateDepthStencilView(l_DX11TextureComp->m_ResourceHandle, &DX11RenderPassComp->m_DSVDesc, &DX11RenderPassComp->m_DSV);
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
+				Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
 				return false;
 			}
 #ifdef  INNO_DEBUG
@@ -768,7 +768,7 @@ bool DX11Helper::CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", DX11RenderPassComp->m_InstanceName.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: ", DX11RenderPassComp->m_InstanceName.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
 		}
 	}
 
@@ -830,7 +830,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassComponent* DX11RenderPassComp,
 	auto l_HResult = device->CreateInputLayout(l_inputLayouts, 5, dummyILShaderBuffer->GetBufferPointer(), dummyILShaderBuffer->GetBufferSize(), &l_PSO->m_InputLayout);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create input layout object!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create input layout object!");
 		return false;
 	}
 #ifdef  INNO_DEBUG
@@ -843,7 +843,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassComponent* DX11RenderPassComp,
 		auto l_HResult = device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
 			return false;
 		}
 	}
@@ -854,7 +854,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassComponent* DX11RenderPassComp,
 		auto l_HResult = device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
 			return false;
 		}
 	}
@@ -863,7 +863,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassComponent* DX11RenderPassComp,
 	l_HResult = device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RenderPassComp->m_InstanceName.c_str(), "!");
 		return false;
 	}
 
@@ -1153,11 +1153,11 @@ bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 			std::vector<char> l_errorMessageVector(bufferSize);
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't find ", shaderFilePath.c_str(), "!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: can't find ", shaderFilePath.c_str(), "!");
 		}
 		return false;
 	}
@@ -1167,6 +1167,6 @@ bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 		l_errorMessage->Release();
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
+	Logger::Log(LogLevel::Verbose, "DX11RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 	return true;
 }

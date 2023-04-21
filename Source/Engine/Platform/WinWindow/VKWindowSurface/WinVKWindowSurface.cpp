@@ -1,6 +1,6 @@
 #include "WinVKWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Core/InnoLogger.h"
+#include "../../../Core/Logger.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
@@ -65,7 +65,7 @@ bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface Setup finished.");
+	Logger::Log(LogLevel::Success, "WinVKWindowSurface Setup finished.");
 
 	return true;
 }
@@ -85,7 +85,7 @@ bool WinVKWindowSurfaceNS::Initialize()
 	if (vkCreateWin32SurfaceKHR(l_VkInstance, &l_createInfo, NULL, l_VkSurface) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");
+		Logger::Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");
 		return false;
 	}
 
@@ -97,7 +97,7 @@ bool WinVKWindowSurfaceNS::Initialize()
 		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 	}
 
-	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface has been initialized.");
+	Logger::Log(LogLevel::Success, "WinVKWindowSurface has been initialized.");
 	return true;
 }
 
@@ -109,7 +109,7 @@ bool WinVKWindowSurfaceNS::Update()
 bool WinVKWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
+	Logger::Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
 
 	return true;
 }

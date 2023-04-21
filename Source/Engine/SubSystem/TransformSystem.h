@@ -4,10 +4,10 @@
 
 namespace Inno
 {
-	class InnoTransformSystem : public ITransformSystem
+	class TransformSystem : public ITransformSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTransformSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(TransformSystem);
 
 		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;

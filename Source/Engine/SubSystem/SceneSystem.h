@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoSceneSystem : public ISceneSystem
+	class SceneSystem : public ISceneSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoSceneSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(SceneSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

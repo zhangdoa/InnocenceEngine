@@ -1,7 +1,7 @@
 #include "TransformSystem.h"
 #include "../Component/TransformComponent.h"
-#include "../Core/InnoRandomizer.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Randomizer.h"
+#include "../Core/Logger.h"
 
 #include "../Interface/IEngine.h"
 
@@ -11,7 +11,7 @@ extern IEngine* g_Engine;
 namespace TransformSystemNS
 {
 	const size_t m_MaxComponentCount = 32768;
-	InnoEntity* m_RootTransformEntity;
+	Entity* m_RootTransformEntity;
 	TransformComponent* m_RootTransformComponent;
 
 	std::function<void()> f_SceneLoadingFinishCallback;
@@ -40,31 +40,31 @@ namespace TransformSystemNS
 	{
 		auto l_tickTime = g_Engine->getTickTime();
 		auto l_ratio = (1.0f - l_tickTime / 100.0f);
-		l_ratio = InnoMath::clamp(l_ratio, 0.01f, 0.99f);
+		l_ratio = Math::clamp(l_ratio, 0.01f, 0.99f);
 
 		auto l_component = g_Engine->getComponentManager()->GetAll<TransformComponent>();
 
 		std::for_each(l_component.begin(), l_component.end(), [&](TransformComponent* val)
 			{
-				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
+				if (!Math::isCloseEnough<float, 4>(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
 				{
-					val->m_localTransformVector.m_pos = InnoMath::lerp(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos, l_ratio);
+					val->m_localTransformVector.m_pos = Math::lerp(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos, l_ratio);
 				}
 
-				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
+				if (!Math::isCloseEnough<float, 4>(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
 				{
-					val->m_localTransformVector.m_rot = InnoMath::slerp(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot, l_ratio);
+					val->m_localTransformVector.m_rot = Math::slerp(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot, l_ratio);
 				}
 
-				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
+				if (!Math::isCloseEnough<float, 4>(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
 				{
-					val->m_localTransformVector.m_scale = InnoMath::lerp(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale, l_ratio);
+					val->m_localTransformVector.m_scale = Math::lerp(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale, l_ratio);
 				}
 
 				if (val->m_parentTransformComponent)
 				{
-					val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
-					val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
+					val->m_globalTransformVector = Math::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
+					val->m_globalTransformMatrix = Math::TransformVectorToTransformMatrix(val->m_globalTransformVector);
 				}
 			});
 	}
@@ -72,7 +72,7 @@ namespace TransformSystemNS
 
 using namespace TransformSystemNS;
 
-bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
+bool TransformSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->getComponentManager()->RegisterType<TransformComponent>(m_MaxComponentCount, this);
 
@@ -87,8 +87,8 @@ bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
 
 			if (i->m_parentTransformComponent)
 			{
-				i->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(i->m_localTransformVector, i->m_parentTransformComponent->m_globalTransformVector, i->m_parentTransformComponent->m_globalTransformMatrix);
-				i->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(i->m_globalTransformVector);
+				i->m_globalTransformVector = Math::LocalTransformVectorToGlobal(i->m_localTransformVector, i->m_parentTransformComponent->m_globalTransformVector, i->m_parentTransformComponent->m_globalTransformMatrix);
+				i->m_globalTransformMatrix = Math::TransformVectorToTransformMatrix(i->m_globalTransformVector);
 			}
 		}
 	};
@@ -101,17 +101,17 @@ bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
 
 	m_RootTransformComponent->m_localTransformVector_target = m_RootTransformComponent->m_localTransformVector;
 	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
-	m_RootTransformComponent->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_RootTransformComponent->m_globalTransformVector);
+	m_RootTransformComponent->m_globalTransformMatrix = Math::TransformVectorToTransformMatrix(m_RootTransformComponent->m_globalTransformVector);
 
 	return true;
 }
 
-bool InnoTransformSystem::Initialize()
+bool TransformSystem::Initialize()
 {
 	return true;
 }
 
-bool InnoTransformSystem::Update()
+bool TransformSystem::Update()
 {
 	auto l_SimulateTask = g_Engine->getTaskSystem()->Submit("TransformComponentsSimulateTask", 0, nullptr, [&]()
 		{
@@ -121,7 +121,7 @@ bool InnoTransformSystem::Update()
 	return true;
 }
 
-bool InnoTransformSystem::OnFrameEnd()
+bool TransformSystem::OnFrameEnd()
 {
 	auto l_component = g_Engine->getComponentManager()->GetAll<TransformComponent>();
 
@@ -132,17 +132,17 @@ bool InnoTransformSystem::OnFrameEnd()
 	return true;
 }
 
-bool InnoTransformSystem::Terminate()
+bool TransformSystem::Terminate()
 {
 	return true;
 }
 
-ObjectStatus InnoTransformSystem::GetStatus()
+ObjectStatus TransformSystem::GetStatus()
 {
 	return ObjectStatus();
 }
 
-const TransformComponent *Inno::InnoTransformSystem::GetRootTransformComponent()
+const TransformComponent *Inno::TransformSystem::GetRootTransformComponent()
 {
     return m_RootTransformComponent;
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "../Core/InnoMemory.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Memory.h"
+#include "../Core/Logger.h"
 
 namespace Inno
 {
@@ -27,12 +27,12 @@ namespace Inno
 		{
 			m_ObjectSize = sizeof(T) + sizeof(Chunk);
 			m_PoolCapability = poolCapability;
-			m_HeapAddress = reinterpret_cast<unsigned char*>(InnoMemory::Allocate(m_PoolCapability * m_ObjectSize));
+			m_HeapAddress = reinterpret_cast<unsigned char*>(Memory::Allocate(m_PoolCapability * m_ObjectSize));
 			m_CurrentFreeChunk = reinterpret_cast<Chunk*>(m_HeapAddress);
 
 			ConstructPool();
 
-			InnoLogger::Log(LogLevel::Verbose, "InnoMemory: Object pool has been allocated at ", this, ".");
+			Logger::Log(LogLevel::Verbose, "Memory: Object pool has been allocated at ", this, ".");
 		}
 
 		~TObjectPool() = default;
@@ -41,7 +41,7 @@ namespace Inno
 		{
 			if (!m_CurrentFreeChunk)
 			{
-				InnoLogger::Log(LogLevel::Error, "InnoMemory: Run out of object pool!");
+				Logger::Log(LogLevel::Error, "Memory: Run out of object pool!");
 				return nullptr;
 			}
 
@@ -58,14 +58,14 @@ namespace Inno
 				else
 				{
 					m_CurrentFreeChunk = nullptr;
-					InnoLogger::Log(LogLevel::Warning, "InnoMemory: Last free chuck has been allocated!");
+					Logger::Log(LogLevel::Warning, "Memory: Last free chuck has been allocated!");
 				}
 
 				return new(l_Object) T();
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Error, "InnoMemory: Can't spawn object!");
+				Logger::Log(LogLevel::Error, "Memory: Can't spawn object!");
 				return nullptr;
 			}
 		}
@@ -124,7 +124,7 @@ namespace Inno
 	public:
 		static TObjectPool<T>* Create(uint32_t poolCapability)
 		{
-			auto l_TObjectPoolAddress = reinterpret_cast<TObjectPool<T>*>(InnoMemory::Allocate(sizeof(TObjectPool<T>)));
+			auto l_TObjectPoolAddress = reinterpret_cast<TObjectPool<T>*>(Memory::Allocate(sizeof(TObjectPool<T>)));
 			auto l_TObjectPool = new(l_TObjectPoolAddress) TObjectPool<T>(poolCapability);
 			return l_TObjectPool;
 		}
@@ -137,7 +137,7 @@ namespace Inno
 		static bool Destruct(TObjectPool<T>* objectPool)
 		{
 			Clear(objectPool);
-			InnoMemory::Deallocate(objectPool);
+			Memory::Deallocate(objectPool);
 			return true;
 		}
 	};

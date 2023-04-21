@@ -1,6 +1,6 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoGraphicsPrimitive.h"
+#include "../Common/Type.h"
+#include "../Common/GraphicsPrimitive.h"
 #include "../Component/TextureComponent.h"
 #include "../Component/ShaderProgramComponent.h"
 
@@ -11,7 +11,7 @@ namespace Inno
 
 	};
 	
-	class RenderPassComponent : public InnoComponent
+	class RenderPassComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 11; };

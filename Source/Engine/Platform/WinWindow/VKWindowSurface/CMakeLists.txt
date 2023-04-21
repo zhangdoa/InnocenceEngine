@@ -1,5 +1,5 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
-add_library(InnoWinVKWindowSurface ${HEADERS} ${SOURCES})
-set_target_properties(InnoWinVKWindowSurface PROPERTIES FOLDER Engine/Window)
-target_include_directories(InnoWinVKWindowSurface PRIVATE "${INNO_SUBMODULE_DIRECTORIES}/Vulkan-Headers/include")
+add_library(WinVKWindowSurface ${HEADERS} ${SOURCES})
+set_target_properties(WinVKWindowSurface PROPERTIES FOLDER Engine/Window)
+target_include_directories(WinVKWindowSurface PRIVATE "${INNO_SUBMODULE_DIRECTORIES}/Vulkan-Headers/include")

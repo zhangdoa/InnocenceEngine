@@ -5,7 +5,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "InnoLogger.h"
+#include "Logger.h"
 
 namespace Inno
 {
@@ -19,7 +19,7 @@ namespace Inno
 		m_workingDir = fs::current_path().generic_string();
 		m_workingDir = m_workingDir + "//";
 
-		InnoLogger::Log(LogLevel::Verbose, "IOService: current working directory is ", m_workingDir.c_str());
+		Logger::Log(LogLevel::Verbose, "IOService: current working directory is ", m_workingDir.c_str());
 
 		return true;
 	}
@@ -45,7 +45,7 @@ namespace Inno
 
 		if (!l_file.is_open())
 		{
-			InnoLogger::Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
+			Logger::Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
 			return std::vector<char>();
 		}
 
@@ -82,7 +82,7 @@ namespace Inno
 
 		if (!l_file.is_open())
 		{
-			InnoLogger::Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
+			Logger::Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
 			return false;
 		}
 

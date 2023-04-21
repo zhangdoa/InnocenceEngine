@@ -1,6 +1,6 @@
 #include "RenderingFrontend.h"
 
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 
 #include "../Interface/IEngine.h"
 using namespace Inno;
@@ -8,7 +8,7 @@ extern IEngine* g_Engine;
 
 #include "../RayTracer/RayTracer.h"
 
-namespace InnoRenderingFrontendNS
+namespace RenderingFrontendNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -107,9 +107,9 @@ namespace InnoRenderingFrontendNS
 	bool updateDebuggerPassData();
 }
 
-using namespace InnoRenderingFrontendNS;
+using namespace RenderingFrontendNS;
 
-float InnoRenderingFrontendNS::radicalInverse(uint32_t n, uint32_t base)
+float RenderingFrontendNS::radicalInverse(uint32_t n, uint32_t base)
 {
 	float val = 0.0f;
 	float invBase = 1.0f / base, invBi = invBase;
@@ -123,7 +123,7 @@ float InnoRenderingFrontendNS::radicalInverse(uint32_t n, uint32_t base)
 	return val;
 };
 
-void InnoRenderingFrontendNS::initializeHaltonSampler()
+void RenderingFrontendNS::initializeHaltonSampler()
 {
 	// in NDC space
 	for (uint32_t i = 0; i < 16; i++)
@@ -132,7 +132,7 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 	}
 }
 
-void InnoRenderingFrontendNS::initializeAnimation(AnimationComponent* rhs)
+void RenderingFrontendNS::initializeAnimation(AnimationComponent* rhs)
 {
 	std::string l_name = rhs->m_InstanceName.c_str();
 
@@ -154,7 +154,7 @@ void InnoRenderingFrontendNS::initializeAnimation(AnimationComponent* rhs)
 	m_animationDataInfosLUT.emplace(rhs->m_InstanceName.c_str(), l_info);
 }
 
-AnimationData InnoRenderingFrontendNS::getAnimationData(const char* animationName)
+AnimationData RenderingFrontendNS::getAnimationData(const char* animationName)
 {
 	auto l_result = m_animationDataInfosLUT.find(animationName);
 	if (l_result != m_animationDataInfosLUT.end())
@@ -167,12 +167,12 @@ AnimationData InnoRenderingFrontendNS::getAnimationData(const char* animationNam
 	}
 }
 
-bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
+bool RenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingFrontendConfig = reinterpret_cast<IRenderingFrontendConfig*>(systemConfig);
 
 	m_renderingServer = l_renderingFrontendConfig->m_RenderingServer;
-	m_rayTracer = new InnoRayTracer();
+	m_rayTracer = new RayTracer();
 
 	m_renderingConfig.useCSM = true;
 	m_renderingConfig.useMotionBlur = true;
@@ -251,7 +251,7 @@ bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 	return true;
 }
 
-bool InnoRenderingFrontendNS::loadDefaultAssets()
+bool RenderingFrontendNS::loadDefaultAssets()
 {
 	auto m_basicNormalTexture = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//basic_normal.png");
 	m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
@@ -284,15 +284,15 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
 	m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
 
-	m_iconTemplate_DirectionalLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
+	m_iconTemplate_DirectionalLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//WorldEditorIcons_DirectionalLight.png");
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_PointLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_PointLight.png");
+	m_iconTemplate_PointLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//WorldEditorIcons_PointLight.png");
 	m_iconTemplate_PointLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_PointLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_SphereLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_SphereLight.png");
+	m_iconTemplate_SphereLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//WorldEditorIcons_SphereLight.png");
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
@@ -388,7 +388,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::Initialize()
+bool RenderingFrontendNS::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -398,17 +398,17 @@ bool InnoRenderingFrontendNS::Initialize()
 		m_rayTracer->Initialize();
 
 		m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "RenderingFrontend has been initialized.");
+		Logger::Log(LogLevel::Success, "RenderingFrontend has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Object is not created!");
+		Logger::Log(LogLevel::Error, "RenderingFrontend: Object is not created!");
 		return false;
 	}
 }
 
-bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
+bool RenderingFrontendNS::updatePerFrameConstantBuffer()
 {
 	auto l_camera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
 
@@ -444,9 +444,9 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		l_currentHaltonStep += 1;
 	}
 
-	auto r = InnoMath::getInvertRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto r = Math::getInvertRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 
-	auto t = InnoMath::getInvertTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
+	auto t = Math::getInvertTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
 	l_PerFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 
@@ -484,7 +484,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		return false;
 	}
 
-	l_PerFrameCB.sun_direction = InnoMath::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+	l_PerFrameCB.sun_direction = Math::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
 	l_PerFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;
@@ -520,7 +520,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::updateLightData()
+bool RenderingFrontendNS::updateLightData()
 {
 	auto& l_PointLightCB = m_pointLightCBVector.GetOldValue();
 	auto& l_SphereLightCB = m_sphereLightCBVector.GetOldValue();
@@ -564,7 +564,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::updateMeshData()
+bool RenderingFrontendNS::updateMeshData()
 {
 	auto& l_drawCallInfoVector = m_drawCallInfoVector.GetOldValue();
 	auto& l_perObjectCBVector = m_perObjectCBVector.GetOldValue();
@@ -630,7 +630,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 							l_animationCB.numChannels = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumChannels;
 							l_animationCB.numTicks = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumTicks;
 							l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
-							l_animationCB.rootOffsetMatrix = InnoMath::generateIdentityMatrix<float>();
+							l_animationCB.rootOffsetMatrix = Math::generateIdentityMatrix<float>();
 
 							l_animationCBVector.emplace_back(l_animationCB);
 
@@ -660,7 +660,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::simulateAnimation()
+bool RenderingFrontendNS::simulateAnimation()
 {
 	m_currentTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 
@@ -698,7 +698,7 @@ bool InnoRenderingFrontendNS::simulateAnimation()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::updateBillboardPassData()
+bool RenderingFrontendNS::updateBillboardPassData()
 {
 	auto& l_lightComponents = g_Engine->getComponentManager()->GetAll<LightComponent>();
 
@@ -734,7 +734,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 		auto l_transformCompoent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
 		if (l_transformCompoent != nullptr)
 		{
-			l_meshCB.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+			l_meshCB.m = Math::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
 		}
 
 		switch (i->m_LightType)
@@ -776,14 +776,14 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::updateDebuggerPassData()
+bool RenderingFrontendNS::updateDebuggerPassData()
 {
 	// @TODO: Implementation
 
 	return true;
 }
 
-bool InnoRenderingFrontendNS::Update()
+bool RenderingFrontendNS::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -811,64 +811,64 @@ bool InnoRenderingFrontendNS::Update()
 	}
 }
 
-bool InnoRenderingFrontendNS::Terminate()
+bool RenderingFrontendNS::Terminate()
 {
 	m_rayTracer->Terminate();
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "RenderingFrontend has been terminated.");
+	Logger::Log(LogLevel::Success, "RenderingFrontend has been terminated.");
 	return true;
 }
 
-bool InnoRenderingFrontend::Setup(ISystemConfig* systemConfig)
+bool RenderingFrontend::Setup(ISystemConfig* systemConfig)
 {	
 	g_Engine->getComponentManager()->RegisterType<SkeletonComponent>(2048, this);
 	g_Engine->getComponentManager()->RegisterType<AnimationComponent>(16384, this);
 	
-	return InnoRenderingFrontendNS::Setup(systemConfig);
+	return RenderingFrontendNS::Setup(systemConfig);
 }
 
-bool InnoRenderingFrontend::Initialize()
+bool RenderingFrontend::Initialize()
 {
-	return InnoRenderingFrontendNS::Initialize();
+	return RenderingFrontendNS::Initialize();
 }
 
-bool InnoRenderingFrontend::Update()
+bool RenderingFrontend::Update()
 {
-	return InnoRenderingFrontendNS::Update();
+	return RenderingFrontendNS::Update();
 }
 
-bool InnoRenderingFrontend::Terminate()
+bool RenderingFrontend::Terminate()
 {
-	return InnoRenderingFrontendNS::Terminate();
+	return RenderingFrontendNS::Terminate();
 }
 
-ObjectStatus InnoRenderingFrontend::GetStatus()
+ObjectStatus RenderingFrontend::GetStatus()
 {
-	return InnoRenderingFrontendNS::m_ObjectStatus;
+	return RenderingFrontendNS::m_ObjectStatus;
 }
 
-bool InnoRenderingFrontend::runRayTrace()
+bool RenderingFrontend::runRayTrace()
 {
-	return InnoRenderingFrontendNS::m_rayTracer->Execute();
+	return RenderingFrontendNS::m_rayTracer->Execute();
 }
 
-MeshComponent* InnoRenderingFrontend::addMeshComponent()
+MeshComponent* RenderingFrontend::addMeshComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddMeshComponent();
+	return RenderingFrontendNS::m_renderingServer->AddMeshComponent();
 }
 
-TextureComponent* InnoRenderingFrontend::addTextureComponent()
+TextureComponent* RenderingFrontend::addTextureComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddTextureComponent();
+	return RenderingFrontendNS::m_renderingServer->AddTextureComponent();
 }
 
-MaterialComponent* InnoRenderingFrontend::addMaterialComponent()
+MaterialComponent* RenderingFrontend::addMaterialComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddMaterialComponent();
+	return RenderingFrontendNS::m_renderingServer->AddMaterialComponent();
 }
 
-SkeletonComponent* InnoRenderingFrontend::addSkeletonComponent()
+SkeletonComponent* RenderingFrontend::addSkeletonComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_parentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
@@ -881,7 +881,7 @@ SkeletonComponent* InnoRenderingFrontend::addSkeletonComponent()
 	return l_SDC;
 }
 
-AnimationComponent* InnoRenderingFrontend::addAnimationComponent()
+AnimationComponent* RenderingFrontend::addAnimationComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_parentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
@@ -894,7 +894,7 @@ AnimationComponent* InnoRenderingFrontend::addAnimationComponent()
 	return l_ADC;
 }
 
-MeshComponent* InnoRenderingFrontend::getMeshComponent(ProceduralMeshShape shape)
+MeshComponent* RenderingFrontend::getMeshComponent(ProceduralMeshShape shape)
 {
 	switch (shape)
 	{
@@ -929,13 +929,13 @@ MeshComponent* InnoRenderingFrontend::getMeshComponent(ProceduralMeshShape shape
 		return m_unitSphereMesh;
 		break;
 	default:
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Invalid ProceduralMeshShape!");
+		Logger::Log(LogLevel::Error, "RenderingFrontend: Invalid ProceduralMeshShape!");
 		return nullptr;
 		break;
 	}
 }
 
-TextureComponent* InnoRenderingFrontend::getTextureComponent(WorldEditorIconType iconType)
+TextureComponent* RenderingFrontend::getTextureComponent(WorldEditorIconType iconType)
 {
 	switch (iconType)
 	{
@@ -950,12 +950,12 @@ TextureComponent* InnoRenderingFrontend::getTextureComponent(WorldEditorIconType
 	}
 }
 
-MaterialComponent* InnoRenderingFrontend::getDefaultMaterialComponent()
+MaterialComponent* RenderingFrontend::getDefaultMaterialComponent()
 {
 	return m_defaultMaterial;
 }
 
-bool InnoRenderingFrontend::transferDataToGPU()
+bool RenderingFrontend::transferDataToGPU()
 {
 	while (m_uninitializedMeshes.size() > 0)
 	{
@@ -993,7 +993,7 @@ bool InnoRenderingFrontend::transferDataToGPU()
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1009,7 +1009,7 @@ bool InnoRenderingFrontend::registerMeshComponent(MeshComponent* rhs, bool Async
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1025,14 +1025,14 @@ bool InnoRenderingFrontend::registerMaterialComponent(MaterialComponent* rhs, bo
 	return true;
 }
 
-bool InnoRenderingFrontend::registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU)
 {
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool InnoRenderingFrontend::registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1048,39 +1048,39 @@ bool InnoRenderingFrontend::registerAnimationComponent(AnimationComponent* rhs, 
 	return true;
 }
 
-TVec2<uint32_t> InnoRenderingFrontend::getScreenResolution()
+TVec2<uint32_t> RenderingFrontend::getScreenResolution()
 {
 	return m_screenResolution;
 }
 
-bool InnoRenderingFrontend::setScreenResolution(TVec2<uint32_t> screenResolution)
+bool RenderingFrontend::setScreenResolution(TVec2<uint32_t> screenResolution)
 {
 	m_screenResolution = screenResolution;
 	return true;
 }
 
-RenderingConfig InnoRenderingFrontend::getRenderingConfig()
+RenderingConfig RenderingFrontend::getRenderingConfig()
 {
 	return m_renderingConfig;
 }
 
-bool InnoRenderingFrontend::setRenderingConfig(RenderingConfig renderingConfig)
+bool RenderingFrontend::setRenderingConfig(RenderingConfig renderingConfig)
 {
 	m_renderingConfig = renderingConfig;
 	return true;
 }
 
-RenderingCapability InnoRenderingFrontend::getRenderingCapability()
+RenderingCapability RenderingFrontend::getRenderingCapability()
 {
 	return m_renderingCapability;
 }
 
-RenderPassDesc InnoRenderingFrontend::getDefaultRenderPassDesc()
+RenderPassDesc RenderingFrontend::getDefaultRenderPassDesc()
 {
 	return m_DefaultRenderPassDesc;
 }
 
-bool InnoRenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping)
+bool RenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping)
 {
 	auto l_animationData = getAnimationData(animationName);
 
@@ -1101,7 +1101,7 @@ bool InnoRenderingFrontend::playAnimation(VisibleComponent* rhs, const char* ani
 	return false;
 }
 
-bool InnoRenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* animationName)
+bool RenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* animationName)
 {
 	auto l_result = m_animationInstanceMap.find(rhs->m_UUID);
 	if (l_result != m_animationInstanceMap.end())
@@ -1114,67 +1114,67 @@ bool InnoRenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* ani
 	return false;
 }
 
-const PerFrameConstantBuffer& InnoRenderingFrontend::getPerFrameConstantBuffer()
+const PerFrameConstantBuffer& RenderingFrontend::getPerFrameConstantBuffer()
 {
 	return m_perFrameCB.GetNewValue();
 }
 
-const std::vector<CSMConstantBuffer>& InnoRenderingFrontend::getCSMConstantBuffer()
+const std::vector<CSMConstantBuffer>& RenderingFrontend::getCSMConstantBuffer()
 {
 	return m_CSMCBVector.GetNewValue();
 }
 
-const std::vector<PointLightConstantBuffer>& InnoRenderingFrontend::getPointLightConstantBuffer()
+const std::vector<PointLightConstantBuffer>& RenderingFrontend::getPointLightConstantBuffer()
 {
 	return m_pointLightCBVector.GetNewValue();
 }
 
-const std::vector<SphereLightConstantBuffer>& InnoRenderingFrontend::getSphereLightConstantBuffer()
+const std::vector<SphereLightConstantBuffer>& RenderingFrontend::getSphereLightConstantBuffer()
 {
 	return m_sphereLightCBVector.GetNewValue();
 }
 
-const std::vector<DrawCallInfo>& InnoRenderingFrontend::getDrawCallInfo()
+const std::vector<DrawCallInfo>& RenderingFrontend::getDrawCallInfo()
 {
 	return m_drawCallInfoVector.GetNewValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getPerObjectConstantBuffer()
+const std::vector<PerObjectConstantBuffer>& RenderingFrontend::getPerObjectConstantBuffer()
 {
 	return m_perObjectCBVector.GetNewValue();
 }
 
-const std::vector<MaterialConstantBuffer>& InnoRenderingFrontend::getMaterialConstantBuffer()
+const std::vector<MaterialConstantBuffer>& RenderingFrontend::getMaterialConstantBuffer()
 {
 	return m_materialCBVector.GetNewValue();
 }
 
-const std::vector<AnimationDrawCallInfo>& InnoRenderingFrontend::getAnimationDrawCallInfo()
+const std::vector<AnimationDrawCallInfo>& RenderingFrontend::getAnimationDrawCallInfo()
 {
 	return m_animationDrawCallInfoVector.GetNewValue();
 }
 
-const std::vector<AnimationConstantBuffer>& InnoRenderingFrontend::getAnimationConstantBuffer()
+const std::vector<AnimationConstantBuffer>& RenderingFrontend::getAnimationConstantBuffer()
 {
 	return m_animationCBVector.GetNewValue();
 }
 
-const std::vector<BillboardPassDrawCallInfo>& InnoRenderingFrontend::getBillboardPassDrawCallInfo()
+const std::vector<BillboardPassDrawCallInfo>& RenderingFrontend::getBillboardPassDrawCallInfo()
 {
 	return m_billboardPassDrawCallInfoVector.GetNewValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getBillboardPassPerObjectConstantBuffer()
+const std::vector<PerObjectConstantBuffer>& RenderingFrontend::getBillboardPassPerObjectConstantBuffer()
 {
 	return m_billboardPassPerObjectCB.GetNewValue();
 }
 
-const std::vector<DebugPassDrawCallInfo>& InnoRenderingFrontend::getDebugPassDrawCallInfo()
+const std::vector<DebugPassDrawCallInfo>& RenderingFrontend::getDebugPassDrawCallInfo()
 {
 	return m_debugPassDrawCallInfoVector.GetNewValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getDebugPassPerObjectConstantBuffer()
+const std::vector<PerObjectConstantBuffer>& RenderingFrontend::getDebugPassPerObjectConstantBuffer()
 {
 	return m_debugPassPerObjectCB.GetNewValue();
 }

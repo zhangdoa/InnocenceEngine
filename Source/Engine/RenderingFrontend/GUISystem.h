@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoGUISystem : public IGUISystem
+	class GUISystem : public IGUISystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoGUISystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(GUISystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

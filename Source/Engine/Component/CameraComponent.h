@@ -1,11 +1,11 @@
 #pragma once
-#include "../Common/InnoObject.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Common/Object.h"
+#include "../Common/MathHelper.h"
 #include "../Interface/ISystem.h"
 
 namespace Inno
 {
-	class CameraComponent : public InnoComponent
+	class CameraComponent : public Component
 	{
 	public:		
 		static uint32_t GetTypeID() { return 4; };

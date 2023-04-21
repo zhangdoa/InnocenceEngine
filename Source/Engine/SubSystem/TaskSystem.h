@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoTaskSystem : public ITaskSystem
+	class TaskSystem : public ITaskSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTaskSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(TaskSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

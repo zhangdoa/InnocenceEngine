@@ -1,5 +1,5 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
-add_library(InnoRayTracer ${HEADERS} ${SOURCES})
-set_property(TARGET InnoRayTracer PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_target_properties(InnoRayTracer PROPERTIES FOLDER Engine)
+add_library(RayTracer ${HEADERS} ${SOURCES})
+set_property(TARGET RayTracer PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(RayTracer PROPERTIES FOLDER Engine)

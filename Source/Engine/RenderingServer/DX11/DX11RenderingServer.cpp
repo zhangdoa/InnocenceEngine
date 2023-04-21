@@ -20,9 +20,9 @@ extern IEngine* g_Engine;
 #include "DX11Helper.h"
 using namespace DX11Helper;
 
-#include "../../Core/InnoLogger.h"
-#include "../../Core/InnoMemory.h"
-#include "../../Core/InnoRandomizer.h"
+#include "../../Core/Logger.h"
+#include "../../Core/Memory.h"
+#include "../../Core/Randomizer.h"
 #include "../../Template/ObjectPool.h"
 
 #pragma comment(lib, "d3d11.lib")
@@ -105,7 +105,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	l_HResult = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create DXGI factory!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create DXGI factory!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -114,7 +114,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	l_HResult = m_factory->EnumAdapters(0, &m_adapter);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create video card adapter!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create video card adapter!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -123,7 +123,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	l_HResult = m_adapter->EnumOutputs(0, &m_adapterOutput);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create monitor adapter!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create monitor adapter!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -132,7 +132,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	l_HResult = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, NULL);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -144,7 +144,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	l_HResult = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, &displayModeList[0]);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't fill the display mode list structures!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't fill the display mode list structures!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -169,7 +169,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	l_HResult = m_adapter->GetDesc(&m_adapterDesc);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get the video card adapter description!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't get the video card adapter description!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -180,7 +180,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	// Convert the name of the video card to a character array and store it.
 	if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't convert the name of the video card to a character array!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't convert the name of the video card to a character array!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -254,7 +254,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 		D3D11_SDK_VERSION, &m_swapChainDesc, &l_swapChain, &l_device, NULL, &l_deviceContext);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the swap chain/D3D device/D3D device context!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the swap chain/D3D device/D3D device context!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -280,7 +280,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get back buffer pointer!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't get back buffer pointer!");
 			m_ObjectStatus = ObjectStatus::Suspended;
 			return false;
 		}
@@ -294,7 +294,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	m_SwapChainSamplerComp = reinterpret_cast<DX11SamplerComponent*>(AddSamplerComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer Setup finished.");
+	Logger::Log(LogLevel::Success, "DX11RenderingServer Setup finished.");
 
 	return true;
 }
@@ -374,7 +374,7 @@ bool DX11RenderingServer::Terminate()
 	m_factory = 0;
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer has been terminated.");
+	Logger::Log(LogLevel::Success, "DX11RenderingServer has been terminated.");
 
 	return true;
 }
@@ -429,14 +429,14 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	l_HResult = m_device->CreateBuffer(&l_vertexBufferDesc, &l_vertexSubresourceData, &l_rhs->m_vertexBuffer);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Vertex Buffer!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Vertex Buffer!");
 		return false;
 	}
 #ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
 #endif //  INNO_DEBUG
 
-	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Vertex Buffer: ", l_rhs->m_vertexBuffer, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Vertex Buffer: ", l_rhs->m_vertexBuffer, " is initialized.");
 
 	// Set up the description of the static index buffer.
 	D3D11_BUFFER_DESC l_indexBufferDesc;
@@ -459,14 +459,14 @@ bool DX11RenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	l_HResult = m_device->CreateBuffer(&l_indexBufferDesc, &l_indexSubresourceData, &l_rhs->m_indexBuffer);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Index Buffer!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Index Buffer!");
 		return false;
 	}
 #ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
 #endif //  INNO_DEBUG
 
-	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Index Buffer: ", l_rhs->m_indexBuffer, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Index Buffer: ", l_rhs->m_indexBuffer, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -512,7 +512,7 @@ bool DX11RenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Texture!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Texture!");
 		return false;
 	}
 
@@ -543,7 +543,7 @@ bool DX11RenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 	SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
 #endif //  INNO_DEBUG
 
-	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Texture: ", l_rhs->m_ResourceHandle, " is initialized.");
+	Logger::Log(LogLevel::Verbose, "DX11RenderingServer: Texture: ", l_rhs->m_ResourceHandle, " is initialized.");
 
 	if (l_rhs->m_TextureDesc.CPUAccessibility == Accessibility::Immutable)
 	{
@@ -553,14 +553,14 @@ bool DX11RenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle, &l_rhs->m_SRVDesc, &l_rhs->m_SRV);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for texture!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for texture!");
 			return false;
 		}
 #ifdef  INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
 #endif //  INNO_DEBUG
 
-		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
+		Logger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
 		// Generate mipmaps for this texture.
 		if (l_rhs->m_TextureDesc.UseMipMap)
@@ -579,14 +579,14 @@ bool DX11RenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 				l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, &l_rhs->m_UAVDesc, &l_rhs->m_UAV);
 				if (FAILED(l_HResult))
 				{
-					InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
+					Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
 					return false;
 				}
 #ifdef  INNO_DEBUG
 				SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
 #endif //  INNO_DEBUG
 
-				InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
+				Logger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
 			}
 		}
 	}
@@ -665,7 +665,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateVertexShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_VSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create vertex shader!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create vertex shader!");
 			return false;
 		};
 	}
@@ -676,7 +676,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_HSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create hull shader!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create hull shader!");
 			return false;
 		};
 	}
@@ -687,7 +687,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_DSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create domain shader!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create domain shader!");
 			return false;
 		};
 	}
@@ -698,7 +698,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateGeometryShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_GSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create geometry shader!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create geometry shader!");
 			return false;
 		};
 	}
@@ -709,7 +709,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreatePixelShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_FSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create fragment shader!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create fragment shader!");
 			return false;
 		};
 	}
@@ -720,7 +720,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateComputeShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_CSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create compute shader!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create compute shader!");
 			return false;
 		};
 	}
@@ -751,7 +751,7 @@ bool DX11RenderingServer::InitializeSamplerComponent(SamplerComponent* rhs)
 	auto l_HResult = m_device->CreateSamplerState(&l_rhs->m_DX11SamplerDesc, &l_rhs->m_SamplerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_InstanceName.c_str(), "!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_InstanceName.c_str(), "!");
 		return false;
 	}
 
@@ -794,7 +794,7 @@ bool DX11RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Buffer object!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Buffer object!");
 		return false;
 	}
 #ifdef  INNO_DEBUG
@@ -820,7 +820,7 @@ bool DX11RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for Buffer object!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for Buffer object!");
 			return false;
 		}
 #ifdef  INNO_DEBUG
@@ -838,7 +838,7 @@ bool DX11RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for Buffer object!");
+			Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for Buffer object!");
 			return false;
 		}
 #ifdef  INNO_DEBUG
@@ -1047,7 +1047,7 @@ bool DX11RenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, 
 	auto l_HResult = m_deviceContext->Map(l_rhs->m_Buffer, 0, l_mapMethod, 0, &l_MappedResource);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock GPU Buffer!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock GPU Buffer!");
 		return false;
 	}
 
@@ -1300,7 +1300,7 @@ bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView* 
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader access UAV!");
+		Logger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader access UAV!");
 		return false;
 	}
 
@@ -1395,7 +1395,7 @@ bool DX11RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
+					Logger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
 				}
 				if (elementCount != SIZE_MAX)
 				{
@@ -1649,7 +1649,7 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
 
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't map texture for CPU to read!");
+		Logger::Log(LogLevel::Error, "DX11RenderingServer: Can't map texture for CPU to read!");
 	}
 	else
 	{

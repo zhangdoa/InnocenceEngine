@@ -63,8 +63,8 @@ xcuserdata/
 /Res/Textures/*
 
 # For Qt
-/Source/Editor/InnoEditor/qdarkstyle/
-/Source/Editor/InnoEditor/InnoEditor.pro.user
+/Source/Editor/qdarkstyle/
+/Source/Editor/Editor.pro.user
 
 #For ImGui
 /Source/Engine/ThirdParty/ImGui/*

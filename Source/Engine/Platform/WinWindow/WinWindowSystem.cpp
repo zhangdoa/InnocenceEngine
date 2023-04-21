@@ -1,5 +1,5 @@
 #include "WinWindowSystem.h"
-#include "../../Core/InnoLogger.h"
+#include "../../Core/Logger.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
 #include "GLWindowSurface/WinGLWindowSurface.h"
@@ -141,7 +141,7 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	WinWindowSystemNS::m_windowSurface->Setup(&l_surfaceConfig);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinWindowSystem Setup finished.");
+	Logger::Log(LogLevel::Success, "WinWindowSystem Setup finished.");
 
 	return true;
 }
@@ -149,7 +149,7 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 bool WinWindowSystem::Initialize()
 {
 	WinWindowSystemNS::m_windowSurface->Initialize();
-	InnoLogger::Log(LogLevel::Success, "WinWindowSystem has been initialized.");
+	Logger::Log(LogLevel::Success, "WinWindowSystem has been initialized.");
 	return true;
 }
 
@@ -187,7 +187,7 @@ bool WinWindowSystem::Terminate()
 		DestroyWindow(m_hwnd);
 		m_hwnd = NULL;
 
-		InnoLogger::Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
+		Logger::Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
 
 		// Remove the application instance.
 		UnregisterClass(m_applicationName, m_hInstance);
@@ -197,7 +197,7 @@ bool WinWindowSystem::Terminate()
 	PostQuitMessage(0);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "WinWindowSystem has been terminated.");
+	Logger::Log(LogLevel::Success, "WinWindowSystem has been terminated.");
 	return true;
 }
 
@@ -261,7 +261,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_DESTROY:
 	{
-		InnoLogger::Log(LogLevel::Warning, "WinWindowSystem: WM_DESTROY signal received.");
+		Logger::Log(LogLevel::Warning, "WinWindowSystem: WM_DESTROY signal received.");
 		WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 	}
 	case WM_PAINT:

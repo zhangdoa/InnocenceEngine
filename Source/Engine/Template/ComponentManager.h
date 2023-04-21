@@ -1,7 +1,7 @@
 #pragma once
-#include "../Common/InnoObject.h"
+#include "../Common/Object.h"
 #include "ObjectPool.h"
-#include "../Core/InnoRandomizer.h"
+#include "../Core/Randomizer.h"
 
 namespace Inno
 {
@@ -41,16 +41,16 @@ namespace Inno
 			return true;
 		}
 
-		T* Spawn(const InnoEntity* owner, bool serializable, ObjectLifespan objectLifespan)
+		T* Spawn(const Entity* owner, bool serializable, ObjectLifespan objectLifespan)
 		{
 			auto l_Component = static_cast<TObjectPool<T>*>(m_ComponentPool)->Spawn();
 			if (l_Component)
 			{
-				l_Component->m_UUID = InnoRandomizer::GenerateUUID();
+				l_Component->m_UUID = Randomizer::GenerateUUID();
 				l_Component->m_ObjectStatus = ObjectStatus::Created;
 				l_Component->m_Serializable = serializable;
 				l_Component->m_ObjectLifespan = objectLifespan;
-				auto l_owner = const_cast<InnoEntity*>(owner);
+				auto l_owner = const_cast<Entity*>(owner);
 				l_Component->m_Owner = l_owner;
 				auto l_componentIndex = m_CurrentComponentIndex;
 #ifdef INNO_DEBUG
@@ -78,9 +78,9 @@ namespace Inno
 			static_cast<TObjectPool<T>*>(m_ComponentPool)->Destroy(component);
 		}
 
-		T* Find(const InnoEntity* owner)
+		T* Find(const Entity* owner)
 		{
-			auto l_owner = const_cast<InnoEntity*>(owner);
+			auto l_owner = const_cast<Entity*>(owner);
 
 			auto l_result = m_ComponentLUT.find(l_owner);
 			if (l_result != m_ComponentLUT.end())
@@ -89,7 +89,7 @@ namespace Inno
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: ", l_owner->m_InstanceName.c_str(), "!");
+				Logger::Log(LogLevel::Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: ", l_owner->m_InstanceName.c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -113,7 +113,7 @@ namespace Inno
 		uint32_t m_CurrentComponentIndex = 0;
 		IObjectPool* m_ComponentPool;
 		ThreadSafeVector<T*> m_ComponentPointers;
-		ThreadSafeUnorderedMap<InnoEntity*, T*> m_ComponentLUT;
+		ThreadSafeUnorderedMap<Entity*, T*> m_ComponentLUT;
 	};
 
 	class ComponentManager
@@ -127,7 +127,7 @@ namespace Inno
 
 			if (m_ComponentTypeIndexLUT.find(l_typeHashCode) != m_ComponentTypeIndexLUT.end())
 			{
-				InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " has been registered!");
+				Logger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " has been registered!");
 				return false;
 			}
 
@@ -151,7 +151,7 @@ namespace Inno
 				return m_ComponentTypeIndexLUT[l_typeHashCode];
 			}
 
-			InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+			Logger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
 			return -1;
 		}
 
@@ -166,13 +166,13 @@ namespace Inno
 				return m_ComponentSystems[l_typeHashCode];
 			}
 
-			InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+			Logger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
 
 			return nullptr;
 		}
 
 		template<typename T>
-		T* Spawn(const InnoEntity* owner, bool serializable, ObjectLifespan objectLifespan)
+		T* Spawn(const Entity* owner, bool serializable, ObjectLifespan objectLifespan)
 		{
 			return GetComponentFactory<T>()->Spawn(owner, serializable, objectLifespan);
 		}
@@ -184,7 +184,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		T* Find(InnoEntity* entity)
+		T* Find(Entity* entity)
 		{
 			return GetComponentFactory<T>()->Find(entity);
 		}
@@ -228,7 +228,7 @@ namespace Inno
 				return std::static_pointer_cast<TComponentFactory<T>>(m_ComponentFactories[l_typeHashCode]);
 			}
 
-			InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+			Logger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
 
 			return nullptr;
 		}

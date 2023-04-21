@@ -1,7 +1,7 @@
 #include "GIDataLoader.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "../../Engine/Common/InnoMathHelper.h"
+#include "../../Engine/Common/MathHelper.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
@@ -45,7 +45,7 @@ bool GIDataLoader::loadGIData()
 	auto l_currentSceneName = g_Engine->getSceneSystem()->getCurrentSceneName();
 
 	std::ifstream l_surfelFile;
-	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
+	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".Surfel", std::ios::binary);
 
 	if (l_surfelFile.is_open())
 	{
@@ -54,7 +54,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_brickFile;
-	l_brickFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
+	l_brickFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".Brick", std::ios::binary);
 
 	if (l_brickFile.is_open())
 	{
@@ -63,7 +63,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_brickFactorFile;
-	l_brickFactorFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
+	l_brickFactorFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".BrickFactor", std::ios::binary);
 
 	if (l_brickFactorFile.is_open())
 	{
@@ -72,7 +72,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_probeFile;
-	l_probeFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
+	l_probeFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".Probe", std::ios::binary);
 
 	if (l_probeFile.is_open())
 	{
@@ -82,7 +82,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_probeInfoFile;
-	l_probeInfoFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoProbeInfo", std::ios::binary);
+	l_probeInfoFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".ProbeInfo", std::ios::binary);
 
 	if (l_probeInfoFile.is_open())
 	{

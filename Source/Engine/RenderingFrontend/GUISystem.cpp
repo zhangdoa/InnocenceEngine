@@ -13,7 +13,7 @@ namespace GUISystemNS
 
 using namespace GUISystemNS;
 
-bool InnoGUISystem::Setup(ISystemConfig* systemConfig)
+bool GUISystem::Setup(ISystemConfig* systemConfig)
 {
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
@@ -23,12 +23,12 @@ bool InnoGUISystem::Setup(ISystemConfig* systemConfig)
 	return 	ImGuiWrapper::Get().Setup();
 }
 
-bool InnoGUISystem::Initialize()
+bool GUISystem::Initialize()
 {
 	return ImGuiWrapper::Get().Initialize();
 }
 
-bool InnoGUISystem::Update()
+bool GUISystem::Update()
 {
 	if (m_showImGui)
 	{
@@ -38,7 +38,7 @@ bool InnoGUISystem::Update()
 	return true;
 }
 
-bool InnoGUISystem::Render()
+bool GUISystem::Render()
 {
 	if (m_showImGui)
 	{
@@ -47,12 +47,12 @@ bool InnoGUISystem::Render()
 	return true;
 }
 
-bool InnoGUISystem::Terminate()
+bool GUISystem::Terminate()
 {
 	return ImGuiWrapper::Get().Terminate();
 }
 
-ObjectStatus InnoGUISystem::GetStatus()
+ObjectStatus GUISystem::GetStatus()
 {
 	return ObjectStatus();
 }

@@ -1,12 +1,12 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoObject.h"
+#include "../Common/Type.h"
+#include "../Common/GraphicsPrimitive.h"
+#include "../Common/Object.h"
 #include "SkeletonComponent.h"
 
 namespace Inno
 {
-	class MeshComponent : public InnoComponent
+	class MeshComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 6; };

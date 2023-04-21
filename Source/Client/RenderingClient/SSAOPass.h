@@ -27,8 +27,8 @@ namespace Inno
 		SamplerComponent *m_SamplerComp_RandomRot;
 
 		uint32_t m_kernelSize = 64;
-		std::vector<InnoMath::Vec4> m_SSAOKernel;
-		std::vector<InnoMath::Vec4> m_SSAONoise;
+		std::vector<Math::Vec4> m_SSAOKernel;
+		std::vector<Math::Vec4> m_SSAONoise;
 
 		GPUBufferComponent *m_SSAOKernelGPUBuffer;
 		TextureComponent *m_SSAONoiseTextureComp;

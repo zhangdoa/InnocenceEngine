@@ -50,7 +50,7 @@ namespace Inno
 			auto l_result = SetDebugUtilsObjectNameEXT(device, &nameInfo);
 			if (l_result != VK_SUCCESS)
 			{
-				InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+				Logger::Log(LogLevel::Warning, "VKRenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
 				return false;
 			}
 			return true;

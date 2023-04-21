@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Common/InnoType.h"
+#include "../../Common/Type.h"
 
 #include "nlohmann/json.hpp"
 using json = nlohmann::json;
@@ -14,7 +14,7 @@ namespace Inno
 		bool loadJsonDataFromDisk(const char* fileName, json& data);
 		bool saveJsonDataToDisk(const char* fileName, const json& data);
 
-		void to_json(json& j, const InnoEntity& p);
+		void to_json(json& j, const Entity& p);
 		void to_json(json& j, const Vec4& p);
 		void to_json(json& j, const Mat4& p);
 

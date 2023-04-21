@@ -1,11 +1,11 @@
 #pragma once
-#include "../Common/InnoObject.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Common/Object.h"
+#include "../Common/MathHelper.h"
 #include "../Interface/ISystem.h"
 
 namespace Inno
 {
-	class TransformComponent : public InnoComponent
+	class TransformComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 1; };

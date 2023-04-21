@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "../Common/Type.h"
 #include "../RenderingServer/GL/GLHeaders.h"
 #include "TextureComponent.h"
 

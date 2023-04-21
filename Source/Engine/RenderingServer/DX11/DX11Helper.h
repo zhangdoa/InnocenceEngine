@@ -17,7 +17,7 @@ namespace Inno
 			auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (uint32_t)l_Name.size(), l_Name.c_str());
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+				Logger::Log(LogLevel::Warning, "DX11RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
 				return false;
 			}
 			return true;

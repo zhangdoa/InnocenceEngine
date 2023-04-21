@@ -73,6 +73,6 @@ namespace Inno
 
     const char* DefaultLogicClientImpl::GetApplicationName()
     {
-        return "InnoLogicClient/";
+        return "LogicClient/";
     }
 }

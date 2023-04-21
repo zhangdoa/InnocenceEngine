@@ -14,7 +14,7 @@ else \
 } \
 auto l_rawPtr = m_##component##ComponentPool->Spawn(); \
 auto l_result = new(l_rawPtr)renderingServer##component##Component(); \
-l_result->m_UUID = InnoRandomizer::GenerateUUID(); \
+l_result->m_UUID = Randomizer::GenerateUUID(); \
 l_result->m_ObjectStatus = ObjectStatus::Created; \
 l_result->m_Serializable = false; \
 l_result->m_ObjectLifespan = ObjectLifespan::Persistence; \

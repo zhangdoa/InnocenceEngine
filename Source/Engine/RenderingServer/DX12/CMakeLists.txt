@@ -1,5 +1,5 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
-add_library(InnoDX12RenderingServer ${HEADERS} ${SOURCES})
-set_target_properties(InnoDX12RenderingServer PROPERTIES FOLDER Engine/RenderingServer)
-target_include_directories(InnoDX12RenderingServer PUBLIC "${INNO_SUBMODULE_DIRECTORIES}/DirectX-Headers/include")
+add_library(DX12RenderingServer ${HEADERS} ${SOURCES})
+set_target_properties(DX12RenderingServer PROPERTIES FOLDER Engine/RenderingServer)
+target_include_directories(DX12RenderingServer PUBLIC "${INNO_SUBMODULE_DIRECTORIES}/DirectX-Headers/include")

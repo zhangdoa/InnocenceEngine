@@ -1,6 +1,6 @@
 #pragma once
 #include "ISystem.h"
-#include "../Core/InnoTaskScheduler.h"
+#include "../Core/TaskScheduler.h"
 
 namespace Inno
 {

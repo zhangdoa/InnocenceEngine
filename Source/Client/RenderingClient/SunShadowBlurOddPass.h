@@ -23,7 +23,7 @@ namespace Inno
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
 		TextureComponent *m_TextureComp;
-		InnoMath::TVec4<uint32_t> m_numThreads;
-		InnoMath::TVec4<uint32_t> m_numThreadGroups;
+		Math::TVec4<uint32_t> m_numThreads;
+		Math::TVec4<uint32_t> m_numThreadGroups;
 	};
 } // namespace Inno

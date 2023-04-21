@@ -6,14 +6,14 @@ namespace Inno
 {
 	struct DebugPerObjectConstantBuffer
 	{
-		InnoMath::Mat4 m;
+		Math::Mat4 m;
 		uint32_t materialID;
 		uint32_t padding[15];
 	};
 
 	struct DebugMaterialConstantBuffer
 	{
-		InnoMath::Vec4 color;
+		Math::Vec4 color;
 	};
 
 	class DebugPass : IRenderPass

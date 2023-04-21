@@ -20,15 +20,15 @@ namespace Inno
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-        InnoEntity* m_playerCharacterEntity = nullptr;
+        Entity* m_playerCharacterEntity = nullptr;
         TransformComponent* m_playerTransformComponent = nullptr;
         VisibleComponent* m_playerVisibleComponent = nullptr;
 
-        InnoEntity* m_playerCameraEntity = nullptr;
+        Entity* m_playerCameraEntity = nullptr;
         TransformComponent* m_playerCameraTransformComponent = nullptr;
         CameraComponent* m_playerCameraComponent = nullptr;
 
-        InnoEntity* m_debugCameraEntity = nullptr;
+        Entity* m_debugCameraEntity = nullptr;
         TransformComponent* m_debugCameraTransformComponent = nullptr;
         CameraComponent* m_debugCameraComponent = nullptr;
 
@@ -196,7 +196,7 @@ namespace Inno
         f_rotateAroundRightAxis = std::bind(&Player::RotateAroundRightAxis, this, std::placeholders::_1);
 
         f_addForce = [&]() {
-            auto l_force = InnoMath::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
+            auto l_force = Math::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
             l_force = l_force * 10.0f;
             g_Engine->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
         };
@@ -257,9 +257,9 @@ namespace Inno
     {
         if (m_canMove)
         {
-            auto l_dir = InnoMath::getDirection(direction, transformComponent->m_localTransformVector.m_rot);
+            auto l_dir = Math::getDirection(direction, transformComponent->m_localTransformVector.m_rot);
             auto l_currentPos = transformComponent->m_localTransformVector.m_pos;
-            transformComponent->m_localTransformVector_target.m_pos = InnoMath::moveTo(l_currentPos, l_dir, length);
+            transformComponent->m_localTransformVector_target.m_pos = Math::moveTo(l_currentPos, l_dir, length);
             if (!m_smoothInterp)
             {
                 transformComponent->m_localTransformVector.m_pos = transformComponent->m_localTransformVector_target.m_pos;
@@ -271,7 +271,7 @@ namespace Inno
     {
         if (m_canMove)
         {
-            m_targetCameraRotY = InnoMath::getQuatRotator(
+            m_targetCameraRotY = Math::getQuatRotator(
                 Vec4(0.0f, 1.0f, 0.0f, 0.0f),
                 ((-offset * m_rotateSpeed) / 180.0f) * PI<float>);
 
@@ -295,8 +295,8 @@ namespace Inno
         {
             m_canSlerp = false;
 
-            auto l_right = InnoMath::getDirection(Direction::Right, m_activeCameraTransformComponent->m_localTransformVector_target.m_rot);
-            m_targetCameraRotX = InnoMath::getQuatRotator(
+            auto l_right = Math::getDirection(Direction::Right, m_activeCameraTransformComponent->m_localTransformVector_target.m_rot);
+            m_targetCameraRotX = Math::getQuatRotator(
                 l_right,
                 ((offset * m_rotateSpeed) / 180.0f) * PI<float>);
             m_activeCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotX.quatMul(m_activeCameraTransformComponent->m_localTransformVector_target.m_rot);
@@ -325,13 +325,13 @@ namespace Inno
 
             auto l_lp = m_cameraPlayerDistance;
             m_cameraPlayerDistance.w = 1.0f;
-            auto l_gp = InnoMath::mul(l_m, m_cameraPlayerDistance);
+            auto l_gp = Math::mul(l_m, m_cameraPlayerDistance);
 
             m_playerCameraTransformComponent->m_localTransformVector_target.m_pos = l_gp;
             m_playerCameraTransformComponent->m_localTransformVector.m_pos = l_gp;
         }
 
-        // auto l_targetCameraRotY = InnoMath::getQuatRotator(
+        // auto l_targetCameraRotY = Math::getQuatRotator(
         //     Vec4(1.0f, 0.0f, 0.0f, 0.0f),
         //     ((-30.0f) / 180.0f) * PI<float>);
 

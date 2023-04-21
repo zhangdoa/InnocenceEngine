@@ -1,8 +1,8 @@
 #include "LightSystem.h"
 #include "../Component/LightComponent.h"
-#include "../Core/InnoRandomizer.h"
-#include "../Core/InnoLogger.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Core/Randomizer.h"
+#include "../Core/Logger.h"
+#include "../Common/MathHelper.h"
 
 #include "../Interface/IEngine.h"
 
@@ -36,7 +36,7 @@ AABB LightSystemNS::SnapAABBToShadowMap(const AABB &rhs, float shadowMapResoluti
 	l_boundMax.w = 1.0f;
 	l_boundMin.w = 1.0f;
 
-	return InnoMath::generateAABB(l_boundMax, l_boundMin);
+	return Math::generateAABB(l_boundMax, l_boundMin);
 }
 
 void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
@@ -56,13 +56,13 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 		return;
 	
 	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
-	auto l_frustumAABB = InnoMath::generateAABB(&l_splitFrustumVerticesWS[0], 8);
+	auto l_frustumAABB = Math::generateAABB(&l_splitFrustumVerticesWS[0], 8);
 
-	auto l_min = InnoMath::elementWiseMin(l_frustumAABB.m_boundMin, l_totalSceneAABB.m_boundMin);
-	auto l_max = InnoMath::elementWiseMax(l_frustumAABB.m_boundMax, l_totalSceneAABB.m_boundMax);
+	auto l_min = Math::elementWiseMin(l_frustumAABB.m_boundMin, l_totalSceneAABB.m_boundMin);
+	auto l_max = Math::elementWiseMax(l_frustumAABB.m_boundMax, l_totalSceneAABB.m_boundMax);
 
-	auto l_AABB = InnoMath::generateAABB(l_max, l_min);
-	l_AABB = InnoMath::extendAABBToBoundingSphere(l_AABB);
+	auto l_AABB = Math::generateAABB(l_max, l_min);
+	l_AABB = Math::extendAABBToBoundingSphere(l_AABB);
 	l_AABB = SnapAABBToShadowMap(l_AABB, static_cast<float>(g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution));
 	rhs->m_SplitAABBWS.emplace_back(l_AABB);
 
@@ -70,7 +70,7 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	rhs->m_ViewMatrices.emplace_back(l_r.inverse());
 
-	Mat4 l_p = InnoMath::generateOrthographicMatrix(l_AABB.m_boundMin.x, l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z, l_AABB.m_boundMax.z);
+	Mat4 l_p = Math::generateOrthographicMatrix(l_AABB.m_boundMin.x, l_AABB.m_boundMax.x, l_AABB.m_boundMin.y, l_AABB.m_boundMax.y, l_AABB.m_boundMin.z, l_AABB.m_boundMax.z);
 	rhs->m_ProjectionMatrices.emplace_back(l_p);
 }
 
@@ -94,19 +94,19 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_rInv = l_r.inverse();
-	auto l_totalSceneAABBLS = InnoMath::extendAABBToBoundingSphere(l_totalSceneAABBWS);
-	l_totalSceneAABBLS = InnoMath::rotateAABBToNewSpace(l_totalSceneAABBLS, l_rInv);
+	auto l_totalSceneAABBLS = Math::extendAABBToBoundingSphere(l_totalSceneAABBWS);
+	l_totalSceneAABBLS = Math::rotateAABBToNewSpace(l_totalSceneAABBLS, l_rInv);
 
 	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
 
 	// calculate AABBs in light space and generate the matrices
 	for (size_t i = 0; i < 4; i++)
 	{
-		AABB l_aabbWS = InnoMath::generateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
+		AABB l_aabbWS = Math::generateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
 		rhs->m_SplitAABBWS.emplace_back(l_aabbWS);
 
-		AABB l_aabbLS = InnoMath::extendAABBToBoundingSphere(l_aabbWS);
-		l_aabbLS = InnoMath::rotateAABBToNewSpace(l_aabbLS, l_rInv);
+		AABB l_aabbLS = Math::extendAABBToBoundingSphere(l_aabbWS);
+		l_aabbLS = Math::rotateAABBToNewSpace(l_aabbLS, l_rInv);
 
 		l_aabbLS.m_boundMin.z = l_totalSceneAABBLS.m_boundMin.z;
 		l_aabbLS.m_boundMax.z = l_totalSceneAABBLS.m_boundMax.z;
@@ -119,7 +119,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 		auto l_v = l_rInv;
 		rhs->m_ViewMatrices.emplace_back(l_v);
 
-		Mat4 p = InnoMath::generateOrthographicMatrix(l_aabbLS.m_boundMin.x, l_aabbLS.m_boundMax.x, l_aabbLS.m_boundMin.y, l_aabbLS.m_boundMax.y, l_aabbLS.m_boundMin.z, l_aabbLS.m_boundMax.z);
+		Mat4 p = Math::generateOrthographicMatrix(l_aabbLS.m_boundMin.x, l_aabbLS.m_boundMax.x, l_aabbLS.m_boundMin.y, l_aabbLS.m_boundMax.y, l_aabbLS.m_boundMin.z, l_aabbLS.m_boundMax.z);
 		rhs->m_ProjectionMatrices.emplace_back(p);
 	}
 }
@@ -128,7 +128,7 @@ void LightSystemNS::UpdateColorTemperature(LightComponent* rhs)
 {
 	if (rhs->m_UseColorTemperature)
 	{
-		rhs->m_RGBColor = InnoMath::colorTemperatureToRGB(rhs->m_ColorTemperature);
+		rhs->m_RGBColor = Math::colorTemperatureToRGB(rhs->m_ColorTemperature);
 	}
 }
 
@@ -156,19 +156,19 @@ void LightSystemNS::UpdateAttenuationRadius(LightComponent* rhs)
 
 using namespace LightSystemNS;
 
-bool InnoLightSystem::Setup(ISystemConfig* systemConfig)
+bool LightSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount, this);
 
 	return true;
 }
 
-bool InnoLightSystem::Initialize()
+bool LightSystem::Initialize()
 {
 	return true;
 }
 
-bool InnoLightSystem::Update()
+bool LightSystem::Update()
 {
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 	auto l_components = g_Engine->getComponentManager()->GetAll<LightComponent>();
@@ -208,17 +208,17 @@ bool InnoLightSystem::Update()
 	return true;
 }
 
-bool InnoLightSystem::OnFrameEnd()
+bool LightSystem::OnFrameEnd()
 {
 	return true;
 }
 
-bool InnoLightSystem::Terminate()
+bool LightSystem::Terminate()
 {
 	return true;
 }
 
-ObjectStatus InnoLightSystem::GetStatus()
+ObjectStatus LightSystem::GetStatus()
 {
 	return ObjectStatus();
 }

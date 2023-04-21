@@ -1,6 +1,6 @@
 #pragma once
 #include "ISystem.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Common/MathHelper.h"
 
 namespace Inno
 {
@@ -13,26 +13,26 @@ namespace Inno
 	enum class EventLifeTime { OneShot, Continuous };
 
 	template<typename T>
-	struct InnoEvent
+	struct Event
 	{
 		EventLifeTime m_eventLifeTime = EventLifeTime::OneShot;
 		T* m_eventHandle = 0;
 
-		bool operator==(const InnoEvent& other) const
+		bool operator==(const Event& other) const
 		{
 			return (m_eventLifeTime == other.m_eventLifeTime
 				&& m_eventHandle == other.m_eventHandle
 				);
 		}
 
-		bool operator<(const InnoEvent& other) const
+		bool operator<(const Event& other) const
 		{
 			return m_eventHandle < other.m_eventHandle;
 		}
 	};
 
-	using ButtonEvent = InnoEvent<void>;
-	using MouseMovementEvent = InnoEvent<std::function<void(float)>>;
+	using ButtonEvent = Event<void>;
+	using MouseMovementEvent = Event<std::function<void(float)>>;
 	enum class MouseMovementAxis { Horizontal, Vertical };
 
 	class IEventSystem : public ISystem

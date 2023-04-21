@@ -5,14 +5,14 @@ namespace Inno
 {
 	struct ProbePos
 	{
-		InnoMath::Vec4 pos;
-		InnoMath::Vec4 index;
+		Math::Vec4 pos;
+		Math::Vec4 index;
 	};
 
 	struct ProbeMeshData
 	{
-		InnoMath::Mat4 m;
-		InnoMath::Vec4 index;
+		Math::Mat4 m;
+		Math::Vec4 index;
 		float padding[12];
 	};
 

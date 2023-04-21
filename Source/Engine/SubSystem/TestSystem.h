@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoTestSystem : public ITestSystem
+	class TestSystem : public ITestSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTestSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(TestSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

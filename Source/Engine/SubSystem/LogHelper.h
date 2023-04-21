@@ -1,23 +1,23 @@
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 
 namespace Inno
 {
 	template <>
-	inline void InnoLogger::Log(LogLevel logLevel, const Vec2& values)
+	inline void Logger::Log(LogLevel logLevel, const Vec2& values)
 	{
-		InnoLogger::Log(logLevel, "Vec2(x: ", values.x, ", y: ", values.y, ")");
+		Logger::Log(logLevel, "Vec2(x: ", values.x, ", y: ", values.y, ")");
 	}
 
 	template <>
-	inline void InnoLogger::Log(LogLevel logLevel, const Vec4& values)
+	inline void Logger::Log(LogLevel logLevel, const Vec4& values)
 	{
-		InnoLogger::Log(logLevel, "Vec4(x: ", values.x, ", y: ", values.y, ", z: ", values.z, ", w: ", values.w, ")");
+		Logger::Log(logLevel, "Vec4(x: ", values.x, ", y: ", values.y, ", z: ", values.z, ", w: ", values.w, ")");
 	}
 
 	template <>
-	inline void InnoLogger::Log(LogLevel logLevel, const Mat4& values)
+	inline void Logger::Log(LogLevel logLevel, const Mat4& values)
 	{
-		InnoLogger::Log(logLevel,
+		Logger::Log(logLevel,
 			"Mat4: \n|",
 			values.m00, "", values.m10, "", values.m20, "", values.m30, "|\n|",
 			values.m01, "", values.m11, "", values.m21, "", values.m31, "|\n|",

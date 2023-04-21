@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoEventSystem : public IEventSystem
+	class EventSystem : public IEventSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoEventSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(EventSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

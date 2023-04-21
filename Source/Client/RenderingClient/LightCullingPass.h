@@ -40,7 +40,7 @@ namespace Inno
 		TextureComponent* m_heatMap;
 
 		const uint32_t m_tileSize = 16;
-		InnoMath::TVec4<uint32_t> m_numThreads;
-		InnoMath::TVec4<uint32_t> m_numThreadGroups;
+		Math::TVec4<uint32_t> m_numThreads;
+		Math::TVec4<uint32_t> m_numThreadGroups;
 	};
 } // namespace Inno

@@ -1,11 +1,11 @@
 #include "TestSystem.h"
-#include "../Core/InnoLogger.h"
-#include "../Core/InnoTimer.h"
+#include "../Core/Logger.h"
+#include "../Core/Timer.h"
 
 using namespace Inno;
 namespace Inno
 {
-	namespace InnoTestSystemNS
+	namespace TestSystemNS
 	{
 		bool Setup();
 		bool Initialize();
@@ -16,80 +16,80 @@ namespace Inno
 	}
 }
 
-bool InnoTestSystemNS::Setup()
+bool TestSystemNS::Setup()
 {
-	InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	TestSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool InnoTestSystemNS::Initialize()
+bool TestSystemNS::Initialize()
 {
-	if (InnoTestSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (TestSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "TestSystem has been initialized.");
+		TestSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		Logger::Log(LogLevel::Success, "TestSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "TestSystem: Object is not created!");
+		Logger::Log(LogLevel::Error, "TestSystem: Object is not created!");
 		return false;
 	}
 }
 
-bool InnoTestSystemNS::Update()
+bool TestSystemNS::Update()
 {
-	if (InnoTestSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (TestSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
 	else
 	{
-		InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		TestSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
-bool InnoTestSystemNS::Terminate()
+bool TestSystemNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "TestSystem has been terminated.");
+	Logger::Log(LogLevel::Success, "TestSystem has been terminated.");
 
 	return true;
 }
 
-bool InnoTestSystem::Setup(ISystemConfig* systemConfig)
+bool TestSystem::Setup(ISystemConfig* systemConfig)
 {
-	return InnoTestSystemNS::Setup();
+	return TestSystemNS::Setup();
 }
 
-bool InnoTestSystem::Initialize()
+bool TestSystem::Initialize()
 {
-	return InnoTestSystemNS::Initialize();
+	return TestSystemNS::Initialize();
 }
 
-bool InnoTestSystem::Update()
+bool TestSystem::Update()
 {
-	return InnoTestSystemNS::Update();
+	return TestSystemNS::Update();
 }
 
-bool InnoTestSystem::Terminate()
+bool TestSystem::Terminate()
 {
-	return InnoTestSystemNS::Terminate();
+	return TestSystemNS::Terminate();
 }
 
-ObjectStatus InnoTestSystem::GetStatus()
+ObjectStatus TestSystem::GetStatus()
 {
-	return InnoTestSystemNS::m_ObjectStatus;
+	return TestSystemNS::m_ObjectStatus;
 }
 
-bool InnoTestSystem::measure(const std::string& functorName, const std::function<void()>& functor)
+bool TestSystem::measure(const std::string& functorName, const std::function<void()>& functor)
 {
-	auto l_startTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+	auto l_startTime = Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
 	(functor)();
 
-	auto l_endTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+	auto l_endTime = Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
 	auto l_duration = (float)(l_endTime - l_startTime);
 

@@ -7,7 +7,7 @@
 #include "assimp/DefaultLogger.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-#include "../../Core/InnoLogger.h"
+#include "../../Core/Logger.h"
 
 #include "../../Interface/IEngine.h"
 using namespace Inno;
@@ -88,7 +88,7 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	// Check if the file was exist
 	if (IOService::isFileExist(fileName))
 	{
-		InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
+		Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
 #if defined INNO_DEBUG
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
@@ -97,14 +97,14 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "AssimpWrapper: ", fileName, " doesn't exist!");
+		Logger::Log(LogLevel::Error, "AssimpWrapper: ", fileName, " doesn't exist!");
 		return false;
 	}
 	if (l_scene)
 	{
 		if (l_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_scene->mRootNode)
 		{
-			InnoLogger::Log(LogLevel::Error, "AssimpWrapper: ", l_importer.GetErrorString());
+			Logger::Log(LogLevel::Error, "AssimpWrapper: ", l_importer.GetErrorString());
 			return false;
 		}
 
@@ -113,11 +113,11 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 		processAssimpScene(j, l_scene, l_exportFileName.c_str());
 		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), j);
 
-		InnoLogger::Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
+		Logger::Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "AssimpWrapper: Can't load file ", fileName, "!");
+		Logger::Log(LogLevel::Error, "AssimpWrapper: Can't load file ", fileName, "!");
 		return false;
 	}
 
@@ -155,10 +155,10 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 		}
 	};
 
-	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
+	Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
 	processAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
-	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
+	Logger::Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
 	std::unordered_map<std::string, uint32_t> l_boneNameIDMap;
 	std::unordered_map<std::string, Mat4> l_boneNameOffsetMap;
 
@@ -175,7 +175,7 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 
 	if (scene->mNumAnimations)
 	{
-		InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting animations...");
+		Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting animations...");
 
 		for (uint32_t i = 0; i < scene->mNumAnimations; i++)
 		{
@@ -408,7 +408,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
+				Logger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
 				break;
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_HEIGHT)
@@ -433,7 +433,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
+				Logger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
 				break;
 			}
 			j["Textures"].emplace_back(j_child);
@@ -548,6 +548,7 @@ uint32_t FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
 	}
 
 	assert(0);
+	return 0;
 }
 
 uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
@@ -563,6 +564,7 @@ uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 	}
 
 	assert(0);
+	return 0;
 }
 
 uint32_t FindTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
@@ -578,6 +580,7 @@ uint32_t FindTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 	}
 
 	assert(0);
+	return 0;
 }
 
 aiVector3D CalcInterpolatedScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
@@ -670,15 +673,15 @@ void ReadNodeHeirarchy(float AnimationTime, const aiAnimation* pAnimation, const
 	{
 		auto l_aiS = CalcInterpolatedScaling(AnimationTime, pNodeAnim);
 		auto l_s = Vec4(l_aiS.x, l_aiS.y, l_aiS.z, 1.0f);
-		auto l_sM = InnoMath::toScaleMatrix(l_s);
+		auto l_sM = Math::toScaleMatrix(l_s);
 
 		auto l_aiR = CalcInterpolatedRotation(AnimationTime, pNodeAnim);
 		auto l_r = Vec4(l_aiR.x, l_aiR.y, l_aiR.z, l_aiR.w);
-		auto l_rM = InnoMath::toRotationMatrix(l_r);
+		auto l_rM = Math::toRotationMatrix(l_r);
 
 		auto l_aiT = CalcInterpolatedTranslation(AnimationTime, pNodeAnim);
 		auto l_t = Vec4(l_aiT.x, l_aiT.y, l_aiT.z, 1.0f);
-		auto l_tM = InnoMath::toTranslationMatrix(l_t);
+		auto l_tM = Math::toTranslationMatrix(l_t);
 
 		l_lm = l_tM * l_rM * l_sM;
 	}
@@ -752,7 +755,7 @@ void AssimpWrapper::processAssimpAnimation(json& j, const aiScene* scene, const 
 
 	for (uint32_t i = 0; i < l_numTicksInt; i++)
 	{
-		auto l_m = InnoMath::generateIdentityMatrix<float>();
+		auto l_m = Math::generateIdentityMatrix<float>();
 		float l_animationTime = (float)i * l_timeInTicks;
 
 		std::vector<Mat4> l_transformsInCurrentTick;

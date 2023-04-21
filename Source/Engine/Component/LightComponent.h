@@ -1,12 +1,12 @@
 #pragma once
-#include "../Common/InnoObject.h"
-#include "../Common/InnoMathHelper.h"
+#include "../Common/Object.h"
+#include "../Common/MathHelper.h"
 
 namespace Inno
 {
 	enum class LightType { Directional, Point, Spot, Sphere, Disk, Tube, Rectangle };
 
-	class LightComponent : public InnoComponent
+	class LightComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 3; };

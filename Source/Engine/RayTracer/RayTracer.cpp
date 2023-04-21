@@ -1,11 +1,11 @@
 #include "RayTracer.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Logger.h"
 
 #include "../Interface/IEngine.h"
 using namespace Inno;
 extern IEngine* g_Engine;
 
-namespace InnoRayTracerNS
+namespace RayTracerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
@@ -17,7 +17,7 @@ namespace InnoRayTracerNS
 	TextureComponent* m_TextureComp;
 }
 
-using namespace InnoRayTracerNS;
+using namespace RayTracerNS;
 
 Vec4 RandomDirectionInUnitDisk()
 {
@@ -284,7 +284,7 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 		{
 			Vec4 unitDir = r.m_direction.normalize();
 			float t = unitDir.y * 0.5f + 0.5f;
-			color = InnoMath::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
+			color = Math::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
 		}
 	}
 
@@ -293,13 +293,13 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 
 bool ExecuteRayTracing()
 {
-	InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: Start ray tracing...");
+	Logger::Log(LogLevel::Verbose, "RayTracer: Start ray tracing...");
 
 	auto l_camera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
-	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
-	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_lookat = l_lookfrom + Math::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_up = Math::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
@@ -420,18 +420,18 @@ bool ExecuteRayTracing()
 	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->getTimeSystem()->getCurrentTimeFromEpoch());
 	g_Engine->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TextureComp);
 
-	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Ray tracing finished.");
+	Logger::Log(LogLevel::Success, "RayTracer: Ray tracing finished.");
 
 	return true;
 }
 
-bool InnoRayTracer::Setup(ISystemConfig* systemConfig)
+bool RayTracer::Setup(ISystemConfig* systemConfig)
 {
-	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Created;
+	RayTracerNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool InnoRayTracer::Initialize()
+bool RayTracer::Initialize()
 {
 	const int l_denom = 2;
 
@@ -446,29 +446,29 @@ bool InnoRayTracer::Initialize()
 	m_TextureComp->m_TextureDesc.Height = l_screenResolution.y / l_denom;
 	m_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::UByte;
 
-	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Activated;
+	RayTracerNS::m_ObjectStatus = ObjectStatus::Activated;
 	return true;
 }
 
-bool InnoRayTracer::Execute()
+bool RayTracer::Execute()
 {
-	if (!InnoRayTracerNS::m_isWorking)
+	if (!RayTracerNS::m_isWorking)
 	{
-		InnoRayTracerNS::m_isWorking = true;
+		RayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_Engine->getTaskSystem()->Submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
+		auto l_rayTracingTask = g_Engine->getTaskSystem()->Submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
 	}
 
 	return true;
 }
 
-bool InnoRayTracer::Terminate()
+bool RayTracer::Terminate()
 {
-	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Terminated;
+	RayTracerNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
 }
 
-ObjectStatus InnoRayTracer::GetStatus()
+ObjectStatus RayTracer::GetStatus()
 {
-	return InnoRayTracerNS::m_ObjectStatus;
+	return RayTracerNS::m_ObjectStatus;
 }

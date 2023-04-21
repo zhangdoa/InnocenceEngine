@@ -1,6 +1,6 @@
 #include "STBWrapper.h"
 
-#include "../../Core/InnoLogger.h"
+#include "../../Core/Logger.h"
 
 #include "../../Core/IOService.h"
 
@@ -46,13 +46,13 @@ TextureComponent* STBWrapper::loadTexture(const char* fileName)
 		l_TextureComp->m_TextureData = l_rawData;
 		l_TextureComp->m_ObjectStatus = ObjectStatus::Created;
 
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
+		Logger::Log(LogLevel::Verbose, "FileSystem: STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
 
 		return l_TextureComp;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
+		Logger::Log(LogLevel::Error, "FileSystem: STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
 
 		return nullptr;
 	}

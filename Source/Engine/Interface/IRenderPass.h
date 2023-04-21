@@ -4,7 +4,7 @@
 #include "../Component/GPUResourceComponent.h"
 #include "../Component/SamplerComponent.h"
 #include "../Component/GPUBufferComponent.h"
-#include "../Common/InnoMath.h"
+#include "../Common/Math.h"
 
 namespace Inno
 {

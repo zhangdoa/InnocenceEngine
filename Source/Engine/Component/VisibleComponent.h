@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoObject.h"
+#include "../Common/Object.h"
 #include "MeshComponent.h"
 #include "MaterialComponent.h"
 
@@ -16,7 +16,7 @@ namespace Inno
 		ArrayRangeInfo meshMaterialPairs;
 	};
 
-	class VisibleComponent : public InnoComponent
+	class VisibleComponent : public Component
 	{
 	public:
 		static uint32_t GetTypeID() { return 2; };

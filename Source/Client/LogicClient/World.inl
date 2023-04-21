@@ -37,27 +37,27 @@ namespace Inno
 
 		Player* m_player = nullptr;
 
-		std::vector<InnoEntity*> m_referenceSphereEntites;
+		std::vector<Entity*> m_referenceSphereEntites;
 		std::vector<TransformComponent*> m_referenceSphereTransformComponents;
 		std::vector<VisibleComponent*> m_referenceSphereVisibleComponents;
 
-		std::vector<InnoEntity*> m_opaqueSphereEntites;
+		std::vector<Entity*> m_opaqueSphereEntites;
 		std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
 		std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
 
-		std::vector<InnoEntity*> m_transparentCubeEntites;
+		std::vector<Entity*> m_transparentCubeEntites;
 		std::vector<TransformComponent*> m_transparentCubeTransformComponents;
 		std::vector<VisibleComponent*> m_transparentCubeVisibleComponents;
 
-		std::vector<InnoEntity*> m_volumetricCubeEntites;
+		std::vector<Entity*> m_volumetricCubeEntites;
 		std::vector<TransformComponent*> m_volumetricCubeTransformComponents;
 		std::vector<VisibleComponent*> m_volumetricCubeVisibleComponents;
 
-		std::vector<InnoEntity*> m_occlusionCubeEntites;
+		std::vector<Entity*> m_occlusionCubeEntites;
 		std::vector<TransformComponent*> m_occlusionCubeTransformComponents;
 		std::vector<VisibleComponent*> m_occlusionCubeVisibleComponents;
 
-		std::vector<InnoEntity*> m_pointLightEntites;
+		std::vector<Entity*> m_pointLightEntites;
 		std::vector<TransformComponent*> m_pointLightTransformComponents;
 		std::vector<LightComponent*> m_pointLightComponents;
 
@@ -191,7 +191,7 @@ namespace Inno
 						0.0f);
 
 				l_currentComponent->m_localTransformVector.m_rot =
-					InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+					Math::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 						Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 						l_randomRotDelta(m_generator));
 			}
@@ -253,7 +253,7 @@ namespace Inno
 						0.0f);
 
 				l_currentComponent->m_localTransformVector.m_rot =
-					InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+					Math::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 						Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
 						l_randomRotDelta(m_generator));
 			}
@@ -416,9 +416,9 @@ namespace Inno
 			std::uniform_real_distribution<float> randomAngle(0.0f, 360.0f);
 			auto angleSample = randomAngle(m_generator);
 
-			Vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
-			Mat4 rotMat = InnoMath::toRotationMatrix(originalRot);
-			auto resultRot = InnoMath::toQuatRotator(rotMat);
+			Vec4 originalRot = Math::getQuatRotator(axisSample, angleSample);
+			Mat4 rotMat = Math::toRotationMatrix(originalRot);
+			auto resultRot = Math::toQuatRotator(rotMat);
 
 			auto testResult = true;
 			testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon<float, 4>);
@@ -583,27 +583,27 @@ namespace Inno
 		}
 		auto pCamera = l_activeCamera->m_projectionMatrix;
 		auto rCamera =
-			InnoMath::getInvertRotationMatrix(
+			Math::getInvertRotationMatrix(
 				l_cameraTransformComponent->m_globalTransformVector.m_rot);
 		auto tCamera =
-			InnoMath::getInvertTranslationMatrix(
+			Math::getInvertTranslationMatrix(
 				l_cameraTransformComponent->m_globalTransformVector.m_pos);
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
+		l_ndcSpace = Math::mul(l_ndcSpace, pCamera.inverse());
 		l_ndcSpace.z = -1.0f;
 		l_ndcSpace.w = 0.0f;
-		l_ndcSpace = InnoMath::mul(l_ndcSpace, rCamera.inverse());
-		l_ndcSpace = InnoMath::mul(l_ndcSpace, tCamera.inverse());
+		l_ndcSpace = Math::mul(l_ndcSpace, rCamera.inverse());
+		l_ndcSpace = Math::mul(l_ndcSpace, tCamera.inverse());
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 
-		l_ndcSpace = InnoMath::mul(pCamera.inverse(), l_ndcSpace);
+		l_ndcSpace = Math::mul(pCamera.inverse(), l_ndcSpace);
 		l_ndcSpace.z = -1.0f;
 		l_ndcSpace.w = 0.0f;
-		l_ndcSpace = InnoMath::mul(tCamera.inverse(), l_ndcSpace);
-		l_ndcSpace = InnoMath::mul(rCamera.inverse(), l_ndcSpace);
+		l_ndcSpace = Math::mul(tCamera.inverse(), l_ndcSpace);
+		l_ndcSpace = Math::mul(rCamera.inverse(), l_ndcSpace);
 #endif
 		l_ndcSpace = l_ndcSpace.normalize();
 		return l_ndcSpace;
@@ -634,7 +634,7 @@ namespace Inno
 
 		for (uint32_t i = 0; i < m_transparentCubeVisibleComponents.size(); i++)
 		{
-			auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+			auto l_albedo = Math::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 			l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
 			auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
 			updateMaterial(m_transparentCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Transparent);
@@ -642,7 +642,7 @@ namespace Inno
 
 		for (uint32_t i = 0; i < m_volumetricCubeVisibleComponents.size(); i++)
 		{
-			auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+			auto l_albedo = Math::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 			l_albedo.w = clamp((float)sin(seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
 			auto l_MRAT = Vec4(clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
 			updateMaterial(m_volumetricCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Volumetric);

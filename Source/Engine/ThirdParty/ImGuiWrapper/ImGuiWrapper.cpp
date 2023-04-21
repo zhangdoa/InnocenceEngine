@@ -380,19 +380,19 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void* rhs)
 	static float rot_max = 180.0f;
 
 	static float rot[4];
-	Vec4 eulerAngles = InnoMath::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
-	rot[0] = InnoMath::radianToAngle(eulerAngles.x);
-	rot[1] = InnoMath::radianToAngle(eulerAngles.y);
-	rot[2] = InnoMath::radianToAngle(eulerAngles.z);
+	Vec4 eulerAngles = Math::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
+	rot[0] = Math::radianToAngle(eulerAngles.x);
+	rot[1] = Math::radianToAngle(eulerAngles.y);
+	rot[2] = Math::radianToAngle(eulerAngles.z);
 	rot[3] = 0.0f;
 
 	if (ImGui::DragFloat3("Rotation", rot, 1.0f, rot_min, rot_max))
 	{
-		auto roll = InnoMath::angleToRadian(rot[0]);
-		auto pitch = InnoMath::angleToRadian(rot[1]);
-		auto yaw = InnoMath::angleToRadian(rot[2]);
+		auto roll = Math::angleToRadian(rot[0]);
+		auto pitch = Math::angleToRadian(rot[1]);
+		auto yaw = Math::angleToRadian(rot[2]);
 
-		l_rhs->m_localTransformVector_target.m_rot = InnoMath::eulerAngleToQuat(roll, pitch, yaw);
+		l_rhs->m_localTransformVector_target.m_rot = Math::eulerAngleToQuat(roll, pitch, yaw);
 	}
 
 	static float scale[4];
@@ -560,7 +560,7 @@ ImVec4 generateButtonColor(const char* name)
 {
 	auto l_ptr = reinterpret_cast<intptr_t>(name);
 	auto l_hue = l_ptr * 4 % 180;
-	auto l_RGB = InnoMath::HSVtoRGB(Vec4((float)l_hue, 1.0f, 1.0f, 1.0f));
+	auto l_RGB = Math::HSVtoRGB(Vec4((float)l_hue, 1.0f, 1.0f, 1.0f));
 	return ImVec4(l_RGB.x, l_RGB.y, l_RGB.z, 1.0f);
 }
 
@@ -600,9 +600,9 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 					l_workDuration += (l_finishTime - l_startTime);
 
 					auto l_InvalidButtonWidth = ((float)(l_startTime - l_lastTaskReportButtonPos) + 1.0f) * 10.0f / l_totalDuration;
-					l_InvalidButtonWidth = InnoMath::clamp(l_InvalidButtonWidth, 0.005f, 20.0f);
+					l_InvalidButtonWidth = Math::clamp(l_InvalidButtonWidth, 0.005f, 20.0f);
 					auto l_visibleButtonWidth = ((float)(l_finishTime - l_startTime) + 1.0f) * 10.0f / l_totalDuration;
-					l_visibleButtonWidth = InnoMath::clamp(l_visibleButtonWidth, 0.005f, 20.0f);
+					l_visibleButtonWidth = Math::clamp(l_visibleButtonWidth, 0.005f, 20.0f);
 					ImGui::PushStyleColor(ImGuiCol_Button, generateButtonColor(l_taskReport[j].m_TaskName));
 					ImGui::Button("", ImVec2(l_visibleButtonWidth * l_windowWidth, 20));
 					if (ImGui::IsItemHovered())

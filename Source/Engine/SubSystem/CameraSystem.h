@@ -4,10 +4,10 @@
 
 namespace Inno
 {
-	class InnoCameraSystem : public ICameraSystem
+	class CameraSystem : public ICameraSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoCameraSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(CameraSystem);
 
 		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;

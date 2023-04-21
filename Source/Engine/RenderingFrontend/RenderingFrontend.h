@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoRenderingFrontend : public IRenderingFrontend
+	class RenderingFrontend : public IRenderingFrontend
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRenderingFrontend);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(RenderingFrontend);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

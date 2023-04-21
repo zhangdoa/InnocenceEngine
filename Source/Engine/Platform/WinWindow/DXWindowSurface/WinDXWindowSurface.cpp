@@ -1,6 +1,6 @@
 #include "WinDXWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Core/InnoLogger.h"
+#include "../../../Core/Logger.h"
 
 #include "../../../Interface/IEngine.h"
 using namespace Inno;
@@ -63,7 +63,7 @@ bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface Setup finished.");
+	Logger::Log(LogLevel::Success, "WinDXWindowSurface Setup finished.");
 
 	return true;
 }
@@ -78,7 +78,7 @@ bool WinDXWindowSurfaceNS::Initialize()
 		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 	}
 
-	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");
+	Logger::Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");
 	return true;
 }
 
@@ -90,7 +90,7 @@ bool WinDXWindowSurfaceNS::Update()
 bool WinDXWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
+	Logger::Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
 
 	return true;
 }

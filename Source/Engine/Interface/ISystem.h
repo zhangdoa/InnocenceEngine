@@ -1,7 +1,7 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
-#include "../Common/InnoObject.h"
+#include "../Common/Type.h"
+#include "../Common/ClassTemplate.h"
+#include "../Common/Object.h"
 
 namespace Inno
 {

@@ -1,6 +1,6 @@
 #include "WinGLWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Engine/Core/InnoLogger.h"
+#include "../../../Engine/Core/Logger.h"
 
 #include "glad/gl.h"
 #include "glext.h"
@@ -68,14 +68,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (fakePFDID == 0)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: ChoosePixelFormat() failed.");
+		Logger::Log(LogLevel::Error, "WinWindowSystem: ChoosePixelFormat() failed.");
 		return false;
 	}
 
 	if (SetPixelFormat(fakeDC, fakePFDID, &fakePFD) == false)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: SetPixelFormat() failed.");
+		Logger::Log(LogLevel::Error, "WinWindowSystem: SetPixelFormat() failed.");
 		return false;
 	}
 
@@ -85,14 +85,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (fakeRC == 0)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContext() failed.");
+		Logger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContext() failed.");
 		return false;
 	}
 
 	if (wglMakeCurrent(fakeDC, fakeRC) == false)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
+		Logger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
 		return false;
 	}
 
@@ -102,7 +102,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (wglChoosePixelFormatARB == nullptr)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglChoosePixelFormatARB) failed.");
+		Logger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglChoosePixelFormatARB) failed.");
 		return false;
 	}
 
@@ -111,7 +111,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (wglCreateContextAttribsARB == nullptr)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglCreateContextAttribsARB) failed.");
+		Logger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglCreateContextAttribsARB) failed.");
 		return false;
 	}
 
@@ -166,7 +166,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (status == false || numFormats == 0)
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
+			Logger::Log(LogLevel::Error, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
 		}
 
 		PIXELFORMATDESCRIPTOR PFD;
@@ -192,7 +192,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (m_HGLRC == NULL)
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
+			Logger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
 		}
 	};
 
@@ -210,7 +210,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (!wglMakeCurrent(m_HDC, m_HGLRC))
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
+			Logger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
 		}
 
 		// init opengl loader here (extra safe version)
@@ -219,7 +219,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (!gladLoadGL(nullptr))
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: Failed to Initialize GLAD.");
+			Logger::Log(LogLevel::Error, "WinWindowSystem: Failed to Initialize GLAD.");
 		}
 
 		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
@@ -231,7 +231,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			if (wglSwapIntervalEXT == nullptr)
 			{
 				m_ObjectStatus = ObjectStatus::Created;
-				InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
+				Logger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
 			}
 			wglSwapIntervalEXT(0);
 		}
@@ -248,14 +248,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinGLWindowSurface Setup finished.");
+	Logger::Log(LogLevel::Success, "WinGLWindowSurface Setup finished.");
 
 	return true;
 }
 
 bool WinGLWindowSurfaceNS::Initialize()
 {
-	InnoLogger::Log(LogLevel::Success, "WinGLWindowSurface has been initialized.");
+	Logger::Log(LogLevel::Success, "WinGLWindowSurface has been initialized.");
 	return true;
 }
 
@@ -267,7 +267,7 @@ bool WinGLWindowSurfaceNS::Update()
 bool WinGLWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "WinGLWindowSurfaceNS has been terminated.");
+	Logger::Log(LogLevel::Success, "WinGLWindowSurfaceNS has been terminated.");
 
 	return true;
 }

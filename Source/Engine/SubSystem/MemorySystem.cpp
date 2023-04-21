@@ -1,73 +1,73 @@
 #include "MemorySystem.h"
-#include "../Core/InnoMemory.h"
-#include "../Core/InnoLogger.h"
+#include "../Core/Memory.h"
+#include "../Core/Logger.h"
 
 using namespace Inno;
 namespace Inno
 {
-	namespace InnoMemorySystemNS
+	namespace MemorySystemNS
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	}
 }
 
-bool InnoMemorySystem::Setup(ISystemConfig* systemConfig)
+bool MemorySystem::Setup(ISystemConfig* systemConfig)
 {
-	InnoMemorySystemNS::m_ObjectStatus = ObjectStatus::Created;
+	MemorySystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool InnoMemorySystem::Initialize()
+bool MemorySystem::Initialize()
 {
-	if (InnoMemorySystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (MemorySystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoMemorySystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		InnoLogger::Log(LogLevel::Success, "MemorySystem has been initialized.");
+		MemorySystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		Logger::Log(LogLevel::Success, "MemorySystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "MemorySystem: Object is not created!");
+		Logger::Log(LogLevel::Error, "MemorySystem: Object is not created!");
 		return false;
 	}
 }
 
-bool InnoMemorySystem::Update()
+bool MemorySystem::Update()
 {
-	if (InnoMemorySystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (MemorySystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
 	else
 	{
-		InnoMemorySystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		MemorySystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
-bool InnoMemorySystem::Terminate()
+bool MemorySystem::Terminate()
 {
-	InnoMemorySystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "MemorySystem has been terminated.");
+	MemorySystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	Logger::Log(LogLevel::Success, "MemorySystem has been terminated.");
 	return true;
 }
-ObjectStatus InnoMemorySystem::GetStatus()
+ObjectStatus MemorySystem::GetStatus()
 {
-	return InnoMemorySystemNS::m_ObjectStatus;
+	return MemorySystemNS::m_ObjectStatus;
 }
 
-void* InnoMemorySystem::allocate(size_t size)
+void* MemorySystem::allocate(size_t size)
 {
-	return InnoMemory::Allocate(size);
+	return Memory::Allocate(size);
 }
 
-bool InnoMemorySystem::deallocate(void* ptr)
+bool MemorySystem::deallocate(void* ptr)
 {
-	InnoMemory::Deallocate(ptr);
+	Memory::Deallocate(ptr);
 	return true;
 }
 
-void* InnoMemorySystem::reallocate(void* ptr, size_t size)
+void* MemorySystem::reallocate(void* ptr, size_t size)
 {
-	return InnoMemory::Reallocate(ptr, size);
+	return Memory::Reallocate(ptr, size);
 }

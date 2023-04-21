@@ -1,7 +1,7 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
-#include "../Export/InnoEngine_Export.h"
+#include "../Common/Type.h"
+#include "../Common/ClassTemplate.h"
+#include "../Export/Engine_Export.h"
 #include "ITimeSystem.h"
 #include "ILogSystem.h"
 #include "IMemorySystem.h"

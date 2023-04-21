@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class InnoLightSystem : public IComponentSystem
+	class LightSystem : public IComponentSystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLightSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(LightSystem);
 
 		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;

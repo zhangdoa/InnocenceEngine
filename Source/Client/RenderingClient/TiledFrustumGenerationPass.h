@@ -26,7 +26,7 @@ namespace Inno
 		GPUBufferComponent* m_tiledFrustum;
 		const uint32_t m_tileSize = 16;
 		const uint32_t m_numThreadPerGroup = 16;
-		InnoMath::TVec4<uint32_t> m_numThreads;
-		InnoMath::TVec4<uint32_t> m_numThreadGroups;
+		Math::TVec4<uint32_t> m_numThreads;
+		Math::TVec4<uint32_t> m_numThreadGroups;
 	};
 } // namespace Inno

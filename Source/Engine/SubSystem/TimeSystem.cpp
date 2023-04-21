@@ -1,27 +1,27 @@
 #include "TimeSystem.h"
-#include "../Core/InnoTimer.h"
+#include "../Core/Timer.h"
 
 using namespace Inno;
 namespace Inno
 {
-	namespace InnoTimeSystemNS
+	namespace TimeSystemNS
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	}
 }
 
-bool InnoTimeSystem::Setup(ISystemConfig* systemConfig)
+bool TimeSystem::Setup(ISystemConfig* systemConfig)
 {
-	InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Created;
-	return InnoTimer::Setup();
+	TimeSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	return Timer::Setup();
 }
 
-bool InnoTimeSystem::Initialize()
+bool TimeSystem::Initialize()
 {
-	if (InnoTimeSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (TimeSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		return InnoTimer::Initialize();
+		TimeSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		return Timer::Initialize();
 	}
 	else
 	{
@@ -29,28 +29,28 @@ bool InnoTimeSystem::Initialize()
 	}
 }
 
-bool InnoTimeSystem::Update()
+bool TimeSystem::Update()
 {
-	if (InnoTimeSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (TimeSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
-		return InnoTimer::Tick();
+		return Timer::Tick();
 	}
 	else
 	{
-		InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		TimeSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
-bool InnoTimeSystem::Terminate()
+bool TimeSystem::Terminate()
 {
-	InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	return InnoTimer::Terminate();
+	TimeSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	return Timer::Terminate();
 }
 
-const TimeData InnoTimeSystem::getCurrentTime(uint32_t timezone_adjustment)
+const TimeData TimeSystem::getCurrentTime(uint32_t timezone_adjustment)
 {
-	auto l_resultRaw = InnoTimer::GetCurrentTime(timezone_adjustment);
+	auto l_resultRaw = Timer::GetCurrentTime(timezone_adjustment);
 
 	TimeData l_result;
 
@@ -65,12 +65,12 @@ const TimeData InnoTimeSystem::getCurrentTime(uint32_t timezone_adjustment)
 	return  l_result;
 }
 
-const int64_t InnoTimeSystem::getCurrentTimeFromEpoch()
+const int64_t TimeSystem::getCurrentTimeFromEpoch()
 {
-	return InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+	return Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 }
 
-ObjectStatus InnoTimeSystem::GetStatus()
+ObjectStatus TimeSystem::GetStatus()
 {
-	return InnoTimeSystemNS::m_ObjectStatus;
+	return TimeSystemNS::m_ObjectStatus;
 }
