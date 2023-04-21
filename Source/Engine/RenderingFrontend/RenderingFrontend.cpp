@@ -199,6 +199,7 @@ bool RenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Width = m_screenResolution.x;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Height = m_screenResolution.y;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 1;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::Float16;
 
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_screenResolution.x;
