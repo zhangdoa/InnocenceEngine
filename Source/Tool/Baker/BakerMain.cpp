@@ -2,42 +2,46 @@
 #include "../../Engine/Interface/ILogicClient.h"
 #include "Baker.h"
 
-class BakerLogicClient : public ILogicClient
+namespace Inno
 {
-	// Inherited via ILogicClient
-	bool Setup(ISystemConfig* systemConfig) override
+	class BakerLogicClient: public ILogicClient
 	{
-		return true;
-	}
-	bool Initialize() override
-	{
-		return true;
-	}
-	bool Update() override
-	{
-		return true;
-	}
-	bool Terminate() override
-	{
-		return true;
-	}
-	ObjectStatus GetStatus() override
-	{
-		return ObjectStatus();
-	}
-	const char* GetApplicationName() override
-	{
-		return "Baker/";
-	}
-};
+		// Inherited via ILogicClient
+		bool Setup(ISystemConfig* systemConfig) override
+		{
+			return true;
+		}
+		bool Initialize() override
+		{
+			return true;
+		}
+		bool Update() override
+		{
+			return true;
+		}
+		bool Terminate() override
+		{
+			return true;
+		}
+		ObjectStatus GetStatus() override
+		{
+			return ObjectStatus();
+		}
+		const char* GetApplicationName() override
+		{
+			return "Baker/";
+		}
+	};
 
-namespace Baker
-{
-	std::unique_ptr<Engine> m_pModuleManager;
-	std::unique_ptr<BakerRenderingClient> m_pRenderingClient;
-	std::unique_ptr<BakerLogicClient> m_pLogicClient;
+	namespace Baker
+	{
+		std::unique_ptr<Engine> m_pModuleManager;
+		std::unique_ptr<BakerRenderingClient> m_pRenderingClient;
+		std::unique_ptr<BakerLogicClient> m_pLogicClient;
+	}
 }
 
+using namespace Inno;
 using namespace Baker;
 
 #ifdef INNO_PLATFORM_WIN
@@ -136,11 +140,12 @@ int main(int argc, char* argv[])
 		}
 	}
 
+#define TEST
 #ifdef TEST
-	Baker::BakeProbeCache("..//Res//Scenes//GITest.Scene");
-	Baker::BakeBrickCache("..//Res//Intermediate//GITest.SurfelCache");
-	Baker::BakeBrick("..//Res//Intermediate//GITest.BrickCacheSummary");
-	Baker::BakeBrickFactor("..//Res//Scenes//GITest.Brick");
+	Baker::BakeProbeCache("..//Res//Scenes//GITestBox.InnoScene");
+	Baker::BakeBrickCache("..//Res//Intermediate//GITestBox.InnoSurfelCache");
+	Baker::BakeBrick("..//Res//Intermediate//GITestBox.InnoBrickCacheSummary");
+	Baker::BakeBrickFactor("..//Res//Scenes//GITestBox.InnoBrick");
 #endif
 
 	m_pModuleManager->Terminate();

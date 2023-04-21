@@ -1,5 +1,7 @@
 if (INNO_PLATFORM_WIN)
-add_executable(Baker WIN32 Baker.h Baker.cpp BakerMain.cpp)
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_executable(Baker WIN32 ${HEADERS} ${SOURCES})
 set_target_properties(Baker PROPERTIES FOLDER Tool)
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set_target_properties(Baker PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
