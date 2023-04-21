@@ -35,6 +35,14 @@ void Baker::Setup()
 void Baker::BakeProbeCache(const char* sceneName)
 {
 	g_Engine->getSceneSystem()->loadScene(sceneName, false);
+	auto l_playerCameraEntity = g_Engine->getEntityManager()->Find("playerCharacterCamera");
+	if (l_playerCameraEntity.has_value())
+	{
+		auto l_playerCameraComponent = g_Engine->getComponentManager()->Find<CameraComponent>(l_playerCameraEntity.value());
+        static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_playerCameraComponent);
+        static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_playerCameraComponent);
+	}
+
 	g_Engine->Update();
 	Config::Get().m_exportFileName = g_Engine->getSceneSystem()->getCurrentSceneName();
 
