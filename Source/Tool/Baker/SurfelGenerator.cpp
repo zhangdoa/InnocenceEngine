@@ -236,10 +236,7 @@ namespace Inno
             auto l_albedoAO = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[2]);
             auto l_depthStencilRT = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget);
 
-            auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
-            l_TextureComp->m_TextureDesc = m_RenderPassComp_Surfel->m_RenderTargets[0]->m_TextureDesc;
-            l_TextureComp->m_TextureData = l_albedoAO.data();
-            g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TextureComp);
+            g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_RenderTargets[2]->m_TextureDesc, l_albedoAO.data());
 
             auto l_surfelsCount = Config::Get().m_surfelSampleCountPerFace * Config::Get().m_surfelSampleCountPerFace * 6;
             auto l_sampleStep = Config::Get().m_captureResolution / Config::Get().m_surfelSampleCountPerFace;
@@ -282,11 +279,7 @@ namespace Inno
                 probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
             }
 
-            auto l_DSTextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
-            l_DSTextureComp->m_TextureDesc = m_RenderPassComp_Surfel->m_RenderTargets[0]->m_TextureDesc;
-            l_DSTextureComp->m_TextureData = l_DSTextureCompData.data();
-            g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTextureComp);
-
+            g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_DepthStencilRenderTarget->m_TextureDesc, l_DSTextureCompData.data());
             surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
             l_index++;

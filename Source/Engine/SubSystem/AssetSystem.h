@@ -18,6 +18,7 @@ namespace Inno
 		bool convertModel(const char* fileName, const char* exportPath) override;
 		Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) override;
 		TextureComponent* loadTexture(const char* fileName) override;
+		bool saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData) override;
 		bool saveTexture(const char* fileName, TextureComponent* TextureComp) override;
 
 		bool loadAssetsForComponents(bool AsyncLoad) override;

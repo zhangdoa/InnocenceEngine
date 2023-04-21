@@ -18,6 +18,7 @@ namespace Inno
 		virtual bool convertModel(const char* fileName, const char* exportPath) = 0;
 		virtual Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
 		virtual TextureComponent* loadTexture(const char* fileName) = 0;
+		virtual bool saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData) = 0;		
 		virtual bool saveTexture(const char* fileName, TextureComponent* TextureComp) = 0;
 
 		virtual bool loadAssetsForComponents(bool AsyncLoad = true) = 0;

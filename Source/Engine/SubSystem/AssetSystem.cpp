@@ -657,9 +657,14 @@ TextureComponent* AssetSystem::loadTexture(const char* fileName)
 	}
 }
 
+bool AssetSystem::saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
+{
+    return STBWrapper::saveTexture(fileName, textureDesc, textureData);
+}
+
 bool AssetSystem::saveTexture(const char* fileName, TextureComponent* TextureComp)
 {
-	return STBWrapper::saveTexture(fileName, TextureComp);
+	return STBWrapper::saveTexture(fileName, TextureComp->m_TextureDesc, TextureComp->m_TextureData);
 }
 
 bool AssetSystem::loadAssetsForComponents(bool AsyncLoad)

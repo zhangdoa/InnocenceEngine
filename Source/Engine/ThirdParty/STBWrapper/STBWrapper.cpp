@@ -58,48 +58,54 @@ TextureComponent* STBWrapper::loadTexture(const char* fileName)
 	}
 }
 
-bool STBWrapper::saveTexture(const char* fileName, TextureComponent* TextureComp)
+bool STBWrapper::saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
-	if (TextureComp->m_TextureDesc.PixelDataType == TexturePixelDataType::Float16 || TextureComp->m_TextureDesc.PixelDataType == TexturePixelDataType::Float32)
+	int result = 1;
+	int32_t comp = (int32_t)textureDesc.PixelDataFormat;
+
+	// BGRA, D and DS, all 4 * sizeof(float)
+	comp = comp > 4 ? 4 : comp;
+
+	if (textureDesc.PixelDataType == TexturePixelDataType::Float16 || textureDesc.PixelDataType == TexturePixelDataType::Float32)
 	{
-		if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler1DArray)
+		if (textureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{
-			stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, 1, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, (float*)TextureComp->m_TextureData);
+			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, 1, comp, (float*)textureData);
 		}
-		else if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler2DArray
-			|| TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+		else if (textureDesc.Sampler == TextureSampler::Sampler2DArray
+			|| textureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, (int32_t)TextureComp->m_TextureDesc.Height * TextureComp->m_TextureDesc.DepthOrArraySize, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, (float*)TextureComp->m_TextureData);
+			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, (float*)textureData);
 		}
-		else if (TextureComp->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, (int32_t)TextureComp->m_TextureDesc.Height * 6, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, (float*)TextureComp->m_TextureData);
+			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, (float*)textureData);
 		}
 		else
 		{
-			stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, (int32_t)TextureComp->m_TextureDesc.Height, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, (float*)TextureComp->m_TextureData);
+			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, (float*)textureData);
 		}
 	}
 	else
 	{
-		if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler1DArray)
+		if (textureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{
-			stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, 1, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, TextureComp->m_TextureData, (int32_t)TextureComp->m_TextureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, 1, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
-		else if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler2DArray
-			|| TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+		else if (textureDesc.Sampler == TextureSampler::Sampler2DArray
+			|| textureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, (int32_t)TextureComp->m_TextureDesc.Height * TextureComp->m_TextureDesc.DepthOrArraySize, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, TextureComp->m_TextureData, (int32_t)TextureComp->m_TextureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
-		else if (TextureComp->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, (int32_t)TextureComp->m_TextureDesc.Height * 6, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, TextureComp->m_TextureData, (int32_t)TextureComp->m_TextureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else
 		{
-			stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)TextureComp->m_TextureDesc.Width, (int32_t)TextureComp->m_TextureDesc.Height, (int32_t)TextureComp->m_TextureDesc.PixelDataFormat, TextureComp->m_TextureData, (int32_t)TextureComp->m_TextureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 	}
 
-	return true;
+	return result == 1;
 }
