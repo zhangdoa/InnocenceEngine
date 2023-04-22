@@ -50,6 +50,8 @@ xcuserdata/
 /Res/Shaders/Converted/*
 /Res/Intermediate/*
 
+*.refl
+
 *.spv
 *.InnoBrick
 *.InnoBrickFactor
