@@ -40,6 +40,19 @@
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
             "externalConsole": false
+        },
+        {
+            "name": "(Windows) Launch Reflector",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/Debug/Reflector.exe",
+            "args": [
+                "../Source/Engine/Common/GPUDataStructure.h"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
         }
     ]
 }
