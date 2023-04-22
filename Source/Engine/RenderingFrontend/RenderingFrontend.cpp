@@ -536,13 +536,13 @@ bool RenderingFrontendNS::updateLightData()
 	{
 		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{
-			auto l_transformCompoent = g_Engine->getComponentManager()->Find<TransformComponent>(l_lightComponents[i]->m_Owner);
-			if (l_transformCompoent != nullptr)
+			auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_lightComponents[i]->m_Owner);
+			if (l_transformComponent != nullptr)
 			{
 				if (l_lightComponents[i]->m_LightType == LightType::Point)
 				{
 					PointLightConstantBuffer l_data;
-					l_data.pos = l_transformCompoent->m_globalTransformVector.m_pos;
+					l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
 					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
 					l_PointLightCB.emplace_back(l_data);
@@ -550,7 +550,7 @@ bool RenderingFrontendNS::updateLightData()
 				else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
 				{
 					SphereLightConstantBuffer l_data;
-					l_data.pos = l_transformCompoent->m_globalTransformVector.m_pos;
+					l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
 					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
 					l_SphereLightCB.emplace_back(l_data);
@@ -732,10 +732,10 @@ bool RenderingFrontendNS::updateBillboardPassData()
 	{
 		PerObjectConstantBuffer l_meshCB;
 
-		auto l_transformCompoent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
-		if (l_transformCompoent != nullptr)
+		auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
+		if (l_transformComponent != nullptr)
 		{
-			l_meshCB.m = Math::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+			l_meshCB.m = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
 		}
 
 		switch (i->m_LightType)
@@ -773,6 +773,11 @@ bool RenderingFrontendNS::updateBillboardPassData()
 	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_pointLightPerObjectCB.begin(), l_pointLightPerObjectCB.end());
 	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_sphereLightPerObjectCB.begin(), l_sphereLightPerObjectCB.end());
 
+	m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVector));
+	m_billboardPassPerObjectCB.SetValue(std::move(l_billboardPassPerObjectCB));
+	m_directionalLightPerObjectCB.SetValue(std::move(l_directionalLightPerObjectCB));
+	m_pointLightPerObjectCB.SetValue(std::move(l_pointLightPerObjectCB));
+	m_sphereLightPerObjectCB.SetValue(std::move(l_sphereLightPerObjectCB));
 
 	return true;
 }
