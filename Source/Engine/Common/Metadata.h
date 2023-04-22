@@ -1,6 +1,4 @@
 #pragma once
-#include "nlohmann/json.hpp"
-using json = nlohmann::json;
 
 namespace Inno
 {
@@ -60,35 +58,23 @@ namespace Inno
 			TemplateParm
 		};
 
-		struct Metadata
+		struct TypeInfo
 		{
-			const char* name;
-			DeclType declType;
-			AccessType accessType;
-			TypeKind typeKind;
-			const char* typeName;
-			Metadata* typeRef;
-			bool isPtr;
-			Metadata* base;
+			const char* Name;
+			DeclType DeclType;
+			AccessType AccessType;
+			TypeKind TypeKind;
+			const char* TypeName;
+			TypeInfo* TypeRef;
+			bool IsPtr;
+			TypeInfo* Base;
 		};
 
 		template<typename T>
-		Metadata GetMetadata() {};
-
-		template<typename T>
-		Metadata GetMetadata(const T& rhs)
+		TypeInfo Get()
 		{
-			using orig_type = std::remove_const_t<std::remove_reference_t<decltype(rhs)>>;
-			return GetMetadata<orig_type>();
+			using orig_type = std::remove_const_t<std::remove_reference_t<decltype(T)>>;
+			return Get<orig_type>();
 		};
-	}
-
-	namespace Serializer
-	{
-		template<typename T>
-		void to_json(json& j, const T& rhs) {};
-
-		template<typename T>
-		void from_json(const json& j, T& rhs) {};
 	}
 }

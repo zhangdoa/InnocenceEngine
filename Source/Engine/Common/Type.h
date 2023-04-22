@@ -1,6 +1,7 @@
 #pragma once
 #include "Config.h"
 #include "Container.h"
+#include "Metadata.h"
 
 #if defined INNO_PLATFORM_WIN
 #define INNO_FORCEINLINE __forceinline

@@ -16,6 +16,7 @@ namespace Reflector
 	struct FileWriter
 	{
 		std::ofstream os;
+		std::string inputFileName;
 	};
 
 	struct ClangMetadata
@@ -141,7 +142,7 @@ namespace Reflector
 
 	void writeCursorKind(CXCursorKind typeKind, FileWriter* fileWriter)
 	{
-		fileWriter->os << "DeclType::";
+		fileWriter->os << "Metadata::DeclType::";
 		switch (typeKind)
 		{
 		case CXCursor_UnexposedDecl:
@@ -198,7 +199,7 @@ namespace Reflector
 
 	void writeAccessSpecifier(CX_CXXAccessSpecifier accessSpecifier, FileWriter* fileWriter)
 	{
-		fileWriter->os << "AccessType::";
+		fileWriter->os << "Metadata::AccessType::";
 
 		switch (accessSpecifier)
 		{
@@ -221,7 +222,7 @@ namespace Reflector
 
 	void writeTypeKind(CXTypeKind typeKind, FileWriter* fileWriter)
 	{
-		fileWriter->os << "TypeKind::";
+		fileWriter->os << "Metadata::TypeKind::";
 
 		switch (typeKind)
 		{
@@ -318,6 +319,15 @@ namespace Reflector
 		}
 	}
 
+	std::string flattenClangTypeName(const CXString& typeName)
+	{
+		auto l_typeName = std::string(clang_getCString(typeName));
+		std::replace(l_typeName.begin(), l_typeName.end(), ':', '_');
+		l_typeName = "Metadata_" + l_typeName;
+		
+		return l_typeName;
+	}
+
 	void writeMetadataMember(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
 		if (clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod
@@ -356,7 +366,7 @@ namespace Reflector
 			&& (clangMetadata.typeKind == CXTypeKind::CXType_Record
 				|| clangMetadata.typeKind == CXTypeKind::CXType_Enum))
 		{
-			fileWriter->os << ", &refl_" << clang_getCString(clangMetadata.typeName);
+			fileWriter->os << ", &" << flattenClangTypeName(clangMetadata.typeName);
 		}
 		else
 		{
@@ -374,7 +384,7 @@ namespace Reflector
 
 		if (clangMetadata.inheritanceBase != nullptr)
 		{
-			fileWriter->os << ", &refl_" << clang_getCString(clangMetadata.inheritanceBase->typeName);
+			fileWriter->os << ", &" << flattenClangTypeName(clangMetadata.inheritanceBase->typeName);
 		}
 		else
 		{
@@ -384,9 +394,9 @@ namespace Reflector
 
 	void writeMetadataDefi(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "Metadata refl_";
+		fileWriter->os << "inline Metadata::TypeInfo ";
 
-		fileWriter->os << clang_getCString(clangMetadata.entityName) << " = { ";
+		fileWriter->os << flattenClangTypeName(clangMetadata.typeName) << " = { ";
 
 		writeMetadataMember(clangMetadata, fileWriter);
 
@@ -395,7 +405,7 @@ namespace Reflector
 
 	void writeChildrenMetadataDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.entityName) << "_member[" << clangMetadata.validChildrenCount << "] = \n{";
+		fileWriter->os << "inline Metadata::TypeInfo " << flattenClangTypeName(clangMetadata.typeName) << "_Member[" << clangMetadata.validChildrenCount << "] = \n{";
 
 		auto l_startOffset = 1;
 		if (clangMetadata.inheritanceBase != nullptr)
@@ -422,8 +432,8 @@ namespace Reflector
 
 	void writeMetadataGetter(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "template<>\ninline Metadata Metadata::GetMetadata<" << clang_getCString(clangMetadata.typeName) << ">()\n";
-		fileWriter->os << "{\n\treturn refl_" << clang_getCString(clangMetadata.entityName) << ";\n}\n\n";
+		fileWriter->os << "template<>\ninline Inno::Metadata::TypeInfo Inno::Metadata::Get<" << clang_getCString(clangMetadata.typeName) << ">()\n";
+		fileWriter->os << "{\n\treturn " << flattenClangTypeName(clangMetadata.typeName) << ";\n}\n\n";
 	}
 
 	void writeSerializerDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
@@ -541,7 +551,7 @@ namespace Reflector
 		{
 			std::string l_name = clang_getCString(m_includedFileName[i]);
 			size_t start_pos = l_name.find(".h");
-			l_name.replace(start_pos, 2, ".refl.h");
+			l_name.replace(start_pos, 2, ".h.refl");
 
 			fileWriter->os << "#include " << l_name << "\n";
 		}
@@ -564,16 +574,14 @@ namespace Reflector
 		auto l_clangMetadataCount = m_clangMetadata.size();
 
 		fileWriter->os << "#pragma once\n";
-		fileWriter->os << "#include \"../../Source/Engine/Common/Metadata.h\"\n";
-		fileWriter->os << "using namespace Metadata;\n";
+		fileWriter->os << "#include \"" << fileWriter->inputFileName << "\"\n";
 		fileWriter->os << "\n";
-
-		writeIncludedHeaders(fileWriter);
+		fileWriter->os << "using namespace Inno;\n";
+		//writeIncludedHeaders(fileWriter);
 
 		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
-			auto& l_clangMetadata = m_clangMetadata[i];
-
+			auto& l_clangMetadata = m_clangMetadata[i];	
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_EnumDecl)
 			{
 				writeSector(i, l_clangMetadata, fileWriter);
@@ -643,23 +651,22 @@ using namespace Reflector;
 
 int main(int argc, char *argv[])
 {
-	if (argc != 3)
+	if (argc != 2)
 	{
-		std::cerr << "Usage: " << argv[0] << " Input" << argv[1] << " Output" << argv[2] << std::endl;
+		std::cerr << "Usage: " << argv[0] << " Input" << argv[1] << std::endl;
 		return 0;
 	}
 
 	auto l_inputFilePath = fs::path(argv[1]);
-	auto l_inputFileName = l_inputFilePath.generic_string();
-
-	auto l_outputFilePath = fs::path(argv[2]);
-	auto l_outputFileName = l_outputFilePath.generic_string();
+	auto l_inputFilePathStr = l_inputFilePath.generic_string();
+	auto l_outputFilePathStr = l_inputFilePathStr + ".refl";
 
 	FileWriter l_fileWriter;
+	
+	l_fileWriter.inputFileName = l_inputFilePath.filename().generic_string();
+	l_fileWriter.os.open(l_outputFilePathStr);
 
-	l_fileWriter.os.open(l_outputFileName);
-
-	parseContent(l_inputFileName, l_fileWriter);
+	parseContent(l_inputFilePathStr, l_fileWriter);
 
 	l_fileWriter.os.close();
 
