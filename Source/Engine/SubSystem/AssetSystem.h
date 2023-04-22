@@ -15,36 +15,36 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		bool convertModel(const char* fileName, const char* exportPath) override;
-		Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) override;
-		TextureComponent* loadTexture(const char* fileName) override;
-		bool saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData) override;
-		bool saveTexture(const char* fileName, TextureComponent* TextureComp) override;
+		bool ConvertModel(const char* fileName, const char* exportPath) override;
+		Model* LoadModel(const char* fileName, bool AsyncUploadGPUResource = true) override;
+		TextureComponent* LoadTexture(const char* fileName) override;
+		bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData) override;
+		bool SaveTexture(const char* fileName, TextureComponent* TextureComp) override;
 
-		bool loadAssetsForComponents(bool AsyncLoad) override;
+		bool LoadAssetsForComponents(bool AsyncLoad) override;
 
-		bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) override;
-		bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) override;
+		bool RecordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) override;
+		bool FindLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) override;
 
-		bool recordLoadedModel(const char* fileName, Model* model) override;
-		bool findLoadedModel(const char* fileName, Model*& model) override;
+		bool RecordLoadedModel(const char* fileName, Model* model) override;
+		bool FindLoadedModel(const char* fileName, Model*& model) override;
 
-		bool recordLoadedTexture(const char* fileName, TextureComponent* texture) override;
-		bool findLoadedTexture(const char* fileName, TextureComponent*& texture) override;
+		bool RecordLoadedTexture(const char* fileName, TextureComponent* texture) override;
+		bool FindLoadedTexture(const char* fileName, TextureComponent*& texture) override;
 
-		bool recordLoadedSkeleton(const char* fileName, SkeletonComponent* skeleton) override;
-		bool findLoadedSkeleton(const char* fileName, SkeletonComponent*& skeleton) override;
+		bool RecordLoadedSkeleton(const char* fileName, SkeletonComponent* skeleton) override;
+		bool FindLoadedSkeleton(const char* fileName, SkeletonComponent*& skeleton) override;
 
-		bool recordLoadedAnimation(const char* fileName, AnimationComponent* animation) override;
-		bool findLoadedAnimation(const char* fileName, AnimationComponent*& animation) override;
+		bool RecordLoadedAnimation(const char* fileName, AnimationComponent* animation) override;
+		bool FindLoadedAnimation(const char* fileName, AnimationComponent*& animation) override;
 
-		ArrayRangeInfo addMeshMaterialPairs(uint64_t count) override;
-		MeshMaterialPair* getMeshMaterialPair(uint64_t index) override;
+		ArrayRangeInfo AddMeshMaterialPairs(uint64_t count) override;
+		MeshMaterialPair* GetMeshMaterialPair(uint64_t index) override;
 
-		Model* addModel() override;
+		Model* AddModel() override;
 
-		Model* addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel) override;
-		bool generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent) override;
-		void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace) override;
+		Model* AddProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel) override;
+		bool GenerateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent) override;
+		void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace) override;
 	};
 }

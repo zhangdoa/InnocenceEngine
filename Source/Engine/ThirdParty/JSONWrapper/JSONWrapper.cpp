@@ -364,7 +364,7 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 
 	if (j.find("Meshes") != j.end())
 	{
-		l_result = g_Engine->getAssetSystem()->addModel();
+		l_result = g_Engine->getAssetSystem()->AddModel();
 		l_result->meshMaterialPairs = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
 	}
 
@@ -406,7 +406,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
 		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
-		g_Engine->getAssetSystem()->recordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
+		g_Engine->getAssetSystem()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
 		g_Engine->getRenderingFrontend()->InitializeAnimationComponent(l_ADC, AsyncUploadGPUResource);
 	}
 
@@ -415,13 +415,13 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 
 ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
 {
-	auto l_result = g_Engine->getAssetSystem()->addMeshMaterialPairs(j.size());
+	auto l_result = g_Engine->getAssetSystem()->AddMeshMaterialPairs(j.size());
 
 	uint64_t l_currentIndex = 0;
 
 	for (auto i : j)
 	{
-		auto l_currentMeshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
+		auto l_currentMeshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
 
 		// Load material data
 		if (i.find("Material") != i.end())
@@ -447,7 +447,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 			MeshMaterialPair* l_loadedMeshMaterialPair;
 
 			// check if this file has already been loaded once
-			if (g_Engine->getAssetSystem()->findLoadedMeshMaterialPair(l_meshFileName.c_str(), l_loadedMeshMaterialPair))
+			if (g_Engine->getAssetSystem()->FindLoadedMeshMaterialPair(l_meshFileName.c_str(), l_loadedMeshMaterialPair))
 			{
 				l_currentMeshMaterialPair = l_loadedMeshMaterialPair;
 			}
@@ -493,7 +493,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 
 				g_Engine->getRenderingFrontend()->InitializeMeshComponent(l_mesh, AsyncUploadGPUResource);
 
-				g_Engine->getAssetSystem()->recordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_currentMeshMaterialPair);
+				g_Engine->getAssetSystem()->RecordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_currentMeshMaterialPair);
 			}
 		}
 		else
@@ -514,7 +514,7 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 	SkeletonComponent* l_SamplerComp;
 
 	// check if this file has already been loaded once
-	if (g_Engine->getAssetSystem()->findLoadedSkeleton(name, l_SamplerComp))
+	if (g_Engine->getAssetSystem()->FindLoadedSkeleton(name, l_SamplerComp))
 	{
 		return l_SamplerComp;
 	}
@@ -534,7 +534,7 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 			l_SamplerComp->m_BoneData[i["ID"]] = l_boneData;
 		}
 
-		g_Engine->getAssetSystem()->recordLoadedSkeleton(name, l_SamplerComp);
+		g_Engine->getAssetSystem()->RecordLoadedSkeleton(name, l_SamplerComp);
 		g_Engine->getRenderingFrontend()->InitializeSkeletonComponent(l_SamplerComp, AsyncUploadGPUResource);
 
 		return l_SamplerComp;
@@ -554,7 +554,7 @@ MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const cha
 			std::string l_textureFile = i["File"];
 			size_t l_textureSlotIndex = i["TextureSlotIndex"];
 
-			auto l_TextureComp = g_Engine->getAssetSystem()->loadTexture(l_textureFile.c_str());
+			auto l_TextureComp = g_Engine->getAssetSystem()->LoadTexture(l_textureFile.c_str());
 			if (l_TextureComp)
 			{
 				l_TextureComp->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);

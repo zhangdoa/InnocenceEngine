@@ -481,7 +481,7 @@ namespace Inno
 		};
 
 		f_convertModel = []() {
-			g_Engine->getAssetSystem()->convertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
+			g_Engine->getAssetSystem()->ConvertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 		};
 
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
@@ -496,7 +496,7 @@ namespace Inno
 		{
 			for (uint64_t j = 0; j < model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
 				l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
 				l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
 				l_pair->material->m_materialAttributes.AlbedoB = albedo.z;

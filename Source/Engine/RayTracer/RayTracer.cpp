@@ -316,7 +316,7 @@ bool ExecuteRayTracing()
 			auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
 					auto l_hitable = new HitableSphere();
@@ -418,7 +418,7 @@ bool ExecuteRayTracing()
 	m_TextureComp->m_TextureData = &l_result[0];
 
 	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->getTimeSystem()->getCurrentTimeFromEpoch());
-	g_Engine->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TextureComp);
+	g_Engine->getAssetSystem()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
 
 	Logger::Log(LogLevel::Success, "RayTracer: Ray tracing finished.");
 

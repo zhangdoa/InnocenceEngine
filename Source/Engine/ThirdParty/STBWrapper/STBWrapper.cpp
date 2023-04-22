@@ -11,7 +11,7 @@ extern IEngine* g_Engine;
 #include "stb_image.h"
 #include "stb_image_write.h"
 
-TextureComponent* STBWrapper::loadTexture(const char* fileName)
+TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 {
 	int32_t width, height, nrChannels;
 
@@ -58,7 +58,7 @@ TextureComponent* STBWrapper::loadTexture(const char* fileName)
 	}
 }
 
-bool STBWrapper::saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
+bool STBWrapper::SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
 	int result = 1;
 	int32_t comp = (int32_t)textureDesc.PixelDataFormat;

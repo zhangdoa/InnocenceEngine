@@ -87,7 +87,7 @@ namespace Inno
 
                     for (uint64_t j = 0; j < visibleComponent->m_model->meshMaterialPairs.m_count; j++)
                     {
-                        auto l_meshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+                        auto l_meshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 
                         if (l_meshMaterialPair->material->m_ShaderModel == ShaderModel::Opaque)
                         {
@@ -198,7 +198,7 @@ namespace Inno
             auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0]->m_TextureDesc;
             l_TextureComp->m_TextureData = l_probePosTextureResults.data();
-            g_Engine->getAssetSystem()->saveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
+            g_Engine->getAssetSystem()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
             //#endif // DEBUG_
 
             auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, Config::Get().m_probeInterval);

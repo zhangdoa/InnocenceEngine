@@ -15,36 +15,36 @@ namespace Inno
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IAssetSystem);
 
-		virtual bool convertModel(const char* fileName, const char* exportPath) = 0;
-		virtual Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
-		virtual TextureComponent* loadTexture(const char* fileName) = 0;
-		virtual bool saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData) = 0;		
-		virtual bool saveTexture(const char* fileName, TextureComponent* TextureComp) = 0;
+		virtual bool ConvertModel(const char* fileName, const char* exportPath) = 0;
+		virtual Model* LoadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
+		virtual TextureComponent* LoadTexture(const char* fileName) = 0;
+		virtual bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData) = 0;		
+		virtual bool SaveTexture(const char* fileName, TextureComponent* TextureComp) = 0;
 
-		virtual bool loadAssetsForComponents(bool AsyncLoad = true) = 0;
+		virtual bool LoadAssetsForComponents(bool AsyncLoad = true) = 0;
 
-		virtual bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) = 0;
-		virtual bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) = 0;
+		virtual bool RecordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) = 0;
+		virtual bool FindLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) = 0;
 
-		virtual bool recordLoadedModel(const char* fileName, Model* model) = 0;
-		virtual bool findLoadedModel(const char* fileName, Model*& model) = 0;
+		virtual bool RecordLoadedModel(const char* fileName, Model* model) = 0;
+		virtual bool FindLoadedModel(const char* fileName, Model*& model) = 0;
 
-		virtual bool recordLoadedTexture(const char* fileName, TextureComponent* texture) = 0;
-		virtual bool findLoadedTexture(const char* fileName, TextureComponent*& texture) = 0;
+		virtual bool RecordLoadedTexture(const char* fileName, TextureComponent* texture) = 0;
+		virtual bool FindLoadedTexture(const char* fileName, TextureComponent*& texture) = 0;
 
-		virtual bool recordLoadedSkeleton(const char* fileName, SkeletonComponent* skeleton) = 0;
-		virtual bool findLoadedSkeleton(const char* fileName, SkeletonComponent*& skeleton) = 0;
+		virtual bool RecordLoadedSkeleton(const char* fileName, SkeletonComponent* skeleton) = 0;
+		virtual bool FindLoadedSkeleton(const char* fileName, SkeletonComponent*& skeleton) = 0;
 
-		virtual bool recordLoadedAnimation(const char* fileName, AnimationComponent* animation) = 0;
-		virtual bool findLoadedAnimation(const char* fileName, AnimationComponent*& animation) = 0;
+		virtual bool RecordLoadedAnimation(const char* fileName, AnimationComponent* animation) = 0;
+		virtual bool FindLoadedAnimation(const char* fileName, AnimationComponent*& animation) = 0;
 
-		virtual ArrayRangeInfo addMeshMaterialPairs(uint64_t count) = 0;
-		virtual MeshMaterialPair* getMeshMaterialPair(uint64_t index) = 0;
+		virtual ArrayRangeInfo AddMeshMaterialPairs(uint64_t count) = 0;
+		virtual MeshMaterialPair* GetMeshMaterialPair(uint64_t index) = 0;
 
-		virtual Model* addModel() = 0;
+		virtual Model* AddModel() = 0;
 
-		virtual Model* addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel = ShaderModel::Opaque) = 0;
-		virtual bool generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent) = 0;
-		virtual void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace) = 0;
+		virtual Model* AddProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel = ShaderModel::Opaque) = 0;
+		virtual bool GenerateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent) = 0;
+		virtual void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace) = 0;
 	};
 }

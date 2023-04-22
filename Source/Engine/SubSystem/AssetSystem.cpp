@@ -12,7 +12,7 @@ using namespace Inno;
 extern IEngine* g_Engine;
 
 #define recordLoaded( funcName, type, value ) \
-bool AssetSystem::recordLoaded##funcName(const char * fileName, type value) \
+bool AssetSystem::RecordLoaded##funcName(const char * fileName, type value) \
 { \
 	m_loaded##funcName.emplace(fileName, value); \
 \
@@ -20,7 +20,7 @@ bool AssetSystem::recordLoaded##funcName(const char * fileName, type value) \
 }
 
 #define findLoaded( funcName, type, value ) \
-bool AssetSystem::findLoaded##funcName(const char * fileName, type value) \
+bool AssetSystem::FindLoaded##funcName(const char * fileName, type value) \
 { \
 	auto l_loaded##funcName = m_loaded##funcName.find(fileName); \
 	if (l_loaded##funcName != m_loaded##funcName.end()) \
@@ -41,7 +41,7 @@ namespace AssetSystemNS
 {
 	void generateVertexBasedNormal(MeshComponent* meshComponent);
 	void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
-	void fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace = 0);
+	void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace = 0);
 	void addTriangle(MeshComponent* meshComponent);
 	void addSquare(MeshComponent* meshComponent);
 	void addPentagon(MeshComponent* meshComponent);
@@ -204,7 +204,7 @@ void AssetSystemNS::generateFaceBasedNormal(MeshComponent* meshComponent, uint32
 	}
 }
 
-void AssetSystemNS::fulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
+void AssetSystemNS::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
 {
 	meshComponent->m_Vertices.reserve(indices.size());
 	meshComponent->m_Vertices.fulfill();
@@ -250,7 +250,7 @@ void AssetSystemNS::addTetrahedron(MeshComponent* meshComponent)
 		Vec3(-1.0f, -1.0f, 1.0f)
 	};
 
-	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
+	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
 void AssetSystemNS::addCube(MeshComponent* meshComponent)
@@ -277,7 +277,7 @@ void AssetSystemNS::addCube(MeshComponent* meshComponent)
 		Vec3(-1.0f, 1.0f, -1.0f)
 	};
 
-	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 6);
+	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 6);
 }
 
 void AssetSystemNS::addOctahedron(MeshComponent* meshComponent)
@@ -300,7 +300,7 @@ void AssetSystemNS::addOctahedron(MeshComponent* meshComponent)
 		Vec3(0.0f, 0.0f, -1.0f)
 	};
 
-	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
+	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
 void AssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
@@ -347,7 +347,7 @@ void AssetSystemNS::addDodecahedron(MeshComponent* meshComponent)
 		Vec3(-1.61803398875f, -0.61803398875f, 0.0f)
 	};
 
-	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 9);
+	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 9);
 }
 
 void AssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
@@ -382,7 +382,7 @@ void AssetSystemNS::addIcosahedron(MeshComponent* meshComponent)
 		Vec3(-1.0f, 0.0f, 0.0f)
 	};
 
-	fulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
+	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
 }
 
 void AssetSystemNS::addSphere(MeshComponent* meshComponent)
@@ -526,13 +526,13 @@ bool AssetSystem::Setup(ISystemConfig* systemConfig)
 
 	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
-		i->m_model = loadModel(i->m_modelFileName.c_str(), AsyncLoad);
+		i->m_model = LoadModel(i->m_modelFileName.c_str(), AsyncLoad);
 	};
 
 	f_AssignProceduralModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
-		i->m_model = addProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
-		auto l_pair = getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
+		i->m_model = AddProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
+		auto l_pair = GetMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
 		g_Engine->getRenderingFrontend()->InitializeMaterialComponent(l_pair->material, AsyncLoad);
 	};
 
@@ -591,7 +591,7 @@ ObjectStatus AssetSystem::GetStatus()
 	return m_ObjectStatus;
 }
 
-bool AssetSystem::convertModel(const char* fileName, const char* exportPath)
+bool AssetSystem::ConvertModel(const char* fileName, const char* exportPath)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	std::string l_fileName = fileName;
@@ -600,7 +600,7 @@ bool AssetSystem::convertModel(const char* fileName, const char* exportPath)
 	{
 		auto tempTask = g_Engine->getTaskSystem()->Submit("ConvertModelTask", -1, nullptr, [=]()
 			{
-				AssimpWrapper::convertModel(l_fileName.c_str(), exportPath);
+				AssimpWrapper::ConvertModel(l_fileName.c_str(), exportPath);
 			});
 		return true;
 	}
@@ -612,21 +612,21 @@ bool AssetSystem::convertModel(const char* fileName, const char* exportPath)
 	}
 }
 
-Model* AssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
+Model* AssetSystem::LoadModel(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
 	{
 		Model* l_loadedModel;
 
-		if (findLoadedModel(fileName, l_loadedModel))
+		if (FindLoadedModel(fileName, l_loadedModel))
 		{
 			return l_loadedModel;
 		}
 		else
 		{
 			auto l_result = JSONWrapper::loadModelFromDisk(fileName, AsyncUploadGPUResource);
-			recordLoadedModel(fileName, l_result);
+			RecordLoadedModel(fileName, l_result);
 
 			return l_result;
 		}
@@ -638,36 +638,36 @@ Model* AssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
 	}
 }
 
-TextureComponent* AssetSystem::loadTexture(const char* fileName)
+TextureComponent* AssetSystem::LoadTexture(const char* fileName)
 {
 	TextureComponent* l_TextureComp;
 
-	if (findLoadedTexture(fileName, l_TextureComp))
+	if (FindLoadedTexture(fileName, l_TextureComp))
 	{
 		return l_TextureComp;
 	}
 	else
 	{
-		l_TextureComp = STBWrapper::loadTexture(fileName);
+		l_TextureComp = STBWrapper::LoadTexture(fileName);
 		if (l_TextureComp)
 		{
-			recordLoadedTexture(fileName, l_TextureComp);
+			RecordLoadedTexture(fileName, l_TextureComp);
 		}
 		return l_TextureComp;
 	}
 }
 
-bool AssetSystem::saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
+bool AssetSystem::SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
-    return STBWrapper::saveTexture(fileName, textureDesc, textureData);
+    return STBWrapper::SaveTexture(fileName, textureDesc, textureData);
 }
 
-bool AssetSystem::saveTexture(const char* fileName, TextureComponent* TextureComp)
+bool AssetSystem::SaveTexture(const char* fileName, TextureComponent* TextureComp)
 {
-	return STBWrapper::saveTexture(fileName, TextureComp->m_TextureDesc, TextureComp->m_TextureData);
+	return STBWrapper::SaveTexture(fileName, TextureComp->m_TextureDesc, TextureComp->m_TextureData);
 }
 
-bool AssetSystem::loadAssetsForComponents(bool AsyncLoad)
+bool AssetSystem::LoadAssetsForComponents(bool AsyncLoad)
 {
 	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 
@@ -727,7 +727,7 @@ findLoaded(Skeleton, SkeletonComponent*&, skeleton)
 recordLoaded(Animation, AnimationComponent*, animation)
 findLoaded(Animation, AnimationComponent*&, animation)
 
-ArrayRangeInfo AssetSystem::addMeshMaterialPairs(uint64_t count)
+ArrayRangeInfo AssetSystem::AddMeshMaterialPairs(uint64_t count)
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutexMeshMaterialPair };
 
@@ -745,36 +745,36 @@ ArrayRangeInfo AssetSystem::addMeshMaterialPairs(uint64_t count)
 	return l_result;
 }
 
-MeshMaterialPair* AssetSystem::getMeshMaterialPair(uint64_t index)
+MeshMaterialPair* AssetSystem::GetMeshMaterialPair(uint64_t index)
 {
 	return m_meshMaterialPairList[index];
 }
 
-Model* AssetSystem::addModel()
+Model* AssetSystem::AddModel()
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutexModel };
 
 	return m_modelPool->Spawn();
 }
 
-Model* AssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
+Model* AssetSystem::AddProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(shape);
 	auto l_material = g_Engine->getRenderingFrontend()->AddMaterialComponent();
 	l_material->m_ShaderModel = shaderModel;
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 
-	auto l_result = addModel();
-	l_result->meshMaterialPairs = addMeshMaterialPairs(1);
+	auto l_result = AddModel();
+	l_result->meshMaterialPairs = AddMeshMaterialPairs(1);
 
-	auto l_pair = getMeshMaterialPair(l_result->meshMaterialPairs.m_startOffset);
+	auto l_pair = GetMeshMaterialPair(l_result->meshMaterialPairs.m_startOffset);
 	l_pair->mesh = l_mesh;
 	l_pair->material = l_material;
 
 	return l_result;
 }
 
-bool AssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent)
+bool AssetSystem::GenerateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent)
 {
 	switch (shape)
 	{
@@ -814,7 +814,7 @@ bool AssetSystem::generateProceduralMesh(ProceduralMeshShape shape, MeshComponen
 	return true;
 }
 
-void AssetSystem::fulfillVerticesAndIndices(MeshComponent *meshComponent, const std::vector<Index> &indices, const std::vector<Vec3> &vertices, uint32_t verticesPerFace)
+void AssetSystem::FulfillVerticesAndIndices(MeshComponent *meshComponent, const std::vector<Index> &indices, const std::vector<Vec3> &vertices, uint32_t verticesPerFace)
 {
-	 AssetSystemNS::fulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
+	 AssetSystemNS::FulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
 }

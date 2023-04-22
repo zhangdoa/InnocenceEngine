@@ -164,7 +164,7 @@ ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 
 	for (uint64_t j = 0; j < VC->m_model->meshMaterialPairs.m_count; j++)
 	{
-		auto l_meshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
+		auto l_meshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
 
 		auto l_PDC = generatePhysicsComponent(l_meshMaterialPair);
 		l_PDC->m_TransformComponent = l_transformComponent;

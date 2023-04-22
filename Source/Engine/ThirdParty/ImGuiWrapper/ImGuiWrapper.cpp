@@ -437,7 +437,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 		{
 			for (uint64_t j = 0; j < l_rhs->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_meshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_meshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
 
 				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_meshMaterialPair->material))
 				{

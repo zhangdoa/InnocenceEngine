@@ -76,7 +76,7 @@ void AssimpWrapper::from_json(const json& j, aiMatrix4x4& m)
 	m.d4 = j["33"];
 }
 
-bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
+bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 {
 	auto l_exportFileName = IOService::getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
@@ -93,7 +93,15 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
-		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
+		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName, 
+		aiProcess_Triangulate 
+		| aiProcess_GenSmoothNormals 
+		| aiProcess_CalcTangentSpace 
+		| aiProcess_FlipUVs 
+		| aiProcess_JoinIdenticalVertices 
+		| aiProcess_SplitLargeMeshes
+		| aiProcess_OptimizeMeshes 
+		| aiProcess_OptimizeGraph);
 	}
 	else
 	{

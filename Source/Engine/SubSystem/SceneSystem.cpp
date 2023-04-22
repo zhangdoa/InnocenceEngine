@@ -91,7 +91,7 @@ bool SceneSystemNS::loadScene(const char* fileName)
 		(*i.first)();
 	}
 
-	g_Engine->getAssetSystem()->loadAssetsForComponents();
+	g_Engine->getAssetSystem()->LoadAssetsForComponents();
 
 	m_isLoadingScene = false;
 

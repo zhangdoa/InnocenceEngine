@@ -79,7 +79,7 @@ QString DirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_Engine->getAssetSystem()->convertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
+            g_Engine->getAssetSystem()->ConvertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
             break;
         case QMessageBox::No:
             g_Engine->getLogSystem()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());

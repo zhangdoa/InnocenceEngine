@@ -75,7 +75,7 @@ void Viewport::Resize(float width, float height)
         if (g_Engine->GetStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
-            g_Engine->getRenderingFrontend()->setScreenResolution(l_newResolution);
+            g_Engine->getRenderingFrontend()->SetScreenResolution(l_newResolution);
             g_Engine->getRenderingServer()->Resize();
         }
     }

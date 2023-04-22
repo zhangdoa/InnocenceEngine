@@ -18,7 +18,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
 		m_debugCameraFrustumMeshComps[i] = g_Engine->getRenderingServer()->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
-		g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
+		g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
 		m_debugCameraFrustumMeshComps[i]->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 		m_debugCameraFrustumMeshComps[i]->m_ProceduralMeshShape = ProceduralMeshShape::Cube;
 		m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
@@ -261,7 +261,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 					{
 						l_vertices[j] = l_cameraComponent->m_splitFrustumVerticesWS[i * 8 + j].m_pos;
 					}
-					g_Engine->getAssetSystem()->fulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
+					g_Engine->getAssetSystem()->FulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
 					g_Engine->getRenderingServer()->UpdateMeshComponent(m_debugCameraFrustumMeshComps[i]);
 
 					DebugPerObjectConstantBuffer l_meshData;
@@ -362,7 +362,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
 					{
-						auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
+						auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
 						auto l_skeleton = l_pair->mesh->m_SkeletonComp;
 
 						for (auto k : l_skeleton->m_BoneData)

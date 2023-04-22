@@ -254,23 +254,23 @@ bool RenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 
 bool RenderingFrontendNS::loadDefaultAssets()
 {
-	auto m_basicNormalTexture = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//basic_normal.png");
+	auto m_basicNormalTexture = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//basic_normal.png");
 	m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAlbedoTexture = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//basic_albedo.png");
+	auto m_basicAlbedoTexture = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//basic_albedo.png");
 	m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicMetallicTexture = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//basic_metallic.png");
+	auto m_basicMetallicTexture = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//basic_metallic.png");
 	m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicRoughnessTexture = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//basic_roughness.png");
+	auto m_basicRoughnessTexture = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//basic_roughness.png");
 	m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAOTexture = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//basic_ao.png");
+	auto m_basicAOTexture = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//basic_ao.png");
 	m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
@@ -285,74 +285,74 @@ bool RenderingFrontendNS::loadDefaultAssets()
 	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
 	m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
 
-	m_iconTemplate_DirectionalLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//WorldEditorIcons_DirectionalLight.png");
+	m_iconTemplate_DirectionalLight = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//WorldEditorIcons_DirectionalLight.png");
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_PointLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//WorldEditorIcons_PointLight.png");
+	m_iconTemplate_PointLight = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//WorldEditorIcons_PointLight.png");
 	m_iconTemplate_PointLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_PointLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_SphereLight = g_Engine->getAssetSystem()->loadTexture("..//Res//Textures//WorldEditorIcons_SphereLight.png");
+	m_iconTemplate_SphereLight = g_Engine->getAssetSystem()->LoadTexture("..//Res//Textures//WorldEditorIcons_SphereLight.png");
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
 	m_unitTriangleMesh = m_renderingServer->AddMeshComponent("UnitTriangleMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Triangle, m_unitTriangleMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Triangle, m_unitTriangleMesh);
 	m_unitTriangleMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitTriangleMesh->m_ProceduralMeshShape = ProceduralMeshShape::Triangle;
 	m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitSquareMesh = m_renderingServer->AddMeshComponent("UnitSquareMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Square, m_unitSquareMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Square, m_unitSquareMesh);
 	m_unitSquareMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSquareMesh->m_ProceduralMeshShape = ProceduralMeshShape::Square;
 	m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitPentagonMesh = m_renderingServer->AddMeshComponent("UnitPentagonMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Pentagon, m_unitPentagonMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Pentagon, m_unitPentagonMesh);
 	m_unitPentagonMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitPentagonMesh->m_ProceduralMeshShape = ProceduralMeshShape::Pentagon;
 	m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitHexagonMesh = m_renderingServer->AddMeshComponent("UnitHexagonMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Hexagon, m_unitHexagonMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Hexagon, m_unitHexagonMesh);
 	m_unitHexagonMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitHexagonMesh->m_ProceduralMeshShape = ProceduralMeshShape::Hexagon;
 	m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitTetrahedronMesh = m_renderingServer->AddMeshComponent("UnitTetrahedronMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Tetrahedron, m_unitTetrahedronMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Tetrahedron, m_unitTetrahedronMesh);
 	m_unitTetrahedronMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitTetrahedronMesh->m_ProceduralMeshShape = ProceduralMeshShape::Tetrahedron;
 	m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitCubeMesh = m_renderingServer->AddMeshComponent("UnitCubeMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Cube, m_unitCubeMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Cube, m_unitCubeMesh);
 	m_unitCubeMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitCubeMesh->m_ProceduralMeshShape = ProceduralMeshShape::Cube;
 	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitOctahedronMesh = m_renderingServer->AddMeshComponent("UnitOctahedronMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Octahedron, m_unitOctahedronMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Octahedron, m_unitOctahedronMesh);
 	m_unitOctahedronMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitOctahedronMesh->m_ProceduralMeshShape = ProceduralMeshShape::Octahedron;
 	m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitDodecahedronMesh = m_renderingServer->AddMeshComponent("UnitDodecahedronMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Dodecahedron, m_unitDodecahedronMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Dodecahedron, m_unitDodecahedronMesh);
 	m_unitDodecahedronMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitDodecahedronMesh->m_ProceduralMeshShape = ProceduralMeshShape::Dodecahedron;
 	m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitIcosahedronMesh = m_renderingServer->AddMeshComponent("UnitIcosahedronMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Icosahedron, m_unitIcosahedronMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Icosahedron, m_unitIcosahedronMesh);
 	m_unitIcosahedronMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitIcosahedronMesh->m_ProceduralMeshShape = ProceduralMeshShape::Icosahedron;
 	m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitSphereMesh = m_renderingServer->AddMeshComponent("UnitSphereMesh/");
-	g_Engine->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Sphere, m_unitSphereMesh);
+	g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Sphere, m_unitSphereMesh);
 	m_unitSphereMesh->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSphereMesh->m_ProceduralMeshShape = ProceduralMeshShape::Sphere;
 	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;

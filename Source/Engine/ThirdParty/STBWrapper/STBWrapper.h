@@ -6,7 +6,7 @@ namespace Inno
 {
 	namespace STBWrapper
 	{
-		TextureComponent* loadTexture(const char* fileName);
-		bool saveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
+		TextureComponent* LoadTexture(const char* fileName);
+		bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
 	};
 }
