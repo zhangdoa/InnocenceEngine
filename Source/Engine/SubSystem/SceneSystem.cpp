@@ -167,7 +167,7 @@ ObjectStatus SceneSystem::GetStatus()
 
 std::string SceneSystem::getCurrentSceneName()
 {
-	auto l_currentSceneName = m_currentScene.substr(0, m_currentScene.find(".Scene"));
+	auto l_currentSceneName = m_currentScene.substr(0, m_currentScene.find(".InnoScene"));
 	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
 	return l_currentSceneName;
 }
