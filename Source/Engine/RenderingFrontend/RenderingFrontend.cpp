@@ -234,9 +234,9 @@ bool RenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 	{
 		// @TODO:
 		std::vector<BillboardPassDrawCallInfo> l_billboardPassDrawCallInfoVectorA(3);
-		l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->getRenderingFrontend()->getTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-		l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->getRenderingFrontend()->getTextureComponent(WorldEditorIconType::POINT_LIGHT);
-		l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->getRenderingFrontend()->getTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
+		l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->getRenderingFrontend()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
+		l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->getRenderingFrontend()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
+		l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->getRenderingFrontend()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
 		auto l_billboardPassDrawCallInfoVectorB = l_billboardPassDrawCallInfoVectorA;
 
 		m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorA));
@@ -849,27 +849,27 @@ ObjectStatus RenderingFrontend::GetStatus()
 	return RenderingFrontendNS::m_ObjectStatus;
 }
 
-bool RenderingFrontend::runRayTrace()
+bool RenderingFrontend::RunRayTracing()
 {
 	return RenderingFrontendNS::m_rayTracer->Execute();
 }
 
-MeshComponent* RenderingFrontend::addMeshComponent()
+MeshComponent* RenderingFrontend::AddMeshComponent()
 {
 	return RenderingFrontendNS::m_renderingServer->AddMeshComponent();
 }
 
-TextureComponent* RenderingFrontend::addTextureComponent()
+TextureComponent* RenderingFrontend::AddTextureComponent()
 {
 	return RenderingFrontendNS::m_renderingServer->AddTextureComponent();
 }
 
-MaterialComponent* RenderingFrontend::addMaterialComponent()
+MaterialComponent* RenderingFrontend::AddMaterialComponent()
 {
 	return RenderingFrontendNS::m_renderingServer->AddMaterialComponent();
 }
 
-SkeletonComponent* RenderingFrontend::addSkeletonComponent()
+SkeletonComponent* RenderingFrontend::AddSkeletonComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_parentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
@@ -882,7 +882,7 @@ SkeletonComponent* RenderingFrontend::addSkeletonComponent()
 	return l_SDC;
 }
 
-AnimationComponent* RenderingFrontend::addAnimationComponent()
+AnimationComponent* RenderingFrontend::AddAnimationComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_parentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
@@ -895,7 +895,7 @@ AnimationComponent* RenderingFrontend::addAnimationComponent()
 	return l_ADC;
 }
 
-MeshComponent* RenderingFrontend::getMeshComponent(ProceduralMeshShape shape)
+MeshComponent* RenderingFrontend::GetMeshComponent(ProceduralMeshShape shape)
 {
 	switch (shape)
 	{
@@ -936,7 +936,7 @@ MeshComponent* RenderingFrontend::getMeshComponent(ProceduralMeshShape shape)
 	}
 }
 
-TextureComponent* RenderingFrontend::getTextureComponent(WorldEditorIconType iconType)
+TextureComponent* RenderingFrontend::GetTextureComponent(WorldEditorIconType iconType)
 {
 	switch (iconType)
 	{
@@ -951,12 +951,12 @@ TextureComponent* RenderingFrontend::getTextureComponent(WorldEditorIconType ico
 	}
 }
 
-MaterialComponent* RenderingFrontend::getDefaultMaterialComponent()
+MaterialComponent* RenderingFrontend::GetDefaultMaterialComponent()
 {
 	return m_defaultMaterial;
 }
 
-bool RenderingFrontend::transferDataToGPU()
+bool RenderingFrontend::TransferDataToGPU()
 {
 	while (m_uninitializedMeshes.size() > 0)
 	{
@@ -994,7 +994,7 @@ bool RenderingFrontend::transferDataToGPU()
 	return true;
 }
 
-bool RenderingFrontend::registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::InitializeMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1010,7 +1010,7 @@ bool RenderingFrontend::registerMeshComponent(MeshComponent* rhs, bool AsyncUplo
 	return true;
 }
 
-bool RenderingFrontend::registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::InitializeMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1026,14 +1026,14 @@ bool RenderingFrontend::registerMaterialComponent(MaterialComponent* rhs, bool A
 	return true;
 }
 
-bool RenderingFrontend::registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::InitializeSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU)
 {
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool RenderingFrontend::registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU)
+bool RenderingFrontend::InitializeAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -1049,39 +1049,39 @@ bool RenderingFrontend::registerAnimationComponent(AnimationComponent* rhs, bool
 	return true;
 }
 
-TVec2<uint32_t> RenderingFrontend::getScreenResolution()
+TVec2<uint32_t> RenderingFrontend::GetScreenResolution()
 {
 	return m_screenResolution;
 }
 
-bool RenderingFrontend::setScreenResolution(TVec2<uint32_t> screenResolution)
+bool RenderingFrontend::SetScreenResolution(TVec2<uint32_t> screenResolution)
 {
 	m_screenResolution = screenResolution;
 	return true;
 }
 
-RenderingConfig RenderingFrontend::getRenderingConfig()
+RenderingConfig RenderingFrontend::GetRenderingConfig()
 {
 	return m_renderingConfig;
 }
 
-bool RenderingFrontend::setRenderingConfig(RenderingConfig renderingConfig)
+bool RenderingFrontend::SetRenderingConfig(RenderingConfig renderingConfig)
 {
 	m_renderingConfig = renderingConfig;
 	return true;
 }
 
-RenderingCapability RenderingFrontend::getRenderingCapability()
+RenderingCapability RenderingFrontend::GetRenderingCapability()
 {
 	return m_renderingCapability;
 }
 
-RenderPassDesc RenderingFrontend::getDefaultRenderPassDesc()
+RenderPassDesc RenderingFrontend::GetDefaultRenderPassDesc()
 {
 	return m_DefaultRenderPassDesc;
 }
 
-bool RenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping)
+bool RenderingFrontend::PlayAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping)
 {
 	auto l_animationData = getAnimationData(animationName);
 
@@ -1102,7 +1102,7 @@ bool RenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animati
 	return false;
 }
 
-bool RenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* animationName)
+bool RenderingFrontend::StopAnimation(VisibleComponent* rhs, const char* animationName)
 {
 	auto l_result = m_animationInstanceMap.find(rhs->m_UUID);
 	if (l_result != m_animationInstanceMap.end())
@@ -1115,67 +1115,67 @@ bool RenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* animati
 	return false;
 }
 
-const PerFrameConstantBuffer& RenderingFrontend::getPerFrameConstantBuffer()
+const PerFrameConstantBuffer& RenderingFrontend::GetPerFrameConstantBuffer()
 {
 	return m_perFrameCB.GetNewValue();
 }
 
-const std::vector<CSMConstantBuffer>& RenderingFrontend::getCSMConstantBuffer()
+const std::vector<CSMConstantBuffer>& RenderingFrontend::GetCSMConstantBuffer()
 {
 	return m_CSMCBVector.GetNewValue();
 }
 
-const std::vector<PointLightConstantBuffer>& RenderingFrontend::getPointLightConstantBuffer()
+const std::vector<PointLightConstantBuffer>& RenderingFrontend::GetPointLightConstantBuffer()
 {
 	return m_pointLightCBVector.GetNewValue();
 }
 
-const std::vector<SphereLightConstantBuffer>& RenderingFrontend::getSphereLightConstantBuffer()
+const std::vector<SphereLightConstantBuffer>& RenderingFrontend::GetSphereLightConstantBuffer()
 {
 	return m_sphereLightCBVector.GetNewValue();
 }
 
-const std::vector<DrawCallInfo>& RenderingFrontend::getDrawCallInfo()
+const std::vector<DrawCallInfo>& RenderingFrontend::GetDrawCallInfo()
 {
 	return m_drawCallInfoVector.GetNewValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& RenderingFrontend::getPerObjectConstantBuffer()
+const std::vector<PerObjectConstantBuffer>& RenderingFrontend::GetPerObjectConstantBuffer()
 {
 	return m_perObjectCBVector.GetNewValue();
 }
 
-const std::vector<MaterialConstantBuffer>& RenderingFrontend::getMaterialConstantBuffer()
+const std::vector<MaterialConstantBuffer>& RenderingFrontend::GetMaterialConstantBuffer()
 {
 	return m_materialCBVector.GetNewValue();
 }
 
-const std::vector<AnimationDrawCallInfo>& RenderingFrontend::getAnimationDrawCallInfo()
+const std::vector<AnimationDrawCallInfo>& RenderingFrontend::GetAnimationDrawCallInfo()
 {
 	return m_animationDrawCallInfoVector.GetNewValue();
 }
 
-const std::vector<AnimationConstantBuffer>& RenderingFrontend::getAnimationConstantBuffer()
+const std::vector<AnimationConstantBuffer>& RenderingFrontend::GetAnimationConstantBuffer()
 {
 	return m_animationCBVector.GetNewValue();
 }
 
-const std::vector<BillboardPassDrawCallInfo>& RenderingFrontend::getBillboardPassDrawCallInfo()
+const std::vector<BillboardPassDrawCallInfo>& RenderingFrontend::GetBillboardPassDrawCallInfo()
 {
 	return m_billboardPassDrawCallInfoVector.GetNewValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& RenderingFrontend::getBillboardPassPerObjectConstantBuffer()
+const std::vector<PerObjectConstantBuffer>& RenderingFrontend::GetBillboardPassPerObjectConstantBuffer()
 {
 	return m_billboardPassPerObjectCB.GetNewValue();
 }
 
-const std::vector<DebugPassDrawCallInfo>& RenderingFrontend::getDebugPassDrawCallInfo()
+const std::vector<DebugPassDrawCallInfo>& RenderingFrontend::GetDebugPassDrawCallInfo()
 {
 	return m_debugPassDrawCallInfoVector.GetNewValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& RenderingFrontend::getDebugPassPerObjectConstantBuffer()
+const std::vector<PerObjectConstantBuffer>& RenderingFrontend::GetDebugPassPerObjectConstantBuffer()
 {
 	return m_debugPassPerObjectCB.GetNewValue();
 }

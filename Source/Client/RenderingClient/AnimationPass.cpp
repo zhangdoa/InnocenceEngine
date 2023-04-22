@@ -18,7 +18,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("AnimationPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_UseColorBuffer = false;
@@ -143,7 +143,7 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 	auto l_AnimationGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Animation);
 
-	auto& l_AnimationDrawCallInfo = g_Engine->getRenderingFrontend()->getAnimationDrawCallInfo();
+	auto& l_AnimationDrawCallInfo = g_Engine->getRenderingFrontend()->GetAnimationDrawCallInfo();
 
 	if (l_AnimationDrawCallInfo.size())
 	{

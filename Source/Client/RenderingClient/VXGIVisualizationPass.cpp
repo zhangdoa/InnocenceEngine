@@ -20,8 +20,8 @@ bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelVisualizationPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;

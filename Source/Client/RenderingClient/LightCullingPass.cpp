@@ -23,7 +23,7 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 
 	auto l_averangeOverlapLight = 64;
 
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / m_tileSize);
 	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / m_tileSize);
@@ -38,7 +38,7 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	m_lightIndexList->m_ElementCount = l_elementCount;
 	m_lightIndexList->m_ElementSize = sizeof(uint32_t);
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	

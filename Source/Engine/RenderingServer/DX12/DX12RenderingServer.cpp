@@ -297,7 +297,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	for (uint32_t i = 0; i < l_numModes; i++)
 	{
@@ -602,7 +602,7 @@ bool DX12RenderingServerNS::CreateSwapChain()
 	// Set the swap chain to use double buffering.
 	m_swapChainDesc.BufferCount = m_swapChainImageCount;
 
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	// Set the width and height of the back buffer.
 	m_swapChainDesc.Width = (UINT)l_screenResolution.x;
@@ -761,7 +761,7 @@ DX12Semaphore *addSemaphore()
 
 bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 {
-	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
+	auto l_renderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
 
 	m_MeshComponentPool = TObjectPool<DX12MeshComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureComponentPool = TObjectPool<DX12TextureComponent>::Create(l_renderingCapability.maxTextures);
@@ -810,7 +810,7 @@ bool DX12RenderingServer::Initialize()
 		InitializeSamplerComponent(m_SwapChainSamplerComp);
 
 		// Create command queue first
-		auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+		auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = m_swapChainImageCount;
 
@@ -1133,7 +1133,7 @@ bool DX12RenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 	}
 
 	auto l_rhs = reinterpret_cast<DX12MaterialComponent *>(rhs);
-	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialComponent();
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->GetDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -2160,7 +2160,7 @@ bool DX12RenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 

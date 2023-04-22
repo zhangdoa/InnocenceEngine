@@ -14,7 +14,7 @@ using namespace DefaultGPUBuffers;
 
 bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	m_atomicCounterGPUBufferComp = g_Engine->getRenderingServer()->AddGPUBufferComponent("TransparentPassAtomicCounter/");
 	m_atomicCounterGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -159,7 +159,7 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6, Accessibility::ReadWrite);
 
-	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

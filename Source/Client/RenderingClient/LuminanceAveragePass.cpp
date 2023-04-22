@@ -12,7 +12,7 @@ using namespace DefaultGPUBuffers;
 
 bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 {	
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;

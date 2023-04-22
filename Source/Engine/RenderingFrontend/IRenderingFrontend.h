@@ -74,54 +74,54 @@ namespace Inno
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingFrontend);
 
-		virtual bool runRayTrace() = 0;
+		virtual bool RunRayTracing() = 0;
 
-		virtual MeshComponent* addMeshComponent() = 0;
-		virtual TextureComponent* addTextureComponent() = 0;
-		virtual MaterialComponent* addMaterialComponent() = 0;
-		virtual SkeletonComponent* addSkeletonComponent() = 0;
-		virtual AnimationComponent* addAnimationComponent() = 0;
+		virtual MeshComponent* AddMeshComponent() = 0;
+		virtual TextureComponent* AddTextureComponent() = 0;
+		virtual MaterialComponent* AddMaterialComponent() = 0;
+		virtual SkeletonComponent* AddSkeletonComponent() = 0;
+		virtual AnimationComponent* AddAnimationComponent() = 0;
 
-		virtual bool registerMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU = true) = 0;
-		virtual bool registerMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU = true) = 0;
-		virtual bool registerSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU = true) = 0;
-		virtual bool registerAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool InitializeMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool InitializeMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool InitializeSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+		virtual bool InitializeAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU = true) = 0;
 
-		virtual MeshComponent* getMeshComponent(ProceduralMeshShape shape) = 0;
-		virtual TextureComponent* getTextureComponent(WorldEditorIconType iconType) = 0;
-		virtual MaterialComponent* getDefaultMaterialComponent() = 0;
+		virtual MeshComponent* GetMeshComponent(ProceduralMeshShape shape) = 0;
+		virtual TextureComponent* GetTextureComponent(WorldEditorIconType iconType) = 0;
+		virtual MaterialComponent* GetDefaultMaterialComponent() = 0;
 
-		virtual bool transferDataToGPU() = 0;
+		virtual bool TransferDataToGPU() = 0;
 
-		virtual TVec2<uint32_t> getScreenResolution() = 0;
-		virtual bool setScreenResolution(TVec2<uint32_t> screenResolution) = 0;
+		virtual TVec2<uint32_t> GetScreenResolution() = 0;
+		virtual bool SetScreenResolution(TVec2<uint32_t> screenResolution) = 0;
 
-		virtual RenderingConfig getRenderingConfig() = 0;
-		virtual bool setRenderingConfig(RenderingConfig renderingConfig) = 0;
+		virtual RenderingConfig GetRenderingConfig() = 0;
+		virtual bool SetRenderingConfig(RenderingConfig renderingConfig) = 0;
 
-		virtual RenderingCapability getRenderingCapability() = 0;
+		virtual RenderingCapability GetRenderingCapability() = 0;
 
-		virtual RenderPassDesc getDefaultRenderPassDesc() = 0;
+		virtual RenderPassDesc GetDefaultRenderPassDesc() = 0;
 
-		virtual bool playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping = false) = 0;
-		virtual bool stopAnimation(VisibleComponent* rhs, const char* animationName) = 0;
+		virtual bool PlayAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping = false) = 0;
+		virtual bool StopAnimation(VisibleComponent* rhs, const char* animationName) = 0;
 
-		virtual const PerFrameConstantBuffer& getPerFrameConstantBuffer() = 0;
-		virtual const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() = 0;
-		virtual const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() = 0;
-		virtual const std::vector<SphereLightConstantBuffer>& getSphereLightConstantBuffer() = 0;
+		virtual const PerFrameConstantBuffer& GetPerFrameConstantBuffer() = 0;
+		virtual const std::vector<CSMConstantBuffer>& GetCSMConstantBuffer() = 0;
+		virtual const std::vector<PointLightConstantBuffer>& GetPointLightConstantBuffer() = 0;
+		virtual const std::vector<SphereLightConstantBuffer>& GetSphereLightConstantBuffer() = 0;
 
-		virtual const std::vector<DrawCallInfo>& getDrawCallInfo() = 0;
-		virtual const std::vector<PerObjectConstantBuffer>& getPerObjectConstantBuffer() = 0;
-		virtual const std::vector<MaterialConstantBuffer>& getMaterialConstantBuffer() = 0;
+		virtual const std::vector<DrawCallInfo>& GetDrawCallInfo() = 0;
+		virtual const std::vector<PerObjectConstantBuffer>& GetPerObjectConstantBuffer() = 0;
+		virtual const std::vector<MaterialConstantBuffer>& GetMaterialConstantBuffer() = 0;
 
-		virtual const std::vector<AnimationDrawCallInfo>& getAnimationDrawCallInfo() = 0;
-		virtual const std::vector<AnimationConstantBuffer>& getAnimationConstantBuffer() = 0;
+		virtual const std::vector<AnimationDrawCallInfo>& GetAnimationDrawCallInfo() = 0;
+		virtual const std::vector<AnimationConstantBuffer>& GetAnimationConstantBuffer() = 0;
 
-		virtual const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() = 0;
-		virtual const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() = 0;
+		virtual const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo() = 0;
+		virtual const std::vector<PerObjectConstantBuffer>& GetBillboardPassPerObjectConstantBuffer() = 0;
 
-		virtual const std::vector<DebugPassDrawCallInfo>& getDebugPassDrawCallInfo() = 0;
-		virtual const std::vector<PerObjectConstantBuffer>& getDebugPassPerObjectConstantBuffer() = 0;
+		virtual const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo() = 0;
+		virtual const std::vector<PerObjectConstantBuffer>& GetDebugPassPerObjectConstantBuffer() = 0;
 	};
 }

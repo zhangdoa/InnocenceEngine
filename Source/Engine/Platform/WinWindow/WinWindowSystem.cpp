@@ -279,7 +279,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
-			g_Engine->getRenderingFrontend()->setScreenResolution(l_newResolution);
+			g_Engine->getRenderingFrontend()->SetScreenResolution(l_newResolution);
 			g_Engine->getRenderingServer()->Resize();
 		}
 	}

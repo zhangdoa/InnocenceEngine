@@ -12,7 +12,7 @@ using namespace DefaultGPUBuffers;
 
 bool TransparentBlendPass::Setup(ISystemConfig *systemConfig)
 {
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("TransparentBlendPassRT0/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;

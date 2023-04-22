@@ -120,7 +120,7 @@ extern IEngine* g_Engine;
     
 - (void)render
 {
-        auto l_perFrameGPUData = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
+        auto l_perFrameGPUData = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer();
         updateUBO(_perFrameUBO, &l_perFrameGPUData, sizeof(l_perFrameGPUData));
     
         MTLRenderPassDescriptor* passDescriptor = [_view currentRenderPassDescriptor];
@@ -132,7 +132,7 @@ extern IEngine* g_Engine;
         [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [commandEncoder setCullMode:MTLCullModeFront];
     
-        auto l_MeshComp = reinterpret_cast<MTMeshComponent*>(g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square));
+        auto l_MeshComp = reinterpret_cast<MTMeshComponent*>(g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square));
         encodeDrawCall(commandEncoder, l_MeshComp);
         [commandEncoder endEncoding];
         [commandBuffer presentDrawable:drawable];

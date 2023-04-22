@@ -70,6 +70,6 @@ ObjectStatus ImGuiRendererDX12::GetStatus()
 
 void ImGuiRendererDX12::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

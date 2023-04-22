@@ -225,7 +225,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 				g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_probeGPUBufferComp);
 
-				auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+				auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 				m_probeVolume = g_Engine->getRenderingServer()->AddTextureComponent("ProbeVolume/");
 				m_probeVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
@@ -350,7 +350,7 @@ bool GIResolvePass::Initialize()
 
 bool GIResolvePass::setupSky()
 {
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -426,7 +426,7 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("GIResolveSurfelPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -479,7 +479,7 @@ bool GIResolvePass::setupBricks()
 
 	m_brickRenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("GIResolveBrickPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -525,7 +525,7 @@ bool GIResolvePass::setupProbes()
 
 	m_probeRenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("GIResolveProbePass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -582,7 +582,7 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	m_irradianceVolumeRenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("GIResolveIrradianceVolumePass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -859,9 +859,9 @@ bool GIResolvePass::PrepareCommandList()
 	{
 		auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 		auto l_GIGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::GI);
-		auto l_cameraConstantBuffer = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
+		auto l_cameraConstantBuffer = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer();
 
-		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
+		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer();
 		l_PerFrameConstantBuffer.posWSNormalizer = m_irradianceVolumeRange;
 
 		GIConstantBuffer l_GIConstantBuffer;

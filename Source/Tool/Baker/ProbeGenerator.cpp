@@ -21,13 +21,13 @@ namespace Inno
     {
         void ProbeGenerator::setup()
         {
-            auto l_RenderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
+            auto l_RenderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
 
             Config::Get().m_staticMeshDrawCallInfo.reserve(l_RenderingCapability.maxMeshes);
             Config::Get().m_staticMeshPerObjectConstantBuffer.reserve(l_RenderingCapability.maxMeshes);
             Config::Get().m_staticMeshMaterialConstantBuffer.reserve(l_RenderingCapability.maxMaterials);
 
-            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
 

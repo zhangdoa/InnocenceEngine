@@ -20,7 +20,7 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("FinalBlendPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -98,7 +98,7 @@ ObjectStatus FinalBlendPass::GetStatus()
 bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);

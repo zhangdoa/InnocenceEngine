@@ -22,7 +22,7 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelScreenSpaceFeedbackPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelScreenSpaceFeedbackVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
@@ -106,7 +106,7 @@ ObjectStatus VXGIScreenSpaceFeedbackPass::GetStatus()
 bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_renderingContext = reinterpret_cast<VXGIScreenSpaceFeedbackPassRenderingContext*>(renderingContext);
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 	auto l_perFrameGPUBufferComp = DefaultGPUBuffers::GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);

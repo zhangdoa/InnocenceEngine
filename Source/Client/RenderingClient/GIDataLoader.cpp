@@ -130,7 +130,7 @@ bool GIDataLoader::Setup()
 		}
 	}
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	m_testSampleCubemap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSampleCubemap->m_TextureDesc.Sampler = TextureSampler::SamplerCubemap;

@@ -10,7 +10,7 @@ using namespace DefaultGPUBuffers;
 
 bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
-	m_shadowMapResolution = g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution;
+	m_shadowMapResolution = g_Engine->getRenderingFrontend()->GetRenderingConfig().shadowMapResolution;
 
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
 
@@ -20,7 +20,7 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -123,7 +123,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_CSMGPUBufferComp, 2, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4, Accessibility::ReadOnly);
 
-	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

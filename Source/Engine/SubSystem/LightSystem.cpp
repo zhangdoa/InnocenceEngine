@@ -63,7 +63,7 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 
 	auto l_AABB = Math::generateAABB(l_max, l_min);
 	l_AABB = Math::extendAABBToBoundingSphere(l_AABB);
-	l_AABB = SnapAABBToShadowMap(l_AABB, static_cast<float>(g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution));
+	l_AABB = SnapAABBToShadowMap(l_AABB, static_cast<float>(g_Engine->getRenderingFrontend()->GetRenderingConfig().shadowMapResolution));
 	rhs->m_SplitAABBWS.emplace_back(l_AABB);
 
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
@@ -113,7 +113,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 		l_aabbLS.m_extend = l_aabbLS.m_boundMax - l_aabbLS.m_boundMin;
 		l_aabbLS.m_center = l_aabbLS.m_boundMax - l_aabbLS.m_extend * 0.5f;
 
-		l_aabbLS = SnapAABBToShadowMap(l_aabbLS, static_cast<float>(g_Engine->getRenderingFrontend()->getRenderingConfig().shadowMapResolution));
+		l_aabbLS = SnapAABBToShadowMap(l_aabbLS, static_cast<float>(g_Engine->getRenderingFrontend()->GetRenderingConfig().shadowMapResolution));
 		rhs->m_SplitAABBLS.emplace_back(l_aabbLS);
 
 		auto l_v = l_rInv;
@@ -170,7 +170,7 @@ bool LightSystem::Initialize()
 
 bool LightSystem::Update()
 {
-	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
 	auto l_components = g_Engine->getComponentManager()->GetAll<LightComponent>();
 	for (auto i : l_components)
 	{

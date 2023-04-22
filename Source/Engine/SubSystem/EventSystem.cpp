@@ -185,7 +185,7 @@ void EventSystemNS::buttonStateCallback(ButtonState buttonState)
 void EventSystemNS::windowSizeCallback(int32_t width, int32_t height)
 {
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
-	g_Engine->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
+	g_Engine->getRenderingFrontend()->SetScreenResolution(l_newScreenResolution);
 	g_Engine->getRenderingServer()->Resize();
 }
 

@@ -17,7 +17,7 @@ bool OpaquePass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("OpaquePass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -129,7 +129,7 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 8);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 
-	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

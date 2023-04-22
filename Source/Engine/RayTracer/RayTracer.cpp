@@ -435,7 +435,7 @@ bool RayTracer::Initialize()
 {
 	const int l_denom = 2;
 
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("RayTracingResult/");
 

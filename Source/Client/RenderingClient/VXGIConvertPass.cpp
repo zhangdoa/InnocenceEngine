@@ -14,7 +14,7 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	m_luminanceVolume = g_Engine->getRenderingServer()->AddTextureComponent("VoxelLuminanceVolume/");
 	m_luminanceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;

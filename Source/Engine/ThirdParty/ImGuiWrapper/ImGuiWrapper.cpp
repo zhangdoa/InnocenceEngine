@@ -183,7 +183,7 @@ bool ImGuiWrapper::Initialize()
 		l_workingDir += "..//Res//Fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
 
-		ImGuiWrapperNS::m_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+		ImGuiWrapperNS::m_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
 	}
 
 	return true;
@@ -258,7 +258,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Run ray trace"))
 	{
-		g_Engine->getRenderingFrontend()->runRayTrace();
+		g_Engine->getRenderingFrontend()->RunRayTracing();
 	}
 
 	static char scene_filePath[128];
@@ -275,7 +275,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	ImGui::End();
 
-	g_Engine->getRenderingFrontend()->setRenderingConfig(m_renderingConfig);
+	g_Engine->getRenderingFrontend()->SetRenderingConfig(m_renderingConfig);
 }
 
 void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)

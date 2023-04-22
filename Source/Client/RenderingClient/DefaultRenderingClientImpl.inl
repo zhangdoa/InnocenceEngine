@@ -188,7 +188,7 @@ namespace Inno
 		};
 
 		f_RenderJob = [&]() {
-			auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+			auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
 			auto l_renderingServer = g_Engine->getRenderingServer();
 			GPUResourceComponent* l_canvas;
 			RenderPassComponent* l_canvasOwner;

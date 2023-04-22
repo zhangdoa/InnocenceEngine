@@ -501,7 +501,7 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	{
 		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
-		m_RenderingFrontend->transferDataToGPU();
+		m_RenderingFrontend->TransferDataToGPU();
 
 		m_RenderingClient->Render();
 

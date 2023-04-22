@@ -16,7 +16,7 @@ bool PostTAAPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("PostTAAPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -74,7 +74,7 @@ ObjectStatus PostTAAPass::GetStatus()
 bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);	
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);

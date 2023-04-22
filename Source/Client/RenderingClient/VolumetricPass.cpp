@@ -58,7 +58,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 
 	m_froxelizationRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricGeometryProcessPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 2;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -116,7 +116,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 
 	m_irraidanceInjectionSPC->m_ShaderFilePaths.m_CSPath = "volumetricIrraidanceInjectionPass.comp/";
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -193,7 +193,7 @@ bool VolumetricPass::setupRayMarchingPass()
 
 	m_rayMarchingSPC->m_ShaderFilePaths.m_CSPath = "volumetricRayMarchingPass.comp/";
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -266,8 +266,8 @@ bool VolumetricPass::setupVisualizationPass()
 
 	m_visualizationRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricVisualizationPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -326,7 +326,7 @@ bool VolumetricPass::Setup()
 	setupVisualizationPass();
 
 	////
-	auto l_textureDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc().m_RenderTargetDesc;
+	auto l_textureDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc().m_RenderTargetDesc;
 
 	l_textureDesc.Sampler = TextureSampler::Sampler3D;
 	l_textureDesc.Usage = TextureUsage::Sample;
@@ -387,7 +387,7 @@ bool VolumetricPass::froxelization()
 	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3, Accessibility::ReadWrite);
 	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1], 4, Accessibility::ReadWrite);
 
-	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -545,7 +545,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
 
-	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

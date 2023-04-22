@@ -12,7 +12,7 @@ using namespace DefaultGPUBuffers;
 
 bool SunShadowBlurOddPass::Setup(ISystemConfig *systemConfig)
 {
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;

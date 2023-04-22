@@ -431,7 +431,7 @@ namespace Inno
 
 		runTest(512, l_testQuatToMat);
 
-		f_runRayTracing = [&]() { g_Engine->getRenderingFrontend()->runRayTrace(); };
+		f_runRayTracing = [&]() { g_Engine->getRenderingFrontend()->RunRayTracing(); };
 		f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
@@ -562,7 +562,7 @@ namespace Inno
 
 	Vec4 WorldSystem::getMousePositionInWorldSpace()
 	{
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
 		auto l_mousePositionSS = g_Engine->getEventSystem()->getMousePosition();
 
 		auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;

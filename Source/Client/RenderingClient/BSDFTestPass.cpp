@@ -20,7 +20,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BSDFTestPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -71,7 +71,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("BSDFTestPass/");
 
 	//
-	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
+	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
 
 	m_meshConstantBuffer.resize(l_RenderingCapability.maxMeshes);
 	m_materialConstantBuffer.resize(l_RenderingCapability.maxMaterials);
@@ -151,7 +151,7 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Sphere);
+	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Sphere);
 
 	uint32_t l_offset = 0;
 

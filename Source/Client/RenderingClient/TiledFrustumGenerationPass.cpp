@@ -12,7 +12,7 @@ using namespace DefaultGPUBuffers;
 
 bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 {	
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	auto l_numThreadsX = std::ceil(l_viewportSize.x / m_tileSize);
 	auto l_numThreadsY = std::ceil(l_viewportSize.y / m_tileSize);
@@ -33,7 +33,7 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_SPC->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";	
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 

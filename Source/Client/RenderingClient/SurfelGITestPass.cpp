@@ -29,7 +29,7 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SurfelGITestPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -196,7 +196,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 			m_probeSphereMeshData.emplace_back(l_probeMeshData);
 		}
 
-		auto l_sphere = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Sphere);
+		auto l_sphere = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Sphere);
 
 		g_Engine->getRenderingServer()->UploadGPUBufferComponent(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 

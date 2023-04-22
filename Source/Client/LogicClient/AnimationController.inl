@@ -33,11 +33,11 @@ namespace Inno
             m_visibleComponent = g_Engine->getComponentManager()->Find<VisibleComponent>(*l_entity);
 
             std::function<void()> f_idle = [&]() {
-                g_Engine->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+                g_Engine->getRenderingFrontend()->PlayAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
             };
 
             std::function<void()> f_run = [&]() {
-                g_Engine->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+                g_Engine->getRenderingFrontend()->PlayAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
             };
 
             m_states.emplace("Idle", f_idle);
@@ -60,7 +60,7 @@ namespace Inno
             auto l_func = m_states.find(m_currentState);
             if (l_func != m_states.end())
             {
-                g_Engine->getRenderingFrontend()->stopAnimation(m_visibleComponent, "");
+                g_Engine->getRenderingFrontend()->StopAnimation(m_visibleComponent, "");
                 l_func->second();
                 m_isStateChanged = false;
 

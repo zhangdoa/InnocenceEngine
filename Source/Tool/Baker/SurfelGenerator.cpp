@@ -31,7 +31,7 @@ namespace Inno
 
             m_RenderPassComp_Surfel = g_Engine->getRenderingServer()->AddRenderPassComponent("GIBakeSurfelPass/");
 
-            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
             
@@ -121,7 +121,7 @@ namespace Inno
         {
             g_Engine->getLogSystem()->Log(LogLevel::Success, "SurfelGenerator: Start to capture surfels...");
 
-            auto l_perFrameConstantBuffer = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
+            auto l_perFrameConstantBuffer = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer();
 
             auto l_p = Math::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_perFrameConstantBuffer.zNear, l_perFrameConstantBuffer.zFar);
 

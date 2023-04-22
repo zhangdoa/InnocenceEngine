@@ -13,7 +13,7 @@ using namespace DefaultGPUBuffers;
 
 bool DebugPass::Setup(ISystemConfig *systemConfig)
 {	
-	auto l_cameraFrustumMeshCount = g_Engine->getRenderingFrontend()->getRenderingConfig().useCSM ? 4 : 1;
+	auto l_cameraFrustumMeshCount = g_Engine->getRenderingFrontend()->GetRenderingConfig().useCSM ? 4 : 1;
 	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
@@ -51,7 +51,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_SPC->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("DebugPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -129,13 +129,13 @@ ObjectStatus DebugPass::GetStatus()
 
 bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
 
 	if (l_renderingConfig.drawDebugObject)
 	{
 		auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-		auto l_sphere = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Sphere);
-		auto l_cube = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Cube);
+		auto l_sphere = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Sphere);
+		auto l_cube = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Cube);
 
 		m_debugSphereConstantBuffer.clear();
 		m_debugCubeConstantBuffer.clear();

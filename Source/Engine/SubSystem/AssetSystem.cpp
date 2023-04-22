@@ -533,7 +533,7 @@ bool AssetSystem::Setup(ISystemConfig* systemConfig)
 	{
 		i->m_model = addProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
 		auto l_pair = getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
-		g_Engine->getRenderingFrontend()->registerMaterialComponent(l_pair->material, AsyncLoad);
+		g_Engine->getRenderingFrontend()->InitializeMaterialComponent(l_pair->material, AsyncLoad);
 	};
 
 	// @TODO: Concurrency
@@ -759,8 +759,8 @@ Model* AssetSystem::addModel()
 
 Model* AssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(shape);
-	auto l_material = g_Engine->getRenderingFrontend()->addMaterialComponent();
+	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(shape);
+	auto l_material = g_Engine->getRenderingFrontend()->AddMaterialComponent();
 	l_material->m_ShaderModel = shaderModel;
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 

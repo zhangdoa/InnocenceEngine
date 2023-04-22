@@ -32,7 +32,7 @@ TextureComponent* STBWrapper::loadTexture(const char* fileName)
 	}
 	if (l_rawData)
 	{
-		auto l_TextureComp = g_Engine->getRenderingFrontend()->addTextureComponent();
+		auto l_TextureComp = g_Engine->getRenderingFrontend()->AddTextureComponent();
 #ifdef INNO_DEBUG
         auto l_fileName = std::string(fileName);
         l_fileName += "/";

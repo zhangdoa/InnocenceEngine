@@ -19,7 +19,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BillboardPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 
@@ -96,9 +96,9 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 3);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
-	auto& l_billboardPassDrawCallInfo = g_Engine->getRenderingFrontend()->getBillboardPassDrawCallInfo();
+	auto& l_billboardPassDrawCallInfo = g_Engine->getRenderingFrontend()->GetBillboardPassDrawCallInfo();
 	auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

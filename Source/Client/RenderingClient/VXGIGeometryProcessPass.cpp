@@ -23,7 +23,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VXGIGeometryProcessPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -174,7 +174,7 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowGeometryProcessPass::Get().GetResult(), 10, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_CSMGPUBufferComp, 12, Accessibility::ReadOnly);
 
-	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

@@ -118,7 +118,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -222,7 +222,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			Logger::Log(LogLevel::Error, "WinWindowSystem: Failed to Initialize GLAD.");
 		}
 
-		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+		auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
 
 		if (!l_renderingConfig.VSync)
 		{

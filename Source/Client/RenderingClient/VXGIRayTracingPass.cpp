@@ -13,7 +13,7 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 {	
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelRayTracingVolume/");
