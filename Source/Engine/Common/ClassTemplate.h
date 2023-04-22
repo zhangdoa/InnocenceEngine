@@ -1,6 +1,6 @@
 #pragma once
 
-#define INNO_CLASS_CONCRETE_DEFALUT(className)            \
+#define INNO_CLASS_CONCRETE_DEFAULT(className)            \
     className(void) = default;                            \
     ~className(void) = default;                           \
     className(const className &rhs) = default;            \

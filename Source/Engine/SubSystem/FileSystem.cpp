@@ -157,7 +157,7 @@ bool FileSystem::addCPPClassFiles(const CPPClassDesc& desc)
 		}
 		else
 		{
-			l_headerFile << "  INNO_CLASS_CONCRETE_DEFALUT(" << desc.className << ");" << std::endl;
+			l_headerFile << "  INNO_CLASS_CONCRETE_DEFAULT(" << desc.className << ");" << std::endl;
 		}
 	}
 

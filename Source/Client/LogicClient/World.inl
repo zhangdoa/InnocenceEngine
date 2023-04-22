@@ -10,7 +10,7 @@ namespace Inno
 	class WorldSystem : public ISystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_DEFALUT(WorldSystem);
+		INNO_CLASS_CONCRETE_DEFAULT(WorldSystem);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
