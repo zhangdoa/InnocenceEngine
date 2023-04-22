@@ -39,6 +39,7 @@ $outputPath += '.md'
 
 xcopy /s/e/y bin\$outputPath\$buildTypeLowerCase\*.dll ..\..\..\DLL\Win\$buildType\
 xcopy /s/e/y bin\$outputPath\$buildTypeLowerCase\*.lib ..\..\..\Lib\Win\$buildType\
+xcopy /s/e/y bin\$outputPath\$buildTypeLowerCase\*.pdb ..\..\..\Lib\Win\$buildType\
 
 # Check if the previous command exited with an error
 if ($LASTEXITCODE -ne 0) {
