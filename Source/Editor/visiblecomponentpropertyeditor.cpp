@@ -195,7 +195,7 @@ void VisibleComponentPropertyEditor::GetModelMap()
 
     for (uint64_t j = 0; j < m_component->m_model->meshMaterialPairs.m_count; j++)
     {
-        auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
+        auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
         auto l_meshItem = new QTableWidgetItem();
         l_meshItem->setText(l_pair->mesh->m_InstanceName.c_str());
         l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->mesh)));

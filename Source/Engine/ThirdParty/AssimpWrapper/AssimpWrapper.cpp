@@ -93,15 +93,15 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
-		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName, 
-		aiProcess_Triangulate 
-		| aiProcess_GenSmoothNormals 
-		| aiProcess_CalcTangentSpace 
-		| aiProcess_FlipUVs 
-		| aiProcess_JoinIdenticalVertices 
-		| aiProcess_SplitLargeMeshes
-		| aiProcess_OptimizeMeshes 
-		| aiProcess_OptimizeGraph);
+		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName,
+			aiProcess_Triangulate
+			| aiProcess_GenSmoothNormals
+			| aiProcess_CalcTangentSpace
+			| aiProcess_FlipUVs
+			| aiProcess_JoinIdenticalVertices
+			| aiProcess_SplitLargeMeshes
+			| aiProcess_OptimizeMeshes
+			| aiProcess_OptimizeGraph);
 	}
 	else
 	{

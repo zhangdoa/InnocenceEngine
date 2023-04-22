@@ -91,7 +91,7 @@ QString DirectoryListViewer::GetSelectionPath()
             break;
         }
     }
-    else if (l_fileInfo.suffix().toStdString() == "Scene")
+    else if (l_fileInfo.suffix().toStdString() == "InnoScene")
     {
         QDir l_RootDir(l_relativeRoot.c_str());
         auto l_relativePath = "..//Res//" + l_RootDir.relativeFilePath(l_fileInfo.filePath());
