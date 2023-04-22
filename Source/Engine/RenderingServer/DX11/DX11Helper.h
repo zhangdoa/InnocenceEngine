@@ -39,8 +39,6 @@ namespace Inno
 		D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
 		D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, bool stencilEnable);
 
-		bool ReserveRenderTargets(DX11RenderPassComponent* DX11RenderPassComp, IRenderingServer* renderingServer);
-		bool CreateRenderTargets(DX11RenderPassComponent* DX11RenderPassComp, IRenderingServer* renderingServer);
 		bool CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11Device* device);
 		bool CreateStateObjects(DX11RenderPassComponent* DX11RenderPassComp, ID3D10Blob* dummyILShaderBuffer, ID3D11Device* device);
 

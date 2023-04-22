@@ -24,6 +24,9 @@
 using namespace Inno;
 extern IEngine *g_Engine;
 
+#include "../Common/Helper.h"
+using namespace RenderingServerHelper;
+
 #include "DX12Helper.h"
 using namespace DX12Helper;
 
@@ -67,6 +70,7 @@ namespace DX12RenderingServerNS
 	std::unordered_set<MeshComponent *> m_initializedMeshes;
 	std::unordered_set<TextureComponent *> m_initializedTextures;
 	std::unordered_set<MaterialComponent *> m_initializedMaterials;
+	std::unordered_set<RenderPassComponent *> m_initializedRenderPasses;
 
 	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
@@ -1160,6 +1164,12 @@ bool DX12RenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 
 bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 {
+	// @TODO: Move the tracker to the frontend
+	if (m_initializedRenderPasses.find(rhs) != m_initializedRenderPasses.end())
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 
 	bool l_result = true;
@@ -1204,6 +1214,8 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 	CreateFenceEvents(l_rhs);
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+
+	m_initializedRenderPasses.emplace(l_rhs);
 
 	return l_result;
 }
@@ -2436,6 +2448,14 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent *rhs)
 
 bool DX12RenderingServer::Resize()
 {
+	// for (auto i : m_initializedTextures)
+	// {
+	// 	if(i->m_TextureDesc.IsScreenSizeRelated)
+	// 	{
+			
+	// 	}
+	// }
+	
 	return true;
 }
 

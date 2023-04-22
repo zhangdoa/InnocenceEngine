@@ -435,62 +435,17 @@ bool GLHelper::CreateFramebuffer(GLRenderPassComponent* GLRenderPassComp)
 	return true;
 }
 
-bool GLHelper::ReserveRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer)
+bool Inno::GLHelper::AttachFramebuffer(GLRenderPassComponent* GLRenderPassComp)
 {
-	GLRenderPassComp->m_RenderTargets.reserve(GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-
-	for (uint32_t i = 0; i < GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		GLRenderPassComp->m_RenderTargets.emplace_back();
-		GLRenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(GLRenderPassComp->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-	}
-
-	return true;
-}
-
-bool GLHelper::CreateRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer)
-{
-	// Color RT
 	for (uint32_t i = 0; i < GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		auto l_TextureComp = GLRenderPassComp->m_RenderTargets[i];
-
-		l_TextureComp->m_TextureDesc = GLRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-		l_TextureComp->m_TextureData = nullptr;
-
-		renderingServer->InitializeTextureComponent(l_TextureComp);
-
 		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(l_TextureComp), GLRenderPassComp, i);
 	}
-
-	// DS RT
+	
 	if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		auto l_TextureComp = renderingServer->AddTextureComponent((std::string(GLRenderPassComp->m_InstanceName.c_str()) + "_DS/").c_str());
-
-		l_TextureComp->m_TextureDesc = GLRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-		if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
-		{
-			l_TextureComp->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
-			l_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
-		}
-		else
-		{
-			l_TextureComp->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
-			l_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
-		}
-
-		l_TextureComp->m_TextureData = nullptr;
-
-		renderingServer->InitializeTextureComponent(l_TextureComp);
-
-		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(l_TextureComp), GLRenderPassComp, 0);
-
-		GLRenderPassComp->m_DepthStencilRenderTarget = l_TextureComp;
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(GLRenderPassComp->m_DepthStencilRenderTarget), GLRenderPassComp, 0);
 	}
 
 	return true;

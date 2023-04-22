@@ -16,6 +16,7 @@ target_link_libraries(Engine EntityManager)
 target_link_libraries(Engine SubSystem)
 target_link_libraries(Engine RenderingFrontend)
 target_link_libraries(Engine RayTracer)
+target_link_libraries(Engine RenderingServerCommon)
 
 if (INNO_RENDERER_DIRECTX)
 target_link_libraries(Engine DX11RenderingServer)

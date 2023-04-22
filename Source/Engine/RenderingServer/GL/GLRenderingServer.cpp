@@ -14,6 +14,9 @@
 using namespace Inno;
 extern IEngine* g_Engine;
 
+#include "../Common/Helper.h"
+using namespace RenderingServerHelper;
+
 #include "GLHelper.h"
 using namespace GLHelper;
 
@@ -469,6 +472,8 @@ bool GLRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
 	ReserveRenderTargets(l_rhs, this);
 
 	CreateRenderTargets(l_rhs, this);
+
+	AttachFramebuffer(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 

@@ -660,63 +660,6 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, bo
 	return l_result;
 }
 
-bool DX11Helper::ReserveRenderTargets(DX11RenderPassComponent* DX11RenderPassComp, IRenderingServer* renderingServer)
-{
-	if (DX11RenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		DX11RenderPassComp->m_RenderTargets.reserve(DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-		for (size_t i = 0; i < DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			DX11RenderPassComp->m_RenderTargets.emplace_back();
-			DX11RenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(DX11RenderPassComp->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-		}
-	}
-
-	return true;
-}
-
-bool DX11Helper::CreateRenderTargets(DX11RenderPassComponent* DX11RenderPassComp, IRenderingServer* renderingServer)
-{
-	if (DX11RenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		for (size_t i = 0; i < DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			auto l_TextureComp = DX11RenderPassComp->m_RenderTargets[i];
-
-			l_TextureComp->m_TextureDesc = DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-			l_TextureComp->m_TextureData = nullptr;
-
-			renderingServer->InitializeTextureComponent(l_TextureComp);
-		}
-	}
-
-	if (DX11RenderPassComp->m_RenderPassDesc.m_UseDepthBuffer)
-	{
-		DX11RenderPassComp->m_DepthStencilRenderTarget = renderingServer->AddTextureComponent((std::string(DX11RenderPassComp->m_InstanceName.c_str()) + "_DS/").c_str());
-		DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc = DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-		if (DX11RenderPassComp->m_RenderPassDesc.m_UseStencilBuffer)
-		{
-			DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
-			DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
-		}
-		else
-		{
-			DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
-			DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
-		}
-
-		DX11RenderPassComp->m_DepthStencilRenderTarget->m_TextureData = nullptr;
-
-		renderingServer->InitializeTextureComponent(DX11RenderPassComp->m_DepthStencilRenderTarget);
-	}
-
-	return true;
-}
-
 bool DX11Helper::CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11Device* device)
 {
 	if (DX11RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)

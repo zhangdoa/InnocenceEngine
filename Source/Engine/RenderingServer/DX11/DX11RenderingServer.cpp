@@ -17,6 +17,9 @@
 using namespace Inno;
 extern IEngine* g_Engine;
 
+#include "../Common/Helper.h"
+using namespace RenderingServerHelper;
+
 #include "DX11Helper.h"
 using namespace DX11Helper;
 

@@ -1441,79 +1441,15 @@ bool VKHelper::UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet *writeD
 	return true;
 }
 
-bool VKHelper::ReserveRenderTargets(VKRenderPassComponent *VKRenderPassComp, IRenderingServer *renderingServer)
+bool Inno::VKHelper::ReserveFramebuffer(VKRenderPassComponent* VKRenderPassComp)
 {
+	// @TODO: reconsider how to implement multi-frame support properly
 	auto l_framebufferCount = VKRenderPassComp->m_RenderPassDesc.m_UseMultiFrames ? VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount : 1;
-
-	if (VKRenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		// @TODO: reconsider how to implement multi-frame support properly
-		// if (VKRenderPassComp->m_RenderPassDesc.m_UseMultiFrames)
-		// {
-		// 	VKRenderPassComp->m_RenderTargets.reserve(1);
-		// 	VKRenderPassComp->m_RenderTargets.emplace_back();
-		// }
-		// else
-		// {
-			VKRenderPassComp->m_RenderTargets.reserve(VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-			for (size_t i = 0; i < VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-			{
-				VKRenderPassComp->m_RenderTargets.emplace_back();
-				VKRenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(VKRenderPassComp->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-			}
-		// }
-
-		Logger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " render targets have been allocated.");
-	}
-
 	VKRenderPassComp->m_Framebuffers.reserve(l_framebufferCount);
 	for (size_t i = 0; i < l_framebufferCount; i++)
 	{
 		VKRenderPassComp->m_Framebuffers.emplace_back();
 	}
-
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " framebuffers have been allocated.");
-
-	return true;
-}
-
-bool VKHelper::CreateRenderTargets(VKRenderPassComponent *VKRenderPassComp, IRenderingServer *renderingServer)
-{
-	if (VKRenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		for (size_t i = 0; i < VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			VKRenderPassComp->m_RenderTargets[i]->m_TextureDesc = VKRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-			VKRenderPassComp->m_RenderTargets[i]->m_TextureData = nullptr;
-
-			renderingServer->InitializeTextureComponent(VKRenderPassComp->m_RenderTargets[i]);
-		}
-	}
-	if (VKRenderPassComp->m_RenderPassDesc.m_UseDepthBuffer)
-	{
-		VKRenderPassComp->m_DepthStencilRenderTarget = renderingServer->AddTextureComponent((std::string(VKRenderPassComp->m_InstanceName.c_str()) + "_DS/").c_str());
-		VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc = VKRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-		if (VKRenderPassComp->m_RenderPassDesc.m_UseStencilBuffer)
-		{
-			VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
-			VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
-		}
-		else
-		{
-			VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
-			VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
-		}
-		VKRenderPassComp->m_DepthStencilRenderTarget->m_TextureData = {nullptr};
-
-		renderingServer->InitializeTextureComponent(VKRenderPassComp->m_DepthStencilRenderTarget);
-	}
-
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " render targets have been created.");
-
 	return true;
 }
 

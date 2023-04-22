@@ -17,8 +17,7 @@ namespace Inno
 		GLsizei GetTexturePixelDataSize(TextureDesc textureDesc);
 
 		bool CreateFramebuffer(GLRenderPassComponent* GLRenderPassComp);
-		bool ReserveRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer);
-		bool CreateRenderTargets(GLRenderPassComponent* GLRenderPassComp, IRenderingServer* renderingServer);
+		bool AttachFramebuffer(GLRenderPassComponent* GLRenderPassComp);
 		bool CreateStateObjects(GLRenderPassComponent* GLRenderPassComp);
 
 		GLenum GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);

@@ -780,67 +780,6 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, bo
 	return l_result;
 }
 
-bool DX12Helper::ReserveRenderTargets(DX12RenderPassComponent* DX12RenderPassComp, IRenderingServer* renderingServer)
-{
-	if (DX12RenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		DX12RenderPassComp->m_RenderTargets.reserve(DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-		for (size_t i = 0; i < DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			DX12RenderPassComp->m_RenderTargets.emplace_back();
-			DX12RenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(DX12RenderPassComp->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-		}
-
-		Logger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " render targets have been allocated.");
-	}
-
-	return true;
-}
-
-bool DX12Helper::CreateRenderTargets(DX12RenderPassComponent* DX12RenderPassComp, IRenderingServer* renderingServer)
-{
-	if (DX12RenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		for (size_t i = 0; i < DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			auto l_TextureComp = DX12RenderPassComp->m_RenderTargets[i];
-
-			l_TextureComp->m_TextureDesc = DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-			l_TextureComp->m_TextureData = nullptr;
-
-			renderingServer->InitializeTextureComponent(l_TextureComp);
-		}
-	}
-
-	if (DX12RenderPassComp->m_RenderPassDesc.m_UseDepthBuffer)
-	{
-		DX12RenderPassComp->m_DepthStencilRenderTarget = renderingServer->AddTextureComponent((std::string(DX12RenderPassComp->m_InstanceName.c_str()) + "_DS/").c_str());
-		DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc = DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
-
-		if (DX12RenderPassComp->m_RenderPassDesc.m_UseStencilBuffer)
-		{
-			DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
-			DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
-		}
-		else
-		{
-			DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
-			DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-			DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
-		}
-
-		DX12RenderPassComp->m_DepthStencilRenderTarget->m_TextureData = nullptr;
-
-		renderingServer->InitializeTextureComponent(DX12RenderPassComp->m_DepthStencilRenderTarget);
-	}
-
-	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " render targets have been created.");
-
-	return true;
-}
-
 bool DX12Helper::CreateViews(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<ID3D12Device> device)
 {
 	if (DX12RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)

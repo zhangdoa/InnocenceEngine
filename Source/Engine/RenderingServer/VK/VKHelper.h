@@ -104,8 +104,7 @@ namespace Inno
 		bool CreateDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout* setLayout, VkDescriptorSet& setHandle, uint32_t count);
 		bool CreateDescriptorSets(VkDevice device, VKRenderPassComponent* VKRenderPassComp);
 		bool UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
-		bool ReserveRenderTargets(VKRenderPassComponent* VKRenderPassComp, IRenderingServer* renderingServer);
-		bool CreateRenderTargets(VKRenderPassComponent* VKRenderPassComp, IRenderingServer* renderingServer);
+		bool ReserveFramebuffer(VKRenderPassComponent* VKRenderPassComp);
 		bool CreateRenderPass(VkDevice device, VKRenderPassComponent* VKRenderPassComp, VkFormat* overrideFormat = nullptr);
 		bool CreateViewportAndScissor(VKRenderPassComponent* VKRenderPassComp);
 		bool CreateSingleFramebuffer(VkDevice device, VKRenderPassComponent* VKRenderPassComp);

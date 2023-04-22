@@ -1,3 +1,5 @@
+add_subdirectory("Common")
+
 if (INNO_RENDERER_DIRECTX)
 add_subdirectory("DX11")
 add_subdirectory("DX12")

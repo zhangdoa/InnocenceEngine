@@ -14,6 +14,9 @@
 using namespace Inno;
 extern IEngine *g_Engine;
 
+#include "../Common/Helper.h"
+using namespace RenderingServerHelper;
+
 #include "VKHelper.h"
 using namespace VKHelper;
 
@@ -698,6 +701,8 @@ bool VKRenderingServer::Initialize()
 
 	l_result &= ReserveRenderTargets(m_SwapChainRenderPassComp, this);
 
+	l_result &= ReserveFramebuffer(m_SwapChainRenderPassComp);
+
 	// use device created swap chain textures
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
@@ -983,6 +988,8 @@ bool VKRenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 	l_result &= ReserveRenderTargets(l_rhs, this);
 
 	l_result &= CreateRenderTargets(l_rhs, this);
+
+	l_result &= ReserveFramebuffer(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
