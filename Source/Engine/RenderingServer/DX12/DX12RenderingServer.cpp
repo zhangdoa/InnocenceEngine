@@ -2345,6 +2345,7 @@ bool DX12RenderingServer::Present()
 	if (m_needResize)
 	{
 		ResizeImpl();
+		m_SwapChainRenderPassComp->m_CurrentFrame = 0;
 		m_needResize = false;
 	}
 
