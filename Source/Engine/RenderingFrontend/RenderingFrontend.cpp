@@ -1061,6 +1061,9 @@ TVec2<uint32_t> RenderingFrontend::GetScreenResolution()
 
 bool RenderingFrontend::SetScreenResolution(TVec2<uint32_t> screenResolution)
 {
+	if(screenResolution.x == 0 || screenResolution.y == 0)
+		return false;
+		
 	m_screenResolution = screenResolution;
 	return true;
 }
