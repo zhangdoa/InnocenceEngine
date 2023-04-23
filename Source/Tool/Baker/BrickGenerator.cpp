@@ -268,7 +268,7 @@ namespace Inno
 
             g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_BrickFactor, 0);
             g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_BrickFactor);
-            g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp_BrickFactor);
+            g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp_BrickFactor);
             g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
             for (uint32_t i = 0; i < bricksCount; i++)

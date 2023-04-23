@@ -18,10 +18,10 @@ bool TAAPass::Setup(ISystemConfig *systemConfig)
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderTargetCount = 2;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-	
+
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
@@ -53,12 +53,6 @@ bool TAAPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_oddTextureComp = g_Engine->getRenderingServer()->AddTextureComponent("TAAPass_Odd/");
-	m_evenTextureComp = g_Engine->getRenderingServer()->AddTextureComponent("TAAPass_Even/");
-
-	m_oddTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_evenTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-
 	m_ObjectStatus = ObjectStatus::Created;
 	
 	return true;
@@ -68,8 +62,6 @@ bool TAAPass::Initialize()
 {	
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_oddTextureComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_evenTextureComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -98,7 +90,7 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp, (size_t)(l_renderingContext->m_writeTexture == m_RenderPassComp->m_RenderTargets[0]));
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
@@ -125,10 +117,10 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 
 GPUResourceComponent *TAAPass::GetOddResult()
 {
-	return m_oddTextureComp;
+	return m_RenderPassComp->m_RenderTargets[0];
 }
 
 GPUResourceComponent *TAAPass::GetEvenResult()
 {
-	return m_evenTextureComp;
+	return m_RenderPassComp->m_RenderTargets[1];
 }

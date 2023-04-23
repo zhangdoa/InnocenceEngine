@@ -164,7 +164,7 @@ namespace Inno
 
             g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_Probe, 0);
             g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_Probe);
-            g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp_Probe);
+            g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp_Probe);
             g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
             uint32_t l_offset = 0;

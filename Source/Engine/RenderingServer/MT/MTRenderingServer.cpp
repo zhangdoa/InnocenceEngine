@@ -170,7 +170,7 @@ bool MTRenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::CleanRenderTargets(RenderPassComponent* rhs)
+bool MTRenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t index)
 {
 	return true;
 }

@@ -111,7 +111,7 @@ bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderin
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4, Accessibility::ReadOnly);

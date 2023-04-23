@@ -643,7 +643,7 @@ bool GIResolvePass::generateSkyRadiance()
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_skyRadianceRenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_skyRadianceRenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_skyRadianceRenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_skyRadianceRenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 1, Accessibility::ReadWrite);
@@ -661,7 +661,7 @@ bool GIResolvePass::generateSkyIrradiance()
 {
 	g_Engine->getRenderingServer()->CommandListBegin(m_skyIrradianceRenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_skyIrradianceRenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_skyIrradianceRenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_skyIrradianceRenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 1, Accessibility::ReadWrite);
@@ -699,7 +699,7 @@ bool GIResolvePass::litSurfels()
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_surfelRenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_surfelRenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_surfelRenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_surfelRenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 1, Accessibility::ReadOnly);
@@ -741,7 +741,7 @@ bool GIResolvePass::litBricks()
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_brickRenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_brickRenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_brickRenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_brickRenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 1, Accessibility::ReadOnly);
@@ -782,7 +782,7 @@ bool GIResolvePass::litProbes()
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_probeRenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_probeRenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_probeRenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_probeRenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1, Accessibility::ReadOnly);
@@ -822,7 +822,7 @@ bool GIResolvePass::generateIrradianceVolume()
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_irradianceVolumeRenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_irradianceVolumeRenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_irradianceVolumeRenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_irradianceVolumeRenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolumeSamplerComp, 6);
 

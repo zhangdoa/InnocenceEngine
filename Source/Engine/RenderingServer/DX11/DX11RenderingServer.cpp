@@ -1151,7 +1151,7 @@ bool DX11RenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 	return true;
 }
 
-bool DX11RenderingServer::CleanRenderTargets(RenderPassComponent* rhs)
+bool DX11RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t index)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassComponent*>(rhs);
 
@@ -1584,7 +1584,7 @@ bool DX11RenderingServer::Present()
 
 	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
-	CleanRenderTargets(m_SwapChainRenderPassComp);
+	ClearRenderTargets(m_SwapChainRenderPassComp);
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 

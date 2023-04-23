@@ -1404,7 +1404,7 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
+bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t index)
 {
 	return true;
 }
@@ -1719,7 +1719,7 @@ bool VKRenderingServer::Present()
 
 	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
-	CleanRenderTargets(m_SwapChainRenderPassComp);
+	ClearRenderTargets(m_SwapChainRenderPassComp);
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 

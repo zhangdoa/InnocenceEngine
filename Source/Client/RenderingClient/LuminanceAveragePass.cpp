@@ -88,7 +88,7 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1, Accessibility::ReadWrite);

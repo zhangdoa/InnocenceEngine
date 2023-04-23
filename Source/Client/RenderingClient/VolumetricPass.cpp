@@ -381,7 +381,7 @@ bool VolumetricPass::froxelization()
 
 	l_renderingServer->CommandListBegin(m_froxelizationRenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_froxelizationRenderPassComp);
-	l_renderingServer->CleanRenderTargets(m_froxelizationRenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_froxelizationRenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3, Accessibility::ReadWrite);
@@ -440,7 +440,7 @@ bool VolumetricPass::irraidanceInjection()
 
 	l_renderingServer->CommandListBegin(m_irraidanceInjectionRenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp);
-	l_renderingServer->CleanRenderTargets(m_irraidanceInjectionRenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_irraidanceInjectionRenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_SamplerComp, 9);
 
@@ -504,7 +504,7 @@ bool VolumetricPass::rayMarching()
 
 	l_renderingServer->CommandListBegin(m_rayMarchingRenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp);
-	l_renderingServer->CleanRenderTargets(m_rayMarchingRenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_rayMarchingRenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_SamplerComp, 7, Accessibility::ReadOnly);
 
@@ -538,7 +538,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 
 	l_renderingServer->CommandListBegin(m_visualizationRenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_visualizationRenderPassComp);
-	l_renderingServer->CleanRenderTargets(m_visualizationRenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_visualizationRenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 

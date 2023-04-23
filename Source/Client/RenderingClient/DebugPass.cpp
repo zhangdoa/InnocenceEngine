@@ -405,7 +405,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-		g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+		g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
 
 		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 
@@ -438,7 +438,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 	{
 		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-		g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+		g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
 
 		g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 	}

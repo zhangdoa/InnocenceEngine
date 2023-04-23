@@ -1774,12 +1774,35 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
+bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t index)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics && rhs->m_RenderPassDesc.m_RenderTargetCount)
 	{
 		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
 		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+		auto f_clearRTAsUAV = [&](DX12TextureComponent* l_RT)
+		{
+			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+			{
+				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
+					l_RT->m_UAV.ShaderVisibleGPUHandle,
+					l_RT->m_UAV.ShaderNonVisibleCPUHandle,
+					l_RT->m_DefaultHeapBuffer.Get(),
+					(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+					0,
+					NULL);
+			}
+			else
+			{
+				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
+					l_RT->m_UAV.ShaderVisibleGPUHandle,
+					l_RT->m_UAV.ShaderNonVisibleCPUHandle,
+					l_RT->m_DefaultHeapBuffer.Get(),
+					l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+					0,
+					NULL);
+			}
+		};
 
 		if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 		{
@@ -1789,65 +1812,37 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 			}
 			else
 			{
-				for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+				if(index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 				{
-					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+				}
+				else
+				{
+					for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+					{
+						l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+					}
 				}
 			}
 		}
 		else
 		{
-			// @TODO: SOOO verbose API DX12 it is!
 			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				auto l_RT = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
-
-				if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
-				{
-					l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-						l_RT->m_UAV.ShaderVisibleGPUHandle,
-						l_RT->m_UAV.ShaderNonVisibleCPUHandle,
-						l_RT->m_DefaultHeapBuffer.Get(),
-						(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-						0,
-						NULL);
-				}
-				else
-				{
-					l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-						l_RT->m_UAV.ShaderVisibleGPUHandle,
-						l_RT->m_UAV.ShaderNonVisibleCPUHandle,
-						l_RT->m_DefaultHeapBuffer.Get(),
-						l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-						0,
-						NULL);
-				}
+				f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]));
 			}
 			else
 			{
-				for (auto i : l_rhs->m_RenderTargets)
+				if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 				{
-					auto l_RT = reinterpret_cast<DX12TextureComponent*>(i);
+					f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(index));
+				}
+				else
+				{
 
-					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+					for (auto i : l_rhs->m_RenderTargets)
 					{
-						l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-							l_RT->m_UAV.ShaderVisibleGPUHandle,
-							l_RT->m_UAV.ShaderNonVisibleCPUHandle,
-							l_RT->m_DefaultHeapBuffer.Get(),
-							(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-							0,
-							NULL);
-					}
-					else
-					{
-						l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-							l_RT->m_UAV.ShaderVisibleGPUHandle,
-							l_RT->m_UAV.ShaderNonVisibleCPUHandle,
-							l_RT->m_DefaultHeapBuffer.Get(),
-							l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-							0,
-							NULL);
+						f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(i));
 					}
 				}
 			}
@@ -2221,7 +2216,7 @@ bool DX12RenderingServer::Present()
 
 	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
-	CleanRenderTargets(m_SwapChainRenderPassComp);
+	ClearRenderTargets(m_SwapChainRenderPassComp);
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 

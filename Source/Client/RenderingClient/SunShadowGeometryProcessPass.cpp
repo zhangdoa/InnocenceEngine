@@ -119,7 +119,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_CSMGPUBufferComp, 2, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4, Accessibility::ReadOnly);

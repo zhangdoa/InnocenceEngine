@@ -807,7 +807,7 @@ bool GLRenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 	return true;
 }
 
-bool GLRenderingServer::CleanRenderTargets(RenderPassComponent* rhs)
+bool GLRenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t index)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
@@ -954,7 +954,7 @@ bool GLRenderingServer::Present()
 
 	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
-	CleanRenderTargets(m_SwapChainRenderPassComp);
+	ClearRenderTargets(m_SwapChainRenderPassComp);
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 

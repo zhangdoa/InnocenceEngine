@@ -48,7 +48,7 @@ namespace Inno
 
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
-		bool CleanRenderTargets(RenderPassComponent* rhs) override;
+		bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
 		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
 		bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
 		bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;

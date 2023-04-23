@@ -32,7 +32,7 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 2;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-	
+
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(21);
@@ -192,7 +192,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 17);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);

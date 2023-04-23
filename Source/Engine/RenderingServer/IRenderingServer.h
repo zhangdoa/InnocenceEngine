@@ -65,7 +65,7 @@ namespace Inno
 
 		virtual bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) = 0;
 		virtual bool BindRenderPassComponent(RenderPassComponent* rhs) = 0;
-		virtual bool CleanRenderTargets(RenderPassComponent* rhs) = 0;
+		virtual bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) = 0;
 		virtual bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 		virtual bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount = 1) = 0;
 		virtual bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount = 1) = 0;

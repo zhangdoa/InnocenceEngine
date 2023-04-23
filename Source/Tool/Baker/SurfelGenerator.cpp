@@ -181,7 +181,7 @@ namespace Inno
 
             g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_Surfel, 0);
             g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_Surfel);
-            g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp_Surfel);
+            g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp_Surfel);
             g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, m_SamplerComp_Surfel, 8);
             g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
