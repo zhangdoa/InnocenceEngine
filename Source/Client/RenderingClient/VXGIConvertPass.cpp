@@ -29,9 +29,9 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 	m_normalVolume = g_Engine->getRenderingServer()->AddTextureComponent("VoxelNormalVolume/");
 	m_normalVolume->m_TextureDesc = m_luminanceVolume->m_TextureDesc;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelConvertPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelConvertPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "voxelConvertPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelConvertPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelConvertPass/");
 
@@ -67,7 +67,7 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 9;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -76,7 +76,7 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIConvertPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_luminanceVolume);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_normalVolume);

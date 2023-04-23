@@ -12,11 +12,11 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
 	m_shadowMapResolution = g_Engine->getRenderingFrontend()->GetRenderingConfig().shadowMapResolution;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
@@ -73,7 +73,7 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("SunShadowGeometryProcessPass/");
 
@@ -87,7 +87,7 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 bool SunShadowGeometryProcessPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

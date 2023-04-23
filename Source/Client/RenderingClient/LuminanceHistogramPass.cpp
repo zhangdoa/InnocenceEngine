@@ -15,10 +15,10 @@ bool LuminanceHistogramPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
-	
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceHistogramPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "luminanceHistogramPass.comp/";
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceHistogramPass/");
+
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceHistogramPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("LuminanceHistogramPass/");
 
@@ -42,7 +42,7 @@ bool LuminanceHistogramPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_luminanceHistogram = g_Engine->getRenderingServer()->AddGPUBufferComponent("LuminanceHistogramGPUBuffer/");
 	m_luminanceHistogram->m_CPUAccessibility = Accessibility::Immutable;
@@ -57,7 +57,7 @@ bool LuminanceHistogramPass::Setup(ISystemConfig *systemConfig)
 
 bool LuminanceHistogramPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_luminanceHistogram);

@@ -23,7 +23,7 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_SPC;
+		ShaderProgramComponent *m_ShaderProgramComp;
 
 		GPUBufferComponent* m_atomicCounterGPUBufferComp;
 		GPUBufferComponent* m_RT0;

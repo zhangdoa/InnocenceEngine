@@ -22,7 +22,7 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_SPC;
+		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
 
 		uint32_t m_shadowMapResolution = 1024;

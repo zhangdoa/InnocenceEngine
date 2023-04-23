@@ -16,9 +16,9 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelScreenSpaceFeedbackPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelScreenSpaceFeedbackPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "voxelScreenSpaceFeedBackPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelScreenSpaceFeedBackPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelScreenSpaceFeedbackPass/");
 
@@ -71,7 +71,7 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 9;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -80,7 +80,7 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIScreenSpaceFeedbackPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
 	

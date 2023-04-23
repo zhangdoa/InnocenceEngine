@@ -13,10 +13,10 @@ using namespace DefaultGPUBuffers;
 
 bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BSDFTestPass/");
 
@@ -66,7 +66,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("BSDFTestPass/");
 
@@ -108,7 +108,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 bool BSDFTestPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

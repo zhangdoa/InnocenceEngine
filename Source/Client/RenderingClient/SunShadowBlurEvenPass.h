@@ -21,8 +21,7 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_SPC;
-		TextureComponent *m_TextureComp;
+		ShaderProgramComponent *m_ShaderProgramComp;
 		Math::TVec4<uint32_t> m_numThreads;
 		Math::TVec4<uint32_t> m_numThreadGroups;
 	};

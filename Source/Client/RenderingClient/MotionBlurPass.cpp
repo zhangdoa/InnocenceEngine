@@ -12,16 +12,17 @@ using namespace DefaultGPUBuffers;
 
 bool MotionBlurPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("MotionBlurPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("MotionBlurPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "motionBlurPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "motionBlurPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("MotionBlurPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
+	l_RenderPassDesc.m_UseOutputMerger = false;
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -54,14 +55,11 @@ bool MotionBlurPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("MotionBlurPass/");
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Border;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Border;
-
-	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("MotionBlurPass/");
-	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -70,10 +68,9 @@ bool MotionBlurPass::Setup(ISystemConfig *systemConfig)
 
 bool MotionBlurPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -108,13 +105,13 @@ bool MotionBlurPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 0);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
@@ -128,5 +125,5 @@ RenderPassComponent* MotionBlurPass::GetRenderPassComp()
 
 GPUResourceComponent* MotionBlurPass::GetResult()
 {
-	return m_TextureComp;
+	return m_RenderPassComp->m_RenderTargets[0];
 }

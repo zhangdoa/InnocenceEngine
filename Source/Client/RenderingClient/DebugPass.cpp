@@ -45,10 +45,10 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_debugMaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	////
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("DebugPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("DebugPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "debugPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "debugPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("DebugPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
@@ -82,7 +82,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_debugSphereConstantBuffer.reserve(m_maxDebugMeshes);
 	m_debugCubeConstantBuffer.reserve(m_maxDebugMeshes);
@@ -105,7 +105,7 @@ bool DebugPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_debugCameraFrustumGPUBufferComp);
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_debugMaterialGPUBufferComp);
 
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

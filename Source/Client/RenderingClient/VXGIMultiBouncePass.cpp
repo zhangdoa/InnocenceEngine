@@ -26,9 +26,9 @@ bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.UseMipMap = true;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelMultiBouncePass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelMultiBouncePass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "voxelMultiBouncePass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelMultiBouncePass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelMultiBouncePass/");
 
@@ -70,7 +70,7 @@ bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 9;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("VoxelMultiBouncePass/");
 
@@ -84,7 +84,7 @@ bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIMultiBouncePass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);

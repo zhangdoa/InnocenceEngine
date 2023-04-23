@@ -17,10 +17,10 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
-	
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceAveragePass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceAveragePass/");
+
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("LuminanceAveragePass/");
 
@@ -43,7 +43,7 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_luminanceAverage = g_Engine->getRenderingServer()->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
@@ -58,7 +58,7 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_luminanceAverage);

@@ -41,7 +41,8 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	
+	l_RenderPassDesc.m_Resizable = false;
+
 	m_lightGrid = g_Engine->getRenderingServer()->AddTextureComponent("LightGrid/");
 	m_lightGrid->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
@@ -55,8 +56,8 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	m_heatMap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_heatMap->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("LightCullingPass/");
-	m_SPC->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("LightCullingPass/");
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("LightCullingPass/");
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
@@ -116,7 +117,7 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("ComputePass/");
 
@@ -132,7 +133,7 @@ bool LightCullingPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_lightGrid);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_heatMap);
 
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 

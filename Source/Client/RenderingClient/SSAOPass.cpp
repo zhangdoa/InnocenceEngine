@@ -12,17 +12,18 @@ using namespace DefaultGPUBuffers;
 
 bool SSAOPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SSAONoisePass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("SSAONoisePass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SSAONoisePass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-
+	l_RenderPassDesc.m_UseOutputMerger = false;
+	
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(8);
@@ -66,7 +67,7 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("SSAONoisePass/");
 
@@ -76,9 +77,6 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
-
-	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("SSAONoisePass/");
-	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	// Kernel
 	std::uniform_real_distribution<float> l_randomFloats(0.0f, 1.0f);
@@ -138,9 +136,8 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 
 bool SSAOPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp_RandomRot);
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_SSAOKernelGPUBuffer);
@@ -181,14 +178,14 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 2);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1], 3);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAONoiseTextureComp, 4);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 7, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 7, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 2);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1], 3);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAONoiseTextureComp, 4);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 7, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 7, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
@@ -202,5 +199,5 @@ RenderPassComponent* SSAOPass::GetRenderPassComp()
 
 GPUResourceComponent *SSAOPass::GetResult()
 {
-	return m_TextureComp;
+	return m_RenderPassComp->m_RenderTargets[0];
 }

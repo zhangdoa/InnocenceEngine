@@ -10,17 +10,18 @@ using namespace DefaultGPUBuffers;
 
 bool PostTAAPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("PostTAAPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("PostTAAPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("PostTAAPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-
+	l_RenderPassDesc.m_UseOutputMerger = false;
+	
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
@@ -36,10 +37,7 @@ bool PostTAAPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
-
-	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("PostTAAPass/");
-	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -48,9 +46,8 @@ bool PostTAAPass::Setup(ISystemConfig *systemConfig)
 
 bool PostTAAPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -81,12 +78,12 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RenderPassComp);
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
@@ -100,5 +97,5 @@ RenderPassComponent* PostTAAPass::GetRenderPassComp()
 
 GPUResourceComponent *PostTAAPass::GetResult()
 {
-	return m_TextureComp;
+	return m_RenderPassComp->m_RenderTargets[0];
 }

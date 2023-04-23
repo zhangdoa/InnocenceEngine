@@ -21,17 +21,18 @@ using namespace DefaultGPUBuffers;
 
 bool LightPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("LightPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("LightPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "lightPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("LightPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderTargetCount = 2;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-
+	l_RenderPassDesc.m_UseOutputMerger = false;
+	
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(21);
@@ -145,15 +146,9 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("LightPass/");
-
-	m_TextureComp_Luminance = g_Engine->getRenderingServer()->AddTextureComponent("LightPass0/");
-	m_TextureComp_Luminance->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-
-	m_TextureComp_Illuminance = g_Engine->getRenderingServer()->AddTextureComponent("LightPass1/");
-	m_TextureComp_Illuminance->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -162,10 +157,8 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 
 bool LightPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp_Luminance);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp_Illuminance);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -222,8 +215,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 14, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 15, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 16, Accessibility::ReadOnly, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp_Luminance, 19, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp_Illuminance, 20, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 19, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[1], 20, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
@@ -240,8 +233,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 14, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 15, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 16, Accessibility::ReadOnly, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp_Luminance, 19, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TextureComp_Illuminance, 20, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 19, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[1], 20, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
@@ -255,10 +248,10 @@ RenderPassComponent* LightPass::GetRenderPassComp()
 
 TextureComponent* LightPass::GetLuminanceResult()
 {
-	return m_TextureComp_Luminance;
+	return m_RenderPassComp->m_RenderTargets[0];
 }
 
 TextureComponent* LightPass::GetIlluminanceResult()
 {
-	return m_TextureComp_Illuminance;
+	return m_RenderPassComp->m_RenderTargets[1];
 }

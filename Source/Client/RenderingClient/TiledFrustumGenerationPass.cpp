@@ -30,8 +30,8 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 	m_tiledFrustum->m_ElementCount = l_elementCount;
 	m_tiledFrustum->m_ElementSize = 64;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("TiledFrustumGenerationPass/");
-	m_SPC->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";	
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TiledFrustumGenerationPass/");
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";	
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -55,7 +55,7 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 	
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -65,7 +65,7 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 bool TiledFrustumGenerationPass::Initialize()
 {	
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_tiledFrustum);
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

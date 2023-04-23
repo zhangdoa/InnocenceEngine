@@ -11,10 +11,10 @@ using namespace DefaultGPUBuffers;
 
 bool AnimationPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("AnimationPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("AnimationPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("AnimationPass/");
 
@@ -92,7 +92,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("AnimationPass/");
 
@@ -106,7 +106,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

@@ -21,9 +21,8 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_SPC;
-		SamplerComponent *m_SamplerComp;	
-		TextureComponent* m_TextureComp;	
+		ShaderProgramComponent *m_ShaderProgramComp;
+		SamplerComponent *m_SamplerComp;
 		SamplerComponent *m_SamplerComp_RandomRot;
 
 		uint32_t m_kernelSize = 64;

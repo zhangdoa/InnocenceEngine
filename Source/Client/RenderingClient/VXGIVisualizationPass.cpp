@@ -12,11 +12,11 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelVisualizationPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelVisualizationPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "voxelVisualizationPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_GSPath = "voxelVisualizationPass.geom/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "voxelVisualizationPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "voxelVisualizationPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "voxelVisualizationPass.geom/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "voxelVisualizationPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelVisualizationPass/");
 
@@ -56,7 +56,7 @@ bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 9;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -65,7 +65,7 @@ bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIVisualizationPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

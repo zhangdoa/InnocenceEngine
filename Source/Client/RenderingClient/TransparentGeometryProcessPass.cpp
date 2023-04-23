@@ -40,10 +40,10 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	auto l_cleanValue = 0xFFFFFFFF;
 	std::memcpy(&m_HeadPtr->m_TextureDesc.ClearColor[0], &l_cleanValue, sizeof(l_cleanValue));
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("TransparentGeometryProcessPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TransparentGeometryProcessPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "transparentGeometryProcessPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "transparentGeometryProcessPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "transparentGeometryProcessPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "transparentGeometryProcessPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("TransparentGeometryProcessPass/");
 
@@ -99,7 +99,7 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -113,7 +113,7 @@ bool TransparentGeometryProcessPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_RT1);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_HeadPtr);
 
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

@@ -22,10 +22,10 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 	m_probeSphereMeshData.reserve(4096);
 
 	////
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SurfelGITestPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("SurfelGITestPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "GIResolveTestProbePass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "GIResolveTestProbePass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "GIResolveTestProbePass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "GIResolveTestProbePass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SurfelGITestPass/");
 
@@ -73,7 +73,7 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("SurfelGITestPass/");
 	
@@ -87,7 +87,7 @@ bool SurfelGITestPass::Initialize()
 	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_probeSphereMeshGPUBufferComp);
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

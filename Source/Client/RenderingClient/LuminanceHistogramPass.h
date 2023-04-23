@@ -27,9 +27,7 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_SPC;
-		SamplerComponent *m_SamplerComp;	
-		TextureComponent* m_TextureComp;
+		ShaderProgramComponent *m_ShaderProgramComp;
 
 		GPUBufferComponent *m_luminanceHistogram = 0;
 	};

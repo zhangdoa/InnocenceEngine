@@ -26,9 +26,9 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.UseMipMap = true;
 
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelRayTracingPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelRayTracingPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "voxelRayTracingPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelRayTracingPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelRayTracingPass/");
 
@@ -82,7 +82,7 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 2;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("VoxelRayTracingPass/");
 
@@ -142,7 +142,7 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIRayTracingPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

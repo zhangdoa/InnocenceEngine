@@ -15,11 +15,11 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("VXGIGeometryProcessPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VXGIGeometryProcessPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "voxelGeometryProcessPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_GSPath = "voxelGeometryProcessPass.geom/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "voxelGeometryProcessPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "voxelGeometryProcessPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "voxelGeometryProcessPass.geom/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "voxelGeometryProcessPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VXGIGeometryProcessPass/");
 
@@ -111,7 +111,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex = 5;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("VXGIGeometryProcessPass/");
 
@@ -130,7 +130,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIGeometryProcessPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

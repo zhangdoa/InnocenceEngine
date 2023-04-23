@@ -34,9 +34,8 @@ namespace Inno
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_SPC;
+		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;	
-		TextureComponent* m_TextureComp;
 		
 		GPUBufferComponent* m_probeSphereMeshGPUBufferComp = 0;
 		std::vector<ProbeMeshData> m_probeSphereMeshData;

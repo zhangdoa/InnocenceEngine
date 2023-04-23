@@ -12,10 +12,10 @@ using namespace DefaultGPUBuffers;
 
 bool BillboardPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("BillboardPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("BillboardPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "billboardPass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "billboardPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "billboardPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "billboardPass.frag/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BillboardPass/");
 
@@ -53,7 +53,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("BillboardPass/");
 
@@ -62,7 +62,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 bool BillboardPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
 

@@ -10,9 +10,9 @@ using namespace DefaultGPUBuffers;
 
 bool TAAPass::Setup(ISystemConfig *systemConfig)
 {
-	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("TAAPass/");
+	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TAAPass/");
 
-	m_SPC->m_ShaderFilePaths.m_CSPath = "TAAPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "TAAPass.comp/";
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("TAAPass/");
 
@@ -20,7 +20,8 @@ bool TAAPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-
+	l_RenderPassDesc.m_UseOutputMerger = false;
+	
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(5);
@@ -50,7 +51,7 @@ bool TAAPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
 
-	m_RenderPassComp->m_ShaderProgram = m_SPC;
+	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_oddTextureComp = g_Engine->getRenderingServer()->AddTextureComponent("TAAPass_Odd/");
 	m_evenTextureComp = g_Engine->getRenderingServer()->AddTextureComponent("TAAPass_Even/");
@@ -65,7 +66,7 @@ bool TAAPass::Setup(ISystemConfig *systemConfig)
 
 bool TAAPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_oddTextureComp);
 	g_Engine->getRenderingServer()->InitializeTextureComponent(m_evenTextureComp);
