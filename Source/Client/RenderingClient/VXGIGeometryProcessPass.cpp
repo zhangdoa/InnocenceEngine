@@ -180,7 +180,8 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		if (l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+		auto l_visible = static_cast<uint32_t>(l_drawCallData.visibilityMask & VisibilityMask::MainCamera);
+		if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			if (l_drawCallData.material->m_ShaderModel == ShaderModel::Opaque)
 			{

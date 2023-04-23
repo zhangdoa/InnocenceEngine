@@ -251,20 +251,6 @@ namespace Inno
 				l_canvas = SurfelGITestPass::Get().GetRenderPassComp()->m_RenderTargets[0];
 				l_canvasOwner = SurfelGITestPass::Get().GetRenderPassComp();
 			}
-			else if (m_showTransparent)
-			{
-				TransparentGeometryProcessPass::Get().PrepareCommandList();
-				TransparentBlendPass::Get().PrepareCommandList();
-				l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-				l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-				l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-				l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-				l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-				l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-				l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-				l_canvas = TransparentBlendPass::Get().GetResult();
-				l_canvasOwner = TransparentBlendPass::Get().GetRenderPassComp();
-			}
 			else if (m_showVolumetric)
 			{
 				VolumetricPass::Render(true);
@@ -300,13 +286,15 @@ namespace Inno
 				l_canvas = PreTAAPass::Get().GetResult();
 				l_canvasOwner = PreTAAPass::Get().GetRenderPassComp();
 
-				TransparentGeometryProcessPass::Get().PrepareCommandList();
+				if (m_showTransparent)
+				{
+					TransparentGeometryProcessPass::Get().PrepareCommandList();
 
-				TransparentBlendPassRenderingContext l_transparentBlendPassRenderingContext;
-				l_transparentBlendPassRenderingContext.m_output = l_canvas;
-				TransparentBlendPass::Get().PrepareCommandList(&l_transparentBlendPassRenderingContext);
+					TransparentBlendPassRenderingContext l_transparentBlendPassRenderingContext;
+					l_transparentBlendPassRenderingContext.m_output = l_canvas;
+					TransparentBlendPass::Get().PrepareCommandList(&l_transparentBlendPassRenderingContext);
+				}
 
-				l_renderingServer->WaitCommandQueue(AnimationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 				l_renderingServer->WaitCommandQueue(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 				l_renderingServer->WaitCommandQueue(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 				//l_renderingServer->WaitCommandQueue(SunShadowBlurEvenPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
@@ -328,13 +316,16 @@ namespace Inno
 				l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 
 				l_renderingServer->WaitCommandQueue(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-				l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-				l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-				l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-				l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-				l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-				l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-				l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+				if (m_showTransparent)
+				{
+					l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+					l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
+					l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+					l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+					l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+					l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
+					l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+				}
 			}
 
 			if (m_showVoxel)
@@ -348,7 +339,10 @@ namespace Inno
 
 			LuminanceAveragePass::Get().PrepareCommandList();
 
-			l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			if (m_showTransparent)
+			{
+				l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			}
 			l_renderingServer->ExecuteCommandList(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 			l_renderingServer->WaitCommandQueue(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->ExecuteCommandList(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
