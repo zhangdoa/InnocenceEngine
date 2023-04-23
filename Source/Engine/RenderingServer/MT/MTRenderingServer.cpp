@@ -210,7 +210,7 @@ bool MTRenderingServer::WaitForFrame(RenderPassComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
+bool MTRenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc)
 {
 	return true;
 }

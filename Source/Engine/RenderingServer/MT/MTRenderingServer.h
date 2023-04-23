@@ -56,7 +56,7 @@ namespace Inno
 		bool CommandListEnd(RenderPassComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 		bool WaitForFrame(RenderPassComponent* rhs) override;
-		bool SetUserPipelineOutput(GPUResourceComponent* rhs) override;
+		bool SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc) override;
 		GPUResourceComponent* GetUserPipelineOutput() override;
 		bool Present() override;
 

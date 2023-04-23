@@ -123,7 +123,7 @@ namespace VKRenderingServerNS
 	VkDescriptorSetLayout m_materialDescriptorLayout;
 	VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
-	GPUResourceComponent *m_userPipelineOutput = 0;
+	std::function<GPUResourceComponent*()> m_GetUserPipelineOutputFunc;
 	VKRenderPassComponent *m_SwapChainRenderPassComp = 0;
 	VKShaderProgramComponent *m_SwapChainSPC = 0;
 	VKSamplerComponent *m_SwapChainSamplerComp = 0;
@@ -1697,15 +1697,15 @@ bool VKRenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUEng
 	return true;
 }
 
-bool VKRenderingServer::SetUserPipelineOutput(GPUResourceComponent *rhs)
+bool VKRenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc)
 {
-	m_userPipelineOutput = rhs;
+	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
 	return true;
 }
 
 GPUResourceComponent *VKRenderingServer::GetUserPipelineOutput()
 {
-	return m_userPipelineOutput;
+	return m_GetUserPipelineOutputFunc();
 }
 
 bool VKRenderingServer::Present()
@@ -1723,13 +1723,13 @@ bool VKRenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	TryToTransitImageLayout(l_VKTextureComp, l_commandList->m_GraphicsCommandBuffer, l_VKTextureComp->m_ReadImageLayout);
 

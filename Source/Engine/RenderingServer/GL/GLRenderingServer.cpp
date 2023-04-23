@@ -96,7 +96,7 @@ namespace GLRenderingServerNS
 	std::unordered_set<MaterialComponent*> m_initializedMaterials;
 	std::vector<GLRenderPassComponent*> m_RenderPassComps;
 
-	GPUResourceComponent* m_userPipelineOutput = 0;
+	std::function<GPUResourceComponent*()> m_GetUserPipelineOutputFunc;
 	GLRenderPassComponent* m_SwapChainRenderPassComp = 0;
 	GLShaderProgramComponent* m_SwapChainSPC = 0;
 	GLSamplerComponent* m_SwapChainSamplerComp = 0;
@@ -936,16 +936,16 @@ bool GLRenderingServer::WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEng
 	return true;
 }
 
-bool GLRenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
+bool GLRenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc)
 {
-	m_userPipelineOutput = rhs;
+	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
 
 	return true;
 }
 
 GPUResourceComponent* GLRenderingServer::GetUserPipelineOutput()
 {
-	return m_userPipelineOutput;
+	return m_GetUserPipelineOutputFunc();
 }
 
 bool GLRenderingServer::Present()
@@ -958,13 +958,13 @@ bool GLRenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 

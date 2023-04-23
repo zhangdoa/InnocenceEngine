@@ -184,7 +184,12 @@ namespace Inno
 
 			BSDFTestPass::Get().Initialize();
 
-			g_Engine->getRenderingServer()->SetUserPipelineOutput(FinalBlendPass::Get().GetResult());
+			auto f_getUserPipelineOutputFunc = []()
+			{
+				return FinalBlendPass::Get().GetResult();
+			};
+
+			g_Engine->getRenderingServer()->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 		};
 
 		f_RenderJob = [&]() {

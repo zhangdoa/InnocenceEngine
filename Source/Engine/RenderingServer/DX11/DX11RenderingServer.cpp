@@ -73,7 +73,7 @@ namespace Inno
 
 		ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
 
-		GPUResourceComponent* m_userPipelineOutput = 0;
+		std::function<GPUResourceComponent*()> m_GetUserPipelineOutputFunc;
 		DX11RenderPassComponent* m_SwapChainRenderPassComp = 0;
 		DX11ShaderProgramComponent* m_SwapChainSPC = 0;
 		DX11SamplerComponent* m_SwapChainSamplerComp = 0;
@@ -1566,16 +1566,16 @@ bool DX11RenderingServer::WaitFence(RenderPassComponent* rhs, GPUEngineType GPUE
 	return true;
 }
 
-bool DX11RenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
+bool DX11RenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc)
 {
-	m_userPipelineOutput = rhs;
+	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
 
 	return true;
 }
 
 GPUResourceComponent* DX11RenderingServer::GetUserPipelineOutput()
 {
-	return m_userPipelineOutput;
+	return m_GetUserPipelineOutputFunc();
 }
 
 bool DX11RenderingServer::Present()
@@ -1588,13 +1588,13 @@ bool DX11RenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 

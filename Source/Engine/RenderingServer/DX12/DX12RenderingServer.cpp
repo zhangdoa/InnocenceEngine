@@ -133,7 +133,7 @@ namespace DX12RenderingServerNS
 	D3D12_CPU_DESCRIPTOR_HANDLE m_SamplerDescHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_SamplerDescHeapGPUHandle;
 
-	GPUResourceComponent *m_userPipelineOutput = 0;
+	std::function<GPUResourceComponent*()> m_GetUserPipelineOutputFunc;
 	DX12RenderPassComponent *m_SwapChainRenderPassComp = 0;
 	DX12ShaderProgramComponent *m_SwapChainSPC = 0;
 	DX12SamplerComponent *m_SwapChainSamplerComp = 0;
@@ -2193,16 +2193,16 @@ bool DX12RenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUE
 	return true;
 }
 
-bool DX12RenderingServer::SetUserPipelineOutput(GPUResourceComponent *rhs)
+bool DX12RenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc)
 {
-	m_userPipelineOutput = rhs;
+	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
 
 	return true;
 }
 
 GPUResourceComponent *DX12RenderingServer::GetUserPipelineOutput()
 {
-	return m_userPipelineOutput;
+	return m_GetUserPipelineOutputFunc();
 }
 
 bool DX12RenderingServer::Present()
@@ -2220,13 +2220,13 @@ bool DX12RenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	TryToTransitState(l_DX12TextureComp, l_commandList,l_DX12TextureComp->m_ReadState);
 
