@@ -57,7 +57,9 @@ namespace DX12RenderingServerNS
 
 	bool CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
 	bool GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp);
-
+	bool Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer);
+	bool ResizeImpl();
+	
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	TObjectPool<DX12MeshComponent> *m_MeshComponentPool = 0;
@@ -74,7 +76,9 @@ namespace DX12RenderingServerNS
 	std::unordered_set<MeshComponent *> m_initializedMeshes;
 	std::unordered_set<TextureComponent *> m_initializedTextures;
 	std::unordered_set<MaterialComponent *> m_initializedMaterials;
-	std::unordered_set<RenderPassComponent *> m_initializedRenderPasses;
+	std::vector<RenderPassComponent *> m_initializedRenderPasses;
+
+	std::atomic_bool m_needResize = false;
 
 	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
@@ -95,7 +99,7 @@ namespace DX12RenderingServerNS
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 	ComPtr<IDXGISwapChain4> m_swapChain = 0;
 	const uint32_t m_swapChainImageCount = 2;
-	std::vector<ComPtr<ID3D12Resource>> m_swapChainImages(m_swapChainImageCount);
+	std::vector<ComPtr<ID3D12Resource>> m_swapChainImages;
 
 	ComPtr<ID3D12CommandQueue> m_directCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_computeCommandQueue = 0;
@@ -715,6 +719,8 @@ bool DX12RenderingServerNS::CreateSwapChain()
 
 bool DX12RenderingServerNS::GetSwapChainImages()
 {
+	m_swapChainImages.resize(m_swapChainImageCount);
+	
 	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
 		auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
@@ -852,6 +858,90 @@ DX12CommandList *addCommandList()
 DX12Semaphore *addSemaphore()
 {
 	return m_SemaphorePool->Spawn();
+}
+
+bool DX12RenderingServerNS::Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer)
+{
+	if (rhs->m_RenderPassDesc.m_Resizable)
+	{
+		for (auto i : rhs->m_RenderTargets)
+		{
+			renderingServer->DeleteTextureComponent(i);
+		}
+
+		rhs->m_RenderTargets.clear();
+
+		if (rhs->m_DepthStencilRenderTarget)
+		{
+			renderingServer->DeleteTextureComponent(rhs->m_DepthStencilRenderTarget);
+		}
+
+		m_PSOPool->Destroy(reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject));
+
+		rhs->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
+		rhs->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
+
+		rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
+		rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
+
+		ReserveRenderTargets(rhs, renderingServer);
+
+		CreateRenderTargets(rhs, renderingServer);
+
+		if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+		{
+			for (size_t i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+			{
+				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_RenderTargets[i])->m_DefaultHeapBuffer;
+				m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &rhs->m_RTVDesc, rhs->m_RTVDescCPUHandles[i]);
+			}
+		}
+
+		if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		{
+			if (rhs->m_DepthStencilRenderTarget != nullptr)
+			{
+				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_DepthStencilRenderTarget)->m_DefaultHeapBuffer;
+				m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &rhs->m_DSVDesc, rhs->m_DSVDescCPUHandle);
+			}
+		}
+
+		rhs->m_PipelineStateObject = addPSO();
+
+		CreatePSO(rhs, m_device);
+	}
+
+	return true;
+}
+
+bool DX12RenderingServerNS::ResizeImpl()
+{
+	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	
+	m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+	m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+	
+	for	(auto i : m_SwapChainRenderPassComp->m_RenderTargets)
+	{
+		reinterpret_cast<DX12TextureComponent*>(i)->m_DefaultHeapBuffer.Reset();
+	}
+
+	m_swapChainImages.clear();
+
+	m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
+
+	if (!GetSwapChainImages())
+		return false;
+
+	for (auto i : m_initializedRenderPasses)
+	{
+		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(i);
+		if (!Resize(l_screenResolution, l_rhs, l_renderingServer))
+			return false;
+	}
+	
+	return true;
 }
 
 bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
@@ -1218,7 +1308,8 @@ bool DX12RenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 {
 	// @TODO: Move the tracker to the frontend
-	if (m_initializedRenderPasses.find(rhs) != m_initializedRenderPasses.end())
+	auto it = std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), rhs);
+	if (it != m_initializedRenderPasses.end())
 	{
 		return true;
 	}
@@ -1273,7 +1364,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedRenderPasses.emplace(l_rhs);
+	m_initializedRenderPasses.emplace_back(l_rhs);
 
 	return l_result;
 }
@@ -2251,6 +2342,12 @@ bool DX12RenderingServer::Present()
 	m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]->Reset();
 	m_copyCommandAllocator->Reset();
 
+	if (m_needResize)
+	{
+		ResizeImpl();
+		m_needResize = false;
+	}
+
 	return true;
 }
 
@@ -2498,14 +2595,7 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent *rhs)
 
 bool DX12RenderingServer::Resize()
 {
-	// for (auto i : m_initializedTextures)
-	// {
-	// 	if(i->m_TextureDesc.IsScreenSizeRelated)
-	// 	{
-			
-	// 	}
-	// }
-	
+	m_needResize = true;		
 	return true;
 }
 
