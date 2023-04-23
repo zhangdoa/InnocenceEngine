@@ -1065,6 +1065,11 @@ bool RenderingFrontend::SetScreenResolution(TVec2<uint32_t> screenResolution)
 		return false;
 		
 	m_screenResolution = screenResolution;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.Width = m_screenResolution.x;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.Height = m_screenResolution.y;
+	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_screenResolution.x;
+	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_screenResolution.y;
+	
 	return true;
 }
 
