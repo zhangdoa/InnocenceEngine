@@ -24,7 +24,8 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
-
+	l_RenderPassDesc.m_Resizable = false;
+	
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2DArray;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = m_shadowMapResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = m_shadowMapResolution;

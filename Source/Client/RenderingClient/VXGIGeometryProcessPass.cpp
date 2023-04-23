@@ -26,7 +26,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 	l_RenderPassDesc.m_UseOutputMerger = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;

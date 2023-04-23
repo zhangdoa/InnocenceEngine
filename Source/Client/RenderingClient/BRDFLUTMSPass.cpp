@@ -22,7 +22,8 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 512;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 512;
-
+	l_RenderPassDesc.m_Resizable = false;
+	
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(2);

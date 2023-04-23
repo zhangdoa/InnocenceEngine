@@ -19,7 +19,8 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-
+	l_RenderPassDesc.m_Resizable = false;
+	
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2DArray;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = l_shadowMapResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = l_shadowMapResolution;

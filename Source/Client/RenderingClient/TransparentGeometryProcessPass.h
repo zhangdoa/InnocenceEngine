@@ -29,5 +29,7 @@ namespace Inno
 		GPUBufferComponent* m_RT0;
 		GPUBufferComponent* m_RT1;
 		TextureComponent* m_HeadPtr;
+
+		bool DepthStencilRenderTargetsCreationFunc();
 	};
 } // namespace Inno

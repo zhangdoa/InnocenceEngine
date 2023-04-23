@@ -23,6 +23,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&AnimationPass::RenderTargetsReservationFunc, this);
 	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&AnimationPass::RenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsCreationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
@@ -208,6 +209,11 @@ bool AnimationPass::RenderTargetsCreationFunc()
 		m_RenderPassComp->m_RenderTargets[i] = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i];
 	}
 
+	return true;
+}
+
+bool AnimationPass::DepthStencilRenderTargetsCreationFunc()
+{
 	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
 	return true;

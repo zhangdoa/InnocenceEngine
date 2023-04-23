@@ -61,7 +61,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 2;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 	l_RenderPassDesc.m_UseOutputMerger = false;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
@@ -119,7 +119,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_irraidanceInjectionRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricIrraidanceInjectionPass/");
 
@@ -196,7 +196,7 @@ bool VolumetricPass::setupRayMarchingPass()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_rayMarchingRenderPassComp = l_renderingServer->AddRenderPassComponent("VolumetricRayMarchingPass/");
 

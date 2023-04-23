@@ -118,7 +118,7 @@ bool GLRenderingServerNS::resizeImpl()
 
 	for (auto i : m_RenderPassComps)
 	{
-		if (!i->m_RenderPassDesc.m_IsOffScreen)
+		if (i->m_RenderPassDesc.m_Resizable)
 		{
 			if (i->m_RBO)
 			{

@@ -16,7 +16,8 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-
+	l_RenderPassDesc.m_Resizable = false;
+	
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceAveragePass/");
 
 	m_SPC->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";

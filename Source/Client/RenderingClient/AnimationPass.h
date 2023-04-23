@@ -24,5 +24,6 @@ namespace Inno
 
 		bool RenderTargetsReservationFunc();
 		bool RenderTargetsCreationFunc();
+		bool DepthStencilRenderTargetsCreationFunc();
 	};
 } // namespace Inno

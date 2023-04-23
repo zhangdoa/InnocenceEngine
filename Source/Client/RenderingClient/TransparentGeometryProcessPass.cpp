@@ -49,7 +49,8 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-
+	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&TransparentGeometryProcessPass::DepthStencilRenderTargetsCreationFunc, this);
+	
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
@@ -107,8 +108,6 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 bool TransparentGeometryProcessPass::Initialize()
 {	
-	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
-
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_atomicCounterGPUBufferComp);
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_RT0);
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_RT1);
@@ -209,4 +208,11 @@ GPUBufferComponent* TransparentGeometryProcessPass::GetResultChannel1()
 TextureComponent* TransparentGeometryProcessPass::GetHeadPtrTexture()
 {
 	return m_HeadPtr;
+}
+
+bool TransparentGeometryProcessPass::DepthStencilRenderTargetsCreationFunc()
+{
+	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
+
+    return true;
 }

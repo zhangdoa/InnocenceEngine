@@ -22,6 +22,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsCreationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;
@@ -61,8 +62,6 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 bool BillboardPass::Initialize()
 {
-	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
-
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
@@ -124,4 +123,11 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 RenderPassComponent* BillboardPass::GetRenderPassComp()
 {
 	return m_RenderPassComp;
+}
+
+bool Inno::BillboardPass::DepthStencilRenderTargetsCreationFunc()
+{
+	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
+
+    return true;
 }

@@ -188,7 +188,7 @@ namespace Inno
 		struct RenderPassDesc
 		{
 			bool m_UseMultiFrames = false;
-			bool m_IsOffScreen = false;
+			bool m_Resizable = true;
 			GPUEngineType m_GPUEngineType = GPUEngineType::Graphics;
 			size_t m_RenderTargetCount = 0;
 			bool m_UseDepthBuffer = false;
@@ -198,6 +198,8 @@ namespace Inno
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 			std::function<bool()> m_RenderTargetsReservationFunc;
 			std::function<bool()> m_RenderTargetsCreationFunc;
+			std::function<bool()> m_DepthStencilRenderTargetsReservationFunc;
+			std::function<bool()> m_DepthStencilRenderTargetsCreationFunc;
 		};
 
 		struct IPipelineStateObject {};

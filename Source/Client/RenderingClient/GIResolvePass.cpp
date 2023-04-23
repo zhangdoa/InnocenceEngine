@@ -353,7 +353,7 @@ bool GIResolvePass::setupSky()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_skyRadianceSPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyRadiancePass/");
 	m_skyRadianceSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSkyRadiancePass.comp/";
@@ -429,7 +429,7 @@ bool GIResolvePass::setupSurfels()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_surfelRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -482,7 +482,7 @@ bool GIResolvePass::setupBricks()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_brickRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -528,7 +528,7 @@ bool GIResolvePass::setupProbes()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_probeRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -585,7 +585,7 @@ bool GIResolvePass::setupIrradianceVolume()
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_Resizable = false;
 
 	m_irradianceVolumeRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
