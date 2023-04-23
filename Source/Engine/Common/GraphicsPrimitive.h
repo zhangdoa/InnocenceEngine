@@ -191,12 +191,13 @@ namespace Inno
 			bool m_IsOffScreen = false;
 			GPUEngineType m_GPUEngineType = GPUEngineType::Graphics;
 			size_t m_RenderTargetCount = 0;
-			bool m_UseColorBuffer = true;
 			bool m_UseDepthBuffer = false;
 			bool m_UseStencilBuffer = false;
 			bool m_UseOutputMerger = true;
 			TextureDesc m_RenderTargetDesc = {};
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
+			std::function<bool()> m_RenderTargetsReservationFunc;
+			std::function<bool()> m_RenderTargetsCreationFunc;
 		};
 
 		struct IPipelineStateObject {};

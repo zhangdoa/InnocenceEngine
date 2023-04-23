@@ -10,17 +10,18 @@ extern IEngine* g_Engine;
 
 bool RenderingServerHelper::ReserveRenderTargets(RenderPassComponent* RenderPassComp, IRenderingServer* renderingServer)
 {
-	if (RenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
-	{
-		RenderPassComp->m_RenderTargets.reserve(RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-		for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			RenderPassComp->m_RenderTargets.emplace_back();
-			RenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(RenderPassComp->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
-		}
+	if (RenderPassComp->m_RenderPassDesc.m_RenderTargetsReservationFunc)
+		return RenderPassComp->m_RenderPassDesc.m_RenderTargetsReservationFunc();
 
-		Logger::Log(LogLevel::Verbose, "RenderingServer: ", RenderPassComp->m_InstanceName.c_str(), " render targets have been allocated.");
+	RenderPassComp->m_RenderTargets.reserve(RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		RenderPassComp->m_RenderTargets.emplace_back();
+		RenderPassComp->m_RenderTargets[i] = renderingServer->AddTextureComponent((std::string(RenderPassComp->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
 	}
+
+	Logger::Log(LogLevel::Verbose, "RenderingServer: ", RenderPassComp->m_InstanceName.c_str(), " render targets have been allocated.");
+
 
 	if (RenderPassComp->m_RenderPassDesc.m_UseDepthBuffer)
 	{
@@ -34,18 +35,18 @@ bool RenderingServerHelper::ReserveRenderTargets(RenderPassComponent* RenderPass
 
 bool RenderingServerHelper::CreateRenderTargets(RenderPassComponent* RenderPassComp, IRenderingServer* renderingServer)
 {
-	if (RenderPassComp->m_RenderPassDesc.m_UseColorBuffer)
+	if (RenderPassComp->m_RenderPassDesc.m_RenderTargetsCreationFunc)
+		return RenderPassComp->m_RenderPassDesc.m_RenderTargetsCreationFunc();
+
+	for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			auto l_TextureComp = RenderPassComp->m_RenderTargets[i];
+		auto l_TextureComp = RenderPassComp->m_RenderTargets[i];
 
-			l_TextureComp->m_TextureDesc = RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TextureComp->m_TextureDesc = RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
 
-			l_TextureComp->m_TextureData = nullptr;
+		l_TextureComp->m_TextureData = nullptr;
 
-			renderingServer->InitializeTextureComponent(l_TextureComp);
-		}
+		renderingServer->InitializeTextureComponent(l_TextureComp);
 	}
 
 	if (RenderPassComp->m_RenderPassDesc.m_UseDepthBuffer)

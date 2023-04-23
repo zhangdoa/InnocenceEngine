@@ -21,5 +21,8 @@ namespace Inno
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_SPC;
 		SamplerComponent *m_SamplerComp;
+
+		bool RenderTargetsReservationFunc();
+		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno

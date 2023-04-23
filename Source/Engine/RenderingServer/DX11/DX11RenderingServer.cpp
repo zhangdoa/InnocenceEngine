@@ -933,7 +933,7 @@ bool DX11RenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
-		if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
+		if (!l_rhs->m_RenderPassDesc.m_RenderTargetsReservationFunc)
 		{
 			DeleteTextureComponent(l_rhs->m_RenderTargets[i]);
 		}
@@ -1159,27 +1159,40 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassComponent* rhs)
 	{
 		if (l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
+			if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 			{
-				if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
+				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+					m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
+				}
+				else
+				{
+					for (auto i : l_rhs->m_RTVs)
 					{
-						m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
+						m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
+					}
+				}
+			}
+			else
+			{
+				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+				{
+					auto l_RT = reinterpret_cast<DX11TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+
+					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+					{
+						m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 					}
 					else
 					{
-						for (auto i : l_rhs->m_RTVs)
-						{
-							m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
-						}
+						m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 					}
 				}
 				else
 				{
-					if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+					for (auto i : l_rhs->m_RenderTargets)
 					{
-						auto l_RT = reinterpret_cast<DX11TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+						auto l_RT = reinterpret_cast<DX11TextureComponent*>(i);
 
 						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 						{
@@ -1188,22 +1201,6 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassComponent* rhs)
 						else
 						{
 							m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
-						}
-					}
-					else
-					{
-						for (auto i : l_rhs->m_RenderTargets)
-						{
-							auto l_RT = reinterpret_cast<DX11TextureComponent*>(i);
-
-							if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
-							{
-								m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
-							}
-							else
-							{
-								m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
-							}
 						}
 					}
 				}

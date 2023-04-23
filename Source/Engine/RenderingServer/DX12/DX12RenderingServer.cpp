@@ -52,6 +52,8 @@ namespace DX12RenderingServerNS
 	bool CreateGlobalSamplerDescHeap();
 	bool CreateMipmapGenerator();
 	bool CreateSwapChain();
+	bool GetSwapChainImages();
+	bool AssignSwapChainImages();
 
 	bool CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
 	bool GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp);
@@ -711,6 +713,41 @@ bool DX12RenderingServerNS::CreateSwapChain()
 	return true;
 }
 
+bool DX12RenderingServerNS::GetSwapChainImages()
+{
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
+	{
+		auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
+		if (FAILED(l_HResult))
+		{
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
+			return false;
+		}
+	}
+
+    return true;
+}
+
+bool DX12RenderingServerNS::AssignSwapChainImages()
+{
+	m_SwapChainRenderPassComp->m_RenderTargets.resize(m_swapChainImageCount);
+
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
+	{
+		auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
+
+		l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
+		l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
+		l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
+		l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
+
+		l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
+	}
+
+    return true;
+}
+
 bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp)
 {
 	struct DWParam
@@ -869,10 +906,13 @@ bool DX12RenderingServer::Initialize()
 
 		InitializeSamplerComponent(m_SwapChainSamplerComp);
 
-		// Create command queue first
+		if(!GetSwapChainImages())
+			return false;
+
 		auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = m_swapChainImageCount;
+		l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&AssignSwapChainImages);
 
 		m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 		m_SwapChainRenderPassComp->m_RenderPassDesc.m_UseMultiFrames = true;
@@ -893,57 +933,12 @@ bool DX12RenderingServer::Initialize()
 
 		m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainSPC;
 
-		ReserveRenderTargets(m_SwapChainRenderPassComp, this);
-
-		// use device created swap chain textures as render targets
-		for (size_t i = 0; i < m_swapChainImageCount; i++)
-		{
-			auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
-			if (FAILED(l_HResult))
-			{
-				Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
-				return false;
-			}
-			auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
-
-			l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
-			l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
-			l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
-			l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
-			l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
-		}
-
-		CreateRTV(m_SwapChainRenderPassComp);
-
-		CreateDSV(m_SwapChainRenderPassComp);
-
-		CreateRootSignature(m_SwapChainRenderPassComp, m_device);
-
-		m_SwapChainRenderPassComp->m_PipelineStateObject = addPSO();
-
-		CreatePSO(m_SwapChainRenderPassComp, m_device);
-
-		m_SwapChainRenderPassComp->m_CommandLists.resize(m_swapChainImageCount);
-		for (size_t i = 0; i < m_SwapChainRenderPassComp->m_CommandLists.size(); i++)
-		{
-			m_SwapChainRenderPassComp->m_CommandLists[i] = addCommandList();
-		}
-
-		CreateCommandLists(m_SwapChainRenderPassComp);
-
-		m_SwapChainRenderPassComp->m_Semaphores.resize(m_SwapChainRenderPassComp->m_CommandLists.size());
-		for (size_t i = 0; i < m_SwapChainRenderPassComp->m_Semaphores.size(); i++)
-		{
-			m_SwapChainRenderPassComp->m_Semaphores[i] = addSemaphore();
-		}
-
-		CreateFenceEvents(m_SwapChainRenderPassComp);
-
-		m_SwapChainRenderPassComp->m_ObjectStatus = ObjectStatus::Activated;
+		InitializeRenderPassComponent(m_SwapChainRenderPassComp);
+		
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool DX12RenderingServer::Terminate()
@@ -1780,31 +1775,56 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics && rhs->m_RenderPassDesc.m_RenderTargetCount)
 	{
-		auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
-		auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
+		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
-		if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
+		if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+			}
+			else
+			{
+				for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 				{
-					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+				}
+			}
+		}
+		else
+		{
+			// @TODO: SOOO verbose API DX12 it is!
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			{
+				auto l_RT = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+
+				if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+				{
+					l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
+						l_RT->m_UAV.ShaderVisibleGPUHandle,
+						l_RT->m_UAV.ShaderNonVisibleCPUHandle,
+						l_RT->m_DefaultHeapBuffer.Get(),
+						(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+						0,
+						NULL);
 				}
 				else
 				{
-					for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-					{
-						l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
-					}
+					l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
+						l_RT->m_UAV.ShaderVisibleGPUHandle,
+						l_RT->m_UAV.ShaderNonVisibleCPUHandle,
+						l_RT->m_DefaultHeapBuffer.Get(),
+						l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+						0,
+						NULL);
 				}
 			}
 			else
 			{
-				// @TODO: SOOO verbose API DX12 it is!
-				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+				for (auto i : l_rhs->m_RenderTargets)
 				{
-					auto l_RT = reinterpret_cast<DX12TextureComponent *>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+					auto l_RT = reinterpret_cast<DX12TextureComponent*>(i);
 
 					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 					{
@@ -1812,7 +1832,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 							l_RT->m_UAV.ShaderVisibleGPUHandle,
 							l_RT->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_DefaultHeapBuffer.Get(),
-							(UINT *)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+							(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 							0,
 							NULL);
 					}
@@ -1825,34 +1845,6 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 							l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 							0,
 							NULL);
-					}
-				}
-				else
-				{
-					for (auto i : l_rhs->m_RenderTargets)
-					{
-						auto l_RT = reinterpret_cast<DX12TextureComponent *>(i);
-
-						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
-						{
-							l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-								l_RT->m_UAV.ShaderVisibleGPUHandle,
-								l_RT->m_UAV.ShaderNonVisibleCPUHandle,
-								l_RT->m_DefaultHeapBuffer.Get(),
-								(UINT *)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-								0,
-								NULL);
-						}
-						else
-						{
-							l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-								l_RT->m_UAV.ShaderVisibleGPUHandle,
-								l_RT->m_UAV.ShaderNonVisibleCPUHandle,
-								l_RT->m_DefaultHeapBuffer.Get(),
-								l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-								0,
-								NULL);
-						}
 					}
 				}
 			}
@@ -2610,7 +2602,7 @@ DX12SRV DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
     return CreateSRVImpl(l_desc, l_rhs->m_DefaultHeapBuffer);
 }
 
-DX12UAV createUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter)
+DX12UAV CreateUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter)
 {
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -2637,7 +2629,7 @@ DX12UAV DX12RenderingServer::CreateUAV(TextureComponent *rhs, uint32_t mipSlice)
 
 	auto l_desc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mipSlice);
 
-	return createUAVImpl(l_desc, l_rhs->m_DefaultHeapBuffer, false);
+	return CreateUAVImpl(l_desc, l_rhs->m_DefaultHeapBuffer, false);
 }
 
 DX12UAV DX12RenderingServer::CreateUAV(GPUBufferComponent *rhs)
@@ -2649,7 +2641,7 @@ DX12UAV DX12RenderingServer::CreateUAV(GPUBufferComponent *rhs)
 	l_desc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
 	l_desc.Buffer.StructureByteStride = l_rhs->m_isAtomicCounter ? (uint32_t)l_rhs->m_ElementSize : 0;
 
-	return createUAVImpl(l_desc, l_rhs->m_DefaultHeapBuffer, l_rhs->m_isAtomicCounter);
+	return CreateUAVImpl(l_desc, l_rhs->m_DefaultHeapBuffer, l_rhs->m_isAtomicCounter);
 }
 
 DX12CBV DX12RenderingServer::CreateCBV(GPUBufferComponent *rhs)

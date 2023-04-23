@@ -21,7 +21,8 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
-	l_RenderPassDesc.m_UseColorBuffer = false;
+	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&AnimationPass::RenderTargetsReservationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&AnimationPass::RenderTargetsCreationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
@@ -104,15 +105,6 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	m_RenderPassComp->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-
-	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		m_RenderPassComp->m_RenderTargets[i] = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i];
-	}
-
-	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
-
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
@@ -147,8 +139,6 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (l_AnimationDrawCallInfo.size())
 	{
-		g_Engine->getRenderingServer()->BeginCapture();
-
 		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
 		// Don't clean render targets since they are from previous pass
@@ -188,8 +178,6 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 		}
 
 		g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
-
-		g_Engine->getRenderingServer()->EndCapture();
 	}
 	else
 	{
@@ -204,4 +192,23 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 RenderPassComponent* AnimationPass::GetRenderPassComp()
 {
 	return m_RenderPassComp;
+}
+
+bool Inno::AnimationPass::RenderTargetsReservationFunc()
+{
+	m_RenderPassComp->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
+
+    return true;
+}
+
+bool AnimationPass::RenderTargetsCreationFunc()
+{
+	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		m_RenderPassComp->m_RenderTargets[i] = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i];
+	}
+
+	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
+
+	return true;
 }
