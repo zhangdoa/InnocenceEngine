@@ -3,7 +3,7 @@
 
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
-#include "SunShadowBlurEvenPass.h"
+#include "SunShadowGeometryProcessPass.h"
 #include "LightCullingPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
@@ -450,7 +450,7 @@ bool VolumetricPass::irraidanceInjection()
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 3, Accessibility::ReadOnly);
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0], 5, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 6, Accessibility::ReadOnly);
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
 
@@ -458,7 +458,7 @@ bool VolumetricPass::irraidanceInjection()
 
 	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
 	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0], 5, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 6, Accessibility::ReadOnly);
 	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
 	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
 
@@ -590,12 +590,17 @@ bool VolumetricPass::Render(bool visualize)
 
 	l_renderingServer->ExecuteCommandList(m_froxelizationRenderPassComp, GPUEngineType::Graphics);
 	l_renderingServer->WaitCommandQueue(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->WaitCommandQueue(m_froxelizationRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute);
+	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->WaitCommandQueue(m_rayMarchingRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Compute);
+	l_renderingServer->WaitCommandQueue(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	if (visualize)
 	{
