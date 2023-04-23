@@ -11,6 +11,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
+
 bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_initialIndexCount = 1;
@@ -21,40 +22,11 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	m_lightListIndexCounter->m_ElementSize = sizeof(uint32_t);
 	m_lightListIndexCounter->m_InitialData = &l_initialIndexCount;
 
-	auto l_averangeOverlapLight = 64;
-
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
-
-	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / m_tileSize);
-	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / m_tileSize);
-
-	m_numThreadGroups = TVec4<uint32_t>((uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1, 0);
-	m_numThreads = TVec4<uint32_t>(m_tileSize, m_tileSize, 1, 0);
-
-	auto l_elementCount = m_numThreadGroups.x * m_numThreadGroups.y * l_averangeOverlapLight;
-
-	m_lightIndexList = g_Engine->getRenderingServer()->AddGPUBufferComponent("LightIndexList/");
-	m_lightIndexList->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_lightIndexList->m_ElementCount = l_elementCount;
-	m_lightIndexList->m_ElementSize = sizeof(uint32_t);
-
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_Resizable = false;
-
-	m_lightGrid = g_Engine->getRenderingServer()->AddTextureComponent("LightGrid/");
-	m_lightGrid->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-
-	m_lightGrid->m_TextureDesc.Width = m_numThreadGroups.x;
-	m_lightGrid->m_TextureDesc.Height = m_numThreadGroups.y;
-	m_lightGrid->m_TextureDesc.Usage = TextureUsage::Sample;
-	m_lightGrid->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
-	m_lightGrid->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
-
-	m_heatMap = g_Engine->getRenderingServer()->AddTextureComponent("LightCullingHeatMap/");
-	m_heatMap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_heatMap->m_TextureDesc.Usage = TextureUsage::Sample;
+	l_RenderPassDesc.m_UseOutputMerger = false;
+	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&LightCullingPass::RenderTargetsCreationFunc, this);
 
 	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("LightCullingPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";
@@ -129,9 +101,6 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 bool LightCullingPass::Initialize()
 {	
 	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_lightListIndexCounter);
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_lightIndexList);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_lightGrid);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_heatMap);
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
@@ -221,4 +190,57 @@ GPUResourceComponent* LightCullingPass::GetLightIndexList()
 GPUResourceComponent* LightCullingPass::GetHeatMap()
 {
 	return m_heatMap;
+}
+
+bool Inno::LightCullingPass::CreateResources()
+{
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
+
+	auto l_averangeOverlapLight = 64;
+	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / m_tileSize);
+	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / m_tileSize);
+
+	m_numThreadGroups = TVec4<uint32_t>((uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1, 0);
+	m_numThreads = TVec4<uint32_t>(m_tileSize, m_tileSize, 1, 0);
+
+	auto l_elementCount = m_numThreadGroups.x * m_numThreadGroups.y * l_averangeOverlapLight;
+
+	m_lightIndexList = g_Engine->getRenderingServer()->AddGPUBufferComponent("LightIndexList/");
+	m_lightIndexList->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_lightIndexList->m_ElementCount = l_elementCount;
+	m_lightIndexList->m_ElementSize = sizeof(uint32_t);
+
+	m_lightGrid = g_Engine->getRenderingServer()->AddTextureComponent("LightGrid/");
+	m_lightGrid->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+
+	m_lightGrid->m_TextureDesc.Width = m_numThreadGroups.x;
+	m_lightGrid->m_TextureDesc.Height = m_numThreadGroups.y;
+	m_lightGrid->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_lightGrid->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
+	m_lightGrid->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
+
+	m_heatMap = g_Engine->getRenderingServer()->AddTextureComponent("LightCullingHeatMap/");
+	m_heatMap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_heatMap->m_TextureDesc.Usage = TextureUsage::Sample;
+
+    return true;
+}
+
+bool Inno::LightCullingPass::RenderTargetsCreationFunc()
+{
+	if(m_lightIndexList)
+		g_Engine->getRenderingServer()->DeleteGPUBufferComponent(m_lightIndexList);
+	if(m_lightGrid)
+		g_Engine->getRenderingServer()->DeleteTextureComponent(m_lightGrid);
+	if(m_heatMap)
+	g_Engine->getRenderingServer()->DeleteTextureComponent(m_heatMap);
+
+	CreateResources();
+
+	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_lightIndexList);
+	g_Engine->getRenderingServer()->InitializeTextureComponent(m_lightGrid);
+	g_Engine->getRenderingServer()->InitializeTextureComponent(m_heatMap);
+
+    return true;
 }

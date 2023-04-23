@@ -12,30 +12,14 @@ using namespace DefaultGPUBuffers;
 
 bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 {	
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
-
-	auto l_numThreadsX = std::ceil(l_viewportSize.x / m_tileSize);
-	auto l_numThreadsY = std::ceil(l_viewportSize.y / m_tileSize);
-
-	auto l_numThreadGroupsX = std::ceil(l_numThreadsX / m_numThreadPerGroup);
-	auto l_numThreadGroupsY = std::ceil(l_numThreadsY / m_numThreadPerGroup);
-
-	m_numThreads = TVec4<uint32_t>((uint32_t)l_numThreadsX, (uint32_t)l_numThreadsY, 1, 0);
-	m_numThreadGroups = TVec4<uint32_t>((uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1, 0);
-
-	auto l_elementCount = m_numThreads.x * m_numThreads.y;
-
-	m_tiledFrustum = g_Engine->getRenderingServer()->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
-	m_tiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_tiledFrustum->m_ElementCount = l_elementCount;
-	m_tiledFrustum->m_ElementSize = 64;
-
 	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";	
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
+	l_RenderPassDesc.m_UseOutputMerger = false;
+	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&TiledFrustumGenerationPass::RenderTargetsCreationFunc, this);
 
 	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("TiledFrustumGenerationPass/");
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
@@ -64,7 +48,6 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 
 bool TiledFrustumGenerationPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_tiledFrustum);
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
 
@@ -122,4 +105,39 @@ RenderPassComponent* TiledFrustumGenerationPass::GetRenderPassComp()
 GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 {
 	return m_tiledFrustum;
+}
+
+bool Inno::TiledFrustumGenerationPass::CreateResources()
+{
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
+
+	auto l_numThreadsX = std::ceil(l_viewportSize.x / m_tileSize);
+	auto l_numThreadsY = std::ceil(l_viewportSize.y / m_tileSize);
+
+	auto l_numThreadGroupsX = std::ceil(l_numThreadsX / m_numThreadPerGroup);
+	auto l_numThreadGroupsY = std::ceil(l_numThreadsY / m_numThreadPerGroup);
+
+	m_numThreads = TVec4<uint32_t>((uint32_t)l_numThreadsX, (uint32_t)l_numThreadsY, 1, 0);
+	m_numThreadGroups = TVec4<uint32_t>((uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1, 0);
+
+	auto l_elementCount = m_numThreads.x * m_numThreads.y;
+
+	m_tiledFrustum = g_Engine->getRenderingServer()->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
+	m_tiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_tiledFrustum->m_ElementCount = l_elementCount;
+	m_tiledFrustum->m_ElementSize = 64;
+
+    return true;
+}
+
+bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
+{
+	if(m_tiledFrustum)
+		g_Engine->getRenderingServer()->DeleteGPUBufferComponent(m_tiledFrustum);
+
+	CreateResources();
+
+	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_tiledFrustum);
+
+    return true;
 }

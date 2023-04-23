@@ -42,5 +42,8 @@ namespace Inno
 		const uint32_t m_tileSize = 16;
 		Math::TVec4<uint32_t> m_numThreads;
 		Math::TVec4<uint32_t> m_numThreadGroups;
+
+		bool CreateResources();
+		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno
