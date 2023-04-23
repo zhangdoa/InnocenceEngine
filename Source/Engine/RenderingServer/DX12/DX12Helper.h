@@ -48,7 +48,6 @@ namespace Inno
 		D3D12_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
 		D3D12_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, bool stencilEnable);
 
-		bool CreateViews(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
 		bool CreateRootSignature(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
 		bool CreatePSO(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
 		bool CreateFenceEvents(DX12RenderPassComponent *DX12RenderPassComp);

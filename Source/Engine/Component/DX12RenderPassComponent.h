@@ -41,15 +41,11 @@ namespace Inno
 	class DX12RenderPassComponent : public RenderPassComponent
 	{
 	public:
-		ComPtr<ID3D12DescriptorHeap> m_RTVDescriptorHeap;
-		D3D12_DESCRIPTOR_HEAP_DESC m_RTVDescriptorHeapDesc = {};
 		D3D12_RENDER_TARGET_VIEW_DESC m_RTVDesc = {};
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVDescriptorCPUHandles;
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVDescCPUHandles;
 
-		ComPtr<ID3D12DescriptorHeap> m_DSVDescriptorHeap;
-		D3D12_DESCRIPTOR_HEAP_DESC m_DSVDescriptorHeapDesc = {};
 		D3D12_DEPTH_STENCIL_VIEW_DESC m_DSVDesc = {};
-		D3D12_CPU_DESCRIPTOR_HANDLE m_DSVDescriptorCPUHandle;
+		D3D12_CPU_DESCRIPTOR_HANDLE m_DSVDescCPUHandle;
 
 		ComPtr<ID3D12RootSignature> m_RootSignature = 0;
 	};

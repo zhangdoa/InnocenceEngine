@@ -46,8 +46,10 @@ namespace DX12RenderingServerNS
 	bool CreateGlobalCommandQueues();
 	bool CreateGlobalCommandAllocators();
 	bool CreateSyncPrimitives();
-	bool CreateGlobalCSUHeap();
-	bool CreateGlobalSamplerHeap();
+	bool CreateGlobalCSUDescHeap();
+	bool CreateGlobalRTVDescHeap();
+	bool CreateGlobalDSVDescHeap();
+	bool CreateGlobalSamplerDescHeap();
 	bool CreateMipmapGenerator();
 	bool CreateSwapChain();
 
@@ -88,6 +90,11 @@ namespace DX12RenderingServerNS
 
 	ComPtr<ID3D12Device8> m_device = 0;
 
+	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
+	ComPtr<IDXGISwapChain4> m_swapChain = 0;
+	const uint32_t m_swapChainImageCount = 2;
+	std::vector<ComPtr<ID3D12Resource>> m_swapChainImages(m_swapChainImageCount);
+
 	ComPtr<ID3D12CommandQueue> m_directCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_computeCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_copyCommandQueue = 0;
@@ -100,24 +107,27 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12Fence> m_copyCommandQueueFence = 0;
 	std::atomic<HANDLE> m_directCommandQueueFenceEvent = 0;
 	std::atomic<HANDLE> m_computeCommandQueueFenceEvent = 0;
-
-	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
-	ComPtr<IDXGISwapChain4> m_swapChain = 0;
-	const uint32_t m_swapChainImageCount = 2;
-	std::vector<ComPtr<ID3D12Resource>> m_swapChainImages(m_swapChainImageCount);
 	std::vector<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators(m_swapChainImageCount);
 	std::vector<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators(m_swapChainImageCount);
 	ComPtr<ID3D12CommandAllocator> m_copyCommandAllocator = 0;
-
-	ComPtr<ID3D12DescriptorHeap> m_CSUHeap = 0;
+	
+	ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_CSUDescHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_CSUDescHeapGPUHandle;
 
-	ComPtr<ID3D12DescriptorHeap> m_ShaderNonVisibleCSUHeap = 0;
+	ComPtr<ID3D12DescriptorHeap> m_ShaderNonVisibleCSUDescHeap = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_ShaderNonVisibleCSUDescHeapCPUHandle;
 
-	ComPtr<ID3D12DescriptorHeap> m_samplerHeap = 0;
-	D3D12_DESCRIPTOR_HEAP_DESC m_samplerHeapDesc = {};
+	ComPtr<ID3D12DescriptorHeap> m_RTVDescHeap = 0;
+	D3D12_DESCRIPTOR_HEAP_DESC m_RTVDescHeapDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVDescHeapCPUHandle;
+
+	ComPtr<ID3D12DescriptorHeap> m_DSVDescHeap = 0;
+	D3D12_DESCRIPTOR_HEAP_DESC m_DSVDescHeapDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_DSVDescHeapCPUHandle;
+
+	ComPtr<ID3D12DescriptorHeap> m_samplerDescHeap = 0;
+	D3D12_DESCRIPTOR_HEAP_DESC m_samplerDescHeapDesc = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_SamplerDescHeapCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_SamplerDescHeapGPUHandle;
 
@@ -443,7 +453,7 @@ bool DX12RenderingServerNS::CreateSyncPrimitives()
 	return true;
 }
 
-bool DX12RenderingServerNS::CreateGlobalCSUHeap()
+bool DX12RenderingServerNS::CreateGlobalCSUDescHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC l_CSUHeapDesc = {};
 
@@ -451,7 +461,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	l_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	l_CSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-	auto l_result = m_device->CreateDescriptorHeap(&l_CSUHeapDesc, IID_PPV_ARGS(&m_CSUHeap));
+	auto l_result = m_device->CreateDescriptorHeap(&l_CSUHeapDesc, IID_PPV_ARGS(&m_CSUDescHeap));
 	if (FAILED(l_result))
 	{
 		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-visible DescriptorHeap for CBV/SRV/UAV!");
@@ -459,10 +469,10 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 		return false;
 	}
 
-	m_CSUHeap->SetName(L"ShaderVisibleGlobalCSUHeap");
+	m_CSUDescHeap->SetName(L"GlobalCSUDescHeap_ShaderVisible");
 
-	m_CSUDescHeapCPUHandle = m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
-	m_CSUDescHeapGPUHandle = m_CSUHeap->GetGPUDescriptorHandleForHeapStart();
+	m_CSUDescHeapCPUHandle = m_CSUDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_CSUDescHeapGPUHandle = m_CSUDescHeap->GetGPUDescriptorHandleForHeapStart();
 
 	Logger::Log(LogLevel::Success, "DX12RenderingServer: Shader-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
@@ -472,7 +482,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	l_ShaderNonVisibleCSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	l_ShaderNonVisibleCSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	l_result = m_device->CreateDescriptorHeap(&l_ShaderNonVisibleCSUHeapDesc, IID_PPV_ARGS(&m_ShaderNonVisibleCSUHeap));
+	l_result = m_device->CreateDescriptorHeap(&l_ShaderNonVisibleCSUHeapDesc, IID_PPV_ARGS(&m_ShaderNonVisibleCSUDescHeap));
 	if (FAILED(l_result))
 	{
 		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-non-visible DescriptorHeap for CBV/SRV/UAV!");
@@ -480,22 +490,22 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 		return false;
 	}
 
-	m_ShaderNonVisibleCSUHeap->SetName(L"ShaderNonVisibleGlobalCSUHeap");
+	m_ShaderNonVisibleCSUDescHeap->SetName(L"GlobalCSUDescHeap_ShaderNonVisible");
 
-	m_ShaderNonVisibleCSUDescHeapCPUHandle = m_ShaderNonVisibleCSUHeap->GetCPUDescriptorHandleForHeapStart();
+	m_ShaderNonVisibleCSUDescHeapCPUHandle = m_ShaderNonVisibleCSUDescHeap->GetCPUDescriptorHandleForHeapStart();
 
 	Logger::Log(LogLevel::Success, "DX12RenderingServer: Shader-non-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
 	return true;
 }
 
-bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
+bool DX12RenderingServerNS::CreateGlobalSamplerDescHeap()
 {
-	m_samplerHeapDesc.NumDescriptors = 128;
-	m_samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-	m_samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	m_samplerDescHeapDesc.NumDescriptors = 128;
+	m_samplerDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	m_samplerDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-	auto l_result = m_device->CreateDescriptorHeap(&m_samplerHeapDesc, IID_PPV_ARGS(&m_samplerHeap));
+	auto l_result = m_device->CreateDescriptorHeap(&m_samplerDescHeapDesc, IID_PPV_ARGS(&m_samplerDescHeap));
 	if (FAILED(l_result))
 	{
 		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for Sampler!");
@@ -503,12 +513,56 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 		return false;
 	}
 
-	m_samplerHeap->SetName(L"GlobalSamplerHeap");
+	m_samplerDescHeap->SetName(L"GlobalSamplerDescHeap");
 
-	m_SamplerDescHeapCPUHandle = m_samplerHeap->GetCPUDescriptorHandleForHeapStart();
-	m_SamplerDescHeapGPUHandle = m_samplerHeap->GetGPUDescriptorHandleForHeapStart();
+	m_SamplerDescHeapCPUHandle = m_samplerDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_SamplerDescHeapGPUHandle = m_samplerDescHeap->GetGPUDescriptorHandleForHeapStart();
 
 	Logger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for Sampler has been created.");
+
+	return true;
+}
+
+bool DX12RenderingServerNS::CreateGlobalRTVDescHeap()
+{
+	m_RTVDescHeapDesc.NumDescriptors = 256;
+	m_RTVDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	m_RTVDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	auto l_HResult = m_device->CreateDescriptorHeap(&m_RTVDescHeapDesc, IID_PPV_ARGS(&m_RTVDescHeap));
+	if (FAILED(l_HResult))
+	{
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for RTV!");
+		return false;
+	}
+
+	m_RTVDescHeap->SetName(L"GlobalRTVDescHeap");
+
+	m_RTVDescHeapCPUHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for RTV has been created.");
+
+	return true;
+}
+
+bool DX12RenderingServerNS::CreateGlobalDSVDescHeap()
+{
+	m_DSVDescHeapDesc.NumDescriptors = 256;
+	m_DSVDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	m_DSVDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	auto l_HResult = m_device->CreateDescriptorHeap(&m_DSVDescHeapDesc, IID_PPV_ARGS(&m_DSVDescHeap));
+	if (FAILED(l_HResult))
+	{
+		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for DSV!");
+		return false;
+	}
+
+	m_DSVDescHeap->SetName(L"GlobalDSVDescHeap");
+
+	m_DSVDescHeapCPUHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
+
+	Logger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for DSV has been created.");
 
 	return true;
 }
@@ -690,7 +744,7 @@ bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12Texture
 
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
 
 	auto computeCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
@@ -787,8 +841,10 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	l_result &= CreateGlobalCommandQueues();
 	l_result &= CreateGlobalCommandAllocators();
 	l_result &= CreateSyncPrimitives();
-	l_result &= CreateGlobalCSUHeap();
-	l_result &= CreateGlobalSamplerHeap();
+	l_result &= CreateGlobalCSUDescHeap();
+	l_result &= CreateGlobalRTVDescHeap();
+	l_result &= CreateGlobalDSVDescHeap();
+	l_result &= CreateGlobalSamplerDescHeap();
 	l_result &= CreateMipmapGenerator();
 	l_result &= CreateSwapChain();
 
@@ -858,7 +914,9 @@ bool DX12RenderingServer::Initialize()
 			l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
 		}
 
-		CreateViews(m_SwapChainRenderPassComp, m_device);
+		CreateRTV(m_SwapChainRenderPassComp);
+
+		CreateDSV(m_SwapChainRenderPassComp);
 
 		CreateRootSignature(m_SwapChainRenderPassComp, m_device);
 
@@ -1178,7 +1236,9 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 
 	l_result &= CreateRenderTargets(l_rhs, this);
 
-	l_result &= CreateViews(l_rhs, m_device);
+	l_result &= CreateRTV(l_rhs);
+
+	l_result &= CreateDSV(l_rhs);
 
 	l_result &= CreateRootSignature(l_rhs, m_device);
 
@@ -1488,7 +1548,7 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 
 	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 	
-	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
 	
 	if(l_rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
@@ -1578,7 +1638,7 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 
 	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
-	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
 
 	l_commandList->ClearUnorderedAccessViewUint(
@@ -1641,7 +1701,7 @@ bool PrepareRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *
 
 bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *commandList, DX12PipelineStateObject *PSO)
 {
-	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get(), m_samplerHeap.Get()};
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get(), m_samplerDescHeap.Get()};
 
 	ComPtr<ID3D12GraphicsCommandList> l_commandList;
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
@@ -1666,7 +1726,7 @@ bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *comma
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			l_DSV = &renderPass->m_DSVDescriptorCPUHandle;
+			l_DSV = &renderPass->m_DSVDescCPUHandle;
 		}
 
 		D3D12_CPU_DESCRIPTOR_HANDLE *l_RTVs = NULL;
@@ -1678,12 +1738,12 @@ bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *comma
 			{
 				if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					l_RTVs = &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame];
+					l_RTVs = &renderPass->m_RTVDescCPUHandles[renderPass->m_CurrentFrame];
 					l_RTCount = 1;
 				}
 				else
 				{
-					l_RTVs = &renderPass->m_RTVDescriptorCPUHandles[0];
+					l_RTVs = &renderPass->m_RTVDescCPUHandles[0];
 					l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
 				}
 			}
@@ -1729,13 +1789,13 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 			{
 				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 				}
 				else
 				{
 					for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 					{
-						l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+						l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 					}
 				}
 			}
@@ -1805,7 +1865,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassComponent *rhs)
 			{
 				l_flag |= D3D12_CLEAR_FLAG_STENCIL;
 			}
-			l_commandList->m_DirectCommandList->ClearDepthStencilView(l_rhs->m_DSVDescriptorCPUHandle, l_flag, 1.0f, 0x00, 0, nullptr);
+			l_commandList->m_DirectCommandList->ClearDepthStencilView(l_rhs->m_DSVDescCPUHandle, l_flag, 1.0f, 0x00, 0, nullptr);
 		}
 	}
 
@@ -2459,7 +2519,61 @@ bool DX12RenderingServer::Resize()
 	return true;
 }
 
-DX12SRV createSRVImpl(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle)
+bool DX12RenderingServer::CreateRTV(RenderPassComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
+	if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
+	{
+		auto l_RTVDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		l_rhs->m_RTVDesc = GetRTVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc);
+		l_rhs->m_RTVDescCPUHandles.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+
+		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			l_rhs->m_RTVDescCPUHandles[i] = m_RTVDescHeapCPUHandle;
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[i])->m_DefaultHeapBuffer;
+			m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_rhs->m_RTVDesc, l_rhs->m_RTVDescCPUHandles[i]);
+
+			m_RTVDescHeapCPUHandle.ptr += l_RTVDescSize;
+		}
+
+		Logger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " RTV has been created.");
+		return true;
+	}
+
+	return false;
+}
+
+bool DX12RenderingServer::CreateDSV(RenderPassComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+	{
+		if (l_rhs->m_DepthStencilRenderTarget != nullptr)
+		{
+			auto l_DSVDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+			l_rhs->m_DSVDesc = GetDSVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
+			l_rhs->m_DSVDescCPUHandle = m_DSVDescHeapCPUHandle;
+
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_DepthStencilRenderTarget)->m_DefaultHeapBuffer;
+			m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_rhs->m_DSVDesc, l_rhs->m_DSVDescCPUHandle);
+			
+			m_DSVDescHeapCPUHandle.ptr += l_DSVDescSize;
+
+			Logger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " DSV has been created.");
+			return false;
+		}
+		else
+		{
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
+			return false;
+		}
+	}
+
+	return false;
+}
+
+DX12SRV CreateSRVImpl(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle)
 {
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -2479,10 +2593,10 @@ DX12SRV createSRVImpl(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resourc
 DX12SRV DX12RenderingServer::CreateSRV(TextureComponent *rhs, uint32_t mostDetailedMip)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
-	return createSRVImpl(GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mostDetailedMip), l_rhs->m_DefaultHeapBuffer);
+	return CreateSRVImpl(GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mostDetailedMip), l_rhs->m_DefaultHeapBuffer);
 }
 
-DX12SRV Inno::DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
+DX12SRV DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
@@ -2493,7 +2607,7 @@ DX12SRV Inno::DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 	l_desc.Buffer.StructureByteStride = l_rhs->m_isAtomicCounter ? (uint32_t)l_rhs->m_ElementSize : 0;
 	l_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    return createSRVImpl(l_desc, l_rhs->m_DefaultHeapBuffer);
+    return CreateSRVImpl(l_desc, l_rhs->m_DefaultHeapBuffer);
 }
 
 DX12UAV createUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter)
@@ -2567,7 +2681,7 @@ ID3D12Device* Inno::DX12RenderingServer::GetDevice()
 
 ID3D12DescriptorHeap* Inno::DX12RenderingServer::GetCSUDescHeap()
 {
-    return m_CSUHeap.Get();
+    return m_CSUDescHeap.Get();
 }
 
 uint32_t Inno::DX12RenderingServer::GetSwapChainImageCount()
