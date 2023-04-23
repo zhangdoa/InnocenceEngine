@@ -1231,9 +1231,12 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 
 	l_result &= CreateRenderTargets(l_rhs, this);
 
-	l_result &= CreateRTV(l_rhs);
+	if(l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+	{
+		l_result &= CreateRTV(l_rhs);
 
-	l_result &= CreateDSV(l_rhs);
+		l_result &= CreateDSV(l_rhs);
+	}
 
 	l_result &= CreateRootSignature(l_rhs, m_device);
 
