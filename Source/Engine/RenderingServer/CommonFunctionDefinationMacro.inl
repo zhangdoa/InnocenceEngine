@@ -12,8 +12,7 @@ else \
 { \
 	l_name = (std::string(#component) + "_" + std::to_string(l_count) + "/"); \
 } \
-auto l_rawPtr = m_##component##ComponentPool->Spawn(); \
-auto l_result = new(l_rawPtr)renderingServer##component##Component(); \
+auto l_result = m_##component##ComponentPool->Spawn(); \
 l_result->m_UUID = Randomizer::GenerateUUID(); \
 l_result->m_ObjectStatus = ObjectStatus::Created; \
 l_result->m_Serializable = false; \
