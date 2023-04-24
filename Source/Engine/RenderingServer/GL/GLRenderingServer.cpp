@@ -128,14 +128,15 @@ bool GLRenderingServerNS::resizeImpl()
 
 			for (auto j : i->m_RenderTargets)
 			{
-				l_renderingServer->DeleteTextureComponent(j);
+				if(j.m_IsOwned)
+					l_renderingServer->DeleteTextureComponent(j.m_Texture);
 			}
 
 			i->m_RenderTargets.clear();
 
-			if (i->m_DepthStencilRenderTarget)
+			if (i->m_DepthStencilRenderTarget.m_IsOwned && i->m_DepthStencilRenderTarget.m_Texture)
 			{
-				l_renderingServer->DeleteTextureComponent(i->m_DepthStencilRenderTarget);
+				l_renderingServer->DeleteTextureComponent(i->m_DepthStencilRenderTarget.m_Texture);
 			}
 
 			m_PSOPool->Destroy(reinterpret_cast<GLPipelineStateObject*>(i->m_PipelineStateObject));
@@ -649,14 +650,14 @@ bool GLRenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
 	}
 	glDeleteFramebuffers(1, &l_rhs->m_FBO);
 
-	if (l_rhs->m_DepthStencilRenderTarget)
+	if (l_rhs->m_DepthStencilRenderTarget.m_Texture)
 	{
-		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget);
+		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget.m_Texture);
 	}
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
-		DeleteTextureComponent(l_rhs->m_RenderTargets[i]);
+		DeleteTextureComponent(l_rhs->m_RenderTargets[i].m_Texture);
 	}
 
 	m_RenderPassComponentPool->Destroy(l_rhs);

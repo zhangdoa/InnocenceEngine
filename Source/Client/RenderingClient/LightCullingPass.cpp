@@ -155,7 +155,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightIndexList, 5, Accessibility::ReadWrite, 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightGrid, 6, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_heatMap, 7, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture, 8, Accessibility::ReadOnly);
 
 	// @TODO: Buggy on OpenGL + Nvidia
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
@@ -165,7 +165,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightIndexList, 5, Accessibility::ReadWrite, 0);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightGrid, 6, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_heatMap, 7, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture, 8, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 

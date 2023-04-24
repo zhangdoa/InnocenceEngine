@@ -192,11 +192,11 @@ namespace Inno
             g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: Start to generate probe location...");
 
             // Read back results and generate probes
-            auto l_probePosTextureResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0]);
+            auto l_probePosTextureResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture);
 
             //#ifdef DEBUG_
             auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
-            l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0]->m_TextureDesc;
+            l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_TextureData = l_probePosTextureResults.data();
             g_Engine->getAssetSystem()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
             //#endif // DEBUG_

@@ -90,7 +90,7 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
 	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp, (size_t)(l_renderingContext->m_writeTexture == m_RenderPassComp->m_RenderTargets[0]));
+	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp, (size_t)(l_renderingContext->m_writeTexture == m_RenderPassComp->m_RenderTargets[0].m_Texture));
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
@@ -117,10 +117,10 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 
 GPUResourceComponent *TAAPass::GetOddResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0];
+	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }
 
 GPUResourceComponent *TAAPass::GetEvenResult()
 {
-	return m_RenderPassComp->m_RenderTargets[1];
+	return m_RenderPassComp->m_RenderTargets[1].m_Texture;
 }

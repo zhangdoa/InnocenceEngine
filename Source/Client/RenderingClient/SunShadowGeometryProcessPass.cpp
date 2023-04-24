@@ -165,7 +165,7 @@ RenderPassComponent* SunShadowGeometryProcessPass::GetRenderPassComp()
 
 GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0];
+	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }
 
 uint32_t SunShadowGeometryProcessPass::GetShadowMapResolution()

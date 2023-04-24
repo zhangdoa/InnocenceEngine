@@ -8,7 +8,8 @@ namespace Inno
 {
 	struct RenderTarget
 	{
-
+		TextureComponent* m_Texture = nullptr;
+		bool m_IsOwned = false;
 	};
 	
 	class RenderPassComponent : public Component
@@ -21,8 +22,8 @@ namespace Inno
 
 		RenderPassDesc m_RenderPassDesc = {};
 
-		std::vector<TextureComponent*> m_RenderTargets;
-		TextureComponent* m_DepthStencilRenderTarget = 0;
+		std::vector<RenderTarget> m_RenderTargets;
+		RenderTarget m_DepthStencilRenderTarget = {};
 		std::vector<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
 
 		IPipelineStateObject* m_PipelineStateObject = 0;

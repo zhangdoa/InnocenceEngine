@@ -336,7 +336,7 @@ bool DX11RenderingServer::Initialize()
 
 		ReserveRenderTargets(m_SwapChainRenderPassComp, this);
 
-		auto l_DX11TextureComp = reinterpret_cast<DX11TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[0]);
+		auto l_DX11TextureComp = reinterpret_cast<DX11TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[0].m_Texture);
 
 		l_DX11TextureComp->m_ResourceHandle = m_swapChainTextures[0];
 		l_DX11TextureComp->m_ObjectStatus = ObjectStatus::Activated;
@@ -928,14 +928,14 @@ bool DX11RenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
 
 	if (l_rhs->m_RenderPassDesc.m_UseDepthBuffer)
 	{
-		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget);
+		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget.m_Texture);
 	}
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
 		if (!l_rhs->m_RenderPassDesc.m_RenderTargetsReservationFunc)
 		{
-			DeleteTextureComponent(l_rhs->m_RenderTargets[i]);
+			DeleteTextureComponent(l_rhs->m_RenderTargets[i].m_Texture);
 		}
 	}
 
@@ -1177,7 +1177,7 @@ bool DX11RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 			{
 				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					auto l_RT = reinterpret_cast<DX11TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+					auto l_RT = reinterpret_cast<DX11TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame].m_Texture);
 
 					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 					{
@@ -1192,7 +1192,7 @@ bool DX11RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 				{
 					for (auto i : l_rhs->m_RenderTargets)
 					{
-						auto l_RT = reinterpret_cast<DX11TextureComponent*>(i);
+						auto l_RT = reinterpret_cast<DX11TextureComponent*>(i.m_Texture);
 
 						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 						{

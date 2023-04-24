@@ -239,7 +239,7 @@ namespace Inno
 				l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 				l_renderingServer->WaitCommandQueue(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 				l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-				l_canvas = BSDFTestPass::Get().GetRenderPassComp()->m_RenderTargets[0];
+				l_canvas = BSDFTestPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
 				l_canvasOwner = BSDFTestPass::Get().GetRenderPassComp();
 			}
 			else if (m_showLightHeatmap)
@@ -253,7 +253,7 @@ namespace Inno
 				l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 				l_renderingServer->WaitCommandQueue(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 				l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-				l_canvas = SurfelGITestPass::Get().GetRenderPassComp()->m_RenderTargets[0];
+				l_canvas = SurfelGITestPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
 				l_canvasOwner = SurfelGITestPass::Get().GetRenderPassComp();
 			}
 			else if (m_showVolumetric)
@@ -376,7 +376,7 @@ namespace Inno
 				}
 
 				l_TAAPassRenderingContext.m_input = l_canvas;
-				l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3];
+				l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3].m_Texture;
 
 				TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
 

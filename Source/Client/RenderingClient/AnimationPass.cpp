@@ -23,6 +23,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&AnimationPass::RenderTargetsReservationFunc, this);
 	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&AnimationPass::RenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsReservationFunc, this);
 	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsCreationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
@@ -206,15 +207,20 @@ bool AnimationPass::RenderTargetsCreationFunc()
 {
 	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		m_RenderPassComp->m_RenderTargets[i] = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i];
+		m_RenderPassComp->m_RenderTargets[i].m_Texture = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i].m_Texture;
 	}
 
 	return true;
 }
 
+bool AnimationPass::DepthStencilRenderTargetsReservationFunc()
+{
+	return true;
+}
+
 bool AnimationPass::DepthStencilRenderTargetsCreationFunc()
 {
-	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
+	m_RenderPassComp->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture;
 
 	return true;
 }

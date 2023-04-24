@@ -24,6 +24,7 @@ namespace Inno
 		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
 
+		bool DepthStencilRenderTargetsReservationFunc();
 		bool DepthStencilRenderTargetsCreationFunc();
 	};
 } // namespace Inno

@@ -23,6 +23,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsReservationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;
@@ -125,9 +126,14 @@ RenderPassComponent* BillboardPass::GetRenderPassComp()
 	return m_RenderPassComp;
 }
 
-bool Inno::BillboardPass::DepthStencilRenderTargetsCreationFunc()
+bool BillboardPass::DepthStencilRenderTargetsReservationFunc()
 {
-	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
+    return true;
+}
+
+bool BillboardPass::DepthStencilRenderTargetsCreationFunc()
+{
+	m_RenderPassComp->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture;
 
     return true;
 }

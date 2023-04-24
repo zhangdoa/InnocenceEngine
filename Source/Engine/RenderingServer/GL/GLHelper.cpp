@@ -439,13 +439,13 @@ bool Inno::GLHelper::AttachFramebuffer(GLRenderPassComponent* GLRenderPassComp)
 {
 	for (uint32_t i = 0; i < GLRenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		auto l_TextureComp = GLRenderPassComp->m_RenderTargets[i];
+		auto l_TextureComp = GLRenderPassComp->m_RenderTargets[i].m_Texture;
 		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(l_TextureComp), GLRenderPassComp, i);
 	}
 	
 	if (GLRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(GLRenderPassComp->m_DepthStencilRenderTarget), GLRenderPassComp, 0);
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureComponent*>(GLRenderPassComp->m_DepthStencilRenderTarget.m_Texture), GLRenderPassComp, 0);
 	}
 
 	return true;

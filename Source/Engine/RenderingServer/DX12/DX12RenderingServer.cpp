@@ -57,6 +57,7 @@ namespace DX12RenderingServerNS
 
 	bool CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
 	bool GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp);
+	bool DeleteResources(DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer);
 	bool Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer);
 	bool ResizeImpl();
 	
@@ -73,10 +74,10 @@ namespace DX12RenderingServerNS
 	TObjectPool<DX12SamplerComponent> *m_SamplerComponentPool = 0;
 	TObjectPool<DX12GPUBufferComponent> *m_GPUBufferComponentPool = 0;
 
-	std::unordered_set<MeshComponent *> m_initializedMeshes;
-	std::unordered_set<TextureComponent *> m_initializedTextures;
-	std::unordered_set<MaterialComponent *> m_initializedMaterials;
-	std::vector<RenderPassComponent *> m_initializedRenderPasses;
+	std::unordered_set<MeshComponent*> m_initializedMeshes;
+	std::unordered_set<TextureComponent*> m_initializedTextures;
+	std::unordered_set<MaterialComponent*> m_initializedMaterials;
+	std::vector<RenderPassComponent*> m_initializedRenderPasses;
 
 	std::atomic_bool m_needResize = false;
 
@@ -105,14 +106,14 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12CommandQueue> m_computeCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_copyCommandQueue = 0;
 
-	std::atomic<uint64_t> m_directCommandQueueSemaphore = 0;
-	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 0;
-	std::atomic<uint64_t> m_copyCommandQueueSemaphore = 0;
-	ComPtr<ID3D12Fence> m_directCommandQueueFence = 0;
-	ComPtr<ID3D12Fence> m_computeCommandQueueFence = 0;
-	ComPtr<ID3D12Fence> m_copyCommandQueueFence = 0;
-	std::atomic<HANDLE> m_directCommandQueueFenceEvent = 0;
-	std::atomic<HANDLE> m_computeCommandQueueFenceEvent = 0;
+	std::vector<std::atomic<uint64_t>> m_directCommandQueueSemaphore(m_swapChainImageCount);
+	std::vector<std::atomic<uint64_t>> m_computeCommandQueueSemaphore(m_swapChainImageCount);
+	std::vector<std::atomic<uint64_t>> m_copyCommandQueueSemaphore(m_swapChainImageCount);
+	std::vector<ComPtr<ID3D12Fence>> m_directCommandQueueFence(m_swapChainImageCount);
+	std::vector<ComPtr<ID3D12Fence>> m_computeCommandQueueFence(m_swapChainImageCount);
+	std::vector<ComPtr<ID3D12Fence>> m_copyCommandQueueFence(m_swapChainImageCount);
+	std::vector<std::atomic<HANDLE>> m_directCommandQueueFenceEvent(m_swapChainImageCount);
+	std::vector<std::atomic<HANDLE>> m_computeCommandQueueFenceEvent(m_swapChainImageCount);
 	std::vector<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators(m_swapChainImageCount);
 	std::vector<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators(m_swapChainImageCount);
 	ComPtr<ID3D12CommandAllocator> m_copyCommandAllocator = 0;
@@ -433,27 +434,29 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocators()
 
 bool DX12RenderingServerNS::CreateSyncPrimitives()
 {
-	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence))))
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
-		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for direct CommandQueue!");
-		return false;
+		if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence[i]))))
+		{
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for direct CommandQueue!");
+			return false;
+		}
+		if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence[i]))))
+		{
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for compute CommandQueue!");
+			return false;
+		}
+		if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence[i]))))
+		{
+			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for copy CommandQueue!");
+			return false;
+		}
+	#ifdef INNO_DEBUG
+		m_directCommandQueueFence[i]->SetName((L"DirectCommandQueueFence_" + std::to_wstring(i)).c_str());
+		m_computeCommandQueueFence[i]->SetName((L"ComputeCommandQueueFence_" + std::to_wstring(i)).c_str());
+		m_copyCommandQueueFence[i]->SetName((L"CopyCommandQueueFence_" + std::to_wstring(i)).c_str());
+	#endif // INNO_DEBUG
 	}
-	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence))))
-	{
-		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for compute CommandQueue!");
-		return false;
-	}
-	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence))))
-	{
-		Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for copy CommandQueue!");
-		return false;
-	}
-#ifdef INNO_DEBUG
-	m_directCommandQueueFence->SetName(L"DirectCommandQueueFence");
-	m_computeCommandQueueFence->SetName(L"ComputeCommandQueueFence");
-	m_copyCommandQueueFence->SetName(L"CopyCommandQueueFence");
-#endif // INNO_DEBUG
-
 	Logger::Log(LogLevel::Verbose, "DX12RenderingServer:  Fences have been created.");
 
 	return true;
@@ -729,6 +732,7 @@ bool DX12RenderingServerNS::GetSwapChainImages()
 			Logger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
 			return false;
 		}
+		m_swapChainImages[i]->SetName((L"SwapChainBackBuffer_" + std::to_wstring(i)).c_str());
 	}
 
     return true;
@@ -740,7 +744,7 @@ bool DX12RenderingServerNS::AssignSwapChainImages()
 
 	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
-		auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
+		auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[i].m_Texture);
 
 		l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
 		l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
@@ -860,24 +864,33 @@ DX12Semaphore *addSemaphore()
 	return m_SemaphorePool->Spawn();
 }
 
-bool DX12RenderingServerNS::Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer)
+bool DX12RenderingServerNS::DeleteResources(DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer)
 {
 	if (rhs->m_RenderPassDesc.m_Resizable)
 	{
 		for (auto i : rhs->m_RenderTargets)
 		{
-			renderingServer->DeleteTextureComponent(i);
+			if(i.m_IsOwned)
+				renderingServer->DeleteTextureComponent(i.m_Texture);
 		}
 
 		rhs->m_RenderTargets.clear();
 
-		if (rhs->m_DepthStencilRenderTarget)
+		if (rhs->m_DepthStencilRenderTarget.m_IsOwned && rhs->m_DepthStencilRenderTarget.m_Texture)
 		{
-			renderingServer->DeleteTextureComponent(rhs->m_DepthStencilRenderTarget);
+			renderingServer->DeleteTextureComponent(rhs->m_DepthStencilRenderTarget.m_Texture);
 		}
 
 		m_PSOPool->Destroy(reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject));
+	}
 
+	return true;
+}
+
+bool DX12RenderingServerNS::Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer)
+{
+	if (rhs->m_RenderPassDesc.m_Resizable)
+	{
 		rhs->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
 		rhs->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
 
@@ -892,16 +905,16 @@ bool DX12RenderingServerNS::Resize(const TVec2<uint32_t>& screenResolution, DX12
 		{
 			for (size_t i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_RenderTargets[i])->m_DefaultHeapBuffer;
+				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_RenderTargets[i].m_Texture)->m_DefaultHeapBuffer;
 				m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &rhs->m_RTVDesc, rhs->m_RTVDescCPUHandles[i]);
 			}
 		}
 
 		if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			if (rhs->m_DepthStencilRenderTarget != nullptr)
+			if (rhs->m_DepthStencilRenderTarget.m_Texture != nullptr)
 			{
-				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_DepthStencilRenderTarget)->m_DefaultHeapBuffer;
+				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_DepthStencilRenderTarget.m_Texture)->m_DefaultHeapBuffer;
 				m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &rhs->m_DSVDesc, rhs->m_DSVDescCPUHandle);
 			}
 		}
@@ -922,12 +935,25 @@ bool DX12RenderingServerNS::ResizeImpl()
 	m_swapChainDesc.Width = (UINT)l_screenResolution.x;
 	m_swapChainDesc.Height = (UINT)l_screenResolution.y;
 	
-	for	(auto i : m_SwapChainRenderPassComp->m_RenderTargets)
+	for (auto i : m_initializedRenderPasses)
 	{
-		reinterpret_cast<DX12TextureComponent*>(i)->m_DefaultHeapBuffer.Reset();
+		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(i);
+		if (!DeleteResources(l_rhs, l_renderingServer))
+			return false;
 	}
 
 	m_swapChainImages.clear();
+
+	for (int i = 0; i < m_swapChainImageCount; i++)
+    {
+		UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore[i];
+        m_directCommandQueue->Signal(m_directCommandQueueFence[i].Get(), l_directCommandFinishedSemaphore);
+        if (m_directCommandQueueFence[i]->GetCompletedValue() < l_directCommandFinishedSemaphore)
+        {
+           	m_directCommandQueueFence[i]->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent[i]);
+            WaitForSingleObject(m_directCommandQueueFenceEvent[i], INFINITE);
+        }
+    }
 
 	m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
 
@@ -1138,7 +1164,7 @@ bool DX12RenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedMeshes.emplace(l_rhs);
+	m_initializedMeshes.emplace(rhs);
 
 	return true;
 }
@@ -1147,6 +1173,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
+		Logger::Log(LogLevel::Warning, "DX12RenderingServer: Texture ", rhs->m_InstanceName.c_str(), " has already been initialized!");
 		return true;
 	}
 
@@ -1265,7 +1292,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedTextures.emplace(l_rhs);
+	m_initializedTextures.emplace(rhs);
 
 	Logger::Log(LogLevel::Verbose, "DX12RenderingServer: texture ", l_rhs, " is initialized.");
 
@@ -1300,7 +1327,7 @@ bool DX12RenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedMaterials.emplace(l_rhs);
+	m_initializedMaterials.emplace(rhs);
 
 	return true;
 }
@@ -1364,7 +1391,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedRenderPasses.emplace_back(l_rhs);
+	m_initializedRenderPasses.emplace_back(rhs);
 
 	return l_result;
 }
@@ -1520,10 +1547,21 @@ bool DX12RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 bool DX12RenderingServer::DeleteMeshComponent(MeshComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
+	if(l_rhs->m_DefaultHeapBuffer_VB)
+		l_rhs->m_DefaultHeapBuffer_VB.Reset();
+
+	if(l_rhs->m_DefaultHeapBuffer_IB)
+		l_rhs->m_DefaultHeapBuffer_IB.Reset();
+
+	if(l_rhs->m_UploadHeapBuffer_VB)
+		l_rhs->m_UploadHeapBuffer_VB.Reset();
+
+	if(l_rhs->m_UploadHeapBuffer_IB)
+		l_rhs->m_UploadHeapBuffer_IB.Reset();
 
 	m_MeshComponentPool->Destroy(l_rhs);
 
-	m_initializedMeshes.erase(l_rhs);
+	m_initializedMeshes.erase(rhs);
 
 	return true;
 }
@@ -1532,9 +1570,12 @@ bool DX12RenderingServer::DeleteTextureComponent(TextureComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
+	if(l_rhs->m_DefaultHeapBuffer)
+		l_rhs->m_DefaultHeapBuffer.Reset();
+
 	m_TextureComponentPool->Destroy(l_rhs);
 
-	m_initializedTextures.erase(l_rhs);
+	m_initializedTextures.erase(rhs);
 
 	return true;
 }
@@ -1545,7 +1586,7 @@ bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent *rhs)
 
 	m_MaterialComponentPool->Destroy(l_rhs);
 
-	m_initializedMaterials.erase(l_rhs);
+	m_initializedMaterials.erase(rhs);
 
 	return true;
 }
@@ -1557,14 +1598,14 @@ bool DX12RenderingServer::DeleteRenderPassComponent(RenderPassComponent *rhs)
 
 	m_PSOPool->Destroy(l_PSO);
 
-	if (l_rhs->m_DepthStencilRenderTarget)
+	if (l_rhs->m_DepthStencilRenderTarget.m_Texture)
 	{
-		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget);
+		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget.m_Texture);
 	}
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
-		DeleteTextureComponent(l_rhs->m_RenderTargets[i]);
+		DeleteTextureComponent(l_rhs->m_RenderTargets[i].m_Texture);
 	}
 
 	m_RenderPassComponentPool->Destroy(l_rhs);
@@ -1594,6 +1635,12 @@ bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
+	if(l_rhs->m_DefaultHeapBuffer)
+		l_rhs->m_DefaultHeapBuffer.Reset();
+
+	if(l_rhs->m_UploadHeapBuffer)
+		l_rhs->m_UploadHeapBuffer.Reset();
+		
 	m_GPUBufferComponentPool->Destroy(l_rhs);
 
 	return true;
@@ -1751,8 +1798,8 @@ bool DX12RenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t fram
 
 	l_rhs->m_CurrentFrame = frameIndex;
 
-	l_commandList->m_DirectCommandList->Reset(m_directCommandAllocators[frameIndex].Get(), l_PSO->m_PSO.Get());
-	l_commandList->m_ComputeCommandList->Reset(m_computeCommandAllocators[frameIndex].Get(), l_PSO->m_PSO.Get());
+	l_commandList->m_DirectCommandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_PSO->m_PSO.Get());
+	l_commandList->m_ComputeCommandList->Reset(m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_PSO->m_PSO.Get());
 
 	return true;
 }
@@ -1763,7 +1810,7 @@ bool PrepareRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *
 	{
 		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
+			auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame].m_Texture);
 
 			TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 		}
@@ -1771,7 +1818,7 @@ bool PrepareRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *
 		{
 			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_RenderTargets[i]);
+				auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_RenderTargets[i].m_Texture);
 
 				TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 			}
@@ -1779,7 +1826,7 @@ bool PrepareRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 		{
-			auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_DepthStencilRenderTarget);
+			auto l_rhs = reinterpret_cast<DX12TextureComponent *>(renderPass->m_DepthStencilRenderTarget.m_Texture);
 
 			TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 		}
@@ -1920,7 +1967,7 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t in
 		{
 			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]));
+				f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame].m_Texture));
 			}
 			else
 			{
@@ -1933,7 +1980,7 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t in
 
 					for (auto i : l_rhs->m_RenderTargets)
 					{
-						f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(i));
+						f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(i.m_Texture));
 					}
 				}
 			}
@@ -2169,25 +2216,27 @@ bool DX12RenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngine
 
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{
+		UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore[l_rhs->m_CurrentFrame];
+		m_directCommandQueueFence[l_rhs->m_CurrentFrame]->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
+		l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+
 		ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
 		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
 
-		UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore;
-		m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
-		l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
-		m_directCommandQueueFenceEvent = l_semaphore->m_DirectCommandQueueFenceEvent;
-		m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
+		m_directCommandQueueFenceEvent[l_rhs->m_CurrentFrame] = l_semaphore->m_DirectCommandQueueFenceEvent;
+		m_directCommandQueue->Signal(m_directCommandQueueFence[l_rhs->m_CurrentFrame].Get(), l_directCommandFinishedSemaphore);
 	}
 	else if (GPUEngineType == GPUEngineType::Compute)
 	{
+		UINT64 l_computeCommandFinishedSemaphore = ++m_computeCommandQueueSemaphore[l_rhs->m_CurrentFrame];
+		m_computeCommandQueueFence[l_rhs->m_CurrentFrame]->SetEventOnCompletion(l_computeCommandFinishedSemaphore, l_semaphore->m_ComputeCommandQueueFenceEvent);
+		l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
+
 		ID3D12CommandList *l_computeCommandLists[] = {l_commandList->m_ComputeCommandList.Get()};
 		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
 
-		UINT64 l_computeCommandFinishedSemaphore = ++m_computeCommandQueueSemaphore;
-		m_computeCommandQueueFence->SetEventOnCompletion(l_computeCommandFinishedSemaphore, l_semaphore->m_ComputeCommandQueueFenceEvent);
-		l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
-		m_computeCommandQueueFenceEvent = l_semaphore->m_ComputeCommandQueueFenceEvent;
-		m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
+		m_computeCommandQueueFenceEvent[l_rhs->m_CurrentFrame] = l_semaphore->m_ComputeCommandQueueFenceEvent;
+		m_computeCommandQueue->Signal(m_computeCommandQueueFence[l_rhs->m_CurrentFrame].Get(), l_computeCommandFinishedSemaphore);
 	}
 
 	return true;
@@ -2212,12 +2261,12 @@ bool DX12RenderingServer::WaitCommandQueue(RenderPassComponent *rhs, GPUEngineTy
 
 	if (semaphoreType == GPUEngineType::Graphics)
 	{
-		fence = m_directCommandQueueFence.Get();
+		fence = m_directCommandQueueFence[l_rhs->m_CurrentFrame].Get();
 		semaphore = l_semaphore->m_DirectCommandQueueSemaphore;
 	}
 	else if (semaphoreType == GPUEngineType::Compute)
 	{
-		fence = m_computeCommandQueueFence.Get();
+		fence = m_computeCommandQueueFence[l_rhs->m_CurrentFrame].Get();
 		semaphore = l_semaphore->m_ComputeCommandQueueSemaphore;
 	}
 
@@ -2233,18 +2282,19 @@ bool DX12RenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUE
 {
 	UINT64 semaphore = 0;
 	HANDLE fenceEvent = 0;
+	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
 
 	if (rhs == nullptr)
 	{
 		if (GPUEngineType == GPUEngineType::Graphics)
 		{
-			semaphore = m_directCommandQueueSemaphore;
-			fenceEvent = m_directCommandQueueFenceEvent;
+			semaphore = m_directCommandQueueSemaphore[m_SwapChainRenderPassComp->m_CurrentFrame];
+			fenceEvent = m_directCommandQueueFenceEvent[m_SwapChainRenderPassComp->m_CurrentFrame];
 		}
 		else if (GPUEngineType == GPUEngineType::Compute)
 		{
-			semaphore = m_computeCommandQueueSemaphore;
-			fenceEvent = m_computeCommandQueueFenceEvent;
+			semaphore = m_computeCommandQueueSemaphore[m_SwapChainRenderPassComp->m_CurrentFrame];
+			fenceEvent = m_computeCommandQueueFenceEvent[m_SwapChainRenderPassComp->m_CurrentFrame];
 		}
 	}
 	else
@@ -2266,7 +2316,7 @@ bool DX12RenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUE
 
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{
-		if (m_directCommandQueueFence->GetCompletedValue() < semaphore)
+		if (m_directCommandQueueFence[l_currentFrame]->GetCompletedValue() < semaphore)
 		{
 			WaitForSingleObject(fenceEvent, INFINITE);
 		}
@@ -2274,7 +2324,7 @@ bool DX12RenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUE
 	}
 	else if (GPUEngineType == GPUEngineType::Compute)
 	{
-		if (m_computeCommandQueueFence->GetCompletedValue() < semaphore)
+		if (m_computeCommandQueueFence[l_currentFrame]->GetCompletedValue() < semaphore)
 		{
 			WaitForSingleObject(fenceEvent, INFINITE);
 		}
@@ -2300,7 +2350,7 @@ bool DX12RenderingServer::Present()
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRenderPassComp->m_CommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(m_SwapChainRenderPassComp->m_PipelineStateObject);
-	auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame].m_Texture);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(m_SwapChainRenderPassComp->m_Semaphores[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 	CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);
@@ -2323,19 +2373,21 @@ bool DX12RenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 
+	UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore[m_SwapChainRenderPassComp->m_CurrentFrame];
+	m_directCommandQueueFence[m_SwapChainRenderPassComp->m_CurrentFrame]->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
+	l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+
 	ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
 	m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
 
+	m_directCommandQueue->Signal(m_directCommandQueueFence[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_directCommandFinishedSemaphore);
+
 	m_swapChain->Present(0, 0);
 
-	UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore;
-	m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
-	m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
-	l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
+	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Compute);
 
-	WaitFence(nullptr, GPUEngineType::Graphics);
-	WaitFence(nullptr, GPUEngineType::Compute);
-
+	auto l_previousFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
 	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
 	m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]->Reset();
@@ -2345,6 +2397,7 @@ bool DX12RenderingServer::Present()
 	if (m_needResize)
 	{
 		ResizeImpl();
+
 		m_SwapChainRenderPassComp->m_CurrentFrame = 0;
 		m_needResize = false;
 	}
@@ -2612,7 +2665,7 @@ bool DX12RenderingServer::CreateRTV(RenderPassComponent* rhs)
 		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
 			l_rhs->m_RTVDescCPUHandles[i] = m_RTVDescHeapCPUHandle;
-			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[i])->m_DefaultHeapBuffer;
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[i].m_Texture)->m_DefaultHeapBuffer;
 			m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_rhs->m_RTVDesc, l_rhs->m_RTVDescCPUHandles[i]);
 
 			m_RTVDescHeapCPUHandle.ptr += l_RTVDescSize;
@@ -2630,13 +2683,13 @@ bool DX12RenderingServer::CreateDSV(RenderPassComponent* rhs)
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		if (l_rhs->m_DepthStencilRenderTarget != nullptr)
+		if (l_rhs->m_DepthStencilRenderTarget.m_Texture != nullptr)
 		{
 			auto l_DSVDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 			l_rhs->m_DSVDesc = GetDSVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
 			l_rhs->m_DSVDescCPUHandle = m_DSVDescHeapCPUHandle;
 
-			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_DepthStencilRenderTarget)->m_DefaultHeapBuffer;
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_DepthStencilRenderTarget.m_Texture)->m_DefaultHeapBuffer;
 			m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_rhs->m_DSVDesc, l_rhs->m_DSVDescCPUHandle);
 			
 			m_DSVDescHeapCPUHandle.ptr += l_DSVDescSize;

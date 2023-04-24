@@ -706,7 +706,7 @@ bool VKRenderingServer::Initialize()
 	// use device created swap chain textures
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
-		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i]);
+		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i].m_Texture);
 		l_VKTextureComp->m_TextureDesc = m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
 		l_VKTextureComp->m_image = m_swapChainImages[i];
 		l_VKTextureComp->m_VKTextureDesc = GetVKTextureDesc(l_VKTextureComp->m_TextureDesc);
@@ -1328,7 +1328,7 @@ bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *comm
 	{
 		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
+			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame].m_Texture);
 
 			TryToTransitImageLayout(l_rhs, commandList->m_GraphicsCommandBuffer, l_rhs->m_WriteImageLayout);
 		}
@@ -1336,7 +1336,7 @@ bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *comm
 		{
 			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[i]);
+				auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_RenderTargets[i].m_Texture);
 
 				TryToTransitImageLayout(l_rhs, commandList->m_GraphicsCommandBuffer, l_rhs->m_WriteImageLayout);
 			}
@@ -1344,7 +1344,7 @@ bool PrepareRenderTargets(VKRenderPassComponent *renderPass, VKCommandList *comm
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 		{
-			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_DepthStencilRenderTarget);
+			auto l_rhs = reinterpret_cast<VKTextureComponent *>(renderPass->m_DepthStencilRenderTarget.m_Texture);
 
 			TryToTransitImageLayout(l_rhs, commandList->m_GraphicsCommandBuffer, l_rhs->m_WriteImageLayout);
 		}
@@ -1712,7 +1712,7 @@ bool VKRenderingServer::Present()
 {
 	auto l_commandList = reinterpret_cast<VKCommandList *>(m_SwapChainRenderPassComp->m_CommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(m_SwapChainRenderPassComp->m_PipelineStateObject);
-	auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame].m_Texture);
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(m_SwapChainRenderPassComp->m_Semaphores[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 	CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);

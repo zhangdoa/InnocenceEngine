@@ -90,13 +90,13 @@ bool PreTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
 
@@ -110,5 +110,5 @@ RenderPassComponent* PreTAAPass::GetRenderPassComp()
 
 GPUResourceComponent* PreTAAPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0];
+	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }

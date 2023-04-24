@@ -291,10 +291,10 @@ namespace Inno
         {
             static int l_index = 0;
 
-            auto l_brickIDResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_BrickFactor, m_RenderPassComp_BrickFactor->m_RenderTargets[0]);
+            auto l_brickIDResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_BrickFactor, m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture);
 
             auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
-            l_TextureComp->m_TextureDesc = m_RenderPassComp_BrickFactor->m_RenderTargets[0]->m_TextureDesc;
+            l_TextureComp->m_TextureDesc = m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_TextureData = l_brickIDResults.data();
             g_Engine->getAssetSystem()->SaveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
             l_index++;

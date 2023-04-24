@@ -675,7 +675,7 @@ bool DX11Helper::CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11
 
 		for (uint32_t i = 0; i < DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			auto l_DX11TextureComp = reinterpret_cast<DX11TextureComponent*>(DX11RenderPassComp->m_RenderTargets[i]);
+			auto l_DX11TextureComp = reinterpret_cast<DX11TextureComponent*>(DX11RenderPassComp->m_RenderTargets[i].m_Texture);
 
 			auto l_HResult = device->CreateRenderTargetView(l_DX11TextureComp->m_ResourceHandle, &DX11RenderPassComp->m_RTVDesc, &DX11RenderPassComp->m_RTVs[i]);
 			if (FAILED(l_HResult))
@@ -693,11 +693,11 @@ bool DX11Helper::CreateViews(DX11RenderPassComponent* DX11RenderPassComp, ID3D11
 	// DSV
 	if (DX11RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		if (DX11RenderPassComp->m_DepthStencilRenderTarget != nullptr)
+		if (DX11RenderPassComp->m_DepthStencilRenderTarget.m_Texture != nullptr)
 		{
 			DX11RenderPassComp->m_DSVDesc = GetDSVDesc(DX11RenderPassComp->m_RenderPassDesc.m_RenderTargetDesc, DX11RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
 
-			auto l_DX11TextureComp = reinterpret_cast<DX11TextureComponent*>(DX11RenderPassComp->m_DepthStencilRenderTarget);
+			auto l_DX11TextureComp = reinterpret_cast<DX11TextureComponent*>(DX11RenderPassComp->m_DepthStencilRenderTarget.m_Texture);
 
 			auto l_HResult = device->CreateDepthStencilView(l_DX11TextureComp->m_ResourceHandle, &DX11RenderPassComp->m_DSVDesc, &DX11RenderPassComp->m_DSV);
 			if (FAILED(l_HResult))

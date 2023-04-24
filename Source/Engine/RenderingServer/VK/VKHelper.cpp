@@ -1629,13 +1629,13 @@ bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassComponent *V
 	{
 		for (size_t i = 0; i < VKRenderPassComp->m_RenderTargets.size(); i++)
 		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_RenderTargets[i]);
+			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_RenderTargets[i].m_Texture);
 			l_attachments[i] = l_VKTextureComp->m_imageView;
 		}
 
 		if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_DepthStencilRenderTarget);
+			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_DepthStencilRenderTarget.m_Texture);
 			l_attachments[l_attachments.size() - 1] = l_VKTextureComp->m_imageView;
 		}
 		l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
@@ -1682,11 +1682,11 @@ bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassComponent
 
 		if (VKRenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_RenderTargets[i]);
+			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_RenderTargets[i].m_Texture);
 			l_attachments[0] = l_VKTextureComp->m_imageView;
 			if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 			{
-				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_DepthStencilRenderTarget);
+				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_DepthStencilRenderTarget.m_Texture);
 				l_attachments[1] = l_VKTextureComp->m_imageView;
 			}
 			l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();

@@ -95,8 +95,8 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 
 	if (renderingContext == nullptr)
 	{
-		g_Engine->getRenderingServer()->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0]);
-		l_canvas = m_RenderPassComp->m_RenderTargets[0];
+		g_Engine->getRenderingServer()->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0].m_Texture);
+		l_canvas = m_RenderPassComp->m_RenderTargets[0].m_Texture;
 	}
 	else
 	{
@@ -136,5 +136,5 @@ RenderPassComponent* TransparentBlendPass::GetRenderPassComp()
 
 GPUResourceComponent* TransparentBlendPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0];
+	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }

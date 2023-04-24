@@ -117,5 +117,5 @@ RenderPassComponent* VXGIVisualizationPass::GetRenderPassComp()
 
 GPUResourceComponent* VXGIVisualizationPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0];
+	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }
