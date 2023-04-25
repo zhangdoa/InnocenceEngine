@@ -1,169 +1,167 @@
 {
-  "SceneEntities": [
-    {
-      "ChildrenComponents": [
+    "SceneName": "..//Res//Scenes/animationTest.InnoScene",
+    "SceneEntities": [
         {
-          "ComponentType": 1,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 0.1,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 200.0,
-              "Y": 0.1,
-              "Z": 200.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
+            "UUID": 3027687533433153852,
+            "ObjectName": "landscape",
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 1,
+                    "ParentTransformComponentEntityName": "RootTransform",
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 0.10000000149011612,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0,
+                            "W": 1.0
+                        },
+                        "Scale": {
+                            "X": 200.0,
+                            "Y": 0.10000000149011612,
+                            "Z": 200.0
+                        }
+                    }
+                },
+                {
+                    "ComponentType": 2,
+                    "MeshPrimitiveTopology": 2,
+                    "TextureWrapMethod": 1,
+                    "MeshUsage": 1,
+                    "MeshSource": 1,
+                    "ProceduralMeshShape": 6,
+                    "ModelFileName": "",
+                    "SimulatePhysics": true
+                }
+            ]
         },
         {
-          "ComponentType": 2,
-          "MeshPrimitiveTopology": 2,
-          "MeshSource": 1,
-          "ProceduralMeshShape": 6,
-          "MeshUsage": 1,
-          "ModelFileName": "",
-          "TextureWrapMethod": 1,
-          "Visibility": 1,
-          "SimulatePhysics": true
-        }
-      ],
-      "UUID": "d4229e4616eb07cc6e5e044ffe0fd77b",
-      "ObjectName": "landscape"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 1,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 10.0,
-              "Z": 10.0
-            },
-            "Rotation": {
-              "W": 0.9238795042037964,
-              "X": -0.3826834559440613,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
+            "UUID": 3748865927784692254,
+            "ObjectName": "playerCharacterCamera",
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 1,
+                    "ParentTransformComponentEntityName": "RootTransform",
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 10.0,
+                            "Z": 10.0
+                        },
+                        "Rotation": {
+                            "X": -0.3826834559440613,
+                            "Y": 0.0,
+                            "Z": 0.0,
+                            "W": 0.9238795042037964
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    }
+                },
+                {
+                    "ComponentType": 4,
+                    "FOVX": 90.0,
+                    "WidthScale": 16.0,
+                    "HeightScale": 9.0,
+                    "zNear": 0.10000000149011612,
+                    "zFar": 2000.0,
+                    "Aperture": 2.200000047683716,
+                    "ShutterTime": 0.0005000000237487257,
+                    "ISO": 100.0
+                }
+            ]
         },
         {
-          "ComponentType": 4,
-          "FOVX": 90.0,
-          "WidthScale": 16.0,
-          "HeightScale": 9.0,
-          "zNear": 0.1,
-          "zFar": 2000.0,
-          "Aperture": 2.2,
-          "ShutterTime": 0.0005,
-          "ISO": 100.0
-        }
-      ],
-      "UUID": "1e6af8f1c63c5165990ba1aca26a72ab",
-      "ObjectName": "playerCharacterCamera"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 1,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 0.2,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 0.1,
-              "Y": 0.1,
-              "Z": 0.1
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
+            "UUID": 2690860915433163736,
+            "ObjectName": "playerCharacter",
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 1,
+                    "ParentTransformComponentEntityName": "RootTransform",
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 0.20000000298023224,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "X": 0.0,
+                            "Y": 0.0,
+                            "Z": 0.0,
+                            "W": 1.0
+                        },
+                        "Scale": {
+                            "X": 0.10000000149011612,
+                            "Y": 0.10000000149011612,
+                            "Z": 0.10000000149011612
+                        }
+                    }
+                },
+                {
+                    "ComponentType": 2,
+                    "MeshPrimitiveTopology": 2,
+                    "TextureWrapMethod": 0,
+                    "MeshUsage": 3,
+                    "MeshSource": 2,
+                    "ProceduralMeshShape": 0,
+                    "ModelFileName": "..//Res//ConvertedAssets//Wolf.InnoModel",
+                    "SimulatePhysics": false
+                }
+            ]
         },
         {
-          "ComponentType": 2,
-          "MeshPrimitiveTopology": 2,
-          "MeshSource": 2,
-          "ProceduralMeshShape": 0,
-          "MeshUsage": 3,
-          "ModelFileName": "..//Res//ConvertedAssets//Wolf.InnoModel",
-          "TextureWrapMethod": 0,
-          "Visibility": 1,
-          "SimulatePhysics": false
+            "UUID": 3171876393001129051,
+            "ObjectName": "sun",
+            "ChildrenComponents": [
+                {
+                    "ComponentType": 1,
+                    "ParentTransformComponentEntityName": "RootTransform",
+                    "LocalTransformVector": {
+                        "Position": {
+                            "X": 0.0,
+                            "Y": 4.0,
+                            "Z": 0.0
+                        },
+                        "Rotation": {
+                            "X": -0.7070821523666382,
+                            "Y": 0.0,
+                            "Z": 0.0,
+                            "W": 0.7071315050125122
+                        },
+                        "Scale": {
+                            "X": 1.0,
+                            "Y": 1.0,
+                            "Z": 1.0
+                        }
+                    }
+                },
+                {
+                    "ComponentType": 3,
+                    "RGBColor": {
+                        "X": 1.0,
+                        "Y": 0.9507150650024414,
+                        "Z": 0.9043404459953308,
+                        "W": 1.0
+                    },
+                    "Shape": {
+                        "X": 0.0,
+                        "Y": 0.0,
+                        "Z": 0.0,
+                        "W": 1.0
+                    },
+                    "LightType": 0,
+                    "ColorTemperature": 5780.0,
+                    "LuminousFlux": 100000.0,
+                    "UseColorTemperature": true
+                }
+            ]
         }
-      ],
-      "UUID": "5372b91cf296630c0784256e52f89db1",
-      "ObjectName": "playerCharacter"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 1,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 4.0,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 0.7071315050125122,
-              "X": -0.7070821523666382,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "RGBColor": {
-            "W": 1.0,
-            "Z": 1.0,
-            "Y": 1.0,
-            "X": 1.0
-          },
-          "ComponentType": 3,
-          "LightType": 0,
-          "Shape": {
-            "W": 1.0,
-            "Z": 0.0,
-            "Y": 0.0,
-            "X": 0.0
-          },
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 100000.0,
-          "UseColorTemperature": true
-        }
-      ],
-      "UUID": "3a467d719bce3caa3337c860e378b19e",
-      "ObjectName": "sun"
-    }
-  ],
-  "SceneName": "..//res//scenes//animationTest.InnoScene"
+    ]
 }
