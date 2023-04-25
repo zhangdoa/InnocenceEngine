@@ -24,19 +24,16 @@ bool EntityManager::Setup(ISystemConfig* systemConfig)
 	m_EntityPool = TObjectPool<Entity>::Create(m_MaxEntity);
 
 	f_SceneLoadingStartCallback = [&]() {
-		for (auto i : m_Entities)
-		{
-			if (i->m_ObjectLifespan == ObjectLifespan::Scene)
-			{
-				i->m_ObjectStatus = ObjectStatus::Terminated;
-				m_EntityPool->Destroy(i);
-			}
-		}
-
 		m_Entities.erase(
 			std::remove_if(m_Entities.begin(), m_Entities.end(),
 				[&](auto val) {
-					return val->m_ObjectLifespan == ObjectLifespan::Scene;
+					if(val->m_ObjectLifespan == ObjectLifespan::Scene)
+					{
+						val->m_ObjectStatus = ObjectStatus::Terminated;
+						m_EntityPool->Destroy(val);
+						return true;
+					}
+					return false;
 				}), m_Entities.end());
 	};
 
