@@ -19,13 +19,15 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
 	f_sceneLoadingFinishCallback = [&]() {
 		m_isInitialLoadScene = true;
 	};
 
 	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 	
-	m_VXGICBuffer = g_Engine->getRenderingServer()->AddGPUBufferComponent("VXGIPassCBuffer/");
+	m_VXGICBuffer = l_renderingServer->AddGPUBufferComponent("VXGIPassCBuffer/");
 	m_VXGICBuffer->m_ElementCount = 1;
 	m_VXGICBuffer->m_ElementSize = sizeof(VoxelizationConstantBuffer);
 	
@@ -43,7 +45,9 @@ bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 
 bool VXGIRenderer::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_VXGICBuffer);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeGPUBufferComponent(m_VXGICBuffer);
 	VXGIGeometryProcessPass::Get().Initialize();
 	VXGIConvertPass::Get().Initialize();
 	VXGIMultiBouncePass::Get().Initialize();
@@ -77,8 +81,8 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 
-		g_Engine->getRenderingServer()->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetLuminanceVolume()));
-		g_Engine->getRenderingServer()->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetNormalVolume()));
+		l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetLuminanceVolume()));
+		l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetNormalVolume()));
 	};
 
 	if (l_VXGIRenderingConfig->m_screenFeedback)

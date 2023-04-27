@@ -189,7 +189,7 @@ namespace Inno
 				return FinalBlendPass::Get().GetResult();
 			};
 
-			g_Engine->getRenderingServer()->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
+			l_renderingServer->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 		};
 
 		f_RenderJob = [&]() {

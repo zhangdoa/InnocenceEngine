@@ -12,11 +12,13 @@ using namespace DefaultGPUBuffers;
 
 bool SSAOPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("SSAONoisePass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SSAONoisePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SSAONoisePass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SSAONoisePass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -69,9 +71,9 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("SSAONoisePass/");
+	m_SamplerComp = l_renderingServer->AddSamplerComponent("SSAONoisePass/");
 
-	m_SamplerComp_RandomRot = g_Engine->getRenderingServer()->AddSamplerComponent("SSAONoisePass_RandomRot/");
+	m_SamplerComp_RandomRot = l_renderingServer->AddSamplerComponent("SSAONoisePass_RandomRot/");
 
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
@@ -99,7 +101,7 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 		m_SSAOKernel.emplace_back(l_sample);
 	}
 
-	m_SSAOKernelGPUBuffer = g_Engine->getRenderingServer()->AddGPUBufferComponent("SSAOKernel/");
+	m_SSAOKernelGPUBuffer = l_renderingServer->AddGPUBufferComponent("SSAOKernel/");
 	m_SSAOKernelGPUBuffer->m_ElementSize = sizeof(Vec4);
 	m_SSAOKernelGPUBuffer->m_ElementCount = m_kernelSize;
 	m_SSAOKernelGPUBuffer->m_InitialData = &m_SSAOKernel[0];
@@ -117,7 +119,7 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 		m_SSAONoise.push_back(noise);
 	}
 
-	m_SSAONoiseTextureComp = g_Engine->getRenderingServer()->AddTextureComponent("SSAONoise/");
+	m_SSAONoiseTextureComp = l_renderingServer->AddTextureComponent("SSAONoise/");
 
 	m_SSAONoiseTextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_SSAONoiseTextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
@@ -136,12 +138,14 @@ bool SSAOPass::Setup(ISystemConfig *systemConfig)
 
 bool SSAOPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
-	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp_RandomRot);
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_SSAOKernelGPUBuffer);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_SSAONoiseTextureComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp_RandomRot);
+	l_renderingServer->InitializeGPUBufferComponent(m_SSAOKernelGPUBuffer);
+	l_renderingServer->InitializeTextureComponent(m_SSAONoiseTextureComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -150,7 +154,9 @@ bool SSAOPass::Initialize()
 
 bool SSAOPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -164,30 +170,32 @@ ObjectStatus SSAOPass::GetStatus()
 
 bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 5);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_RandomRot, 6);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_RandomRot, 6);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAOKernelGPUBuffer, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1].m_Texture, 3);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAONoiseTextureComp, 4);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 7, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAOKernelGPUBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1].m_Texture, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAONoiseTextureComp, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 7);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1].m_Texture, 3);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAONoiseTextureComp, 4);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 7, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1].m_Texture, 3);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SSAONoiseTextureComp, 4);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 7);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

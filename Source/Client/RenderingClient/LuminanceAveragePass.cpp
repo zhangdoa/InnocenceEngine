@@ -12,17 +12,19 @@ using namespace DefaultGPUBuffers;
 
 bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 {	
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceAveragePass/");
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("LuminanceAveragePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("LuminanceAveragePass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("LuminanceAveragePass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -45,7 +47,7 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_luminanceAverage = g_Engine->getRenderingServer()->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
+	m_luminanceAverage = l_renderingServer->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceAverage->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceAverage->m_ElementCount = 1;
@@ -58,10 +60,12 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_luminanceAverage);
+	l_renderingServer->InitializeGPUBufferComponent(m_luminanceAverage);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -70,7 +74,9 @@ bool LuminanceAveragePass::Initialize()
 
 bool LuminanceAveragePass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -84,22 +90,24 @@ ObjectStatus LuminanceAveragePass::GetStatus()
 
 bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 2, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 2);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, 1, 1, 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, 1, 1, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 	
 	return true;
 }

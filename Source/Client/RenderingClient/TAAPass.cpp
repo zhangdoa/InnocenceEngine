@@ -10,11 +10,13 @@ using namespace DefaultGPUBuffers;
 
 bool TAAPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TAAPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TAAPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "TAAPass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("TAAPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("TAAPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -60,8 +62,10 @@ bool TAAPass::Setup(ISystemConfig *systemConfig)
 
 bool TAAPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -70,7 +74,9 @@ bool TAAPass::Initialize()
 
 bool TAAPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -84,28 +90,30 @@ ObjectStatus TAAPass::GetStatus()
 
 bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_renderingContext = reinterpret_cast<TAAPassRenderingContext*>(renderingContext);	
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp, (size_t)(l_renderingContext->m_writeTexture == m_RenderPassComp->m_RenderTargets[0].m_Texture));
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, (size_t)(l_renderingContext->m_writeTexture == m_RenderPassComp->m_RenderTargets[0].m_Texture));
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 3, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 2);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 3, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 1);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 2);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 3);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

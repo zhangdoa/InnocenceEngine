@@ -13,12 +13,14 @@ using namespace DefaultGPUBuffers;
 
 bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("BSDFTestPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BSDFTestPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("BSDFTestPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -68,7 +70,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("BSDFTestPass/");
+	m_SamplerComp = l_renderingServer->AddSamplerComponent("BSDFTestPass/");
 
 	//
 	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
@@ -108,9 +110,20 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 bool BSDFTestPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = BRDFLUTPass::Get().GetResult();
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = BRDFLUTMSPass::Get().GetResult();
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Pixel;
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -119,7 +132,9 @@ bool BSDFTestPass::Initialize()
 
 bool BSDFTestPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -133,23 +148,18 @@ ObjectStatus BSDFTestPass::GetStatus()
 
 bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MeshGPUBufferComp, m_meshConstantBuffer);
-	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_MaterialGPUBufferComp, m_materialConstantBuffer);
+	l_renderingServer->UploadGPUBufferComponent(l_MeshGPUBufferComp, m_meshConstantBuffer);
+	l_renderingServer->UploadGPUBufferComponent(l_MaterialGPUBufferComp, m_materialConstantBuffer);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 5);
-
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Sphere);
 
@@ -157,17 +167,14 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	for (size_t i = 0; i < m_shpereCount * m_shpereCount; i++)
 	{
-		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, 1);
-		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_offset, 1);
-		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_mesh);
+		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
+		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_offset, 1);
+		l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_mesh);
 
 		l_offset++;
 	}
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
-
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

@@ -50,6 +50,7 @@ namespace VolumetricPass
 bool VolumetricPass::setupGeometryProcessPass()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_froxelizationSPC = l_renderingServer->AddShaderProgramComponent("VolumetricGeometryProcessPass/");
 
 	m_froxelizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricGeometryProcessPass.vert/";
@@ -112,6 +113,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 bool VolumetricPass::setupIrradianceInjectionPass()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_irraidanceInjectionSPC = l_renderingServer->AddShaderProgramComponent("VolumetricIrraidanceInjectionPass/");
 
 	m_irraidanceInjectionSPC->m_ShaderFilePaths.m_CSPath = "volumetricIrraidanceInjectionPass.comp/";
@@ -189,6 +191,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 bool VolumetricPass::setupRayMarchingPass()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_rayMarchingSPC = l_renderingServer->AddShaderProgramComponent("VolumetricRayMarchingPass/");
 
 	m_rayMarchingSPC->m_ShaderFilePaths.m_CSPath = "volumetricRayMarchingPass.comp/";
@@ -259,6 +262,7 @@ bool VolumetricPass::setupRayMarchingPass()
 bool VolumetricPass::setupVisualizationPass()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_visualizationSPC = l_renderingServer->AddShaderProgramComponent("VolumetricVisualizationPass/");
 
 	m_visualizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricVisualizationPass.vert/";
@@ -318,6 +322,7 @@ bool VolumetricPass::setupVisualizationPass()
 bool VolumetricPass::Setup()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("VolumetricPass/");
 
 	setupGeometryProcessPass();
@@ -351,6 +356,7 @@ bool VolumetricPass::Setup()
 bool VolumetricPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
 	l_renderingServer->InitializeShaderProgramComponent(m_froxelizationSPC);
@@ -375,6 +381,7 @@ bool VolumetricPass::Initialize()
 bool VolumetricPass::froxelization()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
@@ -383,9 +390,9 @@ bool VolumetricPass::froxelization()
 	l_renderingServer->BindRenderPassComponent(m_froxelizationRenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_froxelizationRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3);
+	l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4);
 
 	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -400,8 +407,8 @@ bool VolumetricPass::froxelization()
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.meshConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.materialConstantBufferIndex, 1);
 
 					l_renderingServer->DrawIndexedInstanced(m_froxelizationRenderPassComp, l_drawCallData.mesh);
 				}
@@ -409,8 +416,8 @@ bool VolumetricPass::froxelization()
 		}
 	}
 
-	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3);
+	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4);
 
 	l_renderingServer->CommandListEnd(m_froxelizationRenderPassComp);
 
@@ -420,6 +427,7 @@ bool VolumetricPass::froxelization()
 bool VolumetricPass::irraidanceInjection()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PointLight);
 	auto l_CSMGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::CSM);
@@ -444,23 +452,23 @@ bool VolumetricPass::irraidanceInjection()
 
 	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_SamplerComp, 9);
 
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 2, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 3, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 5, Accessibility::ReadWrite);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 6, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 2);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 3);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 5);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 6);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7);
+	l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8);
 
 	l_renderingServer->Dispatch(m_irraidanceInjectionRenderPassComp, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 5, Accessibility::ReadWrite);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 6, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 4);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 5);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 6);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7);
+	l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8);
 
 	l_renderingServer->CommandListEnd(m_irraidanceInjectionRenderPassComp);
 
@@ -506,23 +514,23 @@ bool VolumetricPass::rayMarching()
 	l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_rayMarchingRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_SamplerComp, 7, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_SamplerComp, 7);
 
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 2, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 2);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5);
+	l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6);
 
 	l_renderingServer->Dispatch(m_rayMarchingRenderPassComp, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 2, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5, Accessibility::ReadOnly);
-	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_irraidanceInjectionResult, 2);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_froxelizationRenderPassComp->m_RenderTargets[1].m_Texture, 4);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5);
+	l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6);
 
 	l_renderingServer->CommandListEnd(m_rayMarchingRenderPassComp);
 
@@ -532,6 +540,7 @@ bool VolumetricPass::rayMarching()
 bool VolumetricPass::visualization(GPUResourceComponent *input)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
@@ -542,9 +551,9 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 
 	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
-	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3);
 
 	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -559,8 +568,8 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.meshConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.materialConstantBufferIndex, 1);
 
 					l_renderingServer->DrawIndexedInstanced(m_visualizationRenderPassComp, l_drawCallData.mesh);
 				}
@@ -568,7 +577,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 		}
 	}
 
-	l_renderingServer->UnbindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3);
 
 	l_renderingServer->CommandListEnd(m_visualizationRenderPassComp);
 
@@ -577,6 +586,8 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 
 bool VolumetricPass::Render(bool visualize)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	froxelization();
 	irraidanceInjection();
 	rayMarching();
@@ -585,8 +596,6 @@ bool VolumetricPass::Render(bool visualize)
 	{
 		visualization(m_rayMarchingResult_A);
 	}
-
-	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->ExecuteCommandList(m_froxelizationRenderPassComp, GPUEngineType::Graphics);
 	l_renderingServer->WaitCommandQueue(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
@@ -614,6 +623,7 @@ bool VolumetricPass::Render(bool visualize)
 bool VolumetricPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	l_renderingServer->DeleteRenderPassComponent(m_froxelizationRenderPassComp);
 	l_renderingServer->DeleteRenderPassComponent(m_irraidanceInjectionRenderPassComp);
 	l_renderingServer->DeleteRenderPassComponent(m_rayMarchingRenderPassComp);

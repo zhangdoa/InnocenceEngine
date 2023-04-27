@@ -14,11 +14,13 @@ using namespace DefaultGPUBuffers;
 
 bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("FinalBlendPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("FinalBlendPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("FinalBlendPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("FinalBlendPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -70,8 +72,21 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 
 bool FinalBlendPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Compute;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = LuminanceAveragePass::Get().GetResult();
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Compute;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Compute;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Compute;
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -80,7 +95,9 @@ bool FinalBlendPass::Initialize()
 
 bool FinalBlendPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -93,31 +110,24 @@ ObjectStatus FinalBlendPass::GetStatus()
 }
 
 bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
-{	
+{
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceAveragePass::Get().GetResult(), 3, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 5, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceAveragePass::Get().GetResult(), 3, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

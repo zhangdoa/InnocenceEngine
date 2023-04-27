@@ -13,10 +13,12 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
-	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("VoxelMultiBounceVolume/");
+	m_TextureComp = l_renderingServer->AddTextureComponent("VoxelMultiBounceVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
@@ -26,11 +28,11 @@ bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.UseMipMap = true;
 
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelMultiBouncePass/");
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelMultiBouncePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelMultiBouncePass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelMultiBouncePass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VoxelMultiBouncePass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -72,7 +74,7 @@ bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("VoxelMultiBouncePass/");
+	m_SamplerComp = l_renderingServer->AddSamplerComponent("VoxelMultiBouncePass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -84,10 +86,12 @@ bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIMultiBouncePass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
-	g_Engine->getRenderingServer()->InitializeTextureComponent(m_TextureComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->InitializeTextureComponent(m_TextureComp);
 	
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -96,7 +100,9 @@ bool VXGIMultiBouncePass::Initialize()
 
 bool VXGIMultiBouncePass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -109,30 +115,32 @@ ObjectStatus VXGIMultiBouncePass::GetStatus()
 }
 
 bool VXGIMultiBouncePass::PrepareCommandList(IRenderingContext* renderingContext)
-{	
+{
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
 	auto l_renderingContext = reinterpret_cast<VXGIMultiBouncePassRenderingContext*>(renderingContext);
 	auto l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(l_renderingContext);
 	auto l_numThreadGroup = l_VXGIRenderingConfig->m_voxelizationResolution / 8;
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 3);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, l_numThreadGroup, l_numThreadGroup, l_numThreadGroup);
+	l_renderingServer->Dispatch(m_RenderPassComp, l_numThreadGroup, l_numThreadGroup, l_numThreadGroup);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

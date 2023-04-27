@@ -10,15 +10,17 @@ using namespace DefaultGPUBuffers;
 
 bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_shadowMapResolution = g_Engine->getRenderingFrontend()->GetRenderingConfig().shadowMapResolution;
 
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SunShadowGeometryProcessPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -75,7 +77,7 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("SunShadowGeometryProcessPass/");
+	m_SamplerComp = l_renderingServer->AddSamplerComponent("SunShadowGeometryProcessPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -87,9 +89,11 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 bool SunShadowGeometryProcessPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -98,7 +102,9 @@ bool SunShadowGeometryProcessPass::Initialize()
 
 bool SunShadowGeometryProcessPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -112,17 +118,19 @@ ObjectStatus SunShadowGeometryProcessPass::GetStatus()
 
 bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 	auto l_CSMGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::CSM);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_CSMGPUBufferComp, 2, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_CSMGPUBufferComp, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
 	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -139,21 +147,21 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 				{
 					if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 					{
-						g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 0, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-						g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 1, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+						l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 0, l_drawCallData.meshConstantBufferIndex, 1);
+						l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 1, l_drawCallData.materialConstantBufferIndex, 1);
 
-						g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 3);
+						l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 3);
 
-						g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
+						l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
 
-						g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 3);
+						l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 3);
 					}
 				}
 			}
 		}
 	}
 	
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

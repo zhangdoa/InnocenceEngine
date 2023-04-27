@@ -13,6 +13,8 @@ using namespace DefaultGPUBuffers;
 
 bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
 
@@ -31,10 +33,10 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[2] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[3] = 1.0f;
 
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("SunShadowBlurEvenPass/");
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SunShadowBlurEvenPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowBlurPassEven.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("SunShadowBlurEvenPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SunShadowBlurEvenPass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -71,8 +73,10 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 
 bool SunShadowBlurEvenPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -81,7 +85,9 @@ bool SunShadowBlurEvenPass::Initialize()
 
 bool SunShadowBlurEvenPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -95,22 +101,24 @@ ObjectStatus SunShadowBlurEvenPass::GetStatus()
 
 bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
 	auto l_perFrameGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2, Accessibility::ReadWrite);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

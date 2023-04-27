@@ -2,6 +2,7 @@
 
 namespace Inno
 {
+	class GPUResourceComponent;
 	namespace Type
 	{
 		enum class Accessibility
@@ -225,6 +226,8 @@ namespace Inno
 		struct ResourceBindingLayoutDesc
 		{
 			GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
+			GPUResourceComponent* m_GPUResource = nullptr;
+			ShaderStage m_ShaderStage = ShaderStage::Invalid;
 			Accessibility m_BindingAccessibility = Accessibility::ReadOnly;
 			Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
 			size_t m_DescriptorSetIndex = 0;

@@ -11,10 +11,12 @@ using namespace DefaultGPUBuffers;
 
 bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("BRDFLUTMSPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("BRDFLUTMSPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTMSPass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("BRDFLUTMSPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("BRDFLUTMSPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -51,8 +53,15 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 
 bool BRDFLUTMSPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = BRDFLUTPass::Get().GetResult();
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -61,7 +70,9 @@ bool BRDFLUTMSPass::Initialize()
 
 bool BRDFLUTMSPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -75,18 +86,15 @@ ObjectStatus BRDFLUTMSPass::GetStatus()
 
 bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 1, Accessibility::ReadWrite);
+	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, 32, 32, 1);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	
+	l_renderingServer->Dispatch(m_RenderPassComp, 32, 32, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 1, Accessibility::ReadWrite);
-
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

@@ -12,13 +12,15 @@ using namespace DefaultGPUBuffers;
 
 bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("VoxelVisualizationPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelVisualizationPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "voxelVisualizationPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "voxelVisualizationPass.geom/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "voxelVisualizationPass.frag/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("VoxelVisualizationPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VoxelVisualizationPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
@@ -65,8 +67,10 @@ bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 
 bool VXGIVisualizationPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -75,7 +79,9 @@ bool VXGIVisualizationPass::Initialize()
 
 bool VXGIVisualizationPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -89,23 +95,25 @@ ObjectStatus VXGIVisualizationPass::GetStatus()
 
 bool VXGIVisualizationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_renderingContext = reinterpret_cast<VXGIVisualizationPassRenderingContext*>(renderingContext);
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_renderingContext->m_input, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_PerFrameCBufferGPUBufferComp, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_renderingContext->m_input, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_PerFrameCBufferGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2);
 
-	g_Engine->getRenderingServer()->DrawInstanced(m_RenderPassComp, l_renderingContext->m_resolution * l_renderingContext->m_resolution * l_renderingContext->m_resolution);
+	l_renderingServer->DrawInstanced(m_RenderPassComp, l_renderingContext->m_resolution * l_renderingContext->m_resolution * l_renderingContext->m_resolution);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_renderingContext->m_input, 0, Accessibility::ReadOnly);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_renderingContext->m_input, 0);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

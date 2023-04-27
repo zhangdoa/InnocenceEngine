@@ -849,11 +849,12 @@ bool BindGPUBuffer(Accessibility accessibility, GLuint BO, size_t localSlot, siz
 	return true;
 }
 
-bool GLRenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	if (resource)
 	{
 		auto l_localSlot = renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorIndex;
+		auto l_accessibility = renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_BindingAccessibility;
 		switch (resource->m_GPUResourceType)
 		{
 		case GPUResourceType::Sampler:
@@ -863,13 +864,13 @@ bool GLRenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderS
 			}
 			break;
 		case GPUResourceType::Image:
-			if (accessibility == Accessibility::ReadOnly)
+			if (l_accessibility == Accessibility::ReadOnly)
 			{
 				ActivateTexture(reinterpret_cast<GLTextureComponent*>(resource), (uint32_t)l_localSlot);
 			}
 			else
 			{
-				BindTextureAsImage(reinterpret_cast<GLTextureComponent*>(resource), (uint32_t)l_localSlot, accessibility);
+				BindTextureAsImage(reinterpret_cast<GLTextureComponent*>(resource), (uint32_t)l_localSlot, l_accessibility);
 			}
 			break;
 		case GPUResourceType::Buffer:
@@ -904,7 +905,7 @@ bool GLRenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t in
 	return true;
 }
 
-bool GLRenderingServer::UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -957,15 +958,15 @@ bool GLRenderingServer::Present()
 
 	ClearRenderTargets(m_SwapChainRenderPassComp);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 

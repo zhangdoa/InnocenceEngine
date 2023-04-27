@@ -1409,7 +1409,7 @@ bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t inde
 	return true;
 }
 
-bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	if (resource == nullptr)
 	{
@@ -1436,7 +1436,8 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 	VkDescriptorBufferInfo l_descriptorBufferInfo = {};
 	auto l_descriptorSetIndex = (uint32_t)l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorSetIndex;
 	auto l_descriptorIndex = (uint32_t)l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorIndex;
-
+	auto accessibility = l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_BindingAccessibility;
+	
 	switch (resource->m_GPUResourceType)
 	{
 	case GPUResourceType::Sampler:
@@ -1551,7 +1552,7 @@ bool VKRenderingServer::DrawInstanced(RenderPassComponent *renderPass, size_t in
 	return true;
 }
 
-bool VKRenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -1721,15 +1722,15 @@ bool VKRenderingServer::Present()
 
 	ClearRenderTargets(m_SwapChainRenderPassComp);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	TryToTransitImageLayout(l_VKTextureComp, l_commandList->m_GraphicsCommandBuffer, l_VKTextureComp->m_ReadImageLayout);
 

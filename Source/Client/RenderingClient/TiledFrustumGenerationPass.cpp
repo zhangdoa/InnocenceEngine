@@ -12,7 +12,9 @@ using namespace DefaultGPUBuffers;
 
 bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 {	
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TiledFrustumGenerationPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";	
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
@@ -21,7 +23,7 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&TiledFrustumGenerationPass::RenderTargetsCreationFunc, this);
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("TiledFrustumGenerationPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("TiledFrustumGenerationPass/");
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(3);
@@ -48,8 +50,10 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 
 bool TiledFrustumGenerationPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -58,7 +62,9 @@ bool TiledFrustumGenerationPass::Initialize()
 
 bool TiledFrustumGenerationPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -71,7 +77,9 @@ ObjectStatus TiledFrustumGenerationPass::GetStatus()
 }
 
 bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* renderingContext)
-{		
+{	
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_dispatchParamsGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
@@ -79,20 +87,20 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;
 	l_tiledFrustumWorkload.numThreads = m_numThreads;
 
-	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
+	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_tiledFrustum, 2, Accessibility::ReadWrite, 0);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_tiledFrustum, 2);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_tiledFrustum, 2, Accessibility::ReadWrite, 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_tiledFrustum, 2);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }
@@ -109,6 +117,8 @@ GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 
 bool Inno::TiledFrustumGenerationPass::CreateResources()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
 
 	auto l_numThreadsX = std::ceil(l_viewportSize.x / m_tileSize);
@@ -122,7 +132,7 @@ bool Inno::TiledFrustumGenerationPass::CreateResources()
 
 	auto l_elementCount = m_numThreads.x * m_numThreads.y;
 
-	m_tiledFrustum = g_Engine->getRenderingServer()->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
+	m_tiledFrustum = l_renderingServer->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
 	m_tiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_tiledFrustum->m_ElementCount = l_elementCount;
 	m_tiledFrustum->m_ElementSize = 64;
@@ -132,12 +142,14 @@ bool Inno::TiledFrustumGenerationPass::CreateResources()
 
 bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	if(m_tiledFrustum)
-		g_Engine->getRenderingServer()->DeleteGPUBufferComponent(m_tiledFrustum);
+		l_renderingServer->DeleteGPUBufferComponent(m_tiledFrustum);
 
 	CreateResources();
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(m_tiledFrustum);
+	l_renderingServer->InitializeGPUBufferComponent(m_tiledFrustum);
 
     return true;
 }

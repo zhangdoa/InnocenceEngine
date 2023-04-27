@@ -49,10 +49,10 @@ namespace Inno
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
 		bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
-		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
+		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
 		bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
-		bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
+		bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		bool CommandListEnd(RenderPassComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 		bool WaitForFrame(RenderPassComponent* rhs) override;

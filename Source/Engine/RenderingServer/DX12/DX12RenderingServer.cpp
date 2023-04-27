@@ -1909,6 +1909,15 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 	PrepareRenderTargets(l_rhs, l_commandList);
 	PreparePipeline(l_rhs, l_commandList, l_PSO);
 
+	for	(size_t i = 0; i < l_rhs->m_ResourceBindingLayoutDescs.size(); i++)
+	{
+		auto& l_desc = l_rhs->m_ResourceBindingLayoutDescs[i];
+		if(l_desc.m_GPUResource)
+		{
+			BindGPUResource(rhs, l_desc.m_ShaderStage, l_desc.m_GPUResource, i);
+		}
+	}
+	
 	return true;
 }
 
@@ -2000,7 +2009,7 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t in
 	return true;
 }
 
-bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -2113,7 +2122,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 			break;
 		case GPUResourceType::Image:
 		{
-			if (accessibility != Accessibility::ReadOnly)
+			if (l_accessibility != Accessibility::ReadOnly)
 			{
 				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
 			}
@@ -2192,7 +2201,7 @@ bool DX12RenderingServer::DrawInstanced(RenderPassComponent *renderPass, size_t 
 	return true;
 }
 
-bool DX12RenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -2201,6 +2210,15 @@ bool DX12RenderingServer::CommandListEnd(RenderPassComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+
+	for	(size_t i = 0; i < l_rhs->m_ResourceBindingLayoutDescs.size(); i++)
+	{
+		auto& l_desc = l_rhs->m_ResourceBindingLayoutDescs[0];
+		if(l_desc.m_GPUResource)
+		{
+			UnbindGPUResource(rhs, l_desc.m_ShaderStage, l_desc.m_GPUResource, i);
+		}
+	}
 
 	l_commandList->m_DirectCommandList->Close();
 	l_commandList->m_ComputeCommandList->Close();
@@ -2359,15 +2377,15 @@ bool DX12RenderingServer::Present()
 
 	ClearRenderTargets(m_SwapChainRenderPassComp);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	TryToTransitState(l_DX12TextureComp, l_commandList,l_DX12TextureComp->m_ReadState);
 

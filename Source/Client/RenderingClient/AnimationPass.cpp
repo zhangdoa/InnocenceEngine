@@ -11,12 +11,14 @@ using namespace DefaultGPUBuffers;
 
 bool AnimationPass::Setup(ISystemConfig *systemConfig)
 {
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("AnimationPass/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("AnimationPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("AnimationPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("AnimationPass/");
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
@@ -95,7 +97,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = g_Engine->getRenderingServer()->AddSamplerComponent("AnimationPass/");
+	m_SamplerComp = l_renderingServer->AddSamplerComponent("AnimationPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -107,9 +109,16 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = ShaderStage::Pixel;
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -118,7 +127,9 @@ bool AnimationPass::Initialize()
 
 bool AnimationPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -132,7 +143,8 @@ ObjectStatus AnimationPass::GetStatus()
 
 bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 	auto l_AnimationGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Animation);
@@ -141,51 +153,49 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (l_AnimationDrawCallInfo.size())
 	{
-		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
+		l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+		l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 		// Don't clean render targets since they are from previous pass
-		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 8);
-		g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0, Accessibility::ReadOnly);
 
 		for (auto i : l_AnimationDrawCallInfo)
 		{
-			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, Accessibility::ReadOnly, i.animationConstantBufferIndex, 1);
-			g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10, Accessibility::ReadOnly);
+			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
+			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
 
 			if (i.drawCallInfo.mesh->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, i.drawCallInfo.meshConstantBufferIndex, 1);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, i.drawCallInfo.materialConstantBufferIndex, 1);
+				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.meshConstantBufferIndex, 1);
+				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.materialConstantBufferIndex, 1);
 
 				if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
-					g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
-					g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
-					g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
-					g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
 				}
 
-				g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp, i.drawCallInfo.mesh);
+				l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, i.drawCallInfo.mesh);
 
 				if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
-					g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
-					g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
-					g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
-					g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
+					l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
+					l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
+					l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
+					l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
+					l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
 				}
 			}
 		}
 
-		g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+		l_renderingServer->CommandListEnd(m_RenderPassComp);
 	}
 	else
 	{
-		g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-		g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-		g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+		l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+		l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+		l_renderingServer->CommandListEnd(m_RenderPassComp);
 	}
 
 	return true;
@@ -205,6 +215,8 @@ bool Inno::AnimationPass::RenderTargetsReservationFunc()
 
 bool AnimationPass::RenderTargetsCreationFunc()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		m_RenderPassComp->m_RenderTargets[i].m_Texture = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i].m_Texture;
@@ -215,11 +227,15 @@ bool AnimationPass::RenderTargetsCreationFunc()
 
 bool AnimationPass::DepthStencilRenderTargetsReservationFunc()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	return true;
 }
 
 bool AnimationPass::DepthStencilRenderTargetsCreationFunc()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	m_RenderPassComp->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture;
 
 	return true;

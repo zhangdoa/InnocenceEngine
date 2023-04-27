@@ -12,13 +12,15 @@ using namespace DefaultGPUBuffers;
 
 bool TransparentBlendPass::Setup(ISystemConfig *systemConfig)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 	
-	m_ShaderProgramComp = g_Engine->getRenderingServer()->AddShaderProgramComponent("TransparentBlendPass/");
+	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TransparentBlendPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "transparentBlendPass.comp/";
 
-	m_RenderPassComp = g_Engine->getRenderingServer()->AddRenderPassComponent("TransparentBlendPass/");
+	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("TransparentBlendPass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -67,8 +69,10 @@ bool TransparentBlendPass::Setup(ISystemConfig *systemConfig)
 
 bool TransparentBlendPass::Initialize()
 {	
-	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	
+	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -77,7 +81,9 @@ bool TransparentBlendPass::Initialize()
 
 bool TransparentBlendPass::Terminate()
 {
-	g_Engine->getRenderingServer()->DeleteRenderPassComponent(m_RenderPassComp);
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -91,11 +97,13 @@ ObjectStatus TransparentBlendPass::GetStatus()
 
 bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
 	GPUResourceComponent* l_canvas = nullptr;
 
 	if (renderingContext == nullptr)
 	{
-		g_Engine->getRenderingServer()->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0].m_Texture);
+		l_renderingServer->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0].m_Texture);
 		l_canvas = m_RenderPassComp->m_RenderTargets[0].m_Texture;
 	}
 	else
@@ -106,25 +114,25 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp, 0);
-	g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp);
-	g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetHeadPtrTexture(), 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel0(), 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel1(), 2, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_canvas, 3, Accessibility::ReadWrite);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetHeadPtrTexture(), 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel0(), 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel1(), 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_canvas, 3);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4, Accessibility::ReadOnly);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RenderPassComp, 160, 90, 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, 160, 90, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetHeadPtrTexture(), 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel0(), 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel1(), 2, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_canvas, 3, Accessibility::ReadWrite);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetHeadPtrTexture(), 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel0(), 1);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel1(), 2);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_canvas, 3);
 
-	g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

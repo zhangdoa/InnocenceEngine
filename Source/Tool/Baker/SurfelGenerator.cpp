@@ -21,15 +21,17 @@ namespace Inno
     {
         void SurfelGenerator::setup()
         {
-            m_SPC_Surfel = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIBakeSurfelPass/");
+            auto l_renderingServer = g_Engine->getRenderingServer();
+
+            m_SPC_Surfel = l_renderingServer->AddShaderProgramComponent("GIBakeSurfelPass/");
 
             m_SPC_Surfel->m_ShaderFilePaths.m_VSPath = "GIBakeSurfelPass.vert/";
             m_SPC_Surfel->m_ShaderFilePaths.m_GSPath = "GIBakeSurfelPass.geom/";
             m_SPC_Surfel->m_ShaderFilePaths.m_PSPath = "GIBakeSurfelPass.frag/";
 
-            g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Surfel);
+            l_renderingServer->InitializeShaderProgramComponent(m_SPC_Surfel);
 
-            m_RenderPassComp_Surfel = g_Engine->getRenderingServer()->AddRenderPassComponent("GIBakeSurfelPass/");
+            m_RenderPassComp_Surfel = l_renderingServer->AddRenderPassComponent("GIBakeSurfelPass/");
 
             auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -107,14 +109,14 @@ namespace Inno
 
             m_RenderPassComp_Surfel->m_ShaderProgram = m_SPC_Surfel;
 
-            g_Engine->getRenderingServer()->InitializeRenderPassComponent(m_RenderPassComp_Surfel);
+            l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp_Surfel);
 
-            m_SamplerComp_Surfel = g_Engine->getRenderingServer()->AddSamplerComponent("GIBakeSurfelPass/");
+            m_SamplerComp_Surfel = l_renderingServer->AddSamplerComponent("GIBakeSurfelPass/");
 
             m_SamplerComp_Surfel->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
             m_SamplerComp_Surfel->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-            g_Engine->getRenderingServer()->InitializeSamplerComponent(m_SamplerComp_Surfel);
+            l_renderingServer->InitializeSamplerComponent(m_SamplerComp_Surfel);
         }
 
         bool SurfelGenerator::captureSurfels(std::vector<Probe>& probes)
@@ -164,6 +166,8 @@ namespace Inno
 
         bool SurfelGenerator::drawObjects(Probe& probeCache, const Mat4& p, const std::vector<Mat4>& v)
         {
+            auto l_renderingServer = g_Engine->getRenderingServer();
+
             auto l_t = Math::getInvertTranslationMatrix(probeCache.pos);
 
             std::vector<Mat4> l_GICameraConstantBuffer(8);
@@ -174,16 +178,16 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = l_t;
 
-            g_Engine->getRenderingServer()->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
             auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-            g_Engine->getRenderingServer()->CommandListBegin(m_RenderPassComp_Surfel, 0);
-            g_Engine->getRenderingServer()->BindRenderPassComponent(m_RenderPassComp_Surfel);
-            g_Engine->getRenderingServer()->ClearRenderTargets(m_RenderPassComp_Surfel);
-            g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, m_SamplerComp_Surfel, 8);
-            g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
+            l_renderingServer->CommandListBegin(m_RenderPassComp_Surfel, 0);
+            l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Surfel);
+            l_renderingServer->ClearRenderTargets(m_RenderPassComp_Surfel);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, m_SamplerComp_Surfel, 8);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
 
             uint32_t l_offset = 0;
 
@@ -193,50 +197,52 @@ namespace Inno
 
                 if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
                 {
-                    g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, Accessibility::ReadOnly, l_offset, 1);
-                    g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, Accessibility::ReadOnly, l_offset, 1);
+                    l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
+                    l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_offset, 1);
 
                     if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
                     {
-                        g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
-                        g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
-                        g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
-                        g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
-                        g_Engine->getRenderingServer()->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
                     }
 
-                    g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RenderPassComp_Surfel, l_staticPerObjectConstantBuffer.mesh);
+                    l_renderingServer->DrawIndexedInstanced(m_RenderPassComp_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
                     if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
                     {
-                        g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
-                        g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
-                        g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
-                        g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
-                        g_Engine->getRenderingServer()->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
                     }
                 }
 
                 l_offset++;
             }
 
-            g_Engine->getRenderingServer()->CommandListEnd(m_RenderPassComp_Surfel);
+            l_renderingServer->CommandListEnd(m_RenderPassComp_Surfel);
 
-            g_Engine->getRenderingServer()->ExecuteCommandList(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
-            g_Engine->getRenderingServer()->WaitCommandQueue(m_RenderPassComp_Surfel, GPUEngineType::Graphics, GPUEngineType::Graphics);
-            g_Engine->getRenderingServer()->WaitFence(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
+            l_renderingServer->ExecuteCommandList(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
+            l_renderingServer->WaitCommandQueue(m_RenderPassComp_Surfel, GPUEngineType::Graphics, GPUEngineType::Graphics);
+            l_renderingServer->WaitFence(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
 
             return true;
         }
 
         bool SurfelGenerator::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches)
         {
+            auto l_renderingServer = g_Engine->getRenderingServer();
+            
             static uint32_t l_index = 0;
 
-            auto l_posWSMetallic = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[0].m_Texture);
-            auto l_normalRoughness = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[1].m_Texture);
-            auto l_albedoAO = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture);
-            auto l_depthStencilRT = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture);
+            auto l_posWSMetallic = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[0].m_Texture);
+            auto l_normalRoughness = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[1].m_Texture);
+            auto l_albedoAO = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture);
+            auto l_depthStencilRT = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture);
 
             g_Engine->getAssetSystem()->SaveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture->m_TextureDesc, l_albedoAO.data());
 

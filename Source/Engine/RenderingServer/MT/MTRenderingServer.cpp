@@ -175,7 +175,7 @@ bool MTRenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t inde
 	return true;
 }
 
-bool MTRenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool MTRenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -190,7 +190,7 @@ bool MTRenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t in
 	return true;
 }
 
-bool MTRenderingServer::UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool MTRenderingServer::UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
