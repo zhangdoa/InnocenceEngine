@@ -12,27 +12,7 @@ namespace Inno
 		Invalid = 0, MainCamera = 1, Sun = 2
 	};
 
-	inline VisibilityMask operator&(VisibilityMask a, VisibilityMask b)
-	{
-		return static_cast<VisibilityMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-	}
-
-	inline VisibilityMask& operator&=(VisibilityMask& a, VisibilityMask b)
-	{
-		a = static_cast<VisibilityMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-		return a;
-	}
-
-	inline VisibilityMask operator|(VisibilityMask a, VisibilityMask b)
-	{
-		return static_cast<VisibilityMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-	}
-
-	inline VisibilityMask& operator|=(VisibilityMask& a, VisibilityMask b)
-	{
-		a = static_cast<VisibilityMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-		return a;
-	}
+	INNO_ENUM_OPERATORS(VisibilityMask)
 
 	struct alignas(16) PerFrameConstantBuffer
 	{
