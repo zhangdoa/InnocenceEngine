@@ -24,11 +24,11 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 
 	if (l_isHDR)
 	{
-		l_rawData = stbi_loadf(l_fullPath.c_str(), &width, &height, &nrChannels, 0);
+		l_rawData = stbi_loadf(l_fullPath.c_str(), &width, &height, &nrChannels, 4);
 	}
 	else
 	{
-		l_rawData = stbi_load(l_fullPath.c_str(), &width, &height, &nrChannels, 0);
+		l_rawData = stbi_load(l_fullPath.c_str(), &width, &height, &nrChannels, 4);
 	}
 	if (l_rawData)
 	{
@@ -38,7 +38,8 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
         l_fileName += "/";
 		l_TextureComp->m_InstanceName = l_fileName.c_str();
 #endif
-		l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels);
+		// @TODO: Forcing RGBA is wasting memory
+		l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(4);
 		l_TextureComp->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;
 		l_TextureComp->m_TextureDesc.UseMipMap = true;
 		l_TextureComp->m_TextureDesc.Width = width;
