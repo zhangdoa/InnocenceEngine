@@ -2,7 +2,6 @@
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "VXGIRenderer.h"
-#include "SunShadowGeometryProcessPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
@@ -46,7 +45,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(13);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(11);
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
@@ -99,19 +98,10 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_SubresourceCount = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_IndirectBinding = true;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 5;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_IndirectBinding = true;
-
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 3;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_IndirectBinding = true;
-
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex = 5;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -168,19 +158,16 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
-	auto l_CSMGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::CSM);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 11);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowGeometryProcessPass::Get().GetResult(), 10);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_CSMGPUBufferComp, 12);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 10);
 
 	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -217,7 +204,6 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	}
 
 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, SunShadowGeometryProcessPass::Get().GetResult(), 10);
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 

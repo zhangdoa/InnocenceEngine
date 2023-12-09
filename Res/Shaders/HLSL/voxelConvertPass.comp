@@ -12,14 +12,14 @@ struct ComputeInputType
 [[vk::binding(0, 1)]]
 RWStructuredBuffer<uint> in_geometryProcessResult : register(u0);
 [[vk::binding(1, 1)]]
-RWTexture3D<float4> out_luminanceVolume : register(u1);
+RWTexture3D<float4> out_positionVolume : register(u1);
 [[vk::binding(2, 1)]]
 RWTexture3D<float4> out_normalVolume : register(u2);
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
-	out_luminanceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	out_positionVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	out_normalVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	int index = input.dispatchThreadID.x + input.dispatchThreadID.y * voxelizationPassCBuffer.volumeResolution + input.dispatchThreadID.z * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
@@ -29,7 +29,7 @@ void main(ComputeInputType input)
 
 	if (in_geometryProcessResult[index])
 	{
-		out_luminanceVolume[input.dispatchThreadID] = DecodeColor(in_geometryProcessResult[index]);
-		out_normalVolume[input.dispatchThreadID] = DecodeNormal(in_geometryProcessResult[index + offset]);
+		out_positionVolume[input.dispatchThreadID] = RGBA8ToFloat4(in_geometryProcessResult[index]) / 255.0;
+		out_normalVolume[input.dispatchThreadID] = RGBA8ToFloat4(in_geometryProcessResult[index + offset]) / 255.0;
 	}
 }

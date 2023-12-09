@@ -32,17 +32,30 @@ struct PixelInputType
 	float2 texCoord : TEXCOORD;
 };
 
+void imageAtomicRGBA8Avg(RWStructuredBuffer<uint> grid, int index, float4 value)
+{
+    value.rgb *= 255.0;
+    uint newVal = Float4ToRGBA8(value);
+    uint prevStoredVal = 1;
+    uint curStoredVal = 0;
+    uint numIterations = 0;
+
+    while(curStoredVal != prevStoredVal && numIterations < 255)
+    {
+		InterlockedCompareExchange(grid[index], curStoredVal, newVal, prevStoredVal);
+        float4 rval = RGBA8ToFloat4(curStoredVal);
+        rval.rgb = (rval.rgb * rval.a); // Denormalize
+        float4 curValF = rval + value;  // Add
+        curValF.rgb /= curValF.a;       // Renormalize
+        newVal = Float4ToRGBA8(curValF);
+		curStoredVal = newVal;
+		
+        ++numIterations;
+    }
+}
+
 void main(PixelInputType input)
 {
-	//float3 pos = input.posCS.xyz;
-
-	//pos *= voxelizationPassCBuffer.volumeResolutionRcp;
-
-	//if (((pos.x < input.AABB.x) && (pos.y < input.AABB.y)) || ((pos.x > input.AABB.z) && (pos.y > input.AABB.w)))
-	//{
-	//	discard;
-	//}
-
 	float3 powWS = input.posCS_orig.xyz;
 
 	if ((powWS.x < -1.0) || (powWS.y < -1.0) || (powWS.z < -1.0) || (powWS.x > 1.0) || (powWS.y > 1.0) || (powWS.z > 1.0))
@@ -51,23 +64,10 @@ void main(PixelInputType input)
 	}
 
 	float transparency = 1.0;
-	float3 out_Albedo;
+	float4 out_Albedo = materialCBuffer.albedo;
 	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
-		float4 l_albedo = t2d_albedo.Sample(in_samplerTypePoint, input.texCoord);
-		transparency = l_albedo.a;
-		if (transparency < 0.1)
-		{
-			discard;
-		}
-		else
-		{
-			out_Albedo = l_albedo.rgb;
-		}
-	}
-	else
-	{
-		out_Albedo = materialCBuffer.albedo.rgb;
+		out_Albedo = t2d_albedo.Sample(in_samplerTypePoint, input.texCoord);
 	}
 
 	float out_Metallic;
@@ -90,40 +90,6 @@ void main(PixelInputType input)
 		out_Roughness = materialCBuffer.MRAT.g;
 	}
 
-	float out_AO;
-	if (materialCBuffer.textureSlotMask & 0x00000010)
-	{
-		out_AO = t2d_ao.Sample(in_samplerTypePoint, input.texCoord).r;
-	}
-	else
-	{
-		out_AO = materialCBuffer.MRAT.b;
-	}
-
-	float3 F0 = float3(0.04, 0.04, 0.04);
-	F0 = lerp(F0, out_Albedo, out_Metallic);
-
-	float3 N = normalize(input.normalLS.xyz);
-	float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - input.posWS.xyz);
-	float NdotV = max(dot(N, V), 0.0);
-
-	float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
-	float NdotL = max(dot(N, L), 0.0);
-
-	float3 H = normalize(V + L);
-	float LdotH = max(dot(L, H), 0.0);
-
-	float F90 = 1.0;
-	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotH);
-	float3 Ft = getBTDF(NdotV, NdotL, LdotH, out_Roughness, out_Metallic, FresnelFactor, out_Albedo);
-
-	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotL;
-	float4 Lo = float4(illuminance * Ft, 1.0f);
-	Lo *= 1.0 - SunShadowResolver(input.posWS.xyz, in_SunShadow, in_samplerTypePoint);
-
-	uint LoUint = EncodeColor(Lo);
-	uint normalUint = EncodeNormal(input.normalLS);
-
 	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.volumeResolution;
 	int3 writeCoordInt = int3(writeCoord);
 	int index = writeCoordInt.x + writeCoordInt.y * voxelizationPassCBuffer.volumeResolution + writeCoordInt.z * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
@@ -131,6 +97,6 @@ void main(PixelInputType input)
 	// @TODO: optimize
 	int offset = voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
 
-	InterlockedMax(out_geometryProcessResult[index], LoUint);
-	InterlockedMax(out_geometryProcessResult[index + offset], normalUint);
+	imageAtomicRGBA8Avg(out_geometryProcessResult, index, out_Albedo);
+	imageAtomicRGBA8Avg(out_geometryProcessResult, index + offset, input.normalLS);
 }

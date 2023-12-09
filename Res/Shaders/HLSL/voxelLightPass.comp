@@ -1,0 +1,34 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+[[vk::binding(0, 1)]]
+Texture3D<float4> in_albedoVolume : register(t0);
+[[vk::binding(1, 1)]]
+Texture3D<float4> in_normalVolume : register(t1);
+[[vk::binding(0, 2)]]
+RWTexture3D<float4> out_illuminanceVolume : register(u0);
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	out_illuminanceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	float4 albedo = in_albedoVolume[input.dispatchThreadID];
+	if(albedo.a)
+	{
+		float4 normal = in_normalVolume[input.dispatchThreadID];
+		float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
+		float NdotL = max(dot(normal.xyz, L), 0.0);
+		float3 sunLo = perFrameCBuffer.sun_illuminance.xyz * NdotL;
+
+		out_illuminanceVolume[input.dispatchThreadID] = float4(albedo.xyz * sunLo, 1.0);
+	}
+}

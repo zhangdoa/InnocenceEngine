@@ -3,17 +3,18 @@
 
 namespace Inno
 {
-	class VXGIConvertPassRenderingContext: public IRenderingContext
+	class VXGILightPassRenderingContext: public IRenderingContext
 	{
 	public:
-		GPUResourceComponent* m_input;
+		GPUResourceComponent* m_AlbedoVolume;
+		GPUResourceComponent* m_NormalVolume;
 		uint32_t m_resolution;
 	};
 
-	class VXGIConvertPass: IRenderPass
+	class VXGILightPass: IRenderPass
 	{
 	public:
-		INNO_CLASS_SINGLETON(VXGIConvertPass)
+		INNO_CLASS_SINGLETON(VXGILightPass)
 
 		bool Setup(ISystemConfig *systemConfig = nullptr) override;
 		bool Initialize() override;
@@ -23,14 +24,12 @@ namespace Inno
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent *GetRenderPassComp() override;
 
-		GPUResourceComponent *GetAlbedoVolume();
-		GPUResourceComponent *GetNormalVolume();
+		GPUResourceComponent *GetIlluminanceVolume();
 
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
-		TextureComponent *m_AlbedoVolume;
-		TextureComponent *m_NormalVolume;
+		TextureComponent *m_IlluminanceVolume;
 	};
 } // namespace Inno

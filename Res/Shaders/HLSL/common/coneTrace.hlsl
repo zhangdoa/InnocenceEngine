@@ -82,7 +82,7 @@ inline float4 ConeTraceRadianceDiffuse(
 {
 	float4 radiance = 0;
 
-	for (uint cone = 0; cone < (uint)voxelizationPassCBuffer.numCones; ++cone)
+	for (uint cone = 0; cone < 16; ++cone)
 	{
 		float3 coneDirection = normalize(CONES[cone] + N);
 
@@ -91,7 +91,7 @@ inline float4 ConeTraceRadianceDiffuse(
 		radiance += ConeTrace(voxelTexture, samplerTypePoint, P, N, coneDirection, tan(PI * 0.5f * 0.33f), voxelizationPassCBuffer).color;
 	}
 
-	radiance *= voxelizationPassCBuffer.numConesRcp;
+	radiance /= 16;
 
 	return max(0, radiance);
 }

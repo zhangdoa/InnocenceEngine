@@ -3,6 +3,7 @@
 
 #include "VXGIGeometryProcessPass.h"
 #include "VXGIConvertPass.h"
+#include "VXGILightPass.h"
 #include "VXGIMultiBouncePass.h"
 #include "VXGIScreenSpaceFeedbackPass.h"
 #include "VXGIRayTracingPass.h"
@@ -33,6 +34,7 @@ bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 	
 	VXGIGeometryProcessPass::Get().Setup(systemConfig);
 	VXGIConvertPass::Get().Setup(systemConfig);
+	VXGILightPass::Get().Setup(systemConfig);
 	VXGIMultiBouncePass::Get().Setup(systemConfig);
 	VXGIScreenSpaceFeedbackPass::Get().Setup(systemConfig);
 	VXGIRayTracingPass::Get().Setup(systemConfig);
@@ -50,6 +52,7 @@ bool VXGIRenderer::Initialize()
 	l_renderingServer->InitializeGPUBufferComponent(m_VXGICBuffer);
 	VXGIGeometryProcessPass::Get().Initialize();
 	VXGIConvertPass::Get().Initialize();
+	VXGILightPass::Get().Initialize();
 	VXGIMultiBouncePass::Get().Initialize();
 	VXGIScreenSpaceFeedbackPass::Get().Initialize();
 	VXGIRayTracingPass::Get().Initialize();
@@ -68,21 +71,32 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 	auto f_renderGeometryPasses = [&]() 
 	{
 		VXGIGeometryProcessPass::Get().PrepareCommandList();
+
 		VXGIConvertPassRenderingContext l_VXGIConvertPassRenderingContext;
 		l_VXGIConvertPassRenderingContext.m_input = VXGIGeometryProcessPass::Get().GetResult();
 		l_VXGIConvertPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
 		VXGIConvertPass::Get().PrepareCommandList(&l_VXGIConvertPassRenderingContext);
 
+		VXGILightPassRenderingContext l_VXGILightPassRenderingContext;
+		l_VXGILightPassRenderingContext.m_AlbedoVolume = VXGIConvertPass::Get().GetAlbedoVolume();
+		l_VXGILightPassRenderingContext.m_NormalVolume = VXGIConvertPass::Get().GetNormalVolume();
+		l_VXGILightPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
+		VXGILightPass::Get().PrepareCommandList(&l_VXGILightPassRenderingContext);
+
 		l_renderingServer->ExecuteCommandList(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		l_renderingServer->WaitCommandQueue(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
-		l_renderingServer->WaitCommandQueue(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+		l_renderingServer->WaitCommandQueue(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-		l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetLuminanceVolume()));
-		l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetNormalVolume()));
+		l_renderingServer->ExecuteCommandList(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		l_renderingServer->WaitCommandQueue(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
+		l_renderingServer->ExecuteCommandList(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		l_renderingServer->WaitCommandQueue(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+
+		l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()));
 	};
 
 	if (l_VXGIRenderingConfig->m_screenFeedback)
@@ -109,7 +123,7 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 			m_isInitialLoadScene = false;
 
 			f_renderGeometryPasses();
-			l_renderingServer->CopyTextureComponent(reinterpret_cast<TextureComponent*>(VXGIConvertPass::Get().GetLuminanceVolume()), reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
+			l_renderingServer->CopyTextureComponent(reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()), reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
 		}
 		else
 		{
@@ -172,7 +186,7 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		if (l_VXGIRenderingConfig->m_multiBounceCount)
 		{			
 			VXGIMultiBouncePassRenderingContext l_VXGIMultiBouncePassRenderingContext;
-			l_VXGIMultiBouncePassRenderingContext.m_input = VXGIConvertPass::Get().GetLuminanceVolume();
+			l_VXGIMultiBouncePassRenderingContext.m_input = VXGILightPass::Get().GetIlluminanceVolume();
 			// @TODO: Investigate if we really needs a dynamic output target or not
 			l_VXGIMultiBouncePassRenderingContext.m_output = VXGIMultiBouncePass::Get().GetResult();	
 
@@ -193,7 +207,7 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 		}
 		else
 		{
-			m_result = VXGIConvertPass::Get().GetLuminanceVolume();
+			m_result = VXGILightPass::Get().GetIlluminanceVolume();
 		}
 	}
 

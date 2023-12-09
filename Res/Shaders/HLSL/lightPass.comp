@@ -45,8 +45,6 @@ RWTexture2D<float4> out_lightPassRT1 : register(u1);
 
 //#define uni_drawCSMSplitedArea
 
-static const float sunAngularRadius = 0.000071;
-
 float4 GetFog(in Texture3D<float4> voxelTexture,
 	in SamplerState in_samplerTypePoint,
 	in float3 P,

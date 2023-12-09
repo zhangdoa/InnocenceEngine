@@ -11,6 +11,8 @@ static const int NR_CSM_SPLITS = 4;
 static const float FLT_MIN = 1.175494351e-38;
 static const float FLT_MAX = 3.402823466e+38;
 
+static const float sunAngularRadius = 0.000071;
+
 // Listing 45 [https://google.github.io/filament/Filament.md.html]
 static const float4 debugColors[16] = {
 	float4(0.0, 0.0, 0.0, 0.0),         // black
@@ -306,6 +308,21 @@ float4 DecodeNormal(in uint normalMask)
 	return float4(normal, 1.0f);
 }
 
+float4 RGBA8ToFloat4(uint val)
+{
+    return float4(float((val & 0x000000FF)), 
+    float((val & 0x0000FF00) >> 8U), 
+    float((val & 0x00FF0000) >> 16U), 
+    float((val & 0xFF000000) >> 24U));
+}
+
+uint Float4ToRGBA8(float4 val)
+{
+    return (uint(val.w) & 0x000000FF) << 24U | 
+    (uint(val.z) & 0x000000FF) << 16U | 
+    (uint(val.y) & 0x000000FF) << 8U | 
+    (uint(val.x) & 0x000000FF);
+}
 float GetLuma(float3 color)
 {
 	return dot(color, float3(0.2126, 0.7152, 0.0722));

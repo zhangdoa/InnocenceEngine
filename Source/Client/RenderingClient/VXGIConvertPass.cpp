@@ -18,18 +18,18 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 	
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
 
-	m_luminanceVolume = l_renderingServer->AddTextureComponent("VoxelLuminanceVolume/");
-	m_luminanceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_AlbedoVolume = l_renderingServer->AddTextureComponent("VoxelAlbedoVolume/");
+	m_AlbedoVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_luminanceVolume->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
-	m_luminanceVolume->m_TextureDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
-	m_luminanceVolume->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
-	m_luminanceVolume->m_TextureDesc.Usage = TextureUsage::Sample;
-	m_luminanceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-	m_luminanceVolume->m_TextureDesc.UseMipMap = true;
+	m_AlbedoVolume->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_AlbedoVolume->m_TextureDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_AlbedoVolume->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
+	m_AlbedoVolume->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_AlbedoVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
+	m_AlbedoVolume->m_TextureDesc.UseMipMap = true;
 
-	m_normalVolume = l_renderingServer->AddTextureComponent("VoxelNormalVolume/");
-	m_normalVolume->m_TextureDesc = m_luminanceVolume->m_TextureDesc;
+	m_NormalVolume = l_renderingServer->AddTextureComponent("VoxelNormalVolume/");
+	m_NormalVolume->m_TextureDesc = m_AlbedoVolume->m_TextureDesc;
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelConvertPass/");
 
@@ -82,8 +82,8 @@ bool VXGIConvertPass::Initialize()
 	
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeTextureComponent(m_luminanceVolume);
-	l_renderingServer->InitializeTextureComponent(m_normalVolume);
+	l_renderingServer->InitializeTextureComponent(m_AlbedoVolume);
+	l_renderingServer->InitializeTextureComponent(m_NormalVolume);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -118,15 +118,15 @@ bool VXGIConvertPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceVolume, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_normalVolume, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_AlbedoVolume, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NormalVolume, 2);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
 
 	l_renderingServer->Dispatch(m_RenderPassComp,l_numThreadGroup, l_numThreadGroup, l_numThreadGroup);
 
 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceVolume, 1);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_normalVolume, 2);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_AlbedoVolume, 1);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NormalVolume, 2);
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
@@ -138,12 +138,12 @@ RenderPassComponent* VXGIConvertPass::GetRenderPassComp()
 	return m_RenderPassComp;
 }
 
-GPUResourceComponent * VXGIConvertPass::GetLuminanceVolume()
+GPUResourceComponent * VXGIConvertPass::GetAlbedoVolume()
 {
-	return m_luminanceVolume;
+	return m_AlbedoVolume;
 }
 
 GPUResourceComponent * VXGIConvertPass::GetNormalVolume()
 {
-	return m_normalVolume;
+	return m_NormalVolume;
 }
