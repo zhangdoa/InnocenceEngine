@@ -8,49 +8,55 @@ extern IEngine* g_Engine;
 using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
 using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
 
-namespace EventSystemNS
+namespace Inno
 {
-	bool Setup();
-	bool Initialize();
-	bool Update();
-	bool Terminate();
+	class EventSystemImpl
+	{
+	public:
+		bool Setup();
+		bool Initialize();
+		bool Update();
+		bool Terminate();
 
-	bool addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent);
-	bool addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent);
+		bool AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent);
+		bool AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent);
 
-	Vec2 getMousePosition();
+		Vec2 GetMousePosition();
 
-	void buttonStateCallback(ButtonState buttonState);
-	void windowSizeCallback(int32_t width, int32_t height);
-	void mouseMovementCallback(float mouseXPos, float mouseYPos);
-	void scrollCallback(float xoffset, float yoffset);
+		void ButtonStateCallback(ButtonState buttonState);
+		void WindowResizeCallback(int32_t width, int32_t height);
+		void MouseMovementCallback(float mouseXPos, float mouseYPos);
+		void MouseScrollCallback(float xOffset, float yOffset);
 
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		void ExecuteEvent(const ButtonEvent& buttonEvent);
 
-	const InputConfig m_inputConfig = { 256, 5 };
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	std::vector<ButtonState> m_previousFrameButtonStates;
+		const InputConfig m_InputConfig = { 256, 5 };
 
-	ButtonEventMap m_buttonEvents;
-	MouseMovementEventMap m_mouseMovementEvents;
+		std::vector<ButtonState> m_PreviousFrameButtonStates;
 
-	float m_mouseXOffset;
-	float m_mouseYOffset;
-	float m_mouseLastX;
-	float m_mouseLastY;
+		ButtonEventMap m_ButtonEvents;
+		MouseMovementEventMap m_MouseMovementEvents;
 
-	Vec4 m_mousePositionInWorldSpace;
-};
+		float m_MouseXOffset;
+		float m_MouseYOffset;
+		float m_MouseLastX;
+		float m_MouseLastY;
 
-bool EventSystemNS::Setup()
+		Vec4 m_MousePositionInWorldSpace;
+	};
+}
+
+bool EventSystemImpl::Setup()
 {
-	EventSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool EventSystemNS::Initialize()
+bool EventSystemImpl::Initialize()
 {
-	if (EventSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
 		Logger::Log(LogLevel::Success, "EventSystem has been initialized.");
@@ -64,54 +70,49 @@ bool EventSystemNS::Initialize()
 	}
 }
 
-bool EventSystemNS::Update()
+bool EventSystemImpl::Update()
 {
-	if (EventSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (EventSystemImpl::m_ObjectStatus != ObjectStatus::Activated)
 	{
-		auto l_buttonStates = g_Engine->getWindowSystem()->getButtonState();
-
-		for (auto& i : l_buttonStates)
-		{
-			buttonStateCallback(i);
-		}
-
-		if (m_mouseMovementEvents.size() != 0)
-		{
-			if (m_mouseXOffset != 0)
-			{
-				for (auto& j : m_mouseMovementEvents.find(MouseMovementAxis::Horizontal)->second)
-				{
-					(*j.m_eventHandle)(m_mouseXOffset);
-				};
-			}
-			if (m_mouseYOffset != 0)
-			{
-				for (auto& j : m_mouseMovementEvents.find(MouseMovementAxis::Vertical)->second)
-				{
-					(*j.m_eventHandle)(m_mouseYOffset);
-				};
-			}
-			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
-			{
-				m_mouseXOffset = 0;
-				m_mouseYOffset = 0;
-			}
-		}
-
-		m_previousFrameButtonStates = l_buttonStates;
-
-		return true;
-	}
-	else
-	{
-		EventSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		EventSystemImpl::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
+
+	auto l_buttonStates = g_Engine->getWindowSystem()->GetButtonState();
+	for (auto& i : l_buttonStates)
+	{
+		ButtonStateCallback(i);
+	}
+
+	if (m_MouseMovementEvents.size() != 0)
+	{
+		if (m_MouseXOffset != 0)
+		{
+			for (auto& j : m_MouseMovementEvents.find(MouseMovementAxis::Horizontal)->second)
+			{
+				(*j.m_eventHandle)(m_MouseXOffset);
+			}
+		}
+		if (m_MouseYOffset != 0)
+		{
+			for (auto& j : m_MouseMovementEvents.find(MouseMovementAxis::Vertical)->second)
+			{
+				(*j.m_eventHandle)(m_MouseYOffset);
+			}
+		}
+		if (m_MouseXOffset != 0 || m_MouseYOffset != 0)
+		{
+			m_MouseXOffset = 0;
+			m_MouseYOffset = 0;
+		}
+	}
+
+	m_PreviousFrameButtonStates = l_buttonStates;
 
 	return true;
 }
 
-bool EventSystemNS::Terminate()
+bool EventSystemImpl::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Logger::Log(LogLevel::Success, "EventSystem has been terminated.");
@@ -119,150 +120,143 @@ bool EventSystemNS::Terminate()
 	return true;
 }
 
-bool EventSystemNS::addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
+bool EventSystemImpl::AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
-	m_buttonEvents.emplace(buttonState, buttonEvent);
+	m_ButtonEvents.emplace(buttonState, buttonEvent);
 
 	return true;
 }
 
-bool EventSystemNS::addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
+bool EventSystemImpl::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
 {
-	auto l_result = m_mouseMovementEvents.find(mouseMovementAxis);
-	if (l_result != m_mouseMovementEvents.end())
-	{
+	auto l_result = m_MouseMovementEvents.find(mouseMovementAxis);
+	if (l_result != m_MouseMovementEvents.end())
 		l_result->second.emplace(mouseMovementEvent);
-	}
 	else
-	{
-		m_mouseMovementEvents.emplace(mouseMovementAxis, std::set<MouseMovementEvent>{ mouseMovementEvent });
-	}
+		m_MouseMovementEvents.emplace(mouseMovementAxis, std::set<MouseMovementEvent>{ mouseMovementEvent });
 
 	return true;
 }
 
-Vec2 EventSystemNS::getMousePosition()
+Vec2 EventSystemImpl::GetMousePosition()
 {
-	return Vec2(m_mouseLastX, m_mouseLastY);
+	return Vec2(m_MouseLastX, m_MouseLastY);
 }
 
-void EventSystemNS::buttonStateCallback(ButtonState buttonState)
+void EventSystemImpl::ButtonStateCallback(ButtonState buttonState)
 {
-	auto l_buttonEvents = m_buttonEvents.equal_range(buttonState);
+	auto l_buttonEvents = m_ButtonEvents.equal_range(buttonState);
 	auto l_resultCount = std::distance(l_buttonEvents.first, l_buttonEvents.second);
+	if (!l_resultCount)
+		return;
 
-	if (l_resultCount)
+	for (auto it = l_buttonEvents.first; it != l_buttonEvents.second; it++)
 	{
-		for (auto it = l_buttonEvents.first; it != l_buttonEvents.second; it++)
+		if (it->second.m_eventLifeTime == EventLifeTime::Continuous && it->second.m_eventHandle)
+			ExecuteEvent(it->second);
+		else if (m_PreviousFrameButtonStates.size())
 		{
-			if (it->second.m_eventLifeTime == EventLifeTime::Continuous)
-			{
-				if (it->second.m_eventHandle)
-				{
-					auto l_event = reinterpret_cast<std::function<void()>*>(it->second.m_eventHandle);
-					(*l_event)();
-				}
-			}
-			else
-			{
-				if (m_previousFrameButtonStates.size())
-				{
-					auto l_previousFrameButtonState = m_previousFrameButtonStates[it->first.m_code];
-					if (l_previousFrameButtonState.m_isPressed != it->first.m_isPressed)
-					{
-						if (it->second.m_eventHandle)
-						{
-							auto l_event = reinterpret_cast<std::function<void()>*>(it->second.m_eventHandle);
-							(*l_event)();
-						}
-					}
-				}
-			}
+			auto l_previousFrameButtonState = m_PreviousFrameButtonStates[it->first.m_code];
+			if (l_previousFrameButtonState.m_isPressed != it->first.m_isPressed && it->second.m_eventHandle)
+				ExecuteEvent(it->second);
 		}
 	}
 }
 
-void EventSystemNS::windowSizeCallback(int32_t width, int32_t height)
+void EventSystemImpl::WindowResizeCallback(int32_t width, int32_t height)
 {
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
 	g_Engine->getRenderingFrontend()->SetScreenResolution(l_newScreenResolution);
 	g_Engine->getRenderingServer()->Resize();
 }
 
-void EventSystemNS::mouseMovementCallback(float mouseXPos, float mouseYPos)
+void EventSystemImpl::MouseMovementCallback(float mouseXPos, float mouseYPos)
 {
-	m_mouseXOffset = mouseXPos - m_mouseLastX;
-	m_mouseYOffset = m_mouseLastY - mouseYPos;
+	m_MouseXOffset = mouseXPos - m_MouseLastX;
+	m_MouseYOffset = m_MouseLastY - mouseYPos;
 
-	m_mouseLastX = mouseXPos;
-	m_mouseLastY = mouseYPos;
+	m_MouseLastX = mouseXPos;
+	m_MouseLastY = mouseYPos;
 }
 
-void EventSystemNS::scrollCallback(float xoffset, float yoffset)
+void EventSystemImpl::MouseScrollCallback(float xOffset, float yOffset)
 {
+}
+
+void EventSystemImpl::ExecuteEvent(const ButtonEvent& buttonEvent)
+{
+	auto l_event = reinterpret_cast<std::function<void()>*>(buttonEvent.m_eventHandle);
+	(*l_event)();
 }
 
 bool EventSystem::Setup(ISystemConfig* systemConfig)
 {
-	return EventSystemNS::Setup();
+	m_Impl = new EventSystemImpl();
+	return m_Impl->Setup();
 }
 
 bool EventSystem::Initialize()
 {
-	return EventSystemNS::Initialize();
+	return m_Impl->Initialize();
 }
 
 bool EventSystem::Update()
 {
-	return EventSystemNS::Update();
+	return m_Impl->Update();
 }
 
 bool EventSystem::Terminate()
 {
-	return EventSystemNS::Terminate();
+	if (m_Impl->Terminate())
+	{
+		delete m_Impl;
+		return true;
+	}
+
+	return false;
 }
 
-InputConfig EventSystem::getInputConfig()
+InputConfig EventSystem::GetInputConfig()
 {
-	return EventSystemNS::m_inputConfig;
+	return m_Impl->m_InputConfig;
 }
 
-void EventSystem::addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
+void EventSystem::AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
-	EventSystemNS::addButtonStateCallback(buttonState, buttonEvent);
+	m_Impl->AddButtonStateCallback(buttonState, buttonEvent);
 }
 
-void EventSystem::addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
+void EventSystem::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
 {
-	EventSystemNS::addMouseMovementCallback(mouseMovementAxis, mouseMovementEvent);
+	m_Impl->AddMouseMovementCallback(mouseMovementAxis, mouseMovementEvent);
 }
 
-void EventSystem::buttonStateCallback(ButtonState buttonState)
+void EventSystem::ButtonStateCallback(ButtonState buttonState)
 {
-	EventSystemNS::buttonStateCallback(buttonState);
+	m_Impl->ButtonStateCallback(buttonState);
 }
 
-void EventSystem::windowSizeCallback(int32_t width, int32_t height)
+void EventSystem::WindowResizeCallback(int32_t width, int32_t height)
 {
-	EventSystemNS::windowSizeCallback(width, height);
+	m_Impl->WindowResizeCallback(width, height);
 }
 
-void EventSystem::mouseMovementCallback(float mouseXPos, float mouseYPos)
+void EventSystem::MouseMovementCallback(float mouseXPos, float mouseYPos)
 {
-	EventSystemNS::mouseMovementCallback(mouseXPos, mouseYPos);
+	m_Impl->MouseMovementCallback(mouseXPos, mouseYPos);
 }
 
-void EventSystem::scrollCallback(float xoffset, float yoffset)
+void EventSystem::ScrollCallback(float xOffset, float yOffset)
 {
-	EventSystemNS::scrollCallback(xoffset, yoffset);
+	m_Impl->MouseScrollCallback(xOffset, yOffset);
 }
 
-Vec2 EventSystem::getMousePosition()
+Vec2 EventSystem::GetMousePosition()
 {
-	return EventSystemNS::getMousePosition();
+	return m_Impl->GetMousePosition();
 }
 
 ObjectStatus EventSystem::GetStatus()
 {
-	return EventSystemNS::m_ObjectStatus;
+	return m_Impl->m_ObjectStatus;
 }

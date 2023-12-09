@@ -21,11 +21,11 @@ namespace LinuxWindowSystemNS
 	bool Update();
 	bool Terminate();
 
-	IWindowSurface* m_windowSurface;
+	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_initConfig;
-	std::vector<ButtonState> m_buttonState;
-	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
+	InitConfig m_InitConfig;
+	std::vector<ButtonState> m_ButtonStates;
+	std::set<WindowEventCallback*> m_WindowEventCallbacks;
 
 	Display* m_display;
 	Window m_window;
@@ -68,7 +68,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 
 	/* Show_the_window
 	--------------- */
-	auto l_windowName = g_Engine->getApplicationName();
+	auto l_windowName = g_Engine->GetApplicationName();
 	XStoreName(m_display, m_window, l_windowName.c_str());
 	XSelectInput(m_display, m_window, ExposureMask | StructureNotifyMask);
 
@@ -177,24 +177,24 @@ ObjectStatus LinuxWindowSystem::GetStatus()
 	return LinuxWindowSystemNS::m_ObjectStatus;
 }
 
-IWindowSurface* LinuxWindowSystem::getWindowSurface()
+IWindowSurface* LinuxWindowSystem::GetWindowSurface()
 {
-	return LinuxWindowSystemNS::m_windowSurface;
+	return LinuxWindowSystemNS::m_WindowSurface;
 }
 
-const std::vector<ButtonState>& LinuxWindowSystem::getButtonState()
+const std::vector<ButtonState>& LinuxWindowSystem::GetButtonState()
 {
-	return LinuxWindowSystemNS::m_buttonState;
+	return LinuxWindowSystemNS::m_ButtonStates;
 }
 
-bool LinuxWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
+bool LinuxWindowSystem::SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
 	return true;
 }
 
-bool LinuxWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
+bool LinuxWindowSystem::AddEventCallback(WindowEventCallback* callback)
 {
-	LinuxWindowSystemNS::m_windowEventCallbackFunctor.emplace(functor);
+	LinuxWindowSystemNS::m_WindowEventCallbacks.emplace(functor);
 	return true;
 }
 

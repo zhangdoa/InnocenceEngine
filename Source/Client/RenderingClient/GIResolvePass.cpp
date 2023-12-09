@@ -310,7 +310,7 @@ bool GIResolvePass::Setup()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	f_reloadGIData = [&]() { m_needToReloadGIData = true; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
+	g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
 
 	setupSky();
 	setupSurfels();

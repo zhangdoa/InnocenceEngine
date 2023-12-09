@@ -70,6 +70,6 @@ namespace Inno
 
 		INNO_ENGINE_API virtual float getTickTime() = 0;
 
-		INNO_ENGINE_API virtual const FixedSizeString<128>& getApplicationName() = 0;
+		INNO_ENGINE_API virtual const FixedSizeString<128>& GetApplicationName() = 0;
 	};
 }

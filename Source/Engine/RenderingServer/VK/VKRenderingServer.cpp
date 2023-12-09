@@ -161,7 +161,7 @@ bool VKRenderingServerNS::CreateVkInstance()
 	// set Vulkan app info
 	VkApplicationInfo l_appInfo = {};
 	l_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	l_appInfo.pApplicationName = g_Engine->getApplicationName().c_str();
+	l_appInfo.pApplicationName = g_Engine->GetApplicationName().c_str();
 	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 9);
 	l_appInfo.pEngineName = "cence Engine";
 	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 9);

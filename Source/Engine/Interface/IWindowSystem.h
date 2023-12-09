@@ -4,7 +4,7 @@
 
 namespace Inno
 {
-	using WindowEventCallbackFunctor = std::function<void(void*, uint32_t, uint64_t, int64_t)>;
+	using WindowEventCallback = std::function<void(void*, uint32_t, uint64_t, int64_t)>;
 
 	class IWindowSystemConfig : public ISystemConfig
 	{
@@ -18,11 +18,11 @@ namespace Inno
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowSystem);
 
-		virtual IWindowSurface* getWindowSurface() = 0;
-		virtual const std::vector<ButtonState>& getButtonState() = 0;
+		virtual IWindowSurface* GetWindowSurface() = 0;
+		virtual const std::vector<ButtonState>& GetButtonState() = 0;
 
 		// Editor only
-		virtual bool sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam) = 0;
-		virtual bool addEventCallback(WindowEventCallbackFunctor* functor) = 0;
+		virtual bool SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam) = 0;
+		virtual bool AddEventCallback(WindowEventCallback* callback) = 0;
 	};
 }

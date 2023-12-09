@@ -18,7 +18,7 @@ bool GUISystem::Setup(ISystemConfig* systemConfig)
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
 	};
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
+	g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
 
 	return 	ImGuiWrapper::Get().Setup();
 }

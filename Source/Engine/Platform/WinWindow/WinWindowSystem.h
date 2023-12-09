@@ -18,15 +18,15 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		IWindowSurface* getWindowSurface() override;
-		const std::vector<ButtonState>& getButtonState() override;
+		IWindowSurface* GetWindowSurface() override;
+		const std::vector<ButtonState>& GetButtonState() override;
 
-		bool sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam) override;
-		bool addEventCallback(WindowEventCallbackFunctor* functor) override;
+		bool SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam) override;
+		bool AddEventCallback(WindowEventCallback* callback) override;
 
-		LPCSTR getApplicationName();
-		HINSTANCE getHInstance();
-		HWND getHwnd();
-		bool setHwnd(HWND rhs);
+		LPCSTR GetApplicationName();
+		HINSTANCE GetApplicationInstance();
+		HWND GetWindowHandle();
+		bool SetWindowHandle(HWND hwnd);
 	};
 }

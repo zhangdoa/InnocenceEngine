@@ -40,16 +40,16 @@ namespace Inno
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IEventSystem);
 
-		virtual InputConfig getInputConfig() = 0;
+		virtual InputConfig GetInputConfig() = 0;
 
-		virtual void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
-		virtual void addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) = 0;
+		virtual void AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
+		virtual void AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) = 0;
 
-		virtual void buttonStateCallback(ButtonState buttonState) = 0;
-		virtual void windowSizeCallback(int32_t width, int32_t height) = 0;
-		virtual void mouseMovementCallback(float mouseXPos, float mouseYPos) = 0;
-		virtual void scrollCallback(float xoffset, float yoffset) = 0;
+		virtual void ButtonStateCallback(ButtonState buttonState) = 0;
+		virtual void WindowResizeCallback(int32_t width, int32_t height) = 0;
+		virtual void MouseMovementCallback(float mouseXPos, float mouseYPos) = 0;
+		virtual void ScrollCallback(float xOffset, float yOffset) = 0;
 
-		virtual Vec2 getMousePosition() = 0;
+		virtual Vec2 GetMousePosition() = 0;
 	};
 }

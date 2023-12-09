@@ -36,6 +36,6 @@ namespace Inno
 
 		InitConfig getInitConfig() override;
 		float getTickTime() override;
-		const FixedSizeString<128>& getApplicationName() override;
+		const FixedSizeString<128>& GetApplicationName() override;
 	};
 }

@@ -21,23 +21,23 @@ namespace WinGLWindowSurfaceNS
 	HDC m_HDC;
 	HGLRC m_HGLRC;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_initConfig;
+	InitConfig m_InitConfig;
 }
 
 bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 {
 	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
 
-	m_initConfig = g_Engine->getInitConfig();
+	m_InitConfig = g_Engine->getInitConfig();
 
 	WNDCLASSEX wcex;
 	ZeroMemory(&wcex, sizeof(wcex));
 	wcex.cbSize = sizeof(wcex);
 	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wcex.lpfnWndProc = (WNDPROC)l_windowSurfaceConfig->WindowProc;
-	wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance();
+	wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance();
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName();
+	wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationName();
 
 	auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
@@ -49,7 +49,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		0, 0,						// position x, y
 		1, 1,						// width, height
 		NULL, NULL,					// parent window, menu
-		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance(), NULL);			// instance, param
+		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance(), NULL);			// instance, param
 
 	HDC fakeDC = GetDC(fakeWND);	// Device Context
 
@@ -115,7 +115,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		return false;
 	}
 
-	if (m_initConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Determine the resolution of the clients desktop screen.
 		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
@@ -130,19 +130,19 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 
 		// create a new window and context
 		auto l_hwnd = CreateWindow(
-			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName(), // class name, window name
+			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationName(), // class name, window name
 			WS_OVERLAPPEDWINDOW, // styles
 			l_rect.right, l_rect.bottom, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
 			l_screenWidth, l_screenHeight, // width, height
 			NULL, NULL, // parent window, menu
-			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance(), NULL); // instance, param
+			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance(), NULL); // instance, param
 
-		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->setHwnd(l_hwnd);
+		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->SetWindowHandle(l_hwnd);
 	}
 
 	auto f_CreateGLContextTask = [&]()
 	{
-		m_HDC = GetDC(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
+		m_HDC = GetDC(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
 
 		const int32_t pixelAttribs[] = {
 			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -240,11 +240,11 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	auto l_ActivateGLContextTask = g_Engine->getTaskSystem()->Submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
 	l_ActivateGLContextTask.m_Future->Get();
 
-	if (m_initConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode == EngineMode::Host)
 	{
-		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd(), true);
-		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
-		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
+		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
+		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;

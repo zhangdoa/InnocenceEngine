@@ -10,123 +10,116 @@
 using namespace Inno;
 extern IEngine* g_Engine;
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
 namespace WinWindowSystemNS
 {
-	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+	LRESULT CALLBACK ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-	IWindowSurface* m_windowSurface;
+	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_initConfig;
+	InitConfig m_InitConfig;
 
-	std::vector<ButtonState> m_buttonState;
-	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
+	std::vector<ButtonState> m_ButtonStates;
+	std::set<WindowEventCallback*> m_WindowEventCallbacks;
 
-	HINSTANCE m_hInstance;
-	LPCSTR m_applicationName;
-	HWND m_hwnd;
+	HINSTANCE m_ApplicationInstance;
+	LPCSTR m_ApplicationName;
+	HWND m_WindowHandle;
 };
 
 using namespace WinWindowSystemNS;
 
-LRESULT WinWindowSystemNS::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+LRESULT WinWindowSystemNS::ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	for (auto i : m_windowEventCallbackFunctor)
+	for (auto i : m_WindowEventCallbacks)
 	{
-		(*i)(hwnd, umsg, (uint64_t)wparam, (int64_t)lparam);
+		(*i)(hwnd, uMsg, (uint64_t)wParam, (int64_t)lParam);
 	}
 
-	switch (umsg)
+	switch (uMsg)
 	{
 	case WM_KEYDOWN:
 	{
-		m_buttonState[(uint64_t)wparam].m_isPressed = true;
+		m_ButtonStates[(uint64_t)wParam].m_isPressed = true;
 		return 0;
 	}
 	case WM_KEYUP:
 	{
-		m_buttonState[(uint64_t)wparam].m_isPressed = false;
+		m_ButtonStates[(uint64_t)wParam].m_isPressed = false;
 		return 0;
 	}
 	case WM_LBUTTONDOWN:
 	{
-		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
+		m_ButtonStates[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
 		return 0;
 	}
 	case WM_LBUTTONUP:
 	{
-		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
+		m_ButtonStates[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
 
 		return 0;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
+		m_ButtonStates[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
 		return 0;
 	}
 	case WM_RBUTTONUP:
 	{
-		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
+		m_ButtonStates[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
 		return 0;
 	}
 
 	case WM_MOUSEMOVE:
 	{
-		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
-		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		g_Engine->getEventSystem()->mouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		auto l_mouseCurrentX = GET_X_LPARAM(lParam);
+		auto l_mouseCurrentY = GET_Y_LPARAM(lParam);
+		g_Engine->getEventSystem()->MouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.
 	default:
 	{
-		return DefWindowProc(hwnd, umsg, wparam, lparam);
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}
 	}
 }
 
 bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
-	auto l_systemConfig = reinterpret_cast<IWindowSystemConfig*>(systemConfig);
-
-	m_buttonState.resize(g_Engine->getEventSystem()->getInputConfig().totalKeyCodes);
-
-	for (size_t i = 0; i < m_buttonState.size(); i++)
+	m_ButtonStates.resize(g_Engine->getEventSystem()->GetInputConfig().totalKeyCodes);
+	for (size_t i = 0; i < m_ButtonStates.size(); i++)
 	{
-		m_buttonState[i].m_code = (uint32_t)i;
+		m_ButtonStates[i].m_code = (uint32_t)i;
 	}
 
-	m_hInstance = static_cast<HINSTANCE>(l_systemConfig->m_AppHook);
-
+	auto l_systemConfig = reinterpret_cast<IWindowSystemConfig*>(systemConfig);
+	m_ApplicationInstance = static_cast<HINSTANCE>(l_systemConfig->m_AppHook);
 	if (l_systemConfig->m_ExtraHook)
 	{
-		m_hwnd = *reinterpret_cast<HWND*>(l_systemConfig->m_ExtraHook);
+		m_WindowHandle = *reinterpret_cast<HWND*>(l_systemConfig->m_ExtraHook);
 	}
 
-	m_applicationName = g_Engine->getApplicationName().c_str();
-
-	// create window surface for different rendering backend
-	WinWindowSystemNS::m_initConfig = g_Engine->getInitConfig();
-
-	switch (WinWindowSystemNS::m_initConfig.renderingServer)
+	m_ApplicationName = g_Engine->GetApplicationName().c_str();
+	WinWindowSystemNS::m_InitConfig = g_Engine->getInitConfig();
+	switch (WinWindowSystemNS::m_InitConfig.renderingServer)
 	{
 	case RenderingServer::GL:
-		WinWindowSystemNS::m_windowSurface = new WinGLWindowSurface();
+		WinWindowSystemNS::m_WindowSurface = new WinGLWindowSurface();
 		break;
 	case RenderingServer::DX11:
 #if defined INNO_PLATFORM_WIN
-		WinWindowSystemNS::m_windowSurface = new WinDXWindowSurface();
+		WinWindowSystemNS::m_WindowSurface = new WinDXWindowSurface();
 #endif
 		break;
 	case RenderingServer::DX12:
 #if defined INNO_PLATFORM_WIN
-		WinWindowSystemNS::m_windowSurface = new WinDXWindowSurface();
+		WinWindowSystemNS::m_WindowSurface = new WinDXWindowSurface();
 #endif
 		break;
 	case RenderingServer::VK:
 #if defined INNO_RENDERER_VULKAN
-		WinWindowSystemNS::m_windowSurface = new WinVKWindowSurface();
+		WinWindowSystemNS::m_WindowSurface = new WinVKWindowSurface();
 #endif
 		break;
 	default:
@@ -134,11 +127,11 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	}
 
 	IWindowSurfaceConfig l_surfaceConfig;
-	l_surfaceConfig.hInstance = m_hInstance;
-	l_surfaceConfig.hwnd = m_hwnd;
-	l_surfaceConfig.WindowProc = WindowProc;
+	l_surfaceConfig.hInstance = m_ApplicationInstance;
+	l_surfaceConfig.hwnd = m_WindowHandle;
+	l_surfaceConfig.WindowProc = WinWindowSystemNS::WindowProcedure;
 
-	WinWindowSystemNS::m_windowSurface->Setup(&l_surfaceConfig);
+	WinWindowSystemNS::m_WindowSurface->Setup(&l_surfaceConfig);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 	Logger::Log(LogLevel::Success, "WinWindowSystem Setup finished.");
@@ -148,16 +141,15 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 
 bool WinWindowSystem::Initialize()
 {
-	WinWindowSystemNS::m_windowSurface->Initialize();
+	WinWindowSystemNS::m_WindowSurface->Initialize();
 	Logger::Log(LogLevel::Success, "WinWindowSystem has been initialized.");
 	return true;
 }
 
 bool WinWindowSystem::Update()
 {
-	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::Host)
+	if (WinWindowSystemNS::m_InitConfig.engineMode == EngineMode::Host)
 	{
-		//Update window
 		MSG msg;
 
 		// Initialize the message structure.
@@ -176,22 +168,22 @@ bool WinWindowSystem::Update()
 
 bool WinWindowSystem::Terminate()
 {
-	WinWindowSystemNS::m_windowSurface->Terminate();
+	WinWindowSystemNS::m_WindowSurface->Terminate();
 
-	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::Host)
+	if (WinWindowSystemNS::m_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Show the mouse cursor.
 		ShowCursor(true);
 
 		// Remove the window.
-		DestroyWindow(m_hwnd);
-		m_hwnd = NULL;
+		DestroyWindow(m_WindowHandle);
+		m_WindowHandle = NULL;
 
 		Logger::Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
 
 		// Remove the application instance.
-		UnregisterClass(m_applicationName, m_hInstance);
-		m_hInstance = NULL;
+		UnregisterClass(m_ApplicationName, m_ApplicationInstance);
+		m_ApplicationInstance = NULL;
 	}
 
 	PostQuitMessage(0);
@@ -206,56 +198,54 @@ ObjectStatus WinWindowSystem::GetStatus()
 	return WinWindowSystemNS::m_ObjectStatus;
 }
 
-IWindowSurface* WinWindowSystem::getWindowSurface()
+IWindowSurface* WinWindowSystem::GetWindowSurface()
 {
-	return WinWindowSystemNS::m_windowSurface;
+	return WinWindowSystemNS::m_WindowSurface;
 }
 
-const std::vector<ButtonState>& WinWindowSystem::getButtonState()
+const std::vector<ButtonState>& WinWindowSystem::GetButtonState()
 {
-	return m_buttonState;
+	return m_ButtonStates;
 }
 
-bool WinWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
+bool WinWindowSystem::SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
-	WindowProc(m_hwnd, umsg, WParam, LParam);
+	WinWindowSystemNS::WindowProcedure(m_WindowHandle, uMsg, wParam, lParam);
 	return true;
 }
 
-bool WinWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
+bool WinWindowSystem::AddEventCallback(WindowEventCallback* callback)
 {
-	m_windowEventCallbackFunctor.emplace(functor);
+	m_WindowEventCallbacks.emplace(callback);
 	return true;
 }
 
-LPCSTR WinWindowSystem::getApplicationName()
+LPCSTR WinWindowSystem::GetApplicationName()
 {
-	return m_applicationName;
+	return m_ApplicationName;
 }
 
-HINSTANCE WinWindowSystem::getHInstance()
+HINSTANCE WinWindowSystem::GetApplicationInstance()
 {
-	return m_hInstance;
+	return m_ApplicationInstance;
 }
 
-HWND WinWindowSystem::getHwnd()
+HWND WinWindowSystem::GetWindowHandle()
 {
-	return m_hwnd;
+	return m_WindowHandle;
 }
 
-bool WinWindowSystem::setHwnd(HWND rhs)
+bool WinWindowSystem::SetWindowHandle(HWND hwnd)
 {
-	m_hwnd = rhs;
+	m_WindowHandle = hwnd;
 	return true;
 }
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// For to eliminate fake OpenGL window handle event
-	if (hwnd != m_hwnd)
-	{
-		return MessageHandler(hwnd, uMsg, wParam, lParam);
-	}
+	if (hwnd != m_WindowHandle)
+		return ProcessEvent(hwnd, uMsg, wParam, lParam);
 
 	switch (uMsg)
 	{
@@ -285,7 +275,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	default:
 	{
-		return MessageHandler(hwnd, uMsg, wParam, lParam);
+		return ProcessEvent(hwnd, uMsg, wParam, lParam);
 	}
 	}
 }

@@ -434,8 +434,8 @@ namespace Inno
 		f_runRayTracing = [&]() { g_Engine->getRenderingFrontend()->RunRayTracing(); };
 		f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
+		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
+		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
 		f_sceneLoadingFinishCallback = [&]() {
 			if (!m_player)
@@ -484,8 +484,8 @@ namespace Inno
 			g_Engine->getAssetSystem()->ConvertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 		};
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
+		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
+		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 		return true;
 	}
@@ -563,7 +563,7 @@ namespace Inno
 	Vec4 WorldSystem::getMousePositionInWorldSpace()
 	{
 		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
-		auto l_mousePositionSS = g_Engine->getEventSystem()->getMousePosition();
+		auto l_mousePositionSS = g_Engine->getEventSystem()->GetMousePosition();
 
 		auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;
 		auto l_y = 1.0f - 2.0f * l_mousePositionSS.y / l_screenResolution.y;

@@ -133,7 +133,7 @@ bool PhysXWrapperNS::Setup()
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
+	g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
 
 	return true;
 }

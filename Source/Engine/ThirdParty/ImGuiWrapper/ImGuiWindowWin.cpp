@@ -10,7 +10,7 @@ extern IEngine* g_Engine;
 
 namespace ImGuiWindowWinNS
 {
-	WindowEventCallbackFunctor m_windowEventCallbackFunctor;
+	WindowEventCallback m_windowEventCallbackFunctor;
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
@@ -24,7 +24,7 @@ bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
 	ImGuiWindowWinNS::m_windowEventCallbackFunctor = [](void* hWnd, uint32_t msg, uint64_t wParam, int64_t lParam) {
 		ImGui_ImplWin32_WndProcHandler((HWND)hWnd, msg, wParam, lParam);
 	};
-	g_Engine->getWindowSystem()->addEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
+	g_Engine->getWindowSystem()->AddEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -35,7 +35,7 @@ bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
 
 bool ImGuiWindowWin::Initialize()
 {
-	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
+	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

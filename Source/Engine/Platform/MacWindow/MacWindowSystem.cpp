@@ -7,11 +7,11 @@ extern IEngine* g_Engine;
 
 namespace MacWindowSystemNS
 {
-	IWindowSurface* m_windowSurface;
+	IWindowSurface* m_WindowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_initConfig;
-	std::vector<ButtonState> m_buttonState;
-	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
+	InitConfig m_InitConfig;
+	std::vector<ButtonState> m_ButtonStates;
+	std::set<WindowEventCallback*> m_WindowEventCallbacks;
 
 	MacWindowSystemBridge* m_bridge;
 }
@@ -55,24 +55,24 @@ ObjectStatus MacWindowSystem::GetStatus()
 	return MacWindowSystemNS::m_ObjectStatus;
 }
 
-IWindowSurface* MacWindowSystem::getWindowSurface()
+IWindowSurface* MacWindowSystem::GetWindowSurface()
 {
-	return MacWindowSystemNS::m_windowSurface;
+	return MacWindowSystemNS::m_WindowSurface;
 }
 
-const std::vector<ButtonState>& MacWindowSystem::getButtonState()
+const std::vector<ButtonState>& MacWindowSystem::GetButtonState()
 {
-	return MacWindowSystemNS::m_buttonState;
+	return MacWindowSystemNS::m_ButtonStates;
 }
 
-bool MacWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
+bool MacWindowSystem::SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
 	return true;
 }
 
-bool MacWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
+bool MacWindowSystem::AddEventCallback(WindowEventCallback* callback)
 {
-	MacWindowSystemNS::m_windowEventCallbackFunctor.emplace(functor);
+	MacWindowSystemNS::m_WindowEventCallbacks.emplace(functor);
 	return true;
 }
 

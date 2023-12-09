@@ -3,6 +3,7 @@
 
 namespace Inno
 {
+	class EventSystemImpl;
 	class EventSystem : public IEventSystem
 	{
 	public:
@@ -15,16 +16,19 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		InputConfig getInputConfig() override;
+		InputConfig GetInputConfig() override;
 
-		void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) override;
-		void addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) override;
+		void AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) override;
+		void AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) override;
 
-		void buttonStateCallback(ButtonState buttonState) override;
-		void windowSizeCallback(int32_t width, int32_t height) override;
-		void mouseMovementCallback(float mouseXPos, float mouseYPos) override;
-		void scrollCallback(float xoffset, float yoffset) override;
+		void ButtonStateCallback(ButtonState buttonState) override;
+		void WindowResizeCallback(int32_t width, int32_t height) override;
+		void MouseMovementCallback(float mouseXPos, float mouseYPos) override;
+		void ScrollCallback(float xOffset, float yOffset) override;
 
-		Vec2 getMousePosition() override;
+		Vec2 GetMousePosition() override;
+
+	private:
+		EventSystemImpl* m_Impl;
 	};
 }

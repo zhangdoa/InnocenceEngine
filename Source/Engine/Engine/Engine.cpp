@@ -432,7 +432,8 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	SystemSetup(TaskSystem);
 
 	SystemSetup(TestSystem);
-
+	SystemSetup(EventSystem);
+	
 	IWindowSystemConfig l_windowSystemConfig;
 	l_windowSystemConfig.m_AppHook = appHook;
 	l_windowSystemConfig.m_ExtraHook = extraHook;
@@ -458,7 +459,6 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 
 	SystemSetup(SceneSystem);
 	SystemSetup(PhysicsSystem);
-	SystemSetup(EventSystem);
 
 	IRenderingFrontendConfig l_renderingFrontendConfig;
 	l_renderingFrontendConfig.m_RenderingServer = m_RenderingServer.get();
@@ -509,7 +509,7 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 
 		m_RenderingServer->Present();
 
-		m_WindowSystem->getWindowSurface()->swapBuffer();
+		m_WindowSystem->GetWindowSurface()->swapBuffer();
 
 		auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
@@ -767,7 +767,7 @@ float Engine::getTickTime()
 	return  m_tickTime;
 }
 
-const FixedSizeString<128>& Engine::getApplicationName()
+const FixedSizeString<128>& Engine::GetApplicationName()
 {
 	return m_applicationName;
 }

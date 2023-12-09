@@ -700,7 +700,7 @@ bool DX12RenderingServerNS::CreateSwapChain()
 	IDXGISwapChain1 *l_swapChain1;
 	auto l_hResult = m_factory->CreateSwapChainForHwnd(
 		m_directCommandQueue.Get(),
-		reinterpret_cast<WinWindowSystem *>(g_Engine->getWindowSystem())->getHwnd(),
+		reinterpret_cast<WinWindowSystem *>(g_Engine->getWindowSystem())->GetWindowHandle(),
 		&m_swapChainDesc,
 		nullptr,
 		nullptr,

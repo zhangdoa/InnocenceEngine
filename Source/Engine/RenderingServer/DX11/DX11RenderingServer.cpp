@@ -220,7 +220,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	m_swapChainDesc.OutputWindow = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd();
+	m_swapChainDesc.OutputWindow = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle();
 
 	// Turn multisampling off.
 	m_swapChainDesc.SampleDesc.Count = 1;
