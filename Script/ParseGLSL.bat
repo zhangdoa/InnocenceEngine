@@ -3,5 +3,5 @@ cd ../Res/Shaders/Parsed
 del /S /Q *.*
 
 cd ../GLSL
-for %%i in (*) do start ../../../Bin/Debug/InnoGLSLParser.exe %%i ../Parsed/%%~i
+for %%i in (*) do start ../../../Bin/Debug/GLSLParser.exe %%i ../Parsed/%%~i
 pause
