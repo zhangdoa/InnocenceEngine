@@ -23,16 +23,16 @@ namespace Inno
 		void to_json(json& j, const aiMatrix4x4& m);
 		void from_json(const json& j, aiMatrix4x4& m);
 
-		void processAssimpScene(json& j, const aiScene* scene, const char* exportName);
-		void processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName);
-		void processAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex);
-		size_t processMeshData(const aiMesh* mesh, const char* exportFileRelativePath);
-		void processAssimpBone(json& j, const aiMesh* mesh);
-		void processAssimpMaterial(json& j, const aiMaterial* material);
-		void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
-		void processAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath);
-		void mergeTransformation(json& j, const aiNode* node);
-		void decomposeTransformation(json& j, const aiMatrix4x4& m);
+		void ProcessAssimpScene(json& j, const aiScene* scene, const char* exportName);
+		void ProcessAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName);
+		void ProcessAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex);
+		size_t ProcessMeshData(const aiMesh* mesh, const char* exportFileRelativePath);
+		void ProcessAssimpBone(json& j, const aiMesh* mesh);
+		void ProcessAssimpMaterial(json& j, const aiMaterial* material);
+		void ProcessTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
+		void ProcessAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath);
+		void MergeTransformation(json& j, const aiNode* node);
+		void DecomposeTransformation(json& j, const aiMatrix4x4& m);
 	};
 }
 
@@ -100,8 +100,10 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 			| aiProcess_FlipUVs
 			| aiProcess_JoinIdenticalVertices
 			| aiProcess_SplitLargeMeshes
+			//| aiProcess_FindInstances // Do not merge instances so the culling result could be more optimized
 			| aiProcess_OptimizeMeshes
-			| aiProcess_OptimizeGraph);
+			| aiProcess_OptimizeGraph
+			);
 	}
 	else
 	{
@@ -118,7 +120,7 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 
 		json j;
 
-		processAssimpScene(j, l_scene, l_exportFileName.c_str());
+		ProcessAssimpScene(j, l_scene, l_exportFileName.c_str());
 		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), j);
 
 		Logger::Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
@@ -132,7 +134,7 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 	return true;
 }
 
-void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char* exportName)
+void AssimpWrapper::ProcessAssimpScene(json& j, const aiScene* scene, const char* exportName)
 {
 	auto l_timeData = g_Engine->getTimeSystem()->getCurrentTime();
 	auto l_timeDataStr =
@@ -150,21 +152,21 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 
 	auto f_getMesh = [](json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 	{
-		// process each mesh located at the current node
+		// Process each mesh located at the current node
 		if (node->mNumMeshes)
 		{
 			for (uint32_t i = 0; i < node->mNumMeshes; i++)
 			{
 				json j_child;
 
-				processAssimpMesh(j_child, scene, exportName, node->mMeshes[i]);
+				ProcessAssimpMesh(j_child, scene, exportName, node->mMeshes[i]);
 				j["Meshes"].emplace_back(j_child);
 			}
 		}
 	};
 
 	Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
-	processAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
+	ProcessAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
 	Logger::Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
 	std::unordered_map<std::string, uint32_t> l_boneNameIDMap;
@@ -191,52 +193,52 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 
 			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
 			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
-			processAssimpAnimation(j_child, scene, scene->mAnimations[i], l_boneNameIDMap, l_boneNameOffsetMap, l_animationFileName.c_str());
+			ProcessAssimpAnimation(j_child, scene, scene->mAnimations[i], l_boneNameIDMap, l_boneNameOffsetMap, l_animationFileName.c_str());
 			j["Animations"].emplace_back(j_child);
 		}
 	}
 }
 
-void AssimpWrapper::processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName)
+void AssimpWrapper::ProcessAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 {
 	nodeFunctor(j, node, scene, exportName);
 
-	// process children node
+	// Process children node
 	if (node->mNumChildren)
 	{
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
 		{
-			processAssimpNode(nodeFunctor, j, node->mChildren[i], scene, exportName);
+			ProcessAssimpNode(nodeFunctor, j, node->mChildren[i], scene, exportName);
 		}
 	}
 }
 
-void AssimpWrapper::processAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex)
+void AssimpWrapper::ProcessAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex)
 {
 	auto l_mesh = scene->mMeshes[meshIndex];
 
-	// process vertices and indices
+	// Process vertices and indices
 	j["Name"] = l_mesh->mName.C_Str();
 	j["VerticesNumber"] = l_mesh->mNumVertices;
 	auto l_meshFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
-	j["IndicesNumber"] = processMeshData(l_mesh, l_meshFileName.c_str());
+	j["IndicesNumber"] = ProcessMeshData(l_mesh, l_meshFileName.c_str());
 	j["File"] = l_meshFileName;
 	j["MeshSource"] = MeshSource::Customized;
 
-	// process bones
+	// Process bones
 	if (l_mesh->mNumBones)
 	{
-		processAssimpBone(j, l_mesh);
+		ProcessAssimpBone(j, l_mesh);
 	}
 
-	// process material
+	// Process material
 	if (l_mesh->mMaterialIndex)
 	{
-		processAssimpMaterial(j["Material"], scene->mMaterials[l_mesh->mMaterialIndex]);
+		ProcessAssimpMaterial(j["Material"], scene->mMaterials[l_mesh->mMaterialIndex]);
 	}
 }
 
-size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFileRelativePath)
+size_t AssimpWrapper::ProcessMeshData(const aiMesh* mesh, const char* exportFileRelativePath)
 {
 	auto l_numVertices = mesh->mNumVertices;
 
@@ -372,7 +374,7 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 	return l_indiceSize;
 }
 
-void AssimpWrapper::processAssimpBone(json& j, const aiMesh* mesh)
+void AssimpWrapper::ProcessAssimpBone(json& j, const aiMesh* mesh)
 {
 	for (uint32_t i = 0; i < mesh->mNumBones; i++)
 	{
@@ -403,41 +405,42 @@ aiTextureType::AI_MATKEY_COLOR_AMBIENT Ka AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
-void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
+void AssimpWrapper::ProcessAssimpMaterial(json& j, const aiMaterial* material)
 {
 	for (uint32_t i = 0; i < aiTextureType_UNKNOWN; i++)
 	{
-		if (material->GetTextureCount(aiTextureType(i)) > 0)
+		auto l_aiTextureType = aiTextureType(i);
+		if (material->GetTextureCount(l_aiTextureType) > 0)
 		{
 			aiString l_AssString;
-			material->GetTexture(aiTextureType(i), 0, &l_AssString);
+			material->GetTexture(l_aiTextureType, 0, &l_AssString);
 			auto l_localPath = l_AssString.C_Str();
 			json j_child;
 
-			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
+			if (l_aiTextureType == aiTextureType::aiTextureType_NONE)
 			{
 				Logger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
 				break;
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_HEIGHT)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_HEIGHT || l_aiTextureType == aiTextureType::aiTextureType_NORMALS || l_aiTextureType == aiTextureType::aiTextureType_NORMAL_CAMERA)
 			{
-				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 0);
+				ProcessTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 0);
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_DIFFUSE || l_aiTextureType == aiTextureType::aiTextureType_BASE_COLOR)
 			{
-				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, true, 1);
+				ProcessTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, true, 1);
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_SPECULAR || l_aiTextureType == aiTextureType::aiTextureType_METALNESS)
 			{
-				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 2);
+				ProcessTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 2);
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_SHININESS)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_SHININESS || l_aiTextureType == aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS)
 			{
-				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 3);
+				ProcessTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 3);
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
+			else if (l_aiTextureType == aiTextureType::aiTextureType_AMBIENT)
 			{
-				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 4);
+				ProcessTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 4);
 			}
 			else
 			{
@@ -471,14 +474,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 	if (material->Get(AI_MATKEY_COLOR_TRANSPARENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		j["Albedo"]["A"] = l_result.r;
-		if (l_result.r == 1.0f)
-		{
-			j["ShaderModel"] = ShaderModel::Opaque;
-		}
-		else
-		{
-			j["ShaderModel"] = ShaderModel::Transparent;
-		}
+		j["ShaderModel"] = ShaderModel::Transparent;
 	}
 	else
 	{
@@ -507,7 +503,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 	}
 	else
 	{
-		j["AO"] = 1.0f;
+		j["AO"] = 0.0f;
 	}
 	if (material->Get(AI_MATKEY_COLOR_REFLECTIVE, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
@@ -519,7 +515,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 	}
 }
 
-void AssimpWrapper::processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex)
+void AssimpWrapper::ProcessTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex)
 {
 	j["Sampler"] = sampler;
 	j["Usage"] = usage;
@@ -555,7 +551,7 @@ uint32_t FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	assert(0);
+	Logger::Log(LogLevel::Error, "AssimpWrapper: Can't find a scaling key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -571,7 +567,7 @@ uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	assert(0);
+	Logger::Log(LogLevel::Error, "AssimpWrapper: Can't find a rotation key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -587,7 +583,7 @@ uint32_t FindTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	assert(0);
+	Logger::Log(LogLevel::Error, "AssimpWrapper: Can't find a translation key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -733,7 +729,7 @@ Binary data structure:
 |...
 |TickN
 */
-void AssimpWrapper::processAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath)
+void AssimpWrapper::ProcessAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath)
 {
 	uint32_t l_numChannels = animation->mNumChannels;
 	if (l_numChannels == 0)
