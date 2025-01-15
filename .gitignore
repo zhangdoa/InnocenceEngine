@@ -8,9 +8,6 @@
 
 # Third-party headers and libraries
 /Source/External/Include
-/Source/External/Lib
-/Source/External/DLL
-/Source/External/Tools
 
 # For macOS
 \.DS_Store

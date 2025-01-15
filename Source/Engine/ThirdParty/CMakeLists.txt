@@ -1,7 +1,6 @@
 add_subdirectory("JSONWrapper")
 add_subdirectory("AssimpWrapper")
 add_subdirectory("STBWrapper")
-add_subdirectory("GLAD")
 add_subdirectory("ImGui")
 add_subdirectory("ImGuiWrapper")
 if (INNO_PLATFORM_WIN)

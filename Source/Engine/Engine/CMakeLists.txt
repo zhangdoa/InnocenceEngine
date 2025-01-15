@@ -7,7 +7,7 @@ include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (Engine
     BASE_NAME INNO_ENGINE
     EXPORT_MACRO_NAME INNO_ENGINE_API
-    EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/Engine/Export/Engine_Export.h
+    EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/Source/Engine/Export/Engine_Export.h
     STATIC_DEFINE INNO_ENGINE_BUILT_AS_STATIC
 )
 

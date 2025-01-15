@@ -1,4 +1,4 @@
-configure_file ("${CMAKE_SOURCE_DIR}/Client/ClientMetadata.h.in" "${CMAKE_SOURCE_DIR}/Client/ClientMetadata.h" @ONLY)
+configure_file ("${CMAKE_SOURCE_DIR}/Source/Client/ClientMetadata.h.in" "${CMAKE_SOURCE_DIR}/Source/Client/ClientMetadata.h" @ONLY)
 
 add_subdirectory("DefaultGPUBuffers")
 add_subdirectory("RenderingClient")

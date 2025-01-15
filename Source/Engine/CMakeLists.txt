@@ -8,6 +8,4 @@ add_subdirectory("RayTracer")
 add_subdirectory("EntityManager")
 add_subdirectory("Engine")
 
-if(BUILD_GAME)
 add_subdirectory("Platform")
-endif (BUILD_GAME)
