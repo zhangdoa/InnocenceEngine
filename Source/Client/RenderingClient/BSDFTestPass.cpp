@@ -1,13 +1,14 @@
 #include "BSDFTestPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -22,7 +23,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("BSDFTestPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -73,7 +74,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("BSDFTestPass/");
 
 	//
-	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
+	auto l_RenderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
 
 	m_meshConstantBuffer.resize(l_RenderingCapability.maxMeshes);
 	m_materialConstantBuffer.resize(l_RenderingCapability.maxMaterials);
@@ -161,7 +162,7 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Sphere);
+	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Sphere);
 
 	uint32_t l_offset = 0;
 

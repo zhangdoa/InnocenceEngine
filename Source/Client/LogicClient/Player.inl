@@ -1,7 +1,9 @@
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Services/PhysicsSystem.h"
+#include "../../Engine/Services/EventSystem.h"
 
+#include "../../Engine/Engine.h"
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+;
 
 #include "AnimationController.inl"
 
@@ -83,35 +85,35 @@ namespace Inno
 
     bool Player::Setup()
     {
-        auto l_rootTransformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
-        auto l_playerCharacterEntity = g_Engine->getEntityManager()->Find("playerCharacter");
+        auto l_rootTransformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
+        auto l_playerCharacterEntity = g_Engine->Get<EntityManager>()->Find("playerCharacter");
         if (l_playerCharacterEntity.has_value())
         {
             m_playerCharacterEntity = *l_playerCharacterEntity;
-            m_playerTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(m_playerCharacterEntity);
-            m_playerVisibleComponent = g_Engine->getComponentManager()->Find<VisibleComponent>(m_playerCharacterEntity);
+            m_playerTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(m_playerCharacterEntity);
+            m_playerVisibleComponent = g_Engine->Get<ComponentManager>()->Find<VisibleComponent>(m_playerCharacterEntity);
         }
 
-        auto l_playerCameraEntity = g_Engine->getEntityManager()->Find("playerCharacterCamera");
+        auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("playerCharacterCamera");
         if (l_playerCameraEntity.has_value())
         {
             m_playerCameraEntity = *l_playerCameraEntity;
-            m_playerCameraComponent = g_Engine->getComponentManager()->Find<CameraComponent>(m_playerCameraEntity);
-            m_playerCameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(m_playerCameraEntity);
+            m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Find<CameraComponent>(m_playerCameraEntity);
+            m_playerCameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(m_playerCameraEntity);
         }
         else
         {
-            m_playerCameraEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, "playerCharacterCamera/");
-            m_playerCameraComponent = g_Engine->getComponentManager()->Spawn<CameraComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
-            m_playerCameraTransformComponent = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
+            m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "playerCharacterCamera/");
+            m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
+            m_playerCameraTransformComponent = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
             m_playerCameraTransformComponent->m_parentTransformComponent = l_rootTransformComponent;
         }
 
         if (!m_debugCameraEntity)
         {
-            m_debugCameraEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "debugCamera/");
-            m_debugCameraComponent = g_Engine->getComponentManager()->Spawn<CameraComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
-            m_debugCameraTransformComponent = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
+            m_debugCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "debugCamera/");
+            m_debugCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
+            m_debugCameraTransformComponent = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
             m_debugCameraTransformComponent->m_parentTransformComponent = l_rootTransformComponent;
 
             m_debugCameraComponent->m_FOVX = m_playerCameraComponent->m_FOVX;
@@ -123,8 +125,8 @@ namespace Inno
 
         m_activeCameraTransformComponent = m_playerCameraTransformComponent;
         m_activeCameraComponent = m_playerCameraComponent;
-        static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetMainCamera(m_playerCameraComponent);
-        static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
+        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(m_playerCameraComponent);
+        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
 
         m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
         m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -198,7 +200,7 @@ namespace Inno
         f_addForce = [&]() {
             auto l_force = Math::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
             l_force = l_force * 10.0f;
-            g_Engine->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
+            g_Engine->Get<PhysicsSystem>()->addForce(m_playerVisibleComponent, l_force);
         };
 
         f_switchCamera = [&]() {
@@ -213,35 +215,35 @@ namespace Inno
                 m_activeCameraTransformComponent = m_playerCameraTransformComponent;
             }
 
-            static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
+            static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
         };
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
-        g_Engine->getEventSystem()->AddMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
-        g_Engine->getEventSystem()->AddMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundRightAxis });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
+        g_Engine->Get<EventSystem>()->AddMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
+        g_Engine->Get<EventSystem>()->AddMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundRightAxis });
 
-        g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_O, true }, ButtonEvent{ EventLifeTime::OneShot, &f_switchCamera });
+        g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_O, true }, ButtonEvent{ EventLifeTime::OneShot, &f_switchCamera });
         
         m_isEventsRegistered = true;
         

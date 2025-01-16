@@ -2,13 +2,21 @@
 
 #if defined INNO_PLATFORM_WIN
 #include "PxPhysicsAPI.h"
+#include "cooking/PxCooking.h"
 #endif
 
-#include "../../Core/Logger.h"
+#include "../../Common/Timer.h"
+#include "../../Common/Logger.h"
+#include "../../Common/IOService.h"
+#include "../../Common/TaskScheduler.h"
+#include "../../Component/MeshComponent.h"
+#include "../../Component/PhysicsComponent.h"
+#include "../../Services/SceneSystem.h"
+#include "../../Services/EventSystem.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 using namespace physx;
 
@@ -48,7 +56,6 @@ namespace PhysXWrapperNS
 
 	PxFoundation* gFoundation = nullptr;
 	PxPhysics* gPhysics = nullptr;
-	PxCooking* gCooking = nullptr;
 	PxPvd* gPvd = nullptr;
 	PxDefaultCpuDispatcher* gDispatcher = nullptr;
 	PxScene* gScene = nullptr;
@@ -68,7 +75,7 @@ bool PhysXWrapperNS::Setup()
 		gDefaultErrorCallback);
 	if (!gFoundation)
 	{
-		Logger::Log(LogLevel::Error, "PhysXWrapper: PxCreateFoundation failed!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "PhysXWrapper: PxCreateFoundation failed!");
 		return false;
 	}
 	bool recordMemoryAllocations = true;
@@ -81,15 +88,7 @@ bool PhysXWrapperNS::Setup()
 
 	if (!gPhysics)
 	{
-		Logger::Log(LogLevel::Error, "PhysXWrapper: PxCreatePhysics failed!");
-		return false;
-	}
-
-	gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));
-
-	if (!gCooking)
-	{
-		Logger::Log(LogLevel::Error, "PhysXWrapper: PxCreateCooking failed!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "PhysXWrapper: PxCreatePhysics failed!");
 		return false;
 	}
 
@@ -126,14 +125,14 @@ bool PhysXWrapperNS::Setup()
 
 		PhysXActors.clear();
 
-		Logger::Log(LogLevel::Success, "PhysXWrapper: All PhysX Actors has been removed.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Success, "PhysXWrapper: All PhysX Actors has been removed.");
 	};
 
-	g_Engine->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 
-	g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
+	g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
 
 	return true;
 }
@@ -151,7 +150,7 @@ bool PhysXWrapperNS::Update()
 		{
 			m_allowUpdate = false;
 
-			g_Engine->getTaskSystem()->Submit("PhysXUpdateTask", 3, nullptr, [&]()
+			g_Engine->Get<TaskScheduler>()->Submit("PhysXUpdateTask", 3, [&]()
 				{
 					gScene->simulate(g_Engine->getTickTime() / 1000.0f);
 					gScene->fetchResults(true);
@@ -195,7 +194,7 @@ bool PhysXWrapperNS::Terminate()
 
 	gFoundation->release();
 
-	Logger::Log(LogLevel::Success, "PhysXWrapper: PhysX has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "PhysXWrapper: PhysX has been terminated.");
 
 	return true;
 }
@@ -228,7 +227,7 @@ bool PhysXWrapperNS::createPxSphere(PhysicsComponent* rhs, Vec4 globalPos, float
 	gScene->addActor(*l_actor);
 	shape->release();
 	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-	Logger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
 
 	return true;
 }
@@ -266,7 +265,7 @@ bool PhysXWrapperNS::createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot
 		gScene->addActor(*l_actor);
 		shape->release();
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-		Logger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
 	}
 
 	return true;
@@ -280,7 +279,7 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 		return l_result->second;
 	}
 
-	PxCookingParams params = gCooking->getParams();
+	PxCookingParams params(gPhysics->getTolerancesScale());
 
 	// Use the new (default) PxConvexMeshCookingType::eQUICKHULL
 	params.convexMeshCookingType = convexMeshCookingType;
@@ -288,7 +287,6 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 	// If the gaussMapLimit is chosen higher than the number of output vertices, no gauss map is added to the convex mesh data.
 	// If the gaussMapLimit is chosen lower than the number of output vertices, a gauss map is added to the convex mesh data.
 	params.gaussMapLimit = gaussMapLimit;
-	gCooking->setParams(params);
 
 	// Setup the convex mesh descriptor
 	PxConvexMeshDesc desc;
@@ -302,19 +300,19 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 	PxU32 meshSize = 0;
 	PxConvexMesh* convex = nullptr;
 
-	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto startTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
 	if (directInsertion)
 	{
 		// Directly insert mesh into PhysX
-		convex = gCooking->createConvexMesh(desc, gPhysics->getPhysicsInsertionCallback());
+		convex = PxCreateConvexMesh(params, desc);
 		PX_ASSERT(convex);
 	}
 	else
 	{
 		// Serialize the cooked mesh into a stream.
 		PxDefaultMemoryOutputStream outStream;
-		bool res = gCooking->cookConvexMesh(desc, outStream);
+		bool res = PxCookConvexMesh(params, desc, outStream);
 		PX_UNUSED(res);
 		PX_ASSERT(res);
 		meshSize = outStream.getSize();
@@ -326,17 +324,17 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 	}
 
 	// Print the elapsed time for comparison
-	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
-	Logger::Log(LogLevel::Verbose, "Create convex mesh with ", desc.points.count, " triangles: ");
-	directInsertion ? Logger::Log(LogLevel::Verbose, "Direct mesh insertion enabled.") : Logger::Log(LogLevel::Verbose, "Direct mesh insertion disabled.");
-	Logger::Log(LogLevel::Verbose, "Gauss map limit: %d \n", gaussMapLimit);
-	Logger::Log(LogLevel::Verbose, "Created hull number of vertices: ", convex->getNbVertices());
-	Logger::Log(LogLevel::Verbose, "Created hull number of polygons: ", convex->getNbPolygons());
-	Logger::Log(LogLevel::Verbose, "Elapsed time in ms: ", double(elapsedTime));
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Create convex mesh with ", desc.points.count, " triangles: ");
+	directInsertion ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Direct mesh insertion enabled.") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Direct mesh insertion disabled.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Gauss map limit: %d \n", gaussMapLimit);
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Created hull number of vertices: ", convex->getNbVertices());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Created hull number of polygons: ", convex->getNbPolygons());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Elapsed time in ms: ", double(elapsedTime));
 	if (!directInsertion)
 	{
-		Logger::Log(LogLevel::Verbose, "Mesh size: ", meshSize);
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Mesh size: ", meshSize);
 	}
 
 	PhysXConvexMeshes.emplace(rhs->m_MeshMaterialPair->mesh, convex);
@@ -380,7 +378,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 		return l_result->second;
 	}
 
-	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto startTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
 	PxTriangleMeshDesc meshDesc;
 	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
@@ -390,7 +388,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_Indices[0];
 	meshDesc.triangles.stride = 3 * sizeof(PxU32);
 
-	PxCookingParams params = gCooking->getParams();
+	PxCookingParams params(gPhysics->getTolerancesScale());
 
 	// Create BVH33 midphase
 	params.midphaseDesc = PxMeshMidPhase::eBVH33;
@@ -416,14 +414,12 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 		params.midphaseDesc.mBVH33Desc.meshSizePerformanceTradeOff = 0.55f;
 	}
 
-	gCooking->setParams(params);
-
 #if defined(PX_CHECKED) || defined(PX_DEBUG)
 	// If DISABLE_CLEAN_MESH is set, the mesh is not cleaned during the cooking.
 	// We should check the validity of provided triangles in debug/checked builds though.
 	if (skipMeshCleanup)
 	{
-		PX_ASSERT(gCooking->validateTriangleMesh(meshDesc));
+		PX_ASSERT(PxValidateTriangleMesh(meshDesc));
 	}
 #endif // DEBUG
 
@@ -433,12 +429,12 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	// The cooked mesh may either be saved to a stream for later loading, or inserted directly into PxPhysics.
 	if (inserted)
 	{
-		triMesh = gCooking->createTriangleMesh(meshDesc, gPhysics->getPhysicsInsertionCallback());
+		triMesh = PxCreateTriangleMesh(params, meshDesc);
 	}
 	else
 	{
 		PxDefaultMemoryOutputStream outBuffer;
-		gCooking->cookTriangleMesh(meshDesc, outBuffer);
+		PxCookTriangleMesh(params, meshDesc, outBuffer);
 
 		PxDefaultMemoryInputData stream(outBuffer.getData(), outBuffer.getSize());
 		triMesh = gPhysics->createTriangleMesh(stream);
@@ -447,19 +443,19 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	}
 
 	// Print the elapsed time for comparison
-	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
-	Logger::Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
-	Logger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
-	cookingPerformance ? Logger::Log(LogLevel::Verbose, "\t\t Cooking performance on\n") : Logger::Log(LogLevel::Verbose, "\t\t Cooking performance off\n");
-	inserted ? Logger::Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : Logger::Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
-	!skipEdgeData ? Logger::Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : Logger::Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
-	!skipMeshCleanup ? Logger::Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : Logger::Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");
-	Logger::Log(LogLevel::Verbose, "\t\t Mesh size/performance trade-off: %f \n", double(params.midphaseDesc.mBVH33Desc.meshSizePerformanceTradeOff));
-	Logger::Log(LogLevel::Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
+	cookingPerformance ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Cooking performance on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Cooking performance off\n");
+	inserted ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
+	!skipEdgeData ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
+	!skipMeshCleanup ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh size/performance trade-off: %f \n", double(params.midphaseDesc.mBVH33Desc.meshSizePerformanceTradeOff));
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
 	if (!inserted)
 	{
-		Logger::Log(LogLevel::Verbose, "\t Mesh size: %d \n", meshSize);
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Mesh size: %d \n", meshSize);
 	}
 
 	PhysXTriangleMeshes.emplace(rhs->m_MeshMaterialPair->mesh, triMesh);
@@ -476,7 +472,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 		return l_result->second;
 	}
 
-	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto startTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
 	PxTriangleMeshDesc meshDesc;
 	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
@@ -486,7 +482,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_Indices[0];
 	meshDesc.triangles.stride = 3 * sizeof(Index);
 
-	PxCookingParams params = gCooking->getParams();
+	PxCookingParams params(gPhysics->getTolerancesScale());
 
 	// Create BVH34 midphase
 	params.midphaseDesc = PxMeshMidPhase::eBVH34;
@@ -498,14 +494,12 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	// and worse cooking performance. Cooking time is better when more triangles per leaf are used.
 	params.midphaseDesc.mBVH34Desc.numPrimsPerLeaf = numTrisPerLeaf;
 
-	gCooking->setParams(params);
-
 #if defined(PX_CHECKED) || defined(PX_DEBUG)
 	// If DISABLE_CLEAN_MESH is set, the mesh is not cleaned during the cooking.
 	// We should check the validity of provided triangles in debug/checked builds though.
 	if (skipMeshCleanup)
 	{
-		PX_ASSERT(gCooking->validateTriangleMesh(meshDesc));
+		PX_ASSERT(PxValidateTriangleMesh(meshDesc));
 	}
 #endif // DEBUG
 
@@ -515,12 +509,12 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	// The cooked mesh may either be saved to a stream for later loading, or inserted directly into PxPhysics.
 	if (inserted)
 	{
-		triMesh = gCooking->createTriangleMesh(meshDesc, gPhysics->getPhysicsInsertionCallback());
+		triMesh = PxCreateTriangleMesh(params, meshDesc);
 	}
 	else
 	{
 		PxDefaultMemoryOutputStream outBuffer;
-		gCooking->cookTriangleMesh(meshDesc, outBuffer);
+		PxCookTriangleMesh(params, meshDesc, outBuffer);
 
 		PxDefaultMemoryInputData stream(outBuffer.getData(), outBuffer.getSize());
 		triMesh = gPhysics->createTriangleMesh(stream);
@@ -529,18 +523,18 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	}
 
 	// Print the elapsed time for comparison
-	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
-	Logger::Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
-	Logger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
-	inserted ? Logger::Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : Logger::Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
-	!skipEdgeData ? Logger::Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : Logger::Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
-	!skipMeshCleanup ? Logger::Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : Logger::Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");
-	Logger::Log(LogLevel::Verbose, "\t\t Num triangles per leaf: %d \n", numTrisPerLeaf);
-	Logger::Log(LogLevel::Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
+	inserted ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
+	!skipEdgeData ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
+	!skipMeshCleanup ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Num triangles per leaf: %d \n", numTrisPerLeaf);
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
 	if (!inserted)
 	{
-		Logger::Log(LogLevel::Verbose, "\t Mesh size: %d \n", meshSize);
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Mesh size: %d \n", meshSize);
 	}
 
 	PhysXTriangleMeshes.emplace(rhs->m_MeshMaterialPair->mesh, triMesh);
@@ -608,7 +602,7 @@ bool PhysXWrapperNS::createPxMesh(PhysicsComponent* rhs, Vec4 globalPos, Vec4 ro
 		rhs->m_Proxy = l_actor;
 		gScene->addActor(*l_actor);
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-		Logger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
 	}
 
 	return true;

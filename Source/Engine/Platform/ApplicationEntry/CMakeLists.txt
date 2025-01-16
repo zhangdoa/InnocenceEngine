@@ -1,4 +1,0 @@
-add_library(ApplicationEntry ApplicationEntry.h ApplicationEntry.cpp)
-set_target_properties(ApplicationEntry PROPERTIES FOLDER Engine/ApplicationEntry)
-target_link_libraries(ApplicationEntry ${INNO_LOGIC_CLIENT})
-target_link_libraries(ApplicationEntry ${INNO_RENDERING_CLIENT})

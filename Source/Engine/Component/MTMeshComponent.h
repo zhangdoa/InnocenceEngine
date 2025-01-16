@@ -1,5 +1,4 @@
 #pragma once
-#include "../Common/Type.h"
 #include "MeshComponent.h"
 
 namespace Inno

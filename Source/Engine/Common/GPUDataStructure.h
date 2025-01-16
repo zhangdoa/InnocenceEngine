@@ -1,5 +1,5 @@
 #pragma once
-#include "Type.h"
+#include "GraphicsPrimitive.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/TextureComponent.h"

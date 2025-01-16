@@ -5,9 +5,9 @@
 #include "../../RenderingServer/DX11/DX11RenderingServer.h"
 #include "../../Component/DX11RenderPassComponent.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace ImGuiRendererDX11NS
 {
@@ -17,7 +17,7 @@ namespace ImGuiRendererDX11NS
 bool ImGuiRendererDX11::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX11 Setup finished.");
 
 	return true;
 }
@@ -29,7 +29,7 @@ bool ImGuiRendererDX11::Initialize()
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
 
 	ImGui_ImplDX11_Init(l_device, l_deviceContext);
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX11 has been initialized.");
 
 	return true;
 }
@@ -56,7 +56,7 @@ bool ImGuiRendererDX11::Terminate()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX11 has been terminated.");
 
 	return true;
 }
@@ -68,6 +68,6 @@ ObjectStatus ImGuiRendererDX11::GetStatus()
 
 void ImGuiRendererDX11::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "../Core/Memory.h"
+#include "Memory.h"
 #include <type_traits>
 
 namespace Inno

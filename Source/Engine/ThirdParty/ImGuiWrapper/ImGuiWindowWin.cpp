@@ -4,9 +4,9 @@
 
 #include "../ImGui/imgui_impl_win32.cpp"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace ImGuiWindowWinNS
 {
@@ -28,7 +28,7 @@ bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
 
 	m_ObjectStatus = ObjectStatus::Created;
 
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowWin Setup finished.");
 
 	return true;
 }
@@ -39,7 +39,7 @@ bool ImGuiWindowWin::Initialize()
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowWin has been initialized.");
 
 	return true;
 }
@@ -56,7 +56,7 @@ bool ImGuiWindowWin::Terminate()
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowWin has been terminated.");
 
 	return true;
 }

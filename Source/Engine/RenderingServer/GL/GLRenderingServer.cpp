@@ -9,10 +9,10 @@
 
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 #include "../Common/Helper.h"
 using namespace RenderingServerHelper;
@@ -20,10 +20,14 @@ using namespace RenderingServerHelper;
 #include "GLHelper.h"
 using namespace GLHelper;
 
-#include "../../Core/Logger.h"
-#include "../../Core/Memory.h"
-#include "../../Core/Randomizer.h"
-#include "../../Template/ObjectPool.h"
+#include "../../Common/Logger.h"
+#include "../../Common/Memory.h"
+#include "../../Common/Randomizer.h"
+#include "../../Common/ObjectPool.h"
+#include "../../Common/TaskScheduler.h"
+
+#include "../../Services/RenderingFrontend.h"
+#include "../../Services/EntityManager.h"
 
 namespace GLRenderingServerNS
 {
@@ -74,7 +78,7 @@ namespace GLRenderingServerNS
 				l_logLevel = LogLevel::Verbose;
 			}
 
-			Logger::Log(l_logLevel, "GLRenderServer: ", l_typeStr, "ID: ", id, ": ", message);
+			g_Engine->Get<Logger>()->Log(l_logLevel, "GLRenderServer: ", l_typeStr, "ID: ", id, ": ", message);
 		}
 	}
 
@@ -114,7 +118,7 @@ GLPipelineStateObject* addPSO()
 bool GLRenderingServerNS::resizeImpl()
 {
 	auto l_renderingServer = reinterpret_cast<GLRenderingServer*>(g_Engine->getRenderingServer());
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 
 	for (auto i : m_RenderPassComps)
 	{
@@ -178,7 +182,7 @@ using namespace GLRenderingServerNS;
 
 bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
+	auto l_renderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
 
 	m_MeshComponentPool = TObjectPool<GLMeshComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureComponentPool = TObjectPool<GLTextureComponent>::Create(l_renderingCapability.maxTextures);
@@ -191,7 +195,7 @@ bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComps.reserve(128);
 
-	auto l_GLRenderingServerSetupTask = g_Engine->getTaskSystem()->Submit("GLRenderingServerSetupTask", 2, nullptr,
+	auto l_GLRenderingServerSetupTask = g_Engine->Get<TaskScheduler>()->Submit("GLRenderingServerSetupTask", 2,
 		[&]() {
 			glEnable(GL_DEBUG_OUTPUT);
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -202,14 +206,14 @@ bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 		}
 	);
 
-	l_GLRenderingServerSetupTask.m_Future->Get();
+	l_GLRenderingServerSetupTask->Activate();
 
 	m_SwapChainRenderPassComp = reinterpret_cast<GLRenderPassComponent*>(AddRenderPassComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<GLShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
 	m_SwapChainSamplerComp = reinterpret_cast<GLSamplerComponent*>(AddSamplerComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	Logger::Log(LogLevel::Success, "GLRenderingServer Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "GLRenderingServer Setup finished.");
 
 	return true;
 }
@@ -221,13 +225,13 @@ bool GLRenderingServer::Initialize()
 		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
 
-		auto l_GLRenderingServerInitializeTask = g_Engine->getTaskSystem()->Submit("GLRenderingServerInitializeTask", 2, nullptr,
+		auto l_GLRenderingServerInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("GLRenderingServerInitializeTask", 2,
 			[&]() {
 				InitializeShaderProgramComponent(m_SwapChainSPC);
 
 				InitializeSamplerComponent(m_SwapChainSamplerComp);
 
-				auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+				auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 				l_RenderPassDesc.m_RenderTargetCount = 1;
 
@@ -257,7 +261,7 @@ bool GLRenderingServer::Initialize()
 				m_SwapChainRenderPassComp->m_ObjectStatus = ObjectStatus::Activated;
 			});
 
-		l_GLRenderingServerInitializeTask.m_Future->Get();
+		l_GLRenderingServerInitializeTask->Wait();
 	}
 
 	return true;
@@ -266,7 +270,7 @@ bool GLRenderingServer::Initialize()
 bool GLRenderingServer::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Logger::Log(LogLevel::Success, "GLRenderingServer has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "GLRenderingServer has been terminated.");
 
 	return true;
 }
@@ -334,15 +338,15 @@ bool GLRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)48);
 
-	Logger::Log(LogLevel::Verbose, "GLRenderingServer: VAO ", l_rhs->m_VAO, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "GLRenderingServer: VAO ", l_rhs->m_VAO, " is initialized.");
 
 	glBufferData(GL_ARRAY_BUFFER, l_rhs->m_Vertices.size() * sizeof(Vertex), &l_rhs->m_Vertices[0], GL_STATIC_DRAW);
 
-	Logger::Log(LogLevel::Verbose, "GLRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "GLRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_Indices.size() * sizeof(Index), &l_rhs->m_Indices[0], GL_STATIC_DRAW);
 
-	Logger::Log(LogLevel::Verbose, "GLRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "GLRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -420,7 +424,7 @@ bool GLRenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 		glGenerateMipmap(l_rhs->m_GLTextureDesc.TextureSampler);
 	}
 
-	Logger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -439,7 +443,7 @@ bool GLRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
 
 	auto l_rhs = reinterpret_cast<GLMaterialComponent*>(rhs);
 
-	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->GetDefaultMaterialComponent();
+	auto l_defaultMaterial = g_Engine->Get<RenderingFrontend>()->GetDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -962,7 +966,7 @@ bool GLRenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 

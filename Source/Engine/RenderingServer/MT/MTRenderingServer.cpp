@@ -1,9 +1,9 @@
 #include "MTRenderingServer.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace MTRenderingServerNS
 {
@@ -253,7 +253,7 @@ bool MTRenderingServer::Resize()
 void MTRenderingServer::setBridge(MTRenderingServerBridge* bridge)
 {
 	MTRenderingServerNS::m_bridge = bridge;
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "MTRenderingServer: Bridge connected at ", bridge);
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "MTRenderingServer: Bridge connected at ", bridge);
 }
 
 bool MTRenderingServer::BeginCapture()

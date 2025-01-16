@@ -1,14 +1,16 @@
 #include "GIDataLoader.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-
 #include "../../Engine/Common/MathHelper.h"
+#include "../../Engine/Common/IOService.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/SceneSystem.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
-#include "../../Engine/Core/IOService.h"
+
+#include "../../Engine/Common/IOService.h"
 
 using namespace DefaultGPUBuffers;
 
@@ -41,15 +43,15 @@ namespace GIDataLoader
 
 bool GIDataLoader::loadGIData()
 {
-	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_Engine->getSceneSystem()->getCurrentSceneName();
+	auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
+	auto l_currentSceneName = g_Engine->Get<SceneSystem>()->getCurrentSceneName();
 
 	std::ifstream l_surfelFile;
 	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".Surfel", std::ios::binary);
 
 	if (l_surfelFile.is_open())
 	{
-		IOService::deserializeVector(l_surfelFile, m_surfels);
+		g_Engine->Get<IOService>()->deserializeVector(l_surfelFile, m_surfels);
 		m_IsSurfelLoaded = true;
 	}
 
@@ -58,7 +60,7 @@ bool GIDataLoader::loadGIData()
 
 	if (l_brickFile.is_open())
 	{
-		IOService::deserializeVector(l_brickFile, m_bricks);
+		g_Engine->Get<IOService>()->deserializeVector(l_brickFile, m_bricks);
 		m_IsBrickLoaded = true;
 	}
 
@@ -67,7 +69,7 @@ bool GIDataLoader::loadGIData()
 
 	if (l_brickFactorFile.is_open())
 	{
-		IOService::deserializeVector(l_brickFactorFile, m_brickFactors);
+		g_Engine->Get<IOService>()->deserializeVector(l_brickFactorFile, m_brickFactors);
 		m_IsBrickFactorLoaded = true;
 	}
 
@@ -76,7 +78,7 @@ bool GIDataLoader::loadGIData()
 
 	if (l_probeFile.is_open())
 	{
-		IOService::deserializeVector(l_probeFile, m_probes);
+		g_Engine->Get<IOService>()->deserializeVector(l_probeFile, m_probes);
 
 		m_IsProbeLoaded = true;
 	}
@@ -86,7 +88,7 @@ bool GIDataLoader::loadGIData()
 
 	if (l_probeInfoFile.is_open())
 	{
-		IOService::deserialize(l_probeInfoFile, &m_probeInfo);
+		g_Engine->Get<IOService>()->deserialize(l_probeInfoFile, &m_probeInfo);
 	}
 	else
 	{
@@ -109,7 +111,7 @@ bool GIDataLoader::Setup()
 		loadGIData();
 	};
 
-	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	////
 	m_testSampleCubemap = l_renderingServer->AddTextureComponent("TestSampleCubemap/");
@@ -132,7 +134,7 @@ bool GIDataLoader::Setup()
 		}
 	}
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	m_testSampleCubemap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSampleCubemap->m_TextureDesc.Sampler = TextureSampler::SamplerCubemap;

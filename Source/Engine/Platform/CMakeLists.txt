@@ -1,5 +1,3 @@
-add_subdirectory("ApplicationEntry")
-
 if (INNO_PLATFORM_WIN)
 add_subdirectory("WinMain")
 add_subdirectory("WinWindow")

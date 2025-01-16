@@ -1,11 +1,16 @@
 #include "JSONWrapper.h"
-#include "../../Core/Logger.h"
+#include "../../Common/ThreadSafeQueue.h"
+#include "../../Common/Logger.h"
+#include "../../Common/IOService.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Services/ComponentManager.h"
+#include "../../Services/RenderingFrontend.h"
+#include "../../Services/AssetSystem.h"
+#include "../../Services/EntityManager.h"
+
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
-
-#include "../../Core/IOService.h"
+;
 
 namespace Inno
 {
@@ -14,7 +19,7 @@ namespace Inno
 		template<typename T>
 		inline void loadComponentData(const json& j, Entity* entity)
 		{
-			auto l_result = g_Engine->getComponentManager()->Spawn<T>(entity, true, ObjectLifespan::Scene);
+			auto l_result = g_Engine->Get<ComponentManager>()->Spawn<T>(entity, true, ObjectLifespan::Scene);
 			from_json(j, *l_result);
 		}
 
@@ -38,7 +43,7 @@ namespace Inno
 			}
 			else
 			{
-				Logger::Log(LogLevel::Warning, "JSONWrapper: saveComponentData<T>: UUID ", rhs->m_Owner->m_UUID, " is invalid.");
+				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "JSONWrapper: saveComponentData<T>: UUID ", rhs->m_Owner->m_UUID, " is invalid.");
 				return false;
 			}
 		}
@@ -59,11 +64,11 @@ bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
 {
 	std::ifstream i;
 
-	i.open(IOService::getWorkingDirectory() + fileName);
+	i.open(g_Engine->Get<IOService>()->getWorkingDirectory() + fileName);
 
 	if (!i.is_open())
 	{
-		Logger::Log(LogLevel::Error, "JSONWrapper: Can't open JSON file : ", fileName, "!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "JSONWrapper: Can't open JSON file : ", fileName, "!");
 		return false;
 	}
 
@@ -76,11 +81,11 @@ bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
 bool JSONWrapper::saveJsonDataToDisk(const char* fileName, const json& data)
 {
 	std::ofstream o;
-	o.open(IOService::getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
+	o.open(g_Engine->Get<IOService>()->getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
-	Logger::Log(LogLevel::Verbose, "JSONWrapper: JSON file : ", fileName, " has been saved.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "JSONWrapper: JSON file : ", fileName, " has been saved.");
 
 	return true;
 }
@@ -286,7 +291,7 @@ void JSONWrapper::from_json(const json& j, TransformComponent& p)
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
 	if (l_parentTransformComponentEntityName == "RootTransform")
 	{
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 		p.m_parentTransformComponent = l_rootTranformComponent;
 	}
 	else
@@ -364,7 +369,7 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 
 	if (j.find("Meshes") != j.end())
 	{
-		l_result = g_Engine->getAssetSystem()->AddModel();
+		l_result = g_Engine->Get<AssetSystem>()->AddModel();
 		l_result->meshMaterialPairs = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
 	}
 
@@ -382,32 +387,32 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 	{
 		std::string l_animationFileName = i["File"];
 
-		std::ifstream l_animationFile(IOService::getWorkingDirectory() + l_animationFileName, std::ios::binary);
+		std::ifstream l_animationFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_animationFileName, std::ios::binary);
 
 		if (!l_animationFile.is_open())
 		{
-			Logger::Log(LogLevel::Error, "JSONWrapper: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "JSONWrapper: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
 			return false;
 		}
 
-		auto l_ADC = g_Engine->getRenderingFrontend()->AddAnimationComponent();
+		auto l_ADC = g_Engine->Get<RenderingFrontend>()->AddAnimationComponent();
 		l_ADC->m_InstanceName = (l_animationFileName + "//").c_str();
 
 		std::streamoff l_offset = 0;
 
-		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_Duration);
+		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_Duration);
 		l_offset += sizeof(l_ADC->m_Duration);
-		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
+		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
 		l_offset += sizeof(l_ADC->m_NumChannels);
-		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumTicks);
+		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_NumTicks);
 		l_offset += sizeof(l_ADC->m_NumTicks);
 
-		auto l_keyDataSize = IOService::getFileSize(l_animationFile) - l_offset;
+		auto l_keyDataSize = g_Engine->Get<IOService>()->getFileSize(l_animationFile) - l_offset;
 		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
-		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
+		g_Engine->Get<IOService>()->deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
-		g_Engine->getAssetSystem()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
-		g_Engine->getRenderingFrontend()->InitializeAnimationComponent(l_ADC, AsyncUploadGPUResource);
+		g_Engine->Get<AssetSystem>()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
+		g_Engine->Get<RenderingFrontend>()->InitializeAnimationComponent(l_ADC, AsyncUploadGPUResource);
 	}
 
 	return true;
@@ -415,13 +420,13 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 
 ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
 {
-	auto l_result = g_Engine->getAssetSystem()->AddMeshMaterialPairs(j.size());
+	auto l_result = g_Engine->Get<AssetSystem>()->AddMeshMaterialPairs(j.size());
 
 	uint64_t l_currentIndex = 0;
 
 	for (auto i : j)
 	{
-		auto l_currentMeshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
+		auto l_currentMeshMaterialPair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
 
 		// Load material data
 		if (i.find("Material") != i.end())
@@ -432,9 +437,9 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 		}
 		else
 		{
-			l_currentMeshMaterialPair->material = g_Engine->getRenderingFrontend()->AddMaterialComponent();
+			l_currentMeshMaterialPair->material = g_Engine->Get<RenderingFrontend>()->AddMaterialComponent();
 			l_currentMeshMaterialPair->material->m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->getRenderingFrontend()->InitializeMaterialComponent(l_currentMeshMaterialPair->material, AsyncUploadGPUResource);
+			g_Engine->Get<RenderingFrontend>()->InitializeMaterialComponent(l_currentMeshMaterialPair->material, AsyncUploadGPUResource);
 		}
 
 		MeshSource l_meshSource = MeshSource(i["MeshSource"].get<int32_t>());
@@ -447,20 +452,20 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 			MeshMaterialPair* l_loadedMeshMaterialPair;
 
 			// check if this file has already been loaded once
-			if (g_Engine->getAssetSystem()->FindLoadedMeshMaterialPair(l_meshFileName.c_str(), l_loadedMeshMaterialPair))
+			if (g_Engine->Get<AssetSystem>()->FindLoadedMeshMaterialPair(l_meshFileName.c_str(), l_loadedMeshMaterialPair))
 			{
 				l_currentMeshMaterialPair = l_loadedMeshMaterialPair;
 			}
 			else
 			{
-				std::ifstream l_meshFile(IOService::getWorkingDirectory() + l_meshFileName, std::ios::binary);
+				std::ifstream l_meshFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_meshFileName, std::ios::binary);
 
 				if (!l_meshFile.is_open())
 				{
-					Logger::Log(LogLevel::Error, "JSONWrapper: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
+					g_Engine->Get<Logger>()->Log(LogLevel::Error, "JSONWrapper: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
 				}
 
-				auto l_mesh = g_Engine->getRenderingFrontend()->AddMeshComponent();
+				auto l_mesh = g_Engine->Get<RenderingFrontend>()->AddMeshComponent();
 				l_mesh->m_InstanceName = (l_meshFileName + "//").c_str();
 
 				size_t l_verticesNumber = i["VerticesNumber"];
@@ -471,8 +476,8 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				l_mesh->m_Indices.reserve(l_indicesNumber);
 				l_mesh->m_Indices.fulfill();
 
-				IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_Vertices);
-				IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_Indices);
+				g_Engine->Get<IOService>()->deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_Vertices);
+				g_Engine->Get<IOService>()->deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_Indices);
 
 				l_meshFile.close();
 
@@ -491,16 +496,16 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				l_currentMeshMaterialPair->mesh->m_MeshSource = MeshSource::Customized;
 				l_currentMeshMaterialPair->mesh->m_ObjectStatus = ObjectStatus::Created;
 
-				g_Engine->getRenderingFrontend()->InitializeMeshComponent(l_mesh, AsyncUploadGPUResource);
+				g_Engine->Get<RenderingFrontend>()->InitializeMeshComponent(l_mesh, AsyncUploadGPUResource);
 
-				g_Engine->getAssetSystem()->RecordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_currentMeshMaterialPair);
+				g_Engine->Get<AssetSystem>()->RecordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_currentMeshMaterialPair);
 			}
 		}
 		else
 		{
 			ProceduralMeshShape l_proceduralMeshShape = ProceduralMeshShape(i["ProceduralMeshShape"].get<int32_t>());
 
-			l_currentMeshMaterialPair->mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(l_proceduralMeshShape);
+			l_currentMeshMaterialPair->mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(l_proceduralMeshShape);
 		}
 
 		l_currentIndex++;
@@ -514,13 +519,13 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 	SkeletonComponent* l_SamplerComp;
 
 	// check if this file has already been loaded once
-	if (g_Engine->getAssetSystem()->FindLoadedSkeleton(name, l_SamplerComp))
+	if (g_Engine->Get<AssetSystem>()->FindLoadedSkeleton(name, l_SamplerComp))
 	{
 		return l_SamplerComp;
 	}
 	else
 	{
-		l_SamplerComp = g_Engine->getRenderingFrontend()->AddSkeletonComponent();
+		l_SamplerComp = g_Engine->Get<RenderingFrontend>()->AddSkeletonComponent();
 		l_SamplerComp->m_InstanceName = (std::string(name) + ("//")).c_str();
 
 		auto l_size = j["Bones"].size();
@@ -534,8 +539,8 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 			l_SamplerComp->m_BoneData[i["ID"]] = l_boneData;
 		}
 
-		g_Engine->getAssetSystem()->RecordLoadedSkeleton(name, l_SamplerComp);
-		g_Engine->getRenderingFrontend()->InitializeSkeletonComponent(l_SamplerComp, AsyncUploadGPUResource);
+		g_Engine->Get<AssetSystem>()->RecordLoadedSkeleton(name, l_SamplerComp);
+		g_Engine->Get<RenderingFrontend>()->InitializeSkeletonComponent(l_SamplerComp, AsyncUploadGPUResource);
 
 		return l_SamplerComp;
 	}
@@ -543,9 +548,9 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 
 MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const char* name, bool AsyncUploadGPUResource)
 {
-	auto l_MeshComp = g_Engine->getRenderingFrontend()->AddMaterialComponent();
+	auto l_MeshComp = g_Engine->Get<RenderingFrontend>()->AddMaterialComponent();
 	l_MeshComp->m_InstanceName = (std::string(name) + ("//")).c_str();
-	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->GetDefaultMaterialComponent();
+	auto l_defaultMaterial = g_Engine->Get<RenderingFrontend>()->GetDefaultMaterialComponent();
 
 	if (j.find("Textures") != j.end())
 	{
@@ -554,7 +559,7 @@ MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const cha
 			std::string l_textureFile = i["File"];
 			size_t l_textureSlotIndex = i["TextureSlotIndex"];
 
-			auto l_TextureComp = g_Engine->getAssetSystem()->LoadTexture(l_textureFile.c_str());
+			auto l_TextureComp = g_Engine->Get<AssetSystem>()->LoadTexture(l_textureFile.c_str());
 			if (l_TextureComp)
 			{
 				l_TextureComp->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);
@@ -582,7 +587,7 @@ MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const cha
 
 	l_MeshComp->m_ObjectStatus = ObjectStatus::Created;
 
-	g_Engine->getRenderingFrontend()->InitializeMaterialComponent(l_MeshComp, AsyncUploadGPUResource);
+	g_Engine->Get<RenderingFrontend>()->InitializeMaterialComponent(l_MeshComp, AsyncUploadGPUResource);
 
 	return l_MeshComp;
 }
@@ -593,7 +598,7 @@ bool JSONWrapper::saveScene(const char* fileName)
 	topLevel["SceneName"] = fileName;
 
 	// save entities name and ID
-	for (auto i : g_Engine->getEntityManager()->GetEntities())
+	for (auto i : g_Engine->Get<EntityManager>()->GetEntities())
 	{
 		if (i->m_Serializable)
 		{
@@ -605,28 +610,28 @@ bool JSONWrapper::saveScene(const char* fileName)
 
 	// @TODO: Use ComponentManager to iterate over types
 	// save children components
-	for (auto i : g_Engine->getComponentManager()->GetAll<TransformComponent>())
+	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<TransformComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->getComponentManager()->GetAll<VisibleComponent>())
+	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->getComponentManager()->GetAll<LightComponent>())
+	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<LightComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->getComponentManager()->GetAll<CameraComponent>())
+	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>())
 	{
 		if (i->m_Serializable)
 		{
@@ -636,7 +641,7 @@ bool JSONWrapper::saveScene(const char* fileName)
 
 	saveJsonDataToDisk(fileName, topLevel);
 
-	Logger::Log(LogLevel::Success, "JSONWrapper: Scene ", fileName, " has been saved.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "JSONWrapper: Scene ", fileName, " has been saved.");
 
 	return true;
 }
@@ -655,7 +660,7 @@ bool JSONWrapper::loadScene(const char* fileName)
 	{
 		std::string l_entityName = i["ObjectName"];
 		l_entityName += "/";
-		auto l_entity = g_Engine->getEntityManager()->Spawn(true, ObjectLifespan::Scene, l_entityName.c_str());
+		auto l_entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, l_entityName.c_str());
 
 		for (auto k : i["ChildrenComponents"])
 		{
@@ -679,12 +684,12 @@ bool JSONWrapper::loadScene(const char* fileName)
 			}
 			else
 			{
-				Logger::Log(LogLevel::Error, "JSONWrapper: Unknown ComponentTypeID: ", componentTypeID);
+				g_Engine->Get<Logger>()->Log(LogLevel::Error, "JSONWrapper: Unknown ComponentTypeID: ", componentTypeID);
 			}
 		}
 	}
 
-	Logger::Log(LogLevel::Success, "JSONWrapper: Scene loading finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "JSONWrapper: Scene loading finished.");
 
 	assignComponentRuntimeData();
 
@@ -698,15 +703,15 @@ bool JSONWrapper::assignComponentRuntimeData()
 		std::pair<TransformComponent*, ObjectName> l_orphan;
 		if (m_orphanTransformComponents.tryPop(l_orphan))
 		{
-			auto l_entity = g_Engine->getEntityManager()->Find(l_orphan.second.c_str());
+			auto l_entity = g_Engine->Get<EntityManager>()->Find(l_orphan.second.c_str());
 
 			if (l_entity.has_value())
 			{
-				l_orphan.first->m_parentTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(*l_entity);
+				l_orphan.first->m_parentTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(*l_entity);
 			}
 			else
 			{
-				Logger::Log(LogLevel::Error, "JSONWrapper: Can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
+				g_Engine->Get<Logger>()->Log(LogLevel::Error, "JSONWrapper: Can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
 			}
 		}
 	}

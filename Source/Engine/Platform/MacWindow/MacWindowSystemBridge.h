@@ -1,8 +1,6 @@
 #ifndef MacWindowSystemBridge_h
 #define MacWindowSystemBridge_h
 
-#include "../../Common/Type.h"
-
 namespace Inno
 {
 	class MacWindowSystemBridge

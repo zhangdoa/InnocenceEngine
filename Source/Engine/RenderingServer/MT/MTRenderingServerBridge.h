@@ -1,7 +1,6 @@
 #ifndef MTRenderingServerBridge_h
 #define MTRenderingServerBridge_h
 
-#include "../../Common/Type.h"
 #include "../../Component/MTMeshComponent.h"
 #include "../../Component/MTTextureComponent.h"
 

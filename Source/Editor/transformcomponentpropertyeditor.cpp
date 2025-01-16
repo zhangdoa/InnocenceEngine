@@ -1,9 +1,9 @@
 #include "transformcomponentpropertyeditor.h"
 
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 
 TransformComponentPropertyEditor::TransformComponentPropertyEditor()
 {

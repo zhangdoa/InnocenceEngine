@@ -1,7 +1,13 @@
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Services/EntityManager.h"
+#include "../../Engine/Services/ComponentManager.h"
+#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/AssetSystem.h"
+
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+;
 
 #include "Player.inl"
 
@@ -94,17 +100,17 @@ namespace Inno
 			m_referenceSphereTransformComponents.emplace_back();
 			m_referenceSphereVisibleComponents.emplace_back();
 			auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
-			m_referenceSphereEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+			m_referenceSphereEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_referenceSphereTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
+			m_referenceSphereTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 			m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_referenceSphereVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
+			m_referenceSphereVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 			m_referenceSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 			m_referenceSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 			m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -147,16 +153,16 @@ namespace Inno
 			m_occlusionCubeTransformComponents.emplace_back();
 			m_occlusionCubeVisibleComponents.emplace_back();
 			auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
-			m_occlusionCubeEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+			m_occlusionCubeEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_occlusionCubeTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
+			m_occlusionCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 			m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-			m_occlusionCubeVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
+			m_occlusionCubeVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 			m_occlusionCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 			m_occlusionCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Static;
 			m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -219,17 +225,17 @@ namespace Inno
 			m_opaqueSphereTransformComponents.emplace_back();
 			m_opaqueSphereVisibleComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
-			m_opaqueSphereEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+			m_opaqueSphereEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_opaqueSphereTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
+			m_opaqueSphereTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 			m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_opaqueSphereVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
+			m_opaqueSphereVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 			m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape(i % 6 + 5);
 			m_opaqueSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 			m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -280,17 +286,17 @@ namespace Inno
 			m_transparentCubeTransformComponents.emplace_back();
 			m_transparentCubeVisibleComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestTransparentCube_" + std::to_string(i) + "/");
-			m_transparentCubeEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+			m_transparentCubeEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_transparentCubeTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
+			m_transparentCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 			m_transparentCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_transparentCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
-			m_transparentCubeVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
+			m_transparentCubeVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 			m_transparentCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 			m_transparentCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 			m_transparentCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -323,17 +329,17 @@ namespace Inno
 			m_volumetricCubeTransformComponents.emplace_back();
 			m_volumetricCubeVisibleComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestVolumetricCube_" + std::to_string(i) + "/");
-			m_volumetricCubeEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+			m_volumetricCubeEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_volumetricCubeTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
+			m_volumetricCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 			m_volumetricCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
-			m_volumetricCubeVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
+			m_volumetricCubeVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 			m_volumetricCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 			m_volumetricCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 			m_volumetricCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -374,17 +380,17 @@ namespace Inno
 			m_pointLightTransformComponents.emplace_back();
 			m_pointLightComponents.emplace_back();
 			auto l_entityName = std::string("TestPointLight_" + std::to_string(i) + "/");
-			m_pointLightEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+			m_pointLightEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
+		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_pointLightTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
+			m_pointLightTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
 			m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_pointLightComponents[i] = g_Engine->getComponentManager()->Spawn<LightComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
+			m_pointLightComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<LightComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
 			m_pointLightComponents[i]->m_LightType = LightType::Point;
 			m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(m_generator);
 			m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(m_generator);
@@ -431,11 +437,11 @@ namespace Inno
 
 		runTest(512, l_testQuatToMat);
 
-		f_runRayTracing = [&]() { g_Engine->getRenderingFrontend()->RunRayTracing(); };
+		f_runRayTracing = [&]() { g_Engine->Get<RenderingFrontend>()->RunRayTracing(); };
 		f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
 		f_sceneLoadingFinishCallback = [&]() {
 			if (!m_player)
@@ -457,7 +463,7 @@ namespace Inno
 			m_ObjectStatus = ObjectStatus::Activated;
 		};
 
-		g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
+		g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 		return true;
 	}
@@ -466,26 +472,26 @@ namespace Inno
 	{       
 		bool l_result = true;
         
-        g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//default.InnoScene");
+        g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//default.InnoScene");
 
-        //g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-        //g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-        //g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-        //g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+        //g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+        //g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+        //g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+        //g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 		f_loadTestScene = []() {
-			g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-			//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-			//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-			//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+			g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 		};
 
 		f_convertModel = []() {
-			g_Engine->getAssetSystem()->ConvertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
+			g_Engine->Get<AssetSystem>()->ConvertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 		};
 
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 		return true;
 	}
@@ -496,7 +502,7 @@ namespace Inno
 		{
 			for (uint64_t j = 0; j < model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
 				l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
 				l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
 				l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
@@ -548,22 +554,22 @@ namespace Inno
 
 	void WorldSystem::runTest(uint32_t testTime, std::function<bool()> testCase)
 	{
-		g_Engine->getLogSystem()->Log(LogLevel::Verbose, "Start test...");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Start test...");
 		for (uint32_t i = 0; i < testTime; i++)
 		{
 			auto l_result = testCase();
 			if (!l_result)
 			{
-				g_Engine->getLogSystem()->Log(LogLevel::Warning, "Test failure.");
+				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Test failure.");
 			}
 		}
-		g_Engine->getLogSystem()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
 	}
 
 	Vec4 WorldSystem::getMousePositionInWorldSpace()
 	{
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
-		auto l_mousePositionSS = g_Engine->getEventSystem()->GetMousePosition();
+		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+		auto l_mousePositionSS = g_Engine->Get<EventSystem>()->GetMousePosition();
 
 		auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;
 		auto l_y = 1.0f - 2.0f * l_mousePositionSS.y / l_screenResolution.y;
@@ -571,12 +577,12 @@ namespace Inno
 		auto l_w = 1.0f;
 		Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
 
-		auto l_activeCamera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
+		auto l_activeCamera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
 		if (l_activeCamera == nullptr)
 		{
 			return Vec4();
 		}
-		auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_activeCamera->m_Owner);
+		auto l_cameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_activeCamera->m_Owner);
 		if (l_cameraTransformComponent == nullptr)
 		{
 			return Vec4();

@@ -1,9 +1,9 @@
 #include "directoryviewer.h"
 
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 
 DirectoryViewer::DirectoryViewer(QWidget *parent) : QSplitter(parent)
 {
@@ -28,7 +28,7 @@ DirectoryViewer::DirectoryViewer(QWidget *parent) : QSplitter(parent)
 
 void DirectoryViewer::Initialize()
 {
-    auto l_workingDir = g_Engine->getFileSystem()->getWorkingDirectory();
+    auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
     l_workingDir += "..//Res//";
 
     m_listViewer->SetRootPath(l_workingDir.c_str());

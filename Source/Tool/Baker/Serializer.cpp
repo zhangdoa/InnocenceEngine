@@ -4,12 +4,12 @@
 
 #include "../../Engine/Common/MathHelper.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
-#include "../../Engine/Core/IOService.h"
+
+#include "../../Engine/Common/IOService.h"
 #include "Baker.h"
 
 using namespace DefaultGPUBuffers;
@@ -18,7 +18,7 @@ namespace Inno
 {
     bool Baker::serializeProbeInfos(const ProbeInfo& probeInfo)
     {
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ofstream l_file;
         l_file.open(l_filePath + "..//Res//Scenes//" + Config::Get().m_exportFileName + ".InnoProbeInfo", std::ios::out | std::ios::trunc | std::ios::binary);
@@ -30,42 +30,42 @@ namespace Inno
 
     bool Baker::serializeProbes(const std::vector<Probe>& probes)
     {
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ofstream l_file;
         l_file.open(l_filePath + "..//Res//Scenes//" + Config::Get().m_exportFileName + ".InnoProbe", std::ios::out | std::ios::trunc | std::ios::binary);
         IOService::serializeVector(l_file, probes);
         l_file.close();
 
-        g_Engine->getLogSystem()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".Probe has been saved.");
+        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".Probe has been saved.");
 
         return true;
     }
 
     bool Baker::serializeSurfels(const std::vector<Surfel>& surfels)
     {
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ofstream l_file;
         l_file.open(l_filePath + "..//Res//Scenes//" + Config::Get().m_exportFileName + ".InnoSurfel", std::ios::out | std::ios::trunc | std::ios::binary);
         IOService::serializeVector(l_file, surfels);
         l_file.close();
 
-        g_Engine->getLogSystem()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoSurfel has been saved.");
+        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoSurfel has been saved.");
 
         return true;
     }
 
     bool Baker::serializeSurfelCaches(const std::vector<Surfel>& surfelCaches)
     {
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ofstream l_file;
         l_file.open(l_filePath + "..//Res//Intermediate//" + Config::Get().m_exportFileName + ".InnoSurfelCache", std::ios::out | std::ios::trunc | std::ios::binary);
         IOService::serializeVector(l_file, surfelCaches);
         l_file.close();
 
-        g_Engine->getLogSystem()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
+        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
 
         return true;
     }
@@ -75,7 +75,7 @@ namespace Inno
         auto l_brickCacheCount = brickCaches.size();
 
         // Serialize metadata
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
         std::ofstream l_summaryFile;
         l_summaryFile.open(l_filePath + "..//Res//Intermediate//" + Config::Get().m_exportFileName + ".InnoBrickCacheSummary", std::ios::out | std::ios::trunc | std::ios::binary);
 
@@ -107,7 +107,7 @@ namespace Inno
         }
         l_surfelCacheFile.close();
 
-        g_Engine->getLogSystem()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
+        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
 
         return true;
     }
@@ -117,7 +117,7 @@ namespace Inno
         auto l_brickCount = brickCacheSummaries.size();
         brickCaches.reserve(l_brickCount);
 
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ifstream l_file;
         l_file.open(l_filePath + "..//Res//Intermediate//" + Config::Get().m_exportFileName + ".InnoBrickCache", std::ios::binary);
@@ -144,28 +144,28 @@ namespace Inno
 
     bool Baker::serializeBricks(const std::vector<Brick>& bricks)
     {
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ofstream l_file;
         l_file.open(l_filePath + "..//Res//Scenes//" + Config::Get().m_exportFileName + ".InnoBrick", std::ios::out | std::ios::trunc | std::ios::binary);
         IOService::serializeVector(l_file, bricks);
         l_file.close();
 
-        g_Engine->getLogSystem()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrick has been saved.");
+        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrick has been saved.");
 
         return true;
     }
 
     bool Baker::serializeBrickFactors(const std::vector<BrickFactor>& brickFactors)
     {
-        auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+        auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 
         std::ofstream l_file;
         l_file.open(l_filePath + "..//Res//Scenes//" + Config::Get().m_exportFileName + ".InnoBrickFactor", std::ios::out | std::ios::trunc | std::ios::binary);
         IOService::serializeVector(l_file, brickFactors);
         l_file.close();
 
-        g_Engine->getLogSystem()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
+        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
 
         return true;
     }

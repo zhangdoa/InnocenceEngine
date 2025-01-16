@@ -1,10 +1,10 @@
 #include "directorylistviewer.h"
 #include <QMessageBox>
 
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 
 DirectoryListViewer::DirectoryListViewer(QWidget* parent) : QListView(parent)
 {
@@ -50,7 +50,7 @@ QString DirectoryListViewer::GetSelectionPath()
     {
     auto l_fileInfo = m_fileModel->fileInfo(index);
 
-    auto l_relativeRoot = g_Engine->getFileSystem()->getWorkingDirectory() + "..//Res//";
+    auto l_relativeRoot = g_Engine->Get<IOService>()->getWorkingDirectory() + "..//Res//";
 
     if (l_fileInfo.isDir())
     {
@@ -79,10 +79,10 @@ QString DirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_Engine->getAssetSystem()->ConvertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
+            g_Engine->Get<AssetSystem>()->ConvertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
             break;
         case QMessageBox::No:
-            g_Engine->getLogSystem()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());
 
             break;
         case QMessageBox::Cancel:
@@ -108,7 +108,7 @@ QString DirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_Engine->getSceneSystem()->loadScene(l_relativePath.toStdString().c_str());
+            g_Engine->Get<SceneSystem>()->loadScene(l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::No:
             break;
@@ -126,5 +126,5 @@ void DirectoryListViewer::OpenFileMenu(QModelIndex index)
 
 void DirectoryListViewer::SaveScene()
 {
-    g_Engine->getSceneSystem()->saveScene();
+    g_Engine->Get<SceneSystem>()->saveScene();
 }

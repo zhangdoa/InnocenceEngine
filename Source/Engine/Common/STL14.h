@@ -25,6 +25,8 @@
 #include <cassert>
 #include <cstdint>
 
+#include <typeindex>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

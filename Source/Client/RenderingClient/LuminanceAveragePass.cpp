@@ -1,12 +1,13 @@
 #include "LuminanceAveragePass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
 #include "LuminanceHistogramPass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -14,7 +15,7 @@ bool LuminanceAveragePass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;

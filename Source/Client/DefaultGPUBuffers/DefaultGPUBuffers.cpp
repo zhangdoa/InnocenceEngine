@@ -1,8 +1,8 @@
 #include "DefaultGPUBuffers.h"
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
 namespace DefaultGPUBuffers
 {
@@ -29,7 +29,7 @@ bool DefaultGPUBuffers::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
+	auto l_RenderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
 
 	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
 	m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
@@ -100,15 +100,15 @@ bool DefaultGPUBuffers::Upload()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameConstantBuffer = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer();
-	auto& l_PerObjectConstantBuffer = g_Engine->getRenderingFrontend()->GetPerObjectConstantBuffer();
+	auto l_PerFrameConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer();
+	auto& l_PerObjectConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPerObjectConstantBuffer();
 	auto l_TotalDrawCallCount = l_PerObjectConstantBuffer.size();
-	auto& l_MaterialConstantBuffer = g_Engine->getRenderingFrontend()->GetMaterialConstantBuffer();
-	auto& l_PointLightConstantBuffer = g_Engine->getRenderingFrontend()->GetPointLightConstantBuffer();
-	auto& l_SphereLightConstantBuffer = g_Engine->getRenderingFrontend()->GetSphereLightConstantBuffer();
-	auto& l_CSMConstantBuffer = g_Engine->getRenderingFrontend()->GetCSMConstantBuffer();
-	auto& l_animationConstantBuffer = g_Engine->getRenderingFrontend()->GetAnimationConstantBuffer();
-	auto& l_billboardPassPerObjectConstantBuffer = g_Engine->getRenderingFrontend()->GetBillboardPassPerObjectConstantBuffer();
+	auto& l_MaterialConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetMaterialConstantBuffer();
+	auto& l_PointLightConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPointLightConstantBuffer();
+	auto& l_SphereLightConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetSphereLightConstantBuffer();
+	auto& l_CSMConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetCSMConstantBuffer();
+	auto& l_animationConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetAnimationConstantBuffer();
+	auto& l_billboardPassPerObjectConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetBillboardPassPerObjectConstantBuffer();
 
 	l_renderingServer->UploadGPUBufferComponent(m_PerFrameCBufferGPUBufferComp, &l_PerFrameConstantBuffer);
 

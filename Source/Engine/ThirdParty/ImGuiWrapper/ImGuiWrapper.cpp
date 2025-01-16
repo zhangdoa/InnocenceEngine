@@ -1,6 +1,9 @@
 #include "ImGuiWrapper.h"
 #include "../ImGui/imgui.h"
 
+#include "IImGuiWindow.h"
+#include "IImGuiRenderer.h"
+
 #if defined INNO_PLATFORM_WIN
 #include "ImGuiWindowWin.h"
 #endif
@@ -29,10 +32,17 @@
 #include "ImGuiRendererMT.h"
 #endif
 
-#include "../../Interface/IEngine.h"
+#include "../../Common/RingBuffer.h"
+#include "../../Common/IOService.h"
+#include "../../Common/TaskScheduler.h"
+#include "../../Services/SceneSystem.h"
+#include "../../Services/AssetSystem.h"
+#include "../../Services/RenderingFrontend.h"
+
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace ImGuiWrapperNS
 {
@@ -114,7 +124,7 @@ bool ImGuiWrapper::Setup()
 		ImGuiWrapperNS::m_rendererImpl->Setup();
 	}
 
-	auto l_maxThreads = g_Engine->getTaskSystem()->GetThreadCounts();
+	auto l_maxThreads = g_Engine->Get<TaskScheduler>()->GetThreadCounts();
 	m_taskReports.resize(l_maxThreads);
 
 	return true;
@@ -179,11 +189,11 @@ bool ImGuiWrapper::Initialize()
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
 		// Load Fonts
-		auto l_workingDir = g_Engine->getFileSystem()->getWorkingDirectory();
+		auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
 		l_workingDir += "..//Res//Fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
 
-		ImGuiWrapperNS::m_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
+		ImGuiWrapperNS::m_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
 	}
 
 	return true;
@@ -258,7 +268,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Run ray trace"))
 	{
-		g_Engine->getRenderingFrontend()->RunRayTracing();
+		g_Engine->Get<RenderingFrontend>()->RunRayTracing();
 	}
 
 	static char scene_filePath[128];
@@ -266,16 +276,16 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Save scene"))
 	{
-		g_Engine->getSceneSystem()->saveScene(scene_filePath);
+		g_Engine->Get<SceneSystem>()->saveScene(scene_filePath);
 	}
 	if (ImGui::Button("Load scene"))
 	{
-		g_Engine->getSceneSystem()->loadScene(scene_filePath);
+		g_Engine->Get<SceneSystem>()->loadScene(scene_filePath, false);
 	}
 
 	ImGui::End();
 
-	g_Engine->getRenderingFrontend()->SetRenderingConfig(m_renderingConfig);
+	g_Engine->Get<RenderingFrontend>()->SetRenderingConfig(m_renderingConfig);
 }
 
 void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)
@@ -308,7 +318,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 
 	ImGui::Begin("World Explorer", 0);
 	{
-		auto l_sceneHierarchyMap = g_Engine->getSceneSystem()->getSceneHierarchyMap();
+		auto l_sceneHierarchyMap = g_Engine->Get<SceneSystem>()->getSceneHierarchyMap();
 
 		for (auto& i : l_sceneHierarchyMap)
 		{
@@ -437,7 +447,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 		{
 			for (uint64_t j = 0; j < l_rhs->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_meshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_meshMaterialPair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
 
 				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_meshMaterialPair->material))
 				{
@@ -568,14 +578,14 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 {
 	if (m_showConcurrencyProfiler)
 	{
-		auto l_maxThreads = g_Engine->getTaskSystem()->GetThreadCounts();
+		auto l_maxThreads = g_Engine->Get<TaskScheduler>()->GetThreadCounts();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 		ImGui::Begin("ConcurrencyProfiler", 0);
 
 		for (uint32_t i = 0; i < l_maxThreads; i++)
 		{
-			auto l_taskReport = g_Engine->getTaskSystem()->GetTaskReport(i);
+			auto l_taskReport = g_Engine->Get<TaskScheduler>()->GetTaskReport(i);
 
 			auto l_taskReportCount = l_taskReport.size();
 

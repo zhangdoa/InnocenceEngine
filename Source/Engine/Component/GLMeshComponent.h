@@ -1,5 +1,4 @@
 #pragma once
-#include "../Common/Type.h"
 #include "../RenderingServer/GL/GLHeaders.h"
 #include "MeshComponent.h"
 

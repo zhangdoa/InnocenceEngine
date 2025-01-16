@@ -1,8 +1,10 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "../ApplicationEntry/ApplicationEntry.h"
+#include "../../Common/STL14.h"
+#include "../../Engine.h"
 
+using namespace Inno;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 	AllocConsole();
@@ -11,16 +13,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	FILE* stream;
 	err = freopen_s(&stream, "CONOUT$", "w", stdout);
 	SetConsoleTitle("Innocence Engine Debug Console");
+	
+	std::unique_ptr<Engine> m_pEngine = std::make_unique<Engine>();
 
-	if (!Inno::ApplicationEntry::Setup(hInstance, nullptr, pScmdline))
+	if (!m_pEngine->Setup(hInstance, nullptr, pScmdline))
 	{
 		return 0;
 	}
-	if (!Inno::ApplicationEntry::Initialize())
+
+	if (!m_pEngine->Initialize())
 	{
 		return 0;
 	}
-	Inno::ApplicationEntry::Run();
-	Inno::ApplicationEntry::Terminate();
+
+	m_pEngine->Run();
+
+	m_pEngine->Terminate();
+
 	return 0;
 }

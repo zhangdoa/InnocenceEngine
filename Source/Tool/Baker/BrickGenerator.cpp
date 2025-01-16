@@ -2,14 +2,19 @@
 
 #include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
 
+#include "../../Engine/Common/IOService.h"
 #include "../../Engine/Common/MathHelper.h"
+#include "../../Engine/Common/TaskScheduler.h"
+#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/EntityManager.h"
+#include "../../Engine/Services/ComponentManager.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
-#include "../../Engine/Core/IOService.h"
+
 #include "Baker.h"
 #include "Serializer.h"
 
@@ -33,7 +38,7 @@ namespace Inno
 
             m_RenderPassComp_BrickFactor = l_renderingServer->AddRenderPassComponent("GIBakeBrickFactorPass/");
 
-            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
 
@@ -75,7 +80,7 @@ namespace Inno
 
         bool BrickGenerator::generateBrickCaches(std::vector<Surfel>& surfelCaches)
         {
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "BrickGenerator: Start to generate brick caches...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "BrickGenerator: Start to generate brick caches...");
 
             // Find bound corner position
             auto l_surfelsCount = surfelCaches.size();
@@ -180,7 +185,7 @@ namespace Inno
 
                 l_brickCaches[l_brickIndex].surfelCaches.emplace_back(surfelCaches[i]);
 
-                g_Engine->getLogSystem()->Log(LogLevel::Verbose, "BrickGenerator: Progress: ", (float)i * 100.0f / (float)l_totalBricksWorkCount, "%...");
+                g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "BrickGenerator: Progress: ", (float)i * 100.0f / (float)l_totalBricksWorkCount, "%...");
             }
 
             // Remove empty bricks
@@ -199,7 +204,7 @@ namespace Inno
                 l_brickCaches[i].surfelCaches.shrink_to_fit();
             }
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "BrickGenerator: ", l_brickCaches.size(), " brick caches have been generated.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "BrickGenerator: ", l_brickCaches.size(), " brick caches have been generated.");
 
             serializeBrickCaches(l_brickCaches);
 
@@ -208,7 +213,7 @@ namespace Inno
 
         bool BrickGenerator::generateBricks(const std::vector<BrickCache>& brickCaches)
         {
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "BrickGenerator: Start to generate bricks...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "BrickGenerator: Start to generate bricks...");
 
             // Generate real bricks with surfel range
             auto l_bricksCount = brickCaches.size();
@@ -239,10 +244,10 @@ namespace Inno
 
                 l_bricks.emplace_back(l_brick);
 
-                g_Engine->getLogSystem()->Log(LogLevel::Verbose, "BrickGenerator: Progress: ", (float)i * 100.0f / (float)l_bricksCount, "%...");
+                g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "BrickGenerator: Progress: ", (float)i * 100.0f / (float)l_bricksCount, "%...");
             }
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "BrickGenerator: ", l_bricksCount, " bricks have been generated.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "BrickGenerator: ", l_bricksCount, " bricks have been generated.");
 
             serializeSurfels(l_surfels);
             serializeBricks(l_bricks);
@@ -266,7 +271,7 @@ namespace Inno
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
-            auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Cube);
+            auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Cube);
 
             uint32_t l_offset = 0;
 
@@ -302,7 +307,7 @@ namespace Inno
             auto l_TextureComp = l_renderingServer->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_TextureData = l_brickIDResults.data();
-            g_Engine->getAssetSystem()->SaveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
+            g_Engine->Get<AssetSystem>()->SaveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
             l_index++;
 
             auto l_brickIDResultSize = l_brickIDResults.size();
@@ -407,7 +412,7 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
             
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "BrickGenerator: Start to generate brick factor and assign to probes...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "BrickGenerator: Start to generate brick factor and assign to probes...");
 
             // Upload camera data and brick cubes data to GPU memory
             auto l_rPX = Math::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -458,12 +463,12 @@ namespace Inno
                 drawBricks(probes[i].pos, (uint32_t)l_bricksCount, l_p, l_v);
                 readBackBrickFactors(probes[i], l_brickFactors, bricks);
 
-                g_Engine->getLogSystem()->Log(LogLevel::Verbose, "BrickGenerator: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
+                g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "BrickGenerator: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
             }
 
             l_brickFactors.shrink_to_fit();
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "BrickGenerator: ", l_brickFactors.size(), " brick factors have been generated.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "BrickGenerator: ", l_brickFactors.size(), " brick factors have been generated.");
 
             serializeBrickFactors(l_brickFactors);
             serializeProbes(probes);

@@ -7,13 +7,14 @@
 #include "assimp/DefaultLogger.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-#include "../../Core/Logger.h"
+#include "../../Common/Logger.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
-#include "../../Core/IOService.h"
+#include "../../Common/Timer.h"
+#include "../../Common/IOService.h"
 #include "../JSONWrapper/JSONWrapper.h"
 
 namespace Inno
@@ -78,7 +79,7 @@ void AssimpWrapper::from_json(const json& j, aiMatrix4x4& m)
 
 bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 {
-	auto l_exportFileName = IOService::getFileName(fileName);
+	auto l_exportFileName = g_Engine->Get<IOService>()->getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
 
 	// read file via ASSIMP
@@ -86,14 +87,14 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 	const aiScene* l_scene;
 
 	// Check if the file was exist
-	if (IOService::isFileExist(fileName))
+	if (g_Engine->Get<IOService>()->isFileExist(fileName))
 	{
-		Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
 #if defined INNO_DEBUG
-		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
+		std::string l_logFilePath = g_Engine->Get<IOService>()->getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
-		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName,
+		l_scene = l_importer.ReadFile(g_Engine->Get<IOService>()->getWorkingDirectory() + fileName,
 			aiProcess_Triangulate
 			| aiProcess_GenSmoothNormals
 			| aiProcess_CalcTangentSpace
@@ -107,14 +108,14 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 	}
 	else
 	{
-		Logger::Log(LogLevel::Error, "AssimpWrapper: ", fileName, " doesn't exist!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: ", fileName, " doesn't exist!");
 		return false;
 	}
 	if (l_scene)
 	{
 		if (l_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_scene->mRootNode)
 		{
-			Logger::Log(LogLevel::Error, "AssimpWrapper: ", l_importer.GetErrorString());
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: ", l_importer.GetErrorString());
 			return false;
 		}
 
@@ -123,11 +124,11 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 		ProcessAssimpScene(j, l_scene, l_exportFileName.c_str());
 		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), j);
 
-		Logger::Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
 	}
 	else
 	{
-		Logger::Log(LogLevel::Error, "AssimpWrapper: Can't load file ", fileName, "!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't load file ", fileName, "!");
 		return false;
 	}
 
@@ -136,7 +137,7 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 
 void AssimpWrapper::ProcessAssimpScene(json& j, const aiScene* scene, const char* exportName)
 {
-	auto l_timeData = g_Engine->getTimeSystem()->getCurrentTime();
+	auto l_timeData = g_Engine->Get<Timer>()->GetCurrentTime();
 	auto l_timeDataStr =
 		"["
 		+ std::to_string(l_timeData.Year)
@@ -165,10 +166,10 @@ void AssimpWrapper::ProcessAssimpScene(json& j, const aiScene* scene, const char
 		}
 	};
 
-	Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
 	ProcessAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
-	Logger::Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
 	std::unordered_map<std::string, uint32_t> l_boneNameIDMap;
 	std::unordered_map<std::string, Mat4> l_boneNameOffsetMap;
 
@@ -185,13 +186,13 @@ void AssimpWrapper::ProcessAssimpScene(json& j, const aiScene* scene, const char
 
 	if (scene->mNumAnimations)
 	{
-		Logger::Log(LogLevel::Verbose, "AssimpWrapper: Converting animations...");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Converting animations...");
 
 		for (uint32_t i = 0; i < scene->mNumAnimations; i++)
 		{
 			json j_child;
 
-			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
+			auto l_validateFileName = g_Engine->Get<IOService>()->validateFileName(scene->mAnimations[i]->mName.C_Str());
 			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
 			ProcessAssimpAnimation(j_child, scene, scene->mAnimations[i], l_boneNameIDMap, l_boneNameOffsetMap, l_animationFileName.c_str());
 			j["Animations"].emplace_back(j_child);
@@ -364,10 +365,10 @@ size_t AssimpWrapper::ProcessMeshData(const aiMesh* mesh, const char* exportFile
 		}
 	}
 
-	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
+	std::ofstream l_file(g_Engine->Get<IOService>()->getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
 
-	IOService::serializeVector(l_file, l_vertices);
-	IOService::serializeVector(l_file, l_indices);
+	g_Engine->Get<IOService>()->serializeVector(l_file, l_vertices);
+	g_Engine->Get<IOService>()->serializeVector(l_file, l_indices);
 
 	l_file.close();
 
@@ -419,7 +420,7 @@ void AssimpWrapper::ProcessAssimpMaterial(json& j, const aiMaterial* material)
 
 			if (l_aiTextureType == aiTextureType::aiTextureType_NONE)
 			{
-				Logger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
+				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
 				break;
 			}
 			else if (l_aiTextureType == aiTextureType::aiTextureType_HEIGHT || l_aiTextureType == aiTextureType::aiTextureType_NORMALS || l_aiTextureType == aiTextureType::aiTextureType_NORMAL_CAMERA)
@@ -444,7 +445,7 @@ void AssimpWrapper::ProcessAssimpMaterial(json& j, const aiMaterial* material)
 			}
 			else
 			{
-				Logger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
+				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
 				break;
 			}
 			j["Textures"].emplace_back(j_child);
@@ -551,7 +552,7 @@ uint32_t FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	Logger::Log(LogLevel::Error, "AssimpWrapper: Can't find a scaling key for ", pNodeAnim->mNodeName.C_Str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't find a scaling key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -567,7 +568,7 @@ uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	Logger::Log(LogLevel::Error, "AssimpWrapper: Can't find a rotation key for ", pNodeAnim->mNodeName.C_Str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't find a rotation key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -583,7 +584,7 @@ uint32_t FindTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	Logger::Log(LogLevel::Error, "AssimpWrapper: Can't find a translation key for ", pNodeAnim->mNodeName.C_Str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't find a translation key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -737,21 +738,21 @@ void AssimpWrapper::ProcessAssimpAnimation(json& j, const aiScene* scene, const 
 		return;
 	}
 
-	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
+	std::ofstream l_file(g_Engine->Get<IOService>()->getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
 	j["File"] = exportFileRelativePath;
 
 	auto l_duration = (float)animation->mDuration;
-	IOService::serialize(l_file, &l_duration);
+	g_Engine->Get<IOService>()->serialize(l_file, &l_duration);
 
 	auto l_validNumChannels = (uint32_t)boneNameIDMap.size();
-	IOService::serialize(l_file, &l_validNumChannels);
+	g_Engine->Get<IOService>()->serialize(l_file, &l_validNumChannels);
 
 	float l_ticksPerSecond = (float)animation->mTicksPerSecond != 0.0f ? (float)animation->mTicksPerSecond : 30.0f;
 	auto l_timeInTicks = 1.0f / l_ticksPerSecond;
 	auto l_numTicks = l_duration / l_timeInTicks;
 	auto l_numTicksInt = (uint32_t)std::ceil(l_numTicks);
 
-	IOService::serialize(l_file, &l_numTicksInt);
+	g_Engine->Get<IOService>()->serialize(l_file, &l_numTicksInt);
 
 	std::vector<Mat4> l_transforms;
 	auto l_numTransforms = (size_t)l_numTicksInt * l_validNumChannels;
@@ -770,7 +771,7 @@ void AssimpWrapper::ProcessAssimpAnimation(json& j, const aiScene* scene, const 
 		l_transforms.insert(l_transforms.end(), l_transformsInCurrentTick.begin(), l_transformsInCurrentTick.end());
 	}
 
-	IOService::serializeVector(l_file, l_transforms);
+	g_Engine->Get<IOService>()->serializeVector(l_file, l_transforms);
 
 	l_file.close();
 }

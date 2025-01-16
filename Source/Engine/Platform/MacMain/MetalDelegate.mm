@@ -12,10 +12,10 @@
 #include "../../Common/GPUDataStructure.h"
 #include "../../Component/MTMeshComponent.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+extern Engine* g_Engine;
 
 @implementation MetalDelegate
     

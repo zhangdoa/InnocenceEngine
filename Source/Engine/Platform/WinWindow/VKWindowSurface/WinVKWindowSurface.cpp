@@ -1,14 +1,17 @@
 #include "WinVKWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Core/Logger.h"
+#include "../../../Common/Logger.h"
+#include "../../../Common/TaskScheduler.h"
+#include "../../../Services/RenderingFrontend.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 #include "../../../RenderingServer/VK/VKRenderingServer.h"
-#include "../../../Interface/IEngine.h"
+
+#include "../../../Engine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace WinVKWindowSurfaceNS
 {
@@ -44,7 +47,7 @@ bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -65,7 +68,7 @@ bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	Logger::Log(LogLevel::Success, "WinVKWindowSurface Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinVKWindowSurface Setup finished.");
 
 	return true;
 }
@@ -85,7 +88,7 @@ bool WinVKWindowSurfaceNS::Initialize()
 	if (vkCreateWin32SurfaceKHR(l_VkInstance, &l_createInfo, NULL, l_VkSurface) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		Logger::Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");
 		return false;
 	}
 
@@ -97,7 +100,7 @@ bool WinVKWindowSurfaceNS::Initialize()
 		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
 	}
 
-	Logger::Log(LogLevel::Success, "WinVKWindowSurface has been initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinVKWindowSurface has been initialized.");
 	return true;
 }
 
@@ -109,7 +112,7 @@ bool WinVKWindowSurfaceNS::Update()
 bool WinVKWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Logger::Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
 
 	return true;
 }

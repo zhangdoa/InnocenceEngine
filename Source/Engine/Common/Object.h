@@ -1,8 +1,28 @@
 #pragma once
-#include "Type.h"
+#include "FixedSizeString.h"
+#include "Config.h"
 
 namespace Inno
 {
+	enum class ObjectStatus
+	{
+		Invalid,
+		Created,
+		Activated,
+		Suspended,
+		Terminated,
+	};
+
+	enum class ObjectLifespan
+	{
+		Invalid,
+		Persistence,
+		Scene,
+		Frame,
+	};
+
+	using ObjectName = FixedSizeString<128>;
+
 	class Object
 	{
 	public:
@@ -18,6 +38,8 @@ namespace Inno
 		ObjectName m_InstanceName;
 #endif
 	};
+
+	const uint32_t MaxComponentType = 512;
 
 	class Entity : public Object
 	{

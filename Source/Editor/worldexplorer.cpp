@@ -1,10 +1,10 @@
 #include "worldexplorer.h"
 
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 #include "../Engine/Common/ComponentHeaders.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 
 WorldExplorer::WorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
@@ -20,7 +20,7 @@ void WorldExplorer::buildTree()
     m_rootItem->setText(0, "Entities");
     this->addTopLevelItem(m_rootItem);
 
-    auto l_sceneHierarchyMap = g_Engine->getSceneSystem()->getSceneHierarchyMap();
+    auto l_sceneHierarchyMap = g_Engine->Get<SceneSystem>()->getSceneHierarchyMap();
 
     for (auto& i : l_sceneHierarchyMap)
     {
@@ -60,7 +60,7 @@ void WorldExplorer::initialize(PropertyEditor* propertyEditor)
         buildTree();
     };
 
-    g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+    g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 }
 
 void WorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -130,7 +130,7 @@ void WorldExplorer::endRename()
 
 void WorldExplorer::addEntity()
 {
-    auto l_entity = g_Engine->getEntityManager()->Spawn(true, ObjectLifespan::Scene, "newEntity/");
+    auto l_entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, "newEntity/");
 
     QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
@@ -160,7 +160,7 @@ void WorldExplorer::deleteEntity()
             destroyComponent(l_componentPtr);
         }
 
-        g_Engine->getEntityManager()->Destroy(l_entityPtr);
+        g_Engine->Get<EntityManager>()->Destroy(l_entityPtr);
 
         item->parent()->removeChild(item);
     }
@@ -176,7 +176,7 @@ T* WorldExplorer::addComponent()
         item = l_items[0];
         auto l_entityPtr = reinterpret_cast<Entity*>(item->data(1, Qt::UserRole).value<void*>());
 
-        auto l_componentPtr = g_Engine->getComponentManager()->Spawn<T>(l_entityPtr, true, ObjectLifespan::Scene);
+        auto l_componentPtr = g_Engine->Get<ComponentManager>()->Spawn<T>(l_entityPtr, true, ObjectLifespan::Scene);
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
@@ -197,7 +197,7 @@ T* WorldExplorer::addComponent()
 void WorldExplorer::addTransformComponent()
 {
     auto l_componentPtr = addComponent<TransformComponent>();
-    auto l_rootTranformComponent = static_cast<ITransformSystem*>(g_Engine->getComponentManager()->GetComponentSystem<TransformComponent>())->GetRootTransformComponent();
+    auto l_rootTranformComponent = static_cast<ITransformSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<TransformComponent>())->GetRootTransformComponent();
     l_componentPtr->m_parentTransformComponent = const_cast<TransformComponent*>(l_rootTranformComponent);
 }
 
@@ -218,7 +218,7 @@ void WorldExplorer::addCameraComponent()
 
 void WorldExplorer::destroyComponent(Component *component)
 {
-    g_Engine->getComponentManager()->Destroy(component);
+    g_Engine->Get<ComponentManager>()->Destroy(component);
 }
 
 void WorldExplorer::deleteComponent()

@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/Object.h"
+#include "../Common/Array.h"
 #include "../Common/MathHelper.h"
 
 namespace Inno

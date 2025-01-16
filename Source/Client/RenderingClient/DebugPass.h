@@ -1,6 +1,6 @@
 #pragma once
 #include "../../Engine/Interface/IRenderPass.h"
-#include "../../Engine/Interface/IPhysicsSystem.h"
+#include "../../Engine/Services/PhysicsSystem.h"
 
 namespace Inno
 {

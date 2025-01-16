@@ -4,12 +4,12 @@
 
 #include "../../Engine/Common/MathHelper.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
-#include "../../Engine/Core/IOService.h"
+
+#include "../../Engine/Common/IOService.h"
 #include "Baker.h"
 #include "Serializer.h"
 
@@ -23,13 +23,13 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
 
-            auto l_RenderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
+            auto l_RenderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
 
             Config::Get().m_staticMeshDrawCallInfo.reserve(l_RenderingCapability.maxMeshes);
             Config::Get().m_staticMeshPerObjectConstantBuffer.reserve(l_RenderingCapability.maxMeshes);
             Config::Get().m_staticMeshMaterialConstantBuffer.reserve(l_RenderingCapability.maxMaterials);
 
-            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
 
@@ -77,21 +77,21 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
             
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: Gathering static meshes...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Gathering static meshes...");
 
             uint32_t l_index = 0;
 
-            auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
+            auto l_visibleComponents = g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>();
             for (auto visibleComponent : l_visibleComponents)
             {
                 if (visibleComponent->m_ObjectStatus == ObjectStatus::Activated && visibleComponent->m_meshUsage == MeshUsage::Static)
                 {
-                    auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(visibleComponent->m_Owner);
+                    auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(visibleComponent->m_Owner);
                     auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
                     for (uint64_t j = 0; j < visibleComponent->m_model->meshMaterialPairs.m_count; j++)
                     {
-                        auto l_meshMaterialPair = g_Engine->getAssetSystem()->GetMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+                        auto l_meshMaterialPair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 
                         if (l_meshMaterialPair->material->m_ShaderModel == ShaderModel::Opaque)
                         {
@@ -129,7 +129,7 @@ namespace Inno
 
             Config::Get().m_staticMeshDrawCallCount = l_index;
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
             auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
@@ -144,9 +144,9 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: Generate probe caches...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Generate probe caches...");
 
-            auto l_sceneAABB = g_Engine->getPhysicsSystem()->getStaticSceneAABB();
+            auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->getStaticSceneAABB();
 
             auto l_eyePos = l_sceneAABB.m_center;
             auto l_extendedAxisSize = l_sceneAABB.m_extend;
@@ -164,7 +164,7 @@ namespace Inno
 
             l_renderingServer->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: Start to draw probe height map...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Start to draw probe height map...");
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
@@ -195,7 +195,7 @@ namespace Inno
             l_renderingServer->WaitCommandQueue(m_RenderPassComp_Probe, GPUEngineType::Graphics, GPUEngineType::Graphics);
             l_renderingServer->WaitFence(m_RenderPassComp_Probe, GPUEngineType::Graphics);
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: Start to generate probe location...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Start to generate probe location...");
 
             // Read back results and generate probes
             auto l_probePosTextureResults = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture);
@@ -204,14 +204,14 @@ namespace Inno
             auto l_TextureComp = l_renderingServer->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_TextureData = l_probePosTextureResults.data();
-            g_Engine->getAssetSystem()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
+            g_Engine->Get<AssetSystem>()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
             //#endif // DEBUG_
 
             auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, Config::Get().m_probeInterval);
 
             serializeProbeInfos(l_probeInfos);
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size(), " probes generated.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size(), " probes generated.");
 
             return true;
         }
@@ -306,7 +306,7 @@ namespace Inno
                 }
             }
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size(), " probe location generated over the surface.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size(), " probe location generated over the surface.");
 
             return true;
         }
@@ -414,7 +414,7 @@ namespace Inno
             probes.insert(probes.end(), l_wallProbes.begin(), l_wallProbes.end());
             probes.shrink_to_fit();
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size() - l_probesCount, " probe location generated along the wall.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size() - l_probesCount, " probe location generated along the wall.");
 
             return l_maxVerticalProbesCount;
         }

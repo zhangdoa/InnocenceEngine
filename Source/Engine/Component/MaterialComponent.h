@@ -12,6 +12,18 @@ namespace Inno
 		bool m_Activate = false;
 	};
 
+	struct MaterialAttributes
+	{
+		float AlbedoR = 1.0f;
+		float AlbedoG = 1.0f;
+		float AlbedoB = 1.0f;
+		float Alpha = 1.0f;
+		float Metallic = 0.0f;
+		float Roughness = 1.0f;
+		float AO = 0.0f;
+		float Thickness = 1.0f;
+	};
+	
 	class MaterialComponent : public GPUResourceComponent
 	{
 	public:

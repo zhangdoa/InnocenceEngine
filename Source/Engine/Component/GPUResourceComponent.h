@@ -1,5 +1,4 @@
 #pragma once
-#include "../Common/Type.h"
 #include "../Common/GraphicsPrimitive.h"
 #include "../Common/Object.h"
 

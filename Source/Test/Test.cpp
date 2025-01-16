@@ -1,12 +1,19 @@
-#include "../Engine/Common/Container.h"
+#include "../Engine/Common/STL14.h"
+#include "../Engine/Common/STL17.h"
 #include "../Engine/Common/MathHelper.h"
-#include "../Engine/Core/Timer.h"
-#include "../Engine/Core/Logger.h"
-#include "../Engine/Core/Memory.h"
-#include "../Engine/Core/TaskScheduler.h"
-#include "../Engine/Template/ObjectPool.h"
+#include "../Engine/Common/Timer.h"
+#include "../Engine/Common/Logger.h"
+#include "../Engine/Common/Memory.h"
+#include "../Engine/Common/TaskScheduler.h"
+#include "../Engine/Common/ObjectPool.h"
+#include "../Engine/Common/Array.h"
+#include "../Engine/Common/Atomic.h"
+#include "../Engine/Common/Task.h"
+#include "../Engine/Common/RingBuffer.h"
 
+#include "../Engine/Engine.h"
 using namespace Inno;
+;
 
 void TestIToA(size_t testCaseCount)
 {
@@ -33,7 +40,7 @@ void TestIToA(size_t testCaseCount)
 
 	auto l_SpeedRatio = double(l_Timestamp1 - l_StartTime) / double(l_Timestamp2 - l_Timestamp1);
 
-	Logger::Log(LogLevel::Success, "Custom VS STL IToA speed ratio is ", l_SpeedRatio);
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom VS STL IToA speed ratio is ", l_SpeedRatio);
 }
 
 void TestArray(size_t testCaseCount)
@@ -77,7 +84,7 @@ void TestArray(size_t testCaseCount)
 
 	auto l_SpeedRatio = double(l_Timestamp1 - l_StartTime) / double(l_Timestamp2 - l_Timestamp1);
 
-	Logger::Log(LogLevel::Success, "Custom VS STL array container speed ratio is ", l_SpeedRatio);
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom VS STL array container speed ratio is ", l_SpeedRatio);
 }
 
 struct TestStruct
@@ -111,7 +118,7 @@ void TestMemory(size_t testCaseCount)
 
 	auto l_SpeedRatio1 = double(l_Timestamp1 - l_StartTime1) / double(l_Timestamp2 - l_Timestamp1);
 
-	Logger::Log(LogLevel::Success, "Custom object pool allocation VS malloc() speed ratio is ", l_SpeedRatio1);
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom object pool allocation VS malloc() speed ratio is ", l_SpeedRatio1);
 
 	auto l_StartTime2 = Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
@@ -131,7 +138,7 @@ void TestMemory(size_t testCaseCount)
 
 	auto l_SpeedRatio2 = double(l_Timestamp3 - l_StartTime2) / double(l_Timestamp4 - l_Timestamp3);
 
-	Logger::Log(LogLevel::Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
 
 	TObjectPool<uint32_t>::Clear(l_objectPool);
 	TObjectPool<uint32_t>::Destruct(l_objectPool);
@@ -187,33 +194,11 @@ std::atomic<uint32_t> l_finishedTaskCount;
 
 bool CheckCyclic(std::vector<std::shared_ptr<ITask>> tasks, size_t initialIndex, size_t targetIndex)
 {
-	auto l_currentTask = tasks[initialIndex];
-	auto l_targetTask = tasks[targetIndex];
-
-	bool l_hasCyclic;
-
-	while (l_targetTask)
-	{
-		l_hasCyclic = (l_currentTask == l_targetTask);
-
-		if (l_hasCyclic)
-		{
-			break;
-		}
-
-		l_targetTask = l_targetTask->GetUpstreamTask();
-		if (!l_targetTask)
-		{
-			l_hasCyclic = false;
-			break;
-		}
-	}
-
-	return l_hasCyclic;
+	return false;
 }
 
 template <typename Func, typename... Args>
-std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, const std::shared_ptr<ITask>& upstreamTask, Func&& func, Args&&... args)
+std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, Func&& func, Args&&... args)
 {
 	auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 	using ResultType = std::invoke_result_t<decltype(BoundTask)>;
@@ -221,13 +206,13 @@ std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, const std::sha
 	using TaskType = Task<PackagedTask>;
 
 	PackagedTask Task{ std::move(BoundTask) };
-	auto l_task = std::make_unique<TaskType>(std::move(Task), name, upstreamTask);
-	return TaskScheduler::AddTask(std::move(l_task), threadID);
+	auto l_task = std::make_unique<TaskType>(std::move(Task), name, ITask::Type::Once);
+	return g_Engine->Get<TaskScheduler>()->AddTask(std::move(l_task), threadID);
 }
 
-void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
+void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, bool buildTaskGraph = false)
 {
-	Logger::Log(LogLevel::Verbose, "Generate test async tasks...");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Generate test async tasks...");
 
 	std::vector<std::shared_ptr<ITask>> l_Tasks;
 	std::vector<std::string> l_TaskNames;
@@ -243,27 +228,29 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 	// We need a DAG structure
 	std::default_random_engine l_generator;
 
-	Logger::Log(LogLevel::Verbose, "Dispatch all tasks to async threads...");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Dispatch all tasks to async threads...");
 
 	for (size_t i = 0; i < testCaseCount; i++)
 	{
-		std::shared_ptr<ITask> l_UpstreamTask;
+		auto l_Task = Submit(l_TaskNames[i].c_str(), -1, job);
 
-		if (i > 1)
+		if (buildTaskGraph)
 		{
-			std::uniform_int_distribution<uint32_t> l_randomDelta(0, (uint32_t)i - 1);
+			std::shared_ptr<ITask> l_UpstreamTask;
 
-			size_t l_UpstreamTaskIndex = l_randomDelta(l_generator);
-
-			// Eliminate cyclic
-			while (CheckCyclic(l_Tasks, i - 1, l_UpstreamTaskIndex))
+			if (i > 1)
 			{
-				l_UpstreamTaskIndex = l_randomDelta(l_generator);
-			}
-			l_UpstreamTask = l_Tasks[l_UpstreamTaskIndex];
-		}
+				std::uniform_int_distribution<uint32_t> l_randomDelta(0, (uint32_t)i - 1);
+				size_t l_UpstreamTaskIndex = l_randomDelta(l_generator);
 
-		auto l_Task = Submit(l_TaskNames[i].c_str(), -1, l_UpstreamTask, job);
+				// Eliminate cyclic
+				while (CheckCyclic(l_Tasks, i - 1, l_UpstreamTaskIndex))
+				{
+					l_UpstreamTaskIndex = l_randomDelta(l_generator);
+				}
+				l_UpstreamTask = l_Tasks[l_UpstreamTaskIndex];
+			}
+		}
 
 		l_Tasks.emplace_back(l_Task);
 	}
@@ -272,9 +259,9 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 	{
 	}
 
-	TaskScheduler::WaitSync();
+	g_Engine->Get<TaskScheduler>()->WaitSync();
 
-	Logger::Log(LogLevel::Verbose, "All jobs finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "All jobs finished.");
 }
 
 void TestRingBuffer(size_t testCaseCount)
@@ -308,7 +295,7 @@ void TestAtomic(size_t testCaseCount)
 			auto l_reader = AtomicReader(l_atomicBuffer);
 			auto l_t = l_reader.Get();
 			auto l_x = *l_t;
-			Logger::Log(LogLevel::Warning, l_x);
+			g_Engine->Get<Logger>()->Log(LogLevel::Warning, l_x);
 		}
 
 		{
@@ -316,7 +303,7 @@ void TestAtomic(size_t testCaseCount)
 			auto l_t = l_writer.Get();
 			*l_t += l_executionTime;
 			std::this_thread::sleep_for(std::chrono::milliseconds(l_executionTime));
-			Logger::Log(LogLevel::Success, *l_t);
+			g_Engine->Get<Logger>()->Log(LogLevel::Success, *l_t);
 		}
 
 		{
@@ -324,7 +311,7 @@ void TestAtomic(size_t testCaseCount)
 			auto l_reader = AtomicReader(l_t);
 			auto l_x = l_reader.Get();
 
-			Logger::Log(LogLevel::Error, *l_x);
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, *l_x);
 		}
 
 		l_finishedTaskCount++;
@@ -354,7 +341,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 			auto l_testAtomicDoubleBufferReader = AtomicReader(l_testAtomicDoubleBuffer.Get());
 			l_writeData = *l_testAtomicDoubleBufferReader.Get();
 
-			Logger::Log(LogLevel::Success, "Read l_testAtomicDoubleBuffer...");
+			g_Engine->Get<Logger>()->Log(LogLevel::Success, "Read l_testAtomicDoubleBuffer...");
 		}
 
 		auto l_executionTime = l_randomDelta(l_generator);
@@ -374,7 +361,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 				l_testAtomicDoubleBuffer.Flip();
 			}
 
-			Logger::Log(LogLevel::Warning, "Write l_testAtomicDoubleBuffer...");
+			g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Write l_testAtomicDoubleBuffer...");
 		}
 
 		l_finishedTaskCount++;
@@ -388,7 +375,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 
 	for (size_t i = 0; i < l_testAtomicDoubleBufferSize; i++)
 	{
-		Logger::Log(LogLevel::Success, l_testAtomicDoubleBufferFinal[i]);
+		g_Engine->Get<Logger>()->Log(LogLevel::Success, l_testAtomicDoubleBufferFinal[i]);
 	}
 }
 
@@ -398,13 +385,13 @@ public:
 	StackAllocator() = delete;
 	explicit StackAllocator(std::size_t size) noexcept
 	{
-		m_HeapAddress = reinterpret_cast<unsigned char*>(Memory::Allocate(size));
+		m_HeapAddress = reinterpret_cast<unsigned char*>(g_Engine->Get<Memory>()->Allocate(size));
 		m_CurrentFreeChunk = m_HeapAddress;
 	};
 
 	~StackAllocator()
 	{
-		Memory::Deallocate(m_HeapAddress);
+		g_Engine->Get<Memory>()->Deallocate(m_HeapAddress);
 	};
 
 	void* Allocate(const std::size_t size);
@@ -444,9 +431,6 @@ void TestStackAllocator(size_t testCaseCount)
 
 int main(int argc, char* argv[])
 {
-	TaskScheduler::Setup();
-	TaskScheduler::Initialize();
-
 	TestIToA(8192);
 	TestArray(8192);
 	TestMemory(65536);
@@ -454,7 +438,6 @@ int main(int argc, char* argv[])
 	TestAtomicDoubleBuffer(128);
 	TestRingBuffer(128);
 	TestStackAllocator(128);
-	TaskScheduler::Terminate();
 
 	return 0;
 }

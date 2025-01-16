@@ -2,10 +2,10 @@
 #include <QLineEdit>
 #include <QListView>
 
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 
 RenderConfigurator::RenderConfigurator(QWidget* parent) : QComboBox(parent)
 {
@@ -91,7 +91,7 @@ void RenderConfigurator::SetRenderConfig()
 	l_renderingConfig.drawTerrain = l_status[4];
 	l_renderingConfig.drawDebugObject = l_status[5];
 
-	g_Engine->getRenderingFrontend()->SetRenderingConfig(l_renderingConfig);
+	g_Engine->Get<RenderingFrontend>()->SetRenderingConfig(l_renderingConfig);
 }
 
 void RenderConfigurator::GetRenderConfig()
@@ -101,7 +101,7 @@ void RenderConfigurator::GetRenderConfig()
 		return;
 	}
 
-	auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
+	auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
 
 	m_model->item(0)->setCheckState(l_renderingConfig.useMotionBlur ? Qt::Checked : Qt::Unchecked);
 	m_model->item(1)->setCheckState(l_renderingConfig.useTAA ? Qt::Checked : Qt::Unchecked);

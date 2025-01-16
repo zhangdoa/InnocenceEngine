@@ -1,6 +1,6 @@
 #pragma once
 #include "Common.h"
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 namespace Inno
 {

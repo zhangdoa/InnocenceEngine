@@ -30,10 +30,16 @@
 
 #include "BSDFTestPass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Services/EventSystem.h"
+#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/AssetSystem.h"
+#include "../../Engine/Common/Task.h"
+#include "../../Engine/Common/TaskScheduler.h"
+
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 namespace Inno
 {
@@ -80,22 +86,22 @@ namespace Inno
 	bool DefaultRenderingClientImpl::Setup(ISystemConfig* systemConfig)
 	{
 		f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 		f_showProbe = [&]() { m_showProbe = !m_showProbe; };
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
 
 		f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
 
 		f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
 
 		f_showVolumetric = [&]() { m_showVolumetric = !m_showVolumetric; };
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
 
 		f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
-		g_Engine->getEventSystem()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
+		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
 		f_SetupJob = [&]() {
 			DefaultGPUBuffers::Setup();
@@ -193,7 +199,7 @@ namespace Inno
 		};
 
 		f_RenderJob = [&]() {
-			auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
+			auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
 			auto l_renderingServer = g_Engine->getRenderingServer();
 			GPUResourceComponent* l_canvas;
 			RenderPassComponent* l_canvasOwner;
@@ -437,7 +443,7 @@ namespace Inno
 			{
 				auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
 				auto l_textureData = l_renderingServer->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
-				g_Engine->getAssetSystem()->SaveTexture("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
+				g_Engine->Get<AssetSystem>()->SaveTexture("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
 				m_saveScreenCapture = false;
 			}
 		};
@@ -479,8 +485,14 @@ namespace Inno
 			BSDFTestPass::Get().Terminate();
 		};
 
-		auto l_DefaultRenderingClientSetupTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
-		l_DefaultRenderingClientSetupTask.m_Future->Get();
+		ITask::Desc taskDesc;
+		taskDesc.m_Name = "Default Rendering Client Setup Task";
+		taskDesc.m_Type = ITask::Type::Once;
+		taskDesc.m_ThreadID = 2;
+
+		auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_SetupJob);
+		l_DefaultRenderingClientSetupTask->Activate();
+		l_DefaultRenderingClientSetupTask->Wait();
 
 		m_ObjectStatus = ObjectStatus::Created;
 
@@ -489,8 +501,14 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Initialize()
 	{
-		auto l_DefaultRenderingClientInitializeTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
-		l_DefaultRenderingClientInitializeTask.m_Future->Get();
+		ITask::Desc taskDesc;
+		taskDesc.m_Name = "Default Rendering Client Initialization Task";
+		taskDesc.m_Type = ITask::Type::Once;
+		taskDesc.m_ThreadID = 2;
+
+		auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_InitializeJob);
+		l_DefaultRenderingClientInitializationTask->Activate();
+		l_DefaultRenderingClientInitializationTask->Wait();
 
 		m_ObjectStatus = ObjectStatus::Activated;
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Engine/Common/GPUDataStructure.h"
 #include "../../Engine/Component/GPUBufferComponent.h"
 
 using namespace Inno;

@@ -1,13 +1,16 @@
 #include "DebugPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/AssetSystem.h"
+#include "../../Engine/Services/ComponentManager.h"
 
 #include "GIDataLoader.h"
 #include "OpaquePass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -15,12 +18,12 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_cameraFrustumMeshCount = g_Engine->getRenderingFrontend()->GetRenderingConfig().useCSM ? 4 : 1;
+	auto l_cameraFrustumMeshCount = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig().useCSM ? 4 : 1;
 	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
 		m_debugCameraFrustumMeshComps[i] = l_renderingServer->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
-		g_Engine->getAssetSystem()->GenerateProceduralMesh(ProceduralMeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
+		g_Engine->Get<AssetSystem>()->GenerateProceduralMesh(ProceduralMeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
 		m_debugCameraFrustumMeshComps[i]->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 		m_debugCameraFrustumMeshComps[i]->m_ProceduralMeshShape = ProceduralMeshShape::Cube;
 		m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
@@ -53,7 +56,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("DebugPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -142,12 +145,12 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_renderingConfig = g_Engine->getRenderingFrontend()->GetRenderingConfig();
+	auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
 
 	if (l_renderingConfig.drawDebugObject)
 	{
-		auto l_sphere = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Sphere);
-		auto l_cube = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Cube);
+		auto l_sphere = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Sphere);
+		auto l_cube = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Cube);
 
 		m_debugSphereConstantBuffer.clear();
 		m_debugCubeConstantBuffer.clear();
@@ -233,7 +236,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		static bool l_drawBVHNodes = false;
 		if (l_drawBVHNodes)
 		{
-			auto l_BVHNodes = g_Engine->getPhysicsSystem()->getBVHNodes();
+			auto l_BVHNodes = g_Engine->Get<PhysicsSystem>()->getBVHNodes();
 
 			for (auto& i : l_BVHNodes)
 			{
@@ -244,16 +247,16 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		static bool l_drawCameraFrustums = true;
 		if (l_drawCameraFrustums)
 		{	
-			auto l_visibleSceneAABBWS = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
+			auto l_visibleSceneAABBWS = g_Engine->Get<PhysicsSystem>()->getVisibleSceneAABB();
 			auto l_visibleSceneAABBMeshData = AddAABB(l_visibleSceneAABBWS);
 			l_visibleSceneAABBMeshData.materialID = 2;
 
 			m_debugCubeConstantBuffer.emplace_back(l_visibleSceneAABBMeshData);
 
-			auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
+			auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 			if(l_cameraComponent)
 			{			
-				auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
+				auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_cameraComponent->m_Owner);
 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_translationMat;
 				for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 				{
@@ -273,7 +276,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 					{
 						l_vertices[j] = l_cameraComponent->m_splitFrustumVerticesWS[i * 8 + j].m_pos;
 					}
-					g_Engine->getAssetSystem()->FulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
+					g_Engine->Get<AssetSystem>()->FulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
 					l_renderingServer->UpdateMeshComponent(m_debugCameraFrustumMeshComps[i]);
 
 					DebugPerObjectConstantBuffer l_meshData;
@@ -299,12 +302,12 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 				}
 			}
 
-			auto l_lightComponents = g_Engine->getComponentManager()->GetAll<LightComponent>();
+			auto l_lightComponents = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
 			for (auto& i : l_lightComponents)
 			{
 				if(i->m_LightType == LightType::Directional)
 				{
-					auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
+					auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(i->m_Owner);
 					auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 					auto l_rInv = l_r.inverse();
 
@@ -363,18 +366,18 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		static bool l_drawSkeletons = true;
 		if (l_drawSkeletons)
 		{
-			auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
+			auto l_visibleComponents = g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>();
 
 			for (auto i : l_visibleComponents)
 			{
 				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
 				{
-					auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
+					auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(i->m_Owner);
 					auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
 					{
-						auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
+						auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
 						auto l_skeleton = l_pair->mesh->m_SkeletonComp;
 
 						for (auto k : l_skeleton->m_BoneData)

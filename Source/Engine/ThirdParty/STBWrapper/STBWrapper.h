@@ -1,5 +1,4 @@
 #pragma once
-#include "../../Common/Type.h"
 #include "../../Component/VisibleComponent.h"
 
 namespace Inno

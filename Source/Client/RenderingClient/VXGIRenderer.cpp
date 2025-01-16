@@ -1,5 +1,8 @@
 #include "VXGIRenderer.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/PhysicsSystem.h"
 
 #include "VXGIGeometryProcessPass.h"
 #include "VXGIConvertPass.h"
@@ -11,10 +14,10 @@
 #include "OpaquePass.h"
 #include "LightPass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -26,7 +29,7 @@ bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 		m_isInitialLoadScene = true;
 	};
 
-	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 	
 	m_VXGICBuffer = l_renderingServer->AddGPUBufferComponent("VXGIPassCBuffer/");
 	m_VXGICBuffer->m_ElementCount = 1;
@@ -101,7 +104,7 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 
 	if (l_VXGIRenderingConfig->m_screenFeedback)
 	{
-		auto l_cameraPos = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer().camera_posWS;
+		auto l_cameraPos = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer().camera_posWS;
 		VoxelizationConstantBuffer l_voxelPassCB;
 
 		l_voxelPassCB.volumeCenter = l_cameraPos;
@@ -155,8 +158,8 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 	}
 	else
 	{
-		auto l_cameraPos = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer().camera_posWS;
-		auto l_sceneAABB = g_Engine->getPhysicsSystem()->getStaticSceneAABB();
+		auto l_cameraPos = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer().camera_posWS;
+		auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->getStaticSceneAABB();
 		auto l_maxExtend = std::max(std::max(l_sceneAABB.m_extend.x, l_sceneAABB.m_extend.y), l_sceneAABB.m_extend.z);
 		auto l_adjustedBoundMax = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f);
 		auto l_adjustedCenter = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f) / 2.0f;

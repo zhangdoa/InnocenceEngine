@@ -1,7 +1,8 @@
 #pragma once
-#include "../Common/Type.h"
-#include "../Common/GraphicsPrimitive.h"
 #include "../Common/Object.h"
+#include "../Common/GraphicsPrimitive.h"
+#include "../Common/Array.h"
+#include "../Common/MathHelper.h"
 #include "SkeletonComponent.h"
 
 namespace Inno

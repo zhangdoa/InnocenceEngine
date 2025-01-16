@@ -3,10 +3,10 @@
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
 #include "../Engine/Platform/ApplicationEntry/ApplicationEntry.h"
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 #define MOUSE_SENSITIVITY 16.0
 
 Viewport::Viewport(QWidget *parent)
@@ -75,7 +75,7 @@ void Viewport::Resize(float width, float height)
         if (g_Engine->GetStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
-            g_Engine->getRenderingFrontend()->SetScreenResolution(l_newResolution);
+            g_Engine->Get<RenderingFrontend>()->SetScreenResolution(l_newResolution);
             g_Engine->getRenderingServer()->Resize();
         }
     }

@@ -1,14 +1,16 @@
 #include "WinWindowSystem.h"
-#include "../../Core/Logger.h"
+#include "../../Common/Logger.h"
+#include "../../Services/EventSystem.h"
+#include "../../Services/RenderingFrontend.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
 #include "GLWindowSurface/WinGLWindowSurface.h"
 #include "VKWindowSurface/WinVKWindowSurface.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace WinWindowSystemNS
 {
@@ -74,7 +76,7 @@ LRESULT WinWindowSystemNS::ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lParam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lParam);
-		g_Engine->getEventSystem()->MouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		g_Engine->Get<EventSystem>()->MouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.
@@ -87,7 +89,7 @@ LRESULT WinWindowSystemNS::ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
 bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
-	m_ButtonStates.resize(g_Engine->getEventSystem()->GetInputConfig().totalKeyCodes);
+	m_ButtonStates.resize(g_Engine->Get<EventSystem>()->GetInputConfig().totalKeyCodes);
 	for (size_t i = 0; i < m_ButtonStates.size(); i++)
 	{
 		m_ButtonStates[i].m_code = (uint32_t)i;
@@ -134,7 +136,7 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	WinWindowSystemNS::m_WindowSurface->Setup(&l_surfaceConfig);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	Logger::Log(LogLevel::Success, "WinWindowSystem Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinWindowSystem Setup finished.");
 
 	return true;
 }
@@ -142,7 +144,7 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 bool WinWindowSystem::Initialize()
 {
 	WinWindowSystemNS::m_WindowSurface->Initialize();
-	Logger::Log(LogLevel::Success, "WinWindowSystem has been initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinWindowSystem has been initialized.");
 	return true;
 }
 
@@ -179,7 +181,7 @@ bool WinWindowSystem::Terminate()
 		DestroyWindow(m_WindowHandle);
 		m_WindowHandle = NULL;
 
-		Logger::Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
 
 		// Remove the application instance.
 		UnregisterClass(m_ApplicationName, m_ApplicationInstance);
@@ -189,7 +191,7 @@ bool WinWindowSystem::Terminate()
 	PostQuitMessage(0);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	Logger::Log(LogLevel::Success, "WinWindowSystem has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinWindowSystem has been terminated.");
 	return true;
 }
 
@@ -251,7 +253,7 @@ LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM
 	{
 	case WM_DESTROY:
 	{
-		Logger::Log(LogLevel::Warning, "WinWindowSystem: WM_DESTROY signal received.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "WinWindowSystem: WM_DESTROY signal received.");
 		WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 	}
 	case WM_PAINT:
@@ -269,7 +271,7 @@ LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
-			g_Engine->getRenderingFrontend()->SetScreenResolution(l_newResolution);
+			g_Engine->Get<RenderingFrontend>()->SetScreenResolution(l_newResolution);
 			g_Engine->getRenderingServer()->Resize();
 		}
 	}

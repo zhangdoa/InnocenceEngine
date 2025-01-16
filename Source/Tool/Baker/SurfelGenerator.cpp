@@ -4,12 +4,12 @@
 
 #include "../../Engine/Common/MathHelper.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
-#include "../../Engine/Core/IOService.h"
+
+#include "../../Engine/Common/IOService.h"
 #include "Baker.h"
 #include "Serializer.h"
 
@@ -33,7 +33,7 @@ namespace Inno
 
             m_RenderPassComp_Surfel = l_renderingServer->AddRenderPassComponent("GIBakeSurfelPass/");
 
-            auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
             
@@ -121,9 +121,9 @@ namespace Inno
 
         bool SurfelGenerator::captureSurfels(std::vector<Probe>& probes)
         {
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "SurfelGenerator: Start to capture surfels...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: Start to capture surfels...");
 
-            auto l_perFrameConstantBuffer = g_Engine->getRenderingFrontend()->GetPerFrameConstantBuffer();
+            auto l_perFrameConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer();
 
             auto l_p = Math::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_perFrameConstantBuffer.zNear, l_perFrameConstantBuffer.zFar);
 
@@ -150,10 +150,10 @@ namespace Inno
 
                 readBackSurfelCaches(probes[i], l_surfelCaches);
 
-                g_Engine->getLogSystem()->Log(LogLevel::Verbose, "SurfelGenerator: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
+                g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "SurfelGenerator: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
             }
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "SurfelGenerator: ", l_surfelCaches.size(), " surfel caches captured.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: ", l_surfelCaches.size(), " surfel caches captured.");
 
             serializeProbes(probes);
 
@@ -244,7 +244,7 @@ namespace Inno
             auto l_albedoAO = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture);
             auto l_depthStencilRT = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture);
 
-            g_Engine->getAssetSystem()->SaveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture->m_TextureDesc, l_albedoAO.data());
+            g_Engine->Get<AssetSystem>()->SaveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture->m_TextureDesc, l_albedoAO.data());
 
             auto l_surfelsCount = Config::Get().m_surfelSampleCountPerFace * Config::Get().m_surfelSampleCountPerFace * 6;
             auto l_sampleStep = Config::Get().m_captureResolution / Config::Get().m_surfelSampleCountPerFace;
@@ -287,7 +287,7 @@ namespace Inno
                 probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
             }
 
-            g_Engine->getAssetSystem()->SaveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture->m_TextureDesc, l_DSTextureCompData.data());
+            g_Engine->Get<AssetSystem>()->SaveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture->m_TextureDesc, l_DSTextureCompData.data());
             surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
             l_index++;
@@ -297,7 +297,7 @@ namespace Inno
 
         bool SurfelGenerator::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
         {
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "SurfelGenerator: Start to eliminate duplicated surfels...");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: Start to eliminate duplicated surfels...");
 
             std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
                 {
@@ -313,7 +313,7 @@ namespace Inno
             surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
             surfelCaches.shrink_to_fit();
 
-            g_Engine->getLogSystem()->Log(LogLevel::Success, "SurfelGenerator: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
+            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
 
             return true;
         }

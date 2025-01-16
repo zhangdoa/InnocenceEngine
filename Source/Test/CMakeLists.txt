@@ -1,5 +1,5 @@
 add_executable(Test Test.cpp)
-target_link_libraries(Test Core)
+target_link_libraries(Test Engine)
 set_target_properties(Test PROPERTIES FOLDER Test)
 
 if (INNO_PLATFORM_LINUX)

@@ -1,9 +1,15 @@
 #include "RayTracer.h"
-#include "../Core/Logger.h"
+#include "../Common/Timer.h"
+#include "../Common/TaskScheduler.h"
+#include "../Common/Logger.h"
 
-#include "../Interface/IEngine.h"
+#include "../Services/ComponentManager.h"
+#include "../Services/AssetSystem.h"
+#include "../Services/RenderingFrontend.h"
+
+#include "../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace RayTracerNS
 {
@@ -293,10 +299,10 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 
 bool ExecuteRayTracing()
 {
-	Logger::Log(LogLevel::Verbose, "RayTracer: Start ray tracing...");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RayTracer: Start ray tracing...");
 
-	auto l_camera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
-	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
+	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
+	auto l_cameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + Math::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_up = Math::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -304,7 +310,7 @@ bool ExecuteRayTracing()
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
 
-	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
+	auto l_visibleComponents = g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>();
 
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_visibleComponents.size());
@@ -313,10 +319,10 @@ bool ExecuteRayTracing()
 	{
 		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
 		{
-			auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
+			auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
 			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_pair = g_Engine->getAssetSystem()->GetMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
 					auto l_hitable = new HitableSphere();
@@ -417,10 +423,10 @@ bool ExecuteRayTracing()
 
 	m_TextureComp->m_TextureData = &l_result[0];
 
-	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->getTimeSystem()->getCurrentTimeFromEpoch());
-	g_Engine->getAssetSystem()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
+	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
+	g_Engine->Get<AssetSystem>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
 
-	Logger::Log(LogLevel::Success, "RayTracer: Ray tracing finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "RayTracer: Ray tracing finished.");
 
 	return true;
 }
@@ -435,7 +441,7 @@ bool RayTracer::Initialize()
 {
 	const int l_denom = 2;
 
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("RayTracingResult/");
 
@@ -456,7 +462,7 @@ bool RayTracer::Execute()
 	{
 		RayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_Engine->getTaskSystem()->Submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
+		auto l_rayTracingTask = g_Engine->Get<TaskScheduler>()->Submit("RayTracingTask", 4, [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
 	}
 
 	return true;

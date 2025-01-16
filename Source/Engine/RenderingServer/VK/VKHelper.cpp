@@ -1,10 +1,11 @@
 #include "VKHelper.h"
-#include "../../Core/Logger.h"
+#include "../../Common/Logger.h"
+#include "../../Common/IOService.h"
+#include "../../Services/RenderingFrontend.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine *g_Engine;
 
 namespace Inno
 {
@@ -189,7 +190,7 @@ VkExtent2D VKHelper::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabiliti
 	}
 	else
 	{
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 
 		VkExtent2D l_actualExtent;
 		l_actualExtent.width = l_screenResolution.x;
@@ -292,7 +293,7 @@ uint32_t VKHelper::FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t type
 			return i;
 		}
 	}
-	Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to find suitable memory type!!");
+	g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to find suitable memory type!!");
 	return 0;
 }
 
@@ -310,11 +311,11 @@ bool VKHelper::CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR w
 
 	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create CommandPool!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create CommandPool!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: CommandPool has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: CommandPool has been created.");
 	return true;
 }
 
@@ -322,7 +323,7 @@ bool VKHelper::CreateBuffer(VkPhysicalDevice physicalDevice, VkDevice device, co
 {
 	if (vkCreateBuffer(device, &bufferCInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkBuffer!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkBuffer!");
 		return false;
 	}
 
@@ -336,7 +337,7 @@ bool VKHelper::CreateBuffer(VkPhysicalDevice physicalDevice, VkDevice device, co
 
 	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkBuffer!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkBuffer!");
 		return false;
 	}
 
@@ -362,7 +363,7 @@ bool VKHelper::CreateImage(VkPhysicalDevice physicalDevice, VkDevice device, con
 {
 	if (vkCreateImage(device, &imageCInfo, nullptr, &image) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
 		return false;
 	}
 
@@ -376,7 +377,7 @@ bool VKHelper::CreateImage(VkPhysicalDevice physicalDevice, VkDevice device, con
 
 	if (vkAllocateMemory(device, &l_allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
 		return false;
 	}
 
@@ -1168,7 +1169,7 @@ bool VKHelper::CreateImageView(VkDevice device, VKTextureComponent *VKTextureCom
 
 	if (vkCreateImageView(device, &l_viewCInfo, nullptr, &VKTextureComp->m_imageView) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImageView!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImageView!");
 		return false;
 	}
 
@@ -1176,7 +1177,7 @@ bool VKHelper::CreateImageView(VkDevice device, VKTextureComponent *VKTextureCom
 	SetObjectName(device, VKTextureComp, VKTextureComp->m_imageView, VK_OBJECT_TYPE_IMAGE_VIEW, "ImageView");
 #endif //  INNO_DEBUG
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkImageView ", VKTextureComp->m_imageView, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkImageView ", VKTextureComp->m_imageView, " is initialized.");
 
 	return true;
 }
@@ -1238,7 +1239,7 @@ bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassComponent *VKRender
 			{
 				if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 				{
-					Logger::Log(LogLevel::Warning, "VKRenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+					g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VKRenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 				}
 				else
 				{
@@ -1262,7 +1263,7 @@ bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassComponent *VKRender
 			{
 				if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 				{
-					Logger::Log(LogLevel::Warning, "VKRenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+					g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VKRenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 				}
 				else
 				{
@@ -1301,11 +1302,11 @@ bool VKHelper::CreateDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolS
 
 	if (vkCreateDescriptorPool(device, &l_poolCInfo, nullptr, &poolHandle) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorPool!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorPool!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorPool has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorPool has been created.");
 	return true;
 }
 
@@ -1355,11 +1356,11 @@ bool VKHelper::CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutB
 
 	if (vkCreateDescriptorSetLayout(device, &l_layoutCInfo, nullptr, &setLayout) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorSetLayout!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorSetLayout!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorSetLayout has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorSetLayout has been created.");
 	return true;
 }
 
@@ -1409,11 +1410,11 @@ bool VKHelper::CreateDescriptorSets(VkDevice device, VkDescriptorPool pool, cons
 
 	if (vkAllocateDescriptorSets(device, &l_allocCInfo, &setHandle) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDescriptorSet!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDescriptorSet!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorSet has been allocated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorSet has been allocated.");
 	return true;
 }
 
@@ -1437,7 +1438,7 @@ bool VKHelper::UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet *writeD
 		0,
 		nullptr);
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: Write VkDescriptorSet has been updated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: Write VkDescriptorSet has been updated.");
 	return true;
 }
 
@@ -1579,7 +1580,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassComponent *VKRender
 
 	if (vkCreateRenderPass(device, &l_PSO->m_RenderPassCInfo, nullptr, &l_PSO->m_RenderPass) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkRenderPass!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkRenderPass!");
 		return false;
 	}
 
@@ -1587,7 +1588,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassComponent *VKRender
 	SetObjectName(device, VKRenderPassComp, l_PSO->m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS, "RenderPass");
 #endif //  INNO_DEBUG
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkRenderPass has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkRenderPass has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 	return true;
 }
 
@@ -1652,14 +1653,14 @@ bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassComponent *V
 
 	if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRenderPassComp->m_Framebuffers[0]) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
 	}
 
 #ifdef INNO_DEBUG
 	SetObjectName(device, VKRenderPassComp, VKRenderPassComp->m_Framebuffers[0], VK_OBJECT_TYPE_FRAMEBUFFER, "FrameBuffer");
 #endif //  INNO_DEBUG
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 
 	return true;
 }
@@ -1699,7 +1700,7 @@ bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassComponent
 
 		if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRenderPassComp->m_Framebuffers[i]) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: ", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
 			continue;
 		}
 
@@ -1709,7 +1710,7 @@ bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassComponent
 #endif //  INNO_DEBUG
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRenderPassComp->m_InstanceName.c_str());
 
 	return true;
 }
@@ -1879,7 +1880,7 @@ bool VKHelper::CreatePipelineLayout(VkDevice device, VKRenderPassComponent *VKRe
 
 	if (vkCreatePipelineLayout(device, &l_PSO->m_PipelineLayoutCInfo, nullptr, &l_PSO->m_PipelineLayout) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipelineLayout!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipelineLayout!");
 		return false;
 	}
 
@@ -1887,7 +1888,7 @@ bool VKHelper::CreatePipelineLayout(VkDevice device, VKRenderPassComponent *VKRe
 	SetObjectName(device, VKRenderPassComp, l_PSO->m_PipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "PipelineLayout");
 #endif //  INNO_DEBUG
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipelineLayout has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkPipelineLayout has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 	return true;
 }
 
@@ -2101,7 +2102,7 @@ bool VKHelper::CreateGraphicsPipelines(VkDevice device, VKRenderPassComponent *V
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_GraphicsPipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipeline for GraphicsPipeline!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipeline for GraphicsPipeline!");
 		return false;
 	}
 
@@ -2109,7 +2110,7 @@ bool VKHelper::CreateGraphicsPipelines(VkDevice device, VKRenderPassComponent *V
 	SetObjectName(device, VKRenderPassComp, l_PSO->m_Pipeline, VK_OBJECT_TYPE_PIPELINE, "GraphicsPipeline");
 #endif //  INNO_DEBUG
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for GraphicsPipeline has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for GraphicsPipeline has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 	return true;
 }
 
@@ -2128,7 +2129,7 @@ bool VKHelper::CreateComputePipelines(VkDevice device, VKRenderPassComponent *VK
 
 	if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_ComputePipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipeline for ComputePipeline!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipeline for ComputePipeline!");
 		return false;
 	}
 
@@ -2136,7 +2137,7 @@ bool VKHelper::CreateComputePipelines(VkDevice device, VKRenderPassComponent *VK
 	SetObjectName(device, VKRenderPassComp, l_PSO->m_Pipeline, VK_OBJECT_TYPE_PIPELINE, "ComputePipeline");
 #endif //  INNO_DEBUG
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for ComputePipeline has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for ComputePipeline has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 	return true;
 }
 
@@ -2163,7 +2164,7 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassComponent *VKRe
 		
 		if (vkAllocateCommandBuffers(device, &l_graphicsAllocInfo, &l_VKCommandList->m_GraphicsCommandBuffer) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate Graphics VkCommandBuffer!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate Graphics VkCommandBuffer!");
 			return false;
 		}
 
@@ -2180,7 +2181,7 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassComponent *VKRe
 
 		if (vkAllocateCommandBuffers(device, &l_computeAllocInfo, &l_VKCommandList->m_ComputeCommandBuffer) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate Compute VkCommandBuffer!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate Compute VkCommandBuffer!");
 			return false;
 		}
 
@@ -2190,7 +2191,7 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassComponent *VKRe
 #endif //  INNO_DEBUG
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkCommandBuffer has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkCommandBuffer has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 	return true;
 }
 
@@ -2215,7 +2216,7 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassComponent *VKRe
 
 		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_GraphicsSemaphore) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create Graphics semaphore!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create Graphics semaphore!");
 			return false;
 		}
 		
@@ -2226,7 +2227,7 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassComponent *VKRe
 
 		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_ComputeSemaphore) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create Compute semaphore!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create Compute semaphore!");
 			return false;
 		}
 		
@@ -2236,7 +2237,7 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassComponent *VKRe
 #endif //  INNO_DEBUG
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: Synchronization primitives has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: Synchronization primitives has been created for ", VKRenderPassComp->m_InstanceName.c_str());
 
 	return true;
 }
@@ -2244,7 +2245,7 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassComponent *VKRe
 bool VKHelper::CreateShaderModule(VkDevice device, VkShaderModule &vkShaderModule, const ShaderFilePath &shaderFilePath)
 {
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
-	auto l_shaderContent = g_Engine->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
+	auto l_shaderContent = g_Engine->Get<IOService>()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
 
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -2253,11 +2254,11 @@ bool VKHelper::CreateShaderModule(VkDevice device, VkShaderModule &vkShaderModul
 
 	if (vkCreateShaderModule(device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkShaderModule for: ", shaderFilePath.c_str(), "!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkShaderModule for: ", shaderFilePath.c_str(), "!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: ", shaderFilePath.c_str(), " has been loaded.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: ", shaderFilePath.c_str(), " has been loaded.");
 	return true;
 }
 VkWriteDescriptorSet VKHelper::GetWriteDescriptorSet(uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)

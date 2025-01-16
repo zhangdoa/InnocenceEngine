@@ -1,10 +1,11 @@
 #include "LuminanceHistogramPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -12,7 +13,7 @@ bool LuminanceHistogramPass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -92,7 +93,7 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_renderingContext = reinterpret_cast<LuminanceHistogramPassRenderingContext*>(renderingContext);	
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / 16);
 	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / 16);

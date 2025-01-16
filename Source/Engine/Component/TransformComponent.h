@@ -22,7 +22,7 @@ namespace Inno
 		TransformComponent* m_parentTransformComponent = 0;
 	};
 
-	class ITransformSystem : public IComponentSystem
+	class ITransformSystem : public ISystem
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(ITransformSystem);

@@ -1,10 +1,11 @@
 #include "PostTAAPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -18,7 +19,7 @@ bool PostTAAPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("PostTAAPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -79,7 +80,7 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);	
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

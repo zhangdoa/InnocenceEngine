@@ -27,7 +27,7 @@ namespace Inno
 		std::vector<Vertex> m_splitFrustumVerticesWS;
 	};
 
-	class ICameraSystem : public IComponentSystem
+	class ICameraSystem : public ISystem
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(ICameraSystem);

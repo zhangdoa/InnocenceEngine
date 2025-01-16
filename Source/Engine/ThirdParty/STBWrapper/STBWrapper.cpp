@@ -1,12 +1,12 @@
 #include "STBWrapper.h"
 
-#include "../../Core/Logger.h"
+#include "../../Common/Logger.h"
+#include "../../Common/IOService.h"
+#include "../../Services/RenderingFrontend.h"
 
-#include "../../Core/IOService.h"
-
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -19,7 +19,7 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 	stbi_set_flip_vertically_on_load(true);
 
 	void* l_rawData;
-	auto l_fullPath = IOService::getWorkingDirectory() + fileName;
+	auto l_fullPath = g_Engine->Get<IOService>()->getWorkingDirectory() + fileName;
 	auto l_isHDR = stbi_is_hdr(l_fullPath.c_str());
 
 	if (l_isHDR)
@@ -32,7 +32,7 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 	}
 	if (l_rawData)
 	{
-		auto l_TextureComp = g_Engine->getRenderingFrontend()->AddTextureComponent();
+		auto l_TextureComp = g_Engine->Get<RenderingFrontend>()->AddTextureComponent();
 #ifdef INNO_DEBUG
         auto l_fileName = std::string(fileName);
         l_fileName += "/";
@@ -47,13 +47,13 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 		l_TextureComp->m_TextureData = l_rawData;
 		l_TextureComp->m_ObjectStatus = ObjectStatus::Created;
 
-		Logger::Log(LogLevel::Verbose, "FileSystem: STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "FileSystem: STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
 
 		return l_TextureComp;
 	}
 	else
 	{
-		Logger::Log(LogLevel::Error, "FileSystem: STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "FileSystem: STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
 
 		return nullptr;
 	}
@@ -71,40 +71,40 @@ bool STBWrapper::SaveTexture(const char* fileName, const TextureDesc& textureDes
 	{
 		if (textureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{
-			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, 1, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, 1, comp, (float*)textureData);
 		}
 		else if (textureDesc.Sampler == TextureSampler::Sampler2DArray
 			|| textureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, (float*)textureData);
 		}
 		else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, (float*)textureData);
 		}
 		else
 		{
-			result = stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, (float*)textureData);
 		}
 	}
 	else
 	{
 		if (textureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{
-			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, 1, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, 1, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else if (textureDesc.Sampler == TextureSampler::Sampler2DArray
 			|| textureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else
 		{
-			result = stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 	}
 

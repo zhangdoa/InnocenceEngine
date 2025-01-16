@@ -1,8 +1,8 @@
 #include "menubar.h"
-#include "../Engine/Interface/IEngine.h"
+#include "../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine *g_Engine;
+Engine *g_Engine;
 
 MenuBar::MenuBar(QWidget* parent) : QMenuBar(parent)
 {
@@ -18,5 +18,5 @@ void MenuBar::openScene()
 
 void MenuBar::saveScene()
 {
-    g_Engine->getSceneSystem()->saveScene();
+    g_Engine->Get<SceneSystem>()->saveScene();
 }

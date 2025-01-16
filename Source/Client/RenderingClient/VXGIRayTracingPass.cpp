@@ -1,13 +1,14 @@
 #include "VXGIRayTracingPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-
+#include "../../Engine/Common/Timer.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 #include "VXGIRenderer.h"
 #include "VXGIConvertPass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -15,7 +16,7 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
 	m_TextureComp = l_renderingServer->AddTextureComponent("VoxelRayTracingVolume/");
@@ -180,7 +181,7 @@ bool VXGIRayTracingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	auto l_renderingContext = reinterpret_cast<VXGIRayTracingPassRenderingContext*>(renderingContext);
 	
-	auto l_tick = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto l_tick = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	m_generator.seed((uint32_t)l_tick);
 
 	m_ProbeIndex.clear();

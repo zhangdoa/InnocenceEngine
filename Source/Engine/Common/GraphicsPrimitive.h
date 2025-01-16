@@ -1,4 +1,6 @@
 #pragma once
+#include "STL14.h"
+#include "Enum.h"
 
 namespace Inno
 {
@@ -185,6 +187,19 @@ namespace Inno
 			Graphics,
 			Compute
 		};
+
+		enum class ShaderStage
+		{
+			Invalid = 0x00000000,
+			Vertex = 0x00000001,
+			Hull = 0x00000002,
+			Domain = 0x00000004,
+			Geometry = 0x00000008,
+			Pixel = 0x00000010,
+			Compute = 0x00000020
+		};
+
+		INNO_ENUM_OPERATORS(ShaderStage);
 
 		struct RenderPassDesc
 		{

@@ -1,12 +1,13 @@
 #include "MotionBlurPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Services/RenderingFrontend.h"
 
 #include "OpaquePass.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+
 
 using namespace DefaultGPUBuffers;
 
@@ -20,7 +21,7 @@ bool MotionBlurPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("MotionBlurPass/");
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -102,7 +103,7 @@ bool MotionBlurPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_renderingContext = reinterpret_cast<MotionBlurPassRenderingContext*>(renderingContext);	
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);

@@ -1,6 +1,4 @@
 #pragma once
-#include "../../Common/Type.h"
-
 #include "nlohmann/json.hpp"
 using json = nlohmann::ordered_json;
 

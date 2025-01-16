@@ -1,6 +1,0 @@
-file(GLOB HEADERS "*.h")
-file(GLOB SOURCES "*.cpp")
-add_library(RenderingFrontend ${HEADERS} ${SOURCES})
-set_property(TARGET RenderingFrontend PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_target_properties(RenderingFrontend PROPERTIES FOLDER Engine)
-target_link_libraries(RenderingFrontend ImGuiWrapper)

@@ -5,9 +5,12 @@
 #include "../../RenderingServer/DX12/DX12RenderingServer.h"
 #include "../../Component/DX12TextureComponent.h"
 
-#include "../../Interface/IEngine.h"
+#include "../../Common/Logger.h"
+#include "../../Services/RenderingFrontend.h"
+
+#include "../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace ImGuiRendererDX12NS
 {
@@ -17,7 +20,7 @@ namespace ImGuiRendererDX12NS
 bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererDX12NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX12 Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX12 Setup finished.");
 
 	return true;
 }
@@ -32,7 +35,7 @@ bool ImGuiRendererDX12::Initialize()
         DXGI_FORMAT_R8G8B8A8_UNORM, l_CSUDescHeap,
         l_CSUDescHeap->GetCPUDescriptorHandleForHeapStart(),
         l_CSUDescHeap->GetGPUDescriptorHandleForHeapStart());
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX12 has been initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX12 has been initialized.");
 
 	return true;
 }
@@ -58,7 +61,7 @@ bool ImGuiRendererDX12::Terminate()
 {
 	ImGui_ImplDX12_Shutdown();
 	ImGuiRendererDX12NS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX12 has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX12 has been terminated.");
 
 	return true;
 }
@@ -70,6 +73,6 @@ ObjectStatus ImGuiRendererDX12::GetStatus()
 
 void ImGuiRendererDX12::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

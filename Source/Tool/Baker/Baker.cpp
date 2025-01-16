@@ -2,13 +2,16 @@
 #include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "../../Engine/Common/MathHelper.h"
+#include "../../Engine/Common/IOService.h"
+#include "../../Engine/Common/TaskScheduler.h"
+#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/EntityManager.h"
+#include "../../Engine/Services/ComponentManager.h"
 
-#include "../../Engine/Interface/IEngine.h"
+#include "../../Engine/Engine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
 
-#include "../../Engine/Core/IOService.h"
 
 #include "Serializer.h"
 #include "ProbeGenerator.h"
@@ -34,33 +37,33 @@ void Baker::Setup()
 
 void Baker::BakeProbeCache(const char* sceneName)
 {
-	g_Engine->getSceneSystem()->loadScene(sceneName, false);
-	auto l_playerCameraEntity = g_Engine->getEntityManager()->Find("playerCharacterCamera");
+	g_Engine->Get<SceneSystem>()->loadScene(sceneName, false);
+	auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("playerCharacterCamera");
 	if (l_playerCameraEntity.has_value())
 	{
-		auto l_playerCameraComponent = g_Engine->getComponentManager()->Find<CameraComponent>(l_playerCameraEntity.value());
-        static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_playerCameraComponent);
-        static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_playerCameraComponent);
+		auto l_playerCameraComponent = g_Engine->Get<ComponentManager>()->Find<CameraComponent>(l_playerCameraEntity.value());
+        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_playerCameraComponent);
+        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_playerCameraComponent);
 	}
 
 	g_Engine->Update();
-	Config::Get().m_exportFileName = g_Engine->getSceneSystem()->getCurrentSceneName();
+	Config::Get().m_exportFileName = g_Engine->Get<SceneSystem>()->getCurrentSceneName();
 
 	std::vector<Probe> l_probes;
 
-	auto l_BakerProbeCacheTask = g_Engine->getTaskSystem()->Submit("BakerProbeCacheTask", 2, nullptr,
+	auto l_BakerProbeCacheTask = g_Engine->Get<TaskScheduler>()->Submit("BakerProbeCacheTask", 2,
 		[&]() {
 			ProbeGenerator::Get().gatherStaticMeshData();
 			ProbeGenerator::Get().generateProbeCaches(l_probes);
 			SurfelGenerator::Get().captureSurfels(l_probes);
 		});
 
-	l_BakerProbeCacheTask.m_Future->Get();
+	l_BakerProbeCacheTask->Wait();
 }
 
 void Baker::BakeBrickCache(const char* surfelCacheFileName)
 {
-	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 	Config::Get().m_exportFileName = Config::Get().parseFileName(surfelCacheFileName);
 
 	std::ifstream l_surfelCacheFile;
@@ -71,18 +74,18 @@ void Baker::BakeBrickCache(const char* surfelCacheFileName)
 
 	if (l_surfelCacheFile.is_open())
 	{
-		IOService::deserializeVector(l_surfelCacheFile, l_surfelCaches);
+		g_Engine->Get<IOService>()->deserializeVector(l_surfelCacheFile, l_surfelCaches);
 		BrickGenerator::Get().generateBrickCaches(l_surfelCaches);
 	}
 	else
 	{
-		g_Engine->getLogSystem()->Log(LogLevel::Error, "Baker: Surfel cache file not exists!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Surfel cache file not exists!");
 	}
 }
 
 void Baker::BakeBrick(const char* brickCacheFileName)
 {
-	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 	Config::Get().m_exportFileName = Config::Get().parseFileName(brickCacheFileName);
 
 	std::ifstream l_brickCacheSummaryFile;
@@ -94,20 +97,20 @@ void Baker::BakeBrick(const char* brickCacheFileName)
 		std::vector<BrickCacheSummary> l_brickCacheSummaries;
 		std::vector<BrickCache> l_brickCaches;
 
-		IOService::deserializeVector(l_brickCacheSummaryFile, l_brickCacheSummaries);
+		g_Engine->Get<IOService>()->deserializeVector(l_brickCacheSummaryFile, l_brickCacheSummaries);
 
 		deserializeBrickCaches(l_brickCacheSummaries, l_brickCaches);
 		BrickGenerator::Get().generateBricks(l_brickCaches);
 	}
 	else
 	{
-		g_Engine->getLogSystem()->Log(LogLevel::Error, "Baker: Brick cache file not exists!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Brick cache file not exists!");
 	}
 }
 
 void Baker::BakeBrickFactor(const char* brickFileName)
 {
-	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
 	Config::Get().m_exportFileName = Config::Get().parseFileName(brickFileName);
 
 	std::ifstream l_brickFile;
@@ -118,7 +121,7 @@ void Baker::BakeBrickFactor(const char* brickFileName)
 	{
 		std::vector<Brick> l_bricks;
 
-		IOService::deserializeVector(l_brickFile, l_bricks);
+		g_Engine->Get<IOService>()->deserializeVector(l_brickFile, l_bricks);
 
 		l_brickFile.close();
 
@@ -130,47 +133,47 @@ void Baker::BakeBrickFactor(const char* brickFileName)
 		{
 			std::vector<Probe> l_probes;
 
-			IOService::deserializeVector(l_probeFile, l_probes);
+			g_Engine->Get<IOService>()->deserializeVector(l_probeFile, l_probes);
 
 			l_probeFile.close();
 
-			auto l_BakerBrickFactorTask = g_Engine->getTaskSystem()->Submit("BakerBrickFactorTask", 2, nullptr,
+			auto l_BakerBrickFactorTask = g_Engine->Get<TaskScheduler>()->Submit("BakerBrickFactorTask", 2,
 				[&]() {
 					BrickGenerator::Get().assignBrickFactorToProbesByGPU(l_bricks, l_probes);
 				});
 
-			l_BakerBrickFactorTask.m_Future->Get();
+			l_BakerBrickFactorTask->Wait();
 		}
 		else
 		{
-			g_Engine->getLogSystem()->Log(LogLevel::Error, "Baker: Probe cache file not exists!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Probe cache file not exists!");
 		}
 	}
 	else
 	{
-		g_Engine->getLogSystem()->Log(LogLevel::Error, "Baker: Brick file not exists!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Brick file not exists!");
 	}
 }
 
 bool BakerRenderingClient::Setup(ISystemConfig* systemConfig)
 {
-	auto l_BakerRenderingClientSetupTask = g_Engine->getTaskSystem()->Submit("BakerRenderingClientSetupTask", 2, nullptr,
+	auto l_BakerRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit("BakerRenderingClientSetupTask", 2,
 		[]() {
 			DefaultGPUBuffers::Setup();
 			Baker::Setup();
 		});
-	l_BakerRenderingClientSetupTask.m_Future->Get();
+	l_BakerRenderingClientSetupTask->Wait();
 
 	return true;
 }
 
 bool BakerRenderingClient::Initialize()
 {
-	auto l_BakerRenderingClientInitializeTask = g_Engine->getTaskSystem()->Submit("BakerRenderingClientInitializeTask", 2, nullptr,
+	auto l_BakerRenderingClientInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("BakerRenderingClientInitializeTask", 2,
 		[]() {
 			DefaultGPUBuffers::Initialize();
 		});
-	l_BakerRenderingClientInitializeTask.m_Future->Get();
+	l_BakerRenderingClientInitializeTask->Wait();
 
 	return true;
 }

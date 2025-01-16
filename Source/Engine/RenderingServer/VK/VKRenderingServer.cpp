@@ -9,10 +9,9 @@
 
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../Interface/IEngine.h"
+#include "../../Engine.h"
 
 using namespace Inno;
-extern IEngine *g_Engine;
 
 #include "../Common/Helper.h"
 using namespace RenderingServerHelper;
@@ -20,10 +19,13 @@ using namespace RenderingServerHelper;
 #include "VKHelper.h"
 using namespace VKHelper;
 
-#include "../../Core/Logger.h"
-#include "../../Core/Memory.h"
-#include "../../Core/Randomizer.h"
-#include "../../Template/ObjectPool.h"
+#include "../../Common/Logger.h"
+#include "../../Common/Memory.h"
+#include "../../Common/Randomizer.h"
+#include "../../Common/ObjectPool.h"
+
+#include "../../Services/RenderingFrontend.h"
+#include "../../Services/EntityManager.h"
 
 namespace VKRenderingServerNS
 {
@@ -41,7 +43,7 @@ namespace VKRenderingServerNS
 			l_logLevel = LogLevel::Error;
 		}
 
-		Logger::Log(l_logLevel, "VKRenderingServer: Validation Layer: ", pCallbackData->pMessage);
+		g_Engine->Get<Logger>()->Log(l_logLevel, "VKRenderingServer: Validation Layer: ", pCallbackData->pMessage);
 		return VK_FALSE;
 	}
 
@@ -154,7 +156,7 @@ bool VKRenderingServerNS::CreateVkInstance()
 	if (m_enableValidationLayers && !CheckValidationLayerSupport(m_validationLayers))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Validation layers requested, but not available!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Validation layers requested, but not available!");
 		return false;
 	}
 
@@ -191,11 +193,11 @@ bool VKRenderingServerNS::CreateVkInstance()
 	if (vkCreateInstance(&l_createInfo, nullptr, &m_instance) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkInstance!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkInstance!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: VkInstance has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkInstance has been created.");
 	return true;
 }
 
@@ -212,11 +214,11 @@ bool VKRenderingServerNS::CreateDebugCallback()
 		if (VKHelper::CreateDebugUtilsMessengerEXT(m_instance, &l_createInfo, nullptr, &m_messengerCallback) != VK_SUCCESS)
 		{
 			m_ObjectStatus = ObjectStatus::Suspended;
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create DebugUtilsMessenger!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create DebugUtilsMessenger!");
 			return false;
 		}
 
-		Logger::Log(LogLevel::Success, "VKRenderingServer: Validation Layer has been created.");
+		g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: Validation Layer has been created.");
 		return true;
 	}
 	else
@@ -234,7 +236,7 @@ bool VKRenderingServerNS::CreatePhysicalDevice()
 	if (l_deviceCount == 0)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to find GPUs with Vulkan support!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to find GPUs with Vulkan support!");
 		return false;
 	}
 
@@ -254,11 +256,11 @@ bool VKRenderingServerNS::CreatePhysicalDevice()
 	if (m_physicalDevice == VK_NULL_HANDLE)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to find a suitable GPU!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to find a suitable GPU!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: VkPhysicalDevice has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkPhysicalDevice has been created.");
 	return true;
 }
 
@@ -335,7 +337,7 @@ bool VKRenderingServerNS::CreateLogicalDevice()
 	if (vkCreateDevice(m_physicalDevice, &l_createInfo, nullptr, &m_device) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDevice!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDevice!");
 		return false;
 	}
 
@@ -343,7 +345,7 @@ bool VKRenderingServerNS::CreateLogicalDevice()
 	vkGetDeviceQueue(m_device, l_indices.m_presentFamily.value(), 0, &m_presentQueue);
 	vkGetDeviceQueue(m_device, l_indices.m_computeFamily.value(), 0, &m_computeQueue);
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: VkDevice has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkDevice has been created.");
 	return true;
 }
 
@@ -367,11 +369,11 @@ bool VKRenderingServerNS::CreateTextureSamplers()
 	// if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_deferredRTSampler) != VK_SUCCESS)
 	//{
 	//	m_ObjectStatus = ObjectStatus::Suspended;
-	//	Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSampler for deferred pass render target sampling!");
+	//	g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSampler for deferred pass render target sampling!");
 	//	return false;
 	// }
 
-	// Logger::Log(LogLevel::Success, "VKRenderingServer: VkSampler for deferred pass render target sampling has been created.");
+	// g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkSampler for deferred pass render target sampling has been created.");
 	return true;
 }
 
@@ -419,7 +421,7 @@ bool VKRenderingServerNS::CreateVertexInputAttributions()
 
 bool VKRenderingServerNS::CreateMaterialDescriptorPool()
 {
-	auto l_renderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
+	auto l_renderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
 
 	VkDescriptorPoolSize l_descriptorPoolSize = {};
 	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -430,11 +432,11 @@ bool VKRenderingServerNS::CreateMaterialDescriptorPool()
 	if (!CreateDescriptorPool(m_device, l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, m_materialDescriptorPool))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorPool for material!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorPool for material!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: VkDescriptorPool for material has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkDescriptorPool for material has been created.");
 
 	std::vector<VkDescriptorSetLayoutBinding> l_textureLayoutBindings(8);
 	for (size_t i = 0; i < l_textureLayoutBindings.size(); i++)
@@ -451,16 +453,16 @@ bool VKRenderingServerNS::CreateMaterialDescriptorPool()
 	if (!CreateDescriptorSetLayout(m_device, &l_textureLayoutBindings[0], (uint32_t)l_textureLayoutBindings.size(), m_materialDescriptorLayout))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorSetLayout for material!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorSetLayout for material!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: VkDescriptorSetLayout for material has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkDescriptorSetLayout for material has been created.");
 
 	if (!CreateDescriptorSetLayout(m_device, nullptr, 0, m_dummyEmptyDescriptorLayout))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create DummyEmptyDescriptorLayout!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create DummyEmptyDescriptorLayout!");
 		return false;
 	}
 
@@ -481,14 +483,14 @@ bool VKRenderingServerNS::CreateSyncPrimitives()
 	if (vkCreateFence(m_device, &l_fenceInfo, nullptr, &m_graphicsQueueFence) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for GraphicsQueue!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for GraphicsQueue!");
 		return false;
 	}
 
 	if (vkCreateFence(m_device, &l_fenceInfo, nullptr, &m_computeQueueFence) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for ComputeQueue!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for ComputeQueue!");
 		return false;
 	}
 
@@ -506,7 +508,7 @@ bool VKRenderingServerNS::CreateSyncPrimitives()
 				nullptr,
 				&m_imageAvailableSemaphores[i]) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image available semaphores!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image available semaphores!");
 			return false;
 		}
 
@@ -516,7 +518,7 @@ bool VKRenderingServerNS::CreateSyncPrimitives()
 				nullptr,
 				&m_swapChainRenderedSemaphores[i]) != VK_SUCCESS)
 		{
-			Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image rendered semaphores!");
+			g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image rendered semaphores!");
 			return false;
 		}
 	}
@@ -574,22 +576,22 @@ bool VKRenderingServerNS::CreateSwapChain()
 	if (vkCreateSwapchainKHR(m_device, &l_createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSwapChainKHR!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSwapChainKHR!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: VkSwapChainKHR has been created.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: VkSwapChainKHR has been created.");
 
 	// get swap chain VkImages
 	// get count
 	if (vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, nullptr) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to query swap chain image count!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to query swap chain image count!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: Swap chain has ", l_imageCount, " image(s).");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: Swap chain has ", l_imageCount, " image(s).");
 
 	m_swapChainImages.reserve(l_imageCount);
 	for (size_t i = 0; i < l_imageCount; i++)
@@ -601,11 +603,11 @@ bool VKRenderingServerNS::CreateSwapChain()
 	if (vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, m_swapChainImages.data()) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to acquire swap chain images!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to acquire swap chain images!");
 		return false;
 	}
 
-	Logger::Log(LogLevel::Success, "VKRenderingServer: Swap chain images has been acquired.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer: Swap chain images has been acquired.");
 
 	return true;
 }
@@ -629,7 +631,7 @@ VKSemaphore *addSemaphore()
 
 bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 {
-	auto l_renderingCapability = g_Engine->getRenderingFrontend()->GetRenderingCapability();
+	auto l_renderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
 
 	m_MeshComponentPool = TObjectPool<VKMeshComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureComponentPool = TObjectPool<VKTextureComponent>::Create(l_renderingCapability.maxTextures);
@@ -650,7 +652,7 @@ bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 	CreateDebugCallback();
 
 	m_ObjectStatus = ObjectStatus::Created;
-	Logger::Log(LogLevel::Success, "VKRenderingServer Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer Setup finished.");
 
 	return true;
 }
@@ -676,7 +678,7 @@ bool VKRenderingServer::Initialize()
 
 	l_result &= InitializeSamplerComponent(m_SwapChainSamplerComp);
 
-	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = m_swapChainImages.size();
 
@@ -765,7 +767,7 @@ bool VKRenderingServer::Initialize()
 bool VKRenderingServer::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Logger::Log(LogLevel::Success, "VKRenderingServer has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "VKRenderingServer has been terminated.");
 
 	return true;
 }
@@ -855,10 +857,10 @@ bool VKRenderingServer::InitializeMeshComponent(MeshComponent *rhs)
 	CreateDeviceLocalBuffer(l_IBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_IBO, l_rhs->m_IBMemory);
 
 	InitializeDeviceLocalBuffer(l_rhs->m_Vertices, l_rhs->m_VBO, l_rhs->m_VBMemory);
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
 	InitializeDeviceLocalBuffer(l_rhs->m_Indices, l_rhs->m_IBO, l_rhs->m_IBMemory);
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 #ifdef INNO_DEBUG
 	SetObjectName(m_device, l_rhs, l_rhs->m_VBO, VK_OBJECT_TYPE_BUFFER, "VB");
@@ -939,7 +941,7 @@ bool VKRenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 	m_initializedTextures.emplace(l_rhs);
 
-	Logger::Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
 
 	return true;
 }
@@ -953,7 +955,7 @@ bool VKRenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 
 	auto l_rhs = reinterpret_cast<VKMaterialComponent *>(rhs);
 
-	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->GetDefaultMaterialComponent();
+	auto l_defaultMaterial = g_Engine->Get<RenderingFrontend>()->GetDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -1152,7 +1154,7 @@ bool VKRenderingServer::InitializeSamplerComponent(SamplerComponent *rhs)
 
 	if (vkCreateSampler(m_device, &l_rhs->m_samplerCInfo, nullptr, &l_rhs->m_sampler) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to create sampler!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to create sampler!");
 	}
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
@@ -1186,7 +1188,7 @@ bool VKRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 		}
 		else
 		{
-			Logger::Log(LogLevel::Warning, "VKRenderingServer: Not support CPU-readable default heap GPU buffer currently.");
+			g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VKRenderingServer: Not support CPU-readable default heap GPU buffer currently.");
 		}
 	}
 
@@ -1303,7 +1305,7 @@ bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameI
 
 	if (vkBeginCommandBuffer(l_commandBuffer, &l_beginInfo) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to begin recording command buffer!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to begin recording command buffer!");
 		return false;
 	}
 
@@ -1413,7 +1415,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 {
 	if (resource == nullptr)
 	{
-		Logger::Log(LogLevel::Warning, "VKRenderingServer: Empty GPU resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
+		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VKRenderingServer: Empty GPU resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
 		return false;
 	}
 
@@ -1470,7 +1472,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 		{
 			if (accessibility != Accessibility::ReadOnly)
 			{
-				Logger::Log(LogLevel::Warning, "VKRenderingServer: Not allow GPU write to Constant Buffer!");
+				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VKRenderingServer: Not allow GPU write to Constant Buffer!");
 			}
 			else
 			{
@@ -1576,7 +1578,7 @@ bool VKRenderingServer::CommandListEnd(RenderPassComponent *rhs)
 
 	if (vkEndCommandBuffer(l_commandBuffer) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to end recording command buffer!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to end recording command buffer!");
 		return false;
 	}
 
@@ -1642,7 +1644,7 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngineTy
 	vkResetFences(m_device, 1, &fence);
 	if (vkQueueSubmit(queue, 1, &l_submitInfo, fence) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer!");
 		return false;
 	}
 
@@ -1726,7 +1728,7 @@ bool VKRenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
-	auto l_mesh = g_Engine->getRenderingFrontend()->GetMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
@@ -1782,7 +1784,7 @@ bool VKRenderingServer::Present()
 	vkResetFences(m_device, 1, &fence);
 	if (vkQueueSubmit(queue, 1, &l_submitInfo, fence) != VK_SUCCESS)
 	{
-		Logger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer for the swap chain RenderPassComp!");
+		g_Engine->Get<Logger>()->Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer for the swap chain RenderPassComp!");
 		return false;
 	}
 

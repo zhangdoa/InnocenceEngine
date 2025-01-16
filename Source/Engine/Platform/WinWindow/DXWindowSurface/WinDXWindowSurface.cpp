@@ -1,10 +1,11 @@
 #include "WinDXWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Core/Logger.h"
+#include "../../../Common/Logger.h"
+#include "../../../Services/RenderingFrontend.h"
 
-#include "../../../Interface/IEngine.h"
+#include "../../../Engine.h"
 using namespace Inno;
-extern IEngine* g_Engine;
+;
 
 namespace WinDXWindowSurfaceNS
 {
@@ -40,7 +41,7 @@ bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -63,7 +64,7 @@ bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	Logger::Log(LogLevel::Success, "WinDXWindowSurface Setup finished.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinDXWindowSurface Setup finished.");
 
 	return true;
 }
@@ -78,7 +79,7 @@ bool WinDXWindowSurfaceNS::Initialize()
 		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
 	}
 
-	Logger::Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");
 	return true;
 }
 
@@ -90,7 +91,7 @@ bool WinDXWindowSurfaceNS::Update()
 bool WinDXWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Logger::Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
+	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
 
 	return true;
 }

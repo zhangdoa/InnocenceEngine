@@ -53,10 +53,13 @@ option(INNO_BUILD_TOOLS OFF)
 configure_file ("${CMAKE_SOURCE_DIR}/Source/Engine/Common/Config.h.in" "${CMAKE_SOURCE_DIR}/Source/Engine/Common/Config.h" @ONLY)
 
 # Add subdirectories
-set(INNO_BUILD_TOOLS ON)
+set(INNO_BUILD_TOOLS OFF)
 add_subdirectory("Engine")
 add_subdirectory("Test")
 add_subdirectory("Client")
 if(INNO_BUILD_TOOLS)
 add_subdirectory("Tool")
 endif (INNO_BUILD_TOOLS)
+
+target_link_libraries(Engine ${INNO_RENDERING_CLIENT})
+target_link_libraries(Engine ${INNO_LOGIC_CLIENT})

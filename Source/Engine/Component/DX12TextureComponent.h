@@ -1,5 +1,4 @@
 #pragma once
-#include "../Common/Type.h"
 #include "../RenderingServer/DX12/DX12Headers.h"
 #include "TextureComponent.h"
 
