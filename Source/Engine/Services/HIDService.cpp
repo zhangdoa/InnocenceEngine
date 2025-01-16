@@ -1,4 +1,4 @@
-#include "EventSystem.h"
+#include "HIDService.h"
 #include "../Common/Logger.h"
 #include "RenderingFrontend.h"
 
@@ -6,13 +6,13 @@
 using namespace Inno;
 ;
 
-bool EventSystem::Setup(ISystemConfig* systemConfig)
+bool HIDService::Setup(ISystemConfig* systemConfig)
 {
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool EventSystem::Initialize()
+bool HIDService::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -28,11 +28,11 @@ bool EventSystem::Initialize()
 	}
 }
 
-bool EventSystem::Update()
+bool HIDService::Update()
 {
-	if (EventSystem::m_ObjectStatus != ObjectStatus::Activated)
+	if (HIDService::m_ObjectStatus != ObjectStatus::Activated)
 	{
-		EventSystem::m_ObjectStatus = ObjectStatus::Suspended;
+		HIDService::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -70,7 +70,7 @@ bool EventSystem::Update()
 	return true;
 }
 
-bool EventSystem::Terminate()
+bool HIDService::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	g_Engine->Get<Logger>()->Log(LogLevel::Success, "EventSystem has been terminated.");
@@ -78,12 +78,12 @@ bool EventSystem::Terminate()
 	return true;
 }
 
-void EventSystem::AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
+void HIDService::AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
 	m_ButtonEvents.emplace(buttonState, buttonEvent);
 }
 
-void EventSystem::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
+void HIDService::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
 {
 	auto l_result = m_MouseMovementEvents.find(mouseMovementAxis);
 	if (l_result != m_MouseMovementEvents.end())
@@ -92,12 +92,12 @@ void EventSystem::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, 
 		m_MouseMovementEvents.emplace(mouseMovementAxis, std::set<MouseMovementEvent>{ mouseMovementEvent });
 }
 
-Vec2 EventSystem::GetMousePosition()
+Vec2 HIDService::GetMousePosition()
 {
 	return Vec2(m_MouseLastX, m_MouseLastY);
 }
 
-void EventSystem::ButtonStateCallback(ButtonState buttonState)
+void HIDService::ButtonStateCallback(ButtonState buttonState)
 {
 	auto l_buttonEvents = m_ButtonEvents.equal_range(buttonState);
 	auto l_resultCount = std::distance(l_buttonEvents.first, l_buttonEvents.second);
@@ -117,14 +117,14 @@ void EventSystem::ButtonStateCallback(ButtonState buttonState)
 	}
 }
 
-void EventSystem::WindowResizeCallback(int32_t width, int32_t height)
+void HIDService::WindowResizeCallback(int32_t width, int32_t height)
 {
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
 	g_Engine->Get<RenderingFrontend>()->SetScreenResolution(l_newScreenResolution);
 	g_Engine->getRenderingServer()->Resize();
 }
 
-void EventSystem::MouseMovementCallback(float mouseXPos, float mouseYPos)
+void HIDService::MouseMovementCallback(float mouseXPos, float mouseYPos)
 {
 	m_MouseXOffset = mouseXPos - m_MouseLastX;
 	m_MouseYOffset = m_MouseLastY - mouseYPos;
@@ -133,18 +133,18 @@ void EventSystem::MouseMovementCallback(float mouseXPos, float mouseYPos)
 	m_MouseLastY = mouseYPos;
 }
 
-void EventSystem::ExecuteEvent(const ButtonEvent& buttonEvent)
+void HIDService::ExecuteEvent(const ButtonEvent& buttonEvent)
 {
 	auto l_event = reinterpret_cast<std::function<void()>*>(buttonEvent.m_eventHandle);
 	(*l_event)();
 }
 
-InputConfig EventSystem::GetInputConfig()
+InputConfig HIDService::GetInputConfig()
 {
 	return m_InputConfig;
 }
 
-ObjectStatus EventSystem::GetStatus()
+ObjectStatus HIDService::GetStatus()
 {
 	return m_ObjectStatus;
 }

@@ -1,6 +1,6 @@
 #include "GUISystem.h"
 #include "../ThirdParty/ImGuiWrapper/ImGuiWrapper.h"
-#include "EventSystem.h"
+#include "HIDService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -18,7 +18,7 @@ bool GUISystem::Setup(ISystemConfig* systemConfig)
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
 	};
-	g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
+	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
 
 	return 	ImGuiWrapper::Get().Setup();
 }

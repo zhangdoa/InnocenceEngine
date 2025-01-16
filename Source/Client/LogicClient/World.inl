@@ -440,8 +440,8 @@ namespace Inno
 		f_runRayTracing = [&]() { g_Engine->Get<RenderingFrontend>()->RunRayTracing(); };
 		f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
 		f_sceneLoadingFinishCallback = [&]() {
 			if (!m_player)
@@ -490,8 +490,8 @@ namespace Inno
 			g_Engine->Get<AssetSystem>()->ConvertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 		};
 
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 		return true;
 	}
@@ -569,7 +569,7 @@ namespace Inno
 	Vec4 WorldSystem::getMousePositionInWorldSpace()
 	{
 		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
-		auto l_mousePositionSS = g_Engine->Get<EventSystem>()->GetMousePosition();
+		auto l_mousePositionSS = g_Engine->Get<HIDService>()->GetMousePosition();
 
 		auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;
 		auto l_y = 1.0f - 2.0f * l_mousePositionSS.y / l_screenResolution.y;

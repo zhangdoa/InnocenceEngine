@@ -1,6 +1,6 @@
 #include "WinWindowSystem.h"
 #include "../../Common/Logger.h"
-#include "../../Services/EventSystem.h"
+#include "../../Services/HIDService.h"
 #include "../../Services/RenderingFrontend.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
@@ -76,7 +76,7 @@ LRESULT WinWindowSystemNS::ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lParam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lParam);
-		g_Engine->Get<EventSystem>()->MouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		g_Engine->Get<HIDService>()->MouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.
@@ -89,7 +89,7 @@ LRESULT WinWindowSystemNS::ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
 bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
-	m_ButtonStates.resize(g_Engine->Get<EventSystem>()->GetInputConfig().totalKeyCodes);
+	m_ButtonStates.resize(g_Engine->Get<HIDService>()->GetInputConfig().totalKeyCodes);
 	for (size_t i = 0; i < m_ButtonStates.size(); i++)
 	{
 		m_ButtonStates[i].m_code = (uint32_t)i;

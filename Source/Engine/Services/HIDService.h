@@ -38,10 +38,10 @@ namespace Inno
 	using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
 	using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
 
-	class EventSystem : public ISystem
+	class HIDService : public ISystem
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(EventSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(HIDService);
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;

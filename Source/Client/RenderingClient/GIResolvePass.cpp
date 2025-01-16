@@ -3,7 +3,7 @@
 #include "../../Engine/Services/RenderingFrontend.h"
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Common/IOService.h"
-#include "../../Engine/Services/EventSystem.h"
+#include "../../Engine/Services/HIDService.h"
 #include "../../Engine/Services/SceneSystem.h"
 #include "../../Engine/Common/Array.h"
 #include "../../Engine/Services/ComponentManager.h"
@@ -317,7 +317,7 @@ bool GIResolvePass::Setup()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	f_reloadGIData = [&]() { m_needToReloadGIData = true; };
-	g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
+	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
 
 	setupSky();
 	setupSurfels();

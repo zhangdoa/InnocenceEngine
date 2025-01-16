@@ -12,7 +12,7 @@
 #include "../../Component/MeshComponent.h"
 #include "../../Component/PhysicsComponent.h"
 #include "../../Services/SceneSystem.h"
-#include "../../Services/EventSystem.h"
+#include "../../Services/HIDService.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -132,7 +132,7 @@ bool PhysXWrapperNS::Setup()
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 
-	g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
+	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
 
 	return true;
 }

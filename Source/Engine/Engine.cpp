@@ -13,7 +13,7 @@
 #include "Services/SceneSystem.h"
 #include "Services/AssetSystem.h"
 #include "Services/PhysicsSystem.h"
-#include "Services/EventSystem.h"
+#include "Services/HIDService.h"
 #include "Services/RenderingFrontend.h"
 #include "Services/GUISystem.h"
 
@@ -278,7 +278,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<TaskScheduler>();
 	Get<IOService>();
 
-	Get<EventSystem>();
+	Get<HIDService>();
 
 	std::string l_windowArguments = pScmdline;
 	m_pImpl->m_initConfig = ParseInitConfig(l_windowArguments);
@@ -384,7 +384,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	SystemSetup(EventSystem);
+	SystemSetup(HIDService);
 	
 	IWindowSystemConfig l_windowSystemConfig;
 	l_windowSystemConfig.m_AppHook = appHook;
@@ -472,7 +472,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 bool Engine::Initialize()
 {
-	SystemInit(EventSystem);
+	SystemInit(HIDService);
 	m_pImpl->m_WindowSystem->Initialize();
 
 	SystemInit(EntityManager);
@@ -502,7 +502,7 @@ bool Engine::ExecuteDefaultTask()
 	Get<Timer>()->Tick();
 
 	m_pImpl->m_WindowSystem->Update();
-	SystemUpdate(EventSystem);
+	SystemUpdate(HIDService);
 	SystemUpdate(EntityManager);
 
 	SystemUpdate(SceneSystem);
@@ -584,7 +584,7 @@ bool Engine::Terminate()
 		return false;
 	}
 
-	SystemTerm(EventSystem);
+	SystemTerm(HIDService);
 	SystemTerm(SceneSystem);
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Terminated;

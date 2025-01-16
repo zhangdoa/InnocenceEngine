@@ -30,7 +30,7 @@
 
 #include "BSDFTestPass.h"
 
-#include "../../Engine/Services/EventSystem.h"
+#include "../../Engine/Services/HIDService.h"
 #include "../../Engine/Services/RenderingFrontend.h"
 #include "../../Engine/Services/AssetSystem.h"
 #include "../../Engine/Common/Task.h"
@@ -86,22 +86,22 @@ namespace Inno
 	bool DefaultRenderingClientImpl::Setup(ISystemConfig* systemConfig)
 	{
 		f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 		f_showProbe = [&]() { m_showProbe = !m_showProbe; };
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
 
 		f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
 
 		f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
 
 		f_showVolumetric = [&]() { m_showVolumetric = !m_showVolumetric; };
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
 
 		f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
-		g_Engine->Get<EventSystem>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
 		f_SetupJob = [&]() {
 			DefaultGPUBuffers::Setup();
