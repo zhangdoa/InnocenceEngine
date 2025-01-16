@@ -1,5 +1,5 @@
 #include "SceneSystem.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/TaskScheduler.h"
 #include "AssetSystem.h"
 #include "ComponentManager.h"
@@ -55,7 +55,7 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 
 	m_isLoadingScene = false;
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "SceneSystem: Scene ", fileName, " has been loaded.");
+	Log(Success, "Scene ", fileName, " has been loaded.");
 
 	return true;
 }
@@ -84,12 +84,12 @@ bool SceneSystem::Initialize()
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, "SceneSystem has been initialized.");
+		Log(Success, "SceneSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "SceneSystem: Object is not created!");
+		Log(Error, "Object is not created!");
 		return false;
 	}
 }
@@ -116,7 +116,7 @@ bool SceneSystem::Update()
 bool SceneSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "SceneSystem has been terminated.");
+	Log(Success, "SceneSystem has been terminated.");
 	return true;
 }
 
@@ -136,13 +136,13 @@ bool SceneSystem::loadScene(const char* fileName, bool AsyncLoad)
 {
 	if (m_currentScene == fileName)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has already loaded now.");
+		Log(Warning, "Scene ", fileName, " has already loaded now.");
 		return true;
 	}
 
 	if (m_nextLoadingScene == fileName)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has been scheduled for loading.");
+		Log(Warning, "Scene ", fileName, " has been scheduled for loading.");
 		return true;
 	}
 

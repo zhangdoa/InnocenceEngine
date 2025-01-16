@@ -28,7 +28,7 @@ bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
 
 	m_ObjectStatus = ObjectStatus::Created;
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowWin Setup finished.");
+	Log(Success, "ImGuiWindowWin Setup finished.");
 
 	return true;
 }
@@ -39,7 +39,7 @@ bool ImGuiWindowWin::Initialize()
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowWin has been initialized.");
+	Log(Success, "ImGuiWindowWin has been initialized.");
 
 	return true;
 }
@@ -56,7 +56,7 @@ bool ImGuiWindowWin::Terminate()
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowWin has been terminated.");
+	Log(Success, "ImGuiWindowWin has been terminated.");
 
 	return true;
 }

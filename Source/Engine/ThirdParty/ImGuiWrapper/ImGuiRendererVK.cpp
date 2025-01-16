@@ -12,14 +12,14 @@ namespace ImGuiRendererVKNS
 bool ImGuiRendererVK::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererVK Setup finished.");
+	Log(Success, "ImGuiRendererVK Setup finished.");
 
 	return true;
 }
 
 bool ImGuiRendererVK::Initialize()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererVK has been initialized.");
+	Log(Success, "ImGuiRendererVK has been initialized.");
 
 	return true;
 }
@@ -37,7 +37,7 @@ bool ImGuiRendererVK::Render()
 bool ImGuiRendererVK::Terminate()
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererVK has been terminated.");
+	Log(Success, "ImGuiRendererVK has been terminated.");
 
 	return true;
 }

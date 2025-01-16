@@ -1,24 +1,12 @@
 #include "WinDXWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Common/Logger.h"
+#include "../../../Common/LogService.h"
 #include "../../../Services/RenderingFrontend.h"
 
 #include "../../../Engine.h"
 using namespace Inno;
-;
 
-namespace WinDXWindowSurfaceNS
-{
-	bool Setup(ISystemConfig* systemConfig);
-	bool Initialize();
-	bool Update();
-	bool Terminate();
-
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_InitConfig;
-}
-
-bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
+bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
 {
 	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
 
@@ -61,15 +49,16 @@ bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance(), NULL); // instance, param
 
 		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->SetWindowHandle(l_hwnd);
+		
+		Log(Success, "A new window handle has been created.");
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinDXWindowSurface Setup finished.");
 
 	return true;
 }
 
-bool WinDXWindowSurfaceNS::Initialize()
+bool WinDXWindowSurface::Initialize()
 {
 	if (m_InitConfig.engineMode == EngineMode::Host)
 	{
@@ -77,48 +66,19 @@ bool WinDXWindowSurfaceNS::Initialize()
 		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(), true);
 		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
 		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
+
+		Log(Success, "The window has been brought to the foreground.");
 	}
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");
 	return true;
-}
-
-bool WinDXWindowSurfaceNS::Update()
-{
-	return true;
-}
-
-bool WinDXWindowSurfaceNS::Terminate()
-{
-	m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
-
-	return true;
-}
-
-bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
-{
-	return WinDXWindowSurfaceNS::Setup(systemConfig);
-}
-
-bool WinDXWindowSurface::Initialize()
-{
-	return WinDXWindowSurfaceNS::Initialize();
-}
-
-bool WinDXWindowSurface::Update()
-{
-	return WinDXWindowSurfaceNS::Update();
 }
 
 bool WinDXWindowSurface::Terminate()
 {
-	return WinDXWindowSurfaceNS::Terminate();
-}
+	m_ObjectStatus = ObjectStatus::Terminated;
+	Log(Warning, "The window needs to be terminated.");
 
-ObjectStatus WinDXWindowSurface::GetStatus()
-{
-	return WinDXWindowSurfaceNS::m_ObjectStatus;
+	return true;
 }
 
 bool WinDXWindowSurface::swapBuffer()

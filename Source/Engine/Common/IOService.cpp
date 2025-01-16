@@ -5,7 +5,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "Logger.h"
+#include "LogService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -16,7 +16,7 @@ bool IOService::setupWorkingDirectory()
 	m_workingDir = fs::current_path().generic_string();
 	m_workingDir = m_workingDir + "//";
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "IOService: current working directory is ", m_workingDir.c_str());
+	Log(Verbose, "current working directory is ", m_workingDir.c_str());
 
 	return true;
 }
@@ -42,7 +42,7 @@ std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
 
 	if (!l_file.is_open())
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
+		Log(Error, "Can't open file : ", filePath, "!");
 		return std::vector<char>();
 	}
 
@@ -79,7 +79,7 @@ bool IOService::saveFile(const char* filePath, const std::vector<char>& content,
 
 	if (!l_file.is_open())
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
+		Log(Error, "Can't open file : ", filePath, "!");
 		return false;
 	}
 
@@ -145,7 +145,7 @@ bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
 
 	if (!l_headerFile.is_open())
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "FileSystem: std::ofstream: can't open file ", l_headerFileName.c_str(), "!");
+		Log(Error, "std::ofstream: can't open file ", l_headerFileName.c_str(), "!");
 		return false;
 	}
 
@@ -233,6 +233,6 @@ bool IOService::addCPPClassFiles(const CPPClassDesc& desc)
 
 	l_headerFile.close();
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "FileSystem: ", l_headerFileName.c_str(), " has been generated.");
+	Log(Success, "", l_headerFileName.c_str(), " has been generated.");
 	return true;
 }

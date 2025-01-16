@@ -1,5 +1,5 @@
 #include "Helper.h"
-#include "../../Common/Logger.h"
+#include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
 #include "../IRenderingServer.h"
 
@@ -12,7 +12,7 @@ bool RenderingServerHelper::ReserveRenderTargets(RenderPassComponent* RenderPass
 {
 	if (RenderPassComp->m_RenderPassDesc.m_RenderTargetsReservationFunc)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: Calling customized render targets reservation function for: ", RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Calling customized render targets reservation function for: ", RenderPassComp->m_InstanceName.c_str());
 		RenderPassComp->m_RenderPassDesc.m_RenderTargetsReservationFunc();
 	}
 	else
@@ -22,13 +22,13 @@ bool RenderingServerHelper::ReserveRenderTargets(RenderPassComponent* RenderPass
 		{
 			RenderPassComp->m_RenderTargets[i].m_IsOwned = true;
 			RenderPassComp->m_RenderTargets[i].m_Texture = renderingServer->AddTextureComponent((std::string(RenderPassComp->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
-			g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: Render target: ", RenderPassComp->m_RenderTargets[i].m_Texture->m_InstanceName.c_str(), " has been allocated at: ", RenderPassComp->m_RenderTargets[i].m_Texture);
+			Log(Verbose, "Render target: ", RenderPassComp->m_RenderTargets[i].m_Texture->m_InstanceName.c_str(), " has been allocated at: ", RenderPassComp->m_RenderTargets[i].m_Texture);
 		}		
 	}
 
 	if (RenderPassComp->m_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: Calling customized depth-stencil render target reservation function for: ", RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", RenderPassComp->m_InstanceName.c_str());
 		RenderPassComp->m_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc();
 	}
 	else
@@ -37,7 +37,7 @@ bool RenderingServerHelper::ReserveRenderTargets(RenderPassComponent* RenderPass
 		{
 			RenderPassComp->m_DepthStencilRenderTarget.m_IsOwned = true;
 			RenderPassComp->m_DepthStencilRenderTarget.m_Texture = renderingServer->AddTextureComponent((std::string(RenderPassComp->m_InstanceName.c_str()) + "_DS/").c_str());
-			g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: ", RenderPassComp->m_InstanceName.c_str(), " depth stencil target has been allocated.");
+			Log(Verbose, "", RenderPassComp->m_InstanceName.c_str(), " depth stencil target has been allocated.");
 		}
 	}
 
@@ -48,7 +48,7 @@ bool RenderingServerHelper::CreateRenderTargets(RenderPassComponent* RenderPassC
 {
 	if (RenderPassComp->m_RenderPassDesc.m_RenderTargetsCreationFunc)
 	{		
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: Calling customized render targets creation function for: ", RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Calling customized render targets creation function for: ", RenderPassComp->m_InstanceName.c_str());
 		RenderPassComp->m_RenderPassDesc.m_RenderTargetsCreationFunc();
 	}
 	else
@@ -61,14 +61,14 @@ bool RenderingServerHelper::CreateRenderTargets(RenderPassComponent* RenderPassC
 
 			renderingServer->InitializeTextureComponent(l_TextureComp);
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: Render target: ", RenderPassComp->m_RenderTargets[i].m_Texture->m_InstanceName.c_str(), " has been initialized.");
+			Log(Verbose, "Render target: ", RenderPassComp->m_RenderTargets[i].m_Texture->m_InstanceName.c_str(), " has been initialized.");
 		}	
 	}
 
 
 	if (RenderPassComp->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc)
 	{	
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: Calling customized depth-stencil render target reservation function for: ", RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", RenderPassComp->m_InstanceName.c_str());
 		RenderPassComp->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc();
 	}
 	else
@@ -93,7 +93,7 @@ bool RenderingServerHelper::CreateRenderTargets(RenderPassComponent* RenderPassC
 			RenderPassComp->m_DepthStencilRenderTarget.m_Texture->m_TextureData = nullptr;
 
 			renderingServer->InitializeTextureComponent(RenderPassComp->m_DepthStencilRenderTarget.m_Texture);
-			g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RenderingServer: ", RenderPassComp->m_InstanceName.c_str(), " depth stencil target has been initialized.");
+			Log(Verbose, "", RenderPassComp->m_InstanceName.c_str(), " depth stencil target has been initialized.");
 		}
 	}
 

@@ -17,7 +17,7 @@ namespace ImGuiRendererDX11NS
 bool ImGuiRendererDX11::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX11 Setup finished.");
+	Log(Success, "ImGuiRendererDX11 Setup finished.");
 
 	return true;
 }
@@ -29,7 +29,7 @@ bool ImGuiRendererDX11::Initialize()
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
 
 	ImGui_ImplDX11_Init(l_device, l_deviceContext);
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX11 has been initialized.");
+	Log(Success, "ImGuiRendererDX11 has been initialized.");
 
 	return true;
 }
@@ -56,7 +56,7 @@ bool ImGuiRendererDX11::Terminate()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX11 has been terminated.");
+	Log(Success, "ImGuiRendererDX11 has been terminated.");
 
 	return true;
 }

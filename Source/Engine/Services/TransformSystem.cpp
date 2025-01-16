@@ -1,7 +1,7 @@
 #include "TransformSystem.h"
 #include "../Component/TransformComponent.h"
 #include "../Common/Randomizer.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "ComponentManager.h"
 #include "SceneSystem.h"
 #include "EntityManager.h"

@@ -16,5 +16,9 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool swapBuffer() override;
+		
+	private:
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		InitConfig m_InitConfig;
 	};
 }

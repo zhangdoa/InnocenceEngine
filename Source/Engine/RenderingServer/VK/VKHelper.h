@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Common/STL17.h"
+#include "../../Common/LogService.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKRenderPassComponent.h"
 #include "../../Component/VKShaderProgramComponent.h"
@@ -50,7 +51,7 @@ namespace Inno
 			auto l_result = SetDebugUtilsObjectNameEXT(device, &nameInfo);
 			if (l_result != VK_SUCCESS)
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VKRenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+				Log(Warning, "Can't name ", objectType, " with ", l_Name.c_str());
 				return false;
 			}
 			return true;

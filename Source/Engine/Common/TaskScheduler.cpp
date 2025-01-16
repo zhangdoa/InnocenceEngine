@@ -1,6 +1,6 @@
 #include "TaskScheduler.h"
 
-#include "Logger.h"
+#include "LogService.h"
 #include "Timer.h"
 #include "Thread.h"
 
@@ -38,7 +38,7 @@ TaskScheduler::~TaskScheduler()
 
 void TaskScheduler::WaitSync()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "TaskScheduler: Waiting for the synchronization point...");
+	Log(Verbose, "Waiting for the synchronization point...");
 
 	bool l_areAllThreadsIdle = false;
 
@@ -50,7 +50,7 @@ void TaskScheduler::WaitSync()
 		}
 	}
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "TaskScheduler: Reached synchronization point");
+	Log(Verbose, "Reached synchronization point");
 }
 
 std::shared_ptr<ITask> TaskScheduler::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)

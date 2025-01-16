@@ -1,6 +1,6 @@
 #pragma once
 #include "Common/ClassTemplate.h"
-#include "Common/Logger.h"
+#include "Common/LogService.h"
 
 #include "Interface/IWindowSystem.h"
 #include "RenderingServer/IRenderingServer.h"

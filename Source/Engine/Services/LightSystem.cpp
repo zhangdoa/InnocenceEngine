@@ -1,7 +1,7 @@
 #include "LightSystem.h"
 #include "../Component/LightComponent.h"
 #include "../Common/Randomizer.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/MathHelper.h"
 #include "ComponentManager.h"
 #include "CameraSystem.h"

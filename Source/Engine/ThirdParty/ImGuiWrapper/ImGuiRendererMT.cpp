@@ -12,14 +12,14 @@ namespace ImGuiRendererMTNS
 bool ImGuiRendererMT::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererMT Setup finished.");
+	Log(Success, "ImGuiRendererMT Setup finished.");
 
 	return true;
 }
 
 bool ImGuiRendererMT::Initialize()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererMT has been initialized.");
+	Log(Success, "ImGuiRendererMT has been initialized.");
 
 	return true;
 }
@@ -39,7 +39,7 @@ bool ImGuiRendererMT::Render()
 bool ImGuiRendererMT::Terminate()
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererMT has been terminated.");
+	Log(Success, "ImGuiRendererMT has been terminated.");
 
 	return true;
 }

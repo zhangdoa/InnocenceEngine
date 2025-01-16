@@ -2,7 +2,7 @@
 #include "../Engine/Common/STL17.h"
 #include "../Engine/Common/MathHelper.h"
 #include "../Engine/Common/Timer.h"
-#include "../Engine/Common/Logger.h"
+#include "../Engine/Common/LogService.h"
 #include "../Engine/Common/Memory.h"
 #include "../Engine/Common/TaskScheduler.h"
 #include "../Engine/Common/ObjectPool.h"
@@ -40,7 +40,7 @@ void TestIToA(size_t testCaseCount)
 
 	auto l_SpeedRatio = double(l_Timestamp1 - l_StartTime) / double(l_Timestamp2 - l_Timestamp1);
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom VS STL IToA speed ratio is ", l_SpeedRatio);
+	Log(Success, "Custom VS STL IToA speed ratio is ", l_SpeedRatio);
 }
 
 void TestArray(size_t testCaseCount)
@@ -84,7 +84,7 @@ void TestArray(size_t testCaseCount)
 
 	auto l_SpeedRatio = double(l_Timestamp1 - l_StartTime) / double(l_Timestamp2 - l_Timestamp1);
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom VS STL array container speed ratio is ", l_SpeedRatio);
+	Log(Success, "Custom VS STL array container speed ratio is ", l_SpeedRatio);
 }
 
 struct TestStruct
@@ -118,7 +118,7 @@ void TestMemory(size_t testCaseCount)
 
 	auto l_SpeedRatio1 = double(l_Timestamp1 - l_StartTime1) / double(l_Timestamp2 - l_Timestamp1);
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom object pool allocation VS malloc() speed ratio is ", l_SpeedRatio1);
+	Log(Success, "Custom object pool allocation VS malloc() speed ratio is ", l_SpeedRatio1);
 
 	auto l_StartTime2 = Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
@@ -138,7 +138,7 @@ void TestMemory(size_t testCaseCount)
 
 	auto l_SpeedRatio2 = double(l_Timestamp3 - l_StartTime2) / double(l_Timestamp4 - l_Timestamp3);
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
+	Log(Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
 
 	TObjectPool<uint32_t>::Clear(l_objectPool);
 	TObjectPool<uint32_t>::Destruct(l_objectPool);
@@ -212,7 +212,7 @@ std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, Func&& func, A
 
 void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, bool buildTaskGraph = false)
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Generate test async tasks...");
+	Log(Verbose, "Generate test async tasks...");
 
 	std::vector<std::shared_ptr<ITask>> l_Tasks;
 	std::vector<std::string> l_TaskNames;
@@ -228,7 +228,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, b
 	// We need a DAG structure
 	std::default_random_engine l_generator;
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Dispatch all tasks to async threads...");
+	Log(Verbose, "Dispatch all tasks to async threads...");
 
 	for (size_t i = 0; i < testCaseCount; i++)
 	{
@@ -261,7 +261,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, b
 
 	g_Engine->Get<TaskScheduler>()->WaitSync();
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "All jobs finished.");
+	Log(Verbose, "All jobs finished.");
 }
 
 void TestRingBuffer(size_t testCaseCount)
@@ -295,7 +295,7 @@ void TestAtomic(size_t testCaseCount)
 			auto l_reader = AtomicReader(l_atomicBuffer);
 			auto l_t = l_reader.Get();
 			auto l_x = *l_t;
-			g_Engine->Get<Logger>()->Log(LogLevel::Warning, l_x);
+			Log(Warning, l_x);
 		}
 
 		{
@@ -303,7 +303,7 @@ void TestAtomic(size_t testCaseCount)
 			auto l_t = l_writer.Get();
 			*l_t += l_executionTime;
 			std::this_thread::sleep_for(std::chrono::milliseconds(l_executionTime));
-			g_Engine->Get<Logger>()->Log(LogLevel::Success, *l_t);
+			Log(Success, *l_t);
 		}
 
 		{
@@ -311,7 +311,7 @@ void TestAtomic(size_t testCaseCount)
 			auto l_reader = AtomicReader(l_t);
 			auto l_x = l_reader.Get();
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, *l_x);
+			Log(Error, *l_x);
 		}
 
 		l_finishedTaskCount++;
@@ -341,7 +341,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 			auto l_testAtomicDoubleBufferReader = AtomicReader(l_testAtomicDoubleBuffer.Get());
 			l_writeData = *l_testAtomicDoubleBufferReader.Get();
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Success, "Read l_testAtomicDoubleBuffer...");
+			Log(Success, "Read l_testAtomicDoubleBuffer...");
 		}
 
 		auto l_executionTime = l_randomDelta(l_generator);
@@ -361,7 +361,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 				l_testAtomicDoubleBuffer.Flip();
 			}
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Write l_testAtomicDoubleBuffer...");
+			Log(Warning, "Write l_testAtomicDoubleBuffer...");
 		}
 
 		l_finishedTaskCount++;
@@ -375,7 +375,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 
 	for (size_t i = 0; i < l_testAtomicDoubleBufferSize; i++)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, l_testAtomicDoubleBufferFinal[i]);
+		Log(Success, l_testAtomicDoubleBufferFinal[i]);
 	}
 }
 

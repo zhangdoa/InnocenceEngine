@@ -77,7 +77,7 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
             
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Gathering static meshes...");
+            Log(Success, "Gathering static meshes...");
 
             uint32_t l_index = 0;
 
@@ -129,7 +129,7 @@ namespace Inno
 
             Config::Get().m_staticMeshDrawCallCount = l_index;
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
+            Log(Success, "There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
             auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
@@ -144,7 +144,7 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Generate probe caches...");
+            Log(Success, "Generate probe caches...");
 
             auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->getStaticSceneAABB();
 
@@ -164,7 +164,7 @@ namespace Inno
 
             l_renderingServer->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Start to draw probe height map...");
+            Log(Success, "Start to draw probe height map...");
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
@@ -195,7 +195,7 @@ namespace Inno
             l_renderingServer->WaitCommandQueue(m_RenderPassComp_Probe, GPUEngineType::Graphics, GPUEngineType::Graphics);
             l_renderingServer->WaitFence(m_RenderPassComp_Probe, GPUEngineType::Graphics);
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: Start to generate probe location...");
+            Log(Success, "Start to generate probe location...");
 
             // Read back results and generate probes
             auto l_probePosTextureResults = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture);
@@ -211,7 +211,7 @@ namespace Inno
 
             serializeProbeInfos(l_probeInfos);
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size(), " probes generated.");
+            Log(Success, "", probes.size(), " probes generated.");
 
             return true;
         }
@@ -306,7 +306,7 @@ namespace Inno
                 }
             }
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size(), " probe location generated over the surface.");
+            Log(Success, "", probes.size(), " probe location generated over the surface.");
 
             return true;
         }
@@ -414,7 +414,7 @@ namespace Inno
             probes.insert(probes.end(), l_wallProbes.begin(), l_wallProbes.end());
             probes.shrink_to_fit();
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "ProbeGenerator: ", probes.size() - l_probesCount, " probe location generated along the wall.");
+            Log(Success, "", probes.size() - l_probesCount, " probe location generated along the wall.");
 
             return l_maxVerticalProbesCount;
         }

@@ -92,7 +92,7 @@ namespace Inno
 			}
 			else
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: ", l_owner->m_InstanceName.c_str(), "!");
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: ", l_owner->m_InstanceName.c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -130,7 +130,7 @@ namespace Inno
 
 			if (m_ComponentTypeIndexLUT.find(l_typeHashCode) != m_ComponentTypeIndexLUT.end())
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " has been registered!");
+				Log(Error, "", l_TypeInfo.name(), " has been registered!");
 				return false;
 			}
 
@@ -154,7 +154,7 @@ namespace Inno
 				return m_ComponentTypeIndexLUT[l_typeHashCode];
 			}
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+			Log(Error, "", l_TypeInfo.name(), " is not registered!");
 			return -1;
 		}
 
@@ -169,7 +169,7 @@ namespace Inno
 				return m_ComponentSystems[l_typeHashCode];
 			}
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+			Log(Error, "", l_TypeInfo.name(), " is not registered!");
 
 			return nullptr;
 		}
@@ -231,7 +231,7 @@ namespace Inno
 				return std::static_pointer_cast<TComponentFactory<T>>(m_ComponentFactories[l_typeHashCode]);
 			}
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+			Log(Error, "", l_TypeInfo.name(), " is not registered!");
 
 			return nullptr;
 		}

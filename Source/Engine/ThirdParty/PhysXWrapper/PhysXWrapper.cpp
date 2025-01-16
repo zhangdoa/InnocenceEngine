@@ -6,7 +6,7 @@
 #endif
 
 #include "../../Common/Timer.h"
-#include "../../Common/Logger.h"
+#include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
 #include "../../Component/MeshComponent.h"
@@ -75,7 +75,7 @@ bool PhysXWrapperNS::Setup()
 		gDefaultErrorCallback);
 	if (!gFoundation)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "PhysXWrapper: PxCreateFoundation failed!");
+		Log(Error, "PxCreateFoundation failed!");
 		return false;
 	}
 	bool recordMemoryAllocations = true;
@@ -88,7 +88,7 @@ bool PhysXWrapperNS::Setup()
 
 	if (!gPhysics)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "PhysXWrapper: PxCreatePhysics failed!");
+		Log(Error, "PxCreatePhysics failed!");
 		return false;
 	}
 
@@ -125,7 +125,7 @@ bool PhysXWrapperNS::Setup()
 
 		PhysXActors.clear();
 
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, "PhysXWrapper: All PhysX Actors has been removed.");
+		Log(Success, "All PhysX Actors has been removed.");
 	};
 
 	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -194,7 +194,7 @@ bool PhysXWrapperNS::Terminate()
 
 	gFoundation->release();
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "PhysXWrapper: PhysX has been terminated.");
+	Log(Success, "PhysX has been terminated.");
 
 	return true;
 }
@@ -227,7 +227,7 @@ bool PhysXWrapperNS::createPxSphere(PhysicsComponent* rhs, Vec4 globalPos, float
 	gScene->addActor(*l_actor);
 	shape->release();
 	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
+	Log(Verbose, "PxRigidActor has been created for ", rhs, ".");
 
 	return true;
 }
@@ -265,7 +265,7 @@ bool PhysXWrapperNS::createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot
 		gScene->addActor(*l_actor);
 		shape->release();
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
+		Log(Verbose, "PxRigidActor has been created for ", rhs, ".");
 	}
 
 	return true;
@@ -326,15 +326,15 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 	// Print the elapsed time for comparison
 	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Create convex mesh with ", desc.points.count, " triangles: ");
-	directInsertion ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Direct mesh insertion enabled.") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Direct mesh insertion disabled.");
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Gauss map limit: %d \n", gaussMapLimit);
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Created hull number of vertices: ", convex->getNbVertices());
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Created hull number of polygons: ", convex->getNbPolygons());
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Elapsed time in ms: ", double(elapsedTime));
+	Log(Verbose, "Create convex mesh with ", desc.points.count, " triangles: ");
+	directInsertion ? Log(Verbose, "Direct mesh insertion enabled.") : Log(Verbose, "Direct mesh insertion disabled.");
+	Log(Verbose, "Gauss map limit: %d \n", gaussMapLimit);
+	Log(Verbose, "Created hull number of vertices: ", convex->getNbVertices());
+	Log(Verbose, "Created hull number of polygons: ", convex->getNbPolygons());
+	Log(Verbose, "Elapsed time in ms: ", double(elapsedTime));
 	if (!directInsertion)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Mesh size: ", meshSize);
+		Log(Verbose, "Mesh size: ", meshSize);
 	}
 
 	PhysXConvexMeshes.emplace(rhs->m_MeshMaterialPair->mesh, convex);
@@ -445,17 +445,17 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	// Print the elapsed time for comparison
 	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
-	cookingPerformance ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Cooking performance on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Cooking performance off\n");
-	inserted ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
-	!skipEdgeData ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
-	!skipMeshCleanup ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh size/performance trade-off: %f \n", double(params.midphaseDesc.mBVH33Desc.meshSizePerformanceTradeOff));
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
+	Log(Verbose, "\t -----------------------------------------------\n");
+	Log(Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
+	cookingPerformance ? Log(Verbose, "\t\t Cooking performance on\n") : Log(Verbose, "\t\t Cooking performance off\n");
+	inserted ? Log(Verbose, "\t\t Mesh inserted on\n") : Log(Verbose, "\t\t Mesh inserted off\n");
+	!skipEdgeData ? Log(Verbose, "\t\t Precompute edge data on\n") : Log(Verbose, "\t\t Precompute edge data off\n");
+	!skipMeshCleanup ? Log(Verbose, "\t\t Mesh cleanup on\n") : Log(Verbose, "\t\t Mesh cleanup off\n");
+	Log(Verbose, "\t\t Mesh size/performance trade-off: %f \n", double(params.midphaseDesc.mBVH33Desc.meshSizePerformanceTradeOff));
+	Log(Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
 	if (!inserted)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Mesh size: %d \n", meshSize);
+		Log(Verbose, "\t Mesh size: %d \n", meshSize);
 	}
 
 	PhysXTriangleMeshes.emplace(rhs->m_MeshMaterialPair->mesh, triMesh);
@@ -525,16 +525,16 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	// Print the elapsed time for comparison
 	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
-	inserted ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh inserted off\n");
-	!skipEdgeData ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Precompute edge data off\n");
-	!skipMeshCleanup ? g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup on\n") : g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Mesh cleanup off\n");
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t\t Num triangles per leaf: %d \n", numTrisPerLeaf);
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
+	Log(Verbose, "\t -----------------------------------------------\n");
+	Log(Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
+	inserted ? Log(Verbose, "\t\t Mesh inserted on\n") : Log(Verbose, "\t\t Mesh inserted off\n");
+	!skipEdgeData ? Log(Verbose, "\t\t Precompute edge data on\n") : Log(Verbose, "\t\t Precompute edge data off\n");
+	!skipMeshCleanup ? Log(Verbose, "\t\t Mesh cleanup on\n") : Log(Verbose, "\t\t Mesh cleanup off\n");
+	Log(Verbose, "\t\t Num triangles per leaf: %d \n", numTrisPerLeaf);
+	Log(Verbose, "\t Elapsed time in ms: %f \n", double(elapsedTime));
 	if (!inserted)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "\t Mesh size: %d \n", meshSize);
+		Log(Verbose, "\t Mesh size: %d \n", meshSize);
 	}
 
 	PhysXTriangleMeshes.emplace(rhs->m_MeshMaterialPair->mesh, triMesh);
@@ -602,7 +602,7 @@ bool PhysXWrapperNS::createPxMesh(PhysicsComponent* rhs, Vec4 globalPos, Vec4 ro
 		rhs->m_Proxy = l_actor;
 		gScene->addActor(*l_actor);
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
+		Log(Verbose, "PxRigidActor has been created for ", rhs, ".");
 	}
 
 	return true;

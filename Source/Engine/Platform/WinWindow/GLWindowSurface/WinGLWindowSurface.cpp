@@ -1,6 +1,6 @@
 #include "WinGLWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../../Common/Logger.h"
+#include "../../../Common/LogService.h"
 #include "../../../Common/TaskScheduler.h"
 #include "../../../Services/RenderingFrontend.h"
 
@@ -70,14 +70,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (fakePFDID == 0)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: ChoosePixelFormat() failed.");
+		Log(Error, "ChoosePixelFormat() failed.");
 		return false;
 	}
 
 	if (SetPixelFormat(fakeDC, fakePFDID, &fakePFD) == false)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: SetPixelFormat() failed.");
+		Log(Error, "SetPixelFormat() failed.");
 		return false;
 	}
 
@@ -87,14 +87,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (fakeRC == 0)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglCreateContext() failed.");
+		Log(Error, "wglCreateContext() failed.");
 		return false;
 	}
 
 	if (wglMakeCurrent(fakeDC, fakeRC) == false)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
+		Log(Error, "wglMakeCurrent() failed.");
 		return false;
 	}
 
@@ -104,7 +104,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (wglChoosePixelFormatARB == nullptr)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglChoosePixelFormatARB) failed.");
+		Log(Error, "wglGetProcAddress(wglChoosePixelFormatARB) failed.");
 		return false;
 	}
 
@@ -113,7 +113,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (wglCreateContextAttribsARB == nullptr)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglCreateContextAttribsARB) failed.");
+		Log(Error, "wglGetProcAddress(wglCreateContextAttribsARB) failed.");
 		return false;
 	}
 
@@ -168,7 +168,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (status == false || numFormats == 0)
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
+			Log(Error, "wglChoosePixelFormatARB() failed.");
 		}
 
 		PIXELFORMATDESCRIPTOR PFD;
@@ -194,7 +194,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (m_HGLRC == NULL)
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
+			Log(Error, "wglCreateContextAttribsARB() failed.");
 		}
 	};
 
@@ -212,7 +212,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (!wglMakeCurrent(m_HDC, m_HGLRC))
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
+			Log(Error, "wglMakeCurrent() failed.");
 		}
 
 		// init opengl loader here (extra safe version)
@@ -221,7 +221,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		if (!gladLoadGL(nullptr))
 		{
 			m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: Failed to Initialize GLAD.");
+			Log(Error, "Failed to Initialize GLAD.");
 		}
 
 		auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
@@ -233,7 +233,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			if (wglSwapIntervalEXT == nullptr)
 			{
 				m_ObjectStatus = ObjectStatus::Created;
-				g_Engine->Get<Logger>()->Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
+				Log(Error, "wglGetProcAddress(wglSwapIntervalEXT) failed.");
 			}
 			wglSwapIntervalEXT(0);
 		}
@@ -250,14 +250,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinGLWindowSurface Setup finished.");
+	Log(Success, "WinGLWindowSurface Setup finished.");
 
 	return true;
 }
 
 bool WinGLWindowSurfaceNS::Initialize()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinGLWindowSurface has been initialized.");
+	Log(Success, "WinGLWindowSurface has been initialized.");
 	return true;
 }
 
@@ -269,7 +269,7 @@ bool WinGLWindowSurfaceNS::Update()
 bool WinGLWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "WinGLWindowSurfaceNS has been terminated.");
+	Log(Success, "WinGLWindowSurfaceNS has been terminated.");
 
 	return true;
 }

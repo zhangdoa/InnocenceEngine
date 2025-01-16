@@ -253,7 +253,7 @@ bool MTRenderingServer::Resize()
 void MTRenderingServer::setBridge(MTRenderingServerBridge* bridge)
 {
 	MTRenderingServerNS::m_bridge = bridge;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "MTRenderingServer: Bridge connected at ", bridge);
+	Log(Success, "Bridge connected at ", bridge);
 }
 
 bool MTRenderingServer::BeginCapture()

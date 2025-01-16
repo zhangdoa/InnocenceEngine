@@ -1,6 +1,6 @@
 #include "Task.h"
 
-#include "Logger.h"
+#include "LogService.h"
 
 #include "../Engine.h"
 
@@ -46,9 +46,9 @@ bool ITask::TryToExecute()
         return false;
     }
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "TaskScheduler: Task: \"", GetName(), "\" executing...");
+	Log(Verbose, "Task: \"", GetName(), "\" executing...");
 	ExecuteImpl();
-    g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "TaskScheduler: Task: \"", GetName(), "\" finished.");
+    Log(Verbose, "Task: \"", GetName(), "\" finished.");
     
     if (m_Type == Type::Once)
     {

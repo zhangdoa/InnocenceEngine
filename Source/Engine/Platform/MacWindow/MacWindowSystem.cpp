@@ -22,7 +22,7 @@ bool MacWindowSystem::Setup(ISystemConfig* systemConfig)
 	bool result = MacWindowSystemNS::m_bridge->Setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Created;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "MacWindowSystem Setup finished.");
+	Log(Success, "MacWindowSystem Setup finished.");
 
 	return true;
 }
@@ -32,7 +32,7 @@ bool MacWindowSystem::Initialize()
 	bool result = MacWindowSystemNS::m_bridge->Initialize();
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "MacWindowSystem has been initialized.");
+	Log(Success, "MacWindowSystem has been initialized.");
 	return true;
 }
 
@@ -46,7 +46,7 @@ bool MacWindowSystem::Terminate()
 {
 	bool result = MacWindowSystemNS::m_bridge->Terminate();
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "MacWindowSystem has been terminated.");
+	Log(Success, "MacWindowSystem has been terminated.");
 	return true;
 }
 
@@ -79,5 +79,5 @@ bool MacWindowSystem::AddEventCallback(WindowEventCallback* callback)
 void MacWindowSystem::setBridge(MacWindowSystemBridge* bridge)
 {
 	MacWindowSystemNS::m_bridge = bridge;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "MacWindowSystem: Bridge connected at ", bridge);
+	Log(Success, "Bridge connected at ", bridge);
 }

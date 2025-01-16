@@ -1,6 +1,6 @@
 #include "CameraSystem.h"
 #include "../Component/CameraComponent.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/Randomizer.h"
 #include "../Common/MathHelper.h"
 #include "RenderingFrontend.h"

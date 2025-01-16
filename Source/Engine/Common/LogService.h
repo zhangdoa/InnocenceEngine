@@ -5,20 +5,20 @@ namespace Inno
 {
 	enum class LogLevel { Verbose, Success, Warning, Error };
 
-	class Logger
+	class LogService
 	{
 	public:
-		Logger();
-		~Logger();
+		LogService();
+		~LogService();
 
 		template<typename... Args>
-		void Log(LogLevel logLevel, Args&&... values)
+		void Print(LogLevel logLevel, const char* context, Args&&... values)
 		{
 			if (logLevel < GetDefaultLogLevel())
 			{
 				return;
 			}
-			LogStartOfLine(logLevel);
+			LogStartOfLine(logLevel, context);
 			LogContent(values ...);
 			LogEndOfLine();
 		}
@@ -40,7 +40,7 @@ namespace Inno
 		}
 
 	private:
-		void LogStartOfLine(LogLevel logLevel);
+		void LogStartOfLine(LogLevel logLevel, const char* context);
 		void LogEndOfLine();
 
 		void LogImpl(const void* logMessage);
@@ -61,4 +61,6 @@ namespace Inno
 		std::mutex m_Mutex;
 		LogLevel m_LogLevel;
 	};
+
+	#define Log(level, ...) g_Engine->Get<LogService>()->Print(LogLevel::level, __FUNCTION__, __VA_ARGS__)
 }

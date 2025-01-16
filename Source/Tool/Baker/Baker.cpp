@@ -79,7 +79,7 @@ void Baker::BakeBrickCache(const char* surfelCacheFileName)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Surfel cache file not exists!");
+		Log(Error, "Surfel cache file not exists!");
 	}
 }
 
@@ -104,7 +104,7 @@ void Baker::BakeBrick(const char* brickCacheFileName)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Brick cache file not exists!");
+		Log(Error, "Brick cache file not exists!");
 	}
 }
 
@@ -146,12 +146,12 @@ void Baker::BakeBrickFactor(const char* brickFileName)
 		}
 		else
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Probe cache file not exists!");
+			Log(Error, "Probe cache file not exists!");
 		}
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "Baker: Brick file not exists!");
+		Log(Error, "Brick file not exists!");
 	}
 }
 

@@ -1,7 +1,7 @@
 #include "RenderingFrontend.h"
 
 #include "../Common/Timer.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/TaskScheduler.h"
 #include "../Common/DoubleBuffer.h"
 #include "../Common/ThreadSafeUnorderedMap.h"
@@ -422,12 +422,12 @@ bool RenderingFrontendNS::Initialize()
 		m_rayTracer->Initialize();
 
 		m_ObjectStatus = ObjectStatus::Activated;
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, "RenderingFrontend has been initialized.");
+		Log(Success, "RenderingFrontend has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "RenderingFrontend: Object is not created!");
+		Log(Error, "Object is not created!");
 		return false;
 	}
 }
@@ -845,7 +845,7 @@ bool RenderingFrontendNS::Terminate()
 	m_rayTracer->Terminate();
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "RenderingFrontend has been terminated.");
+	Log(Success, "RenderingFrontend has been terminated.");
 	return true;
 }
 
@@ -958,7 +958,7 @@ MeshComponent* RenderingFrontend::GetMeshComponent(ProceduralMeshShape shape)
 		return m_unitSphereMesh;
 		break;
 	default:
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "RenderingFrontend: Invalid ProceduralMeshShape!");
+		Log(Error, "Invalid ProceduralMeshShape!");
 		return nullptr;
 		break;
 	}

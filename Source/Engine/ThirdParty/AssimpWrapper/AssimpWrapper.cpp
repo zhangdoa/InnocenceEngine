@@ -7,7 +7,7 @@
 #include "assimp/DefaultLogger.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-#include "../../Common/Logger.h"
+#include "../../Common/LogService.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -89,7 +89,7 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 	// Check if the file was exist
 	if (g_Engine->Get<IOService>()->isFileExist(fileName))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
+		Log(Verbose, "Converting ", fileName, "...");
 #if defined INNO_DEBUG
 		std::string l_logFilePath = g_Engine->Get<IOService>()->getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
@@ -108,14 +108,14 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: ", fileName, " doesn't exist!");
+		Log(Error, "", fileName, " doesn't exist!");
 		return false;
 	}
 	if (l_scene)
 	{
 		if (l_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_scene->mRootNode)
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: ", l_importer.GetErrorString());
+			Log(Error, "", l_importer.GetErrorString());
 			return false;
 		}
 
@@ -124,11 +124,11 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 		ProcessAssimpScene(j, l_scene, l_exportFileName.c_str());
 		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), j);
 
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
+		Log(Success, "", fileName, " has been converted.");
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't load file ", fileName, "!");
+		Log(Error, "Can't load file ", fileName, "!");
 		return false;
 	}
 
@@ -166,10 +166,10 @@ void AssimpWrapper::ProcessAssimpScene(json& j, const aiScene* scene, const char
 		}
 	};
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
+	Log(Verbose, "Converting meshes...");
 	ProcessAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
+	Log(Verbose, "Assign transformation matrices to bones...");
 	std::unordered_map<std::string, uint32_t> l_boneNameIDMap;
 	std::unordered_map<std::string, Mat4> l_boneNameOffsetMap;
 
@@ -186,7 +186,7 @@ void AssimpWrapper::ProcessAssimpScene(json& j, const aiScene* scene, const char
 
 	if (scene->mNumAnimations)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssimpWrapper: Converting animations...");
+		Log(Verbose, "Converting animations...");
 
 		for (uint32_t i = 0; i < scene->mNumAnimations; i++)
 		{
@@ -420,7 +420,7 @@ void AssimpWrapper::ProcessAssimpMaterial(json& j, const aiMaterial* material)
 
 			if (l_aiTextureType == aiTextureType::aiTextureType_NONE)
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
+				Log(Warning, "", l_AssString.C_Str(), " is unknown texture type!");
 				break;
 			}
 			else if (l_aiTextureType == aiTextureType::aiTextureType_HEIGHT || l_aiTextureType == aiTextureType::aiTextureType_NORMALS || l_aiTextureType == aiTextureType::aiTextureType_NORMAL_CAMERA)
@@ -445,7 +445,7 @@ void AssimpWrapper::ProcessAssimpMaterial(json& j, const aiMaterial* material)
 			}
 			else
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
+				Log(Warning, "", l_AssString.C_Str(), " is unsupported texture type!");
 				break;
 			}
 			j["Textures"].emplace_back(j_child);
@@ -552,7 +552,7 @@ uint32_t FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't find a scaling key for ", pNodeAnim->mNodeName.C_Str());
+	Log(Error, "Can't find a scaling key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -568,7 +568,7 @@ uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't find a rotation key for ", pNodeAnim->mNodeName.C_Str());
+	Log(Error, "Can't find a rotation key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 
@@ -584,7 +584,7 @@ uint32_t FindTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 		}
 	}
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Error, "AssimpWrapper: Can't find a translation key for ", pNodeAnim->mNodeName.C_Str());
+	Log(Error, "Can't find a translation key for ", pNodeAnim->mNodeName.C_Str());
 	return 0;
 }
 

@@ -1,24 +1,24 @@
-#include "Logger.h"
+#include "LogService.h"
 #include "MathHelper.h"
 
 namespace Inno
 {
 	template <>
-	inline void Logger::Log(LogLevel logLevel, const Vec2& values)
+	inline void LogService::Log(LogLevel logLevel, const Vec2& values)
 	{
-		Logger::Log(logLevel, "Vec2(x: ", values.x, ", y: ", values.y, ")");
+		LogService::Log(logLevel, "Vec2(x: ", values.x, ", y: ", values.y, ")");
 	}
 
 	template <>
-	inline void Logger::Log(LogLevel logLevel, const Vec4& values)
+	inline void LogService::Log(LogLevel logLevel, const Vec4& values)
 	{
-		Logger::Log(logLevel, "Vec4(x: ", values.x, ", y: ", values.y, ", z: ", values.z, ", w: ", values.w, ")");
+		LogService::Log(logLevel, "Vec4(x: ", values.x, ", y: ", values.y, ", z: ", values.z, ", w: ", values.w, ")");
 	}
 
 	template <>
-	inline void Logger::Log(LogLevel logLevel, const Mat4& values)
+	inline void LogService::Log(LogLevel logLevel, const Mat4& values)
 	{
-		Logger::Log(logLevel,
+		LogService::Log(logLevel,
 			"Mat4: \n|",
 			values.m00, "", values.m10, "", values.m20, "", values.m30, "|\n|",
 			values.m01, "", values.m11, "", values.m21, "", values.m31, "|\n|",

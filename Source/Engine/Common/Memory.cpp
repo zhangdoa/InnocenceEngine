@@ -1,5 +1,5 @@
 #include "Memory.h"
-#include "Logger.h"
+#include "LogService.h"
 #include <memory>
 #include <unordered_map>
 
@@ -48,7 +48,7 @@ bool Memory::Record(void* ptr, std::size_t size)
 	auto l_Result = m_Memo.find(ptr);
 	if (l_Result != m_Memo.end())
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Memory: Allocate collision happened at ", ptr, ".");
+		Log(Warning, "Allocate collision happened at ", ptr, ".");
 		return false;
 	}
 	else
@@ -69,7 +69,7 @@ bool Memory::Erase(void* ptr)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Memory: Deallocate collision happened at ", ptr, ".");
+		Log(Warning, "Deallocate collision happened at ", ptr, ".");
 		return false;
 	}
 }

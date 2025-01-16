@@ -1,7 +1,7 @@
 #include "PhysicsSystem.h"
 
 #include "../Common/MathHelper.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/DoubleBuffer.h"
 #include "EntityManager.h"
 #include "ComponentManager.h"
@@ -137,7 +137,7 @@ PhysicsComponent* PhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair* me
 
 	l_PDC->m_MeshMaterialPair = meshMaterialPair;
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "PhysicsSystem: PhysicsComponent has been generated for MeshComponent:", l_MeshComp->m_Owner->m_InstanceName.c_str(), ".");
+	Log(Verbose, "PhysicsComponent has been generated for MeshComponent:", l_MeshComp->m_Owner->m_InstanceName.c_str(), ".");
 
 	m_Components.emplace_back(l_PDC);
 
@@ -221,7 +221,7 @@ ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				default:
-					g_Engine->Get<Logger>()->Log(LogLevel::Error, "PhysicsSystem: Invalid ProceduralMeshShape!");
+					Log(Error, "Invalid ProceduralMeshShape!");
 					break;
 				}
 			}
@@ -266,12 +266,12 @@ bool PhysicsSystem::Initialize()
 	if (PhysicsSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
 		PhysicsSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, "PhysicsSystem has been initialized.");
+		Log(Success, "PhysicsSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "PhysicsSystem: Object is not created!");
+		Log(Error, "Object is not created!");
 		return false;
 	}
 	return true;
@@ -285,7 +285,7 @@ bool PhysicsSystem::Update()
 bool PhysicsSystem::Terminate()
 {
 	PhysicsSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "PhysicsSystem has been terminated.");
+	Log(Success, "PhysicsSystem has been terminated.");
 	return true;
 }
 

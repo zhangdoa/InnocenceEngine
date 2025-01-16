@@ -121,7 +121,7 @@ namespace Inno
 
         bool SurfelGenerator::captureSurfels(std::vector<Probe>& probes)
         {
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: Start to capture surfels...");
+            Log(Success, "Start to capture surfels...");
 
             auto l_perFrameConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer();
 
@@ -150,10 +150,10 @@ namespace Inno
 
                 readBackSurfelCaches(probes[i], l_surfelCaches);
 
-                g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "SurfelGenerator: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
+                Log(Verbose, "Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
             }
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: ", l_surfelCaches.size(), " surfel caches captured.");
+            Log(Success, "", l_surfelCaches.size(), " surfel caches captured.");
 
             serializeProbes(probes);
 
@@ -297,7 +297,7 @@ namespace Inno
 
         bool SurfelGenerator::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
         {
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: Start to eliminate duplicated surfels...");
+            Log(Success, "Start to eliminate duplicated surfels...");
 
             std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
                 {
@@ -313,7 +313,7 @@ namespace Inno
             surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
             surfelCaches.shrink_to_fit();
 
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, "SurfelGenerator: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
+            Log(Success, "Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
 
             return true;
         }

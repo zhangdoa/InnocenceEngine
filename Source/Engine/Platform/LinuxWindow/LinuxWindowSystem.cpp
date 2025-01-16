@@ -47,7 +47,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 
 	if (m_display == nullptr)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "LinuxWindowSystem: Can't connect to X server!");
+		Log(Error, "Can't connect to X server!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -61,7 +61,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 
 	if (!m_window)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "LinuxWindowSystem: Can't create window!");
+		Log(Error, "Can't create window!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -78,7 +78,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 	GLXFBConfig* fbc = glXChooseFBConfig(m_display, DefaultScreen(m_display), m_attributes, &num_fbc);
 	if (!fbc)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "LinuxWindowSystem: glXChooseFBConfig() failed!");
+		Log(Error, "glXChooseFBConfig() failed!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -94,7 +94,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 		glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
 	if (!glXCreateContextAttribsARB)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "LinuxWindowSystem: glXCreateContextAttribsARB() not found!");
+		Log(Error, "glXCreateContextAttribsARB() not found!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -113,7 +113,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 	m_context = glXCreateContextAttribsARB(m_display, fbc[0], NULL, true, context_attribs);
 	if (!m_context)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "LinuxWindowSystem: Failed to create OpenGL context!");
+		Log(Error, "Failed to create OpenGL context!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -123,20 +123,20 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 	// ---------------------------------------
 	if (!gladLoadGL())
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "LinuxWindowSystem: Failed to Initialize GLAD.");
+		Log(Error, "Failed to Initialize GLAD.");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
 	LinuxWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "LinuxWindowSystem Setup finished.");
+	Log(Success, "LinuxWindowSystem Setup finished.");
 
 	return true;
 }
 
 bool LinuxWindowSystemNS::Initialize()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "LinuxWindowSystem has been initialized.");
+	Log(Success, "LinuxWindowSystem has been initialized.");
 	return true;
 }
 
@@ -148,7 +148,7 @@ bool LinuxWindowSystemNS::Update()
 bool LinuxWindowSystemNS::Terminate()
 {
 	LinuxWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "LinuxWindowSystem has been terminated.");
+	Log(Success, "LinuxWindowSystem has been terminated.");
 	return true;
 }
 

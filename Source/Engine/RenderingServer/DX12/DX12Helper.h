@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Common/LogService.h"
 #include "../../Component/DX12TextureComponent.h"
 #include "../../Component/DX12RenderPassComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
@@ -18,7 +19,7 @@ namespace Inno
 			auto l_HResult = rhs->SetName(l_NameW.c_str());
 			if (FAILED(l_HResult))
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "DX12RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+				Log(Warning, "Can't name ", objectType, " with ", l_Name.c_str());
 				return false;
 			}
 			return true;

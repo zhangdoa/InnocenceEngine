@@ -10,14 +10,14 @@ namespace ImGuiWindowMacNS
 
 bool ImGuiWindowMac::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowMac Setup finished.");
+	Log(Success, "ImGuiWindowMac Setup finished.");
 
 	return true;
 }
 
 bool ImGuiWindowMac::Initialize()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowMac has been initialized.");
+	Log(Success, "ImGuiWindowMac has been initialized.");
 
 	return true;
 }
@@ -29,7 +29,7 @@ bool ImGuiWindowMac::newFrame()
 
 bool ImGuiWindowMac::Terminate()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiWindowMac has been terminated.");
+	Log(Success, "ImGuiWindowMac has been terminated.");
 
 	return true;
 }

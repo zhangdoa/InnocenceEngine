@@ -554,16 +554,16 @@ namespace Inno
 
 	void WorldSystem::runTest(uint32_t testTime, std::function<bool()> testCase)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Start test...");
+		Log(Verbose, "Start test...");
 		for (uint32_t i = 0; i < testTime; i++)
 		{
 			auto l_result = testCase();
 			if (!l_result)
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Test failure.");
+				Log(Warning, "Test failure.");
 			}
 		}
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
+		Log(Verbose, "Finished test for ", testTime, " times.");
 	}
 
 	Vec4 WorldSystem::getMousePositionInWorldSpace()

@@ -1,7 +1,7 @@
 #include "RayTracer.h"
 #include "../Common/Timer.h"
 #include "../Common/TaskScheduler.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 
 #include "../Services/ComponentManager.h"
 #include "../Services/AssetSystem.h"
@@ -299,7 +299,7 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 
 bool ExecuteRayTracing()
 {
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "RayTracer: Start ray tracing...");
+	Log(Verbose, "Start ray tracing...");
 
 	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 	auto l_cameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
@@ -426,7 +426,7 @@ bool ExecuteRayTracing()
 	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
 	g_Engine->Get<AssetSystem>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "RayTracer: Ray tracing finished.");
+	Log(Success, "Ray tracing finished.");
 
 	return true;
 }

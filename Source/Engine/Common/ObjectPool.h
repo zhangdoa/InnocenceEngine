@@ -1,6 +1,6 @@
 #pragma once
 #include "Memory.h"
-#include "Logger.h"
+#include "LogService.h"
 
 namespace Inno
 {
@@ -32,7 +32,7 @@ namespace Inno
 
 			ConstructPool();
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "Memory: Object pool has been allocated at ", this, ".");
+			Log(Verbose, "Object pool has been allocated at ", this, ".");
 		}
 
 		~TObjectPool() = default;
@@ -41,7 +41,7 @@ namespace Inno
 		{
 			if (!m_CurrentFreeChunk)
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Error, "Memory: Run out of object pool!");
+				Log(Error, "Run out of object pool!");
 				return nullptr;
 			}
 
@@ -58,14 +58,14 @@ namespace Inno
 				else
 				{
 					m_CurrentFreeChunk = nullptr;
-					g_Engine->Get<Logger>()->Log(LogLevel::Warning, "Memory: Last free chuck has been allocated!");
+					Log(Warning, "Last free chuck has been allocated!");
 				}
 
 				return new(l_Object) T();
 			}
 			else
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Error, "Memory: Can't spawn object!");
+				Log(Error, "Can't spawn object!");
 				return nullptr;
 			}
 		}

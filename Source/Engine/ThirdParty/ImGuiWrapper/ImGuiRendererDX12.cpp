@@ -5,7 +5,7 @@
 #include "../../RenderingServer/DX12/DX12RenderingServer.h"
 #include "../../Component/DX12TextureComponent.h"
 
-#include "../../Common/Logger.h"
+#include "../../Common/LogService.h"
 #include "../../Services/RenderingFrontend.h"
 
 #include "../../Engine.h"
@@ -20,7 +20,7 @@ namespace ImGuiRendererDX12NS
 bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererDX12NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX12 Setup finished.");
+	Log(Success, "ImGuiRendererDX12 Setup finished.");
 
 	return true;
 }
@@ -35,7 +35,7 @@ bool ImGuiRendererDX12::Initialize()
         DXGI_FORMAT_R8G8B8A8_UNORM, l_CSUDescHeap,
         l_CSUDescHeap->GetCPUDescriptorHandleForHeapStart(),
         l_CSUDescHeap->GetGPUDescriptorHandleForHeapStart());
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX12 has been initialized.");
+	Log(Success, "ImGuiRendererDX12 has been initialized.");
 
 	return true;
 }
@@ -61,7 +61,7 @@ bool ImGuiRendererDX12::Terminate()
 {
 	ImGui_ImplDX12_Shutdown();
 	ImGuiRendererDX12NS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "ImGuiRendererDX12 has been terminated.");
+	Log(Success, "ImGuiRendererDX12 has been terminated.");
 
 	return true;
 }

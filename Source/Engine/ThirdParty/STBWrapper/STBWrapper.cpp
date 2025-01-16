@@ -1,6 +1,6 @@
 #include "STBWrapper.h"
 
-#include "../../Common/Logger.h"
+#include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
 #include "../../Services/RenderingFrontend.h"
 
@@ -47,13 +47,13 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 		l_TextureComp->m_TextureData = l_rawData;
 		l_TextureComp->m_ObjectStatus = ObjectStatus::Created;
 
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "FileSystem: STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
+		Log(Verbose, "STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
 
 		return l_TextureComp;
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "FileSystem: STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
+		Log(Error, "STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
 
 		return nullptr;
 	}

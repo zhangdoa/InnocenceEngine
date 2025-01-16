@@ -1,5 +1,5 @@
 #include "HIDService.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "RenderingFrontend.h"
 
 #include "../Engine.h"
@@ -17,13 +17,13 @@ bool HIDService::Initialize()
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
-		g_Engine->Get<Logger>()->Log(LogLevel::Success, "EventSystem has been initialized.");
+		Log(Success, "EventSystem has been initialized.");
 
 		return true;
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "EventSystem: Object is not created!");
+		Log(Error, "Object is not created!");
 		return false;
 	}
 }
@@ -73,7 +73,7 @@ bool HIDService::Update()
 bool HIDService::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "EventSystem has been terminated.");
+	Log(Success, "EventSystem has been terminated.");
 
 	return true;
 }

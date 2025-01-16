@@ -1,7 +1,7 @@
 #include "AssetSystem.h"
 #include "../Common/ComponentHeaders.h"
 #include "../Common/MathHelper.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/IOService.h"
 #include "../Common/TaskScheduler.h"
 #include "../Common/ObjectPool.h"
@@ -37,7 +37,7 @@ bool AssetSystem::FindLoaded##funcName(const char * fileName, type value) \
 	} \
 	else \
 	{ \
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded."); \
+	Log(Verbose, "", fileName, " has not been loaded."); \
 	\
 	return false; \
 	} \
@@ -598,7 +598,7 @@ bool AssetSystem::ConvertModel(const char* fileName, const char* exportPath)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "FileSystem: ", fileName, " is not supported!");
+		Log(Warning, "", fileName, " is not supported!");
 
 		return false;
 	}
@@ -625,7 +625,7 @@ Model* AssetSystem::LoadModel(const char* fileName, bool AsyncUploadGPUResource)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "AssetSystem: ", fileName, " is not supported!");
+		Log(Warning, "", fileName, " is not supported!");
 		return nullptr;
 	}
 }
@@ -696,7 +696,7 @@ bool AssetSystem::LoadAssetsForComponents(bool AsyncLoad)
 			}
 			else
 			{
-				g_Engine->Get<Logger>()->Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
+				Log(Warning, "Custom shape mesh specified without a model preset file.");
 			}
 		}
 	}

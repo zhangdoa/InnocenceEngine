@@ -1,6 +1,6 @@
 #include "Engine.h"
 #include "Common/Timer.h"
-#include "Common/Logger.h"
+#include "Common/LogService.h"
 #include "Common/Memory.h"
 #include "Common/TaskScheduler.h"
 #include "Common/IOService.h"
@@ -147,7 +147,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 
 	if (arg == "")
 	{
-		Get<Logger>()->Log(LogLevel::Warning, "Engine: No arguments found, use default settings.");
+		Log(Warning, "No arguments found, use default settings.");
 		return l_result;
 	}
 
@@ -155,7 +155,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		Get<Logger>()->Log(LogLevel::Warning, "Engine: No engine mode argument found, use default game mode.");
+		Log(Warning, "No engine mode argument found, use default game mode.");
 	}
 	else
 	{
@@ -165,16 +165,16 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		if (l_engineModeArguments == "0")
 		{
 			l_result.engineMode = EngineMode::Host;
-			Get<Logger>()->Log(LogLevel::Success, "Engine: Launch in host mode, engine will handle OS event.");
+			Log(Success, "Launch in host mode, engine will handle OS event.");
 		}
 		else if (l_engineModeArguments == "1")
 		{
 			l_result.engineMode = EngineMode::Slave;
-			Get<Logger>()->Log(LogLevel::Success, "Engine: Launch in slave mode, engine requires client handle OS event.");
+			Log(Success, "Launch in slave mode, engine requires client handle OS event.");
 		}
 		else
 		{
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: Unsupported engine mode.");
+			Log(Warning, "Unsupported engine mode.");
 		}
 	}
 
@@ -182,7 +182,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 
 	if (l_renderingServerArgPos == std::string::npos)
 	{
-		Get<Logger>()->Log(LogLevel::Warning, "Engine: No rendering backend argument found, use default OpenGL rendering backend.");
+		Log(Warning, "No rendering backend argument found, use default OpenGL rendering backend.");
 	}
 	else
 	{
@@ -194,7 +194,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_OPENGL
 			l_result.renderingServer = RenderingServer::GL;
 #else
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: OpenGL is not supported on current platform, no rendering backend will be launched.");
+			Log(Warning, "OpenGL is not supported on current platform, no rendering backend will be launched.");
 #endif
 		}
 		else if (l_rendererArguments == "1")
@@ -202,7 +202,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX11;
 #else
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
+			Log(Warning, "DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "2")
@@ -210,7 +210,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX12;
 #else
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
+			Log(Warning, "DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "3")
@@ -218,7 +218,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_VULKAN
 			l_result.renderingServer = RenderingServer::VK;
 #else
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
+			Log(Warning, "Vulkan is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "4")
@@ -226,19 +226,19 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_METAL
 			l_result.renderingServer = RenderingServer::MT;
 #else
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: Metal is not supported on current platform, use default OpenGL rendering backend.");
+			Log(Warning, "Metal is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else
 		{
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: Unsupported rendering backend, use default OpenGL rendering backend.");
+			Log(Warning, "Unsupported rendering backend, use default OpenGL rendering backend.");
 		}
 	}
 
 	auto l_logLevelArgPos = arg.find("loglevel");
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		Get<Logger>()->SetDefaultLogLevel(LogLevel::Success);
+		Get<LogService>()->SetDefaultLogLevel(LogLevel::Success);
 	}
 	else
 	{
@@ -247,23 +247,23 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 
 		if (l_logLevelArguments == "0")
 		{
-			Get<Logger>()->SetDefaultLogLevel(LogLevel::Verbose);
+			Get<LogService>()->SetDefaultLogLevel(LogLevel::Verbose);
 		}
 		else if (l_logLevelArguments == "1")
 		{
-			Get<Logger>()->SetDefaultLogLevel(LogLevel::Success);
+			Get<LogService>()->SetDefaultLogLevel(LogLevel::Success);
 		}
 		else if (l_logLevelArguments == "2")
 		{
-			Get<Logger>()->SetDefaultLogLevel(LogLevel::Warning);
+			Get<LogService>()->SetDefaultLogLevel(LogLevel::Warning);
 		}
 		else if (l_logLevelArguments == "3")
 		{
-			Get<Logger>()->SetDefaultLogLevel(LogLevel::Error);
+			Get<LogService>()->SetDefaultLogLevel(LogLevel::Error);
 		}
 		else
 		{
-			Get<Logger>()->Log(LogLevel::Warning, "Engine: Unsupported log level.");
+			Log(Warning, "Unsupported log level.");
 		}
 	}
 
@@ -273,7 +273,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 {
 	Get<Timer>();
-	Get<Logger>();
+	Get<LogService>();
 	Get<Memory>();
 	Get<TaskScheduler>();
 	Get<IOService>();
@@ -394,7 +394,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	{
 		return false;
 	}
-	Get<Logger>()->Log(LogLevel::Success, "Engine: WindowSystem Setup finished.");
+	Log(Success, "WindowSystem Setup finished.");
 
 	SystemSetup(EntityManager);
 
@@ -412,7 +412,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	{
 		return false;
 	}
-	Get<Logger>()->Log(LogLevel::Success, "Engine: RenderingFrontend Setup finished.");
+	Log(Success, "RenderingFrontend Setup finished.");
 
 	SystemSetup(GUISystem);
 
@@ -420,19 +420,19 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	{
 		return false;
 	}
-	Get<Logger>()->Log(LogLevel::Success, "Engine: RenderingServer Setup finished.");
+	Log(Success, "RenderingServer Setup finished.");
 
 	if (!m_pImpl->m_RenderingClient->Setup())
 	{
 		return false;
 	}
-	Get<Logger>()->Log(LogLevel::Success, "Engine: RenderingClient Setup finished.");
+	Log(Success, "RenderingClient Setup finished.");
 
 	if (!m_pImpl->m_LogicClient->Setup())
 	{
 		return false;
 	}
-	Get<Logger>()->Log(LogLevel::Success, "Engine: LogicClient Setup finished.");
+	Log(Success, "LogicClient Setup finished.");
 
 	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]() { m_pImpl->m_LogicClient->Update(); });
 	m_pImpl->m_TransformComponentsSimulationTask = g_Engine->Get<TaskScheduler>()->Submit("Transform Components Simulation Task", -1, [&]() { Get<TransformSystem>()->Update(); });
@@ -465,7 +465,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		});
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Created;
-	Get<Logger>()->Log(LogLevel::Success, "Engine: Engine Setup finished.");
+	Log(Success, "Engine Setup finished.");
 
 	return true;
 }
@@ -492,7 +492,7 @@ bool Engine::Initialize()
 	m_pImpl->m_LogicClient->Initialize();
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Activated;
-	Get<Logger>()->Log(LogLevel::Success, "Engine: Engine has been initialized.");
+	Log(Success, "Engine has been initialized.");
 
 	return true;
 }
@@ -532,7 +532,7 @@ bool Engine::ExecuteDefaultTask()
 	else
 	{
 		m_pImpl->m_ObjectStatus = ObjectStatus::Suspended;
-		Get<Logger>()->Log(LogLevel::Warning, "Engine: Engine is stand-by.");
+		Log(Warning, "Engine is stand-by.");
 		return false;
 	}
 
@@ -547,19 +547,19 @@ bool Engine::Terminate()
 
 	if (!m_pImpl->m_RenderingClient->Terminate())
 	{
-		Get<Logger>()->Log(LogLevel::Error, "Engine: Rendering client can't be terminated!");
+		Log(Error, "Rendering client can't be terminated!");
 		return false;
 	}
 
 	if (!m_pImpl->m_LogicClient->Terminate())
 	{
-		Get<Logger>()->Log(LogLevel::Error, "Engine: Logic client can't be terminated!");
+		Log(Error, "Logic client can't be terminated!");
 		return false;
 	}
 
 	if (!m_pImpl->m_RenderingServer->Terminate())
 	{
-		Get<Logger>()->Log(LogLevel::Error, "Engine: RenderingServer can't be terminated!");
+		Log(Error, "RenderingServer can't be terminated!");
 		return false;
 	}
 
@@ -574,13 +574,13 @@ bool Engine::Terminate()
 
 	if (!Get<EntityManager>()->Terminate())
 	{
-		Get<Logger>()->Log(LogLevel::Error, "Engine: EntityManager can't be terminated!");
+		Log(Error, "EntityManager can't be terminated!");
 		return false;
 	}
 
 	if (!m_pImpl->m_WindowSystem->Terminate())
 	{
-		Get<Logger>()->Log(LogLevel::Error, "Engine: WindowSystem can't be terminated!");
+		Log(Error, "WindowSystem can't be terminated!");
 		return false;
 	}
 
@@ -588,7 +588,7 @@ bool Engine::Terminate()
 	SystemTerm(SceneSystem);
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Terminated;
-	Get<Logger>()->Log(LogLevel::Success, "Engine has been terminated.");
+	Log(Success, "Engine has been terminated.");
 
 	return true;
 }

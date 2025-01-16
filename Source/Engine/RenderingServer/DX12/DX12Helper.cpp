@@ -1,5 +1,5 @@
 #include "DX12Helper.h"
-#include "../../Common/Logger.h"
+#include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
 #include "DX12RenderingServer.h"
 
@@ -29,7 +29,7 @@ ComPtr<ID3D12CommandQueue> DX12Helper::CreateCommandQueue(D3D12_COMMAND_QUEUE_DE
 	auto l_HResult = device->CreateCommandQueue(commandQueueDesc, IID_PPV_ARGS(&l_commandQueue));
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create CommandQueue!");
+		Log(Error, "Can't create CommandQueue!");
 		return nullptr;
 	}
 
@@ -37,7 +37,7 @@ ComPtr<ID3D12CommandQueue> DX12Helper::CreateCommandQueue(D3D12_COMMAND_QUEUE_DE
 	l_commandQueue->SetName(name);
 #endif // INNO_DEBUG
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: CommandQueue has been created.");
+	Log(Verbose, "CommandQueue has been created.");
 
 	return l_commandQueue;
 }
@@ -49,7 +49,7 @@ ComPtr<ID3D12CommandAllocator> DX12Helper::CreateCommandAllocator(D3D12_COMMAND_
 	auto l_HResult = device->CreateCommandAllocator(commandListType, IID_PPV_ARGS(&l_commandAllocator));
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create CommandAllocator!");
+		Log(Error, "Can't create CommandAllocator!");
 		return nullptr;
 	}
 
@@ -57,7 +57,7 @@ ComPtr<ID3D12CommandAllocator> DX12Helper::CreateCommandAllocator(D3D12_COMMAND_
 	l_commandAllocator->SetName(name);
 #endif // INNO_DEBUG
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "DX12RenderingServer: CommandAllocator has been created.");
+	Log(Success, "CommandAllocator has been created.");
 
 	return l_commandAllocator;
 }
@@ -69,7 +69,7 @@ ComPtr<ID3D12GraphicsCommandList> DX12Helper::CreateCommandList(D3D12_COMMAND_LI
 	auto l_HResult = device->CreateCommandList(0, commandListType, commandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create CommandList!");
+		Log(Error, "Can't create CommandList!");
 		return nullptr;
 	}
 
@@ -92,20 +92,20 @@ bool DX12Helper::CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> com
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't close temporary command list!");
+		Log(Error, "Can't close temporary command list!");
 	}
 
 	ComPtr<ID3D12Fence1> l_temporaryCommandListFence;
 	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_temporaryCommandListFence));
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for temporary command list!");
+		Log(Error, "Can't create fence for temporary command list!");
 	}
 
 	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (l_fenceEvent == nullptr)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for temporary command list!");
+		Log(Error, "Can't create fence event for temporary command list!");
 	}
 
 	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
@@ -132,7 +132,7 @@ ComPtr<ID3D12Resource> DX12Helper::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* r
 
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create upload heap buffer!");
+		Log(Error, "Can't create upload heap buffer!");
 		return nullptr;
 	}
 
@@ -153,7 +153,7 @@ ComPtr<ID3D12Resource> DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* 
 
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create default heap buffer!");
+		Log(Error, "Can't create default heap buffer!");
 		return false;
 	}
 
@@ -174,7 +174,7 @@ ComPtr<ID3D12Resource> DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ComPtr<
 
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't create read-back heap buffer!");
+		Log(Error, "Can't create read-back heap buffer!");
 		return nullptr;
 	}
 
@@ -671,7 +671,7 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDesc textureDesc,
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = mipSlice;
 		l_result.Texture2DArray.ArraySize = 6;
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for UAV of cubemap.");
+		Log(Verbose, "Use 2D texture array for UAV of cubemap.");
 		break;
 	default:
 		break;
@@ -719,7 +719,7 @@ D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDesc textureDesc)
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for RTV of cubemap.");
+		Log(Verbose, "Use 2D texture array for RTV of cubemap.");
 		break;
 	default:
 		break;
@@ -755,7 +755,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, bo
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for DSV of 3D texture.");
+		Log(Verbose, "Use 2D texture array for DSV of 3D texture.");
 		break;
 	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
@@ -771,7 +771,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, bo
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for DSV of cubemap.");
+		Log(Verbose, "Use 2D texture array for DSV of cubemap.");
 		break;
 	default:
 		break;
@@ -819,7 +819,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						g_Engine->Get<Logger>()->Log(LogLevel::Warning, "DX12RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 					}
 					else
 					{
@@ -843,7 +843,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						g_Engine->Get<Logger>()->Log(LogLevel::Warning, "DX12RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 					}
 					else
 					{
@@ -863,7 +863,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 		{
 			switch (l_resourceBinderLayoutDesc.m_GPUResourceType)
 			{
-			case GPUResourceType::Sampler: g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " Sampler only could be accessed through a Descriptor table!");
+			case GPUResourceType::Sampler: Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Sampler only could be accessed through a Descriptor table!");
 				break;
 			case GPUResourceType::Image: l_rootParameters[i].InitAsShaderResourceView((uint32_t)l_resourceBinderLayoutDesc.m_DescriptorIndex, 0);
 				break;
@@ -883,7 +883,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						g_Engine->Get<Logger>()->Log(LogLevel::Warning, "DX12RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 					}
 					else
 					{
@@ -915,11 +915,11 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 			l_error->Release();
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " Can't serialize RootSignature!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't serialize RootSignature!");
 		}
 		return false;
 	}
@@ -928,14 +928,14 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 
 	if (FAILED(l_HResult))
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create RootSignature!");
+		Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create RootSignature!");
 		return false;
 	}
 #ifdef INNO_DEBUG
 	SetObjectName(DX12RenderPassComp, DX12RenderPassComp->m_RootSignature, "RootSignature");
 #endif // INNO_DEBUG
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " RootSignature has been created.");
+	Log(Verbose, "", DX12RenderPassComp->m_InstanceName.c_str(), " RootSignature has been created.");
 
 	return true;
 }
@@ -1018,7 +1018,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 		if (l_DX12SPC->m_CSBuffer)
 		{
 #endif
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " GPUEngineType can't be Graphics if there is a Compute shader attached!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " GPUEngineType can't be Graphics if there is a Compute shader attached!");
 			return false;
 		}
 #ifdef USE_DXIL
@@ -1115,7 +1115,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 
 		if (FAILED(l_HResult))
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO!");
 			return false;
 		}
 	}
@@ -1143,7 +1143,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 
 		if (FAILED(l_HResult))
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO!");
 			return false;
 		}
 	}
@@ -1152,7 +1152,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 	SetObjectName(DX12RenderPassComp, l_PSO->m_PSO, "PSO");
 #endif // INNO_DEBUG
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " PSO has been created.");
+	Log(Verbose, "", DX12RenderPassComp->m_InstanceName.c_str(), " PSO has been created.");
 
 	return true;
 }
@@ -1166,21 +1166,21 @@ bool DX12Helper::CreateFenceEvents(DX12RenderPassComponent *DX12RenderPassComp)
 		l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error,"DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(),  " Can't create fence event for direct CommandQueue!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(),  " Can't create fence event for direct CommandQueue!");
 			result = false;
 		}
 
 		l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for compute CommandQueue!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for compute CommandQueue!");
 			result = false;
 		}
 	}
 
 	if(result)
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: Fence events have been created.");
+		Log(Verbose, "Fence events have been created.");
 	}
 
 	return result;
@@ -1512,16 +1512,16 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 			std::vector<char> l_errorMessageVector(bufferSize);
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+			Log(Error, "", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			g_Engine->Get<Logger>()->Log(LogLevel::Error, "DX12RenderingServer: Can't find ", shaderFilePath.c_str(), "!");
+			Log(Error, "Can't find ", shaderFilePath.c_str(), "!");
 		}
 		return false;
 	}
 
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "DX12RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
+	Log(Verbose, "", shaderFilePath.c_str(), " has been compiled.");
 	return true;
 }
 #endif

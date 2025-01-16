@@ -1,6 +1,6 @@
 #include "Thread.h"
 
-#include "Logger.h"
+#include "LogService.h"
 #include "Timer.h"
 
 #include "../Engine.h"
@@ -71,7 +71,7 @@ void Thread::Worker(uint32_t ThreadIndex)
 {
 	auto l_ID = std::this_thread::get_id();
 	m_ID = std::make_pair(ThreadIndex, l_ID);
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "TaskScheduler: Thread ", GetThreadID().c_str(), " has been occupied.");
+	Log(Success, "Thread ", GetThreadID().c_str(), " has been occupied.");
 
 	while (!m_Done.load(std::memory_order_acquire))
 	{
@@ -88,5 +88,5 @@ void Thread::Worker(uint32_t ThreadIndex)
 	}
 
 	m_State.store(Thread::State::Released, std::memory_order_release);
-	g_Engine->Get<Logger>()->Log(LogLevel::Success, "TaskScheduler: Thread ", GetThreadID().c_str(), " has been released.");
+	Log(Success, "Thread ", GetThreadID().c_str(), " has been released.");
 }

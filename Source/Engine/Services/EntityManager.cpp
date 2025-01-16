@@ -1,6 +1,6 @@
 #include "EntityManager.h"
 #include "../Common/ObjectPool.h"
-#include "../Common/Logger.h"
+#include "../Common/LogService.h"
 #include "../Common/Randomizer.h"
 #include "../Common/ThreadSafeVector.h"
 #include "SceneSystem.h"
@@ -80,11 +80,11 @@ Entity* EntityManager::Spawn(bool serializable, ObjectLifespan objectLifespan, c
 		l_Entity->m_ObjectLifespan = objectLifespan;
 		l_Entity->m_ObjectStatus = ObjectStatus::Activated;
 
-		g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_InstanceName.c_str(), " has been created.");
+		Log(Verbose, "Entity ", l_Entity->m_InstanceName.c_str(), " has been created.");
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "EntityManager: Can not creat Entity ", entityName, ".");
+		Log(Warning, "Can not creat Entity ", entityName, ".");
 	}
 
 	return l_Entity;
@@ -93,7 +93,7 @@ Entity* EntityManager::Spawn(bool serializable, ObjectLifespan objectLifespan, c
 bool EntityManager::Destroy(Entity* entity)
 {
 	m_Entities.eraseByValue(entity);
-	g_Engine->Get<Logger>()->Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_InstanceName.c_str(), " has been removed.");
+	Log(Verbose, "Entity ", entity->m_InstanceName.c_str(), " has been removed.");
 	m_EntityPool->Destroy(entity);
 	return true;
 }
@@ -113,7 +113,7 @@ std::optional<Entity*> EntityManager::Find(const char* entityName)
 	}
 	else
 	{
-		g_Engine->Get<Logger>()->Log(LogLevel::Warning, "EntityManager: Can't find entity by name ", entityName, "!");
+		Log(Warning, "Can't find entity by name ", entityName, "!");
 		return std::nullopt;
 	}
 }

@@ -37,7 +37,7 @@ namespace Inno
         IOService::serializeVector(l_file, probes);
         l_file.close();
 
-        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".Probe has been saved.");
+        Log(Success, "", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".Probe has been saved.");
 
         return true;
     }
@@ -51,7 +51,7 @@ namespace Inno
         IOService::serializeVector(l_file, surfels);
         l_file.close();
 
-        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoSurfel has been saved.");
+        Log(Success, "", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoSurfel has been saved.");
 
         return true;
     }
@@ -65,7 +65,7 @@ namespace Inno
         IOService::serializeVector(l_file, surfelCaches);
         l_file.close();
 
-        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
+        Log(Success, "", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
 
         return true;
     }
@@ -107,7 +107,7 @@ namespace Inno
         }
         l_surfelCacheFile.close();
 
-        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
+        Log(Success, "", l_filePath.c_str(), "..//Res//Intermediate//", Config::Get().m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
 
         return true;
     }
@@ -151,7 +151,7 @@ namespace Inno
         IOService::serializeVector(l_file, bricks);
         l_file.close();
 
-        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrick has been saved.");
+        Log(Success, "", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrick has been saved.");
 
         return true;
     }
@@ -165,7 +165,7 @@ namespace Inno
         IOService::serializeVector(l_file, brickFactors);
         l_file.close();
 
-        g_Engine->Get<Logger>()->Log(LogLevel::Success, "Baker: ", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
+        Log(Success, "", l_filePath.c_str(), "..//Res//Scenes//", Config::Get().m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
 
         return true;
     }
