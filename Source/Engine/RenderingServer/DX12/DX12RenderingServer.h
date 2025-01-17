@@ -46,6 +46,8 @@ namespace Inno
 		bool UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) override;
 		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
 
+		void TransferDataToGPU() override;
+
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
 		bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;

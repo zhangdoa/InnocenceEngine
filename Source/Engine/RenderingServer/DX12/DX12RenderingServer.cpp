@@ -59,7 +59,12 @@ namespace DX12RenderingServerNS
 	bool GetSwapChainImages();
 	bool AssignSwapChainImages();
 
-	bool CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
+	DX12PipelineStateObject *AddPSO();
+	DX12CommandList *AddCommandList();
+	DX12Semaphore *AddSemaphore();
+
+	void CreateCommandList(DX12CommandList* commandList, size_t swapChainImageIndex, const std::wstring& name);
+	void CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp);
 	bool GenerateMipmapImpl(DX12TextureComponent *DX12TextureComp);
 	bool DeleteResources(DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer);
 	bool Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer);
@@ -82,6 +87,7 @@ namespace DX12RenderingServerNS
 	std::unordered_set<TextureComponent*> m_initializedTextures;
 	std::unordered_set<MaterialComponent*> m_initializedMaterials;
 	std::vector<RenderPassComponent*> m_initializedRenderPasses;
+	std::vector<GPUBufferComponent*> m_dirtyBuffers;
 
 	std::atomic_bool m_needResize = false;
 
@@ -121,6 +127,7 @@ namespace DX12RenderingServerNS
 	std::vector<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators(m_swapChainImageCount);
 	std::vector<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators(m_swapChainImageCount);
 	ComPtr<ID3D12CommandAllocator> m_copyCommandAllocator = 0;
+	std::vector<DX12CommandList*> m_GlobalCommandLists(m_swapChainImageCount);
 	
 	ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_CSUDescHeapCPUHandle;
@@ -153,7 +160,33 @@ namespace DX12RenderingServerNS
 	ID3D12PipelineState *m_3DMipmapPSO = 0;
 } // namespace DX12RenderingServerNS
 
-bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp)
+DX12PipelineStateObject* DX12RenderingServerNS::AddPSO()
+{
+	return m_PSOPool->Spawn();
+}
+
+DX12CommandList* DX12RenderingServerNS::AddCommandList()
+{
+	return m_CommandListPool->Spawn();
+}
+
+DX12Semaphore* DX12RenderingServerNS::AddSemaphore()
+{
+	return m_SemaphorePool->Spawn();
+}
+
+void DX12RenderingServerNS::CreateCommandList(DX12CommandList* commandList, size_t swapChainImageIndex, const std::wstring& name)
+{
+	commandList->m_DirectCommandList = DX12Helper::CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[swapChainImageIndex].Get(), (name + L"_DirectCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
+	commandList->m_ComputeCommandList = DX12Helper::CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[swapChainImageIndex].Get(), (name + L"_ComputeCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
+	commandList->m_CopyCommandList = DX12Helper::CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator, (name + L"_CopyCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
+
+	commandList->m_DirectCommandList->Close();
+	commandList->m_ComputeCommandList->Close();
+	commandList->m_CopyCommandList->Close();
+}
+
+void DX12RenderingServerNS::CreateCommandLists(DX12RenderPassComponent *DX12RenderPassComp)
 {
 	auto l_tempName = std::string(DX12RenderPassComp->m_InstanceName.c_str());
 	auto l_tempNameL = std::wstring(l_tempName.begin(), l_tempName.end());
@@ -161,18 +194,10 @@ bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassComponent *DX12Rend
 	for (size_t i = 0; i < DX12RenderPassComp->m_CommandLists.size(); i++)
 	{
 		auto l_CommandList = reinterpret_cast<DX12CommandList *>(DX12RenderPassComp->m_CommandLists[i]);
-
-		l_CommandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[i].Get(), (l_tempNameL + L"_DirectCommandList_" + std::to_wstring(i)).c_str());
-		l_CommandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[i].Get(), (l_tempNameL + L"_ComputeCommandList_" + std::to_wstring(i)).c_str());
-		l_CommandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator, (l_tempNameL + L"_CopyCommandList_" + std::to_wstring(i)).c_str());
-
-		l_CommandList->m_DirectCommandList->Close();
-		l_CommandList->m_ComputeCommandList->Close();
-		l_CommandList->m_CopyCommandList->Close();
+		DX12RenderingServerNS::CreateCommandList(l_CommandList, i, l_tempNameL);
 	}
-
-	return true;
 }
+
 bool TryToTransitState(DX12TextureComponent *rhs, DX12CommandList *commandList, const D3D12_RESOURCE_STATES& newState)
 {
 	if (rhs->m_CurrentState != newState)
@@ -418,7 +443,7 @@ bool DX12RenderingServerNS::CreateGlobalCommandQueues()
 	m_computeCommandQueue = CreateCommandQueue(&l_computeCommandQueueDesc, m_device, L"ComputeCommandQueue");
 	m_copyCommandQueue = CreateCommandQueue(&l_copyCommandQueueDesc, m_device, L"CopyCommandQueue");
 
-	Log(Success, "Global CommandQueue has been created.");
+	Log(Success, "Global CommandQueues have been created.");
 
 	return true;
 }
@@ -432,6 +457,16 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocators()
 		m_directCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, (L"DirectCommandAllocator_" + std::to_wstring(i)).c_str());
 		m_computeCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, (L"ComputeCommandAllocator_" + std::to_wstring(i)).c_str());
 	}
+
+	Log(Success, "Global CommandAllocators have been created.");
+
+	for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
+	{
+		m_GlobalCommandLists[i] = AddCommandList();
+		DX12RenderingServerNS::CreateCommandList(m_GlobalCommandLists[i], i, L"GPUBufferCommandList");
+	}
+
+	Log(Success, "Global CommandLists have been created.");
 
 	return true;
 }
@@ -461,7 +496,7 @@ bool DX12RenderingServerNS::CreateSyncPrimitives()
 		m_copyCommandQueueFence[i]->SetName((L"CopyCommandQueueFence_" + std::to_wstring(i)).c_str());
 	#endif // INNO_DEBUG
 	}
-	Log(Verbose, " Fences have been created.");
+	Log(Verbose, "Fences for global CommandQueues have been created.");
 
 	return true;
 }
@@ -788,16 +823,18 @@ bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12Texture
 
 	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
-		auto directCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		auto directCommandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+		directCommandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 		directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_DefaultHeapBuffer.Get(), DX12TextureComp->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-		CloseTemporaryCommandList(directCommandList, m_device, m_directCommandQueue);
+		DX12Helper::ExecuteCommandList(directCommandList, m_device, m_directCommandQueue);
 	}
 
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
 
-	auto computeCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto computeCommandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_ComputeCommandList;
+	computeCommandList->Reset(m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 
 	if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 	{
@@ -839,34 +876,20 @@ bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12Texture
 		l_UAV.ptr += l_CSUDescSize;
 	}
 
-	CloseTemporaryCommandList(computeCommandList, m_device, m_computeCommandQueue);
+	ExecuteCommandList(computeCommandList, m_device, m_computeCommandQueue);
 
 	if (!(DX12TextureComp->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
-		auto directCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		auto directCommandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+		directCommandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);		
 		directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TextureComp->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TextureComp->m_CurrentState));
-		CloseTemporaryCommandList(directCommandList, m_device, m_directCommandQueue);
+		DX12Helper::ExecuteCommandList(directCommandList, m_device, m_directCommandQueue);
 	}
 
 	return true;
 }
 
 using namespace DX12RenderingServerNS;
-
-DX12PipelineStateObject *addPSO()
-{
-	return m_PSOPool->Spawn();
-}
-
-DX12CommandList *addCommandList()
-{
-	return m_CommandListPool->Spawn();
-}
-
-DX12Semaphore *addSemaphore()
-{
-	return m_SemaphorePool->Spawn();
-}
 
 bool DX12RenderingServerNS::DeleteResources(DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer)
 {
@@ -923,7 +946,7 @@ bool DX12RenderingServerNS::Resize(const TVec2<uint32_t>& screenResolution, DX12
 			}
 		}
 
-		rhs->m_PipelineStateObject = addPSO();
+		rhs->m_PipelineStateObject = AddPSO();
 
 		CreatePSO(rhs, m_device);
 	}
@@ -1236,7 +1259,8 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 	SetObjectName(l_rhs, l_rhs->m_DefaultHeapBuffer, "DefaultHeap_Texture");
 #endif // INNO_DEBUG
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 
 	if (l_rhs->m_TextureData)
 	{
@@ -1259,7 +1283,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 	}
 
 	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
-	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 	// Create SRV and UAV
 	l_rhs->m_SRV = CreateSRV(l_rhs, 0);
@@ -1362,7 +1386,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 
 	l_result &= CreateRootSignature(l_rhs, m_device);
 
-	l_rhs->m_PipelineStateObject = addPSO();
+	l_rhs->m_PipelineStateObject = AddPSO();
 
 	l_result &= CreatePSO(l_rhs, m_device);
 
@@ -1377,7 +1401,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 
 	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
 	{
-		l_rhs->m_CommandLists[i] = addCommandList();
+		l_rhs->m_CommandLists[i] = AddCommandList();
 	}
 
 	CreateCommandLists(l_rhs);
@@ -1386,7 +1410,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 	l_rhs->m_Semaphores.resize(l_rhs->m_CommandLists.size());
 	for (size_t i = 0; i < l_rhs->m_Semaphores.size(); i++)
 	{
-		l_rhs->m_Semaphores[i] = addSemaphore();
+		l_rhs->m_Semaphores[i] = AddSemaphore();
 	}
 	
 	Log(Verbose, "", l_rhs->m_InstanceName.c_str(), " Semaphore has been created.");
@@ -1469,7 +1493,6 @@ bool DX12RenderingServer::InitializeSamplerComponent(SamplerComponent *rhs)
 	l_rhs->m_Sampler.SamplerDesc.AddressW = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
 	l_rhs->m_Sampler.SamplerDesc.MipLODBias = 0.0f;
 	l_rhs->m_Sampler.SamplerDesc.MaxAnisotropy = l_rhs->m_SamplerDesc.m_MaxAnisotropy;
-	l_rhs->m_Sampler.SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	l_rhs->m_Sampler.SamplerDesc.BorderColor[0] = l_rhs->m_SamplerDesc.m_BorderColor[0];
 	l_rhs->m_Sampler.SamplerDesc.BorderColor[1] = l_rhs->m_SamplerDesc.m_BorderColor[1];
 	l_rhs->m_Sampler.SamplerDesc.BorderColor[2] = l_rhs->m_SamplerDesc.m_BorderColor[2];
@@ -1520,9 +1543,10 @@ bool DX12RenderingServer::InitializeGPUBufferComponent(GPUBufferComponent *rhs)
 			SetObjectName(rhs, l_rhs->m_DefaultHeapBuffer, "DefaultHeap_General");
 #endif // INNO_DEBUG
 
-			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+			auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+			l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 			l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-			CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+			DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 			l_rhs->m_UAV = CreateUAV(l_rhs);
 		}
@@ -1667,7 +1691,9 @@ bool DX12RenderingServer::UpdateMeshComponent(MeshComponent* rhs)
 	l_rhs->m_UploadHeapBuffer_IB->Map(0, &m_readRange, &l_rhs->m_MappedUploadHeapBuffer_IB);
 	std::memcpy((char *)l_rhs->m_MappedUploadHeapBuffer_IB, &l_rhs->m_Indices[0], l_rhs->m_Indices.size() * sizeof(Index));
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
+
 	if(l_rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
@@ -1677,7 +1703,7 @@ bool DX12RenderingServer::UpdateMeshComponent(MeshComponent* rhs)
 	l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer_IB.Get(), l_rhs->m_UploadHeapBuffer_IB.Get());
 	l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 	l_commandList->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
-	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 	return true;
 }
@@ -1686,7 +1712,8 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 	
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
@@ -1718,14 +1745,15 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 	if(l_rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, l_rhs->m_CurrentState));
 
-	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 	return true;
 }
 
 bool DX12RenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureComponent *rhs)
 {
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 
 	auto l_src = reinterpret_cast<DX12TextureComponent *>(lhs);
 	auto l_dest = reinterpret_cast<DX12TextureComponent *>(rhs);
@@ -1740,7 +1768,7 @@ bool DX12RenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureCom
 
 	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_dest->m_CurrentState));
 
-	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 	return true;
 }
@@ -1756,18 +1784,7 @@ bool DX12RenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent *rhs, 
 	}
 
 	std::memcpy((char *)l_rhs->m_MappedMemory + startOffset * l_rhs->m_ElementSize, GPUBufferValue, l_size);
-
-	if (l_rhs->m_DefaultHeapBuffer)
-	{
-		// @TODO: Let the component own a command list
-		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
-
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
-		l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_rhs->m_UploadHeapBuffer.Get());
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-		CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
-	}
+	DX12RenderingServerNS::m_dirtyBuffers.emplace_back(l_rhs);
 
 	return true;
 }
@@ -1777,8 +1794,8 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 	const uint32_t zero = 0;
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
-	// @TODO: Let the component own a command list
-	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
 
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
@@ -1791,9 +1808,34 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 		0,
 		NULL);
 
-	CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 	return true;
+}
+
+void DX12RenderingServer::TransferDataToGPU()
+{
+	if (m_dirtyBuffers.empty())
+		return;
+
+	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
+
+	for (auto rhs : m_dirtyBuffers)
+	{
+		auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
+
+		if (!l_rhs->m_DefaultHeapBuffer)
+			continue;
+		
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+		l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_rhs->m_UploadHeapBuffer.Get());
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	}
+
+	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
+	
+	m_dirtyBuffers.clear();
 }
 
 bool DX12RenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameIndex)
@@ -2472,14 +2514,14 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 	auto f_DefaultToReadbackHeap = [](ComPtr<ID3D12Resource> l_defaultHeapBuffer, ComPtr<ID3D12Resource> l_readbackHeapBuffer, const std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>& footprints, DXGI_FORMAT l_format, D3D12_RESOURCE_STATES currentState)
 	{
 		{
-			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+			auto l_commandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 			l_commandList->ResourceBarrier(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer.Get(),
 					currentState,
 					D3D12_RESOURCE_STATE_COMMON));
-			CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+			DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 		}
 
 		for (size_t i = 0; i < footprints.size(); i++)
@@ -2495,7 +2537,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 			l_destLocation.PlacedFootprint = footprints[i];
 			l_destLocation.PlacedFootprint.Footprint.Format = l_format;
 
-			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator);
+			auto l_commandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator);
 
 			l_commandList->ResourceBarrier(
 				1,
@@ -2511,17 +2553,17 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent 
 					D3D12_RESOURCE_STATE_COPY_SOURCE,
 					D3D12_RESOURCE_STATE_COMMON));
 
-			CloseTemporaryCommandList(l_commandList, m_device, m_copyCommandQueue);
+			DX12Helper::ExecuteCommandList(l_commandList, m_device, m_copyCommandQueue);
 		}
 
 		{
-			auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
+			auto l_commandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 			l_commandList->ResourceBarrier(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer.Get(),
 					D3D12_RESOURCE_STATE_COMMON,
 					currentState));
-			CloseTemporaryCommandList(l_commandList, m_device, m_directCommandQueue);
+			DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 		}
 	};
 
@@ -2656,14 +2698,16 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent *rhs)
 		barrier[1].Transition.StateBefore = l_rhs->m_CurrentState;
 		barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 
-		auto directCommandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
-		directCommandList->ResourceBarrier(2, barrier);
+		auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+		l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
+
+		l_commandList->ResourceBarrier(2, barrier);
 
 		// Copy the entire resource back
-		directCommandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_copy->m_DefaultHeapBuffer.Get());
-		directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
+		l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_copy->m_DefaultHeapBuffer.Get());
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
 
-		CloseTemporaryCommandList(directCommandList, m_device, m_directCommandQueue);
+		DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
 
 		return true;
 	}

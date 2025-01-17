@@ -50,7 +50,7 @@ namespace Inno
 		void InitializeMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU);
 		void InitializeMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU);
 
-		void TransferDataToGPU();
+		virtual void TransferDataToGPU();
 
 	protected:
 		virtual bool UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) = 0;

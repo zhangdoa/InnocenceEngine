@@ -28,8 +28,8 @@ namespace Inno
 		ComPtr<ID3D12CommandQueue> CreateCommandQueue(D3D12_COMMAND_QUEUE_DESC * commandQueueDesc, ComPtr<ID3D12Device> device, const wchar_t *name = L"");
 		ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, const wchar_t *name = L"");
 		ComPtr<ID3D12GraphicsCommandList> CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t *name = L"");
-		ComPtr<ID3D12GraphicsCommandList> OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator);
-		bool CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> commandQueue);
+		ComPtr<ID3D12GraphicsCommandList> CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator);
+		bool ExecuteCommandList(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> commandQueue);
 		
 		ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC *resourceDesc, ComPtr<ID3D12Device> device, const char *name = "");
 		ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC *resourceDesc, ComPtr<ID3D12Device> device, D3D12_CLEAR_VALUE *clearValue = nullptr, const char *name = "");

@@ -82,40 +82,40 @@ ComPtr<ID3D12GraphicsCommandList> DX12Helper::CreateCommandList(D3D12_COMMAND_LI
 	return l_commandList;
 }
 
-ComPtr<ID3D12GraphicsCommandList> DX12Helper::OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator)
+ComPtr<ID3D12GraphicsCommandList> DX12Helper::CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator)
 {
 	static uint64_t index = 0;
 
 	return CreateCommandList(commandListType, device, commandAllocator, (L"TemporaryCommandList_" + std::to_wstring(index++)).c_str());
 }
 
-bool DX12Helper::CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> commandQueue)
+bool DX12Helper::ExecuteCommandList(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> commandQueue)
 {
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't close temporary command list.");
+		Log(Error, "Can't close command list.");
 	}
 
-	ComPtr<ID3D12Fence1> l_temporaryCommandListFence;
-	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_temporaryCommandListFence));
+	ComPtr<ID3D12Fence1> l_commandListFence;
+	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_commandListFence));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create fence for temporary command list.");
+		Log(Error, "Can't create fence for command list.");
 	}
 
 	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (l_fenceEvent == nullptr)
 	{
-		Log(Error, "Can't create fence event for temporary command list.");
+		Log(Error, "Can't create fence event for command list.");
 	}
 	
 	const auto onFinishedValue = 1;
-	l_temporaryCommandListFence->SetEventOnCompletion(onFinishedValue, l_fenceEvent);
+	l_commandListFence->SetEventOnCompletion(onFinishedValue, l_fenceEvent);
 
 	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	commandQueue->Signal(l_temporaryCommandListFence.Get(), onFinishedValue);
+	commandQueue->Signal(l_commandListFence.Get(), onFinishedValue);
 	
 	WaitForSingleObject(l_fenceEvent, INFINITE);
 	CloseHandle(l_fenceEvent);
