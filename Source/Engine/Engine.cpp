@@ -406,6 +406,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	SystemSetup(EntityManager);
 
+	SystemSetup(AssetSystem);
 	SystemSetup(SceneSystem);
 	SystemSetup(PhysicsSystem);
 
@@ -508,6 +509,8 @@ bool Engine::Initialize()
 
 bool Engine::ExecuteDefaultTask()
 {
+	g_Engine->Get<TaskScheduler>()->Unfreeze();
+
 	Get<Timer>()->Tick();
 
 	m_pImpl->m_WindowSystem->Update();
@@ -545,14 +548,14 @@ bool Engine::ExecuteDefaultTask()
 		return false;
 	}
 
-	Get<TaskScheduler>()->WaitSync();
+	Get<TaskScheduler>()->Freeze();
 
 	return true;
 }
 
 bool Engine::Terminate()
 {
-	Get<TaskScheduler>()->WaitSync();
+	Get<TaskScheduler>()->Freeze();
 
 	if (!m_pImpl->m_RenderingClient->Terminate())
 	{

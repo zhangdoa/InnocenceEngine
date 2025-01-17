@@ -36,21 +36,28 @@ TaskScheduler::~TaskScheduler()
 	}
 }
 
-void TaskScheduler::WaitSync()
+void TaskScheduler::Freeze()
 {
-	Log(Verbose, "Waiting for the synchronization point...");
+	Log(Verbose, "Freezing all thread workers...");
 
-	bool l_areAllThreadsIdle = false;
-
-	while (!l_areAllThreadsIdle)
+	for (size_t i = 0; i < m_Threads.size(); i++)
 	{
-		for (size_t i = 0; i < m_Threads.size(); i++)
-		{
-			l_areAllThreadsIdle &= (m_Threads[i]->GetState() == Thread::State::Idle);
-		}
+		m_Threads[i]->Freeze();
 	}
 
-	Log(Verbose, "Reached synchronization point");
+	Log(Verbose, "All thread workers have been frozen.");
+}
+
+void TaskScheduler::Unfreeze()
+{
+	Log(Verbose, "Unfreezing thread workers...");
+
+	for (size_t i = 0; i < m_Threads.size(); i++)
+	{
+		m_Threads[i]->Unfreeze();
+	}
+
+	Log(Verbose, "All thread workers have been unfrozen.");
 }
 
 std::shared_ptr<ITask> TaskScheduler::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)

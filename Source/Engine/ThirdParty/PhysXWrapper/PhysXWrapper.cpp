@@ -115,8 +115,11 @@ bool PhysXWrapperNS::Setup()
 
 	PhysXActors.reserve(65536);
 
-	f_sceneLoadingStartCallback = [&]() {
+	f_sceneLoadingStartCallback = [&]() 
+	{
 		m_needSimulate = false;
+
+		Log(Verbose, "Removing all PhysX Actors...");
 
 		for (auto i : PhysXActors)
 		{
@@ -125,7 +128,7 @@ bool PhysXWrapperNS::Setup()
 
 		PhysXActors.clear();
 
-		Log(Success, "All PhysX Actors has been removed.");
+		Log(Success, "All PhysX Actors have been removed.");
 	};
 
 	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);

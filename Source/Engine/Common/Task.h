@@ -29,7 +29,6 @@ namespace Inno
             Inactive,
             Done,
             Executing,
-            Waiting,
         };
 
         explicit ITask(const char* name, Type type)
@@ -68,7 +67,8 @@ namespace Inno
     };
 
     template <typename Functor>
-    class Task : public ITask {
+    class Task : public ITask 
+    {
     public:
         static_assert(std::is_invocable_r_v<void, Functor>, "Task's Functor must be callable and return void.");
 

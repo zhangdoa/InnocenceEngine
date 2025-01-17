@@ -77,6 +77,8 @@ bool PhysicsSystemNS::Setup()
 
 	f_sceneLoadingStartCallback = [&]()
 	{
+		Log(Verbose, "Clearing all physics system data...");
+
 		auto l_componentsCount = m_Components.size();
 		for (size_t i = 0; i < l_componentsCount; i++)
 		{
@@ -101,6 +103,8 @@ bool PhysicsSystemNS::Setup()
 		m_staticSceneBoundMax.w = 1.0f;
 		m_staticSceneBoundMin = Math::maxVec4<float>;
 		m_staticSceneBoundMin.w = 1.0f;
+
+		Log(Success, "All physics system data has been cleared.");
 	};
 
 	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);

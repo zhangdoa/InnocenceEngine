@@ -259,7 +259,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, b
 	{
 	}
 
-	g_Engine->Get<TaskScheduler>()->WaitSync();
+	g_Engine->Get<TaskScheduler>()->Freeze();
 
 	Log(Verbose, "All jobs finished.");
 }

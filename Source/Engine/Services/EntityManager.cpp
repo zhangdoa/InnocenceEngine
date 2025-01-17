@@ -25,7 +25,10 @@ bool EntityManager::Setup(ISystemConfig* systemConfig)
 {
 	m_EntityPool = TObjectPool<Entity>::Create(m_MaxEntity);
 
-	f_SceneLoadingStartCallback = [&]() {
+	f_SceneLoadingStartCallback = [&]() 
+	{
+		Log(Verbose, "Clearing all entities...");
+
 		m_Entities.erase(
 			std::remove_if(m_Entities.begin(), m_Entities.end(),
 				[&](auto val) {
@@ -37,6 +40,8 @@ bool EntityManager::Setup(ISystemConfig* systemConfig)
 					}
 					return false;
 				}), m_Entities.end());
+
+		Log(Success, "All entities have been cleared.");
 	};
 
 	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);

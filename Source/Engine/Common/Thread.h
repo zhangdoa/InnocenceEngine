@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <future>
 
+#include "ThreadSafeVector.h"
 #include "ThreadSafeQueue.h"
 #include "RingBuffer.h"
 #include "Task.h"
@@ -22,8 +23,8 @@ namespace Inno
 	public:
 		enum class State
 		{
-			Initialized
-			, Idle
+			Idle
+			, Waiting
 			, Busy
 			, Released
 		};
@@ -36,6 +37,8 @@ namespace Inno
 		Thread& operator=(const Thread& rhs) = delete;
 
 		State GetState() const;
+		void Freeze();
+		void Unfreeze();
 
 		const RingBuffer<TaskReport, true>& GetTaskReport();
 
@@ -46,13 +49,15 @@ namespace Inno
 
 		void Worker(uint32_t ThreadIndex);
 
-		void ExecuteTask(std::shared_ptr<ITask>&& task);
+		bool ExecuteTask(const std::shared_ptr<ITask>& task);
 
 		std::thread* m_ThreadHandle;
 		std::pair<uint32_t, std::thread::id> m_ID;
-		std::atomic<State> m_State = State::Initialized;
+		std::atomic<State> m_State = State::Idle;
 		std::atomic_bool m_Done = false;
-		ThreadSafeQueue<std::shared_ptr<ITask>> m_WorkQueue;
+
+		ThreadSafeVector<std::shared_ptr<ITask>> m_TaskList;
+		ThreadSafeVector<std::shared_ptr<ITask>> m_TaskListToBeRemoved;
 		RingBuffer<TaskReport, true> m_TaskReport;
 	};
 }

@@ -106,9 +106,13 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
 	f_sceneLoadingStartCallback = [&]() 
 	{
+		Log(Verbose, "Clearing all rendering context data...");
+
 		m_cullingData.clear();
 
 		m_drawCallCount = 0;
+
+		Log(Success, "All rendering context data has been cleared.");
 	};
 
 	f_sceneLoadingFinishCallback = [&]()

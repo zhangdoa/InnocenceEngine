@@ -1,5 +1,6 @@
 #pragma once
 #include "STL14.h"
+#include "STL17.h"
 
 namespace Inno
 {
@@ -123,6 +124,27 @@ namespace Inno
 			std::unique_lock<std::shared_mutex> lock{m_mutex};
 			return m_vector.erase(_First, _Last);
 		}
+		
+        template <typename Func>
+        void for_each(Func&& func) const
+        {
+            std::shared_lock<std::shared_mutex> lock{m_mutex};
+            std::for_each(m_vector.begin(), m_vector.end(), std::forward<Func>(func));
+        }
+		
+        template <typename Func>
+        void for_each(Func&& func)
+        {
+            std::shared_lock<std::shared_mutex> lock{m_mutex};
+            std::for_each(m_vector.begin(), m_vector.end(), std::forward<Func>(func));
+        }
+		
+        template <typename Pred>
+        void erase_if(Pred&& pred)
+        {
+            std::unique_lock<std::shared_mutex> lock{m_mutex};
+            m_vector.erase(std::remove_if(m_vector.begin(), m_vector.end(), std::forward<Pred>(pred)), m_vector.end());
+        }
 
 		auto size(void)
 		{

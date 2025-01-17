@@ -41,8 +41,14 @@ void IRenderingServer::InitializeMeshComponent(MeshComponent* rhs, bool AsyncUpl
 	}
 	else
 	{
-		auto l_MeshComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("MeshComponentInitializeTask", 2,
+		ITask::Desc taskDesc;
+		taskDesc.m_Name = "MeshComponentInitializeTask";
+		taskDesc.m_Type = ITask::Type::Once;
+		taskDesc.m_ThreadID = 2;
+
+		auto l_MeshComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
 			[=]() { InitializeMeshComponent(rhs); });
+		l_MeshComponentInitializeTask->Activate();
 		l_MeshComponentInitializeTask->Wait();
 	}
 }
@@ -55,8 +61,14 @@ void IRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs, bool 
 	}
 	else
 	{
-		auto l_MaterialComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("MaterialComponentInitializeTask", 2,
+		ITask::Desc taskDesc;
+		taskDesc.m_Name = "MaterialComponentInitializeTask";
+		taskDesc.m_Type = ITask::Type::Once;
+		taskDesc.m_ThreadID = 2;
+
+		auto l_MaterialComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
 			[=]() { InitializeMaterialComponent(rhs); });
+		l_MaterialComponentInitializeTask->Activate();			
 		l_MaterialComponentInitializeTask->Wait();
 	}
 }

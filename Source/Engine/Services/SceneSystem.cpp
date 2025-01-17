@@ -25,7 +25,6 @@ bool SceneSystem::loadSceneAsync(const char* fileName)
 bool SceneSystem::loadSceneSync(const char* fileName)
 {
 	m_isLoadingScene = true;
-	g_Engine->Get<TaskScheduler>()->WaitSync();
 
 	m_currentScene = fileName;
 
@@ -41,13 +40,20 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 
 	for (auto& i : m_sceneLoadingStartCallbacks)
 	{
+		Log(Verbose, "Scene loading start callback (priority: ", i.second, ") is called.");
 		(*i.first)();
 	}
 
+	g_Engine->Get<TaskScheduler>()->Freeze();
+	Log(Verbose, "Loading scene ", fileName, "...");
+
 	JSONWrapper::loadScene(fileName);
+
+	Log(Verbose, "Scene ", fileName, " has been loaded.");
 
 	for (auto& i : m_sceneLoadingFinishCallbacks)
 	{
+		Log(Verbose, "Scene loading finish callback (priority: ", i.second, ") is called.");
 		(*i.first)();
 	}
 
@@ -57,17 +63,25 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 
 	Log(Success, "Scene ", fileName, " has been loaded.");
 
+	g_Engine->Get<TaskScheduler>()->Unfreeze();
+	
 	return true;
 }
 
 bool SceneSystem::Setup(ISystemConfig* systemConfig)
 {
-	f_SceneLoadingStartCallback = [&]() {
+	f_SceneLoadingStartCallback = [&]() 
+	{
+		Log(Verbose, "Resetting scene hierarchy map...");
+
 		m_SceneHierarchyMap.clear();
 		g_Engine->Get<ComponentManager>()->CleanUp(ObjectLifespan::Scene);
+
+		Log(Success, "Scene hierarchy map has been reset.");
 	};
 
-	f_SceneLoadingFinishCallback = [&]() {
+	f_SceneLoadingFinishCallback = [&]() 
+	{
 		m_needUpdate = true;
 	};
 
@@ -152,7 +166,7 @@ bool SceneSystem::loadScene(const char* fileName, bool AsyncLoad)
 	}
 	else
 	{
-		return loadScene(fileName);
+		return loadSceneSync(fileName);
 	}
 }
 

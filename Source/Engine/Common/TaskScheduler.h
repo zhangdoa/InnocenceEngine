@@ -16,8 +16,9 @@ namespace Inno
 		TaskScheduler();
 		~TaskScheduler();
 
-		void WaitSync();
-
+		void Freeze();
+		void Unfreeze();
+		
 		template <typename Func, typename... Args>
 		auto Submit(const ITask::Desc& taskDesc, Func&& func, Args&&... args) 
 		{
