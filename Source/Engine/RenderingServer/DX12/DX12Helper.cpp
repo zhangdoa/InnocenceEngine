@@ -29,7 +29,7 @@ ComPtr<ID3D12CommandQueue> DX12Helper::CreateCommandQueue(D3D12_COMMAND_QUEUE_DE
 	auto l_HResult = device->CreateCommandQueue(commandQueueDesc, IID_PPV_ARGS(&l_commandQueue));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create CommandQueue!");
+		Log(Error, "Can't create CommandQueue: ", name);
 		return nullptr;
 	}
 
@@ -37,7 +37,7 @@ ComPtr<ID3D12CommandQueue> DX12Helper::CreateCommandQueue(D3D12_COMMAND_QUEUE_DE
 	l_commandQueue->SetName(name);
 #endif // INNO_DEBUG
 
-	Log(Verbose, "CommandQueue has been created.");
+	Log(Verbose, "CommandQueue: ", name, " has been created.");
 
 	return l_commandQueue;
 }
@@ -49,7 +49,7 @@ ComPtr<ID3D12CommandAllocator> DX12Helper::CreateCommandAllocator(D3D12_COMMAND_
 	auto l_HResult = device->CreateCommandAllocator(commandListType, IID_PPV_ARGS(&l_commandAllocator));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create CommandAllocator!");
+		Log(Error, "Can't create CommandAllocator: ", name);
 		return nullptr;
 	}
 
@@ -57,7 +57,7 @@ ComPtr<ID3D12CommandAllocator> DX12Helper::CreateCommandAllocator(D3D12_COMMAND_
 	l_commandAllocator->SetName(name);
 #endif // INNO_DEBUG
 
-	Log(Success, "CommandAllocator has been created.");
+	Log(Success, "CommandAllocator: ", name, " has been created.");
 
 	return l_commandAllocator;
 }
@@ -69,13 +69,15 @@ ComPtr<ID3D12GraphicsCommandList> DX12Helper::CreateCommandList(D3D12_COMMAND_LI
 	auto l_HResult = device->CreateCommandList(0, commandListType, commandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create CommandList!");
+		Log(Error, "Can't create CommandList ", name);
 		return nullptr;
 	}
 
 #ifdef INNO_DEBUG
 	l_commandList->SetName(name);
 #endif // INNO_DEBUG
+
+	Log(Success, "CommandList: ", name, " has been created.");
 
 	return l_commandList;
 }
@@ -92,26 +94,29 @@ bool DX12Helper::CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> com
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't close temporary command list!");
+		Log(Error, "Can't close temporary command list.");
 	}
 
 	ComPtr<ID3D12Fence1> l_temporaryCommandListFence;
 	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_temporaryCommandListFence));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create fence for temporary command list!");
+		Log(Error, "Can't create fence for temporary command list.");
 	}
 
 	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (l_fenceEvent == nullptr)
 	{
-		Log(Error, "Can't create fence event for temporary command list!");
+		Log(Error, "Can't create fence event for temporary command list.");
 	}
+	
+	const auto onFinishedValue = 1;
+	l_temporaryCommandListFence->SetEventOnCompletion(onFinishedValue, l_fenceEvent);
 
 	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	commandQueue->Signal(l_temporaryCommandListFence.Get(), 1);
-	l_temporaryCommandListFence->SetEventOnCompletion(1, l_fenceEvent);
+	commandQueue->Signal(l_temporaryCommandListFence.Get(), onFinishedValue);
+	
 	WaitForSingleObject(l_fenceEvent, INFINITE);
 	CloseHandle(l_fenceEvent);
 
@@ -132,7 +137,7 @@ ComPtr<ID3D12Resource> DX12Helper::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* r
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create upload heap buffer!");
+		Log(Error, "Can't create upload heap buffer ", name);
 		return nullptr;
 	}
 
@@ -153,7 +158,7 @@ ComPtr<ID3D12Resource> DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* 
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create default heap buffer!");
+		Log(Error, "Can't create default heap buffer ", name);
 		return false;
 	}
 
@@ -174,7 +179,7 @@ ComPtr<ID3D12Resource> DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ComPtr<
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create read-back heap buffer!");
+		Log(Error, "Can't create read-back heap buffer ", name);
 		return nullptr;
 	}
 
@@ -819,7 +824,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer.");
 					}
 					else
 					{
@@ -843,7 +848,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer.");
 					}
 					else
 					{
@@ -863,7 +868,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 		{
 			switch (l_resourceBinderLayoutDesc.m_GPUResourceType)
 			{
-			case GPUResourceType::Sampler: Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Sampler only could be accessed through a Descriptor table!");
+			case GPUResourceType::Sampler: Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Sampler only could be accessed through a Descriptor table.");
 				break;
 			case GPUResourceType::Image: l_rootParameters[i].InitAsShaderResourceView((uint32_t)l_resourceBinderLayoutDesc.m_DescriptorIndex, 0);
 				break;
@@ -883,7 +888,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						Log(Warning, "Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer.");
 					}
 					else
 					{
@@ -919,7 +924,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 		}
 		else
 		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't serialize RootSignature!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't serialize RootSignature.");
 		}
 		return false;
 	}
@@ -928,9 +933,10 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create RootSignature!");
+		Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create RootSignature.");
 		return false;
 	}
+
 #ifdef INNO_DEBUG
 	SetObjectName(DX12RenderPassComp, DX12RenderPassComp->m_RootSignature, "RootSignature");
 #endif // INNO_DEBUG
@@ -1018,7 +1024,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 		if (l_DX12SPC->m_CSBuffer)
 		{
 #endif
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " GPUEngineType can't be Graphics if there is a Compute shader attached!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " GPUEngineType can't be Graphics if there is a Compute shader attached.");
 			return false;
 		}
 #ifdef USE_DXIL
@@ -1115,7 +1121,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 
 		if (FAILED(l_HResult))
 		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO.");
 			return false;
 		}
 	}
@@ -1143,7 +1149,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 
 		if (FAILED(l_HResult))
 		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO.");
 			return false;
 		}
 	}
@@ -1166,21 +1172,21 @@ bool DX12Helper::CreateFenceEvents(DX12RenderPassComponent *DX12RenderPassComp)
 		l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
 		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(),  " Can't create fence event for direct CommandQueue!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(),  " Can't create fence event for direct CommandQueue.");
 			result = false;
 		}
 
 		l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
 		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for compute CommandQueue!");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for compute CommandQueue.");
 			result = false;
 		}
 	}
 
 	if(result)
 	{
-		Log(Verbose, "Fence events have been created.");
+		Log(Verbose, DX12RenderPassComp->m_InstanceName.c_str(), " Fence events have been created.");
 	}
 
 	return result;
@@ -1516,7 +1522,7 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 		}
 		else
 		{
-			Log(Error, "Can't find ", shaderFilePath.c_str(), "!");
+			Log(Error, "Can't find ", shaderFilePath.c_str(), " ", name);
 		}
 		return false;
 	}

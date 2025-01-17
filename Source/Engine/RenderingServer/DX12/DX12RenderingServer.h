@@ -82,6 +82,7 @@ namespace Inno
 
 		ID3D12Device* GetDevice();
 		ID3D12DescriptorHeap* GetCSUDescHeap();
+		ID3D12CommandAllocator* GetCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t swapChainImageIndex);
 		uint32_t GetSwapChainImageCount();
 	};
 }

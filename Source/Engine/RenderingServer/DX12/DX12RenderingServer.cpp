@@ -1759,6 +1759,7 @@ bool DX12RenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent *rhs, 
 
 	if (l_rhs->m_DefaultHeapBuffer)
 	{
+		// @TODO: Let the component own a command list
 		auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
@@ -1776,6 +1777,7 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 	const uint32_t zero = 0;
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
+	// @TODO: Let the component own a command list
 	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame]);
 
 	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get()};
@@ -2830,17 +2832,33 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferComponent *rhs)
 	return l_result;
 }
 
-ID3D12Device* Inno::DX12RenderingServer::GetDevice()
+ID3D12Device* DX12RenderingServer::GetDevice()
 {
     return m_device.Get();
 }
 
-ID3D12DescriptorHeap* Inno::DX12RenderingServer::GetCSUDescHeap()
+ID3D12DescriptorHeap* DX12RenderingServer::GetCSUDescHeap()
 {
     return m_CSUDescHeap.Get();
 }
 
-uint32_t Inno::DX12RenderingServer::GetSwapChainImageCount()
+ID3D12CommandAllocator* DX12RenderingServer::GetCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t swapChainImageIndex)
+{
+    switch (commandListType)
+    {
+        case D3D12_COMMAND_LIST_TYPE_DIRECT:
+            return m_directCommandAllocators[swapChainImageIndex].Get();
+        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+            return m_computeCommandAllocators[swapChainImageIndex].Get();
+        case D3D12_COMMAND_LIST_TYPE_COPY:
+            return m_copyCommandAllocator.Get();
+        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
+        default:
+            throw std::runtime_error("Invalid command list type");
+    }
+}
+
+uint32_t DX12RenderingServer::GetSwapChainImageCount()
 {
     return m_swapChainImageCount;
 }
