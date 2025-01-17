@@ -33,48 +33,59 @@ namespace Inno
 
 		bool CleanUp(ObjectLifespan objectLifespan)
 		{
-			std::vector<T*> l_componentPtrs = m_ComponentPointers.getRawData();
-			for (auto i : l_componentPtrs)
+			m_ComponentPointers.for_each([this, objectLifespan](T* component)
 			{
-				if (i->m_ObjectLifespan == objectLifespan)
+				if (component->m_ObjectLifespan == objectLifespan)
 				{
-					Destroy(i);
+					Destroy(component);
 				}
-			}
+			});
+
 			return true;
 		}
 
 		T* Spawn(const Entity* owner, bool serializable, ObjectLifespan objectLifespan)
 		{
-			auto l_Component = static_cast<TObjectPool<T>*>(m_ComponentPool)->Spawn();
-			if (l_Component)
+			if (!owner)
 			{
-				l_Component->m_UUID = Randomizer::GenerateUUID();
-				l_Component->m_ObjectStatus = ObjectStatus::Created;
-				l_Component->m_Serializable = serializable;
-				l_Component->m_ObjectLifespan = objectLifespan;
-				auto l_owner = const_cast<Entity*>(owner);
-				l_Component->m_Owner = l_owner;
-				auto l_componentIndex = m_CurrentComponentIndex;
-#ifdef INNO_DEBUG
-				auto l_instanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) + "." + std::string(T::GetTypeName()) + "_" + std::to_string(l_componentIndex) + "/").c_str());
-				l_Component->m_InstanceName = l_instanceName;
-#endif
-				m_ComponentPointers.emplace_back(l_Component);
-				m_ComponentLUT.emplace(l_owner, l_Component);
-				l_Component->m_ObjectStatus = ObjectStatus::Activated;
-				m_CurrentComponentIndex++;
-
-				return l_Component;
-			}
-			else
-			{
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't spawn ", T::GetTypeName(), " by Entity: nullptr!");
 				return nullptr;
 			}
+
+			auto l_Component = static_cast<TObjectPool<T>*>(m_ComponentPool)->Spawn();
+			if (!l_Component)
+			{
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't spawn ", T::GetTypeName(), "!");
+				return nullptr;
+			}
+
+			l_Component->m_UUID = Randomizer::GenerateUUID();
+			l_Component->m_ObjectStatus = ObjectStatus::Created;
+			l_Component->m_Serializable = serializable;
+			l_Component->m_ObjectLifespan = objectLifespan;
+			auto l_owner = const_cast<Entity*>(owner);
+			l_Component->m_Owner = l_owner;
+			auto l_componentIndex = m_CurrentComponentIndex;
+#ifdef INNO_DEBUG
+			auto l_instanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) + "." + std::string(T::GetTypeName()) + "_" + std::to_string(l_componentIndex) + "/").c_str());
+			l_Component->m_InstanceName = l_instanceName;
+#endif
+			m_ComponentPointers.emplace_back(l_Component);
+			m_ComponentLUT.emplace(l_owner, l_Component);
+			l_Component->m_ObjectStatus = ObjectStatus::Activated;
+			m_CurrentComponentIndex++;
+
+			return l_Component;
 		}
 
 		void Destroy(T* component)
 		{
+			if (!component)
+			{
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't destroy ", T::GetTypeName(), " by nullptr!");
+				return;
+			}
+
 			component->m_ObjectStatus = ObjectStatus::Terminated;
 			m_ComponentPointers.eraseByValue(component);
 			m_ComponentLUT.erase(component->m_Owner);
@@ -83,6 +94,12 @@ namespace Inno
 
 		T* Find(const Entity* owner)
 		{
+			if (!owner)
+			{
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: nullptr!");
+				return nullptr;
+			}
+
 			auto l_owner = const_cast<Entity*>(owner);
 
 			auto l_result = m_ComponentLUT.find(l_owner);
@@ -101,8 +118,10 @@ namespace Inno
 		{
 			if (index >= m_ComponentPointers.size())
 			{
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't get ", T::GetTypeName(), " by index: ", std::to_string(index).c_str(), "!");
 				return nullptr;
 			}
+			
 			return m_ComponentPointers[index];
 		}
 

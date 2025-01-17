@@ -501,6 +501,13 @@ bool Engine::Initialize()
 	m_pImpl->m_RenderingClient->Initialize();
 	m_pImpl->m_LogicClient->Initialize();
 
+	m_pImpl->m_LogicClientUpdateTask->Activate();
+	m_pImpl->m_TransformComponentsSimulationTask->Activate();
+	m_pImpl->m_PhysicsSystemUpdateBVHTask->Activate();
+	m_pImpl->m_PhysicsSystemCullingTask->Activate();
+	m_pImpl->m_RenderingContextServiceUpdateTask->Activate();
+	m_pImpl->m_RenderingServerUpdateTask->Activate();
+
 	m_pImpl->m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "Engine has been initialized.");
 
@@ -509,8 +516,6 @@ bool Engine::Initialize()
 
 bool Engine::ExecuteDefaultTask()
 {
-	g_Engine->Get<TaskScheduler>()->Unfreeze();
-
 	Get<Timer>()->Tick();
 
 	m_pImpl->m_WindowSystem->Update();
@@ -521,34 +526,17 @@ bool Engine::ExecuteDefaultTask()
 	if (Get<SceneSystem>()->isLoadingScene())
 		return true;
 
-	m_pImpl->m_LogicClientUpdateTask->Activate();
-	m_pImpl->m_TransformComponentsSimulationTask->Activate();
-	m_pImpl->m_PhysicsSystemUpdateBVHTask->Activate();
-	m_pImpl->m_PhysicsSystemCullingTask->Activate();
-	m_pImpl->m_RenderingContextServiceUpdateTask->Activate();
-	m_pImpl->m_RenderingServerUpdateTask->Activate();
-
 	SystemUpdate(CameraSystem);
 	SystemUpdate(LightSystem);
 
 	SystemUpdate(PhysicsSystem);
 
-	if (m_pImpl->m_WindowSystem->GetStatus() == ObjectStatus::Activated)
-	{
-		// auto l_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("RenderingContextServiceUpdateTask", 1, l_PhysicsSystemCullingTask.m_Task, f_RenderingContextServiceUpdateJob);
-
-		// m_GUISystem->Update();
-
-		// auto l_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("RenderingServerUpdateTask", 2, l_RenderingContextServiceUpdateTask.m_Task, f_RenderingServerUpdateJob);
-	}
-	else
+	if (m_pImpl->m_WindowSystem->GetStatus() != ObjectStatus::Activated)
 	{
 		m_pImpl->m_ObjectStatus = ObjectStatus::Suspended;
 		Log(Warning, "Engine is stand-by.");
-		return false;
+		return false;	
 	}
-
-	Get<TaskScheduler>()->Freeze();
 
 	return true;
 }
