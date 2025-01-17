@@ -455,7 +455,7 @@ float3 AccurateLinearToSRGB(float3 linearCol)
 {
 	float3 sRGBLo = linearCol * 12.92;
 	float3 sRGBHi = (pow(abs(linearCol), 1.0 / 2.4) * 1.055) - 0.055;
-	float3 sRGB = (linearCol <= 0.0031308) ? sRGBLo : sRGBHi;
+	float3 sRGB = select(sRGBHi, sRGBLo, linearCol <= 0.0031308);
 
 	return sRGB;
 }
