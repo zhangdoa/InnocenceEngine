@@ -23,7 +23,7 @@ foreach ($file in $files) {
         $target_profile="cs_5_0"
     }
     
-    $genCall = "../../../Source/External/Tools/dxc.exe -Wno-ignored-attributes -spirv -T $target_profile -E main -Fo ../SPIRV/$name.spv $file"
+    $genCall = "../../../build/Tools/dxc/bin/x64/dxc.exe -Wno-ignored-attributes -spirv -T $target_profile -E main -Fo ../SPIRV/$name.spv $file"
     Invoke-Expression $genCall
 }
 pause
