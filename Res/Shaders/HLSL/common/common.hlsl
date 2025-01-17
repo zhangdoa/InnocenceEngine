@@ -455,7 +455,13 @@ float3 AccurateLinearToSRGB(float3 linearCol)
 {
 	float3 sRGBLo = linearCol * 12.92;
 	float3 sRGBHi = (pow(abs(linearCol), 1.0 / 2.4) * 1.055) - 0.055;
-	float3 sRGB = select(sRGBHi, sRGBLo, linearCol <= 0.0031308);
+	const float threshold = 0.0031308;
+	const float3 threshold3 = float3(threshold, threshold, threshold);
+
+	float sR = (linearCol.r <= threshold3.r) ? sRGBLo.r : sRGBHi.r;
+	float sG = (linearCol.g <= threshold3.g) ? sRGBLo.g : sRGBHi.g;
+	float sB = (linearCol.b <= threshold3.b) ? sRGBLo.b : sRGBHi.b;
+	float3 sRGB = float3(sR, sG, sB);
 
 	return sRGB;
 }
