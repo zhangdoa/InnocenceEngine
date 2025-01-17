@@ -1,13 +1,14 @@
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/SceneSystem.h"
 #include "../../Engine/Services/AssetSystem.h"
+#include "../../Engine/RayTracer/RayTracer.h"
 
 #include "../../Engine/Engine.h"
 
 using namespace Inno;
-;
 
 #include "Player.inl"
 
@@ -437,7 +438,7 @@ namespace Inno
 
 		runTest(512, l_testQuatToMat);
 
-		f_runRayTracing = [&]() { g_Engine->Get<RenderingFrontend>()->RunRayTracing(); };
+		f_runRayTracing = [&]() { g_Engine->Get<RayTracer>()->Execute(); };
 		f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
@@ -568,7 +569,7 @@ namespace Inno
 
 	Vec4 WorldSystem::getMousePositionInWorldSpace()
 	{
-		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		auto l_mousePositionSS = g_Engine->Get<HIDService>()->GetMousePosition();
 
 		auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;

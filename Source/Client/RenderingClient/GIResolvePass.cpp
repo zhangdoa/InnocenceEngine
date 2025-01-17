@@ -1,6 +1,7 @@
 #include "GIResolvePass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Services/HIDService.h"
@@ -234,7 +235,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 				l_renderingServer->InitializeGPUBufferComponent(m_probeGPUBufferComp);
 
-				auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+				auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 				m_probeVolume = l_renderingServer->AddTextureComponent("ProbeVolume/");
 				m_probeVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
@@ -367,7 +368,7 @@ bool GIResolvePass::setupSky()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
@@ -445,7 +446,7 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRenderPassComp = l_renderingServer->AddRenderPassComponent("GIResolveSurfelPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
@@ -500,7 +501,7 @@ bool GIResolvePass::setupBricks()
 
 	m_brickRenderPassComp = l_renderingServer->AddRenderPassComponent("GIResolveBrickPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
@@ -548,7 +549,7 @@ bool GIResolvePass::setupProbes()
 
 	m_probeRenderPassComp = l_renderingServer->AddRenderPassComponent("GIResolveProbePass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
@@ -607,7 +608,7 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	m_irradianceVolumeRenderPassComp = l_renderingServer->AddRenderPassComponent("GIResolveIrradianceVolumePass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
@@ -898,9 +899,9 @@ bool GIResolvePass::PrepareCommandList()
 	{
 		auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 		auto l_GIGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::GI);
-		auto l_cameraConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer();
+		auto l_cameraConstantBuffer = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer();
 
-		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->Get<RenderingFrontend>()->GetPerFrameConstantBuffer();
+		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer();
 		l_PerFrameConstantBuffer.posWSNormalizer = m_irradianceVolumeRange;
 
 		GIConstantBuffer l_GIConstantBuffer;

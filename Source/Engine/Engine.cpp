@@ -14,7 +14,10 @@
 #include "Services/AssetSystem.h"
 #include "Services/PhysicsSystem.h"
 #include "Services/HIDService.h"
-#include "Services/RenderingFrontend.h"
+#include "Services/RenderingConfigurationService.h"
+#include "Services/TemplateAssetService.h"
+#include "Services/RenderingContextService.h"
+#include "Services/AnimationService.h"
 #include "Services/GUISystem.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -108,14 +111,14 @@ namespace Inno
 		std::function<void()> f_LogicClientUpdateFunction;
 		std::function<void()> f_PhysicsSystemUpdateBVHFunction;
 		std::function<void()> f_PhysicsSystemCullingFunction;
-		std::function<void()> f_RenderingFrontendUpdateFunction;
+		std::function<void()> f_RenderingContextServiceUpdateFunction;
 		std::function<void()> f_RenderingServerUpdateFunction;
 
 		std::shared_ptr<ITask> m_LogicClientUpdateTask;
 		std::shared_ptr<ITask> m_TransformComponentsSimulationTask;
 		std::shared_ptr<ITask> m_PhysicsSystemUpdateBVHTask;
 		std::shared_ptr<ITask> m_PhysicsSystemCullingTask;
-		std::shared_ptr<ITask> m_RenderingFrontendUpdateTask;
+		std::shared_ptr<ITask> m_RenderingContextServiceUpdateTask;
 		std::shared_ptr<ITask> m_RenderingServerUpdateTask;
 
 		float m_tickTime = 0;
@@ -294,10 +297,14 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 #endif
 	if (!m_pImpl->m_WindowSystem.get())
 	{
+		Log(Error, "Failed to create Window System.");
 		return false;
 	}
 
-	Get<RenderingFrontend>();
+	Get<RenderingConfigurationService>();
+	Get<TemplateAssetService>();
+	Get<RenderingContextService>();
+	Get<AnimationService>();
 	Get<GUISystem>();
 
 	switch (m_pImpl->m_initConfig.renderingServer)
@@ -333,6 +340,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	
 	if (!m_pImpl->m_RenderingServer.get())
 	{
+		Log(Error, "Failed to create Rendering Server.");
 		return false;
 	}
 
@@ -368,21 +376,21 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
 	if (!m_pImpl->m_RenderingClient.get())
 	{
+		Log(Error, "Failed to create Rendering Client.");
 		return false;
 	}
 
 	m_pImpl->m_LogicClient = std::make_unique<INNO_LOGIC_CLIENT>();
 	if (!m_pImpl->m_LogicClient.get())
 	{
+		Log(Error, "Failed to create Logic Client.");
 		return false;
 	}
 
 	m_pImpl->m_applicationName = m_pImpl->m_LogicClient->GetApplicationName();
 
 	if (!CreateServices(appHook, extraHook, pScmdline))
-	{
 		return false;
-	}
 
 	SystemSetup(HIDService);
 	
@@ -392,9 +400,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	if (!m_pImpl->m_WindowSystem->Setup(&l_windowSystemConfig))
 	{
+		Log(Error, "Window System can't be setup!");
 		return false;
 	}
-	Log(Success, "WindowSystem Setup finished.");
 
 	SystemSetup(EntityManager);
 
@@ -405,67 +413,66 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	SystemSetup(LightSystem);
 	SystemSetup(CameraSystem);
 
-	IRenderingFrontendConfig l_renderingFrontendConfig;
-	l_renderingFrontendConfig.m_RenderingServer = m_pImpl->m_RenderingServer.get();
-
-	if (!Get<RenderingFrontend>()->Setup(&l_renderingFrontendConfig))
-	{
-		return false;
-	}
-	Log(Success, "RenderingFrontend Setup finished.");
-
+	SystemSetup(TemplateAssetService);
+	SystemSetup(RenderingContextService);
+	SystemSetup(AnimationService);
 	SystemSetup(GUISystem);
 
 	if (!m_pImpl->m_RenderingServer->Setup())
 	{
+		Log(Error, "Rendering Server can't be setup!");
 		return false;
 	}
-	Log(Success, "RenderingServer Setup finished.");
 
 	if (!m_pImpl->m_RenderingClient->Setup())
 	{
+		Log(Error, "Rendering Client can't be setup!");
 		return false;
 	}
-	Log(Success, "RenderingClient Setup finished.");
 
 	if (!m_pImpl->m_LogicClient->Setup())
 	{
+		Log(Error, "Logic Client can't be setup!");
 		return false;
 	}
-	Log(Success, "LogicClient Setup finished.");
 
 	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]() { m_pImpl->m_LogicClient->Update(); });
 	m_pImpl->m_TransformComponentsSimulationTask = g_Engine->Get<TaskScheduler>()->Submit("Transform Components Simulation Task", -1, [&]() { Get<TransformSystem>()->Update(); });
 	m_pImpl->m_PhysicsSystemUpdateBVHTask = g_Engine->Get<TaskScheduler>()->Submit("Physics System Update BVH Task", -1, [&]() { Get<PhysicsSystem>()->updateBVH(); });
 	m_pImpl->m_PhysicsSystemCullingTask = g_Engine->Get<TaskScheduler>()->Submit("Physics System Culling Task", -1, [&]() { Get<PhysicsSystem>()->updateCulling(); });
-	m_pImpl->m_RenderingFrontendUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Frontend Update Task", -1, [&]() { Get<RenderingFrontend>()->Update(); });
+	m_pImpl->m_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Frontend Update Task", -1, [&]() 
+	{ 
+		Get<RenderingContextService>()->Update();
+		Get<AnimationService>()->Update(); 
+	});
+	
 	m_pImpl->m_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Server Update Task", 2, [&]()
-		{
-			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
+	{
+		auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
-			Get<RenderingFrontend>()->TransferDataToGPU();
+		m_pImpl->m_RenderingServer->TransferDataToGPU();
 
-			m_pImpl->m_RenderingClient->Render();
+		m_pImpl->m_RenderingClient->Render();
 
-			Get<GUISystem>()->Render();
+		Get<GUISystem>()->Render();
 
-			m_pImpl->m_RenderingServer->Present();
+		m_pImpl->m_RenderingServer->Present();
 
-			m_pImpl->m_WindowSystem->GetWindowSurface()->swapBuffer();
+		m_pImpl->m_WindowSystem->GetWindowSurface()->swapBuffer();
 
-			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
+		auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
-			m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+		m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
 
-			SystemOnFrameEnd(TransformSystem);
-			SystemOnFrameEnd(LightSystem);
-			SystemOnFrameEnd(CameraSystem);
+		SystemOnFrameEnd(TransformSystem);
+		SystemOnFrameEnd(LightSystem);
+		SystemOnFrameEnd(CameraSystem);
 
-			return true;
-		});
+		return true;
+	});
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Created;
-	Log(Success, "Engine Setup finished.");
+	Log(Success, "Engine setup finished.");
 
 	return true;
 }
@@ -485,7 +492,9 @@ bool Engine::Initialize()
 	SystemInit(CameraSystem);
 	m_pImpl->m_RenderingServer->Initialize();
 
-	SystemInit(RenderingFrontend);
+	SystemInit(TemplateAssetService);
+	SystemInit(RenderingContextService);
+	SystemInit(AnimationService);
 	SystemInit(GUISystem);
 
 	m_pImpl->m_RenderingClient->Initialize();
@@ -513,7 +522,7 @@ bool Engine::ExecuteDefaultTask()
 	m_pImpl->m_TransformComponentsSimulationTask->Activate();
 	m_pImpl->m_PhysicsSystemUpdateBVHTask->Activate();
 	m_pImpl->m_PhysicsSystemCullingTask->Activate();
-	m_pImpl->m_RenderingFrontendUpdateTask->Activate();
+	m_pImpl->m_RenderingContextServiceUpdateTask->Activate();
 	m_pImpl->m_RenderingServerUpdateTask->Activate();
 
 	SystemUpdate(CameraSystem);
@@ -523,11 +532,11 @@ bool Engine::ExecuteDefaultTask()
 
 	if (m_pImpl->m_WindowSystem->GetStatus() == ObjectStatus::Activated)
 	{
-		// auto l_RenderingFrontendUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask.m_Task, f_RenderingFrontendUpdateJob);
+		// auto l_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("RenderingContextServiceUpdateTask", 1, l_PhysicsSystemCullingTask.m_Task, f_RenderingContextServiceUpdateJob);
 
 		// m_GUISystem->Update();
 
-		// auto l_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("RenderingServerUpdateTask", 2, l_RenderingFrontendUpdateTask.m_Task, f_RenderingServerUpdateJob);
+		// auto l_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("RenderingServerUpdateTask", 2, l_RenderingContextServiceUpdateTask.m_Task, f_RenderingServerUpdateJob);
 	}
 	else
 	{
@@ -564,7 +573,7 @@ bool Engine::Terminate()
 	}
 
 	SystemTerm(GUISystem);
-	SystemTerm(RenderingFrontend);
+	SystemTerm(RenderingContextService);
 
 	SystemTerm(PhysicsSystem);
 

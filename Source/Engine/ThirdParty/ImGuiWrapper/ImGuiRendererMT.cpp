@@ -31,7 +31,7 @@ bool ImGuiRendererMT::NewFrame()
 
 bool ImGuiRendererMT::Render()
 {
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	return true;
 }
@@ -51,6 +51,6 @@ ObjectStatus ImGuiRendererMT::GetStatus()
 
 void ImGuiRendererMT::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

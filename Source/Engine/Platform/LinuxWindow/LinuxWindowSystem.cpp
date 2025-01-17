@@ -52,7 +52,7 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 		return false;
 	}
 
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	m_window = XCreateSimpleWindow(m_display, DefaultRootWindow(m_display),
 		0, 0,   /* x, y */
 		(uint32_t)l_screenResolution.x, (uint32_t)l_screenResolution.y, /* width, height */

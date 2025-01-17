@@ -26,7 +26,9 @@ using namespace GLHelper;
 #include "../../Common/ObjectPool.h"
 #include "../../Common/TaskScheduler.h"
 
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
+#include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 
 namespace GLRenderingServerNS
@@ -118,7 +120,7 @@ GLPipelineStateObject* addPSO()
 bool GLRenderingServerNS::resizeImpl()
 {
 	auto l_renderingServer = reinterpret_cast<GLRenderingServer*>(g_Engine->getRenderingServer());
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	for (auto i : m_RenderPassComps)
 	{
@@ -182,7 +184,7 @@ using namespace GLRenderingServerNS;
 
 bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
+	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
 	m_MeshComponentPool = TObjectPool<GLMeshComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureComponentPool = TObjectPool<GLTextureComponent>::Create(l_renderingCapability.maxTextures);
@@ -231,7 +233,7 @@ bool GLRenderingServer::Initialize()
 
 				InitializeSamplerComponent(m_SwapChainSamplerComp);
 
-				auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+				auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 				l_RenderPassDesc.m_RenderTargetCount = 1;
 
@@ -443,7 +445,7 @@ bool GLRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
 
 	auto l_rhs = reinterpret_cast<GLMaterialComponent*>(rhs);
 
-	auto l_defaultMaterial = g_Engine->Get<RenderingFrontend>()->GetDefaultMaterialComponent();
+	auto l_defaultMaterial = g_Engine->Get<TemplateAssetService>()->GetDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -966,7 +968,7 @@ bool GLRenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
-	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 

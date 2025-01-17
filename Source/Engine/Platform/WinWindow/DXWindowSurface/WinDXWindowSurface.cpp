@@ -1,7 +1,8 @@
 #include "WinDXWindowSurface.h"
 #include "../WinWindowSystem.h"
 #include "../../../Common/LogService.h"
-#include "../../../Services/RenderingFrontend.h"
+#include "../../../Services/RenderingConfigurationService.h"
+#include "../../../Services/RenderingContextService.h"
 
 #include "../../../Engine.h"
 using namespace Inno;
@@ -10,9 +11,8 @@ bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
 {
 	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
 
-	m_InitConfig = g_Engine->getInitConfig();
-
-	if (m_InitConfig.engineMode == EngineMode::Host)
+	auto l_InitConfig = g_Engine->getInitConfig();
+	if (l_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Setup the windows class with default settings.
 		auto l_windowName = g_Engine->GetApplicationName();
@@ -29,7 +29,7 @@ bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -60,7 +60,8 @@ bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
 
 bool WinDXWindowSurface::Initialize()
 {
-	if (m_InitConfig.engineMode == EngineMode::Host)
+	auto l_InitConfig = g_Engine->getInitConfig();
+	if (l_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Bring the window up on the screen and set it as main focus.
 		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(), true);
@@ -73,12 +74,22 @@ bool WinDXWindowSurface::Initialize()
 	return true;
 }
 
+bool WinDXWindowSurface::Update()
+{
+	return true;
+}
+
 bool WinDXWindowSurface::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Warning, "The window needs to be terminated.");
 
 	return true;
+}
+
+ObjectStatus WinDXWindowSurface::GetStatus()
+{
+	return m_ObjectStatus;
 }
 
 bool WinDXWindowSurface::swapBuffer()

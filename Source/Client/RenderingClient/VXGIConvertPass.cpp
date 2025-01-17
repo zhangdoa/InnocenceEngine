@@ -1,6 +1,7 @@
 #include "VXGIConvertPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "VXGIRenderer.h"
 
@@ -17,7 +18,7 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	m_AlbedoVolume = l_renderingServer->AddTextureComponent("VoxelAlbedoVolume/");
 	m_AlbedoVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;

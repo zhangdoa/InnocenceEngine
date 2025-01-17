@@ -1,6 +1,7 @@
 #include "SunShadowBlurEvenPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurOddPass.h"
@@ -16,7 +17,7 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;

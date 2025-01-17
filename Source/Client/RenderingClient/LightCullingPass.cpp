@@ -1,6 +1,7 @@
 #include "LightCullingPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "TiledFrustumGenerationPass.h"
 #include "OpaquePass.h"
@@ -25,7 +26,7 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	m_lightListIndexCounter->m_ElementSize = sizeof(uint32_t);
 	m_lightListIndexCounter->m_InitialData = &l_initialIndexCount;
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
@@ -205,8 +206,8 @@ bool Inno::LightCullingPass::CreateResources()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
-	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
+	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	auto l_averangeOverlapLight = 64;
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / m_tileSize);

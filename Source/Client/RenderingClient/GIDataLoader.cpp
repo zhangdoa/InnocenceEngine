@@ -2,7 +2,8 @@
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Common/IOService.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/SceneSystem.h"
 
 #include "../../Engine/Engine.h"
@@ -134,7 +135,7 @@ bool GIDataLoader::Setup()
 		}
 	}
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	m_testSampleCubemap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSampleCubemap->m_TextureDesc.Sampler = TextureSampler::SamplerCubemap;

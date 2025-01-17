@@ -1,7 +1,8 @@
 #include "WinWindowSystem.h"
 #include "../../Common/LogService.h"
 #include "../../Services/HIDService.h"
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
 #include "GLWindowSurface/WinGLWindowSurface.h"
@@ -271,7 +272,7 @@ LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
-			g_Engine->Get<RenderingFrontend>()->SetScreenResolution(l_newResolution);
+			g_Engine->Get<RenderingConfigurationService>()->SetScreenResolution(l_newResolution);
 			g_Engine->getRenderingServer()->Resize();
 		}
 	}

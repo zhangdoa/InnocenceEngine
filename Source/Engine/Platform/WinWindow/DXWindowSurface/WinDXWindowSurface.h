@@ -19,6 +19,5 @@ namespace Inno
 		
 	private:
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-		InitConfig m_InitConfig;
 	};
 }

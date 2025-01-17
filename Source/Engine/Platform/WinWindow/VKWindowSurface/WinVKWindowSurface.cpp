@@ -2,7 +2,8 @@
 #include "../WinWindowSystem.h"
 #include "../../../Common/LogService.h"
 #include "../../../Common/TaskScheduler.h"
-#include "../../../Services/RenderingFrontend.h"
+#include "../../../Services/RenderingConfigurationService.h"
+#include "../../../Services/RenderingContextService.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
@@ -47,7 +48,7 @@ bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 

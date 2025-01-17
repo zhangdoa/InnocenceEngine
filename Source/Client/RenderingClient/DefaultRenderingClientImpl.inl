@@ -31,7 +31,8 @@
 #include "BSDFTestPass.h"
 
 #include "../../Engine/Services/HIDService.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/AssetSystem.h"
 #include "../../Engine/Common/Task.h"
 #include "../../Engine/Common/TaskScheduler.h"
@@ -199,7 +200,7 @@ namespace Inno
 		};
 
 		f_RenderJob = [&]() {
-			auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+			auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 			auto l_renderingServer = g_Engine->getRenderingServer();
 			GPUResourceComponent* l_canvas;
 			RenderPassComponent* l_canvasOwner;

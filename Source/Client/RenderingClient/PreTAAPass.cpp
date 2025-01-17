@@ -1,6 +1,7 @@
 #include "PreTAAPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "LightPass.h"
 #include "SkyPass.h"
@@ -22,7 +23,7 @@ bool PreTAAPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("PreTAAPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -91,7 +92,7 @@ bool PreTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

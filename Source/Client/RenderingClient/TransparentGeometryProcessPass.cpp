@@ -1,5 +1,6 @@
 #include "TransparentGeometryProcessPass.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
@@ -17,7 +18,7 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	m_atomicCounterGPUBufferComp = l_renderingServer->AddGPUBufferComponent("TransparentPassAtomicCounter/");
 	m_atomicCounterGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -168,7 +169,7 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
 
-	auto& l_drawCallInfo = g_Engine->Get<RenderingFrontend>()->GetDrawCallInfo();
+	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

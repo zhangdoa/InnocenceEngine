@@ -37,7 +37,9 @@
 #include "../../Common/TaskScheduler.h"
 #include "../../Services/SceneSystem.h"
 #include "../../Services/AssetSystem.h"
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
+#include "../../RayTracer/RayTracer.h"
 
 #include "../../Engine.h"
 
@@ -193,7 +195,7 @@ bool ImGuiWrapper::Initialize()
 		l_workingDir += "..//Res//Fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
 
-		ImGuiWrapperNS::m_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+		ImGuiWrapperNS::m_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 	}
 
 	return true;
@@ -268,7 +270,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Run ray trace"))
 	{
-		g_Engine->Get<RenderingFrontend>()->RunRayTracing();
+		g_Engine->Get<RayTracer>()->Execute();
 	}
 
 	static char scene_filePath[128];
@@ -285,7 +287,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	ImGui::End();
 
-	g_Engine->Get<RenderingFrontend>()->SetRenderingConfig(m_renderingConfig);
+	g_Engine->Get<RenderingConfigurationService>()->SetRenderingConfig(m_renderingConfig);
 }
 
 void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)

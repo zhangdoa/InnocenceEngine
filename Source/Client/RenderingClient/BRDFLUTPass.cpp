@@ -1,6 +1,7 @@
 #include "BRDFLUTPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -18,7 +19,7 @@ bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("BRDFLUTPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;

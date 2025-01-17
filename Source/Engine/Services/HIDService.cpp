@@ -1,6 +1,7 @@
 #include "HIDService.h"
 #include "../Common/LogService.h"
-#include "RenderingFrontend.h"
+#include "RenderingConfigurationService.h"
+#include "RenderingContextService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -120,7 +121,7 @@ void HIDService::ButtonStateCallback(ButtonState buttonState)
 void HIDService::WindowResizeCallback(int32_t width, int32_t height)
 {
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
-	g_Engine->Get<RenderingFrontend>()->SetScreenResolution(l_newScreenResolution);
+	g_Engine->Get<RenderingConfigurationService>()->SetScreenResolution(l_newScreenResolution);
 	g_Engine->getRenderingServer()->Resize();
 }
 

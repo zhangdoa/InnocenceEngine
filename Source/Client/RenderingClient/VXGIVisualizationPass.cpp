@@ -1,6 +1,7 @@
 #include "VXGIVisualizationPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "VXGIRenderer.h"
 
@@ -23,8 +24,8 @@ bool VXGIVisualizationPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VoxelVisualizationPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
-	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
+	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;

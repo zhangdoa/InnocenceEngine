@@ -1,7 +1,8 @@
 #include "VKHelper.h"
 #include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
 
 #include "../../Engine.h"
 
@@ -190,7 +191,7 @@ VkExtent2D VKHelper::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabiliti
 	}
 	else
 	{
-		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 		VkExtent2D l_actualExtent;
 		l_actualExtent.width = l_screenResolution.x;

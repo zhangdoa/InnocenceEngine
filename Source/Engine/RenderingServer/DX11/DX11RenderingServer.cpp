@@ -15,7 +15,6 @@
 #include "../../Engine.h"
 
 using namespace Inno;
-;
 
 #include "../Common/Helper.h"
 using namespace RenderingServerHelper;
@@ -28,7 +27,9 @@ using namespace DX11Helper;
 #include "../../Common/Randomizer.h"
 #include "../../Common/ObjectPool.h"
 
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
+#include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 
 #pragma comment(lib, "d3d11.lib")
@@ -92,7 +93,7 @@ DX11PipelineStateObject* addPSO()
 
 bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
+	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
 	m_MeshComponentPool = TObjectPool<DX11MeshComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureComponentPool = TObjectPool<DX11TextureComponent>::Create(l_renderingCapability.maxTextures);
@@ -157,7 +158,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	for (uint32_t i = 0; i < l_numModes; i++)
 	{
@@ -206,7 +207,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
-	auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 
 	if (l_renderingConfig.VSync)
 	{
@@ -316,7 +317,7 @@ bool DX11RenderingServer::Initialize()
 
 		InitializeSamplerComponent(m_SwapChainSamplerComp);
 
-		auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+		auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = 1;
 
@@ -614,7 +615,7 @@ bool DX11RenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
 
 	auto l_rhs = reinterpret_cast<DX11MaterialComponent*>(rhs);
 
-	auto l_defaultMaterial = g_Engine->Get<RenderingFrontend>()->GetDefaultMaterialComponent();
+	auto l_defaultMaterial = g_Engine->Get<TemplateAssetService>()->GetDefaultMaterialComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -1595,7 +1596,7 @@ bool DX11RenderingServer::Present()
 
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
-	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
 
@@ -1607,7 +1608,7 @@ bool DX11RenderingServer::Present()
 	
 	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
 
-	auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 
 	if (l_renderingConfig.VSync)
 	{

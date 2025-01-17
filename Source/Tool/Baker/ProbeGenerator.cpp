@@ -23,13 +23,13 @@ namespace Inno
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
 
-            auto l_RenderingCapability = g_Engine->Get<RenderingFrontend>()->GetRenderingCapability();
+            auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
             Config::Get().m_staticMeshDrawCallInfo.reserve(l_RenderingCapability.maxMeshes);
             Config::Get().m_staticMeshPerObjectConstantBuffer.reserve(l_RenderingCapability.maxMeshes);
             Config::Get().m_staticMeshMaterialConstantBuffer.reserve(l_RenderingCapability.maxMaterials);
 
-            auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
 

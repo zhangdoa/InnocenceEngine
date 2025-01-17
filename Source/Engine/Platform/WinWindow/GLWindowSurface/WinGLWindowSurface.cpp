@@ -2,7 +2,8 @@
 #include "../WinWindowSystem.h"
 #include "../../../Common/LogService.h"
 #include "../../../Common/TaskScheduler.h"
-#include "../../../Services/RenderingFrontend.h"
+#include "../../../Services/RenderingConfigurationService.h"
+#include "../../../Services/RenderingContextService.h"
 
 #include "glad/gl.h"
 #include "glext.h"
@@ -120,7 +121,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (m_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -224,7 +225,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			Log(Error, "Failed to Initialize GLAD.");
 		}
 
-		auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+		auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 
 		if (!l_renderingConfig.VSync)
 		{

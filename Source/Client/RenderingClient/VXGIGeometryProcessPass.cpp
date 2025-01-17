@@ -1,6 +1,7 @@
 #include "VXGIGeometryProcessPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "VXGIRenderer.h"
 
@@ -25,7 +26,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VXGIGeometryProcessPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_Resizable = false;
@@ -170,7 +171,7 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 10);
 
-	auto &l_drawCallInfo = g_Engine->Get<RenderingFrontend>()->GetDrawCallInfo();
+	auto &l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

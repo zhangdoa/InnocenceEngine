@@ -1,6 +1,8 @@
 #include "DebugPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/TemplateAssetService.h"
 #include "../../Engine/Services/AssetSystem.h"
 #include "../../Engine/Services/ComponentManager.h"
 
@@ -18,7 +20,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_cameraFrustumMeshCount = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig().useCSM ? 4 : 1;
+	auto l_cameraFrustumMeshCount = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().useCSM ? 4 : 1;
 	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
@@ -56,7 +58,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("DebugPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -145,12 +147,12 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 
 	if (l_renderingConfig.drawDebugObject)
 	{
-		auto l_sphere = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Sphere);
-		auto l_cube = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Cube);
+		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Sphere);
+		auto l_cube = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Cube);
 
 		m_debugSphereConstantBuffer.clear();
 		m_debugCubeConstantBuffer.clear();

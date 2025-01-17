@@ -1,7 +1,7 @@
 
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -37,11 +37,11 @@ namespace Inno
             m_visibleComponent = g_Engine->Get<ComponentManager>()->Find<VisibleComponent>(*l_entity);
 
             std::function<void()> f_idle = [&]() {
-                g_Engine->Get<RenderingFrontend>()->PlayAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+                g_Engine->Get<AnimationService>()->PlayAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
             };
 
             std::function<void()> f_run = [&]() {
-                g_Engine->Get<RenderingFrontend>()->PlayAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+                g_Engine->Get<AnimationService>()->PlayAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
             };
 
             m_states.emplace("Idle", f_idle);
@@ -64,7 +64,7 @@ namespace Inno
             auto l_func = m_states.find(m_currentState);
             if (l_func != m_states.end())
             {
-                g_Engine->Get<RenderingFrontend>()->StopAnimation(m_visibleComponent, "");
+                g_Engine->Get<AnimationService>()->StopAnimation(m_visibleComponent, "");
                 l_func->second();
                 m_isStateChanged = false;
 

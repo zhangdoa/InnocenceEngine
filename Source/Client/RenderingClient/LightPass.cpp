@@ -1,6 +1,7 @@
 #include "LightPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "VXGIRenderer.h"
 #include "OpaquePass.h"
@@ -30,7 +31,7 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("LightPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 2;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -191,7 +192,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PointLight);

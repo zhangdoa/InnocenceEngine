@@ -1,12 +1,13 @@
 #include "AnimationPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 #include "OpaquePass.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/AnimationService.h"
 
 #include "../../Engine/Engine.h"
 
 using namespace Inno;
-
 
 using namespace DefaultGPUBuffers;
 
@@ -21,7 +22,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("AnimationPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&AnimationPass::RenderTargetsReservationFunc, this);
@@ -150,7 +151,7 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 	auto l_AnimationGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Animation);
 
-	auto& l_AnimationDrawCallInfo = g_Engine->Get<RenderingFrontend>()->GetAnimationDrawCallInfo();
+	auto& l_AnimationDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetAnimationDrawCallInfo();
 
 	if (l_AnimationDrawCallInfo.size())
 	{

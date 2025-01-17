@@ -1,6 +1,8 @@
 #include "SurfelGITestPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/TemplateAssetService.h"
 
 #include "GIResolvePass.h"
 #include "OpaquePass.h"
@@ -32,7 +34,7 @@ bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SurfelGITestPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -203,7 +205,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 			m_probeSphereMeshData.emplace_back(l_probeMeshData);
 		}
 
-		auto l_sphere = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Sphere);
+		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Sphere);
 
 		l_renderingServer->UploadGPUBufferComponent(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 

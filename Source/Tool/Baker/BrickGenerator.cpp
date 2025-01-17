@@ -8,7 +8,7 @@
 #include "../../Engine/Services/SceneSystem.h"
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -38,7 +38,7 @@ namespace Inno
 
             m_RenderPassComp_BrickFactor = l_renderingServer->AddRenderPassComponent("GIBakeBrickFactorPass/");
 
-            auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+            auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
 
@@ -271,7 +271,7 @@ namespace Inno
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
-            auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Cube);
+            auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Cube);
 
             uint32_t l_offset = 0;
 

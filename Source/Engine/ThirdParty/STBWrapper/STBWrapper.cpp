@@ -2,7 +2,7 @@
 
 #include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingContextService.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -32,7 +32,7 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 	}
 	if (l_rawData)
 	{
-		auto l_TextureComp = g_Engine->Get<RenderingFrontend>()->AddTextureComponent();
+		auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
 #ifdef INNO_DEBUG
         auto l_fileName = std::string(fileName);
         l_fileName += "/";

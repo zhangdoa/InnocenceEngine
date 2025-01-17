@@ -18,7 +18,7 @@ namespace MacWindowSystemNS
 
 bool MacWindowSystem::Setup(ISystemConfig* systemConfig)
 {
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	bool result = MacWindowSystemNS::m_bridge->Setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Created;

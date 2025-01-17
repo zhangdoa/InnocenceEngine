@@ -1,6 +1,8 @@
 #pragma once
 #include "../Interface/ISystem.h"
 
+#include "../Common/ThreadSafeQueue.h"
+
 #include "../Component/MeshComponent.h"
 #include "../Component/TextureComponent.h"
 #include "../Component/MaterialComponent.h"
@@ -44,6 +46,11 @@ namespace Inno
 
 		virtual bool ClearTextureComponent(TextureComponent* rhs) = 0;
 		virtual bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) = 0;
+
+		void InitializeMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU);
+		void InitializeMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU);
+
+		void TransferDataToGPU();
 
 	protected:
 		virtual bool UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) = 0;
@@ -89,5 +96,9 @@ namespace Inno
 		// Debug use only
 		virtual bool BeginCapture() = 0;
 		virtual bool EndCapture() = 0;
+
+	private:
+		ThreadSafeQueue<MeshComponent*> m_uninitializedMeshes;
+		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
 	};
 }

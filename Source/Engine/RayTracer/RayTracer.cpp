@@ -5,7 +5,8 @@
 
 #include "../Services/ComponentManager.h"
 #include "../Services/AssetSystem.h"
-#include "../Services/RenderingFrontend.h"
+#include "../Services/RenderingConfigurationService.h"
+#include "../Services/RenderingContextService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -441,7 +442,7 @@ bool RayTracer::Initialize()
 {
 	const int l_denom = 2;
 
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("RayTracingResult/");
 

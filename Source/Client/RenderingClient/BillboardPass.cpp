@@ -1,6 +1,8 @@
 #include "BillboardPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/TemplateAssetService.h"
 
 #include "OpaquePass.h"
 
@@ -24,7 +26,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("BillboardPass/");
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsCreationFunc, this);
@@ -107,9 +109,9 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Square);
 
-	auto& l_billboardPassDrawCallInfo = g_Engine->Get<RenderingFrontend>()->GetBillboardPassDrawCallInfo();
+	auto& l_billboardPassDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetBillboardPassDrawCallInfo();
 	auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)

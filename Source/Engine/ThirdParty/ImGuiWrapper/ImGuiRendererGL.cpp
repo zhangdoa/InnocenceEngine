@@ -4,7 +4,8 @@
 #include "../ImGui/imgui_impl_opengl3.cpp"
 
 #include "../../Common/LogService.h"
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -39,7 +40,7 @@ bool ImGuiRendererGL::NewFrame()
 
 bool ImGuiRendererGL::Render()
 {
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<GLRenderPassComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
 
 	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
@@ -66,7 +67,7 @@ ObjectStatus ImGuiRendererGL::GetStatus()
 
 void ImGuiRendererGL::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_RTSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 	auto l_developmentRTSize = ImVec2((float)l_screenResolution.x / 2.0f, (float)l_screenResolution.y / 2.0f);
 	auto l_shadowRTSize = ImVec2(512.0, 512.0);

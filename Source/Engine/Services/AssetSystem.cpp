@@ -9,7 +9,8 @@
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
 #include "ComponentManager.h"
-#include "RenderingFrontend.h"
+#include "RenderingContextService.h"
+#include "TemplateAssetService.h"
 #include "SceneSystem.h"
 #include "PhysicsSystem.h"
 
@@ -539,7 +540,7 @@ bool AssetSystem::Setup(ISystemConfig* systemConfig)
 	{
 		i->m_model = AddProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
 		auto l_pair = GetMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
-		g_Engine->Get<RenderingFrontend>()->InitializeMaterialComponent(l_pair->material, AsyncLoad);
+		g_Engine->getRenderingServer()->InitializeMaterialComponent(l_pair->material, AsyncLoad);
 	};
 
 	// @TODO: Concurrency
@@ -751,8 +752,8 @@ Model* AssetSystem::AddModel()
 
 Model* AssetSystem::AddProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
-	auto l_mesh = g_Engine->Get<RenderingFrontend>()->GetMeshComponent(shape);
-	auto l_material = g_Engine->Get<RenderingFrontend>()->AddMaterialComponent();
+	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(shape);
+	auto l_material = g_Engine->getRenderingServer()->AddMaterialComponent();
 	l_material->m_ShaderModel = shaderModel;
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 

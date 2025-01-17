@@ -6,7 +6,8 @@
 #include "../../Component/DX12TextureComponent.h"
 
 #include "../../Common/LogService.h"
-#include "../../Services/RenderingFrontend.h"
+#include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -73,6 +74,6 @@ ObjectStatus ImGuiRendererDX12::GetStatus()
 
 void ImGuiRendererDX12::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

@@ -1,6 +1,7 @@
 #include "TiledFrustumGenerationPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Services/RenderingFrontend.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "OpaquePass.h"
 
@@ -18,7 +19,7 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";	
 
-	auto l_RenderPassDesc = g_Engine->Get<RenderingFrontend>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
@@ -120,7 +121,7 @@ bool Inno::TiledFrustumGenerationPass::CreateResources()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_viewportSize = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	auto l_numThreadsX = std::ceil(l_viewportSize.x / m_tileSize);
 	auto l_numThreadsY = std::ceil(l_viewportSize.y / m_tileSize);

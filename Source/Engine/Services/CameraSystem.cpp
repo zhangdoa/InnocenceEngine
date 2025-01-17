@@ -3,7 +3,8 @@
 #include "../Common/LogService.h"
 #include "../Common/Randomizer.h"
 #include "../Common/MathHelper.h"
-#include "RenderingFrontend.h"
+#include "RenderingConfigurationService.h"
+#include "RenderingContextService.h"
 #include "ComponentManager.h"
 
 #include "../Engine.h"
@@ -28,7 +29,7 @@ namespace CameraSystemNS
 
 void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 {
-	auto l_resolution = g_Engine->Get<RenderingFrontend>()->GetScreenResolution();
+	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
 	cameraComponent->m_projectionMatrix = Math::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
@@ -57,7 +58,7 @@ void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, 
 
 	//https://docs.microsoft.com/windows/desktop/DxTechArts/common-techniques-to-improve-shadow-depth-maps
 	//3. assemble split frustum corners
-	auto l_renderingConfig = g_Engine->Get<RenderingFrontend>()->GetRenderingConfig();
+	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 
 	if (l_renderingConfig.CSMFitToScene)
 	{
