@@ -98,6 +98,8 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
+	
+	m_RenderPassComp->m_OnResize = std::bind(&AnimationPass::InitializeResourceBindingLayoutDescs, this);
 
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("AnimationPass/");
 
@@ -117,14 +119,19 @@ bool AnimationPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = ShaderStage::Pixel;
+    InitializeResourceBindingLayoutDescs();
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
+}
+
+void AnimationPass::InitializeResourceBindingLayoutDescs()
+{
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = ShaderStage::Pixel;
 }
 
 bool AnimationPass::Terminate()

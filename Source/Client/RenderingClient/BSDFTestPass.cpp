@@ -73,6 +73,8 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_RenderPassComp->m_OnResize = std::bind(&BSDFTestPass::InitializeResourceBindingLayoutDescs, this);
+
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("BSDFTestPass/");
 
 	//
@@ -119,18 +121,23 @@ bool BSDFTestPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = BRDFLUTPass::Get().GetResult();
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = BRDFLUTMSPass::Get().GetResult();
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Pixel;
+    InitializeResourceBindingLayoutDescs();
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
+}
+
+void BSDFTestPass::InitializeResourceBindingLayoutDescs()
+{
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = BRDFLUTPass::Get().GetResult();
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = BRDFLUTMSPass::Get().GetResult();
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Pixel;
 }
 
 bool BSDFTestPass::Terminate()

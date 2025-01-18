@@ -15,10 +15,11 @@ namespace Inno
 		INNO_CLASS_SINGLETON(FinalBlendPass)
 
 		bool Setup(ISystemConfig *systemConfig = nullptr) override;
-		bool Initialize() override;
+        bool Initialize() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
+        void InitializeResourceBindingLayoutDescs() override;
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent *GetRenderPassComp() override;
 

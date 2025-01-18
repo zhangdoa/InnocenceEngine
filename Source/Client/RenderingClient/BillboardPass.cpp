@@ -63,6 +63,8 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_RenderPassComp->m_OnResize = std::bind(&BillboardPass::InitializeResourceBindingLayoutDescs, this);
+
 	return true;
 }
 
@@ -74,12 +76,17 @@ bool BillboardPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = m_SamplerComp;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
+    InitializeResourceBindingLayoutDescs();
 	
 	return true;
+}
+
+void BillboardPass::InitializeResourceBindingLayoutDescs()
+{
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = m_SamplerComp;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 }
 
 bool BillboardPass::Terminate()

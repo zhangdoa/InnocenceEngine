@@ -28,6 +28,8 @@ namespace Inno
 		IPipelineStateObject* m_PipelineStateObject = 0;
 		size_t m_CurrentFrame = 0;
 
+		std::function<void()> m_OnResize;
+
 		std::vector<ICommandList*> m_CommandLists;
 		std::vector<ISemaphore*> m_Semaphores;
 	};

@@ -17,5 +17,6 @@ namespace Inno
 
         virtual bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) = 0;
 		virtual RenderPassComponent* GetRenderPassComp() = 0;
+		virtual void InitializeResourceBindingLayoutDescs() {}
 	};
 }

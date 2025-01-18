@@ -29,7 +29,7 @@ using namespace RenderingServerHelper;
 #include "DX12Helper.h"
 using namespace DX12Helper;
 
-#include "../../Common/LogService.h"
+#include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/Memory.h"
 #include "../../Common/Randomizer.h"
 #include "../../Common/ObjectPool.h"
@@ -916,41 +916,44 @@ bool DX12RenderingServerNS::DeleteResources(DX12RenderPassComponent* rhs, DX12Re
 
 bool DX12RenderingServerNS::Resize(const TVec2<uint32_t>& screenResolution, DX12RenderPassComponent* rhs, DX12RenderingServer* renderingServer)
 {
-	if (rhs->m_RenderPassDesc.m_Resizable)
+	if (!rhs->m_RenderPassDesc.m_Resizable)
+		return true;
+
+	rhs->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
+	rhs->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
+
+	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
+	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
+
+	ReserveRenderTargets(rhs, renderingServer);
+
+	CreateRenderTargets(rhs, renderingServer);
+
+	if (rhs->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		rhs->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
-		rhs->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
-
-		rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
-		rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
-
-		ReserveRenderTargets(rhs, renderingServer);
-
-		CreateRenderTargets(rhs, renderingServer);
-
-		if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+		for (size_t i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			for (size_t i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-			{
-				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_RenderTargets[i].m_Texture)->m_DefaultHeapBuffer;
-				m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &rhs->m_RTVDesc, rhs->m_RTVDescCPUHandles[i]);
-			}
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_RenderTargets[i].m_Texture)->m_DefaultHeapBuffer;
+			m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &rhs->m_RTVDesc, rhs->m_RTVDescCPUHandles[i]);
 		}
-
-		if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-		{
-			if (rhs->m_DepthStencilRenderTarget.m_Texture != nullptr)
-			{
-				auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_DepthStencilRenderTarget.m_Texture)->m_DefaultHeapBuffer;
-				m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &rhs->m_DSVDesc, rhs->m_DSVDescCPUHandle);
-			}
-		}
-
-		rhs->m_PipelineStateObject = AddPSO();
-
-		CreatePSO(rhs, m_device);
 	}
 
+	if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+	{
+		if (rhs->m_DepthStencilRenderTarget.m_Texture != nullptr)
+		{
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_DepthStencilRenderTarget.m_Texture)->m_DefaultHeapBuffer;
+			m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &rhs->m_DSVDesc, rhs->m_DSVDescCPUHandle);
+		}
+	}
+
+	rhs->m_PipelineStateObject = AddPSO();
+
+	CreatePSO(rhs, m_device);
+
+	if (rhs->m_OnResize)
+		rhs->m_OnResize();
+	
 	return true;
 }
 
@@ -966,7 +969,10 @@ bool DX12RenderingServerNS::ResizeImpl()
 	{
 		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(i);
 		if (!DeleteResources(l_rhs, l_renderingServer))
+		{
+			Log(Error, "Can't delete resources for ", l_rhs->m_InstanceName, " when resizing.");
 			return false;
+		}
 	}
 
 	m_swapChainImages.clear();
@@ -991,7 +997,10 @@ bool DX12RenderingServerNS::ResizeImpl()
 	{
 		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(i);
 		if (!Resize(l_screenResolution, l_rhs, l_renderingServer))
+		{
+			Log(Error, "Can't resize ", l_rhs->m_InstanceName);
 			return false;
+		}
 	}
 	
 	return true;
@@ -1200,7 +1209,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
-		Log(Warning, "Texture ", rhs->m_InstanceName.c_str(), " has already been initialized!");
+		Log(Warning, "Texture ", rhs->m_InstanceName, " has already been initialized!");
 		return true;
 	}
 
@@ -1252,7 +1261,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 	if (l_rhs->m_DefaultHeapBuffer == nullptr)
 	{
-		Log(Error, "can't create texture!");
+		Log(Error, "Can't create texture: ", l_rhs->m_InstanceName);
 		return false;
 	}
 #ifdef INNO_DEBUG
@@ -1261,7 +1270,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 	auto l_commandList = m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
 	l_commandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), nullptr);
-
+	
 	if (l_rhs->m_TextureData)
 	{
 		uint32_t l_subresourcesCount = l_rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 6 : 1;
@@ -1284,7 +1293,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
 	DX12Helper::ExecuteCommandList(l_commandList, m_device, m_directCommandQueue);
-
+	
 	// Create SRV and UAV
 	l_rhs->m_SRV = CreateSRV(l_rhs, 0);
 
@@ -1322,7 +1331,7 @@ bool DX12RenderingServer::InitializeTextureComponent(TextureComponent *rhs)
 
 	m_initializedTextures.emplace(rhs);
 
-	Log(Verbose, "texture ", l_rhs, " is initialized.");
+	Log(Verbose, "Texture ", l_rhs->m_InstanceName, " is initialized.");
 
 	return true;
 }
@@ -1405,7 +1414,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 	}
 
 	CreateCommandLists(l_rhs);
-	Log(Verbose, "", l_rhs->m_InstanceName.c_str(), " CommandList has been created.");
+	Log(Verbose, "", l_rhs->m_InstanceName, " CommandList has been created.");
 
 	l_rhs->m_Semaphores.resize(l_rhs->m_CommandLists.size());
 	for (size_t i = 0; i < l_rhs->m_Semaphores.size(); i++)
@@ -1413,7 +1422,7 @@ bool DX12RenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs
 		l_rhs->m_Semaphores[i] = AddSemaphore();
 	}
 	
-	Log(Verbose, "", l_rhs->m_InstanceName.c_str(), " Semaphore has been created.");
+	Log(Verbose, "", l_rhs->m_InstanceName, " Semaphore has been created.");
 
 	CreateFenceEvents(l_rhs);
 
@@ -2064,13 +2073,13 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 
 	if ((l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && shaderStage != ShaderStage::Compute) || (l_renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Compute && shaderStage == ShaderStage::Compute))
 	{
-		Log(Warning, "Trying to activate resource at : ", resourceBindingLayoutDescIndex, " with incompatible render pass: ", renderPass->m_InstanceName.c_str());
+		Log(Warning, "Trying to activate resource at : ", resourceBindingLayoutDescIndex, " with incompatible render pass: ", renderPass->m_InstanceName);
 		return false;
 	}
 
 	if (!resource)
 	{
-		Log(Warning, "Empty resource resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
+		Log(Warning, "Empty resource resource in render pass: ", renderPass->m_InstanceName, ", at: ", resourceBindingLayoutDescIndex);
 		return false;
 	}
 
@@ -2739,7 +2748,7 @@ bool DX12RenderingServer::CreateRTV(RenderPassComponent* rhs)
 			m_RTVDescHeapCPUHandle.ptr += l_RTVDescSize;
 		}
 
-		Log(Verbose, "", l_rhs->m_InstanceName.c_str(), " RTV has been created.");
+		Log(Verbose, "", l_rhs->m_InstanceName, " RTV has been created.");
 		return true;
 	}
 
@@ -2762,12 +2771,12 @@ bool DX12RenderingServer::CreateDSV(RenderPassComponent* rhs)
 			
 			m_DSVDescHeapCPUHandle.ptr += l_DSVDescSize;
 
-			Log(Verbose, "", l_rhs->m_InstanceName.c_str(), " DSV has been created.");
+			Log(Verbose, "", l_rhs->m_InstanceName, " DSV has been created.");
 			return false;
 		}
 		else
 		{
-			Log(Error, "", l_rhs->m_InstanceName.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
+			Log(Error, "", l_rhs->m_InstanceName, " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
 			return false;
 		}
 	}

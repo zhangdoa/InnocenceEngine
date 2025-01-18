@@ -49,6 +49,8 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_RenderPassComp->m_OnResize = std::bind(&BRDFLUTPass::InitializeResourceBindingLayoutDescs, this);
+	
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -61,14 +63,19 @@ bool BRDFLUTMSPass::Initialize()
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = BRDFLUTPass::Get().GetResult();
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
+    InitializeResourceBindingLayoutDescs();
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
+}
+
+void Inno::BRDFLUTMSPass::InitializeResourceBindingLayoutDescs()
+{
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = BRDFLUTPass::Get().GetResult();
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
 }
 
 bool BRDFLUTMSPass::Terminate()
