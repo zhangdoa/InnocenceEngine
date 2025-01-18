@@ -547,7 +547,8 @@ bool Engine::ExecuteDefaultTask()
 bool Engine::Terminate()
 {
 	Get<TaskScheduler>()->Freeze();
-
+	Get<TaskScheduler>()->Reset();
+	
 	if (!m_pImpl->m_RenderingClient->Terminate())
 	{
 		Log(Error, "Rendering client can't be terminated!");
