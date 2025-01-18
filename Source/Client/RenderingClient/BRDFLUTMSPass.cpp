@@ -49,7 +49,7 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_RenderPassComp->m_OnResize = std::bind(&BRDFLUTPass::InitializeResourceBindingLayoutDescs, this);
+	m_RenderPassComp->m_OnResize = std::bind(&BRDFLUTMSPass::InitializeResourceBindingLayoutDescs, this);
 	
 	m_ObjectStatus = ObjectStatus::Created;
 
