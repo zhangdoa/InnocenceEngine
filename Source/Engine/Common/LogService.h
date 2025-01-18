@@ -19,7 +19,7 @@ namespace Inno
 				return;
 			}
 			LogStartOfLine(logLevel, context);
-			LogContent(values ...);
+			LogContent(std::forward<Args>(values) ...);
 			LogEndOfLine();
 		}
 
@@ -35,8 +35,8 @@ namespace Inno
 		template<typename T, typename... Args>
 		void LogContent(T&& first, Args&&... values)
 		{
-			LogContent(first);
-			LogContent(values ...);
+			LogContent(std::forward<T>(first));
+			LogContent(std::forward<Args>(values) ...);
 		}
 
 	private:
