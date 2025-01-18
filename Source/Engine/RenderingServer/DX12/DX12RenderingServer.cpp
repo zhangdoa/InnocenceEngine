@@ -1097,7 +1097,47 @@ bool DX12RenderingServer::Terminate()
 {
 	DeleteSamplerComponent(m_SwapChainSamplerComp);
 	DeleteShaderProgramComponent(m_SwapChainSPC);
-	// DeleteRenderPassComponent(m_SwapChainRenderPassComp);
+	DeleteRenderPassComponent(m_SwapChainRenderPassComp);
+
+	m_samplerDescHeap.ReleaseAndGetAddressOf();
+	m_DSVDescHeap.ReleaseAndGetAddressOf();
+	m_RTVDescHeap.ReleaseAndGetAddressOf();
+	m_ShaderNonVisibleCSUDescHeap.ReleaseAndGetAddressOf();
+	m_CSUDescHeap.ReleaseAndGetAddressOf();
+
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
+	{
+		m_directCommandQueueFence[i].ReleaseAndGetAddressOf();
+		m_computeCommandQueueFence[i].ReleaseAndGetAddressOf();
+		m_copyCommandQueueFence[i].ReleaseAndGetAddressOf();
+	}
+
+	for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
+	{
+		m_GlobalCommandLists[i]->m_DirectCommandList.ReleaseAndGetAddressOf();
+		m_GlobalCommandLists[i]->m_ComputeCommandList.ReleaseAndGetAddressOf();
+		m_GlobalCommandLists[i]->m_CopyCommandList.ReleaseAndGetAddressOf();
+	}
+
+	m_copyCommandAllocator.ReleaseAndGetAddressOf();
+
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
+	{
+		m_directCommandAllocators[i].ReleaseAndGetAddressOf();
+		m_computeCommandAllocators[i].ReleaseAndGetAddressOf();
+	}
+
+	m_directCommandQueue.ReleaseAndGetAddressOf();
+	m_computeCommandQueue.ReleaseAndGetAddressOf();
+	m_copyCommandQueue.ReleaseAndGetAddressOf();
+
+	m_swapChain.ReleaseAndGetAddressOf();
+	m_device.ReleaseAndGetAddressOf();
+	m_adapterOutput.ReleaseAndGetAddressOf();
+	m_adapter.ReleaseAndGetAddressOf();
+	m_factory.ReleaseAndGetAddressOf();
+	m_graphicsAnalysis.ReleaseAndGetAddressOf();
+	m_debugInterface.ReleaseAndGetAddressOf();
 
 #ifdef INNO_DEBUG
 	IDXGIDebug1 *pDebug = nullptr;
@@ -1585,16 +1625,16 @@ bool DX12RenderingServer::DeleteMeshComponent(MeshComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
 	if(l_rhs->m_DefaultHeapBuffer_VB)
-		l_rhs->m_DefaultHeapBuffer_VB.Reset();
+		l_rhs->m_DefaultHeapBuffer_VB.ReleaseAndGetAddressOf();
 
 	if(l_rhs->m_DefaultHeapBuffer_IB)
-		l_rhs->m_DefaultHeapBuffer_IB.Reset();
+		l_rhs->m_DefaultHeapBuffer_IB.ReleaseAndGetAddressOf();
 
 	if(l_rhs->m_UploadHeapBuffer_VB)
-		l_rhs->m_UploadHeapBuffer_VB.Reset();
+		l_rhs->m_UploadHeapBuffer_VB.ReleaseAndGetAddressOf();
 
 	if(l_rhs->m_UploadHeapBuffer_IB)
-		l_rhs->m_UploadHeapBuffer_IB.Reset();
+		l_rhs->m_UploadHeapBuffer_IB.ReleaseAndGetAddressOf();
 
 	m_MeshComponentPool->Destroy(l_rhs);
 
@@ -1608,7 +1648,7 @@ bool DX12RenderingServer::DeleteTextureComponent(TextureComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
 	if(l_rhs->m_DefaultHeapBuffer)
-		l_rhs->m_DefaultHeapBuffer.Reset();
+		l_rhs->m_DefaultHeapBuffer.ReleaseAndGetAddressOf();
 
 	m_TextureComponentPool->Destroy(l_rhs);
 
@@ -1631,20 +1671,29 @@ bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent *rhs)
 bool DX12RenderingServer::DeleteRenderPassComponent(RenderPassComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
+	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
+	{
+		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[i]);
+		l_commandList->m_DirectCommandList.ReleaseAndGetAddressOf();
+		l_commandList->m_ComputeCommandList.ReleaseAndGetAddressOf();
+		l_commandList->m_CopyCommandList.ReleaseAndGetAddressOf();
+		m_CommandListPool->Destroy(l_commandList);
+	}
 
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
+	l_PSO->m_PSO.ReleaseAndGetAddressOf();
 	m_PSOPool->Destroy(l_PSO);
 
-	if (l_rhs->m_DepthStencilRenderTarget.m_Texture)
-	{
+	if (l_rhs->m_DepthStencilRenderTarget.m_IsOwned && l_rhs->m_DepthStencilRenderTarget.m_Texture)
 		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget.m_Texture);
-	}
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
-		DeleteTextureComponent(l_rhs->m_RenderTargets[i].m_Texture);
+		if (l_rhs->m_RenderTargets[i].m_IsOwned && l_rhs->m_RenderTargets[i].m_Texture)
+			DeleteTextureComponent(l_rhs->m_RenderTargets[i].m_Texture);
 	}
 
+	DeleteShaderProgramComponent(l_rhs->m_ShaderProgram);
 	m_RenderPassComponentPool->Destroy(l_rhs);
 
 	return true;
@@ -1673,10 +1722,10 @@ bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
 	if(l_rhs->m_DefaultHeapBuffer)
-		l_rhs->m_DefaultHeapBuffer.Reset();
+		l_rhs->m_DefaultHeapBuffer.ReleaseAndGetAddressOf();
 
 	if(l_rhs->m_UploadHeapBuffer)
-		l_rhs->m_UploadHeapBuffer.Reset();
+		l_rhs->m_UploadHeapBuffer.ReleaseAndGetAddressOf();
 		
 	m_GPUBufferComponentPool->Destroy(l_rhs);
 
@@ -2224,7 +2273,6 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 			break;
 		}
 	}
-
 
 	return true;
 }

@@ -450,40 +450,41 @@ namespace Inno
 		};
 
 		f_TerminateJob = [&]() {
-			DefaultGPUBuffers::Terminate();
-
-			BRDFLUTPass::Get().Terminate();
-			BRDFLUTMSPass::Get().Terminate();
-
-			TiledFrustumGenerationPass::Get().Terminate();
-			LightCullingPass::Get().Terminate();
-			GIResolvePass::Terminate();
-			SurfelGITestPass::Get().Terminate();
-			LuminanceHistogramPass::Get().Terminate();
-			LuminanceAveragePass::Get().Terminate();
-
-			SunShadowGeometryProcessPass::Get().Terminate();
-			SunShadowBlurOddPass::Get().Terminate();
-			SunShadowBlurEvenPass::Get().Terminate();
-			VXGIRenderer::Get().Terminate();
-			OpaquePass::Get().Terminate();
-			AnimationPass::Get().Terminate();
-
-			SSAOPass::Get().Terminate();
-			LightPass::Get().Terminate();
-			SkyPass::Get().Terminate();
-			PreTAAPass::Get().Terminate();
-			TransparentGeometryProcessPass::Get().Terminate();
-			TransparentBlendPass::Get().Terminate();
-			VolumetricPass::Terminate();
-			TAAPass::Get().Terminate();
-			PostTAAPass::Get().Terminate();
-			MotionBlurPass::Get().Terminate();
-			BillboardPass::Get().Terminate();
-			DebugPass::Get().Terminate();
-			FinalBlendPass::Get().Terminate();
-
 			BSDFTestPass::Get().Terminate();
+			
+			FinalBlendPass::Get().Terminate();
+			DebugPass::Get().Terminate();
+			BillboardPass::Get().Terminate();
+			MotionBlurPass::Get().Terminate();
+			PostTAAPass::Get().Terminate();
+			TAAPass::Get().Terminate();
+			
+			VolumetricPass::Terminate();
+			TransparentBlendPass::Get().Terminate();
+			TransparentGeometryProcessPass::Get().Terminate();
+			PreTAAPass::Get().Terminate();
+			SkyPass::Get().Terminate();
+			LightPass::Get().Terminate();
+			SSAOPass::Get().Terminate();
+			
+			AnimationPass::Get().Terminate();
+			OpaquePass::Get().Terminate();
+			VXGIRenderer::Get().Terminate();
+			
+			BRDFLUTMSPass::Get().Terminate();
+			BRDFLUTPass::Get().Terminate();
+			SunShadowBlurEvenPass::Get().Terminate();
+			SunShadowBlurOddPass::Get().Terminate();
+			SunShadowGeometryProcessPass::Get().Terminate();
+
+			LuminanceAveragePass::Get().Terminate();
+			LuminanceHistogramPass::Get().Terminate();
+			SurfelGITestPass::Get().Terminate();
+			GIResolvePass::Terminate();
+			LightCullingPass::Get().Terminate();
+			TiledFrustumGenerationPass::Get().Terminate();
+
+			DefaultGPUBuffers::Terminate();
 		};
 
 		ITask::Desc taskDesc;
