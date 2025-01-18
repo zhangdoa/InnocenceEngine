@@ -1899,10 +1899,13 @@ void DX12RenderingServer::TransferDataToGPU()
 bool DX12RenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[frameIndex]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		l_rhs->m_CurrentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
+	else
+		l_rhs->m_CurrentFrame = frameIndex;
 
-	l_rhs->m_CurrentFrame = frameIndex;
+	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
 	l_commandList->m_DirectCommandList->Reset(m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_PSO->m_PSO.Get());
 	l_commandList->m_ComputeCommandList->Reset(m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_PSO->m_PSO.Get());
@@ -1956,11 +1959,15 @@ bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *comma
 	}
 
 	l_commandList->SetDescriptorHeaps(2, l_heaps);
-	l_commandList->SetPipelineState(PSO->m_PSO.Get());
+
+	if (PSO->m_PSO)
+		l_commandList->SetPipelineState(PSO->m_PSO.Get());
 
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
-		l_commandList->SetGraphicsRootSignature(renderPass->m_RootSignature.Get());
+		if (renderPass->m_RootSignature)
+			l_commandList->SetGraphicsRootSignature(renderPass->m_RootSignature.Get());
+
 		l_commandList->RSSetViewports(1, &PSO->m_Viewport);
 		l_commandList->RSSetScissorRects(1, &PSO->m_Scissor);
 
@@ -2023,6 +2030,9 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 			BindGPUResource(rhs, l_desc.m_ShaderStage, l_desc.m_GPUResource, i);
 		}
 	}
+	
+	if (l_rhs->m_CustomCommandsFunc)
+		l_rhs->m_CustomCommandsFunc(l_commandList);
 	
 	return true;
 }
@@ -2411,13 +2421,13 @@ bool DX12RenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUE
 	{
 		if (GPUEngineType == GPUEngineType::Graphics)
 		{
-			semaphore = m_directCommandQueueSemaphore[m_SwapChainRenderPassComp->m_CurrentFrame];
-			fenceEvent = m_directCommandQueueFenceEvent[m_SwapChainRenderPassComp->m_CurrentFrame];
+			semaphore = m_directCommandQueueSemaphore[l_currentFrame];
+			fenceEvent = m_directCommandQueueFenceEvent[l_currentFrame];
 		}
 		else if (GPUEngineType == GPUEngineType::Compute)
 		{
-			semaphore = m_computeCommandQueueSemaphore[m_SwapChainRenderPassComp->m_CurrentFrame];
-			fenceEvent = m_computeCommandQueueFenceEvent[m_SwapChainRenderPassComp->m_CurrentFrame];
+			semaphore = m_computeCommandQueueSemaphore[l_currentFrame];
+			fenceEvent = m_computeCommandQueueFenceEvent[l_currentFrame];
 		}
 	}
 	else

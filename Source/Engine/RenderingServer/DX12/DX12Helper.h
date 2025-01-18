@@ -52,6 +52,7 @@ namespace Inno
 
 		bool CreateRootSignature(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
 		bool CreatePSO(DX12RenderPassComponent *DX12RenderPassComp, ComPtr<ID3D12Device> device);
+		bool CreateShaderPrograms(DX12RenderPassComponent *DX12RenderPassComp);
 		bool CreateFenceEvents(DX12RenderPassComponent *DX12RenderPassComp);
 
 		D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);

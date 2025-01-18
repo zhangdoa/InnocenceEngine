@@ -787,6 +787,12 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, bo
 
 bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<ID3D12Device> device)
 {
+	if (DX12RenderPassComp->m_ResourceBindingLayoutDescs.empty())
+	{
+		Log(Verbose, "Skipping creating RootSignature for ", DX12RenderPassComp->m_InstanceName.c_str());
+		return true;
+	}
+
 	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(DX12RenderPassComp->m_ResourceBindingLayoutDescs.size());
 
 	size_t l_rootDescriptorTableCount = 0;
@@ -949,14 +955,19 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<ID3D12Device> device)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RenderPassComp->m_PipelineStateObject);
-	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RenderPassComp->m_ShaderProgram);
-	
+	if (!DX12RenderPassComp->m_RootSignature.Get())
+	{
+		Log(Verbose, "Skipping creating PSO for ", DX12RenderPassComp->m_InstanceName.c_str());
+		return true;
+	}
+
 	if (DX12RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		GenerateDepthStencilStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
 		GenerateBlendStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
 		GenerateRasterizerStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 		GenerateViewportStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+		
 
 		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RenderPassComp->m_RootSignature.Get();
 
@@ -1016,17 +1027,68 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 		l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 		l_PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
 
-		// A compute shader could only be bound to a Compute pipeline
-#ifdef USE_DXIL
-		if (l_DX12SPC->m_CSBuffer.size())
+		CreateShaderPrograms(DX12RenderPassComp);
+	
+		if (DX12RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
 		{
-#else
-		if (l_DX12SPC->m_CSBuffer)
+			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
+			for (size_t i = 0; i < DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
+			{
+				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = DX12RenderPassComp->m_RTVDesc.Format;
+			}
+		}
+
+		l_PSO->m_GraphicsPSODesc.DSVFormat = DX12RenderPassComp->m_DSVDesc.Format;
+		l_PSO->m_GraphicsPSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
+		l_PSO->m_GraphicsPSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
+		l_PSO->m_GraphicsPSODesc.BlendState = l_PSO->m_BlendDesc;
+		l_PSO->m_GraphicsPSODesc.SampleMask = UINT_MAX;
+		l_PSO->m_GraphicsPSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
+		l_PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
+
+		auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+		if (FAILED(l_HResult))
 		{
-#endif
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " GPUEngineType can't be Graphics if there is a Compute shader attached.");
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO.");
 			return false;
 		}
+	}
+	else
+	{
+		CreateShaderPrograms(DX12RenderPassComp);
+
+		l_PSO->m_ComputePSODesc.pRootSignature = DX12RenderPassComp->m_RootSignature.Get();
+		auto l_HResult = device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+
+		if (FAILED(l_HResult))
+		{
+			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO.");
+			return false;
+		}
+	}
+
+#ifdef INNO_DEBUG
+	SetObjectName(DX12RenderPassComp, l_PSO->m_PSO, "PSO");
+#endif // INNO_DEBUG
+
+	Log(Verbose, "", DX12RenderPassComp->m_InstanceName.c_str(), " PSO has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateShaderPrograms(DX12RenderPassComponent* DX12RenderPassComp)
+{
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RenderPassComp->m_PipelineStateObject);
+	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RenderPassComp->m_ShaderProgram);
+	
+	if (!l_DX12SPC || !l_PSO)
+	{
+		Log(Verbose, "Skipping creating ShaderPrograms for ", DX12RenderPassComp->m_InstanceName.c_str());
+		return true;
+	}
+
+	if (DX12RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+	{
 #ifdef USE_DXIL
 		if (l_DX12SPC->m_VSBuffer.size())
 		{
@@ -1100,34 +1162,9 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
 		}
 #endif
-		if (DX12RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
-		{
-			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
-			for (size_t i = 0; i < DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-			{
-				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = DX12RenderPassComp->m_RTVDesc.Format;
-			}
-		}
-
-		l_PSO->m_GraphicsPSODesc.DSVFormat = DX12RenderPassComp->m_DSVDesc.Format;
-		l_PSO->m_GraphicsPSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
-		l_PSO->m_GraphicsPSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
-		l_PSO->m_GraphicsPSODesc.BlendState = l_PSO->m_BlendDesc;
-		l_PSO->m_GraphicsPSODesc.SampleMask = UINT_MAX;
-		l_PSO->m_GraphicsPSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
-		l_PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
-
-		auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
-
-		if (FAILED(l_HResult))
-		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO.");
-			return false;
-		}
 	}
 	else
 	{
-		l_PSO->m_ComputePSODesc.pRootSignature = DX12RenderPassComp->m_RootSignature.Get();
 #ifdef USE_DXIL
 		if (l_DX12SPC->m_CSBuffer.size())
 		{
@@ -1145,20 +1182,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
 		}
 #endif
-		auto l_HResult = device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
-
-		if (FAILED(l_HResult))
-		{
-			Log(Error, "", DX12RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO.");
-			return false;
-		}
 	}
-
-#ifdef INNO_DEBUG
-	SetObjectName(DX12RenderPassComp, l_PSO->m_PSO, "PSO");
-#endif // INNO_DEBUG
-
-	Log(Verbose, "", DX12RenderPassComp->m_InstanceName.c_str(), " PSO has been created.");
 
 	return true;
 }
