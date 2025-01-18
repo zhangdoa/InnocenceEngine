@@ -39,9 +39,10 @@ std::shared_ptr<ITask> Thread::AddTask(std::shared_ptr<ITask>&& task)
 {
 	std::shared_ptr<ITask> l_result{ task };
 
+	m_TaskList.emplace_back(std::move(task));
+	
 	Log(Verbose, "Task: \"", task->GetName(), "\" added to thread ", GetThreadID().c_str());
 	
-	m_TaskList.emplace_back(std::move(task));
 	return l_result;
 }
 
