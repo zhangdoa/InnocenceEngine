@@ -449,8 +449,10 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	
 	m_pImpl->m_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Server Update Task", 2, [&]()
 	{
+		if (Get<HIDService>()->IsResizing())
+			return true;
+		
 		auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-
 
 		m_pImpl->m_RenderingClient->Render();
 

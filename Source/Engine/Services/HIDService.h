@@ -60,6 +60,7 @@ namespace Inno
 		void MouseMovementCallback(float mouseXPos, float mouseYPos);
 		void ScrollCallback(float xOffset, float yOffset);
 
+		bool IsResizing();
 		Vec2 GetMousePosition();
 
 	private:
@@ -79,6 +80,7 @@ namespace Inno
 		float m_MouseLastX;
 		float m_MouseLastY;
 
+		std::atomic_bool m_IsResizing = false;
 		Vec4 m_MousePositionInWorldSpace;
 	};
 }

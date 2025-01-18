@@ -120,9 +120,11 @@ void HIDService::ButtonStateCallback(ButtonState buttonState)
 
 void HIDService::WindowResizeCallback(int32_t width, int32_t height)
 {
+	m_IsResizing = true;
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
 	g_Engine->Get<RenderingConfigurationService>()->SetScreenResolution(l_newScreenResolution);
 	g_Engine->getRenderingServer()->Resize();
+	m_IsResizing = false;
 }
 
 void HIDService::MouseMovementCallback(float mouseXPos, float mouseYPos)
@@ -132,6 +134,11 @@ void HIDService::MouseMovementCallback(float mouseXPos, float mouseYPos)
 
 	m_MouseLastX = mouseXPos;
 	m_MouseLastY = mouseYPos;
+}
+
+bool HIDService::IsResizing()
+{
+	return m_IsResizing;
 }
 
 void HIDService::ExecuteEvent(const ButtonEvent& buttonEvent)
