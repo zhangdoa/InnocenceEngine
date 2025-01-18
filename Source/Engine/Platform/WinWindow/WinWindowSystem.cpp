@@ -272,8 +272,7 @@ LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
-			g_Engine->Get<RenderingConfigurationService>()->SetScreenResolution(l_newResolution);
-			g_Engine->getRenderingServer()->Resize();
+			g_Engine->Get<HIDService>()->WindowResizeCallback(l_newResolution.x, l_newResolution.y);
 		}
 	}
 	default:
