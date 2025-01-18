@@ -224,7 +224,7 @@ void AssimpWrapper::ProcessAssimpMesh(json& j, const aiScene* scene, const char*
 	auto l_meshFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	j["IndicesNumber"] = ProcessMeshData(l_mesh, l_meshFileName.c_str());
 	j["File"] = l_meshFileName;
-	j["MeshSource"] = MeshSource::Customized;
+	j["MeshShape"] = MeshShape::Customized;
 
 	// Process bones
 	if (l_mesh->mNumBones)

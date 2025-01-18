@@ -115,11 +115,8 @@
                 },
                 {
                     "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "TextureWrapMethod": 1,
                     "MeshUsage": 1,
-                    "MeshSource": 2,
-                    "ProceduralMeshShape": 0,
+                    "MeshShape": 1,
                     "ModelFileName": "..//Res//ConvertedAssets//fireplace_room.InnoModel",
                     "SimulatePhysics": true
                 }
@@ -153,11 +150,8 @@
                 },
                 {
                     "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "TextureWrapMethod": 1,
                     "MeshUsage": 2,
-                    "MeshSource": 2,
-                    "ProceduralMeshShape": 0,
+                    "MeshShape": 1,
                     "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
                     "SimulatePhysics": true
                 }
@@ -191,11 +185,8 @@
                 },
                 {
                     "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "TextureWrapMethod": 1,
                     "MeshUsage": 2,
-                    "MeshSource": 2,
-                    "ProceduralMeshShape": 0,
+                    "MeshShape": 1,
                     "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
                     "SimulatePhysics": true
                 }
@@ -370,11 +361,8 @@
                 },
                 {
                     "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "TextureWrapMethod": 2,
                     "MeshUsage": 2,
-                    "MeshSource": 1,
-                    "ProceduralMeshShape": 6,
+                    "MeshShape": 7,
                     "ModelFileName": "",
                     "SimulatePhysics": true
                 }

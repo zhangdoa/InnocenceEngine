@@ -205,7 +205,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 			m_probeSphereMeshData.emplace_back(l_probeMeshData);
 		}
 
-		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Sphere);
+		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
 
 		l_renderingServer->UploadGPUBufferComponent(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 

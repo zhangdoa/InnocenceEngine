@@ -3,7 +3,6 @@
 #include "../Common/GraphicsPrimitive.h"
 #include "../Common/Array.h"
 #include "../Common/MathHelper.h"
-#include "SkeletonComponent.h"
 
 namespace Inno
 {
@@ -13,11 +12,8 @@ namespace Inno
 		static uint32_t GetTypeID() { return 6; };
 		static const char* GetTypeName() { return "MeshComponent"; };
 
-		MeshPrimitiveTopology m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-		MeshSource m_MeshSource = MeshSource::Procedural;
-		ProceduralMeshShape m_ProceduralMeshShape = ProceduralMeshShape::Triangle;
+		MeshShape m_MeshShape = MeshShape::Customized;
 		size_t m_IndexCount = 0;
-		SkeletonComponent* m_SkeletonComp = 0;
 
 		Array<Vertex> m_Vertices;
 		Array<Index> m_Indices;

@@ -227,16 +227,13 @@ void JSONWrapper::to_json(json& j, const TransformComponent& p)
 	};
 }
 
-void JSONWrapper::to_json(json& j, const VisibleComponent& p)
+void JSONWrapper::to_json(json& j, const ModelComponent& p)
 {
 	j = json
 	{
 		{"ComponentType", p.GetTypeID()},
-		{"MeshPrimitiveTopology", p.m_meshPrimitiveTopology},
-		{"TextureWrapMethod", p.m_textureWrapMethod},
 		{"MeshUsage", p.m_meshUsage},
-		{"MeshSource", p.m_meshSource},
-		{"ProceduralMeshShape", p.m_proceduralMeshShape},
+		{"MeshShape", p.m_MeshShape},
 		{"ModelFileName", p.m_modelFileName},
 		{"SimulatePhysics", p.m_simulatePhysics},
 	};
@@ -322,13 +319,10 @@ void JSONWrapper::from_json(const json& j, TransformVector& p)
 	p.m_scale.w = 1.0f;
 }
 
-void JSONWrapper::from_json(const json& j, VisibleComponent& p)
+void JSONWrapper::from_json(const json& j, ModelComponent& p)
 {
-	p.m_meshPrimitiveTopology = j["MeshPrimitiveTopology"];
-	p.m_textureWrapMethod = j["TextureWrapMethod"];
 	p.m_meshUsage = j["MeshUsage"];
-	p.m_meshSource = j["MeshSource"];
-	p.m_proceduralMeshShape = j["ProceduralMeshShape"];
+	p.m_MeshShape = j["MeshShape"];
 	p.m_modelFileName = j["ModelFileName"];
 	p.m_simulatePhysics = j["SimulatePhysics"];
 }
@@ -371,7 +365,7 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 	if (j.find("Meshes") != j.end())
 	{
 		l_result = g_Engine->Get<AssetSystem>()->AddModel();
-		l_result->meshMaterialPairs = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
+		l_result->renderableSets = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
 	}
 
 	if (j.find("Animations") != j.end())
@@ -421,41 +415,41 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 
 ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
 {
-	auto l_result = g_Engine->Get<AssetSystem>()->AddMeshMaterialPairs(j.size());
+	auto l_result = g_Engine->Get<AssetSystem>()->AddRenderableSets(j.size());
 
 	uint64_t l_currentIndex = 0;
 
-	for (auto i : j)
+	for (auto& i : j)
 	{
-		auto l_currentMeshMaterialPair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
+		auto l_currentRenderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(l_result.m_startOffset + l_currentIndex);
 
 		// Load material data
 		if (i.find("Material") != i.end())
 		{
 			std::string l_materialName = i["Name"];
 			l_materialName += "_Material";
-			l_currentMeshMaterialPair->material = processMaterialJsonData(i["Material"], l_materialName.c_str(), AsyncUploadGPUResource);
+			l_currentRenderableSet->material = processMaterialJsonData(i["Material"], l_materialName.c_str(), AsyncUploadGPUResource);
 		}
 		else
 		{
-			l_currentMeshMaterialPair->material = g_Engine->getRenderingServer()->AddMaterialComponent();
-			l_currentMeshMaterialPair->material->m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_currentMeshMaterialPair->material, AsyncUploadGPUResource);
+			l_currentRenderableSet->material = g_Engine->getRenderingServer()->AddMaterialComponent();
+			l_currentRenderableSet->material->m_ObjectStatus = ObjectStatus::Created;
+			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_currentRenderableSet->material, AsyncUploadGPUResource);
 		}
 
-		MeshSource l_meshSource = MeshSource(i["MeshSource"].get<int32_t>());
+		MeshShape l_meshShape = MeshShape(i["MeshShape"].get<int32_t>());
 
 		// Load custom mesh data
-		if (l_meshSource == MeshSource::Customized)
+		if (l_meshShape == MeshShape::Customized)
 		{
 			auto l_meshFileName = i["File"].get<std::string>();
 
-			MeshMaterialPair* l_loadedMeshMaterialPair;
+			RenderableSet* l_loadedRenderableSet;
 
 			// check if this file has already been loaded once
-			if (g_Engine->Get<AssetSystem>()->FindLoadedMeshMaterialPair(l_meshFileName.c_str(), l_loadedMeshMaterialPair))
+			if (g_Engine->Get<AssetSystem>()->FindLoadedRenderableSet(l_meshFileName.c_str(), l_loadedRenderableSet))
 			{
-				l_currentMeshMaterialPair = l_loadedMeshMaterialPair;
+				l_currentRenderableSet = l_loadedRenderableSet;
 			}
 			else
 			{
@@ -463,7 +457,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 
 				if (!l_meshFile.is_open())
 				{
-					Log(Error, "std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
+					Log(Error, "Can't open file ", l_meshFileName.c_str(), "!");
 				}
 
 				auto l_mesh = g_Engine->getRenderingServer()->AddMeshComponent();
@@ -484,29 +478,29 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 
 				l_mesh->m_IndexCount = l_mesh->m_Indices.size();
 
-				l_currentMeshMaterialPair->mesh = l_mesh;
+				l_currentRenderableSet->mesh = l_mesh;
 
 				// Load bones data
 				if (i.find("Bones") != i.end())
 				{
 					std::string l_skeletonName = i["Name"];
 					l_skeletonName += "_Skeleton";
-					l_currentMeshMaterialPair->mesh->m_SkeletonComp = processSkeletonJsonData(i, l_skeletonName.c_str(), AsyncUploadGPUResource);
+					l_currentRenderableSet->skeleton = processSkeletonJsonData(i, l_skeletonName.c_str(), AsyncUploadGPUResource);
 				}
 
-				l_currentMeshMaterialPair->mesh->m_MeshSource = MeshSource::Customized;
-				l_currentMeshMaterialPair->mesh->m_ObjectStatus = ObjectStatus::Created;
+				l_currentRenderableSet->mesh->m_MeshShape = MeshShape::Customized;
+				l_currentRenderableSet->mesh->m_ObjectStatus = ObjectStatus::Created;
 
 				g_Engine->getRenderingServer()->InitializeMeshComponent(l_mesh, AsyncUploadGPUResource);
 
-				g_Engine->Get<AssetSystem>()->RecordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_currentMeshMaterialPair);
+				g_Engine->Get<AssetSystem>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
 			}
 		}
 		else
 		{
-			ProceduralMeshShape l_proceduralMeshShape = ProceduralMeshShape(i["ProceduralMeshShape"].get<int32_t>());
+			MeshShape l_MeshShape = MeshShape(i["MeshShape"].get<int32_t>());
 
-			l_currentMeshMaterialPair->mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_proceduralMeshShape);
+			l_currentRenderableSet->mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_MeshShape);
 		}
 
 		l_currentIndex++;
@@ -530,14 +524,14 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 		l_SamplerComp->m_InstanceName = (std::string(name) + ("//")).c_str();
 
 		auto l_size = j["Bones"].size();
-		l_SamplerComp->m_BoneData.reserve(l_size);
-		l_SamplerComp->m_BoneData.fulfill();
+		l_SamplerComp->m_BoneList.reserve(l_size);
+		l_SamplerComp->m_BoneList.fulfill();
 
 		for (auto i : j["Bones"])
 		{
-			BoneData l_boneData;
-			from_json(i["Transformation"], l_boneData.m_L2B);
-			l_SamplerComp->m_BoneData[i["ID"]] = l_boneData;
+			Bone l_boneData;
+			from_json(i["Transformation"], l_boneData.m_LocalToBoneSpace);
+			l_SamplerComp->m_BoneList[i["ID"]] = l_boneData;
 		}
 
 		g_Engine->Get<AssetSystem>()->RecordLoadedSkeleton(name, l_SamplerComp);
@@ -618,7 +612,7 @@ bool JSONWrapper::saveScene(const char* fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>())
+	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>())
 	{
 		if (i->m_Serializable)
 		{
@@ -673,7 +667,7 @@ bool JSONWrapper::loadScene(const char* fileName)
 			}
 			else if (componentTypeID == 2)
 			{
-				loadComponentData<VisibleComponent>(k, l_entity);
+				loadComponentData<ModelComponent>(k, l_entity);
 			}
 			else if (componentTypeID == 3)
 			{

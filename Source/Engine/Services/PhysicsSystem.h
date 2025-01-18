@@ -38,7 +38,7 @@ namespace Inno
 
 		ObjectStatus GetStatus();
 
-		bool generatePhysicsProxy(VisibleComponent* VC);
+		bool generatePhysicsProxy(ModelComponent* VC);
 		void updateBVH();
 		void updateCulling();
 		const std::vector<CullingData>& getCullingData();
@@ -47,6 +47,6 @@ namespace Inno
 		AABB getTotalSceneAABB();
 		const std::vector<BVHNode>& getBVHNodes();
 
-		bool addForce(VisibleComponent* VC, Vec4 force);
+		bool addForce(ModelComponent* VC, Vec4 force);
 	};
 }

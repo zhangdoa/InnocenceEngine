@@ -223,7 +223,7 @@ const SceneHierarchyMap& SceneSystem::getSceneHierarchyMap()
 	if (m_needUpdate)
 	{
 		AddComponentToSceneHierarchyMap<TransformComponent>();
-		AddComponentToSceneHierarchyMap<VisibleComponent>();
+		AddComponentToSceneHierarchyMap<ModelComponent>();
 		AddComponentToSceneHierarchyMap<LightComponent>();
 		AddComponentToSceneHierarchyMap<CameraComponent>();
 

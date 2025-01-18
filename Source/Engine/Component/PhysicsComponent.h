@@ -2,7 +2,7 @@
 #include "../Common/Object.h"
 #include "../Common/MathHelper.h"
 #include "TransformComponent.h"
-#include "VisibleComponent.h"
+#include "ModelComponent.h"
 
 namespace Inno
 {
@@ -18,8 +18,8 @@ namespace Inno
 		Sphere m_SphereWS = {};
 		MeshUsage m_MeshUsage;
 		TransformComponent* m_TransformComponent;
-		VisibleComponent* m_VisibleComponent;
-		MeshMaterialPair* m_MeshMaterialPair;
+		ModelComponent* m_ModelComponent;
+		RenderableSet* m_RenderableSet;
 		void* m_Proxy;
 	};
 }

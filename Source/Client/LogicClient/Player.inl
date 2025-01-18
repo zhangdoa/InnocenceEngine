@@ -24,7 +24,7 @@ namespace Inno
 
         Entity* m_playerCharacterEntity = nullptr;
         TransformComponent* m_playerTransformComponent = nullptr;
-        VisibleComponent* m_playerVisibleComponent = nullptr;
+        ModelComponent* m_playerModelComponent = nullptr;
 
         Entity* m_playerCameraEntity = nullptr;
         TransformComponent* m_playerCameraTransformComponent = nullptr;
@@ -91,7 +91,7 @@ namespace Inno
         {
             m_playerCharacterEntity = *l_playerCharacterEntity;
             m_playerTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(m_playerCharacterEntity);
-            m_playerVisibleComponent = g_Engine->Get<ComponentManager>()->Find<VisibleComponent>(m_playerCharacterEntity);
+            m_playerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(m_playerCharacterEntity);
         }
 
         auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("playerCharacterCamera");
@@ -200,7 +200,7 @@ namespace Inno
         f_addForce = [&]() {
             auto l_force = Math::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
             l_force = l_force * 10.0f;
-            g_Engine->Get<PhysicsSystem>()->addForce(m_playerVisibleComponent, l_force);
+            g_Engine->Get<PhysicsSystem>()->addForce(m_playerModelComponent, l_force);
         };
 
         f_switchCamera = [&]() {

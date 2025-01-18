@@ -116,7 +116,7 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 
 	auto& l_billboardPassDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetBillboardPassDrawCallInfo();
 	auto l_drawCallCount = l_billboardPassDrawCallInfo.size();

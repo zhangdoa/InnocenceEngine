@@ -3,11 +3,13 @@
 #include "../Common/Array.h"
 #include "../Common/MathHelper.h"
 
+#include "MeshComponent.h"
+
 namespace Inno
 {
-	struct BoneData
+	struct Bone
 	{
-		Mat4 m_L2B;
+		Mat4 m_LocalToBoneSpace;
 	};
 
 	class SkeletonComponent : public Component
@@ -16,6 +18,7 @@ namespace Inno
 		static uint32_t GetTypeID() { return 9; };
 		static const char* GetTypeName() { return "SkeletonComponent"; };
 
-		Array<BoneData> m_BoneData;
+		Array<Bone> m_BoneList;
+		MeshComponent* m_Mesh;
 	};
 }

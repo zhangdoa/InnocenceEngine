@@ -3,7 +3,7 @@
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/TextureComponent.h"
-#include "../Component/VisibleComponent.h"
+#include "../Component/ModelComponent.h"
 
 namespace Inno
 {

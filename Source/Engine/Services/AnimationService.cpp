@@ -207,7 +207,7 @@ bool AnimationService::InitializeAnimationComponent(AnimationComponent* rhs, boo
 	return true;
 }
 
-bool AnimationService::PlayAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping)
+bool AnimationService::PlayAnimation(ModelComponent* rhs, const char* animationName, bool isLooping)
 {
 	auto l_animationData = m_Impl->getAnimationData(animationName);
 
@@ -228,7 +228,7 @@ bool AnimationService::PlayAnimation(VisibleComponent* rhs, const char* animatio
 	return false;
 }
 
-bool AnimationService::StopAnimation(VisibleComponent* rhs, const char* animationName)
+bool AnimationService::StopAnimation(ModelComponent* rhs, const char* animationName)
 {
 	auto l_result = m_Impl->m_animationInstanceMap.find(rhs->m_UUID);
 	if (l_result != m_Impl->m_animationInstanceMap.end())

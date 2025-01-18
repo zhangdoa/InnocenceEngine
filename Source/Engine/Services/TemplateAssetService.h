@@ -28,9 +28,12 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-    	MeshComponent* GetMeshComponent(ProceduralMeshShape shape);
+    	MeshComponent* GetMeshComponent(MeshShape shape);
 		TextureComponent* GetTextureComponent(WorldEditorIconType iconType);
 		MaterialComponent* GetDefaultMaterialComponent();
+		
+		bool GenerateMesh(MeshShape shape, MeshComponent* meshComponent);
+		void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace);
 
     private:
         TemplateAssetServiceImpl* m_Impl;

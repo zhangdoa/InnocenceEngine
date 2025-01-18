@@ -311,19 +311,19 @@ bool ExecuteRayTracing()
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
 
-	auto l_visibleComponents = g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>();
+	auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
 
 	std::vector<Hitable*> l_hitableListVector;
-	l_hitableListVector.reserve(l_visibleComponents.size());
+	l_hitableListVector.reserve(l_modelComponents.size());
 
-	for (auto l_visibleComponent : l_visibleComponents)
+	for (auto l_modelComponent : l_modelComponents)
 	{
-		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
+		if (l_modelComponent->m_MeshShape == MeshShape::Sphere)
 		{
 			auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
-			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
+			for (uint64_t j = 0; j < l_modelComponent->m_Model->renderableSets.m_count; j++)
 			{
-				auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->Get<AssetSystem>()->GetRenderableSet(l_modelComponent->m_Model->renderableSets.m_startOffset + j);
 				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
 					auto l_hitable = new HitableSphere();

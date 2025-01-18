@@ -112,11 +112,9 @@
         },
         {
           "ComponentType": 2,
-          "MeshPrimitiveTopology": 2,
-          "MeshSource": 2,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ConvertedAssets//sibenik.InnoModel",
-          "ProceduralMeshShape": 0,
+          "MeshShape": 1,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1
         }
@@ -150,11 +148,9 @@
         },
         {
           "ComponentType": 2,
-          "MeshPrimitiveTopology": 2,
-          "MeshSource": 2,
           "MeshUsage": 2,
           "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
-          "ProceduralMeshShape": 0,
+          "MeshShape": 1,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1
         }
@@ -188,11 +184,9 @@
         },
         {
           "ComponentType": 2,
-          "MeshPrimitiveTopology": 2,
-          "MeshSource": 2,
           "MeshUsage": 2,
           "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
-          "ProceduralMeshShape": 0,
+          "MeshShape": 1,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1
         }
@@ -367,13 +361,10 @@
         },
         {
           "ComponentType": 2,
-          "MeshPrimitiveTopology": 2,
-          "MeshSource": 1,
           "MeshUsage": 2,
           "ModelFileName": "",
-          "ProceduralMeshShape": 6,
-          "SimulatePhysics": true,
-          "TextureWrapMethod": 2
+          "MeshShape": 7,
+          "SimulatePhysics": true
         }
       ],
       "ObjectName": "playerCharacter",

@@ -1,6 +1,6 @@
 #pragma once
 #include "../Component/TransformComponent.h"
-#include "../Component/VisibleComponent.h"
+#include "../Component/ModelComponent.h"
 #include "../Component/LightComponent.h"
 #include "../Component/CameraComponent.h"
 #include "../Component/PhysicsComponent.h"

@@ -271,7 +271,7 @@ namespace Inno
 
             auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
-            auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Cube);
+            auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Cube);
 
             uint32_t l_offset = 0;
 

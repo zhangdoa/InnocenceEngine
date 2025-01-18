@@ -23,9 +23,9 @@ namespace PhysicsSystemNS
 
 	PhysicsComponent* AddPhysicsComponent(Entity* parentEntity);
 
-	PhysicsComponent* generatePhysicsComponent(MeshMaterialPair* meshMaterialPair);
+	PhysicsComponent* generatePhysicsComponent(RenderableSet* renderableSet);
 	bool generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m);
-	ArrayRangeInfo generatePhysicsProxy(VisibleComponent* VC);
+	ArrayRangeInfo generatePhysicsProxy(ModelComponent* VC);
 
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
@@ -53,7 +53,7 @@ namespace PhysicsSystemNS
 	std::vector<BVHNode> m_BVHNodes;
 	std::vector<BVHNode> m_TempBVHNodes;
 
-	std::unordered_map<VisibleComponent*, ArrayRangeInfo> m_ComponentOwnerLUT;
+	std::unordered_map<ModelComponent*, ArrayRangeInfo> m_ComponentOwnerLUT;
 
 	DoubleBuffer<std::vector<CullingData>, true> m_cullingData;
 
@@ -131,15 +131,15 @@ PhysicsComponent* PhysicsSystemNS::AddPhysicsComponent(Entity* parentEntity)
 	return l_PDC;
 }
 
-PhysicsComponent* PhysicsSystemNS::generatePhysicsComponent(MeshMaterialPair* meshMaterialPair)
+PhysicsComponent* PhysicsSystemNS::generatePhysicsComponent(RenderableSet* renderableSet)
 {
-	auto l_MeshComp = meshMaterialPair->mesh;
+	auto l_MeshComp = renderableSet->mesh;
 	auto l_PDC = AddPhysicsComponent(l_MeshComp->m_Owner);
 
 	l_PDC->m_AABBLS = Math::generateAABB(&l_MeshComp->m_Vertices[0], l_MeshComp->m_Vertices.size());
 	l_PDC->m_SphereLS = Math::generateBoundSphere(l_PDC->m_AABBLS);
 
-	l_PDC->m_MeshMaterialPair = meshMaterialPair;
+	l_PDC->m_RenderableSet = renderableSet;
 
 	Log(Verbose, "PhysicsComponent has been generated for MeshComponent:", l_MeshComp->m_Owner->m_InstanceName.c_str(), ".");
 
@@ -162,22 +162,22 @@ bool PhysicsSystemNS::generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4
 	return true;
 }
 
-ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
+ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(ModelComponent* VC)
 {
 	ArrayRangeInfo l_result;
 	l_result.m_startOffset = m_Components.size();
-	l_result.m_count = VC->m_model->meshMaterialPairs.m_count;
+	l_result.m_count = VC->m_Model->renderableSets.m_count;
 
 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(VC->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-	for (uint64_t j = 0; j < VC->m_model->meshMaterialPairs.m_count; j++)
+	for (uint64_t j = 0; j < VC->m_Model->renderableSets.m_count; j++)
 	{
-		auto l_meshMaterialPair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
+		auto l_renderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(VC->m_Model->renderableSets.m_startOffset + j);
 
-		auto l_PDC = generatePhysicsComponent(l_meshMaterialPair);
+		auto l_PDC = generatePhysicsComponent(l_renderableSet);
 		l_PDC->m_TransformComponent = l_transformComponent;
-		l_PDC->m_VisibleComponent = VC;
+		l_PDC->m_ModelComponent = VC;
 		l_PDC->m_MeshUsage = VC->m_meshUsage;
 
 		generateAABBInWorldSpace(l_PDC, l_globalTm);
@@ -190,44 +190,40 @@ ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 #if defined INNO_PLATFORM_WIN
 		if (VC->m_simulatePhysics)
 		{
-			if (l_meshMaterialPair->mesh->m_MeshSource == MeshSource::Customized)
+			switch (l_renderableSet->mesh->m_MeshShape)
 			{
+			case Type::MeshShape::Customized:
 				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), false);
-			}
-			else
-			{
-				switch (l_meshMaterialPair->mesh->m_ProceduralMeshShape)
-				{
-				case Type::ProceduralMeshShape::Triangle:
-					break;
-				case Type::ProceduralMeshShape::Square:
-					break;
-				case Type::ProceduralMeshShape::Pentagon:
-					break;
-				case Type::ProceduralMeshShape::Hexagon:
-					break;
-				case Type::ProceduralMeshShape::Tetrahedron:
-					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
-					break;
-				case Type::ProceduralMeshShape::Cube:
-					PhysXWrapper::get().createPxBox(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic));
-					break;
-				case Type::ProceduralMeshShape::Octahedron:
-					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
-					break;
-				case Type::ProceduralMeshShape::Dodecahedron:
-					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
-					break;
-				case Type::ProceduralMeshShape::Icosahedron:
-					PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
-					break;
-				case Type::ProceduralMeshShape::Sphere:
-					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
-					break;
-				default:
-					Log(Error, "Invalid ProceduralMeshShape!");
-					break;
-				}
+				break;
+			case Type::MeshShape::Triangle:
+				break;
+			case Type::MeshShape::Square:
+				break;
+			case Type::MeshShape::Pentagon:
+				break;
+			case Type::MeshShape::Hexagon:
+				break;
+			case Type::MeshShape::Tetrahedron:
+				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				break;
+			case Type::MeshShape::Cube:
+				PhysXWrapper::get().createPxBox(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic));
+				break;
+			case Type::MeshShape::Octahedron:
+				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				break;
+			case Type::MeshShape::Dodecahedron:
+				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				break;
+			case Type::MeshShape::Icosahedron:
+				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				break;
+			case Type::MeshShape::Sphere:
+				PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
+				break;
+			default:
+				Log(Error, "Invalid MeshShape!");
+				break;
 			}
 		}
 #endif
@@ -446,10 +442,10 @@ void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& culli
 				l_cullingData.m = l_globalTm;
 				l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 				l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-				l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
-				l_cullingData.material = PDC->m_MeshMaterialPair->material;
-				l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
-				l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
+				l_cullingData.mesh = PDC->m_RenderableSet->mesh;
+				l_cullingData.material = PDC->m_RenderableSet->material;
+				l_cullingData.meshUsage = PDC->m_ModelComponent->m_meshUsage;
+				l_cullingData.UUID = PDC->m_ModelComponent->m_UUID;
 
 				l_cullingData.visibilityMask |= VisibilityMask::MainCamera;
 
@@ -491,10 +487,10 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 				l_cullingData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 				l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 				l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-				l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
-				l_cullingData.material = PDC->m_MeshMaterialPair->material;
-				l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
-				l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
+				l_cullingData.mesh = PDC->m_RenderableSet->mesh;
+				l_cullingData.material = PDC->m_RenderableSet->material;
+				l_cullingData.meshUsage = PDC->m_ModelComponent->m_meshUsage;
+				l_cullingData.UUID = PDC->m_ModelComponent->m_UUID;
 				l_cullingData.visibilityMask |= VisibilityMask::Sun;
 
 				cullingDatas.emplace_back(l_cullingData);
@@ -505,10 +501,10 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 
 CullingData generateCullingData(const Frustum& frustum, PhysicsComponent* PDC)
 {
-	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(PDC->m_VisibleComponent->m_Owner);
+	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(PDC->m_ModelComponent->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-	if (PDC->m_VisibleComponent->m_meshUsage == MeshUsage::Dynamic)
+	if (PDC->m_ModelComponent->m_meshUsage == MeshUsage::Dynamic)
 	{
 		PDC->m_AABBWS = Math::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
 		PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
@@ -519,10 +515,10 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsComponent* PDC)
 	l_cullingData.m = l_globalTm;
 	l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 	l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-	l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
-	l_cullingData.material = PDC->m_MeshMaterialPair->material;
-	l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
-	l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
+	l_cullingData.mesh = PDC->m_RenderableSet->mesh;
+	l_cullingData.material = PDC->m_RenderableSet->material;
+	l_cullingData.meshUsage = PDC->m_ModelComponent->m_meshUsage;
+	l_cullingData.UUID = PDC->m_ModelComponent->m_UUID;
 
 	if (Math::intersectCheck(frustum, PDC->m_SphereWS))
 	{
@@ -582,13 +578,13 @@ void PhysicsSystem::updateCulling()
 	m_visibleSceneBoundMin = Math::maxVec4<float>;
 	m_visibleSceneBoundMin.w = 1.0f;
 
-	auto l_visibleComponents = g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>();
+	auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
 	auto& l_cullingDataVector = m_cullingData.GetOldValue();
 	l_cullingDataVector.clear();
 
-	if (l_cullingDataVector.capacity() < l_visibleComponents.size())
+	if (l_cullingDataVector.capacity() < l_modelComponents.size())
 	{
-		m_cullingData.Reserve(l_visibleComponents.size());
+		m_cullingData.Reserve(l_modelComponents.size());
 	}
 
 	PlainCulling(l_mainCamera, l_cullingDataVector);
@@ -626,7 +622,7 @@ const std::vector<BVHNode>& PhysicsSystem::getBVHNodes()
 	return PhysicsSystemNS::m_TempBVHNodes;
 }
 
-bool PhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
+bool PhysicsSystem::addForce(ModelComponent* VC, Vec4 force)
 {
 #if defined INNO_PLATFORM_WIN
 	auto l_result = m_ComponentOwnerLUT.find(VC);
@@ -644,7 +640,7 @@ bool PhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
 	return true;
 }
 
-bool PhysicsSystem::generatePhysicsProxy(VisibleComponent* VC)
+bool PhysicsSystem::generatePhysicsProxy(ModelComponent* VC)
 {
 	auto l_result = PhysicsSystemNS::generatePhysicsProxy(VC);
 	m_ComponentOwnerLUT.emplace(VC, l_result);

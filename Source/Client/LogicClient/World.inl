@@ -46,23 +46,23 @@ namespace Inno
 
 		std::vector<Entity*> m_referenceSphereEntites;
 		std::vector<TransformComponent*> m_referenceSphereTransformComponents;
-		std::vector<VisibleComponent*> m_referenceSphereVisibleComponents;
+		std::vector<ModelComponent*> m_referenceSphereModelComponents;
 
 		std::vector<Entity*> m_opaqueSphereEntites;
 		std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
-		std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
+		std::vector<ModelComponent*> m_opaqueSphereModelComponents;
 
 		std::vector<Entity*> m_transparentCubeEntites;
 		std::vector<TransformComponent*> m_transparentCubeTransformComponents;
-		std::vector<VisibleComponent*> m_transparentCubeVisibleComponents;
+		std::vector<ModelComponent*> m_transparentCubeModelComponents;
 
 		std::vector<Entity*> m_volumetricCubeEntites;
 		std::vector<TransformComponent*> m_volumetricCubeTransformComponents;
-		std::vector<VisibleComponent*> m_volumetricCubeVisibleComponents;
+		std::vector<ModelComponent*> m_volumetricCubeModelComponents;
 
 		std::vector<Entity*> m_occlusionCubeEntites;
 		std::vector<TransformComponent*> m_occlusionCubeTransformComponents;
-		std::vector<VisibleComponent*> m_occlusionCubeVisibleComponents;
+		std::vector<ModelComponent*> m_occlusionCubeModelComponents;
 
 		std::vector<Entity*> m_pointLightEntites;
 		std::vector<TransformComponent*> m_pointLightTransformComponents;
@@ -89,17 +89,17 @@ namespace Inno
 		auto l_containerSize = l_matrixDim * l_matrixDim;
 
 		m_referenceSphereTransformComponents.clear();
-		m_referenceSphereVisibleComponents.clear();
+		m_referenceSphereModelComponents.clear();
 		m_referenceSphereEntites.clear();
 
 		m_referenceSphereTransformComponents.reserve(l_containerSize);
-		m_referenceSphereVisibleComponents.reserve(l_containerSize);
+		m_referenceSphereModelComponents.reserve(l_containerSize);
 		m_referenceSphereEntites.reserve(l_containerSize);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_referenceSphereTransformComponents.emplace_back();
-			m_referenceSphereVisibleComponents.emplace_back();
+			m_referenceSphereModelComponents.emplace_back();
 			auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
 			m_referenceSphereEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
@@ -111,11 +111,10 @@ namespace Inno
 			m_referenceSphereTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 			m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_referenceSphereVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
-			m_referenceSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
-			m_referenceSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-			m_referenceSphereVisibleComponents[i]->m_simulatePhysics = true;
+			m_referenceSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
+			m_referenceSphereModelComponents[i]->m_MeshShape = MeshShape::Sphere;
+			m_referenceSphereModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			m_referenceSphereModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		for (uint32_t i = 0; i < l_matrixDim; i++)
@@ -142,17 +141,17 @@ namespace Inno
 		auto l_containerSize = l_matrixDim * l_matrixDim;
 
 		m_occlusionCubeTransformComponents.clear();
-		m_occlusionCubeVisibleComponents.clear();
+		m_occlusionCubeModelComponents.clear();
 		m_occlusionCubeEntites.clear();
 
 		m_occlusionCubeTransformComponents.reserve(l_containerSize);
-		m_occlusionCubeVisibleComponents.reserve(l_containerSize);
+		m_occlusionCubeModelComponents.reserve(l_containerSize);
 		m_occlusionCubeEntites.reserve(l_containerSize);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_occlusionCubeTransformComponents.emplace_back();
-			m_occlusionCubeVisibleComponents.emplace_back();
+			m_occlusionCubeModelComponents.emplace_back();
 			auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
 			m_occlusionCubeEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
@@ -163,11 +162,10 @@ namespace Inno
 		{
 			m_occlusionCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 			m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-			m_occlusionCubeVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
-			m_occlusionCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
-			m_occlusionCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Static;
-			m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-			m_occlusionCubeVisibleComponents[i]->m_simulatePhysics = true;
+			m_occlusionCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
+			m_occlusionCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
+			m_occlusionCubeModelComponents[i]->m_meshUsage = MeshUsage::Static;
+			m_occlusionCubeModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
@@ -214,17 +212,17 @@ namespace Inno
 		auto l_containerSize = l_matrixDim * l_matrixDim;
 
 		m_opaqueSphereTransformComponents.clear();
-		m_opaqueSphereVisibleComponents.clear();
+		m_opaqueSphereModelComponents.clear();
 		m_opaqueSphereEntites.clear();
 
 		m_opaqueSphereTransformComponents.reserve(l_containerSize);
-		m_opaqueSphereVisibleComponents.reserve(l_containerSize);
+		m_opaqueSphereModelComponents.reserve(l_containerSize);
 		m_opaqueSphereEntites.reserve(l_containerSize);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_opaqueSphereTransformComponents.emplace_back();
-			m_opaqueSphereVisibleComponents.emplace_back();
+			m_opaqueSphereModelComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
 			m_opaqueSphereEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
@@ -236,11 +234,10 @@ namespace Inno
 			m_opaqueSphereTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 			m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_opaqueSphereVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
-			m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape(i % 6 + 5);
-			m_opaqueSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-			m_opaqueSphereVisibleComponents[i]->m_simulatePhysics = true;
+			m_opaqueSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
+			m_opaqueSphereModelComponents[i]->m_MeshShape = MeshShape(i % 6 + 5);
+			m_opaqueSphereModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			m_opaqueSphereModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
@@ -275,17 +272,17 @@ namespace Inno
 		uint32_t l_containerSize = 8;
 
 		m_transparentCubeTransformComponents.clear();
-		m_transparentCubeVisibleComponents.clear();
+		m_transparentCubeModelComponents.clear();
 		m_transparentCubeEntites.clear();
 
 		m_transparentCubeTransformComponents.reserve(l_containerSize);
-		m_transparentCubeVisibleComponents.reserve(l_containerSize);
+		m_transparentCubeModelComponents.reserve(l_containerSize);
 		m_transparentCubeEntites.reserve(l_containerSize);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_transparentCubeTransformComponents.emplace_back();
-			m_transparentCubeVisibleComponents.emplace_back();
+			m_transparentCubeModelComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestTransparentCube_" + std::to_string(i) + "/");
 			m_transparentCubeEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
@@ -297,11 +294,10 @@ namespace Inno
 			m_transparentCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 			m_transparentCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_transparentCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
-			m_transparentCubeVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
-			m_transparentCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
-			m_transparentCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_transparentCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-			m_transparentCubeVisibleComponents[i]->m_simulatePhysics = true;
+			m_transparentCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
+			m_transparentCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
+			m_transparentCubeModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			m_transparentCubeModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
@@ -318,17 +314,17 @@ namespace Inno
 		uint32_t l_containerSize = 8;
 
 		m_volumetricCubeTransformComponents.clear();
-		m_volumetricCubeVisibleComponents.clear();
+		m_volumetricCubeModelComponents.clear();
 		m_volumetricCubeEntites.clear();
 
 		m_volumetricCubeTransformComponents.reserve(l_containerSize);
-		m_volumetricCubeVisibleComponents.reserve(l_containerSize);
+		m_volumetricCubeModelComponents.reserve(l_containerSize);
 		m_volumetricCubeEntites.reserve(l_containerSize);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_volumetricCubeTransformComponents.emplace_back();
-			m_volumetricCubeVisibleComponents.emplace_back();
+			m_volumetricCubeModelComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestVolumetricCube_" + std::to_string(i) + "/");
 			m_volumetricCubeEntites.emplace_back(g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 		}
@@ -340,11 +336,10 @@ namespace Inno
 			m_volumetricCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 			m_volumetricCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 			m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
-			m_volumetricCubeVisibleComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<VisibleComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
-			m_volumetricCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
-			m_volumetricCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_volumetricCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-			m_volumetricCubeVisibleComponents[i]->m_simulatePhysics = false;
+			m_volumetricCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
+			m_volumetricCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
+			m_volumetricCubeModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			m_volumetricCubeModelComponents[i]->m_simulatePhysics = false;
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(-40.0f, 40.0f);
@@ -501,9 +496,9 @@ namespace Inno
 	{
 		if (model)
 		{
-			for (uint64_t j = 0; j < model->meshMaterialPairs.m_count; j++)
+			for (uint64_t j = 0; j < model->renderableSets.m_count; j++)
 			{
-				auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->Get<AssetSystem>()->GetRenderableSet(model->renderableSets.m_startOffset + j);
 				l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
 				l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
 				l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
@@ -618,7 +613,7 @@ namespace Inno
 
 	void WorldSystem::updateSpheres()
 	{
-		for (uint32_t i = 0; i < m_opaqueSphereVisibleComponents.size(); i += 4)
+		for (uint32_t i = 0; i < m_opaqueSphereModelComponents.size(); i += 4)
 		{
 			auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
 			auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
@@ -633,26 +628,26 @@ namespace Inno
 			auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
 			auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-			updateMaterial(m_opaqueSphereVisibleComponents[i]->m_model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 0.0f, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
+			updateMaterial(m_opaqueSphereModelComponents[i]->m_Model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
+			updateMaterial(m_opaqueSphereModelComponents[i + 1]->m_Model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
+			updateMaterial(m_opaqueSphereModelComponents[i + 2]->m_Model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 0.0f, 0.0f));
+			updateMaterial(m_opaqueSphereModelComponents[i + 3]->m_Model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
 		}
 
-		for (uint32_t i = 0; i < m_transparentCubeVisibleComponents.size(); i++)
+		for (uint32_t i = 0; i < m_transparentCubeModelComponents.size(); i++)
 		{
 			auto l_albedo = Math::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 			l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
 			auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-			updateMaterial(m_transparentCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Transparent);
+			updateMaterial(m_transparentCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Transparent);
 		}
 
-		for (uint32_t i = 0; i < m_volumetricCubeVisibleComponents.size(); i++)
+		for (uint32_t i = 0; i < m_volumetricCubeModelComponents.size(); i++)
 		{
 			auto l_albedo = Math::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 			l_albedo.w = clamp((float)sin(seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
 			auto l_MRAT = Vec4(clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
-			updateMaterial(m_volumetricCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Volumetric);
+			updateMaterial(m_volumetricCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Volumetric);
 		}
 
 		uint32_t l_matrixDim = 8;
@@ -661,7 +656,7 @@ namespace Inno
 			for (uint32_t j = 0; j < l_matrixDim; j++)
 			{
 				auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 0.0f, 1.0f);
-				updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
+				updateMaterial(m_referenceSphereModelComponents[i * l_matrixDim + j]->m_Model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 			}
 		}
 	}

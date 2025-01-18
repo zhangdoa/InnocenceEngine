@@ -25,9 +25,8 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
 		m_debugCameraFrustumMeshComps[i] = l_renderingServer->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
-		g_Engine->Get<AssetSystem>()->GenerateProceduralMesh(ProceduralMeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
-		m_debugCameraFrustumMeshComps[i]->m_MeshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-		m_debugCameraFrustumMeshComps[i]->m_ProceduralMeshShape = ProceduralMeshShape::Cube;
+		g_Engine->Get<TemplateAssetService>()->GenerateMesh(MeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
+		m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
 		m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
 	}
 	
@@ -158,8 +157,8 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (l_renderingConfig.drawDebugObject)
 	{
-		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Sphere);
-		auto l_cube = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(ProceduralMeshShape::Cube);
+		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
+		auto l_cube = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Cube);
 
 		m_debugSphereConstantBuffer.clear();
 		m_debugCubeConstantBuffer.clear();
@@ -285,7 +284,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 					{
 						l_vertices[j] = l_cameraComponent->m_splitFrustumVerticesWS[i * 8 + j].m_pos;
 					}
-					g_Engine->Get<AssetSystem>()->FulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
+					g_Engine->Get<TemplateAssetService>()->FulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
 					l_renderingServer->UpdateMeshComponent(m_debugCameraFrustumMeshComps[i]);
 
 					DebugPerObjectConstantBuffer l_meshData;
@@ -375,24 +374,26 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		static bool l_drawSkeletons = true;
 		if (l_drawSkeletons)
 		{
-			auto l_visibleComponents = g_Engine->Get<ComponentManager>()->GetAll<VisibleComponent>();
+			auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
 
-			for (auto i : l_visibleComponents)
+			for (auto i : l_modelComponents)
 			{
-				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
+				if (i->m_Model)
 				{
 					auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(i->m_Owner);
 					auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
+					for (size_t j = 0; j < i->m_Model->renderableSets.m_count; j++)
 					{
-						auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
-						auto l_skeleton = l_pair->mesh->m_SkeletonComp;
+						auto l_pair = g_Engine->Get<AssetSystem>()->GetRenderableSet(i->m_Model->renderableSets.m_startOffset + j);
+						auto l_skeleton = l_pair->skeleton;
+						if (!l_skeleton)
+							continue;
 
-						for (auto k : l_skeleton->m_BoneData)
+						for (auto k : l_skeleton->m_BoneList)
 						{
 							DebugPerObjectConstantBuffer l_meshData;
-							auto l_bm = k.m_L2B;
+							auto l_bm = k.m_LocalToBoneSpace;
 							// Inverse-Joint-Matrix
 							l_bm = l_bm.inverse();
 							auto l_s = Math::toScaleMatrix(Vec4(0.01f, 0.01f, 0.01f, 1.0f));

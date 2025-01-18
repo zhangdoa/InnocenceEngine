@@ -425,14 +425,7 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void* rhs)
 
 void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 {
-	auto l_rhs = reinterpret_cast<VisibleComponent*>(rhs);
-
-	const char* meshPrimitiveTopology_items[] = { "Point", "Line", "Triangle", "Triangle-strip" };
-	static int32_t meshPrimitiveTopology_item_current = (int32_t)l_rhs->m_meshPrimitiveTopology;
-	if (ImGui::Combo("Mesh primitive topology", &meshPrimitiveTopology_item_current, meshPrimitiveTopology_items, IM_ARRAYSIZE(meshPrimitiveTopology_items)))
-	{
-		l_rhs->m_meshPrimitiveTopology = MeshPrimitiveTopology(meshPrimitiveTopology_item_current);
-	}
+	auto l_rhs = reinterpret_cast<ModelComponent*>(rhs);
 
 	static char modelFileName[128];
 	ImGui::InputText("Model file name", modelFileName, IM_ARRAYSIZE(modelFileName));
@@ -447,13 +440,13 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 	{
 		ImGui::BeginChild("Children MaterialComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 		{
-			for (uint64_t j = 0; j < l_rhs->m_model->meshMaterialPairs.m_count; j++)
+			for (uint64_t j = 0; j < l_rhs->m_Model->renderableSets.m_count; j++)
 			{
-				auto l_meshMaterialPair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_renderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(l_rhs->m_Model->renderableSets.m_startOffset + j);
 
-				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_meshMaterialPair->material))
+				if (ImGui::Selectable(l_renderableSet->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_renderableSet->material))
 				{
-					selectedComponent = l_meshMaterialPair->material;
+					selectedComponent = l_renderableSet->material;
 				}
 			}
 		}

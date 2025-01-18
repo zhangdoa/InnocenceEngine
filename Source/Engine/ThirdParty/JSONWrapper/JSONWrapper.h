@@ -18,7 +18,7 @@ namespace Inno
 
 		void to_json(json& j, const TransformComponent& p);
 		void to_json(json& j, const TransformVector& p);
-		void to_json(json& j, const VisibleComponent& p);
+		void to_json(json& j, const ModelComponent& p);
 		void to_json(json& j, const LightComponent& p);
 		void to_json(json& j, const CameraComponent& p);
 		void to_json(json& j, const RenderPassComponent& p);
@@ -28,7 +28,7 @@ namespace Inno
 
 		void from_json(const json& j, TransformComponent& p);
 		void from_json(const json& j, TransformVector& p);
-		void from_json(const json& j, VisibleComponent& p);
+		void from_json(const json& j, ModelComponent& p);
 		void from_json(const json& j, LightComponent& p);
 		void from_json(const json& j, CameraComponent& p);
 		void from_json(const json& j, RenderPassComponent& p);

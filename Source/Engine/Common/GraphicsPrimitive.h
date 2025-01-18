@@ -18,9 +18,7 @@ namespace Inno
 		using Index = uint32_t;
 
 		enum class MeshUsage { Invalid, Static, Dynamic, Skeletal };
-		enum class MeshSource { Invalid, Procedural, Customized };
-		enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
-		enum class ProceduralMeshShape { Invalid, Triangle, Square, Pentagon, Hexagon, Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Sphere };
+		enum class MeshShape { Invalid, Customized, Triangle, Square, Pentagon, Hexagon, Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Sphere };
 
 		enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
 		enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment };

@@ -276,7 +276,7 @@ bool PhysXWrapperNS::createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot
 
 PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit)
 {
-	auto l_result = PhysXConvexMeshes.find(rhs->m_MeshMaterialPair->mesh);
+	auto l_result = PhysXConvexMeshes.find(rhs->m_RenderableSet->mesh);
 	if (l_result != PhysXConvexMeshes.end())
 	{
 		return l_result->second;
@@ -295,8 +295,8 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 	PxConvexMeshDesc desc;
 
 	// We provide points only, therefore the PxConvexFlag::eCOMPUTE_CONVEX flag must be specified
-	desc.points.data = &rhs->m_MeshMaterialPair->mesh->m_Vertices[0];
-	desc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
+	desc.points.data = &rhs->m_RenderableSet->mesh->m_Vertices[0];
+	desc.points.count = (PxU32)rhs->m_RenderableSet->mesh->m_Vertices.size();
 	desc.points.stride = sizeof(Vertex);
 	desc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
@@ -340,7 +340,7 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvex
 		Log(Verbose, "Mesh size: ", meshSize);
 	}
 
-	PhysXConvexMeshes.emplace(rhs->m_MeshMaterialPair->mesh, convex);
+	PhysXConvexMeshes.emplace(rhs->m_RenderableSet->mesh, convex);
 
 	return convex;
 }
@@ -375,7 +375,7 @@ void setupCommonCookingParams(PxCookingParams& params, bool skipMeshCleanup, boo
 // Creates a triangle mesh using BVH33 midphase with different settings.
 PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff)
 {
-	auto l_result = PhysXTriangleMeshes.find(rhs->m_MeshMaterialPair->mesh);
+	auto l_result = PhysXTriangleMeshes.find(rhs->m_RenderableSet->mesh);
 	if (l_result != PhysXTriangleMeshes.end())
 	{
 		return l_result->second;
@@ -384,11 +384,11 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	auto startTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
 	PxTriangleMeshDesc meshDesc;
-	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
-	meshDesc.points.data = &rhs->m_MeshMaterialPair->mesh->m_Vertices[0];
+	meshDesc.points.count = (PxU32)rhs->m_RenderableSet->mesh->m_Vertices.size();
+	meshDesc.points.data = &rhs->m_RenderableSet->mesh->m_Vertices[0];
 	meshDesc.points.stride = sizeof(PxVec4);
-	meshDesc.triangles.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3;
-	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_Indices[0];
+	meshDesc.triangles.count = (PxU32)rhs->m_RenderableSet->mesh->m_IndexCount / 3;
+	meshDesc.triangles.data = &rhs->m_RenderableSet->mesh->m_Indices[0];
 	meshDesc.triangles.stride = 3 * sizeof(PxU32);
 
 	PxCookingParams params(gPhysics->getTolerancesScale());
@@ -449,7 +449,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
 	Log(Verbose, "\t -----------------------------------------------\n");
-	Log(Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
+	Log(Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_RenderableSet->mesh->m_IndexCount / 3);
 	cookingPerformance ? Log(Verbose, "\t\t Cooking performance on\n") : Log(Verbose, "\t\t Cooking performance off\n");
 	inserted ? Log(Verbose, "\t\t Mesh inserted on\n") : Log(Verbose, "\t\t Mesh inserted off\n");
 	!skipEdgeData ? Log(Verbose, "\t\t Precompute edge data on\n") : Log(Verbose, "\t\t Precompute edge data off\n");
@@ -461,7 +461,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 		Log(Verbose, "\t Mesh size: %d \n", meshSize);
 	}
 
-	PhysXTriangleMeshes.emplace(rhs->m_MeshMaterialPair->mesh, triMesh);
+	PhysXTriangleMeshes.emplace(rhs->m_RenderableSet->mesh, triMesh);
 
 	return triMesh;
 }
@@ -469,7 +469,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 // Creates a triangle mesh using BVH34 midphase with different settings.
 PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf)
 {
-	auto l_result = PhysXTriangleMeshes.find(rhs->m_MeshMaterialPair->mesh);
+	auto l_result = PhysXTriangleMeshes.find(rhs->m_RenderableSet->mesh);
 	if (l_result != PhysXTriangleMeshes.end())
 	{
 		return l_result->second;
@@ -478,11 +478,11 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	auto startTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
 	PxTriangleMeshDesc meshDesc;
-	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_Vertices.size();
-	meshDesc.points.data = &rhs->m_MeshMaterialPair->mesh->m_Vertices[0];
+	meshDesc.points.count = (PxU32)rhs->m_RenderableSet->mesh->m_Vertices.size();
+	meshDesc.points.data = &rhs->m_RenderableSet->mesh->m_Vertices[0];
 	meshDesc.points.stride = sizeof(Vertex);
-	meshDesc.triangles.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3;
-	meshDesc.triangles.data = &rhs->m_MeshMaterialPair->mesh->m_Indices[0];
+	meshDesc.triangles.count = (PxU32)rhs->m_RenderableSet->mesh->m_IndexCount / 3;
+	meshDesc.triangles.data = &rhs->m_RenderableSet->mesh->m_Indices[0];
 	meshDesc.triangles.stride = 3 * sizeof(Index);
 
 	PxCookingParams params(gPhysics->getTolerancesScale());
@@ -529,7 +529,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	auto stopTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 	auto elapsedTime = stopTime - startTime;
 	Log(Verbose, "\t -----------------------------------------------\n");
-	Log(Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_IndexCount / 3);
+	Log(Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_RenderableSet->mesh->m_IndexCount / 3);
 	inserted ? Log(Verbose, "\t\t Mesh inserted on\n") : Log(Verbose, "\t\t Mesh inserted off\n");
 	!skipEdgeData ? Log(Verbose, "\t\t Precompute edge data on\n") : Log(Verbose, "\t\t Precompute edge data off\n");
 	!skipMeshCleanup ? Log(Verbose, "\t\t Mesh cleanup on\n") : Log(Verbose, "\t\t Mesh cleanup off\n");
@@ -540,7 +540,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 		Log(Verbose, "\t Mesh size: %d \n", meshSize);
 	}
 
-	PhysXTriangleMeshes.emplace(rhs->m_MeshMaterialPair->mesh, triMesh);
+	PhysXTriangleMeshes.emplace(rhs->m_RenderableSet->mesh, triMesh);
 
 	return triMesh;
 }

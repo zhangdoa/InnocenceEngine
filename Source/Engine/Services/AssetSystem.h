@@ -5,7 +5,7 @@
 #include "../Component/TextureComponent.h"
 #include "../Component/SkeletonComponent.h"
 #include "../Component/AnimationComponent.h"
-#include "../Component/VisibleComponent.h"
+#include "../Component/ModelComponent.h"
 
 namespace Inno
 {
@@ -30,8 +30,8 @@ namespace Inno
 
 		bool LoadAssetsForComponents(bool AsyncLoad);
 
-		bool RecordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair);
-		bool FindLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair);
+		bool RecordLoadedRenderableSet(const char* fileName, RenderableSet* pair);
+		bool FindLoadedRenderableSet(const char* fileName, RenderableSet*& pair);
 
 		bool RecordLoadedModel(const char* fileName, Model* model);
 		bool FindLoadedModel(const char* fileName, Model*& model);
@@ -45,13 +45,11 @@ namespace Inno
 		bool RecordLoadedAnimation(const char* fileName, AnimationComponent* animation);
 		bool FindLoadedAnimation(const char* fileName, AnimationComponent*& animation);
 
-		ArrayRangeInfo AddMeshMaterialPairs(uint64_t count);
-		MeshMaterialPair* GetMeshMaterialPair(uint64_t index);
+		ArrayRangeInfo AddRenderableSets(uint64_t count);
+		RenderableSet* GetRenderableSet(uint64_t index);
 
 		Model* AddModel();
 
-		Model* AddProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel);
-		bool GenerateProceduralMesh(ProceduralMeshShape shape, MeshComponent* meshComponent);
-		void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace);
+		Model* AddModel(MeshShape shape, ShaderModel shaderModel);
 	};
 }
