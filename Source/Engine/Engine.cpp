@@ -116,8 +116,7 @@ namespace Inno
 
 		std::shared_ptr<ITask> m_LogicClientUpdateTask;
 		std::shared_ptr<ITask> m_TransformComponentsSimulationTask;
-		std::shared_ptr<ITask> m_PhysicsSystemUpdateBVHTask;
-		std::shared_ptr<ITask> m_PhysicsSystemCullingTask;
+		std::shared_ptr<ITask> m_PhysicsSystemUpdateTask;
 		std::shared_ptr<ITask> m_RenderingContextServiceUpdateTask;
 		std::shared_ptr<ITask> m_RenderingServerUpdateTask;
 
@@ -417,13 +416,13 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	SystemSetup(TemplateAssetService);
 	SystemSetup(RenderingContextService);
 	SystemSetup(AnimationService);
-	SystemSetup(GUISystem);
 
 	if (!m_pImpl->m_RenderingServer->Setup())
 	{
 		Log(Error, "Rendering Server can't be setup!");
 		return false;
 	}
+
 
 	if (!m_pImpl->m_RenderingClient->Setup())
 	{
@@ -437,14 +436,31 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]() { m_pImpl->m_LogicClient->Update(); });
-	m_pImpl->m_TransformComponentsSimulationTask = g_Engine->Get<TaskScheduler>()->Submit("Transform Components Simulation Task", -1, [&]() { Get<TransformSystem>()->Update(); });
-	m_pImpl->m_PhysicsSystemUpdateBVHTask = g_Engine->Get<TaskScheduler>()->Submit("Physics System Update BVH Task", -1, [&]() { Get<PhysicsSystem>()->updateBVH(); });
-	m_pImpl->m_PhysicsSystemCullingTask = g_Engine->Get<TaskScheduler>()->Submit("Physics System Culling Task", -1, [&]() { Get<PhysicsSystem>()->updateCulling(); });
+	SystemSetup(GUISystem);
+
+	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]() 
+	{
+		m_pImpl->m_LogicClient->Update(); 
+	});
+
+	m_pImpl->m_TransformComponentsSimulationTask = g_Engine->Get<TaskScheduler>()->Submit("Transform Components Simulation Task", -1, [&]() 
+	{ 
+		m_pImpl->m_LogicClientUpdateTask->Wait();
+		Get<TransformSystem>()->Update();
+	});
+
+	m_pImpl->m_PhysicsSystemUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Physics System Update Task", -1, [&]() 
+	{
+		m_pImpl->m_TransformComponentsSimulationTask->Wait();
+		Get<PhysicsSystem>()->updateBVH();
+		Get<PhysicsSystem>()->updateCulling(); 
+	});
+
 	m_pImpl->m_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Frontend Update Task", -1, [&]() 
 	{ 
+		m_pImpl->m_PhysicsSystemUpdateTask->Wait();
 		Get<RenderingContextService>()->Update();
-		Get<AnimationService>()->Update(); 
+		Get<AnimationService>()->Update();
 	});
 	
 	m_pImpl->m_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Server Update Task", 2, [&]()
@@ -452,6 +468,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		if (Get<HIDService>()->IsResizing())
 			return true;
 		
+		m_pImpl->m_RenderingContextServiceUpdateTask->Wait();
+
 		auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
 		m_pImpl->m_RenderingClient->Render();
@@ -499,17 +517,17 @@ bool Engine::Initialize()
 	SystemInit(TemplateAssetService);
 	SystemInit(RenderingContextService);
 	SystemInit(AnimationService);
-	SystemInit(GUISystem);
 
 	m_pImpl->m_RenderingClient->Initialize();
 	m_pImpl->m_LogicClient->Initialize();
 
 	m_pImpl->m_LogicClientUpdateTask->Activate();
 	m_pImpl->m_TransformComponentsSimulationTask->Activate();
-	m_pImpl->m_PhysicsSystemUpdateBVHTask->Activate();
-	m_pImpl->m_PhysicsSystemCullingTask->Activate();
+	m_pImpl->m_PhysicsSystemUpdateTask->Activate();
 	m_pImpl->m_RenderingContextServiceUpdateTask->Activate();
 	m_pImpl->m_RenderingServerUpdateTask->Activate();
+	
+	SystemInit(GUISystem);
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "Engine has been initialized.");
