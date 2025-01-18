@@ -130,6 +130,8 @@
         "__tree": "cpp",
         "__verbose_abort": "cpp",
         "propagate_const": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "*.InnoScene": "json",
+        "*.InnoModel": "json"
     },
 }
