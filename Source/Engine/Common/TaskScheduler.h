@@ -14,7 +14,9 @@ namespace Inno
 	{
 	public:
 		TaskScheduler();
-		~TaskScheduler();
+        ~TaskScheduler();
+
+        void Reset();
 
 		void Freeze();
 		void Unfreeze();
