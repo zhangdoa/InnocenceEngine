@@ -16,7 +16,6 @@ namespace Inno
 		AABB m_AABBWS = {};
 		Sphere m_SphereLS = {};
 		Sphere m_SphereWS = {};
-		MeshUsage m_MeshUsage;
 		TransformComponent* m_TransformComponent;
 		ModelComponent* m_ModelComponent;
 		RenderableSet* m_RenderableSet;

@@ -25,7 +25,7 @@ namespace PhysicsSystemNS
 
 	PhysicsComponent* generatePhysicsComponent(RenderableSet* renderableSet);
 	bool generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4& m);
-	ArrayRangeInfo generatePhysicsProxy(ModelComponent* VC);
+	ArrayRangeInfo generatePhysicsProxy(ModelComponent* modelComponent);
 
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
@@ -162,38 +162,37 @@ bool PhysicsSystemNS::generateAABBInWorldSpace(PhysicsComponent* PDC, const Mat4
 	return true;
 }
 
-ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(ModelComponent* VC)
+ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(ModelComponent* modelComponent)
 {
 	ArrayRangeInfo l_result;
 	l_result.m_startOffset = m_Components.size();
-	l_result.m_count = VC->m_Model->renderableSets.m_count;
+	l_result.m_count = modelComponent->m_Model->renderableSets.m_count;
 
-	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(VC->m_Owner);
+	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(modelComponent->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-	for (uint64_t j = 0; j < VC->m_Model->renderableSets.m_count; j++)
+	for (uint64_t j = 0; j < modelComponent->m_Model->renderableSets.m_count; j++)
 	{
-		auto l_renderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(VC->m_Model->renderableSets.m_startOffset + j);
+		auto l_renderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(modelComponent->m_Model->renderableSets.m_startOffset + j);
 
 		auto l_PDC = generatePhysicsComponent(l_renderableSet);
 		l_PDC->m_TransformComponent = l_transformComponent;
-		l_PDC->m_ModelComponent = VC;
-		l_PDC->m_MeshUsage = VC->m_meshUsage;
+		l_PDC->m_ModelComponent = modelComponent;
 
 		generateAABBInWorldSpace(l_PDC, l_globalTm);
-		if (l_PDC->m_MeshUsage == MeshUsage::Static)
+		if (l_PDC->m_ModelComponent->m_meshUsage == MeshUsage::Static)
 		{
 			updateStaticSceneBoundary(l_PDC->m_AABBWS);
 		}
 		updateTotalSceneBoundary(l_PDC->m_AABBWS);
 
 #if defined INNO_PLATFORM_WIN
-		if (VC->m_simulatePhysics)
+		if (modelComponent->m_simulatePhysics)
 		{
 			switch (l_renderableSet->mesh->m_MeshShape)
 			{
 			case Type::MeshShape::Customized:
-				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), false);
+				PhysXWrapper::get().createPxMesh(l_PDC, (modelComponent->m_meshUsage == MeshUsage::Dynamic), false);
 				break;
 			case Type::MeshShape::Triangle:
 				break;
@@ -204,22 +203,22 @@ ArrayRangeInfo PhysicsSystemNS::generatePhysicsProxy(ModelComponent* VC)
 			case Type::MeshShape::Hexagon:
 				break;
 			case Type::MeshShape::Tetrahedron:
-				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				PhysXWrapper::get().createPxMesh(l_PDC, (modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
 				break;
 			case Type::MeshShape::Cube:
-				PhysXWrapper::get().createPxBox(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic));
+				PhysXWrapper::get().createPxBox(l_PDC, (modelComponent->m_meshUsage == MeshUsage::Dynamic));
 				break;
 			case Type::MeshShape::Octahedron:
-				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				PhysXWrapper::get().createPxMesh(l_PDC, (modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
 				break;
 			case Type::MeshShape::Dodecahedron:
-				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				PhysXWrapper::get().createPxMesh(l_PDC, (modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
 				break;
 			case Type::MeshShape::Icosahedron:
-				PhysXWrapper::get().createPxMesh(l_PDC, (VC->m_meshUsage == MeshUsage::Dynamic), true);
+				PhysXWrapper::get().createPxMesh(l_PDC, (modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
 				break;
 			case Type::MeshShape::Sphere:
-				PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
+				PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_scale.x, (modelComponent->m_meshUsage == MeshUsage::Dynamic));
 				break;
 			default:
 				Log(Error, "Invalid MeshShape!");
@@ -425,37 +424,39 @@ void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& culli
 
 	for (auto PDC : m_Components)
 	{
-		if (PDC->m_ObjectStatus == ObjectStatus::Activated)
+		if (PDC->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
+
+		auto l_transformComponent = PDC->m_TransformComponent;
+		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+		if (PDC->m_ModelComponent->m_meshUsage == MeshUsage::Dynamic)
 		{
-			auto l_transformComponent = PDC->m_TransformComponent;
-			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-			if (PDC->m_MeshUsage == MeshUsage::Dynamic)
-			{
-				PDC->m_AABBWS = Math::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
-				PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
-			}
-			if (Math::intersectCheck(l_cameraFrustum, PDC->m_SphereWS))
-			{
-				CullingData l_cullingData;
-
-				l_cullingData.m = l_globalTm;
-				l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-				l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-				l_cullingData.mesh = PDC->m_RenderableSet->mesh;
-				l_cullingData.material = PDC->m_RenderableSet->material;
-				l_cullingData.meshUsage = PDC->m_ModelComponent->m_meshUsage;
-				l_cullingData.UUID = PDC->m_ModelComponent->m_UUID;
-
-				l_cullingData.visibilityMask |= VisibilityMask::MainCamera;
-
-				cullingDatas.emplace_back(l_cullingData);
-
-				updateVisibleSceneBoundary(PDC->m_AABBWS);
-			}
-
-			updateTotalSceneBoundary(PDC->m_AABBWS);
+			PDC->m_AABBWS = Math::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
+			PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
 		}
+
+		// @TODO: This is not stable
+		if (Math::intersectCheck(l_cameraFrustum, PDC->m_SphereWS))
+		{
+			CullingData l_cullingData;
+
+			l_cullingData.m = l_globalTm;
+			l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+			l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+			l_cullingData.mesh = PDC->m_RenderableSet->mesh;
+			l_cullingData.material = PDC->m_RenderableSet->material;
+			l_cullingData.meshUsage = PDC->m_ModelComponent->m_meshUsage;
+			l_cullingData.UUID = PDC->m_ModelComponent->m_UUID;
+
+			l_cullingData.visibilityMask |= VisibilityMask::MainCamera;
+
+			cullingDatas.emplace_back(l_cullingData);
+
+			updateVisibleSceneBoundary(PDC->m_AABBWS);
+		}
+
+		updateTotalSceneBoundary(PDC->m_AABBWS);
 	}
 }
 
@@ -559,16 +560,16 @@ void BVHCulling(std::vector<BVHNode>::iterator node, const Frustum& frustum, std
 void PhysicsSystem::updateCulling()
 {
 	auto l_mainCamera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
-
 	if (l_mainCamera == nullptr)
 	{
+		Log(Warning, "Can't find the main camera.");
 		return;
 	}
 
 	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
-
 	if (l_sun == nullptr)
 	{
+		Log(Warning, "Can't find the main light source.");
 		return;
 	}
 
@@ -579,6 +580,7 @@ void PhysicsSystem::updateCulling()
 	m_visibleSceneBoundMin.w = 1.0f;
 
 	auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
+
 	auto& l_cullingDataVector = m_cullingData.GetOldValue();
 	l_cullingDataVector.clear();
 
@@ -622,10 +624,10 @@ const std::vector<BVHNode>& PhysicsSystem::getBVHNodes()
 	return PhysicsSystemNS::m_TempBVHNodes;
 }
 
-bool PhysicsSystem::addForce(ModelComponent* VC, Vec4 force)
+bool PhysicsSystem::addForce(ModelComponent* modelComponent, Vec4 force)
 {
 #if defined INNO_PLATFORM_WIN
-	auto l_result = m_ComponentOwnerLUT.find(VC);
+	auto l_result = m_ComponentOwnerLUT.find(modelComponent);
 	if (l_result != m_ComponentOwnerLUT.end())
 	{
 		auto l_rangeInfo = l_result->second;
@@ -640,10 +642,10 @@ bool PhysicsSystem::addForce(ModelComponent* VC, Vec4 force)
 	return true;
 }
 
-bool PhysicsSystem::generatePhysicsProxy(ModelComponent* VC)
+bool PhysicsSystem::generatePhysicsProxy(ModelComponent* modelComponent)
 {
-	auto l_result = PhysicsSystemNS::generatePhysicsProxy(VC);
-	m_ComponentOwnerLUT.emplace(VC, l_result);
+	auto l_result = PhysicsSystemNS::generatePhysicsProxy(modelComponent);
+	m_ComponentOwnerLUT.emplace(modelComponent, l_result);
 
 	return true;
 }
