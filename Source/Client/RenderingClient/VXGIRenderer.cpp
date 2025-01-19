@@ -159,7 +159,7 @@ bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
 	else
 	{
 		auto l_cameraPos = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer().camera_posWS;
-		auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->getStaticSceneAABB();
+		auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->GetStaticSceneAABB();
 		auto l_maxExtend = std::max(std::max(l_sceneAABB.m_extend.x, l_sceneAABB.m_extend.y), l_sceneAABB.m_extend.z);
 		auto l_adjustedBoundMax = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f);
 		auto l_adjustedCenter = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f) / 2.0f;

@@ -1,31 +1,11 @@
 #pragma once
 #include "../Component/PhysicsComponent.h"
 #include "../Common/GPUDataStructure.h"
-#include "CullingData.h"
+#include "CullingResult.h"
 
 namespace Inno
 {
-	struct BVHNode
-	{
-		AABB m_AABB;
-
-		std::vector<BVHNode>::iterator parentNode;
-		std::vector<BVHNode>::iterator leftChildNode;
-		std::vector<BVHNode>::iterator rightChildNode;
-		size_t depth = 0;
-
-		PhysicsComponent* PDC = 0;
-
-		bool operator==(const BVHNode& other) const
-		{
-			return (
-				parentNode == other.parentNode
-				&& leftChildNode == other.leftChildNode
-				&& rightChildNode == other.rightChildNode
-				);
-		}
-	};
-
+	struct PhysicsSystemImpl;
 	class PhysicsSystem : public ISystem
 	{
 	public:
@@ -38,15 +18,17 @@ namespace Inno
 
 		ObjectStatus GetStatus();
 
-		bool generatePhysicsProxy(ModelComponent* VC);
-		void updateBVH();
-		void updateCulling();
-		const std::vector<CullingData>& getCullingData();
-		AABB getVisibleSceneAABB();
-		AABB getStaticSceneAABB();
-		AABB getTotalSceneAABB();
-		const std::vector<BVHNode>& getBVHNodes();
+		bool GeneratePhysicsProxy(ModelComponent* modelComponent);
 
-		bool addForce(ModelComponent* VC, Vec4 force);
+		void RunCulling();
+		const std::vector<CullingResult>& GetCullingResult();
+		AABB GetVisibleSceneAABB();
+		AABB GetStaticSceneAABB();
+		AABB GetTotalSceneAABB();
+
+		bool AddForce(ModelComponent* modelComponent, Vec4 force);
+
+	private:
+		PhysicsSystemImpl* m_Impl;
 	};
 }

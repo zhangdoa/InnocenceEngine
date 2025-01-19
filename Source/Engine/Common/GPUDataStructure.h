@@ -134,7 +134,7 @@ namespace Inno
 		MaterialComponent* material = 0;
 		uint32_t meshConstantBufferIndex = 0;
 		uint32_t materialConstantBufferIndex = 0;
-		VisibilityMask visibilityMask = VisibilityMask::Invalid;
+		VisibilityMask m_VisibilityMask = VisibilityMask::Invalid;
 		MeshUsage meshUsage = MeshUsage::Invalid;
 	};
 

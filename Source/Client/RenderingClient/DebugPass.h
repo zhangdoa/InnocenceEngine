@@ -1,6 +1,6 @@
 #pragma once
 #include "../../Engine/Interface/IRenderPass.h"
-#include "../../Engine/Services/PhysicsSystem.h"
+#include "../../Engine/Services/BVHService.h"
 
 namespace Inno
 {
@@ -38,7 +38,7 @@ namespace Inno
 		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
 
-		bool AddBVHData(const BVHNode& node);
+		bool AddBVHNode(const BVHNode& node);
 		DebugPerObjectConstantBuffer AddAABB(const AABB& aabb);
 		
 		GPUBufferComponent* m_debugSphereMeshGPUBufferComp;

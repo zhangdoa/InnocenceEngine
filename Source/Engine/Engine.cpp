@@ -13,6 +13,7 @@
 #include "Services/SceneSystem.h"
 #include "Services/AssetSystem.h"
 #include "Services/PhysicsSystem.h"
+#include "Services/BVHService.h"
 #include "Services/HIDService.h"
 #include "Services/RenderingConfigurationService.h"
 #include "Services/TemplateAssetService.h"
@@ -49,9 +50,9 @@
 #include "RenderingServer/MT/MTRenderingServer.h"
 #endif
 
-namespace Inno 
+namespace Inno
 {
-    Engine* g_Engine = nullptr;
+	Engine* g_Engine = nullptr;
 }
 
 using namespace Inno;
@@ -115,8 +116,8 @@ namespace Inno
 		std::function<void()> f_RenderingServerUpdateFunction;
 
 		Handle<ITask> m_LogicClientUpdateTask;
-		Handle<ITask> m_TransformComponentsSimulationTask;
-		Handle<ITask> m_PhysicsSystemUpdateTask;
+		Handle<ITask> m_PreCullingTask;
+		Handle<ITask> m_CullingTask;
 		Handle<ITask> m_RenderingContextServiceUpdateTask;
 		Handle<ITask> m_RenderingServerUpdateTask;
 
@@ -134,8 +135,8 @@ Engine::~Engine()
 {
 	delete m_pImpl;
 
-    // Clean up all singletons
-	for (auto& pair : singletons_) 
+	// Clean up all singletons
+	for (auto& pair : singletons_)
 	{
 		delete static_cast<char*>(pair.second);
 	}
@@ -336,7 +337,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	default:
 		break;
 	}
-	
+
 	if (!m_pImpl->m_RenderingServer.get())
 	{
 		Log(Error, "Failed to create Rendering Server.");
@@ -392,7 +393,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 
 	SystemSetup(HIDService);
-	
+
 	IWindowSystemConfig l_windowSystemConfig;
 	l_windowSystemConfig.m_AppHook = appHook;
 	l_windowSystemConfig.m_ExtraHook = extraHook;
@@ -436,61 +437,64 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	}
 
 	SystemSetup(GUISystem);
-	
-	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]() 
-	{
-		m_pImpl->m_LogicClient->Update(); 
-	});
 
-	m_pImpl->m_TransformComponentsSimulationTask = g_Engine->Get<TaskScheduler>()->Submit("Transform Components Simulation Task", -1, [&]() 
-	{ 
-		m_pImpl->m_LogicClientUpdateTask->Wait();
-		Get<TransformSystem>()->Update();
-	});
+	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]()
+		{
+			m_pImpl->m_LogicClient->Update();
+		});
 
-	m_pImpl->m_PhysicsSystemUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Physics System Update Task", -1, [&]() 
-	{
-		m_pImpl->m_TransformComponentsSimulationTask->Wait();
-		Get<PhysicsSystem>()->updateBVH();
-		Get<PhysicsSystem>()->updateCulling(); 
-	});
+	m_pImpl->m_PreCullingTask = g_Engine->Get<TaskScheduler>()->Submit("Pre-culling Task", -1, [&]()
+		{
+			m_pImpl->m_LogicClientUpdateTask->Wait();
+			Get<TransformSystem>()->Update();
+			Get<CameraSystem>()->Update();
+			Get<LightSystem>()->Update();
+		});
 
-	m_pImpl->m_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Frontend Update Task", -1, [&]() 
-	{ 
-		m_pImpl->m_PhysicsSystemUpdateTask->Wait();
-		Get<RenderingContextService>()->Update();
-		Get<AnimationService>()->Update();
-	});
+	m_pImpl->m_CullingTask = g_Engine->Get<TaskScheduler>()->Submit("Culling Task", -1, [&]()
+		{
+			m_pImpl->m_PreCullingTask->Wait();
+			Get<PhysicsSystem>()->Update();
+			Get<BVHService>()->Update();
+			Get<PhysicsSystem>()->RunCulling();
+		});
+
+	m_pImpl->m_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Frontend Update Task", -1, [&]()
+		{
+			m_pImpl->m_CullingTask->Wait();
+			Get<RenderingContextService>()->Update();
+			Get<AnimationService>()->Update();
+		});
 
 	m_pImpl->m_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Server Update Task", 2, [&]()
-	{
-		if (Get<HIDService>()->IsResizing())
+		{
+			if (Get<HIDService>()->IsResizing())
+				return true;
+
+			m_pImpl->m_RenderingContextServiceUpdateTask->Wait();
+
+			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
+
+			m_pImpl->m_RenderingClient->Render();
+
+			Get<GUISystem>()->Render();
+
+			m_pImpl->m_RenderingServer->TransferDataToGPU();
+
+			m_pImpl->m_RenderingServer->Present();
+
+			m_pImpl->m_WindowSystem->GetWindowSurface()->swapBuffer();
+
+			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
+
+			m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+
+			SystemOnFrameEnd(TransformSystem);
+			SystemOnFrameEnd(LightSystem);
+			SystemOnFrameEnd(CameraSystem);
+
 			return true;
-		
-		m_pImpl->m_RenderingContextServiceUpdateTask->Wait();
-
-		auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-
-		m_pImpl->m_RenderingClient->Render();
-
-		Get<GUISystem>()->Render();
-
-		m_pImpl->m_RenderingServer->TransferDataToGPU();
-		
-		m_pImpl->m_RenderingServer->Present();
-
-		m_pImpl->m_WindowSystem->GetWindowSurface()->swapBuffer();
-
-		auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
-
-		m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
-
-		SystemOnFrameEnd(TransformSystem);
-		SystemOnFrameEnd(LightSystem);
-		SystemOnFrameEnd(CameraSystem);
-
-		return true;
-	});
+		});
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Created;
 	Log(Success, "Engine setup finished.");
@@ -521,11 +525,11 @@ bool Engine::Initialize()
 	m_pImpl->m_LogicClient->Initialize();
 
 	m_pImpl->m_LogicClientUpdateTask->Activate();
-	m_pImpl->m_TransformComponentsSimulationTask->Activate();
-	m_pImpl->m_PhysicsSystemUpdateTask->Activate();
+	m_pImpl->m_PreCullingTask->Activate();
+	m_pImpl->m_CullingTask->Activate();
 	m_pImpl->m_RenderingContextServiceUpdateTask->Activate();
 	m_pImpl->m_RenderingServerUpdateTask->Activate();
-	
+
 	SystemInit(GUISystem);
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Activated;
@@ -546,16 +550,11 @@ bool Engine::ExecuteDefaultTask()
 	if (Get<SceneSystem>()->isLoadingScene())
 		return true;
 
-	SystemUpdate(CameraSystem);
-	SystemUpdate(LightSystem);
-
-	SystemUpdate(PhysicsSystem);
-
 	if (m_pImpl->m_WindowSystem->GetStatus() != ObjectStatus::Activated)
 	{
 		m_pImpl->m_ObjectStatus = ObjectStatus::Suspended;
 		Log(Warning, "Engine is stand-by.");
-		return false;	
+		return false;
 	}
 
 	return true;
@@ -565,7 +564,7 @@ bool Engine::Terminate()
 {
 	Get<TaskScheduler>()->Freeze();
 	Get<TaskScheduler>()->Reset();
-	
+
 	if (!m_pImpl->m_RenderingClient->Terminate())
 	{
 		Log(Error, "Rendering client can't be terminated!");

@@ -1619,7 +1619,7 @@ namespace Inno
 		}
 
 		template <class T>
-		inline auto generateAABB(TVec4<T> boundMax, TVec4<T> boundMin) -> TAABB<T>
+		inline auto GenerateAABB(TVec4<T> boundMax, TVec4<T> boundMin) -> TAABB<T>
 		{
 			TAABB<T> l_result;
 
@@ -1634,7 +1634,7 @@ namespace Inno
 		}
 
 		template <class T>
-		inline auto generateAABB(TVertex<T>* vertices, size_t size) -> TAABB<T>
+		inline auto GenerateAABB(TVertex<T>* vertices, size_t size) -> TAABB<T>
 		{
 			TAABB<T> l_result;
 
@@ -1673,13 +1673,13 @@ namespace Inno
 				}
 			}
 
-			return generateAABB(TVec4(maxX, maxY, maxZ, one<T>), TVec4(minX, minY, minZ, one<T>));
+			return GenerateAABB(TVec4(maxX, maxY, maxZ, one<T>), TVec4(minX, minY, minZ, one<T>));
 
 			return l_result;
 		}
 
 		template <class T>
-		inline auto generateBoundSphere(const TAABB<T>& rhs) -> TSphere<T>
+		inline auto GenerateBoundingSphere(const TAABB<T>& rhs) -> TSphere<T>
 		{
 			TSphere<T> l_result;
 			l_result.m_center = rhs.m_center.xyz();
@@ -1697,7 +1697,7 @@ namespace Inno
 
 			l_boundMax.w = one<T>;
 			l_boundMin.w = one<T>;
-			return generateAABB<T>(l_boundMax, l_boundMin);
+			return GenerateAABB<T>(l_boundMax, l_boundMin);
 		}
 
 		template <class T>
@@ -1732,7 +1732,7 @@ namespace Inno
 		}
 
 		template <class T>
-		inline auto transformAABBSpace(const TAABB<T>& rhs, TMat4<T> Tm) -> TAABB<T>
+		inline auto TransformAABB(const TAABB<T>& rhs, TMat4<T> Tm) -> TAABB<T>
 		{
 			auto l_vertices = generateAABBVertices(rhs.m_boundMax, rhs.m_boundMin);
 
@@ -1755,7 +1755,7 @@ namespace Inno
 				l_boundMax = elementWiseMax(i.m_pos, l_boundMax);
 			}
 
-			auto l_result = generateAABB(TVec4<T>(l_boundMax, one<T>), TVec4<T>(l_boundMin, one<T>));
+			auto l_result = GenerateAABB(TVec4<T>(l_boundMax, one<T>), TVec4<T>(l_boundMin, one<T>));
 
 			return l_result;
 		};

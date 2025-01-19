@@ -39,7 +39,7 @@ AABB LightSystemNS::SnapAABBToShadowMap(const AABB &rhs, float shadowMapResoluti
 	l_boundMax.w = 1.0f;
 	l_boundMin.w = 1.0f;
 
-	return Math::generateAABB(l_boundMax, l_boundMin);
+	return Math::GenerateAABB(l_boundMax, l_boundMin);
 }
 
 void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
@@ -54,17 +54,17 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 		return;
 	}
 
-	auto l_totalSceneAABB = g_Engine->Get<PhysicsSystem>()->getVisibleSceneAABB();
+	auto l_totalSceneAABB = g_Engine->Get<PhysicsSystem>()->GetVisibleSceneAABB();
 	if(l_totalSceneAABB.m_extend.x == 0.0f || l_totalSceneAABB.m_extend.y == 0.0f || l_totalSceneAABB.m_extend.z == 0.0f)
 		return;
 	
 	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
-	auto l_frustumAABB = Math::generateAABB(&l_splitFrustumVerticesWS[0], 8);
+	auto l_frustumAABB = Math::GenerateAABB(&l_splitFrustumVerticesWS[0], 8);
 
 	auto l_min = Math::elementWiseMin(l_frustumAABB.m_boundMin, l_totalSceneAABB.m_boundMin);
 	auto l_max = Math::elementWiseMax(l_frustumAABB.m_boundMax, l_totalSceneAABB.m_boundMax);
 
-	auto l_AABB = Math::generateAABB(l_max, l_min);
+	auto l_AABB = Math::GenerateAABB(l_max, l_min);
 	l_AABB = Math::extendAABBToBoundingSphere(l_AABB);
 	l_AABB = SnapAABBToShadowMap(l_AABB, static_cast<float>(g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution));
 	rhs->m_SplitAABBWS.emplace_back(l_AABB);
@@ -90,7 +90,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 		return;
 	}
 
-	auto l_totalSceneAABBWS = g_Engine->Get<PhysicsSystem>()->getVisibleSceneAABB();
+	auto l_totalSceneAABBWS = g_Engine->Get<PhysicsSystem>()->GetVisibleSceneAABB();
 	if(l_totalSceneAABBWS.m_extend.x == 0.0f || l_totalSceneAABBWS.m_extend.y == 0.0f || l_totalSceneAABBWS.m_extend.z == 0.0f)
 		return;
 
@@ -105,7 +105,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	// calculate AABBs in light space and generate the matrices
 	for (size_t i = 0; i < 4; i++)
 	{
-		AABB l_aabbWS = Math::generateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
+		AABB l_aabbWS = Math::GenerateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
 		rhs->m_SplitAABBWS.emplace_back(l_aabbWS);
 
 		AABB l_aabbLS = Math::extendAABBToBoundingSphere(l_aabbWS);

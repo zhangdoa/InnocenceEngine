@@ -140,7 +140,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		auto l_visible = static_cast<uint32_t>(l_drawCallData.visibilityMask & VisibilityMask::Sun);
+		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::Sun);
 		if (l_visible && l_drawCallData.meshUsage != MeshUsage::Skeletal)
 		{
 			if (l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)

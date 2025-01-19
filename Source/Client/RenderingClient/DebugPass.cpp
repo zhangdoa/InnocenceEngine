@@ -4,6 +4,8 @@
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
 #include "../../Engine/Services/AssetSystem.h"
+#include "../../Engine/Services/PhysicsSystem.h"
+#include "../../Engine/Services/BVHService.h"
 #include "../../Engine/Services/ComponentManager.h"
 
 #include "GIDataLoader.h"
@@ -244,18 +246,18 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 		static bool l_drawBVHNodes = false;
 		if (l_drawBVHNodes)
 		{
-			auto l_BVHNodes = g_Engine->Get<PhysicsSystem>()->getBVHNodes();
+			auto l_BVHNodes = g_Engine->Get<BVHService>()->GetNodes();
 
 			for (auto& i : l_BVHNodes)
 			{
-				AddBVHData(i);
+				AddBVHNode(i);
 			}
 		}
 
 		static bool l_drawCameraFrustums = true;
 		if (l_drawCameraFrustums)
 		{	
-			auto l_visibleSceneAABBWS = g_Engine->Get<PhysicsSystem>()->getVisibleSceneAABB();
+			auto l_visibleSceneAABBWS = g_Engine->Get<PhysicsSystem>()->GetVisibleSceneAABB();
 			auto l_visibleSceneAABBMeshData = AddAABB(l_visibleSceneAABBWS);
 			l_visibleSceneAABBMeshData.materialID = 2;
 
@@ -484,7 +486,7 @@ DebugPerObjectConstantBuffer DebugPass::AddAABB(const AABB& aabb)
 	return l_result;
 }
 
-bool DebugPass::AddBVHData(const BVHNode& node)
+bool DebugPass::AddBVHNode(const BVHNode& node)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

@@ -200,7 +200,7 @@ namespace Inno
         f_addForce = [&]() {
             auto l_force = Math::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
             l_force = l_force * 10.0f;
-            g_Engine->Get<PhysicsSystem>()->addForce(m_playerModelComponent, l_force);
+            g_Engine->Get<PhysicsSystem>()->AddForce(m_playerModelComponent, l_force);
         };
 
         f_switchCamera = [&]() {

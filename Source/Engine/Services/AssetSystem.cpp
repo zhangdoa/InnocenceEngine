@@ -88,7 +88,7 @@ bool AssetSystem::Setup(ISystemConfig* systemConfig)
 			return;
 		}
 
-		g_Engine->Get<PhysicsSystem>()->generatePhysicsProxy(i);
+		g_Engine->Get<PhysicsSystem>()->GeneratePhysicsProxy(i);
 		i->m_ObjectStatus = ObjectStatus::Activated;
 	};
 

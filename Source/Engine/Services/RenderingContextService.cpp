@@ -7,7 +7,7 @@
 #include "../Common/ThreadSafeUnorderedMap.h"
 #include "../Common/ThreadSafeQueue.h"
 
-#include "CullingData.h"
+#include "CullingResult.h"
 #include "SceneSystem.h"
 #include "AssetSystem.h"
 #include "GUISystem.h"
@@ -55,7 +55,7 @@ namespace Inno
 		DoubleBuffer<std::vector<DebugPassDrawCallInfo>, true> m_debugPassDrawCallInfoVector;
 		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_debugPassPerObjectCB;
 
-		std::vector<CullingData> m_cullingData;
+		std::vector<CullingResult> m_cullingResults;
 
 		std::vector<Vec2> m_haltonSampler;
 		int32_t m_currentHaltonStep = 0;
@@ -104,29 +104,29 @@ void RenderingContextServiceImpl::initializeHaltonSampler()
 
 bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
-	f_sceneLoadingStartCallback = [&]() 
-	{
-		Log(Verbose, "Clearing all rendering context data...");
+	f_sceneLoadingStartCallback = [&]()
+		{
+			Log(Verbose, "Clearing all rendering context data...");
 
-		m_cullingData.clear();
+			m_cullingResults.clear();
 
-		m_drawCallCount = 0;
+			m_drawCallCount = 0;
 
-		Log(Success, "All rendering context data has been cleared.");
-	};
+			Log(Success, "All rendering context data has been cleared.");
+		};
 
 	f_sceneLoadingFinishCallback = [&]()
-	{
-		// @TODO:
-		std::vector<BillboardPassDrawCallInfo> l_billboardPassDrawCallInfoVectorA(3);
-		l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-		l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
-		l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
-		auto l_billboardPassDrawCallInfoVectorB = l_billboardPassDrawCallInfoVectorA;
+		{
+			// @TODO:
+			std::vector<BillboardPassDrawCallInfo> l_billboardPassDrawCallInfoVectorA(3);
+			l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
+			l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
+			l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
+			auto l_billboardPassDrawCallInfoVectorB = l_billboardPassDrawCallInfoVectorA;
 
-		m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorA));
-		m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorB));
-	};
+			m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorA));
+			m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorB));
+		};
 
 	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
@@ -314,74 +314,100 @@ bool RenderingContextServiceImpl::updateMeshData()
 	l_animationDrawCallInfoVector.clear();
 	l_animationCBVector.clear();
 
-	auto l_cullingDataSize = m_cullingData.size();
-
-	for (size_t i = 0; i < l_cullingDataSize; i++)
+	auto l_cullingResultCount = m_cullingResults.size();
+	for (size_t i = 0; i < l_cullingResultCount; i++)
 	{
-		auto l_cullingData = m_cullingData[i];
-		if (l_cullingData.mesh != nullptr)
+		auto l_cullingResult = m_cullingResults[i];
+		if (l_cullingResult.m_PhysicsComponent == nullptr)
+			continue;
+
+		auto l_modelComponent = l_cullingResult.m_PhysicsComponent->m_ModelComponent;
+		if (l_modelComponent == nullptr)
+			continue;
+
+		if (l_modelComponent->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
+
+		auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_modelComponent->m_Owner);
+		if (l_transformComponent == nullptr)
+			continue;
+
+		if (l_transformComponent->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
+
+		auto l_renderableSet = l_cullingResult.m_PhysicsComponent->m_RenderableSet;
+		if (l_renderableSet == nullptr)
+			continue;
+
+		auto l_mesh = l_renderableSet->mesh;
+		if (l_mesh == nullptr)
+			continue;
+
+		if (l_mesh->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
+
+		auto l_material = l_renderableSet->material;
+		if (l_material == nullptr)
+			continue;
+
+		if (l_material->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
+
+		DrawCallInfo l_drawCallInfo;
+
+		l_drawCallInfo.mesh = l_mesh;
+		l_drawCallInfo.material = l_material;
+
+		l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
+		l_drawCallInfo.meshUsage = l_modelComponent->m_meshUsage;
+		l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
+		l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;
+
+		PerObjectConstantBuffer l_perObjectCB;
+		l_perObjectCB.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+		l_perObjectCB.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+		l_perObjectCB.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+		l_perObjectCB.UUID = (float)l_transformComponent->m_UUID;
+
+		l_perObjectCBVector.emplace_back(l_perObjectCB);
+
+		MaterialConstantBuffer l_materialCB;
+		for (size_t i = 0; i < 8; i++)
 		{
-			if (l_cullingData.mesh->m_ObjectStatus == ObjectStatus::Activated)
-			{
-				if (l_cullingData.material != nullptr)
-				{
-					DrawCallInfo l_drawCallInfo;
+			uint32_t l_writeMask = l_material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
+			l_writeMask = l_writeMask << i;
+			l_materialCB.textureSlotMask |= l_writeMask;
+		}
+		l_materialCB.materialType = int32_t(l_modelComponent->m_meshUsage);
+		l_materialCB.materialAttributes = l_material->m_materialAttributes;
 
-					l_drawCallInfo.mesh = l_cullingData.mesh;
-					l_drawCallInfo.material = l_cullingData.material;
+		l_materialCBVector.emplace_back(l_materialCB);
 
-					l_drawCallInfo.visibilityMask = l_cullingData.visibilityMask;
-					l_drawCallInfo.meshUsage = l_cullingData.meshUsage;
-					l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
-					l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;
+		if (l_modelComponent->m_meshUsage == MeshUsage::Skeletal)
+		{
+			auto l_result = g_Engine->Get<AnimationService>()->GetAnimationInstance(l_modelComponent->m_UUID);
+			if (l_result.animationData.ADC == nullptr)
+				continue;
 
-					PerObjectConstantBuffer l_perObjectCB;
-					l_perObjectCB.m = l_cullingData.m;
-					l_perObjectCB.m_prev = l_cullingData.m_prev;
-					l_perObjectCB.normalMat = l_cullingData.normalMat;
-					l_perObjectCB.UUID = (float)l_cullingData.UUID;
+			AnimationDrawCallInfo animationDrawCallInfo;
+			animationDrawCallInfo.animationInstance = l_result;
+			animationDrawCallInfo.drawCallInfo = l_drawCallInfo;
 
-					MaterialConstantBuffer l_materialCB;
+			AnimationConstantBuffer l_animationCB;
+			l_animationCB.duration = animationDrawCallInfo.animationInstance.animationData.ADC->m_Duration;
+			l_animationCB.numChannels = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumChannels;
+			l_animationCB.numTicks = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumTicks;
+			l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
+			l_animationCB.rootOffsetMatrix = Math::generateIdentityMatrix<float>();
 
-					for (size_t i = 0; i < 8; i++)
-					{
-						uint32_t l_writeMask = l_drawCallInfo.material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
-						l_writeMask = l_writeMask << i;
-						l_materialCB.textureSlotMask |= l_writeMask;
-					}
-					l_materialCB.materialType = int32_t(l_cullingData.meshUsage);
-					l_materialCB.materialAttributes = l_cullingData.material->m_materialAttributes;
+			l_animationCBVector.emplace_back(l_animationCB);
 
-					if (l_cullingData.meshUsage == MeshUsage::Skeletal)
-					{
-						auto l_result = g_Engine->Get<AnimationService>()->GetAnimationInstance(l_cullingData.UUID);
-						if (l_result.animationData.ADC != nullptr)
-						{
-							AnimationDrawCallInfo animationDrawCallInfo;
-							animationDrawCallInfo.animationInstance = l_result;
-							animationDrawCallInfo.drawCallInfo = l_drawCallInfo;
-
-							AnimationConstantBuffer l_animationCB;
-							l_animationCB.duration = animationDrawCallInfo.animationInstance.animationData.ADC->m_Duration;
-							l_animationCB.numChannels = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumChannels;
-							l_animationCB.numTicks = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumTicks;
-							l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
-							l_animationCB.rootOffsetMatrix = Math::generateIdentityMatrix<float>();
-
-							l_animationCBVector.emplace_back(l_animationCB);
-
-							animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)l_animationCBVector.size();
-							l_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
-						}
-					}
-					else
-					{
-						l_drawCallInfoVector.emplace_back(l_drawCallInfo);
-					}
-					l_perObjectCBVector.emplace_back(l_perObjectCB);
-					l_materialCBVector.emplace_back(l_materialCB);
-				}
-			}
+			animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)l_animationCBVector.size();
+			l_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
+		}
+		else
+		{
+			l_drawCallInfoVector.emplace_back(l_drawCallInfo);
 		}
 	}
 
@@ -495,7 +521,7 @@ bool RenderingContextServiceImpl::Update()
 		updateLightData();
 
 		// copy culling data pack for local scope
-		m_cullingData = g_Engine->Get<PhysicsSystem>()->getCullingData();
+		m_cullingResults = g_Engine->Get<PhysicsSystem>()->GetCullingResult();
 
 		updateMeshData();
 
@@ -525,7 +551,7 @@ bool RenderingContextService::Setup(ISystemConfig* systemConfig)
 
 	g_Engine->Get<ComponentManager>()->RegisterType<SkeletonComponent>(2048, this);
 	g_Engine->Get<ComponentManager>()->RegisterType<AnimationComponent>(16384, this);
-	
+
 	return m_Impl->Setup(systemConfig);
 }
 
