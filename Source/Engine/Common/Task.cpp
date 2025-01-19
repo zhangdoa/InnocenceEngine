@@ -17,13 +17,13 @@ void ITask::Activate()
     while (true)
     {
         State expected = m_State.load(std::memory_order_acquire);
-        if (expected == State::Done || expected == State::Executing)
+        if (expected == State::Done || expected == State::Executing || expected == State::Waiting)
         {
-             Log(Verbose, "Task: \"", GetName(), "\" has already been activated.");
+            Log(Verbose, "Task: \"", GetName(), "\" has already been activated.");
             return;
         }
 
-        if (m_State.compare_exchange_weak(expected, State::Done, std::memory_order_acq_rel))
+        if (m_State.compare_exchange_weak(expected, State::Waiting, std::memory_order_acq_rel))
         {
             Log(Verbose, "Task: \"", GetName(), "\" activated.");
             return;
@@ -74,29 +74,36 @@ void ITask::Deactivate()
 bool ITask::TryToExecute()
 {
     State expected = m_State.load(std::memory_order_acquire);
-    if (expected == State::Inactive)
+    if (expected == State::Created || expected == State::Inactive || expected == State::Executing)
         return false;
 
-    if (expected == State::Executing)
-        return false;
+    if (m_State.compare_exchange_strong(expected, State::Executing, std::memory_order_acq_rel))
+    {
+        if (m_Type == Type::Once)
+            Log(Verbose, "Task: \"", GetName(), "\" executing...");
 
-    if (!m_State.compare_exchange_strong(expected, State::Executing, std::memory_order_acq_rel))
-        return false;
+        ExecuteImpl();
 
+        if (m_Type == Type::Once)
+        {
+            m_State.store(State::Inactive, std::memory_order_release);
+            Log(Verbose, "Task: \"", GetName(), "\" finished.");
+        }
+        else
+            m_State.store(State::Done, std::memory_order_release);
+
+        return true;
+    }
+    
+    return false;
+}
+
+bool ITask::CanBeRemoved() const
+{
     if (m_Type == Type::Once)
-	    Log(Verbose, "Task: \"", GetName(), "\" executing...");
-
-	ExecuteImpl();
-
-    if (m_Type == Type::Once)
-	    Log(Verbose, "Task: \"", GetName(), "\" finished.");    
-
-    if (m_Type == Type::Once)
-        m_State.store(State::Inactive, std::memory_order_release);
+        return m_State.load(std::memory_order_acquire) == State::Inactive;
     else
-        m_State.store(State::Done, std::memory_order_release);
-
-	return true;
+        return false;
 }
 
 void ITask::Wait()
@@ -106,16 +113,9 @@ void ITask::Wait()
 
     while (true)
     {
-        if (m_Type == Type::Once)
-        {
-            if (m_State.load(std::memory_order_acquire) == State::Inactive)
-                return;
-        }
-        else
-        {
-            if (m_State.load(std::memory_order_acquire) == State::Done)
-                return;
-        }
+        State expected = m_State.load(std::memory_order_acquire);
+        if (expected == State::Done || expected == State::Inactive)
+            return;
 
         auto now = Timer::GetCurrentTimeFromEpoch();
         if (now - start > timeout)

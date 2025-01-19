@@ -114,11 +114,11 @@ namespace Inno
 		std::function<void()> f_RenderingContextServiceUpdateFunction;
 		std::function<void()> f_RenderingServerUpdateFunction;
 
-		std::shared_ptr<ITask> m_LogicClientUpdateTask;
-		std::shared_ptr<ITask> m_TransformComponentsSimulationTask;
-		std::shared_ptr<ITask> m_PhysicsSystemUpdateTask;
-		std::shared_ptr<ITask> m_RenderingContextServiceUpdateTask;
-		std::shared_ptr<ITask> m_RenderingServerUpdateTask;
+		Handle<ITask> m_LogicClientUpdateTask;
+		Handle<ITask> m_TransformComponentsSimulationTask;
+		Handle<ITask> m_PhysicsSystemUpdateTask;
+		Handle<ITask> m_RenderingContextServiceUpdateTask;
+		Handle<ITask> m_RenderingServerUpdateTask;
 
 		float m_tickTime = 0;
 	};
@@ -423,7 +423,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-
 	if (!m_pImpl->m_RenderingClient->Setup())
 	{
 		Log(Error, "Rendering Client can't be setup!");
@@ -437,7 +436,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	}
 
 	SystemSetup(GUISystem);
-
+	
 	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]() 
 	{
 		m_pImpl->m_LogicClient->Update(); 
@@ -462,7 +461,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		Get<RenderingContextService>()->Update();
 		Get<AnimationService>()->Update();
 	});
-	
+
 	m_pImpl->m_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Server Update Task", 2, [&]()
 	{
 		if (Get<HIDService>()->IsResizing())

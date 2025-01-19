@@ -65,7 +65,7 @@ void TaskScheduler::Unfreeze()
 	Log(Verbose, "All thread workers have been unfrozen.");
 }
 
-std::shared_ptr<ITask> TaskScheduler::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)
+void TaskScheduler::AddTask(Handle<ITask> task, int32_t threadID)
 {
 	int32_t l_ThreadIndex;
 	if (threadID != -1)
@@ -80,7 +80,7 @@ std::shared_ptr<ITask> TaskScheduler::AddTask(std::unique_ptr<ITask>&& task, int
 		l_ThreadIndex = Dis(Gen);
 	}
 
-	return m_Threads[l_ThreadIndex]->AddTask(std::move(task));
+	m_Threads[l_ThreadIndex]->AddTask(task);
 }
 
 size_t TaskScheduler::GetThreadCounts()

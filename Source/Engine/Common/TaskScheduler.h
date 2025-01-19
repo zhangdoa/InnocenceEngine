@@ -6,6 +6,7 @@
 #include "STL14.h"
 #include "Thread.h"
 #include "Task.h"
+#include "Handle.h"
 #include "RingBuffer.h"
 
 namespace Inno
@@ -25,12 +26,15 @@ namespace Inno
 		auto Submit(const ITask::Desc& taskDesc, Func&& func, Args&&... args) 
 		{
 			auto boundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-			auto task = std::make_unique<Task<decltype(boundTask)>>
+			auto task = new Task<decltype(boundTask)>
 			(
 				std::move(boundTask), taskDesc.m_Name, taskDesc.m_Type
 			);
 
-			return AddTask(std::move(task), taskDesc.m_ThreadID);
+			auto handle = Handle<ITask>(task);
+			
+			AddTask(handle, taskDesc.m_ThreadID);
+			return handle;
 		}
 
 		template <typename Func, typename... Args>
@@ -43,8 +47,8 @@ namespace Inno
 			return Submit(taskDesc, std::forward<Func>(func), std::forward<Args>(args)...);
 		}
 
-		std::shared_ptr<ITask> AddTask(std::unique_ptr<ITask>&& task, int32_t threadID);
-		bool AddDependency(std::shared_ptr<ITask>&& task, std::shared_ptr<ITask>&& dependency);
+		void AddTask(Handle<ITask> task, int32_t threadID);
+		bool AddDependency(Handle<ITask> task, Handle<ITask> dependency);
 		size_t GetThreadCounts();
 
 		const RingBuffer<TaskReport, true>& GetTaskReport(int32_t threadID);

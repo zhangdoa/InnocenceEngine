@@ -8,12 +8,12 @@
 #include "../Engine/Common/ObjectPool.h"
 #include "../Engine/Common/Array.h"
 #include "../Engine/Common/Atomic.h"
+#include "../Engine/Common/Handle.h"
 #include "../Engine/Common/Task.h"
 #include "../Engine/Common/RingBuffer.h"
 
 #include "../Engine/Engine.h"
 using namespace Inno;
-;
 
 void TestIToA(size_t testCaseCount)
 {
@@ -192,13 +192,13 @@ private:
 Atomic<uint32_t> l_atomicBuffer;
 std::atomic<uint32_t> l_finishedTaskCount;
 
-bool CheckCyclic(std::vector<std::shared_ptr<ITask>> tasks, size_t initialIndex, size_t targetIndex)
+bool CheckCyclic(std::vector<Handle<ITask>> tasks, size_t initialIndex, size_t targetIndex)
 {
 	return false;
 }
 
 template <typename Func, typename... Args>
-std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, Func&& func, Args&&... args)
+Handle<ITask> Submit(const char* name, int32_t threadID, Func&& func, Args&&... args)
 {
 	auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 	using ResultType = std::invoke_result_t<decltype(BoundTask)>;
@@ -207,14 +207,17 @@ std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, Func&& func, A
 
 	PackagedTask Task{ std::move(BoundTask) };
 	auto l_task = std::make_unique<TaskType>(std::move(Task), name, ITask::Type::Once);
-	return g_Engine->Get<TaskScheduler>()->AddTask(std::move(l_task), threadID);
+	auto l_handle = Handle<ITask>(l_task.get());
+	g_Engine->Get<TaskScheduler>()->AddTask(l_handle, threadID);
+
+	return l_handle;
 }
 
 void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, bool buildTaskGraph = false)
 {
 	Log(Verbose, "Generate test async tasks...");
 
-	std::vector<std::shared_ptr<ITask>> l_Tasks;
+	std::vector<Handle<ITask>> l_Tasks;
 	std::vector<std::string> l_TaskNames;
 	l_Tasks.reserve(testCaseCount);
 	l_TaskNames.reserve(testCaseCount);
@@ -236,7 +239,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job, b
 
 		if (buildTaskGraph)
 		{
-			std::shared_ptr<ITask> l_UpstreamTask;
+			Handle<ITask> l_UpstreamTask;
 
 			if (i > 1)
 			{

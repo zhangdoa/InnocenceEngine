@@ -3,10 +3,10 @@
 #include <type_traits>
 #include <future>
 
-#include "ThreadSafeVector.h"
-#include "ThreadSafeQueue.h"
-#include "RingBuffer.h"
 #include "Task.h"
+#include "Handle.h"
+#include "ThreadSafeVector.h"
+#include "RingBuffer.h"
 
 namespace Inno
 {
@@ -42,22 +42,21 @@ namespace Inno
 
 		const RingBuffer<TaskReport, true>& GetTaskReport();
 
-		std::shared_ptr<ITask> AddTask(std::shared_ptr<ITask>&& task);
+		void AddTask(Handle<ITask> task);
+
+		using ID = std::pair<uint32_t, std::thread::id>;
 
 	private:
-		std::string GetThreadID();
-
 		void Worker(uint32_t ThreadIndex);
 
-		bool ExecuteTask(const std::shared_ptr<ITask>& task);
+		inline bool ExecuteTask(Handle<ITask> task);
 
 		std::thread* m_ThreadHandle;
-		std::pair<uint32_t, std::thread::id> m_ID;
+		ID m_ID;
 		std::atomic<State> m_State = State::Idle;
 		std::atomic_bool m_Done = false;
 
-		ThreadSafeVector<std::shared_ptr<ITask>> m_TaskList;
-		ThreadSafeVector<std::shared_ptr<ITask>> m_TaskListToBeRemoved;
+		std::vector<Handle<ITask>> m_TaskList;
 		RingBuffer<TaskReport, true> m_TaskReport;
 	};
 }

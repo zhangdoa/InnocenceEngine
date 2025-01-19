@@ -26,6 +26,7 @@
 #include <cstdint>
 
 #include <typeindex>
+#include <type_traits>
 
 #include <iostream>
 #include <fstream>

@@ -26,7 +26,9 @@ namespace Inno
 
         enum class State
         {
+            Created,
             Inactive,
+            Waiting,
             Done,
             Executing,
         };
@@ -46,6 +48,7 @@ namespace Inno
         void Activate();
         void Deactivate();   
         bool TryToExecute();
+        bool CanBeRemoved() const;
         void Wait();
 
         virtual void ExecuteImpl() = 0;
@@ -63,7 +66,7 @@ namespace Inno
     protected:
         const char* m_Name = "Anonymous Task";
         Type m_Type = Type::Recurrent;
-        std::atomic<State> m_State = State::Inactive;
+        std::atomic<State> m_State = State::Created;
     };
 
     template <typename Functor>
@@ -73,14 +76,41 @@ namespace Inno
         static_assert(std::is_invocable_r_v<void, Functor>, "Task's Functor must be callable and return void.");
 
         Task(Functor&& functor, const char* name, Type type)
-            : ITask(name, type), m_Functor(std::forward<Functor>(functor)) {}
+            : ITask(name, type), m_Functor(std::forward<Functor>(functor)) {
+            }
 
-        ~Task() override = default;
+        ~Task() override {
+        }
 
-        Task(const Task& rhs) = delete;
-        Task& operator=(const Task& rhs) = delete;
-        Task(Task&& other) = default;
-        Task& operator=(Task&& other) = default;
+        Task(const Task& rhs)
+            : ITask(rhs.m_Name, rhs.m_Type), m_Functor(rhs.m_Functor) {
+            }
+
+        Task& operator=(const Task& rhs)
+        {
+            if (this != &rhs)
+            {
+                ITask::operator=(rhs);
+                m_Functor = rhs.m_Functor;
+            }
+
+            return *this;
+        }
+
+        Task(Task&& other) noexcept
+            : ITask(std::move(other)), m_Functor(std::move(other.m_Functor)) {
+            }
+
+        Task& operator=(Task&& other) noexcept
+        {
+            if (this != &other)
+            {
+                ITask::operator=(std::move(other));
+                m_Functor = std::move(other.m_Functor);
+            }
+
+            return *this;
+        }
 
     protected:
         void ExecuteImpl() override 
