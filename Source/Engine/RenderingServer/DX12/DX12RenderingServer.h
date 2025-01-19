@@ -59,9 +59,11 @@ namespace Inno
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 		bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
 		bool WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
+		void FinalizeSwapChain() override;
+		bool Present() override;
+
 		bool SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc) override;
 		GPUResourceComponent* GetUserPipelineOutput() override;
-		bool Present() override;
 
 		bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
@@ -84,7 +86,10 @@ namespace Inno
 
 		ID3D12Device* GetDevice();
 		ID3D12DescriptorHeap* GetCSUDescHeap();
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCSUDescHeapCPUHandle();
+		D3D12_GPU_DESCRIPTOR_HANDLE GetCSUDescHeapGPUHandle();
 		ID3D12CommandAllocator* GetCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t swapChainImageIndex);
 		uint32_t GetSwapChainImageCount();
+		RenderPassComponent* GetSwapChainRenderPassComponent();
 	};
 }

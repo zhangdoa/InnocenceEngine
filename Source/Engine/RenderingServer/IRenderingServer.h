@@ -81,9 +81,12 @@ namespace Inno
 		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) = 0;
 		virtual bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) = 0;
 		virtual bool WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType) = 0;
+		virtual void FinalizeSwapChain() {}
+		virtual bool Present() = 0;
+		
 		virtual bool SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc) = 0;
 		virtual GPUResourceComponent* GetUserPipelineOutput() = 0;
-		virtual bool Present() = 0;
+		
 
 		virtual bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) = 0;
 

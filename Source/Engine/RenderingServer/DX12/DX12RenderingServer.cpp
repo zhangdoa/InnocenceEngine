@@ -130,24 +130,22 @@ namespace DX12RenderingServerNS
 	std::vector<DX12CommandList*> m_GlobalCommandLists(m_swapChainImageCount);
 	
 	ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = 0;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_CSUDescHeapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_CSUDescHeapGPUHandle;
+	DX12DescriptorHandle m_CSUDescHeapHandle;
 
 	ComPtr<ID3D12DescriptorHeap> m_ShaderNonVisibleCSUDescHeap = 0;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_ShaderNonVisibleCSUDescHeapCPUHandle;
+	DX12DescriptorHandle m_ShaderNonVisibleCSUDescHeapHandle;
 
 	ComPtr<ID3D12DescriptorHeap> m_RTVDescHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_RTVDescHeapDesc = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVDescHeapCPUHandle;
+	DX12DescriptorHandle m_RTVDescHeapHandle;
 
 	ComPtr<ID3D12DescriptorHeap> m_DSVDescHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_DSVDescHeapDesc = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_DSVDescHeapCPUHandle;
+	DX12DescriptorHandle m_DSVDescHeapHandle;
 
 	ComPtr<ID3D12DescriptorHeap> m_samplerDescHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_samplerDescHeapDesc = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_SamplerDescHeapCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_SamplerDescHeapGPUHandle;
+	DX12DescriptorHandle m_SamplerDescHeapHandle;
 
 	std::function<GPUResourceComponent*()> m_GetUserPipelineOutputFunc;
 	DX12RenderPassComponent *m_SwapChainRenderPassComp = 0;
@@ -519,8 +517,8 @@ bool DX12RenderingServerNS::CreateGlobalCSUDescHeap()
 
 	m_CSUDescHeap->SetName(L"GlobalCSUDescHeap_ShaderVisible");
 
-	m_CSUDescHeapCPUHandle = m_CSUDescHeap->GetCPUDescriptorHandleForHeapStart();
-	m_CSUDescHeapGPUHandle = m_CSUDescHeap->GetGPUDescriptorHandleForHeapStart();
+	m_CSUDescHeapHandle.CPUHandle = m_CSUDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_CSUDescHeapHandle.GPUHandle = m_CSUDescHeap->GetGPUDescriptorHandleForHeapStart();
 
 	Log(Success, "Shader-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
@@ -540,7 +538,8 @@ bool DX12RenderingServerNS::CreateGlobalCSUDescHeap()
 
 	m_ShaderNonVisibleCSUDescHeap->SetName(L"GlobalCSUDescHeap_ShaderNonVisible");
 
-	m_ShaderNonVisibleCSUDescHeapCPUHandle = m_ShaderNonVisibleCSUDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_ShaderNonVisibleCSUDescHeapHandle.CPUHandle = m_ShaderNonVisibleCSUDescHeap->GetCPUDescriptorHandleForHeapStart();
+	// There is no GPU handle for non-visible descriptor heaps
 
 	Log(Success, "Shader-non-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
@@ -563,8 +562,8 @@ bool DX12RenderingServerNS::CreateGlobalSamplerDescHeap()
 
 	m_samplerDescHeap->SetName(L"GlobalSamplerDescHeap");
 
-	m_SamplerDescHeapCPUHandle = m_samplerDescHeap->GetCPUDescriptorHandleForHeapStart();
-	m_SamplerDescHeapGPUHandle = m_samplerDescHeap->GetGPUDescriptorHandleForHeapStart();
+	m_SamplerDescHeapHandle.CPUHandle = m_samplerDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_SamplerDescHeapHandle.GPUHandle = m_samplerDescHeap->GetGPUDescriptorHandleForHeapStart();
 
 	Log(Success, "DescriptorHeap for Sampler has been created.");
 
@@ -586,7 +585,8 @@ bool DX12RenderingServerNS::CreateGlobalRTVDescHeap()
 
 	m_RTVDescHeap->SetName(L"GlobalRTVDescHeap");
 
-	m_RTVDescHeapCPUHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_RTVDescHeapHandle.CPUHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+	// There is no GPU handle for RTV descriptor heaps
 
 	Log(Success, "DescriptorHeap for RTV has been created.");
 
@@ -608,7 +608,8 @@ bool DX12RenderingServerNS::CreateGlobalDSVDescHeap()
 
 	m_DSVDescHeap->SetName(L"GlobalDSVDescHeap");
 
-	m_DSVDescHeapCPUHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
+	m_DSVDescHeapHandle.CPUHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
+	// There is no GPU handle for DSV descriptor heaps
 
 	Log(Success, "DescriptorHeap for DSV has been created.");
 
@@ -848,9 +849,9 @@ bool DX12RenderingServerNS::GenerateMipmapImpl(DX12TextureComponent *DX12Texture
 	}
 	computeCommandList->SetDescriptorHeaps(1, l_heaps);
 
-	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = DX12TextureComp->m_SRV.GPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = DX12TextureComp->m_SRV.Handle.GPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE l_UAV;
-	l_UAV.ptr = DX12TextureComp->m_UAV.ShaderVisibleGPUHandle.ptr + l_CSUDescSize;
+	l_UAV.ptr = DX12TextureComp->m_UAV.Handle.GPUHandle.ptr + l_CSUDescSize;
 
 	for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
 	{
@@ -1042,6 +1043,7 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	m_SwapChainSamplerComp = reinterpret_cast<DX12SamplerComponent *>(AddSamplerComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
+
 	Log(Success, "DX12RenderingServer Setup finished.");
 
 	return l_result;
@@ -1549,15 +1551,15 @@ bool DX12RenderingServer::InitializeSamplerComponent(SamplerComponent *rhs)
 	l_rhs->m_Sampler.SamplerDesc.MinLOD = l_rhs->m_SamplerDesc.m_MinLOD;
 	l_rhs->m_Sampler.SamplerDesc.MaxLOD = l_rhs->m_SamplerDesc.m_MaxLOD;
 
-	l_rhs->m_Sampler.CPUHandle = m_SamplerDescHeapCPUHandle;
-	l_rhs->m_Sampler.GPUHandle = m_SamplerDescHeapGPUHandle;
+	l_rhs->m_Sampler.Handle.CPUHandle = m_SamplerDescHeapHandle.CPUHandle;
+	l_rhs->m_Sampler.Handle.GPUHandle = m_SamplerDescHeapHandle.GPUHandle;
 
-	m_device->CreateSampler(&l_rhs->m_Sampler.SamplerDesc, l_rhs->m_Sampler.CPUHandle);
+	m_device->CreateSampler(&l_rhs->m_Sampler.SamplerDesc, l_rhs->m_Sampler.Handle.CPUHandle);
 
 	auto l_samplerDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-	m_SamplerDescHeapCPUHandle.ptr += l_samplerDescSize;
-	m_SamplerDescHeapGPUHandle.ptr += l_samplerDescSize;
+	m_SamplerDescHeapHandle.CPUHandle.ptr += l_samplerDescSize;
+	m_SamplerDescHeapHandle.GPUHandle.ptr += l_samplerDescSize;
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -1782,8 +1784,8 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 	if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
 	{
 		l_commandList->ClearUnorderedAccessViewUint(
-			l_rhs->m_UAV.ShaderVisibleGPUHandle,
-			l_rhs->m_UAV.ShaderNonVisibleCPUHandle,
+			l_rhs->m_UAV.Handle.GPUHandle,
+			l_rhs->m_UAV.Handle.CPUHandle,
 			l_rhs->m_DefaultHeapBuffer.Get(),
 			(UINT *)&l_rhs->m_TextureDesc.ClearColor[0],
 			0,
@@ -1792,8 +1794,8 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent *rhs)
 	else
 	{
 		l_commandList->ClearUnorderedAccessViewFloat(
-			l_rhs->m_UAV.ShaderVisibleGPUHandle,
-			l_rhs->m_UAV.ShaderNonVisibleCPUHandle,
+			l_rhs->m_UAV.Handle.GPUHandle,
+			l_rhs->m_UAV.Handle.CPUHandle,
 			l_rhs->m_DefaultHeapBuffer.Get(),
 			&l_rhs->m_TextureDesc.ClearColor[0],
 			0,
@@ -1859,8 +1861,8 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
 
 	l_commandList->ClearUnorderedAccessViewUint(
-		l_rhs->m_UAV.ShaderVisibleGPUHandle,
-		l_rhs->m_UAV.ShaderNonVisibleCPUHandle,
+		l_rhs->m_UAV.Handle.GPUHandle,
+		l_rhs->m_UAV.Handle.CPUHandle,
 		l_rhs->m_DefaultHeapBuffer.Get(),
 		&zero,
 		0,
@@ -1944,10 +1946,8 @@ bool PrepareRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *
 	return true;
 }
 
-bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *commandList, DX12PipelineStateObject *PSO)
+bool SetDescriptorHeaps(DX12RenderPassComponent *renderPass, DX12CommandList *commandList)
 {
-	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get(), m_samplerDescHeap.Get()};
-
 	ComPtr<ID3D12GraphicsCommandList> l_commandList;
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
@@ -1958,7 +1958,59 @@ bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *comma
 		l_commandList = commandList->m_ComputeCommandList;
 	}
 
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUDescHeap.Get(), m_samplerDescHeap.Get()};
 	l_commandList->SetDescriptorHeaps(2, l_heaps);
+
+	return true;
+}
+
+bool SetRenderTargets(DX12RenderPassComponent *renderPass, DX12CommandList *commandList)
+{
+	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
+		return true;
+
+	auto l_commandList = commandList->m_DirectCommandList;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE* l_DSV = NULL;
+
+	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		l_DSV = &renderPass->m_DSVDescCPUHandle;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE* l_RTVs = NULL;
+	uint32_t l_RTCount = 0;
+
+	if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
+	{
+		if (renderPass->m_RenderPassDesc.m_RenderTargetCount)
+		{
+			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+			{
+				l_RTVs = &renderPass->m_RTVDescCPUHandles[renderPass->m_CurrentFrame];
+				l_RTCount = 1;
+			}
+			else
+			{
+				l_RTVs = &renderPass->m_RTVDescCPUHandles[0];
+				l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
+			}
+		}
+	}
+
+	l_commandList->OMSetRenderTargets(l_RTCount, l_RTVs, FALSE, l_DSV);
+	return true;
+}
+
+bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *commandList, DX12PipelineStateObject *PSO)
+{
+	ComPtr<ID3D12GraphicsCommandList> l_commandList;
+	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+	{
+		l_commandList = commandList->m_DirectCommandList;
+	}
+	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_commandList = commandList->m_ComputeCommandList;
+	}
 
 	if (PSO->m_PSO)
 		l_commandList->SetPipelineState(PSO->m_PSO.Get());
@@ -1970,35 +2022,6 @@ bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *comma
 
 		l_commandList->RSSetViewports(1, &PSO->m_Viewport);
 		l_commandList->RSSetScissorRects(1, &PSO->m_Scissor);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE *l_DSV = NULL;
-
-		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-		{
-			l_DSV = &renderPass->m_DSVDescCPUHandle;
-		}
-
-		D3D12_CPU_DESCRIPTOR_HANDLE *l_RTVs = NULL;
-		uint32_t l_RTCount = 0;
-
-		if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
-		{
-			if (renderPass->m_RenderPassDesc.m_RenderTargetCount)
-			{
-				if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
-				{
-					l_RTVs = &renderPass->m_RTVDescCPUHandles[renderPass->m_CurrentFrame];
-					l_RTCount = 1;
-				}
-				else
-				{
-					l_RTVs = &renderPass->m_RTVDescCPUHandles[0];
-					l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
-				}
-			}
-		}
-
-		l_commandList->OMSetRenderTargets(l_RTCount, l_RTVs, FALSE, l_DSV);
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
@@ -2017,9 +2040,12 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
 	PrepareRenderTargets(l_rhs, l_commandList);
+	SetDescriptorHeaps(l_rhs, l_commandList);
+	SetRenderTargets(l_rhs, l_commandList);
+
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(l_rhs->m_PipelineStateObject);
 	PreparePipeline(l_rhs, l_commandList, l_PSO);
 
 	for	(size_t i = 0; i < l_rhs->m_ResourceBindingLayoutDescs.size(); i++)
@@ -2031,9 +2057,7 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 		}
 	}
 	
-	if (l_rhs->m_CustomCommandsFunc)
-		l_rhs->m_CustomCommandsFunc(l_commandList);
-	
+	l_rhs->m_CustomCommandsFunc(l_commandList);
 	return true;
 }
 
@@ -2048,8 +2072,8 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t in
 			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 			{
 				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-					l_RT->m_UAV.ShaderVisibleGPUHandle,
-					l_RT->m_UAV.ShaderNonVisibleCPUHandle,
+					l_RT->m_UAV.Handle.GPUHandle,
+					l_RT->m_UAV.Handle.CPUHandle,
 					l_RT->m_DefaultHeapBuffer.Get(),
 					(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 					0,
@@ -2058,8 +2082,8 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t in
 			else
 			{
 				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-					l_RT->m_UAV.ShaderVisibleGPUHandle,
-					l_RT->m_UAV.ShaderNonVisibleCPUHandle,
+					l_RT->m_UAV.Handle.GPUHandle,
+					l_RT->m_UAV.Handle.CPUHandle,
 					l_RT->m_DefaultHeapBuffer.Get(),
 					l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 					0,
@@ -2179,17 +2203,17 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 		switch (l_bindingType)
 		{
 		case GPUResourceType::Sampler:
-			l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.GPUHandle);
+			l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.Handle.GPUHandle);
 			break;
 		case GPUResourceType::Image:
 		{
 			if (l_accessibility != Accessibility::ReadOnly)
 			{
-				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.Handle.GPUHandle);
 			}
 			else
 			{
-				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_SRV.GPUHandle);
+				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_SRV.Handle.GPUHandle);
 			}
 			break;
 		}
@@ -2211,7 +2235,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 				{
 					if (reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_isAtomicCounter)
 					{
-						l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+						l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.Handle.GPUHandle);
 					}
 					else
 					{
@@ -2234,17 +2258,17 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 		switch (l_bindingType)
 		{
 		case GPUResourceType::Sampler:
-			l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.GPUHandle);
+			l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.Handle.GPUHandle);
 			break;
 		case GPUResourceType::Image:
 		{
 			if (l_accessibility != Accessibility::ReadOnly)
 			{
-				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.Handle.GPUHandle);
 			}
 			else
 			{
-				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_SRV.GPUHandle);
+				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_SRV.Handle.GPUHandle);
 			}
 			break;
 		}
@@ -2266,7 +2290,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent *renderPass, Shade
 				{
 					if (reinterpret_cast<DX12GPUBufferComponent*>(resource)->m_isAtomicCounter)
 					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.ShaderVisibleGPUHandle);
+						l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, l_UAV.Handle.GPUHandle);
 					}
 					else
 					{
@@ -2479,7 +2503,7 @@ GPUResourceComponent *DX12RenderingServer::GetUserPipelineOutput()
 	return m_GetUserPipelineOutputFunc();
 }
 
-bool DX12RenderingServer::Present()
+void DX12RenderingServer::FinalizeSwapChain()
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRenderPassComp->m_CommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(m_SwapChainRenderPassComp->m_PipelineStateObject);
@@ -2502,7 +2526,7 @@ bool DX12RenderingServer::Present()
 
 	UnbindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
-	TryToTransitState(l_DX12TextureComp, l_commandList,l_DX12TextureComp->m_ReadState);
+	TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 
@@ -2514,6 +2538,30 @@ bool DX12RenderingServer::Present()
 	m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
 
 	m_directCommandQueue->Signal(m_directCommandQueueFence[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_directCommandFinishedSemaphore);
+}
+
+bool DX12RenderingServer::Present()
+{
+	auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[m_SwapChainRenderPassComp->m_CurrentFrame].m_Texture);
+	
+	// Could be a user-side write operation happened on the swap chain texture
+	if (l_DX12TextureComp->m_CurrentState !=l_DX12TextureComp->m_ReadState)
+	{
+		auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRenderPassComp->m_CommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		auto l_semaphore = reinterpret_cast<DX12Semaphore *>(m_SwapChainRenderPassComp->m_Semaphores[m_SwapChainRenderPassComp->m_CurrentFrame]);
+		
+		CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);
+		TryToTransitState(l_DX12TextureComp, l_commandList, l_DX12TextureComp->m_ReadState);
+		CommandListEnd(m_SwapChainRenderPassComp);
+
+		UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore[m_SwapChainRenderPassComp->m_CurrentFrame];
+		m_directCommandQueueFence[m_SwapChainRenderPassComp->m_CurrentFrame]->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
+
+		ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
+		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
+
+		m_directCommandQueue->Signal(m_directCommandQueueFence[m_SwapChainRenderPassComp->m_CurrentFrame].Get(), l_directCommandFinishedSemaphore);
+	}
 
 	m_swapChain->Present(0, 0);
 
@@ -2799,11 +2847,12 @@ bool DX12RenderingServer::CreateRTV(RenderPassComponent* rhs)
 
 		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			l_rhs->m_RTVDescCPUHandles[i] = m_RTVDescHeapCPUHandle;
+			l_rhs->m_RTVDescCPUHandles[i] = m_RTVDescHeapHandle.CPUHandle;
 			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[i].m_Texture)->m_DefaultHeapBuffer;
 			m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_rhs->m_RTVDesc, l_rhs->m_RTVDescCPUHandles[i]);
 
-			m_RTVDescHeapCPUHandle.ptr += l_RTVDescSize;
+			m_RTVDescHeapHandle.CPUHandle.ptr += l_RTVDescSize;
+			// No need to increase the GPU handle, because it doesn't exist
 		}
 
 		Log(Verbose, "", l_rhs->m_InstanceName, " RTV has been created.");
@@ -2822,12 +2871,13 @@ bool DX12RenderingServer::CreateDSV(RenderPassComponent* rhs)
 		{
 			auto l_DSVDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 			l_rhs->m_DSVDesc = GetDSVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
-			l_rhs->m_DSVDescCPUHandle = m_DSVDescHeapCPUHandle;
+			l_rhs->m_DSVDescCPUHandle = m_DSVDescHeapHandle.CPUHandle;
 
 			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(l_rhs->m_DepthStencilRenderTarget.m_Texture)->m_DefaultHeapBuffer;
 			m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_rhs->m_DSVDesc, l_rhs->m_DSVDescCPUHandle);
 			
-			m_DSVDescHeapCPUHandle.ptr += l_DSVDescSize;
+			m_DSVDescHeapHandle.CPUHandle.ptr += l_DSVDescSize;
+			// No need to increase the GPU handle, because it doesn't exist
 
 			Log(Verbose, "", l_rhs->m_InstanceName, " DSV has been created.");
 			return false;
@@ -2848,13 +2898,13 @@ DX12SRV CreateSRVImpl(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resourc
 
 	DX12SRV l_result = {};
 	l_result.SRVDesc = desc;
-	l_result.CPUHandle = m_CSUDescHeapCPUHandle;
-	l_result.GPUHandle = m_CSUDescHeapGPUHandle;
+	l_result.Handle.CPUHandle = m_CSUDescHeapHandle.CPUHandle;
+	l_result.Handle.GPUHandle = m_CSUDescHeapHandle.GPUHandle;
 
-	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
-	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
+	m_device->CreateShaderResourceView(resourceHandle.Get(), &l_result.SRVDesc, m_CSUDescHeapHandle.CPUHandle);
 
-	m_device->CreateShaderResourceView(resourceHandle.Get(), &l_result.SRVDesc, l_result.CPUHandle);
+	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;
 
 	return l_result;
 }
@@ -2885,18 +2935,18 @@ DX12UAV CreateUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resour
 
 	DX12UAV l_result = {};
 	l_result.UAVDesc = desc;
-	l_result.ShaderNonVisibleCPUHandle = m_ShaderNonVisibleCSUDescHeapCPUHandle;
-	l_result.ShaderVisibleGPUHandle = m_CSUDescHeapGPUHandle;
+	l_result.Handle.CPUHandle = m_ShaderNonVisibleCSUDescHeapHandle.CPUHandle;
+	l_result.Handle.GPUHandle = m_CSUDescHeapHandle.GPUHandle;
 
-	auto l_CSUDescHeapCPUHandle = m_CSUDescHeapCPUHandle;
-
-	m_ShaderNonVisibleCSUDescHeapCPUHandle.ptr += l_CSUDescSize;
-	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
-	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
-
-	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
-	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_CSUDescHeapCPUHandle);
+	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, m_ShaderNonVisibleCSUDescHeapHandle.CPUHandle);
+	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, m_CSUDescHeapHandle.CPUHandle);
 	
+	m_ShaderNonVisibleCSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+	// No need to increase the GPU handle, because it's not visible to the shader
+
+	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;	
+	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+
 	return l_result;
 }
 
@@ -2930,15 +2980,15 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferComponent *rhs)
 	l_result.CBVDesc.BufferLocation = l_rhs->m_UploadHeapBuffer->GetGPUVirtualAddress();
 	l_result.CBVDesc.SizeInBytes = (uint32_t)l_rhs->m_ElementSize;
 
-	l_result.CPUHandle = m_CSUDescHeapCPUHandle;
-	l_result.GPUHandle = m_CSUDescHeapGPUHandle;
+	l_result.Handle.CPUHandle = m_CSUDescHeapHandle.CPUHandle;
+	l_result.Handle.GPUHandle = m_CSUDescHeapHandle.GPUHandle;
 
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
-	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;
 
-	m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.CPUHandle);
+	m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.Handle.CPUHandle);
 
 	return l_result;
 }
@@ -2951,6 +3001,24 @@ ID3D12Device* DX12RenderingServer::GetDevice()
 ID3D12DescriptorHeap* DX12RenderingServer::GetCSUDescHeap()
 {
     return m_CSUDescHeap.Get();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderingServer::GetCSUDescHeapCPUHandle()
+{
+	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;
+
+	return m_CSUDescHeapHandle.CPUHandle;
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DX12RenderingServer::GetCSUDescHeapGPUHandle()
+{
+	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;
+
+	return m_CSUDescHeapHandle.GPUHandle;
 }
 
 ID3D12CommandAllocator* DX12RenderingServer::GetCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t swapChainImageIndex)
@@ -2972,6 +3040,11 @@ ID3D12CommandAllocator* DX12RenderingServer::GetCommandAllocator(D3D12_COMMAND_L
 uint32_t DX12RenderingServer::GetSwapChainImageCount()
 {
     return m_swapChainImageCount;
+}
+
+RenderPassComponent* DX12RenderingServer::GetSwapChainRenderPassComponent()
+{
+	return m_SwapChainRenderPassComp;
 }
 
 bool DX12RenderingServer::BeginCapture()

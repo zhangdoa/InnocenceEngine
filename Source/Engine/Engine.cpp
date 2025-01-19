@@ -477,9 +477,11 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 			m_pImpl->m_RenderingClient->Render();
 
-			Get<GUISystem>()->Render();
-
 			m_pImpl->m_RenderingServer->TransferDataToGPU();
+
+			m_pImpl->m_RenderingServer->FinalizeSwapChain();
+
+			Get<GUISystem>()->Render();
 
 			m_pImpl->m_RenderingServer->Present();
 

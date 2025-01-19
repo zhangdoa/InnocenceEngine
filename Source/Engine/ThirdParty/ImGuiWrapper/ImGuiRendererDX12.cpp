@@ -54,6 +54,8 @@ bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
     l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Graphics;
 	l_RenderPassDesc.m_RenderTargetCount = l_renderingServer->GetSwapChainImageCount();
+	l_RenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
 	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&ImGuiRenderPass::RenderTargetsReservationFunc, this);
 	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&ImGuiRenderPass::RenderTargetsCreationFunc, this);	
 	l_RenderPassDesc.m_UseMultiFrames = true;
@@ -69,12 +71,16 @@ bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
 
 bool ImGuiRenderPass::Initialize()
 {
-    auto l_renderingServer = g_Engine->getRenderingServer();
+    auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
     l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
 	// The actual rendering is called by the rendering server
     m_RenderPassComp->m_CustomCommandsFunc = [&](ICommandList* cmdList)
     {
+		auto l_dx12renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
+		auto l_swapChainRenderPassComp = reinterpret_cast<DX12RenderPassComponent*>(l_dx12renderingServer->GetSwapChainRenderPassComponent());
+		l_dx12renderingServer->WaitCommandQueue(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+
         auto dx12CmdList = reinterpret_cast<DX12CommandList*>(cmdList);
         auto directCommandList = dx12CmdList->m_DirectCommandList.Get();
 
@@ -124,13 +130,11 @@ bool ImGuiRenderPass::RenderTargetsReservationFunc()
 bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
-
-	// @TODO: This is too hard assumption for the user-side
-	auto l_userPipelineOutput = reinterpret_cast<DX12TextureComponent*>(l_renderingServer->GetUserPipelineOutput());
+	auto l_swapChainRenderPassComp = reinterpret_cast<DX12RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
 
 	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		m_RenderPassComp->m_RenderTargets[i].m_Texture = l_userPipelineOutput;
+		m_RenderPassComp->m_RenderTargets[i].m_Texture = l_swapChainRenderPassComp->m_RenderTargets[i].m_Texture;
 	}
 
 	return true;
@@ -153,8 +157,8 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 
 		ImGui_ImplDX12_Init(l_device, l_renderingServer->GetSwapChainImageCount(),
 			DXGI_FORMAT_R8G8B8A8_UNORM, l_CSUDescHeap,
-			l_CSUDescHeap->GetCPUDescriptorHandleForHeapStart(),
-			l_CSUDescHeap->GetGPUDescriptorHandleForHeapStart());
+			l_renderingServer->GetCSUDescHeapCPUHandle(),
+			l_renderingServer->GetCSUDescHeapGPUHandle());
 		
 		m_RenderPass->Initialize();
 	};
@@ -165,9 +169,7 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 
 		auto l_renderingServer = g_Engine->getRenderingServer();
 		l_renderingServer->ExecuteCommandList(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
-		l_renderingServer->WaitCommandQueue(m_RenderPass->GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(m_RenderPass->GetRenderPassComp(), GPUEngineType::Compute);
-		l_renderingServer->WaitCommandQueue(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+		l_renderingServer->WaitCommandQueue(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 	};
 
 	f_TerminateJob = [&]() 
@@ -199,9 +201,9 @@ bool ImGuiRendererDX12::Initialize()
 	taskDesc.m_Type = ITask::Type::Once;
 	taskDesc.m_ThreadID = 2;
 
-	// auto l_InitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_InitializeJob);
-	// l_InitializationTask->Activate();
-	// l_InitializationTask->Wait();
+	auto l_InitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_InitializeJob);
+	l_InitializationTask->Activate();
+	l_InitializationTask->Wait();
 
 	Log(Success, "ImGuiRendererDX12 has been initialized.");
 
