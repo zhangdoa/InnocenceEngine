@@ -131,7 +131,7 @@ namespace Inno
         m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
         m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
         m_cameraPlayerDistance = m_playerCameraTransformComponent->m_localTransformVector.m_pos - m_playerTransformComponent->m_localTransformVector.m_pos;
-        m_initialMoveSpeed = 0.5f;
+        m_initialMoveSpeed = 0.05f;
         m_moveSpeed = m_initialMoveSpeed;
         m_rotateSpeed = 10.0f;
 
