@@ -72,6 +72,9 @@ namespace Inno
 
 		void Destroy(T* ptr)
 		{
+			if (!ptr)
+				return;
+			
 			//Allocate in-place a Chunk at the corresponding position
 			auto l_NewFreeChunk = new(reinterpret_cast<unsigned char*>(ptr) - sizeof(Chunk)) Chunk();
 
