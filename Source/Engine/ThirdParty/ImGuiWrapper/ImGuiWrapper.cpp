@@ -193,8 +193,12 @@ bool ImGuiWrapper::Initialize()
 		// Load Fonts
 		auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
 		l_workingDir += "..//Res//Fonts//FreeSans.otf";
-		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
-
+		auto font = io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
+		if (font == nullptr)
+		{
+			Log(Error, "Failed to load font.");
+		}
+		
 		ImGuiWrapperNS::m_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 	}
 
