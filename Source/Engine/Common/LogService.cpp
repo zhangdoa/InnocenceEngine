@@ -219,6 +219,12 @@ void LogService::LogImpl(const char* logMessage)
 	m_LogFile << logMessage;
 }
 
+void LogService::LogImpl(const wchar_t* logMessage)
+{
+	std::wcout << logMessage;
+	m_LogFile << logMessage;
+}
+
 LogService::LogService()
 {
 	std::stringstream ss;

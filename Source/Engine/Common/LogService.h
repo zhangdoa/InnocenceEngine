@@ -56,6 +56,7 @@ namespace Inno
 		void LogImpl(float logMessage);
 		void LogImpl(double logMessage);
 		void LogImpl(const char* logMessage);
+		void LogImpl(const wchar_t* logMessage);
 
 		std::ofstream m_LogFile;
 		std::mutex m_Mutex;
