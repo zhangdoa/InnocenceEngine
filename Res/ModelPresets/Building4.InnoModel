@@ -4,7 +4,7 @@
       "IndicesNumber": 0,
       "File": "",
       "Name": "Building4",
-      "ProceduralMeshShape": 7,
+      "MeshShape": 7,
       "VerticesNumber": 0,
       "Material": {
         "AO": 0.0,
