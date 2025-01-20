@@ -1404,6 +1404,7 @@ bool DX12RenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 		}
 	}
 
+	l_rhs->m_GPUResourceType = GPUResourceType::Material;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(rhs);
@@ -2022,17 +2023,20 @@ bool PreparePipeline(DX12RenderPassComponent *renderPass, DX12CommandList *comma
 		if (renderPass->m_RootSignature)
 			l_commandList->SetGraphicsRootSignature(renderPass->m_RootSignature.Get());
 
-		l_commandList->RSSetViewports(1, &PSO->m_Viewport);
-		l_commandList->RSSetScissorRects(1, &PSO->m_Scissor);
-
-		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+		if (PSO->m_PSO)
 		{
-			l_commandList->OMSetStencilRef(renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+			l_commandList->RSSetViewports(1, &PSO->m_Viewport);
+			l_commandList->RSSetScissorRects(1, &PSO->m_Scissor);
+			if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+			{
+				l_commandList->OMSetStencilRef(renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+			}
 		}
 	}
 	else
 	{
-		l_commandList->SetComputeRootSignature(renderPass->m_RootSignature.Get());
+		if (renderPass->m_RootSignature)
+			l_commandList->SetComputeRootSignature(renderPass->m_RootSignature.Get());
 	}
 
 	return true;
@@ -2059,7 +2063,9 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 		}
 	}
 	
-	l_rhs->m_CustomCommandsFunc(l_commandList);
+	if (l_rhs->m_CustomCommandsFunc)
+		l_rhs->m_CustomCommandsFunc(l_commandList);
+
 	return true;
 }
 
@@ -2354,7 +2360,7 @@ bool DX12RenderingServer::CommandListEnd(RenderPassComponent *rhs)
 
 	for	(size_t i = 0; i < l_rhs->m_ResourceBindingLayoutDescs.size(); i++)
 	{
-		auto& l_desc = l_rhs->m_ResourceBindingLayoutDescs[0];
+		auto& l_desc = l_rhs->m_ResourceBindingLayoutDescs[i];
 		if(l_desc.m_GPUResource)
 		{
 			UnbindGPUResource(rhs, l_desc.m_ShaderStage, l_desc.m_GPUResource, i);
@@ -3008,19 +3014,19 @@ ID3D12DescriptorHeap* DX12RenderingServer::GetCSUDescHeap()
 D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderingServer::GetCSUDescHeapCPUHandle()
 {
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	auto l_currentHandle = m_CSUDescHeapHandle.CPUHandle;
 	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
-	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;
 
-	return m_CSUDescHeapHandle.CPUHandle;
+	return l_currentHandle;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DX12RenderingServer::GetCSUDescHeapGPUHandle()
 {
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_CSUDescHeapHandle.CPUHandle.ptr += l_CSUDescSize;
+	auto l_currentHandle = m_CSUDescHeapHandle.GPUHandle;
 	m_CSUDescHeapHandle.GPUHandle.ptr += l_CSUDescSize;
 
-	return m_CSUDescHeapHandle.GPUHandle;
+	return l_currentHandle;
 }
 
 ID3D12CommandAllocator* DX12RenderingServer::GetCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t swapChainImageIndex)

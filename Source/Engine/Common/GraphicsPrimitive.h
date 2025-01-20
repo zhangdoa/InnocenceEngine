@@ -223,7 +223,8 @@ namespace Inno
 			Invalid,
 			Sampler,
 			Image,
-			Buffer
+			Buffer,
+			Material
 		};
 
 		enum class GPUMemoryType

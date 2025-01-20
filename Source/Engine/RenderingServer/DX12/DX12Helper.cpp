@@ -955,12 +955,6 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp
 bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<ID3D12Device> device)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RenderPassComp->m_PipelineStateObject);
-	if (!DX12RenderPassComp->m_RootSignature.Get())
-	{
-		Log(Verbose, "Skipping creating PSO for ", DX12RenderPassComp->m_InstanceName.c_str());
-		return true;
-	}
-
 	if (DX12RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		GenerateDepthStencilStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
@@ -968,67 +962,6 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 		GenerateRasterizerStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 		GenerateViewportStateDesc(DX12RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 		
-
-		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RenderPassComp->m_RootSignature.Get();
-
-		D3D12_INPUT_ELEMENT_DESC l_polygonLayout[6];
-		uint32_t l_numElements;
-
-		// Create the vertex input layout description.
-		l_polygonLayout[0].SemanticName = "POSITION";
-		l_polygonLayout[0].SemanticIndex = 0;
-		l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		l_polygonLayout[0].InputSlot = 0;
-		l_polygonLayout[0].AlignedByteOffset = 0;
-		l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		l_polygonLayout[0].InstanceDataStepRate = 0;
-
-		l_polygonLayout[1].SemanticName = "NORMAL";
-		l_polygonLayout[1].SemanticIndex = 0;
-		l_polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		l_polygonLayout[1].InputSlot = 0;
-		l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		l_polygonLayout[1].InstanceDataStepRate = 0;
-
-		l_polygonLayout[2].SemanticName = "TANGENT";
-		l_polygonLayout[2].SemanticIndex = 0;
-		l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		l_polygonLayout[2].InputSlot = 0;
-		l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		l_polygonLayout[2].InstanceDataStepRate = 0;
-
-		l_polygonLayout[3].SemanticName = "TEXCOORD";
-		l_polygonLayout[3].SemanticIndex = 0;
-		l_polygonLayout[3].Format = DXGI_FORMAT_R32G32_FLOAT;
-		l_polygonLayout[3].InputSlot = 0;
-		l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		l_polygonLayout[3].InstanceDataStepRate = 0;
-
-		l_polygonLayout[4].SemanticName = "PAD_A";
-		l_polygonLayout[4].SemanticIndex = 0;
-		l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		l_polygonLayout[4].InputSlot = 0;
-		l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		l_polygonLayout[4].InstanceDataStepRate = 0;
-
-		l_polygonLayout[5].SemanticName = "SV_InstanceID";
-		l_polygonLayout[5].SemanticIndex = 0;
-		l_polygonLayout[5].Format = DXGI_FORMAT_R32_UINT;
-		l_polygonLayout[5].InputSlot = 0;
-		l_polygonLayout[5].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-		l_polygonLayout[5].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		l_polygonLayout[5].InstanceDataStepRate = 0;
-
-		// Get a count of the elements in the layout.
-		l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
-		l_PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
-
-		CreateShaderPrograms(DX12RenderPassComp);
-	
 		if (DX12RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
 		{
 			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
@@ -1046,6 +979,17 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 		l_PSO->m_GraphicsPSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
 		l_PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
 
+		if (!DX12RenderPassComp->m_RootSignature.Get())
+		{
+			Log(Verbose, "Skipping creating DX12 PSO for ", DX12RenderPassComp->m_InstanceName.c_str());
+			return true;
+		}
+
+		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RenderPassComp->m_RootSignature.Get();
+
+        CreateInputLayout(l_PSO);
+		CreateShaderPrograms(DX12RenderPassComp);
+		
 		auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
 		if (FAILED(l_HResult))
 		{
@@ -1074,6 +1018,62 @@ bool DX12Helper::CreatePSO(DX12RenderPassComponent* DX12RenderPassComp, ComPtr<I
 	Log(Verbose, "", DX12RenderPassComp->m_InstanceName.c_str(), " PSO has been created.");
 
 	return true;
+}
+
+void Inno::DX12Helper::CreateInputLayout(Inno::DX12PipelineStateObject* PSO)
+{
+    static D3D12_INPUT_ELEMENT_DESC l_polygonLayout[6];
+
+    l_polygonLayout[0].SemanticName = "POSITION";
+    l_polygonLayout[0].SemanticIndex = 0;
+    l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    l_polygonLayout[0].InputSlot = 0;
+    l_polygonLayout[0].AlignedByteOffset = 0;
+    l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+    l_polygonLayout[0].InstanceDataStepRate = 0;
+
+    l_polygonLayout[1].SemanticName = "NORMAL";
+    l_polygonLayout[1].SemanticIndex = 0;
+    l_polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    l_polygonLayout[1].InputSlot = 0;
+    l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+    l_polygonLayout[1].InstanceDataStepRate = 0;
+
+    l_polygonLayout[2].SemanticName = "TANGENT";
+    l_polygonLayout[2].SemanticIndex = 0;
+    l_polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    l_polygonLayout[2].InputSlot = 0;
+    l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+    l_polygonLayout[2].InstanceDataStepRate = 0;
+
+    l_polygonLayout[3].SemanticName = "TEXCOORD";
+    l_polygonLayout[3].SemanticIndex = 0;
+    l_polygonLayout[3].Format = DXGI_FORMAT_R32G32_FLOAT;
+    l_polygonLayout[3].InputSlot = 0;
+    l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+    l_polygonLayout[3].InstanceDataStepRate = 0;
+
+    l_polygonLayout[4].SemanticName = "PAD_A";
+    l_polygonLayout[4].SemanticIndex = 0;
+    l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    l_polygonLayout[4].InputSlot = 0;
+    l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+    l_polygonLayout[4].InstanceDataStepRate = 0;
+
+    l_polygonLayout[5].SemanticName = "SV_InstanceID";
+    l_polygonLayout[5].SemanticIndex = 0;
+    l_polygonLayout[5].Format = DXGI_FORMAT_R32_UINT;
+    l_polygonLayout[5].InputSlot = 0;
+    l_polygonLayout[5].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    l_polygonLayout[5].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+    l_polygonLayout[5].InstanceDataStepRate = 0;
+
+    uint32_t l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+    PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
 }
 
 bool DX12Helper::CreateShaderPrograms(DX12RenderPassComponent* DX12RenderPassComp)
