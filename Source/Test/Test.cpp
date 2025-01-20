@@ -200,14 +200,14 @@ bool CheckCyclic(std::vector<Handle<ITask>> tasks, size_t initialIndex, size_t t
 template <typename Func, typename... Args>
 Handle<ITask> Submit(const char* name, int32_t threadID, Func&& func, Args&&... args)
 {
-	auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-	using ResultType = std::invoke_result_t<decltype(BoundTask)>;
+	auto l_BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
+	using ResultType = std::invoke_result_t<decltype(l_BoundTask)>;
 	using PackagedTask = std::packaged_task<ResultType()>;
 	using TaskType = Task<PackagedTask>;
 
-	PackagedTask Task{ std::move(BoundTask) };
-	auto l_task = std::make_unique<TaskType>(std::move(Task), name, ITask::Type::Once);
-	auto l_handle = Handle<ITask>(l_task.get());
+	PackagedTask l_PackagedTask{ std::move(l_BoundTask) };
+	auto l_task = new Task(std::move(l_PackagedTask), ITask::Desc(name, ITask::Type::Once));
+	auto l_handle = Handle<ITask>(l_task);
 	g_Engine->Get<TaskScheduler>()->AddTask(l_handle, threadID);
 
 	return l_handle;
