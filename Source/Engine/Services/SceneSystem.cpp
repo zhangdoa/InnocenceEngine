@@ -30,21 +30,21 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 
 	std::sort(m_sceneLoadingStartCallbacks.begin(), m_sceneLoadingStartCallbacks.end(),
 		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
-			return A.second > B.second;
+			return A.second < B.second;
 		});
 
 	std::sort(m_sceneLoadingFinishCallbacks.begin(), m_sceneLoadingFinishCallbacks.end(),
 		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
-			return A.second > B.second;
+			return A.second < B.second;
 		});
+
+	Log(Verbose, "Loading scene ", fileName, "...");
 
 	for (auto& i : m_sceneLoadingStartCallbacks)
 	{
 		Log(Verbose, "Scene loading start callback (priority: ", i.second, ") is called.");
 		(*i.first)();
 	}
-
-	Log(Verbose, "Loading scene ", fileName, "...");
 
 	JSONWrapper::loadScene(fileName);
 
@@ -61,14 +61,13 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 	m_isLoadingScene = false;
 
 	Log(Success, "Scene ", fileName, " has been loaded.");
-
 	
 	return true;
 }
 
 bool SceneSystem::Setup(ISystemConfig* systemConfig)
 {
-	f_SceneLoadingStartCallback = [&]() 
+	f_SceneLoadingStartedCallback = [&]() 
 	{
 		Log(Verbose, "Resetting scene hierarchy map...");
 
@@ -83,8 +82,8 @@ bool SceneSystem::Setup(ISystemConfig* systemConfig)
 		m_needUpdate = true;
 	};
 
-	addSceneLoadingStartCallback(&f_SceneLoadingStartCallback, -1);
-	addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback, -1);
+	AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 0);
+	AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishCallback, 0);
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -185,13 +184,13 @@ bool SceneSystem::isLoadingScene()
 	return m_isLoadingScene;
 }
 
-bool SceneSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority)
+bool SceneSystem::AddSceneLoadingStartedCallback(std::function<void()>* functor, int32_t priority)
 {
 	m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
 	return true;
 }
 
-bool SceneSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority)
+bool SceneSystem::AddSceneLoadingFinishedCallback(std::function<void()>* functor, int32_t priority)
 {
 	m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
 	return true;

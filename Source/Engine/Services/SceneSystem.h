@@ -23,8 +23,8 @@ namespace Inno
 		bool saveScene(const char* fileName);
 		bool isLoadingScene();
 
-		bool addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority = -1);
-		bool addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority = -1);
+		bool AddSceneLoadingStartedCallback(std::function<void()>* functor, int32_t priority);
+		bool AddSceneLoadingFinishedCallback(std::function<void()>* functor, int32_t priority);
 
 		const SceneHierarchyMap& getSceneHierarchyMap();
 
@@ -49,7 +49,7 @@ namespace Inno
 		SceneHierarchyMap m_SceneHierarchyMap;
 		std::atomic<bool> m_needUpdate = true;
 
-		std::function<void()> f_SceneLoadingStartCallback;
+		std::function<void()> f_SceneLoadingStartedCallback;
 		std::function<void()> f_SceneLoadingFinishCallback;
 	};
 }

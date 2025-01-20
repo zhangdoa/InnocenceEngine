@@ -71,7 +71,7 @@ namespace Inno
 		Vec4 m_posOffset;
 		std::default_random_engine m_generator;
 
-		std::function<void()> f_sceneLoadingFinishCallback;
+		std::function<void()> f_sceneLoadingFinishedCallback;
 		std::function<void()> f_loadTestScene;
 		std::function<void()> f_convertModel;
 
@@ -439,7 +439,7 @@ namespace Inno
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
-		f_sceneLoadingFinishCallback = [&]() {
+		f_sceneLoadingFinishedCallback = [&]() {
 			if (!m_player)
 				m_player = new Player();
 			m_player->Setup();
@@ -459,7 +459,7 @@ namespace Inno
 			m_ObjectStatus = ObjectStatus::Activated;
 		};
 
-		g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
+		g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 		return true;
 	}

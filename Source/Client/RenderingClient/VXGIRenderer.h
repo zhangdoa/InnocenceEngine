@@ -48,6 +48,6 @@ namespace Inno
 		GPUResourceComponent *m_result;
 
 		bool m_isInitialLoadScene = true;
-		std::function<void()> f_sceneLoadingFinishCallback;	
+		std::function<void()> f_sceneLoadingFinishedCallback;	
 	};
 }

@@ -16,7 +16,7 @@ namespace EntityManagerNS
 	TObjectPool<Entity>* m_EntityPool;
 	ThreadSafeVector<Entity*> m_Entities;
 
-	std::function<void()> f_SceneLoadingStartCallback;
+	std::function<void()> f_SceneLoadingStartedCallback;
 }
 
 using namespace EntityManagerNS;
@@ -25,7 +25,7 @@ bool EntityManager::Setup(ISystemConfig* systemConfig)
 {
 	m_EntityPool = TObjectPool<Entity>::Create(m_MaxEntity);
 
-	f_SceneLoadingStartCallback = [&]() 
+	f_SceneLoadingStartedCallback = [&]() 
 	{
 		Log(Verbose, "Clearing all entities...");
 
@@ -44,7 +44,7 @@ bool EntityManager::Setup(ISystemConfig* systemConfig)
 		Log(Success, "All entities have been cleared.");
 	};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 0);
 
 	return true;
 }

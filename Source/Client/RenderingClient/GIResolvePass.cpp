@@ -69,8 +69,8 @@ namespace GIResolvePass
 	Vec4 m_irradianceVolumePosOffset;
 	Vec4 m_irradianceVolumeRange;
 
-	std::function<void()> f_sceneLoadingFinishCallback;
-	std::function<void()> f_sceneLoadingStartCallback;
+	std::function<void()> f_sceneLoadingFinishedCallback;
+	std::function<void()> f_sceneLoadingStartedCallback;
 	std::function<void()> f_reloadGIData;
 	bool m_needToReloadGIData = false;
 
@@ -330,11 +330,11 @@ bool GIResolvePass::Setup()
 	setupProbes();
 	setupIrradianceVolume();
 
-	f_sceneLoadingFinishCallback = []() { InitializeGPUBuffers(); };
-	f_sceneLoadingStartCallback = []() { DeleteGPUBuffers(); };
+	f_sceneLoadingStartedCallback = []() { DeleteGPUBuffers(); };
+	f_sceneLoadingFinishedCallback = []() { InitializeGPUBuffers(); };
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
-	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 0);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	return true;
 }

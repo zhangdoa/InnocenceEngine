@@ -67,7 +67,7 @@ namespace Inno
 
 		DoubleBuffer<std::vector<CullingResult>, true> m_CullingResults;
 
-		std::function<void()> f_SceneLoadingStartCallback;
+		std::function<void()> f_SceneLoadingStartedCallback;
 	};
 }
 
@@ -79,7 +79,7 @@ bool PhysicsSystemImpl::Setup()
 	PhysXWrapper::get().Setup();
 #endif
 
-	f_SceneLoadingStartCallback = [&]()
+	f_SceneLoadingStartedCallback = [&]()
 		{
 			Log(Verbose, "Clearing all physics system data...");
 
@@ -105,7 +105,7 @@ bool PhysicsSystemImpl::Setup()
 			Log(Success, "All physics system data has been cleared.");
 		};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 1);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -113,6 +113,9 @@ bool PhysicsSystemImpl::Setup()
 
 bool PhysicsSystemImpl::Update()
 {
+    if (g_Engine->Get<SceneSystem>()->isLoadingScene())
+        return true;
+			
 	for (auto PDC : m_Components)
 	{
 		UpdatePhysicsComponent(PDC);

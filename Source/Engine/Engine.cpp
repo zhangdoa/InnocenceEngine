@@ -521,6 +521,27 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			return true;
 		});
 
+	m_pImpl->f_SceneLoadingStartedCallback = [&]()
+	{
+		m_pImpl->m_LogicClientUpdateTask->Deactivate();
+		m_pImpl->m_PreCullingTask->Deactivate();
+		m_pImpl->m_CullingTask->Deactivate();
+		m_pImpl->m_PreRenderingTask->Deactivate();
+		m_pImpl->m_RenderingClientTask->Deactivate();
+	};
+
+	m_pImpl->f_SceneLoadingFinishedCallback = [&]()
+	{
+		m_pImpl->m_LogicClientUpdateTask->Activate();
+		m_pImpl->m_PreCullingTask->Activate();
+		m_pImpl->m_CullingTask->Activate();
+		m_pImpl->m_PreRenderingTask->Activate();
+		m_pImpl->m_RenderingClientTask->Activate();
+	};
+
+	Get<SceneSystem>()->AddSceneLoadingStartedCallback(&m_pImpl->f_SceneLoadingStartedCallback, -1);
+	Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&m_pImpl->f_SceneLoadingFinishedCallback, 10);
+
 	m_pImpl->m_ObjectStatus = ObjectStatus::Created;
 	Log(Success, "Engine setup finished.");
 

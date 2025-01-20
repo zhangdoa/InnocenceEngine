@@ -33,7 +33,7 @@ namespace GIDataLoader
 	bool m_IsBrickFactorLoaded = false;
 	bool m_IsProbeLoaded = false;
 
-	std::function<void()> f_sceneLoadingFinishCallback;
+	std::function<void()> f_sceneLoadingFinishedCallback;
 
 	auto m_testCubemapResolution = 128;
 	auto m_sampleCountPerFace = m_testCubemapResolution * m_testCubemapResolution;
@@ -103,7 +103,7 @@ bool GIDataLoader::Setup()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	f_sceneLoadingFinishCallback = []()
+	f_sceneLoadingFinishedCallback = []()
 	{
 		m_IsSurfelLoaded = false;
 		m_IsBrickLoaded = false;
@@ -112,7 +112,7 @@ bool GIDataLoader::Setup()
 		loadGIData();
 	};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	////
 	m_testSampleCubemap = l_renderingServer->AddTextureComponent("TestSampleCubemap/");

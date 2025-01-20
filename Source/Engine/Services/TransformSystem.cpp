@@ -96,7 +96,7 @@ bool TransformSystem::Setup(ISystemConfig* systemConfig)
 		}
 	};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishCallback, 1);
 
 	m_RootTransformEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "RootTransform/");
 
@@ -116,6 +116,9 @@ bool TransformSystem::Initialize()
 
 bool TransformSystem::Update()
 {
+    if (g_Engine->Get<SceneSystem>()->isLoadingScene())
+        return true;
+
 	SimulateTransformComponents();
 
 	return true;

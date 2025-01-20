@@ -62,9 +62,8 @@ namespace PhysXWrapperNS
 	PxMaterial* gMaterial = nullptr;
 
 	bool m_needSimulate = false;
-	std::atomic<bool> m_allowUpdate = true;
-	std::function<void()> f_sceneLoadingStartCallback;
-	std::function<void()> f_pauseSimulate;
+	std::function<void()> f_sceneLoadingStartedCallback;
+	std::function<void()> f_TogglePhysXUpdateTask;
 	Handle<ITask> m_PhysXUpdateTask;
 
 	std::mutex m_mutex;
@@ -116,7 +115,7 @@ bool PhysXWrapperNS::Setup()
 
 	PhysXActors.reserve(65536);
 
-	f_sceneLoadingStartCallback = [&]() 
+	f_sceneLoadingStartedCallback = [&]() 
 	{
 		m_needSimulate = false;
 
@@ -132,7 +131,7 @@ bool PhysXWrapperNS::Setup()
 		Log(Success, "All PhysX Actors have been removed.");
 	};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 1);
 
 	m_PhysXUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("PhysXUpdateTask", ITask::Type::Recurrent, 3), [&]()
 		{

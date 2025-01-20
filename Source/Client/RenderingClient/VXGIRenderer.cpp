@@ -25,11 +25,11 @@ bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	f_sceneLoadingFinishCallback = [&]() {
+	f_sceneLoadingFinishedCallback = [&]() {
 		m_isInitialLoadScene = true;
 	};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 	
 	m_VXGICBuffer = l_renderingServer->AddGPUBufferComponent("VXGIPassCBuffer/");
 	m_VXGICBuffer->m_ElementCount = 1;

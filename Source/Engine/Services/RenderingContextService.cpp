@@ -60,8 +60,8 @@ namespace Inno
 		std::vector<Vec2> m_haltonSampler;
 		int32_t m_currentHaltonStep = 0;
 
-		std::function<void()> f_sceneLoadingStartCallback;
-		std::function<void()> f_sceneLoadingFinishCallback;
+		std::function<void()> f_sceneLoadingStartedCallback;
+		std::function<void()> f_sceneLoadingFinishedCallback;
 
 		bool Setup(ISystemConfig* systemConfig);
 		bool Initialize();
@@ -104,7 +104,7 @@ void RenderingContextServiceImpl::initializeHaltonSampler()
 
 bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
-	f_sceneLoadingStartCallback = [&]()
+	f_sceneLoadingStartedCallback = [&]()
 		{
 			Log(Verbose, "Clearing all rendering context data...");
 
@@ -115,7 +115,7 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 			Log(Success, "All rendering context data has been cleared.");
 		};
 
-	f_sceneLoadingFinishCallback = [&]()
+	f_sceneLoadingFinishedCallback = [&]()
 		{
 			// @TODO:
 			std::vector<BillboardPassDrawCallInfo> l_billboardPassDrawCallInfoVectorA(3);
@@ -128,8 +128,8 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 			m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorB));
 		};
 
-	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
-	g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 0);
+	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
