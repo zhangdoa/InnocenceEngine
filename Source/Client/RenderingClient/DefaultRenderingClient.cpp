@@ -13,6 +13,11 @@ bool DefaultRenderingClient::Initialize()
 	return m_Impl->Initialize();
 }
 
+bool DefaultRenderingClient::Prepare()
+{
+	return m_Impl->Prepare();
+}
+
 bool DefaultRenderingClient::Render(IRenderingConfig *renderingConfig)
 {
 	return m_Impl->Render(renderingConfig);

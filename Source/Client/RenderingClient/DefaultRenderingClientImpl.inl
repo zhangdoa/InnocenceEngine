@@ -52,6 +52,7 @@ namespace Inno
 		// Inherited via IRenderingClient
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
+		bool Prepare() override;
 		bool Render(IRenderingConfig* renderingConfig = nullptr) override;
 		bool Terminate() override;
 
@@ -66,6 +67,7 @@ namespace Inno
 
 		std::function<void()> f_SetupJob;
 		std::function<void()> f_InitializeJob;
+		std::function<void()> f_PrepareJob;
 		std::function<void()> f_RenderJob;
 		std::function<void()> f_TerminateJob;
 
@@ -199,13 +201,15 @@ namespace Inno
 			l_renderingServer->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 		};
 
+		f_PrepareJob = [&]() {
+			DefaultGPUBuffers::Upload();
+		};
+
 		f_RenderJob = [&]() {
 			auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 			auto l_renderingServer = g_Engine->getRenderingServer();
 			GPUResourceComponent* l_canvas;
 			RenderPassComponent* l_canvasOwner;
-
-			DefaultGPUBuffers::Upload();
 
 			TiledFrustumGenerationPass::Get().PrepareCommandList();
 			LightCullingPass::Get().PrepareCommandList();
@@ -506,6 +510,13 @@ namespace Inno
 
 		m_ObjectStatus = ObjectStatus::Activated;
 
+		return true;
+	}
+
+	bool DefaultRenderingClientImpl::Prepare()
+	{
+		f_PrepareJob();
+		
 		return true;
 	}
 
