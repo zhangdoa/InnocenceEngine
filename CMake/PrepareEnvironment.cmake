@@ -38,6 +38,12 @@ file(COPY
     ${IMGUI_SRC}/backends/imgui_impl_dx12.cpp
     DESTINATION ${IMGUI_DST}
 )
+file(COPY
+    ${IMGUI_SRC}/backends/imgui_impl_opengl3.h
+    ${IMGUI_SRC}/backends/imgui_impl_opengl3.cpp
+    ${IMGUI_SRC}/backends/imgui_impl_opengl3_loader.h 
+    DESTINATION ${IMGUI_DST}
+)
 elseif (APPLE)
     message(STATUS "Support for ImGUI is not ready on macOS yet")
 elseif (UNIX)
