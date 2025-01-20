@@ -35,40 +35,10 @@ void IRenderingServer::TransferDataToGPU()
 
 void IRenderingServer::InitializeMeshComponent(MeshComponent* rhs, bool AsyncUploadToGPU)
 {
-	if (AsyncUploadToGPU)
-	{
-		m_uninitializedMeshes.push(rhs);
-	}
-	else
-	{
-		ITask::Desc taskDesc;
-		taskDesc.m_Name = "MeshComponentInitializeTask";
-		taskDesc.m_Type = ITask::Type::Once;
-		taskDesc.m_ThreadID = 2;
-
-		auto l_MeshComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
-			[=]() { InitializeMeshComponent(rhs); });
-		l_MeshComponentInitializeTask->Activate();
-		l_MeshComponentInitializeTask->Wait();
-	}
+	m_uninitializedMeshes.push(rhs);
 }
 
 void IRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs, bool AsyncUploadToGPU)
 {
-	if (AsyncUploadToGPU)
-	{
-		m_uninitializedMaterials.push(rhs);
-	}
-	else
-	{
-		ITask::Desc taskDesc;
-		taskDesc.m_Name = "MaterialComponentInitializeTask";
-		taskDesc.m_Type = ITask::Type::Once;
-		taskDesc.m_ThreadID = 2;
-
-		auto l_MaterialComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
-			[=]() { InitializeMaterialComponent(rhs); });
-		l_MaterialComponentInitializeTask->Activate();			
-		l_MaterialComponentInitializeTask->Wait();
-	}
+	m_uninitializedMaterials.push(rhs);
 }

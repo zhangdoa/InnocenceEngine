@@ -1875,6 +1875,8 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 
 void DX12RenderingServer::TransferDataToGPU()
 {
+	IRenderingServer::TransferDataToGPU();
+	
 	if (m_dirtyBuffers.empty())
 		return;
 
