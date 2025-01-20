@@ -17,6 +17,7 @@
 [submodule "Source/External/GitSubmodules/imgui"]
 	path = Source/External/GitSubmodules/imgui
 	url = https://github.com/ocornut/imgui
+	branch = v1.91.7
 	ignore = dirty
 [submodule "Source/External/GitSubmodules/json"]
 	path = Source/External/GitSubmodules/json
