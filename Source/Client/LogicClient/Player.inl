@@ -144,44 +144,57 @@ namespace Inno
 
         // -z actually so Direction::Backward
         f_moveForward = [&]() {
+            auto l_tickTime = g_Engine->getTickTime();
+            l_tickTime;
+            auto l_moveSpeed = m_moveSpeed * l_tickTime;
+
             if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
             {
-                Move(m_playerTransformComponent, Direction::Backward, m_moveSpeed);
+                Move(m_playerTransformComponent, Direction::Backward, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Backward, m_moveSpeed);
+                Move(m_activeCameraTransformComponent, Direction::Backward, l_moveSpeed);
             }
         };
         // +z actually so Direction::Backward
         f_moveBackward = [&]() {
+            auto l_tickTime = g_Engine->getTickTime();
+            l_tickTime;
+            auto l_moveSpeed = m_moveSpeed * l_tickTime;            
             if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
             {
-                Move(m_playerTransformComponent, Direction::Forward, m_moveSpeed);
+                Move(m_playerTransformComponent, Direction::Forward, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Forward, m_moveSpeed);
+                Move(m_activeCameraTransformComponent, Direction::Forward, l_moveSpeed);
             }
         };
         f_moveLeft = [&]() {
+            auto l_tickTime = g_Engine->getTickTime();
+            l_tickTime;
+            auto l_moveSpeed = m_moveSpeed * l_tickTime;             
             if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
             {
-                Move(m_playerTransformComponent, Direction::Left, m_moveSpeed);
+                Move(m_playerTransformComponent, Direction::Left, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Left, m_moveSpeed);
+                Move(m_activeCameraTransformComponent, Direction::Left, l_moveSpeed);
             }
         };
         f_moveRight = [&]() {
+            auto l_tickTime = g_Engine->getTickTime();
+            l_tickTime;
+            auto l_moveSpeed = m_moveSpeed * l_tickTime;   
             if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
             {
-                Move(m_playerTransformComponent, Direction::Right, m_moveSpeed);
+                Move(m_playerTransformComponent, Direction::Right, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Right, m_moveSpeed);
+                Move(m_activeCameraTransformComponent, Direction::Right, l_moveSpeed);
             }
         };
 
