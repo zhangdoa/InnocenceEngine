@@ -6,6 +6,8 @@
 #include "../Common/Randomizer.h"
 #include "../Interface/ISystem.h"
 
+#include "../Engine.h"
+
 namespace Inno
 {
 	class IComponentFactory
@@ -33,14 +35,22 @@ namespace Inno
 
 		bool CleanUp(ObjectLifespan objectLifespan)
 		{
-			m_ComponentPointers.for_each([this, objectLifespan](T* component)
+			if (m_ComponentPointers.empty())
+				return true;
+
+			Log(Verbose, "Remove ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), "!");
+			m_ComponentPointers.for_each([this, objectLifespan](T*& component)
 			{
 				if (component->m_ObjectLifespan == objectLifespan)
 				{
-					Destroy(component);
+					DestroyComponent(component);
+					component = nullptr;
 				}
 			});
 
+			m_ComponentPointers.erase_if([](T* component) { return component == nullptr; });
+
+			Log(Verbose, "Remove ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done!");
 			return true;
 		}
 
@@ -80,16 +90,12 @@ namespace Inno
 
 		void Destroy(T* component)
 		{
-			if (!component)
+			if (!DestroyComponent(component))
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't destroy ", T::GetTypeName(), " by nullptr!");
 				return;
 			}
 
-			component->m_ObjectStatus = ObjectStatus::Terminated;
 			m_ComponentPointers.eraseByValue(component);
-			m_ComponentLUT.erase(component->m_Owner);
-			static_cast<TObjectPool<T>*>(m_ComponentPool)->Destroy(component);
 		}
 
 		T* Find(const Entity* owner)
@@ -131,6 +137,21 @@ namespace Inno
 		}
 
 	private:
+		bool DestroyComponent(T* component)
+		{
+			if (!component)
+			{
+				Log(Error, T::GetTypeName(), "ComponentFactory: Can't destroy ", T::GetTypeName(), " by nullptr!");
+				return false;
+			}
+
+			component->m_ObjectStatus = ObjectStatus::Terminated;
+			m_ComponentLUT.erase(component->m_Owner);
+			static_cast<TObjectPool<T>*>(m_ComponentPool)->Destroy(component);
+
+			return true;
+		}
+
 		uint32_t m_MaxComponentCount = 0;
 		uint32_t m_CurrentComponentIndex = 0;
 		IObjectPool* m_ComponentPool;
@@ -225,10 +246,12 @@ namespace Inno
 
 		bool CleanUp(ObjectLifespan objectLifespan)
 		{
+			Log(Verbose, "ComponentManager is cleaning up...");
 			for (auto& i : m_ComponentFactories)
 			{
 				i.second->CleanUp(objectLifespan);
 			}
+			Log(Success, "ComponentManager has been cleaned up.");
 			return true;
 		}
 
@@ -244,13 +267,12 @@ namespace Inno
 		{
 			const std::type_info& l_TypeInfo = typeid(T);
 			auto l_typeHashCode = l_TypeInfo.hash_code();
-
 			if (m_ComponentTypeIndexLUT.find(l_typeHashCode) != m_ComponentTypeIndexLUT.end())
 			{
 				return std::static_pointer_cast<TComponentFactory<T>>(m_ComponentFactories[l_typeHashCode]);
 			}
 
-			Log(Error, "", l_TypeInfo.name(), " is not registered!");
+			Log(Error, l_TypeInfo.name(), " is not registered!");
 
 			return nullptr;
 		}
