@@ -44,7 +44,6 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 		(*i.first)();
 	}
 
-	g_Engine->Get<TaskScheduler>()->Freeze();
 	Log(Verbose, "Loading scene ", fileName, "...");
 
 	JSONWrapper::loadScene(fileName);
@@ -63,7 +62,6 @@ bool SceneSystem::loadSceneSync(const char* fileName)
 
 	Log(Success, "Scene ", fileName, " has been loaded.");
 
-	g_Engine->Get<TaskScheduler>()->Unfreeze();
 	
 	return true;
 }

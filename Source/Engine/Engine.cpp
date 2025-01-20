@@ -109,17 +109,15 @@ namespace Inno
 		std::atomic<bool> m_isRendering = false;
 		std::atomic<bool> m_allowRender = false;
 
-		std::function<void()> f_LogicClientUpdateFunction;
-		std::function<void()> f_PhysicsSystemUpdateBVHFunction;
-		std::function<void()> f_PhysicsSystemCullingFunction;
-		std::function<void()> f_RenderingContextServiceUpdateFunction;
-		std::function<void()> f_RenderingServerUpdateFunction;
+		std::function<void()> f_SceneLoadingStartedCallback;
+		std::function<void()> f_SceneLoadingFinishedCallback;
 
 		Handle<ITask> m_LogicClientUpdateTask;
 		Handle<ITask> m_PreCullingTask;
 		Handle<ITask> m_CullingTask;
-		Handle<ITask> m_RenderingContextServiceUpdateTask;
-		Handle<ITask> m_RenderingServerUpdateTask;
+		Handle<ITask> m_PreRenderingTask;
+		Handle<ITask> m_RenderingClientTask;
+		Handle<ITask> m_RenderingServerTask;
 
 		float m_tickTime = 0;
 	};
@@ -438,44 +436,66 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	SystemSetup(GUISystem);
 
-	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Logic Client Update Task", -1, [&]()
-		{
+	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Logic Client Update Task"), [&]()
+		{			
+			if (Get<SceneSystem>()->isLoadingScene())
+				return;
+
 			m_pImpl->m_LogicClient->Update();
 		});
 
-	m_pImpl->m_PreCullingTask = g_Engine->Get<TaskScheduler>()->Submit("Pre-culling Task", -1, [&]()
+	m_pImpl->m_PreCullingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Pre-Culling Task"), [&]()
 		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return true;
+
 			m_pImpl->m_LogicClientUpdateTask->Wait();
 			Get<TransformSystem>()->Update();
 			Get<CameraSystem>()->Update();
 			Get<LightSystem>()->Update();
+			
+			SystemUpdate(EntityManager);
+			return true;
 		});
 
-	m_pImpl->m_CullingTask = g_Engine->Get<TaskScheduler>()->Submit("Culling Task", -1, [&]()
+	m_pImpl->m_CullingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Culling Task"), [&]()
 		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return;
+
 			m_pImpl->m_PreCullingTask->Wait();
 			Get<PhysicsSystem>()->Update();
 			Get<BVHService>()->Update();
 			Get<PhysicsSystem>()->RunCulling();
 		});
 
-	m_pImpl->m_RenderingContextServiceUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Frontend Update Task", -1, [&]()
+	m_pImpl->m_PreRenderingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Pre-Rendering Task"), [&]()
 		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return;
+
 			m_pImpl->m_CullingTask->Wait();
 			Get<RenderingContextService>()->Update();
 			Get<AnimationService>()->Update();
 		});
 
-	m_pImpl->m_RenderingServerUpdateTask = g_Engine->Get<TaskScheduler>()->Submit("Rendering Server Update Task", 2, [&]()
+	m_pImpl->m_RenderingClientTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Client Task", ITask::Type::Recurrent, 2), [&]()
+	{
+		if (Get<SceneSystem>()->isLoadingScene())
+			return;
+
+		m_pImpl->m_RenderingClient->Prepare();
+		m_pImpl->m_RenderingClient->Render();
+	});
+
+	m_pImpl->m_RenderingServerTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Server Task", ITask::Type::Recurrent, 2), [&]()
 		{
 			if (Get<HIDService>()->IsResizing())
 				return true;
 
-			m_pImpl->m_RenderingContextServiceUpdateTask->Wait();
-
+			m_pImpl->m_PreRenderingTask->Wait();
+			
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-
-			m_pImpl->m_RenderingClient->Render();
 
 			m_pImpl->m_RenderingServer->TransferDataToGPU();
 
@@ -491,6 +511,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 			m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
 
+			if (Get<SceneSystem>()->isLoadingScene())
+				return false;
+				
 			SystemOnFrameEnd(TransformSystem);
 			SystemOnFrameEnd(LightSystem);
 			SystemOnFrameEnd(CameraSystem);
@@ -524,15 +547,12 @@ bool Engine::Initialize()
 	SystemInit(AnimationService);
 
 	m_pImpl->m_RenderingClient->Initialize();
-	m_pImpl->m_LogicClient->Initialize();
-
-	m_pImpl->m_LogicClientUpdateTask->Activate();
-	m_pImpl->m_PreCullingTask->Activate();
-	m_pImpl->m_CullingTask->Activate();
-	m_pImpl->m_RenderingContextServiceUpdateTask->Activate();
-	m_pImpl->m_RenderingServerUpdateTask->Activate();
+	
+	m_pImpl->m_RenderingServerTask->Activate();
 
 	SystemInit(GUISystem);
+
+	m_pImpl->m_LogicClient->Initialize();
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "Engine has been initialized.");
@@ -546,11 +566,7 @@ bool Engine::ExecuteDefaultTask()
 
 	m_pImpl->m_WindowSystem->Update();
 	SystemUpdate(HIDService);
-	SystemUpdate(EntityManager);
-
 	SystemUpdate(SceneSystem);
-	if (Get<SceneSystem>()->isLoadingScene())
-		return true;
 
 	if (m_pImpl->m_WindowSystem->GetStatus() != ObjectStatus::Activated)
 	{

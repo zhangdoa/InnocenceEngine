@@ -463,7 +463,7 @@ bool RayTracer::Execute()
 	{
 		RayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_Engine->Get<TaskScheduler>()->Submit("RayTracingTask", 4, [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
+		auto l_rayTracingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("RayTracingTask", ITask::Type::Once, 4), [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
 	}
 
 	return true;

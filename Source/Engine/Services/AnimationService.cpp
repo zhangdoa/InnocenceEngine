@@ -199,8 +199,9 @@ bool AnimationService::InitializeAnimationComponent(AnimationComponent* rhs, boo
 	}
 	else
 	{
-		auto l_AnimationComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("AnimationComponentInitializeTask", 2,
+		auto l_AnimationComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("AnimationComponentInitializeTask", ITask::Type::Once, 2),
 			[=]() { m_Impl->initializeAnimation(rhs); });
+		l_AnimationComponentInitializeTask->Activate();
 		l_AnimationComponentInitializeTask->Wait();
 	}
 

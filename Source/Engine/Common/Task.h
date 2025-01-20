@@ -1,9 +1,7 @@
 #pragma once
-#include <memory>
-#include <type_traits>
-#include <future>
 
 #include "STL14.h"
+#include "Timer.h"
 
 namespace Inno
 {
@@ -19,23 +17,46 @@ namespace Inno
 
         struct Desc
         {
-            const char* m_Name = "Anonymous Task";
-            Type m_Type = Type::Recurrent;
-            int32_t m_ThreadID = -1;
+            const char* m_Name;
+            Type m_Type;
+            uint32_t m_ThreadIndex;
+
+            explicit Desc(const char* name, Type type, uint32_t threadIndex)
+                : m_Name(name)
+                , m_Type(type)
+                , m_ThreadIndex(threadIndex)
+            {
+            }
+
+            explicit Desc(const char* name, Type type)
+                : Desc(name, type, (std::numeric_limits<uint32_t>::max)())
+            {
+            }
+
+            explicit Desc(const char* name)
+                : Desc(name, Type::Recurrent)
+            {
+            }
+
+            Desc(const Desc& rhs)
+                : m_Name(rhs.m_Name)
+                , m_Type(rhs.m_Type)
+                , m_ThreadIndex(rhs.m_ThreadIndex)
+            {
+            }
         };
 
         enum class State
         {
-            Created,
-            Inactive,
-            Waiting,
-            Done,
-            Executing,
+			Idle
+			, Waiting
+			, Busy
+			, Released
         };
 
-        explicit ITask(const char* name, Type type)
-            : m_Name(name)
-            , m_Type(type)
+        explicit ITask(const Desc& desc)
+            : m_Desc(desc)
+            , m_LastAliveTime((Timer::GetCurrentTimeFromEpoch(TimeUnit::Millisecond)))
         {
         }
 
@@ -55,18 +76,24 @@ namespace Inno
 
         const char* GetName() const
         {
-            return m_Name;
+            return m_Desc.m_Name;
         }
 
         Type GetType() const
         {
-            return m_Type;
+            return m_Desc.m_Type;
+        }
+
+        const uint32_t& GetThreadIndex() const
+        {
+            return m_Desc.m_ThreadIndex;
         }
 
     protected:
-        const char* m_Name = "Anonymous Task";
-        Type m_Type = Type::Recurrent;
-        std::atomic<State> m_State = State::Created;
+        Desc m_Desc;
+        std::atomic<State> m_State = State::Idle;
+        std::atomic<uint64_t> m_ExecutionCount = 0;
+        uint64_t m_LastAliveTime = 0;
     };
 
     template <typename Functor>
@@ -75,15 +102,15 @@ namespace Inno
     public:
         static_assert(std::is_invocable_r_v<void, Functor>, "Task's Functor must be callable and return void.");
 
-        Task(Functor&& functor, const char* name, Type type)
-            : ITask(name, type), m_Functor(std::forward<Functor>(functor)) {
+        Task(Functor&& functor, const Desc& desc)
+            : ITask(desc), m_Functor(std::forward<Functor>(functor)) {
             }
 
         ~Task() override {
         }
 
         Task(const Task& rhs)
-            : ITask(rhs.m_Name, rhs.m_Type), m_Functor(rhs.m_Functor) {
+            : ITask(rhs.m_Desc), m_Functor(rhs.m_Functor) {
             }
 
         Task& operator=(const Task& rhs)

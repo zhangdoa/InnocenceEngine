@@ -85,11 +85,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 	if (l_surfels.size())
 	{
-		ITask::Desc taskDesc;
-		taskDesc.m_Name = "GIResolvePassInitializeGPUBuffersTask";
-		taskDesc.m_Type = ITask::Type::Once;
-		taskDesc.m_ThreadID = 2;
-
+		ITask::Desc taskDesc("GIResolvePassInitializeGPUBuffersTask", ITask::Type::Once, 2);
 		auto l_GIResolvePassInitializeGPUBuffersTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
 			[&]() {
 				m_surfelGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SurfelGPUBuffer/");
@@ -280,10 +276,7 @@ bool GIResolvePass::DeleteGPUBuffers()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	ITask::Desc taskDesc;
-	taskDesc.m_Name = "GIResolvePassDeleteGPUBuffersTask";
-	taskDesc.m_Type = ITask::Type::Once;
-	taskDesc.m_ThreadID = 2;
+	ITask::Desc taskDesc("GIResolvePassDeleteGPUBuffersTask", ITask::Type::Once, 2);
 	auto l_GIResolvePassDeleteGPUBuffersTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
 		[&]() {
 			if (m_surfelGPUBufferComp)

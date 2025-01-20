@@ -487,11 +487,7 @@ namespace Inno
 			DefaultGPUBuffers::Terminate();
 		};
 
-		ITask::Desc taskDesc;
-		taskDesc.m_Name = "Default Rendering Client Setup Task";
-		taskDesc.m_Type = ITask::Type::Once;
-		taskDesc.m_ThreadID = 2;
-
+		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_SetupJob);
 		l_DefaultRenderingClientSetupTask->Activate();
 		l_DefaultRenderingClientSetupTask->Wait();
@@ -503,11 +499,7 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Initialize()
 	{
-		ITask::Desc taskDesc;
-		taskDesc.m_Name = "Default Rendering Client Initialization Task";
-		taskDesc.m_Type = ITask::Type::Once;
-		taskDesc.m_ThreadID = 2;
-
+		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_InitializeJob);
 		l_DefaultRenderingClientInitializationTask->Activate();
 		l_DefaultRenderingClientInitializationTask->Wait();

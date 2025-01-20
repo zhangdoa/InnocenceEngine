@@ -21,6 +21,8 @@ namespace Inno
     class Thread
 	{
 	public:
+	    using ID = std::pair<uint32_t, std::thread::id>;
+
 		enum class State
 		{
 			Idle
@@ -43,8 +45,6 @@ namespace Inno
 		const RingBuffer<TaskReport, true>& GetTaskReport();
 
 		void AddTask(Handle<ITask> task);
-
-		using ID = std::pair<uint32_t, std::thread::id>;
 
 	private:
 		void Worker(uint32_t ThreadIndex);

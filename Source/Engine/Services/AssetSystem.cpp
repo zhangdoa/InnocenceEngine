@@ -133,7 +133,7 @@ bool AssetSystem::ConvertModel(const char* fileName, const char* exportPath)
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".md5mesh")
 	{
-		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit("ConvertModelTask", -1, [=]()
+		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Convert Model Task", ITask::Type::Once), [=]()
 			{
 				AssimpWrapper::ConvertModel(l_fileName.c_str(), exportPath);
 			});
@@ -209,7 +209,7 @@ bool AssetSystem::LoadAssetsForComponents(bool AsyncLoad)
 	{
 		if (AsyncLoad)
 		{
-			auto l_loadModelTask = g_Engine->Get<TaskScheduler>()->Submit("LoadModelTask", 4, f_LoadModelTask, i, true);
+			auto l_loadModelTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Load Model Task", ITask::Type::Once, 4), f_LoadModelTask, i, true);
 		}
 		else
 		{

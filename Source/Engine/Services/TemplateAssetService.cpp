@@ -150,11 +150,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 	m_unitSphereMesh->m_MeshShape = MeshShape::Sphere;
 	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	ITask::Desc taskDesc;
-	taskDesc.m_Name = "Default Assets Initialization Task";
-	taskDesc.m_Type = ITask::Type::Once;
-	taskDesc.m_ThreadID = 2;
-
+	ITask::Desc taskDesc("Default Assets Initialization Task", ITask::Type::Once, 2);
 	auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
 		[&]() {
 			g_Engine->getRenderingServer()->InitializeMeshComponent(m_unitTriangleMesh);

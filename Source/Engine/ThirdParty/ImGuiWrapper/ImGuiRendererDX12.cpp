@@ -180,11 +180,7 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 		delete m_RenderPass;
 	};
 
-	ITask::Desc taskDesc;
-	taskDesc.m_Name = "ImGui Renderer Setup Task";
-	taskDesc.m_Type = ITask::Type::Once;
-	taskDesc.m_ThreadID = 2;
-
+	ITask::Desc taskDesc("ImGui Renderer Setup Task", ITask::Type::Once, 2);
 	auto l_SetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_SetupJob);
 	l_SetupTask->Activate();
 	l_SetupTask->Wait();
@@ -196,11 +192,7 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 
 bool ImGuiRendererDX12::Initialize()
 {
-	ITask::Desc taskDesc;
-	taskDesc.m_Name = "ImGui Renderer Initialization Task";
-	taskDesc.m_Type = ITask::Type::Once;
-	taskDesc.m_ThreadID = 2;
-
+	ITask::Desc taskDesc("ImGui Renderer Initialization Task", ITask::Type::Once, 2);
 	auto l_InitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, f_InitializeJob);
 	l_InitializationTask->Activate();
 	l_InitializationTask->Wait();

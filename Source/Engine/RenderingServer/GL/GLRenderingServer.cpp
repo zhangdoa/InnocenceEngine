@@ -197,7 +197,7 @@ bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComps.reserve(128);
 
-	auto l_GLRenderingServerSetupTask = g_Engine->Get<TaskScheduler>()->Submit("GLRenderingServerSetupTask", 2,
+	auto l_GLRenderingServerSetupTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("GLRenderingServerSetupTask", ITask::Type::Once, 2),
 		[&]() {
 			glEnable(GL_DEBUG_OUTPUT);
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -227,7 +227,7 @@ bool GLRenderingServer::Initialize()
 		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
 
-		auto l_GLRenderingServerInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("GLRenderingServerInitializeTask", 2,
+		auto l_GLRenderingServerInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("GLRenderingServerInitializeTask", ITask::Type::Once, 2),
 			[&]() {
 				InitializeShaderProgramComponent(m_SwapChainSPC);
 

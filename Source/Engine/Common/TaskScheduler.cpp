@@ -65,22 +65,24 @@ void TaskScheduler::Unfreeze()
 	Log(Verbose, "All thread workers have been unfrozen.");
 }
 
-void TaskScheduler::AddTask(Handle<ITask> task, int32_t threadID)
+uint32_t TaskScheduler::GenerateThreadIndex(uint32_t threadIndex)
 {
-	int32_t l_ThreadIndex;
-	if (threadID != -1)
+	if (threadIndex != std::numeric_limits<uint32_t>::max())
 	{
-		l_ThreadIndex = threadID;
+		return threadIndex;
 	}
 	else
 	{
 		std::random_device RD;
 		std::mt19937 Gen(RD());
 		std::uniform_int_distribution<> Dis(0, (uint32_t)m_NumThreads - 1);
-		l_ThreadIndex = Dis(Gen);
+		return Dis(Gen);
 	}
+}
 
-	m_Threads[l_ThreadIndex]->AddTask(task);
+void TaskScheduler::AddTask(Handle<ITask> task, uint32_t threadIndex)
+{
+	m_Threads[threadIndex]->AddTask(task);
 }
 
 size_t TaskScheduler::GetThreadCounts()
@@ -88,7 +90,7 @@ size_t TaskScheduler::GetThreadCounts()
 	return m_NumThreads;
 }
 
-const RingBuffer<TaskReport, true>& TaskScheduler::GetTaskReport(int32_t threadID)
+const RingBuffer<TaskReport, true>& TaskScheduler::GetTaskReport(uint32_t threadIndex)
 {
-	return m_Threads[threadID]->GetTaskReport();
+	return m_Threads[threadIndex]->GetTaskReport();
 }

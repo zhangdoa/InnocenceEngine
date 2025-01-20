@@ -65,6 +65,7 @@ namespace PhysXWrapperNS
 	std::atomic<bool> m_allowUpdate = true;
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_pauseSimulate;
+	Handle<ITask> m_PhysXUpdateTask;
 
 	std::mutex m_mutex;
 }
@@ -133,9 +134,52 @@ bool PhysXWrapperNS::Setup()
 
 	g_Engine->Get<SceneSystem>()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
-	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
+	m_PhysXUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("PhysXUpdateTask", ITask::Type::Recurrent, 3), [&]()
+		{
+			if (g_Engine->Get<SceneSystem>()->isLoadingScene())
+				return;
 
-	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
+			gScene->simulate(g_Engine->getTickTime() / 1000.0f);
+			gScene->fetchResults(true);
+
+			for (auto i : PhysXActors)
+			{
+				if (i.isDynamic)
+				{
+					PxTransform t = i.m_PxRigidActor->getGlobalPose();
+					PxVec3 p = t.p;
+					PxQuat q = t.q;
+
+					auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i.m_PxRigidActor);
+
+					if (l_rigidBody->userData)
+					{
+						auto l_PDC = reinterpret_cast<PhysicsComponent*>(l_rigidBody->userData);
+						auto l_transformComponent = l_PDC->m_TransformComponent;
+						l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
+						l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
+						l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
+					}
+				}
+			}
+		});
+
+	f_TogglePhysXUpdateTask = [&]() 
+	{ 
+		m_needSimulate = !m_needSimulate;
+		if (m_needSimulate)
+		{
+			Log(Verbose, "PhysX Update Task has been activated.");
+			m_PhysXUpdateTask->Activate();
+		}
+		else
+		{
+			Log(Verbose, "PhysX Update Task has been deactivated.");
+			m_PhysXUpdateTask->Deactivate();
+		}
+	};
+
+	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_TogglePhysXUpdateTask });
 
 	return true;
 }
@@ -147,42 +191,6 @@ bool PhysXWrapperNS::Initialize()
 
 bool PhysXWrapperNS::Update()
 {
-	if (m_needSimulate)
-	{
-		if (m_allowUpdate)
-		{
-			m_allowUpdate = false;
-
-			g_Engine->Get<TaskScheduler>()->Submit("PhysXUpdateTask", 3, [&]()
-				{
-					gScene->simulate(g_Engine->getTickTime() / 1000.0f);
-					gScene->fetchResults(true);
-
-					for (auto i : PhysXActors)
-					{
-						if (i.isDynamic)
-						{
-							PxTransform t = i.m_PxRigidActor->getGlobalPose();
-							PxVec3 p = t.p;
-							PxQuat q = t.q;
-
-							auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i.m_PxRigidActor);
-
-							if (l_rigidBody->userData)
-							{
-								auto l_PDC = reinterpret_cast<PhysicsComponent*>(l_rigidBody->userData);
-								auto l_transformComponent = l_PDC->m_TransformComponent;
-								l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
-								l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
-								l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
-							}
-						}
-					}
-					m_allowUpdate = true;
-				});
-		}
-	}
-
 	return true;
 }
 
