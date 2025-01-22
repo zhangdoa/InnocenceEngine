@@ -9,12 +9,12 @@ using namespace Inno;
 namespace DefaultGPUBuffers
 {
 	GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
-	GPUBufferComponent* m_MeshGPUBufferComp;
+	GPUBufferComponent* m_PerObjectGPUBufferComp;
 	GPUBufferComponent* m_MaterialGPUBufferComp;
 	GPUBufferComponent* m_PointLightGPUBufferComp;
 	GPUBufferComponent* m_SphereLightGPUBufferComp;
 	GPUBufferComponent* m_CSMGPUBufferComp;
-	GPUBufferComponent* m_dispatchParamsGPUBufferComp;
+	GPUBufferComponent* m_DispatchParamsGPUBufferComp;
 	GPUBufferComponent* m_GICBufferGPUBufferComp;
 	GPUBufferComponent* m_animationGPUBufferComp;
 	GPUBufferComponent* m_billboardGPUBufferComp;
@@ -34,18 +34,21 @@ bool DefaultGPUBuffers::Initialize()
 	auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
 	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
+	m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
 	m_PerFrameCBufferGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
 
-	m_MeshGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
-	m_MeshGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
-	m_MeshGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+	m_PerObjectGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
+	m_PerObjectGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;	
+	m_PerObjectGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_PerObjectGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
 
-	l_renderingServer->InitializeGPUBufferComponent(m_MeshGPUBufferComp);
+	l_renderingServer->InitializeGPUBufferComponent(m_PerObjectGPUBufferComp);
 
 	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
+	m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;		
 	m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
 	m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
 
@@ -70,11 +73,11 @@ bool DefaultGPUBuffers::Initialize()
 	l_renderingServer->InitializeGPUBufferComponent(m_CSMGPUBufferComp);
 
 	// @TODO: get rid of hard-code stuffs
-	m_dispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DispatchParamsCBuffer/");
-	m_dispatchParamsGPUBufferComp->m_ElementCount = 8;
-	m_dispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
+	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DispatchParamsCBuffer/");
+	m_DispatchParamsGPUBufferComp->m_ElementCount = 8;
+	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 
-	l_renderingServer->InitializeGPUBufferComponent(m_dispatchParamsGPUBufferComp);
+	l_renderingServer->InitializeGPUBufferComponent(m_DispatchParamsGPUBufferComp);
 
 	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
 	m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
@@ -116,7 +119,7 @@ bool DefaultGPUBuffers::Upload()
 
 	if (l_PerObjectConstantBuffer.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_MeshGPUBufferComp, l_PerObjectConstantBuffer, 0, l_TotalDrawCallCount);
+		l_renderingServer->UploadGPUBufferComponent(m_PerObjectGPUBufferComp, l_PerObjectConstantBuffer, 0, l_TotalDrawCallCount);
 	}
 	if (l_MaterialConstantBuffer.size() > 0)
 	{
@@ -151,12 +154,12 @@ bool DefaultGPUBuffers::Terminate()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->DeleteGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_MeshGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_PerObjectGPUBufferComp);
 	l_renderingServer->DeleteGPUBufferComponent(m_MaterialGPUBufferComp);
 	l_renderingServer->DeleteGPUBufferComponent(m_PointLightGPUBufferComp);
 	l_renderingServer->DeleteGPUBufferComponent(m_SphereLightGPUBufferComp);
 	l_renderingServer->DeleteGPUBufferComponent(m_CSMGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_dispatchParamsGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->DeleteGPUBufferComponent(m_GICBufferGPUBufferComp);
 	l_renderingServer->DeleteGPUBufferComponent(m_billboardGPUBufferComp);
 
@@ -171,7 +174,7 @@ Inno::GPUBufferComponent* DefaultGPUBuffers::GetGPUBufferComponent(GPUBufferUsag
 	{
 	case GPUBufferUsageType::PerFrame: l_result = m_PerFrameCBufferGPUBufferComp;
 		break;
-	case GPUBufferUsageType::Mesh: l_result = m_MeshGPUBufferComp;
+	case GPUBufferUsageType::Mesh: l_result = m_PerObjectGPUBufferComp;
 		break;
 	case GPUBufferUsageType::Material: l_result = m_MaterialGPUBufferComp;
 		break;
@@ -181,7 +184,7 @@ Inno::GPUBufferComponent* DefaultGPUBuffers::GetGPUBufferComponent(GPUBufferUsag
 		break;
 	case GPUBufferUsageType::CSM: l_result = m_CSMGPUBufferComp;
 		break;
-	case GPUBufferUsageType::ComputeDispatchParam: l_result = m_dispatchParamsGPUBufferComp;
+	case GPUBufferUsageType::ComputeDispatchParam: l_result = m_DispatchParamsGPUBufferComp;
 		break;
 	case GPUBufferUsageType::GI:l_result = m_GICBufferGPUBufferComp;
 		break;

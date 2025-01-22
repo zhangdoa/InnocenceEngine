@@ -7,13 +7,42 @@ namespace Inno
 	class GPUResourceComponent;
 	namespace Type
 	{
-		enum class Accessibility
+		class Accessibility
 		{
-			Immutable,
-			ReadOnly,
-			WriteOnly,
-			ReadWrite
+		public:
+			explicit Accessibility(bool read, bool write)
+				: m_Read(read)
+				, m_Write(write)
+			{
+			}
+
+			bool operator==(const Accessibility& rhs) const
+			{
+				return m_Read == rhs.m_Read && m_Write == rhs.m_Write;
+			}
+
+			bool operator!=(const Accessibility& rhs) const
+			{
+				return !(*this == rhs);
+			}
+			
+			static Accessibility Immutable;
+			static Accessibility ReadOnly;
+			static Accessibility WriteOnly;
+			static Accessibility ReadWrite;
+
+			bool CanRead() const { return m_Read; }
+			bool CanWrite() const { return m_Write; }
+
+		private:
+			bool m_Read = false;
+			bool m_Write = false;
 		};
+
+		Accessibility Accessibility::Immutable = Accessibility(false, false);
+		Accessibility Accessibility::ReadOnly = Accessibility(true, false);
+		Accessibility Accessibility::WriteOnly = Accessibility(false, true);
+		Accessibility Accessibility::ReadWrite = Accessibility(true, true);
 
 		using Index = uint32_t;
 
@@ -29,8 +58,9 @@ namespace Inno
 
 		struct TextureDesc
 		{
-			Accessibility CPUAccessibility = Accessibility::Immutable;
-			Accessibility GPUAccessibility = Accessibility::ReadWrite;
+			Accessibility CPUAccessibility = Accessibility(false, false);
+			Accessibility GPUAccessibility = Accessibility(true, true);
+
 			TextureSampler Sampler = TextureSampler::Invalid;
 			TextureUsage Usage = TextureUsage::Invalid;
 			bool IsSRGB = false;
@@ -237,6 +267,7 @@ namespace Inno
 
 		struct IGPUMemory {};
 
+		const uint32_t MaxDescriptorCount = 65536;
 		struct ResourceBindingLayoutDesc
 		{
 			GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
@@ -244,10 +275,11 @@ namespace Inno
 			ShaderStage m_ShaderStage = ShaderStage::Invalid;
 			Accessibility m_BindingAccessibility = Accessibility::ReadOnly;
 			Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
-			size_t m_DescriptorSetIndex = 0;
-			size_t m_DescriptorIndex = 0;
-			size_t m_SubresourceCount = 1;
+			uint32_t m_DescriptorSetIndex = 0;
+			uint32_t m_DescriptorIndex = 0;
+			uint32_t m_SubresourceCount = 1;
 			bool m_IndirectBinding = false;
+			bool m_IsRootConstant = false;
 		};
 	}
 

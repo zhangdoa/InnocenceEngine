@@ -14,5 +14,6 @@ namespace Inno
 		size_t m_TotalSize = 0;
 		bool m_isAtomicCounter = false;
 		void* m_InitialData = 0;
+		void* m_MappedMemory = 0;
 	};
 }

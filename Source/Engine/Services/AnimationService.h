@@ -5,7 +5,8 @@
 
 #include "../Component/SkeletonComponent.h"
 #include "../Component/AnimationComponent.h"
-
+#include "../Component/ModelComponent.h"
+	
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno

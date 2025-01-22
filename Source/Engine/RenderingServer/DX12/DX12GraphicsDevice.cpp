@@ -1,0 +1,686 @@
+#include "DX12GraphicsDevice.h"
+
+#include "../../Platform/WinWindow/WinWindowSystem.h"
+
+#include "../../Services/RenderingConfigurationService.h"
+
+using namespace Inno;
+#include "../../Engine.h"
+
+#include "DX12Helper_Common.h"
+
+using namespace DX12Helper;
+
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+
+bool DX12GraphicsDevice::CreateHardwareResources()
+{
+    bool l_result = true;
+
+#ifdef INNO_DEBUG
+    l_result &= CreateDebugCallback();
+#endif
+    l_result &= CreatePhysicalDevices();
+    l_result &= CreateGlobalCommandQueues();
+    l_result &= CreateGlobalCommandAllocators();
+    l_result &= CreateSyncPrimitives();
+    l_result &= CreateGlobalDescriptorHeaps();
+    l_result &= CreateMipmapGenerator();
+    l_result &= CreateSwapChain();
+
+    return l_result;
+}
+
+bool DX12GraphicsDevice::ReleaseHardwareResources()
+{
+    m_SamplerDescHeap->GetHeap().ReleaseAndGetAddressOf();
+    m_DSVDescHeap->GetHeap().ReleaseAndGetAddressOf();
+    m_RTVDescHeap->GetHeap().ReleaseAndGetAddressOf();
+    m_ShaderNonVisibleCSUDescHeap->GetHeap().ReleaseAndGetAddressOf();
+    m_CSUDescHeap->GetHeap().ReleaseAndGetAddressOf();
+
+    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    {
+        m_directCommandQueueFence[i].ReleaseAndGetAddressOf();
+        m_computeCommandQueueFence[i].ReleaseAndGetAddressOf();
+        m_copyCommandQueueFence[i].ReleaseAndGetAddressOf();
+    }
+
+    for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
+    {
+        m_GlobalCommandLists[i]->m_DirectCommandList.ReleaseAndGetAddressOf();
+        m_GlobalCommandLists[i]->m_ComputeCommandList.ReleaseAndGetAddressOf();
+        m_GlobalCommandLists[i]->m_CopyCommandList.ReleaseAndGetAddressOf();
+    }
+
+    m_copyCommandAllocator.ReleaseAndGetAddressOf();
+
+    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    {
+        m_directCommandAllocators[i].ReleaseAndGetAddressOf();
+        m_computeCommandAllocators[i].ReleaseAndGetAddressOf();
+    }
+
+    m_directCommandQueue.ReleaseAndGetAddressOf();
+    m_computeCommandQueue.ReleaseAndGetAddressOf();
+    m_copyCommandQueue.ReleaseAndGetAddressOf();
+
+    m_swapChain.ReleaseAndGetAddressOf();
+    m_device.ReleaseAndGetAddressOf();
+    m_adapterOutput.ReleaseAndGetAddressOf();
+    m_adapter.ReleaseAndGetAddressOf();
+    m_factory.ReleaseAndGetAddressOf();
+    m_graphicsAnalysis.ReleaseAndGetAddressOf();
+    m_debugInterface.ReleaseAndGetAddressOf();
+
+#ifdef INNO_DEBUG
+    IDXGIDebug1* pDebug = nullptr;
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
+    {
+        pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+        pDebug->Release();
+    }
+#endif
+
+    return true;
+}
+
+bool DX12GraphicsDevice::GetSwapChainImages()
+{
+    m_swapChainImages.resize(m_swapChainImageCount);
+
+    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    {
+        auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
+        if (FAILED(l_HResult))
+        {
+            Log(Error, "Can't get pointer of swap chain image ", i, "!");
+            return false;
+        }
+        m_swapChainImages[i]->SetName((L"SwapChainBackBuffer_" + std::to_wstring(i)).c_str());
+    }
+
+    return true;
+}
+
+bool DX12GraphicsDevice::AssignSwapChainImages()
+{
+    m_SwapChainRenderPassComp->m_RenderTargets.resize(m_swapChainImageCount);
+
+    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    {
+        auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[i].m_Texture);
+
+        l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
+        l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
+        l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
+        l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
+
+        l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
+    }
+
+    return true;
+}
+
+bool DX12GraphicsDevice::PresentImpl()
+{
+    m_swapChain->Present(0, 0);
+}
+
+bool DX12GraphicsDevice::PostPresent()
+{
+	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+
+	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
+	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
+	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+}
+
+bool DX12GraphicsDevice::Resize()
+{
+    auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+
+    m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+    m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+
+    m_swapChainImages.clear();
+	
+	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
+	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Compute);
+    for (int i = 0; i < m_swapChainImageCount; i++)
+    {
+        UINT64 l_directCommandFinishedSemaphore = ++GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Semaphore[i];
+        GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)->Signal(GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Fence[i].Get(), l_directCommandFinishedSemaphore);
+        if (GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Fence[i]->GetCompletedValue() < l_directCommandFinishedSemaphore)
+        {
+            GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Fence[i]->SetEventOnCompletion(l_directCommandFinishedSemaphore, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)FenceEvent[i]);
+            WaitForSingleObject(GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)FenceEvent[i], INFINITE);
+        }
+    }
+
+    m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
+
+    if (!GetSwapChainImages())
+        return false;   
+}
+
+bool DX12GraphicsDevice::BeginCapture()
+{
+	if (m_graphicsAnalysis != nullptr)
+	{
+		m_graphicsAnalysis->BeginCapture();
+		return true;
+	}
+
+	return false;
+}
+
+bool DX12GraphicsDevice::EndCapture()
+{
+	if (m_graphicsAnalysis != nullptr)
+	{
+		m_graphicsAnalysis->EndCapture();
+		return true;
+	}
+
+	return false;
+}
+
+ComPtr<ID3D12Device8> DX12GraphicsDevice::GetDevice()
+{
+    return m_device.Get();
+}
+
+ComPtr<ID3D12CommandAllocator> DX12GraphicsDevice::GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType)
+{
+    switch (commandListType)
+    {
+        case D3D12_COMMAND_LIST_TYPE_DIRECT:
+            return m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
+        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+            return m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
+        case D3D12_COMMAND_LIST_TYPE_COPY:
+            return m_copyCommandAllocator;
+        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
+        default:
+            throw std::runtime_error("Invalid command list type");
+    }
+}
+
+ComPtr<ID3D12CommandQueue> DX12GraphicsDevice::GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType)
+{
+    switch (commandListType)
+    {
+        case D3D12_COMMAND_LIST_TYPE_DIRECT:
+            return m_directCommandQueue;
+        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+            return m_computeCommandQueue;
+        case D3D12_COMMAND_LIST_TYPE_COPY:
+            return m_copyCommandQueue;
+        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
+        default:
+            throw std::runtime_error("Invalid command list type");
+    }
+}
+
+ComPtr<ID3D12GraphicsCommandList> DX12GraphicsDevice::GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType)
+{
+    switch (commandListType)
+    {
+        case D3D12_COMMAND_LIST_TYPE_DIRECT:
+            return m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
+        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+             return m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_ComputeCommandList;
+        case D3D12_COMMAND_LIST_TYPE_COPY:
+        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
+        default:
+            throw std::runtime_error("Invalid command list type");
+    }        
+}
+
+bool DX12GraphicsDevice::CreateDebugCallback()
+{
+    ID3D12Debug* l_debugInterface;
+
+    auto l_HResult = D3D12GetDebugInterface(IID_PPV_ARGS(&l_debugInterface));
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "Can't get DirectX 12 debug interface!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    l_HResult = l_debugInterface->QueryInterface(IID_PPV_ARGS(&m_debugInterface));
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "Can't query DirectX 12 debug interface!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    m_debugInterface->EnableDebugLayer();
+    // m_debugInterface->SetEnableGPUBasedValidation(true);
+
+    Log(Success, "Debug layer and GPU based validation has been enabled.");
+
+    l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_graphicsAnalysis));
+    if (SUCCEEDED(l_HResult))
+    {
+        Log(Success, "PIX attached.");
+    }
+
+    return true;
+}
+
+bool DX12GraphicsDevice::CreatePhysicalDevices()
+{
+    // Create a DirectX graphics interface factory.
+    UINT l_DXGIFlag = 0;
+#ifdef INNO_DEBUG
+    l_DXGIFlag |= DXGI_CREATE_FACTORY_DEBUG;
+#endif // INNO_DEBUG
+
+    auto l_HResult = CreateDXGIFactory2(l_DXGIFlag, IID_PPV_ARGS(&m_factory));
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "Can't create DXGI factory!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    Log(Success, "DXGI factory has been created.");
+
+    // Choose a dedicated adapter
+    IDXGIAdapter1* l_adapter;
+    UINT adapterIndex = 0;
+    l_HResult = m_factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&l_adapter));
+    if (FAILED(l_HResult))
+    {
+        Log(Warning, "Can't find a high-performance GPU.");
+        l_HResult = m_factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_UNSPECIFIED, IID_PPV_ARGS(&l_adapter));
+        if (FAILED(l_HResult))
+        {
+            Log(Error, "Can't find any capable GPU!");
+            m_ObjectStatus = ObjectStatus::Suspended;
+            return false;
+        }
+    }
+
+    // Check to see if the adapter supports Direct3D 12, but don't create the
+    // actual device yet.
+    if (FAILED(D3D12CreateDevice(l_adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+    {
+        Log(Error, "Adapter doesn't support DirectX 12!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    if (l_adapter == nullptr)
+    {
+        Log(Error, "Can't create a suitable video card adapter!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    m_adapter = reinterpret_cast<IDXGIAdapter4*>(l_adapter);
+
+    DXGI_ADAPTER_DESC3 l_adapter_desc;
+    m_adapter->GetDesc3(&l_adapter_desc);
+    std::wstring l_descL = std::wstring(l_adapter_desc.Description);
+
+    int length = WideCharToMultiByte(CP_UTF8, 0, l_descL.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    std::string l_desc(length, 0);
+    WideCharToMultiByte(CP_UTF8, 0, l_descL.c_str(), -1, l_desc.data(), length, nullptr, nullptr);
+
+    Log(Success, "Adapter for: ", l_desc.c_str(), " has been created.");
+
+    // Enumerate the primary adapter output (monitor).
+    IDXGIOutput* l_adapterOutput;
+    l_HResult = m_adapter->EnumOutputs(0, &l_adapterOutput);
+    if (FAILED(l_HResult))
+    {
+        Log(Warning, "the primary output of the adapter is not connected.");
+        // @TODO: Find a way to enumerate until we get the actual monitor
+    }
+    else
+    {
+        l_HResult = l_adapterOutput->QueryInterface(IID_PPV_ARGS(&m_adapterOutput));
+    }
+
+    uint32_t l_numModes;
+    uint64_t l_stringLength;
+
+    // Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
+    l_HResult = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, NULL);
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    // Create a list to hold all the possible display modes for this monitor/video card combination.
+    std::vector<DXGI_MODE_DESC1> l_displayModeList(l_numModes);
+
+    // Now fill the display mode list structures.
+    l_HResult = m_adapterOutput->GetDisplayModeList1(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, &l_displayModeList[0]);
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "can't fill the display mode list structures!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    // Now go through all the display modes and find the one that matches the screen width and height.
+    // When a match is found store the numerator and denominator of the refresh rate for that monitor.
+    auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+
+    for (uint32_t i = 0; i < l_numModes; i++)
+    {
+        if (l_displayModeList[i].Width == l_screenResolution.x &&
+            l_displayModeList[i].Height == l_screenResolution.y)
+        {
+            m_refreshRate.x = l_displayModeList[i].RefreshRate.Numerator;
+            m_refreshRate.y = l_displayModeList[i].RefreshRate.Denominator;
+        }
+    }
+
+    // Get the adapter (video card) description.
+    l_HResult = m_adapter->GetDesc(&m_adapterDesc);
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "can't get the video card adapter description!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    // Store the dedicated video card memory in megabytes.
+    m_videoCardMemory = (int32_t)(m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+
+    // Convert the name of the video card to a character array and store it.
+    if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
+    {
+        Log(Error, "can't convert the name of the video card to a character array!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    // Release the display mode list.
+    // displayModeList.clear();
+
+    // Set the feature level to DirectX 12.1 to enable using all the DirectX 12 features.
+    // Note: Not all cards support full DirectX 12, this feature level may need to be reduced on some cards to 12.0.
+    auto featureLevel = D3D_FEATURE_LEVEL_12_1;
+
+    // Create the Direct3D 12 device.
+    l_HResult = D3D12CreateDevice(m_adapter.Get(), featureLevel, IID_PPV_ARGS(&m_device));
+    if (FAILED(l_HResult))
+    {
+        Log(Error, "Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
+    if (SUCCEEDED(m_device->CheckFeatureSupport(
+        D3D12_FEATURE_D3D12_OPTIONS,
+        &options,
+        sizeof(options))))
+    {
+        if (!options.TypedUAVLoadAdditionalFormats)
+            Log(Warning, "TypedUAVLoadAdditionalFormats is not supported, can't generate mipmap for sRGB textures.");
+    }
+
+    Log(Success, "D3D device has been created.");
+
+    // Set debug report severity
+    ComPtr<ID3D12InfoQueue> l_pInfoQueue;
+    l_HResult = m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
+
+    l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+    l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+    // l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+
+    return true;
+}
+
+bool DX12GraphicsDevice::CreateGlobalCommandQueues()
+{
+    // Set up the description of the command queues.
+    D3D12_COMMAND_QUEUE_DESC l_graphicCommandQueueDesc = {};
+    l_graphicCommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    l_graphicCommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+    l_graphicCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+    l_graphicCommandQueueDesc.NodeMask = 0;
+
+    D3D12_COMMAND_QUEUE_DESC l_computeCommandQueueDesc = {};
+    l_computeCommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+    l_computeCommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+    l_computeCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+    l_computeCommandQueueDesc.NodeMask = 0;
+
+    D3D12_COMMAND_QUEUE_DESC l_copyCommandQueueDesc = {};
+    l_copyCommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
+    l_copyCommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+    l_copyCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+    l_copyCommandQueueDesc.NodeMask = 0;
+
+    m_directCommandQueue = CreateCommandQueue(&l_graphicCommandQueueDesc, m_device, L"DirectCommandQueue");
+    m_computeCommandQueue = CreateCommandQueue(&l_computeCommandQueueDesc, m_device, L"ComputeCommandQueue");
+    m_copyCommandQueue = CreateCommandQueue(&l_copyCommandQueueDesc, m_device, L"CopyCommandQueue");
+
+    Log(Success, "Global CommandQueues have been created.");
+
+    return true;
+}
+
+bool DX12GraphicsDevice::CreateGlobalCommandAllocators()
+{
+    m_copyCommandAllocator = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, m_device, L"CopyCommandAllocator");
+
+    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    {
+        m_directCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, (L"DirectCommandAllocator_" + std::to_wstring(i)).c_str());
+        m_computeCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, (L"ComputeCommandAllocator_" + std::to_wstring(i)).c_str());
+    }
+
+    Log(Success, "Global CommandAllocators have been created.");
+
+    for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
+    {
+        m_GlobalCommandLists[i] = static_cast<DX12CommandList*>(m_RenderingComponentPool->AddCommandList());
+        CreateCommandList(m_GlobalCommandLists[i], i, L"GPUBufferCommandList");
+    }
+
+    Log(Success, "Global CommandLists have been created.");
+
+    return true;
+}
+
+bool DX12GraphicsDevice::CreateSyncPrimitives()
+{
+    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    {
+        if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence[i]))))
+        {
+            Log(Error, "Can't create Fence for direct CommandQueue!");
+            return false;
+        }
+        if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence[i]))))
+        {
+            Log(Error, "Can't create Fence for compute CommandQueue!");
+            return false;
+        }
+        if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence[i]))))
+        {
+            Log(Error, "Can't create Fence for copy CommandQueue!");
+            return false;
+        }
+#ifdef INNO_DEBUG
+        m_directCommandQueueFence[i]->SetName((L"DirectCommandQueueFence_" + std::to_wstring(i)).c_str());
+        m_computeCommandQueueFence[i]->SetName((L"ComputeCommandQueueFence_" + std::to_wstring(i)).c_str());
+        m_copyCommandQueueFence[i]->SetName((L"CopyCommandQueueFence_" + std::to_wstring(i)).c_str());
+#endif // INNO_DEBUG
+    }
+    Log(Verbose, "Fences for global CommandQueues have been created.");
+
+    return true;
+}
+
+bool DX12GraphicsDevice::CreateGlobalDescriptorHeaps()
+{
+    m_CSUDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaxDescriptorCount, L"GlobalCSUDescHeap_ShaderVisible");
+    m_ShaderNonVisibleCSUDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaxDescriptorCount, L"GlobalCSUDescHeap_ShaderNonVisible", false);
+    m_SamplerDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 128, L"GlobalSamplerDescHeap");
+    m_RTVDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 256, L"GlobalRTVDescHeap", false);
+    m_DSVDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 256, L"GlobalDSVDescHeap", false);
+
+    return m_CSUDescHeap && m_ShaderNonVisibleCSUDescHeap && m_SamplerDescHeap && m_RTVDescHeap && m_DSVDescHeap;
+}
+
+bool DX12GraphicsDevice::CreateMipmapGenerator()
+{
+    D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+    samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    samplerDesc.MinLOD = 0.0f;
+    samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+    samplerDesc.MaxAnisotropy = 0;
+    samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+    samplerDesc.ShaderRegister = 0;
+    samplerDesc.RegisterSpace = 0;
+    samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+    {
+        CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+        CD3DX12_ROOT_PARAMETER rootParameters[3];
+        srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+        srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+        rootParameters[0].InitAsConstants(3, 0);
+        rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
+        rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
+
+        ID3DBlob* signature;
+        ID3DBlob* error;
+        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+        rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+        m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_3DMipmapRootSignature));
+
+        ShaderFilePath l_3DPath = "mipmapGenerator3D.comp/";
+
+        D3D12_COMPUTE_PIPELINE_STATE_DESC l_3DPSODesc = {};
+        l_3DPSODesc.pRootSignature = m_3DMipmapRootSignature;
+
+#ifdef USE_DXIL
+        std::vector<char> l_3DmipmapComputeShader;
+        LoadShaderFile(l_3DmipmapComputeShader, l_3DPath);
+        l_3DPSODesc.CS = { &l_3DmipmapComputeShader[0], l_3DmipmapComputeShader.size() };
+#else
+        ID3DBlob* l_3DmipmapComputeShader;
+        LoadShaderFile(&l_3DmipmapComputeShader, ShaderStage::Compute, l_3DPath);
+        l_3DPSODesc.CS = { reinterpret_cast<UINT8*>(l_3DmipmapComputeShader->GetBufferPointer()), l_3DmipmapComputeShader->GetBufferSize() };
+#endif
+        m_device->CreateComputePipelineState(&l_3DPSODesc, IID_PPV_ARGS(&m_3DMipmapPSO));
+
+        Log(Success, "Mipmap generator for 3D texture has been created.");
+    }
+    {
+        CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+        CD3DX12_ROOT_PARAMETER rootParameters[3];
+        srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+        srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+        rootParameters[0].InitAsConstants(2, 0);
+        rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
+        rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
+
+        ID3DBlob* signature;
+        ID3DBlob* error;
+        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+        rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+        m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_2DMipmapRootSignature));
+
+        ShaderFilePath l_2DPath = "mipmapGenerator2D.comp/";
+        D3D12_COMPUTE_PIPELINE_STATE_DESC l_2DPSODesc = {};
+        l_2DPSODesc.pRootSignature = m_2DMipmapRootSignature;
+
+#ifdef USE_DXIL
+        std::vector<char> l_2DmipmapComputeShader;
+        LoadShaderFile(l_2DmipmapComputeShader, l_2DPath);
+        l_2DPSODesc.CS = { &l_2DmipmapComputeShader[0], l_2DmipmapComputeShader.size() };
+#else
+        ID3DBlob* l_2DmipmapComputeShader;
+        LoadShaderFile(&l_2DmipmapComputeShader, ShaderStage::Compute, l_2DPath);
+        l_2DPSODesc.CS = { reinterpret_cast<UINT8*>(l_2DmipmapComputeShader->GetBufferPointer()), l_2DmipmapComputeShader->GetBufferSize() };
+#endif
+        m_device->CreateComputePipelineState(&l_2DPSODesc, IID_PPV_ARGS(&m_2DMipmapPSO));
+
+        Log(Success, "Mipmap generator for 2D texture has been created.");
+    }
+
+    return true;
+}
+
+bool DX12GraphicsDevice::CreateSwapChain()
+{
+    // Set the swap chain to use double buffering.
+    m_swapChainDesc.BufferCount = m_swapChainImageCount;
+
+    auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+
+    // Set the width and height of the back buffer.
+    m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+    m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+
+    // Set regular 32-bit surface for the back buffer.
+    m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    // Set the usage of the back buffer.
+    m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
+
+    // Turn multisampling off.
+    m_swapChainDesc.SampleDesc.Count = 1;
+    m_swapChainDesc.SampleDesc.Quality = 0;
+
+    // Set to full screen or windowed mode.
+    // @TODO: finish this feature
+
+    // Discard the back buffer contents after presenting.
+    m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+    // Don't set the advanced flags.
+    m_swapChainDesc.Flags = 0;
+
+    m_swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+    // Finally create the swap chain
+    IDXGISwapChain1* l_swapChain1;
+    auto l_hResult = m_factory->CreateSwapChainForHwnd(
+        m_directCommandQueue.Get(),
+        reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(),
+        &m_swapChainDesc,
+        nullptr,
+        nullptr,
+        &l_swapChain1);
+
+    l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
+
+    if (FAILED(l_hResult))
+    {
+        Log(Error, "Can't create swap chain!");
+        m_ObjectStatus = ObjectStatus::Suspended;
+        return false;
+    }
+
+    Log(Success, "Swap chain has been created.");
+
+    return true;
+}

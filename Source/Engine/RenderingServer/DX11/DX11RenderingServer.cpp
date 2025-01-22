@@ -625,7 +625,7 @@ bool DX11RenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
 		{
 			InitializeTextureComponent(l_texture);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
-			l_rhs->m_TextureSlots[i].m_Activate = true;
+			l_rhs->m_TextureSlots[i].m_Activated = true;
 		}
 		else
 		{

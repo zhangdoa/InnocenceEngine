@@ -176,14 +176,14 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
 		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::MainCamera);
-		if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+		//if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			if (l_drawCallData.material->m_ShaderModel == ShaderModel::Transparent)
+			//if (l_drawCallData.material->m_ShaderModel == ShaderModel::Transparent)
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.materialConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
 
 					l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
 				}

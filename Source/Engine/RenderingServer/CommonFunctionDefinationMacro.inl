@@ -1,5 +1,5 @@
 #define AddComponent(renderingServer, component) \
-component##Component * renderingServer##RenderingServer::Add##component##Component(const char * name) \
+component##Component * renderingServer##RenderingComponentPool::Add##component##Component(const char * name) \
 { \
 static std::atomic<uint32_t> l_count = 0; \
 l_count++; \

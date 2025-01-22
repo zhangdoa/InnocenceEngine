@@ -402,20 +402,20 @@ bool VolumetricPass::froxelization()
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::MainCamera);
-		if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			if (l_drawCallData.material->m_ShaderModel == ShaderModel::Volumetric)
-			{
-				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
-				{
-					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.materialConstantBufferIndex, 1);
+		// auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::MainCamera);
+		// if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+		// {
+		// 	if (l_drawCallData.material->m_ShaderModel == ShaderModel::Volumetric)
+		// 	{
+		// 		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+		// 		{
+		// 			l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+		// 			l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
 
-					l_renderingServer->DrawIndexedInstanced(m_froxelizationRenderPassComp, l_drawCallData.mesh);
-				}
-			}
-		}
+		// 			l_renderingServer->DrawIndexedInstanced(m_froxelizationRenderPassComp, l_drawCallData.mesh);
+		// 		}
+		// 	}
+		// }
 	}
 
 	l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0].m_Texture, 3);
@@ -564,19 +564,19 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
 		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::MainCamera);
-		if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			if (l_drawCallData.material->m_ShaderModel == ShaderModel::Volumetric)
-			{
-				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
-				{
-					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.meshConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.materialConstantBufferIndex, 1);
+		// if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+		// {
+		// 	if (l_drawCallData.material->m_ShaderModel == ShaderModel::Volumetric)
+		// 	{
+		// 		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+		// 		{
+		// 			l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+		// 			l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
 
-					l_renderingServer->DrawIndexedInstanced(m_visualizationRenderPassComp, l_drawCallData.mesh);
-				}
-			}
-		}
+		// 			l_renderingServer->DrawIndexedInstanced(m_visualizationRenderPassComp, l_drawCallData.mesh);
+		// 		}
+		// 	}
+		// }
 	}
 
 	l_renderingServer->UnbindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3);

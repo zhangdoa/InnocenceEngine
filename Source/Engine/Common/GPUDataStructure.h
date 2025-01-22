@@ -1,12 +1,12 @@
 #pragma once
 #include "GraphicsPrimitive.h"
-#include "../Component/MeshComponent.h"
-#include "../Component/MaterialComponent.h"
-#include "../Component/TextureComponent.h"
-#include "../Component/ModelComponent.h"
+#include "MathHelper.h"
 
 namespace Inno
 {
+	class MeshComponent;
+	class TextureComponent;
+
 	enum class VisibilityMask
 	{
 		Invalid = 0, MainCamera = 1, Sun = 2
@@ -69,18 +69,28 @@ namespace Inno
 		Mat4 m_prev;
 		Mat4 normalMat;
 		float UUID;
-		float padding[15];
+		uint32_t m_MaterialIndex = 0;
+		float padding[14];
 	};
 
+	struct MaterialAttributes
+	{
+		float AlbedoR = 1.0f;
+		float AlbedoG = 1.0f;
+		float AlbedoB = 1.0f;
+		float Alpha = 1.0f;
+		float Metallic = 0.0f;
+		float Roughness = 1.0f;
+		float AO = 0.0f;
+		float Thickness = 1.0f;
+	};
+
+	const uint32_t MaxTextureSlotCount = 7;
 	struct alignas(16) MaterialConstantBuffer
 	{
-		MaterialAttributes materialAttributes;
-		uint32_t textureSlotMask = 0x00000000;
-		uint32_t materialType = 0;
-		float padding1[6];
-		Mat4 padding2;
-		Mat4 padding3;
-		Mat4 padding4;
+		MaterialAttributes m_MaterialAttributes;
+		uint32_t m_TextureIndices[MaxTextureSlotCount] = { 0, 0, 0, 0, 0, 0, 0 };
+		uint32_t m_MaterialType = 0;
 	};
 
 	struct alignas(16) DispatchParamsConstantBuffer
@@ -131,9 +141,7 @@ namespace Inno
 	struct DrawCallInfo
 	{
 		MeshComponent* mesh = 0;
-		MaterialComponent* material = 0;
-		uint32_t meshConstantBufferIndex = 0;
-		uint32_t materialConstantBufferIndex = 0;
+		uint32_t m_PerObjectConstantBufferIndex = 0;
 		VisibilityMask m_VisibilityMask = VisibilityMask::Invalid;
 		MeshUsage meshUsage = MeshUsage::Invalid;
 	};

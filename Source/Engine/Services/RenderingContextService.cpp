@@ -356,30 +356,27 @@ bool RenderingContextServiceImpl::updateMeshData()
 		DrawCallInfo l_drawCallInfo;
 
 		l_drawCallInfo.mesh = l_mesh;
-		l_drawCallInfo.material = l_material;
-
-		l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
+		l_drawCallInfo.m_PerObjectConstantBufferIndex = (uint32_t)i;
 		l_drawCallInfo.meshUsage = l_modelComponent->m_meshUsage;
-		l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
-		l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;
+		l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
 
 		PerObjectConstantBuffer l_perObjectCB;
 		l_perObjectCB.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 		l_perObjectCB.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 		l_perObjectCB.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 		l_perObjectCB.UUID = (float)l_transformComponent->m_UUID;
+		l_perObjectCB.m_MaterialIndex = (uint32_t)i; // @TODO: The material is duplicated per object, this should be fixed
 
 		l_perObjectCBVector.emplace_back(l_perObjectCB);
 
 		MaterialConstantBuffer l_materialCB;
-		for (size_t i = 0; i < 8; i++)
+		l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
+
+		auto l_renderingServer = g_Engine->getRenderingServer();
+		for (size_t i = 0; i < MaxTextureSlotCount; i++)
 		{
-			uint32_t l_writeMask = l_material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
-			l_writeMask = l_writeMask << i;
-			l_materialCB.textureSlotMask |= l_writeMask;
+			l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_material->m_TextureSlots[i].m_Texture);
 		}
-		l_materialCB.materialType = int32_t(l_modelComponent->m_meshUsage);
-		l_materialCB.materialAttributes = l_material->m_materialAttributes;
 
 		l_materialCBVector.emplace_back(l_materialCB);
 
@@ -405,10 +402,8 @@ bool RenderingContextServiceImpl::updateMeshData()
 			animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)l_animationCBVector.size();
 			l_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
 		}
-		else
-		{
-			l_drawCallInfoVector.emplace_back(l_drawCallInfo);
-		}
+
+		l_drawCallInfoVector.emplace_back(l_drawCallInfo);
 	}
 
 	m_drawCallInfoVector.SetValue(std::move(l_drawCallInfoVector));

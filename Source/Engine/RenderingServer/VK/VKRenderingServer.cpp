@@ -13,9 +13,6 @@
 
 using namespace Inno;
 
-#include "../Common/Helper.h"
-using namespace RenderingServerHelper;
-
 #include "VKHelper.h"
 using namespace VKHelper;
 
@@ -703,7 +700,7 @@ bool VKRenderingServer::Initialize()
 
 	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainSPC;
 
-	l_result &= ReserveRenderTargets(m_SwapChainRenderPassComp, this);
+	l_result &= m_RenderingComponentPool->ReserveRenderTargets(m_SwapChainRenderPassComp, this);
 
 	l_result &= ReserveFramebuffer(m_SwapChainRenderPassComp);
 
@@ -967,7 +964,7 @@ bool VKRenderingServer::InitializeMaterialComponent(MaterialComponent *rhs)
 		{
 			InitializeTextureComponent(l_texture);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
-			l_rhs->m_TextureSlots[i].m_Activate = true;
+			l_rhs->m_TextureSlots[i].m_Activated = true;
 		}
 		else
 		{
@@ -989,7 +986,7 @@ bool VKRenderingServer::InitializeRenderPassComponent(RenderPassComponent *rhs)
 
 	bool l_result = true;
 
-	l_result &= ReserveRenderTargets(l_rhs, this);
+	l_result &= m_RenderingComponentPool->ReserveRenderTargets(l_rhs, this);
 
 	l_result &= CreateRenderTargets(l_rhs, this);
 

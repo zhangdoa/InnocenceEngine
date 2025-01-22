@@ -1,27 +1,18 @@
 #pragma once
 #include "../IRenderingServer.h"
-#include "DX12Headers.h"
 
 namespace Inno
 {
+	class DX12GraphicsDevice;
 	class DX12RenderingServer : public IRenderingServer
 	{
 	public:
-		// Inherited via IRenderingServer
+		INNO_CLASS_CONCRETE_NON_COPYABLE(DX12RenderingServer);
+
 		bool Setup(ISystemConfig* systemConfig) override;
-		bool Initialize() override;
 		bool Terminate() override;
 
-		ObjectStatus GetStatus() override;
-
-		MeshComponent* AddMeshComponent(const char* name) override;
-		TextureComponent* AddTextureComponent(const char* name) override;
-		MaterialComponent* AddMaterialComponent(const char* name) override;
-		RenderPassComponent* AddRenderPassComponent(const char* name) override;
-		ShaderProgramComponent* AddShaderProgramComponent(const char* name) override;
-		SamplerComponent* AddSamplerComponent(const char* name = "") override;
-		GPUBufferComponent* AddGPUBufferComponent(const char* name) override;
-
+		// Inherited via IRenderingServer
 		bool InitializeMeshComponent(MeshComponent* rhs) override;
 		bool InitializeTextureComponent(TextureComponent* rhs) override;
 		bool InitializeMaterialComponent(MaterialComponent* rhs) override;
@@ -30,23 +21,25 @@ namespace Inno
 		bool InitializeSamplerComponent(SamplerComponent* rhs) override;
 		bool InitializeGPUBufferComponent(GPUBufferComponent* rhs) override;
 
-		bool DeleteMeshComponent(MeshComponent* rhs) override;
-		bool DeleteTextureComponent(TextureComponent* rhs) override;
-		bool DeleteMaterialComponent(MaterialComponent* rhs) override;
-		bool DeleteRenderPassComponent(RenderPassComponent* rhs) override;
-		bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) override;
-		bool DeleteSamplerComponent(SamplerComponent* rhs) override;
-		bool DeleteGPUBufferComponent(GPUBufferComponent* rhs) override;
-
 		bool UpdateMeshComponent(MeshComponent* rhs) override;
+		bool UpdateGPUBufferComponent(GPUBufferComponent* rhs) override;
 
 		bool ClearTextureComponent(TextureComponent* rhs) override;
 		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
 
+	protected:
+		virtual IRenderingGraphicsDevice* CreateRenderingGraphicsDevice() { return nullptr; }
+		virtual IRenderingComponentPool* CreateRenderingComponentPool() { return nullptr; }
+
 		bool UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) override;
+
+	public:		
 		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
 
-		void TransferDataToGPU() override;
+		void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
+		uint32_t GetIndex(GPUResourceComponent* rhs) override;
+		bool Bind(RenderPassComponent *renderPass, GPUResourceComponent* resource, ShaderStage shaderStage, uint32_t rootParameterIndex, Accessibility bindingAccessibility) override;
+		bool TryToTransitState(TextureComponent *rhs, ICommandList *commandList, Accessibility accessibility) override;
 
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
@@ -59,8 +52,6 @@ namespace Inno
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 		bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
 		bool WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
-		void FinalizeSwapChain() override;
-		bool Present() override;
 
 		bool SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc) override;
 		GPUResourceComponent* GetUserPipelineOutput() override;
@@ -71,25 +62,7 @@ namespace Inno
 		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
 		bool GenerateMipmap(TextureComponent* rhs) override;
 
-		bool Resize() override;
-
-		bool BeginCapture() override;
-		bool EndCapture() override;
-
-		bool CreateRTV(RenderPassComponent* rhs);
-		bool CreateDSV(RenderPassComponent* rhs);
-		DX12SRV CreateSRV(TextureComponent* rhs, uint32_t mostDetailedMip);
-		DX12SRV CreateSRV(GPUBufferComponent* rhs);
-		DX12UAV CreateUAV(TextureComponent* rhs, uint32_t mipSlice);
-		DX12UAV CreateUAV(GPUBufferComponent* rhs);
-		DX12CBV CreateCBV(GPUBufferComponent* rhs);
-
-		ID3D12Device* GetDevice();
-		ID3D12DescriptorHeap* GetCSUDescHeap();
-		D3D12_CPU_DESCRIPTOR_HANDLE GetCSUDescHeapCPUHandle();
-		D3D12_GPU_DESCRIPTOR_HANDLE GetCSUDescHeapGPUHandle();
-		ID3D12CommandAllocator* GetCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, uint32_t swapChainImageIndex);
-		uint32_t GetSwapChainImageCount();
-		RenderPassComponent* GetSwapChainRenderPassComponent();
+	private:
+		DX12GraphicsDevice* m_DX12Device = nullptr;
 	};
 }

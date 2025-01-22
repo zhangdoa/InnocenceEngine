@@ -1,4 +1,5 @@
 #pragma once
+#include "../Common/GPUDataStructure.h"
 #include "GPUResourceComponent.h"
 #include "TextureComponent.h"
 
@@ -9,19 +10,7 @@ namespace Inno
 	struct TextureSlot
 	{
 		TextureComponent* m_Texture = 0;
-		bool m_Activate = false;
-	};
-
-	struct MaterialAttributes
-	{
-		float AlbedoR = 1.0f;
-		float AlbedoG = 1.0f;
-		float AlbedoB = 1.0f;
-		float Alpha = 1.0f;
-		float Metallic = 0.0f;
-		float Roughness = 1.0f;
-		float AO = 0.0f;
-		float Thickness = 1.0f;
+		bool m_Activated = false;
 	};
 	
 	class MaterialComponent : public GPUResourceComponent
@@ -31,7 +20,7 @@ namespace Inno
 		static const char* GetTypeName() { return "MaterialComponent"; };
 
 		MaterialAttributes m_materialAttributes = {};
-		TextureSlot m_TextureSlots[8];
+		TextureSlot m_TextureSlots[MaxTextureSlotCount];
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;
 	};
 }
