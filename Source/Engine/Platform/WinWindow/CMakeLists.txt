@@ -8,11 +8,6 @@ add_subdirectory("DXWindowSurface")
 target_link_libraries(WinWindowSystem WinDXWindowSurface)
 endif (INNO_RENDERER_DIRECTX)
 
-if (INNO_RENDERER_OPENGL)
-add_subdirectory("GLWindowSurface")
-target_link_libraries(WinWindowSystem WinGLWindowSurface)
-endif (INNO_RENDERER_OPENGL)
-
 if (INNO_RENDERER_VULKAN)
 add_subdirectory("VKWindowSurface")
 target_link_libraries(WinWindowSystem WinVKWindowSurface)

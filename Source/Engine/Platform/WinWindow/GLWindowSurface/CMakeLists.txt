@@ -1,6 +1,0 @@
-file(GLOB HEADERS "*.h")
-file(GLOB SOURCES "*.cpp")
-add_library(WinGLWindowSurface ${HEADERS} ${SOURCES})
-set_target_properties(WinGLWindowSurface PROPERTIES FOLDER Engine/Window)
-target_include_directories(WinGLWindowSurface PRIVATE "${INNO_EXTERNAL_INCLUDE_DIRECTORIES}/GL")
-target_include_directories(WinGLWindowSurface PRIVATE "${CMAKE_BINARY_DIR}/gladsources/${GL_HEADER_LIB_NAME}/include")

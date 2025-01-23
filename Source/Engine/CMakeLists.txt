@@ -15,17 +15,12 @@ target_link_libraries(Engine RayTracer)
 target_link_libraries(Engine RenderingServerCommon)
 
 if (INNO_RENDERER_DIRECTX)
-target_link_libraries(Engine DX11RenderingServer)
 target_link_libraries(Engine DX12RenderingServer)
 endif (INNO_RENDERER_DIRECTX)
 
 if (INNO_RENDERER_VULKAN)
 target_link_libraries(Engine VKRenderingServer)
 endif (INNO_RENDERER_VULKAN)
-
-if (INNO_RENDERER_OPENGL)
-target_link_libraries(Engine GLRenderingServer)
-endif (INNO_RENDERER_OPENGL)
 
 if (INNO_RENDERER_METAL)
 target_link_libraries(Engine MTRenderingServer)

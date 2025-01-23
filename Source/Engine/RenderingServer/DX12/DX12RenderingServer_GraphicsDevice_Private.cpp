@@ -1,4 +1,4 @@
-#include "DX12GraphicsDevice.h"
+#include "DX12RenderingServer.h"
 
 #include "../../Platform/WinWindow/WinWindowSystem.h"
 
@@ -8,240 +8,11 @@ using namespace Inno;
 #include "../../Engine.h"
 
 #include "DX12Helper_Common.h"
+#include "DX12Helper_Pipeline.h"
 
 using namespace DX12Helper;
 
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3dcompiler.lib")
-
-bool DX12GraphicsDevice::CreateHardwareResources()
-{
-    bool l_result = true;
-
-#ifdef INNO_DEBUG
-    l_result &= CreateDebugCallback();
-#endif
-    l_result &= CreatePhysicalDevices();
-    l_result &= CreateGlobalCommandQueues();
-    l_result &= CreateGlobalCommandAllocators();
-    l_result &= CreateSyncPrimitives();
-    l_result &= CreateGlobalDescriptorHeaps();
-    l_result &= CreateMipmapGenerator();
-    l_result &= CreateSwapChain();
-
-    return l_result;
-}
-
-bool DX12GraphicsDevice::ReleaseHardwareResources()
-{
-    m_SamplerDescHeap->GetHeap().ReleaseAndGetAddressOf();
-    m_DSVDescHeap->GetHeap().ReleaseAndGetAddressOf();
-    m_RTVDescHeap->GetHeap().ReleaseAndGetAddressOf();
-    m_ShaderNonVisibleCSUDescHeap->GetHeap().ReleaseAndGetAddressOf();
-    m_CSUDescHeap->GetHeap().ReleaseAndGetAddressOf();
-
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        m_directCommandQueueFence[i].ReleaseAndGetAddressOf();
-        m_computeCommandQueueFence[i].ReleaseAndGetAddressOf();
-        m_copyCommandQueueFence[i].ReleaseAndGetAddressOf();
-    }
-
-    for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
-    {
-        m_GlobalCommandLists[i]->m_DirectCommandList.ReleaseAndGetAddressOf();
-        m_GlobalCommandLists[i]->m_ComputeCommandList.ReleaseAndGetAddressOf();
-        m_GlobalCommandLists[i]->m_CopyCommandList.ReleaseAndGetAddressOf();
-    }
-
-    m_copyCommandAllocator.ReleaseAndGetAddressOf();
-
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        m_directCommandAllocators[i].ReleaseAndGetAddressOf();
-        m_computeCommandAllocators[i].ReleaseAndGetAddressOf();
-    }
-
-    m_directCommandQueue.ReleaseAndGetAddressOf();
-    m_computeCommandQueue.ReleaseAndGetAddressOf();
-    m_copyCommandQueue.ReleaseAndGetAddressOf();
-
-    m_swapChain.ReleaseAndGetAddressOf();
-    m_device.ReleaseAndGetAddressOf();
-    m_adapterOutput.ReleaseAndGetAddressOf();
-    m_adapter.ReleaseAndGetAddressOf();
-    m_factory.ReleaseAndGetAddressOf();
-    m_graphicsAnalysis.ReleaseAndGetAddressOf();
-    m_debugInterface.ReleaseAndGetAddressOf();
-
-#ifdef INNO_DEBUG
-    IDXGIDebug1* pDebug = nullptr;
-    if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
-    {
-        pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-        pDebug->Release();
-    }
-#endif
-
-    return true;
-}
-
-bool DX12GraphicsDevice::GetSwapChainImages()
-{
-    m_swapChainImages.resize(m_swapChainImageCount);
-
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
-        if (FAILED(l_HResult))
-        {
-            Log(Error, "Can't get pointer of swap chain image ", i, "!");
-            return false;
-        }
-        m_swapChainImages[i]->SetName((L"SwapChainBackBuffer_" + std::to_wstring(i)).c_str());
-    }
-
-    return true;
-}
-
-bool DX12GraphicsDevice::AssignSwapChainImages()
-{
-    m_SwapChainRenderPassComp->m_RenderTargets.resize(m_swapChainImageCount);
-
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[i].m_Texture);
-
-        l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
-        l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
-        l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
-        l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
-
-        l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
-    }
-
-    return true;
-}
-
-bool DX12GraphicsDevice::PresentImpl()
-{
-    m_swapChain->Present(0, 0);
-}
-
-bool DX12GraphicsDevice::PostPresent()
-{
-	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
-}
-
-bool DX12GraphicsDevice::Resize()
-{
-    auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-
-    m_swapChainDesc.Width = (UINT)l_screenResolution.x;
-    m_swapChainDesc.Height = (UINT)l_screenResolution.y;
-
-    m_swapChainImages.clear();
-	
-	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
-	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Compute);
-    for (int i = 0; i < m_swapChainImageCount; i++)
-    {
-        UINT64 l_directCommandFinishedSemaphore = ++GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Semaphore[i];
-        GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)->Signal(GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Fence[i].Get(), l_directCommandFinishedSemaphore);
-        if (GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Fence[i]->GetCompletedValue() < l_directCommandFinishedSemaphore)
-        {
-            GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)Fence[i]->SetEventOnCompletion(l_directCommandFinishedSemaphore, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)FenceEvent[i]);
-            WaitForSingleObject(GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)FenceEvent[i], INFINITE);
-        }
-    }
-
-    m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
-
-    if (!GetSwapChainImages())
-        return false;   
-}
-
-bool DX12GraphicsDevice::BeginCapture()
-{
-	if (m_graphicsAnalysis != nullptr)
-	{
-		m_graphicsAnalysis->BeginCapture();
-		return true;
-	}
-
-	return false;
-}
-
-bool DX12GraphicsDevice::EndCapture()
-{
-	if (m_graphicsAnalysis != nullptr)
-	{
-		m_graphicsAnalysis->EndCapture();
-		return true;
-	}
-
-	return false;
-}
-
-ComPtr<ID3D12Device8> DX12GraphicsDevice::GetDevice()
-{
-    return m_device.Get();
-}
-
-ComPtr<ID3D12CommandAllocator> DX12GraphicsDevice::GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType)
-{
-    switch (commandListType)
-    {
-        case D3D12_COMMAND_LIST_TYPE_DIRECT:
-            return m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
-        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-            return m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
-        case D3D12_COMMAND_LIST_TYPE_COPY:
-            return m_copyCommandAllocator;
-        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
-        default:
-            throw std::runtime_error("Invalid command list type");
-    }
-}
-
-ComPtr<ID3D12CommandQueue> DX12GraphicsDevice::GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType)
-{
-    switch (commandListType)
-    {
-        case D3D12_COMMAND_LIST_TYPE_DIRECT:
-            return m_directCommandQueue;
-        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-            return m_computeCommandQueue;
-        case D3D12_COMMAND_LIST_TYPE_COPY:
-            return m_copyCommandQueue;
-        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
-        default:
-            throw std::runtime_error("Invalid command list type");
-    }
-}
-
-ComPtr<ID3D12GraphicsCommandList> DX12GraphicsDevice::GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType)
-{
-    switch (commandListType)
-    {
-        case D3D12_COMMAND_LIST_TYPE_DIRECT:
-            return m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_DirectCommandList;
-        case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-             return m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]->m_ComputeCommandList;
-        case D3D12_COMMAND_LIST_TYPE_COPY:
-        case D3D12_COMMAND_LIST_TYPE_BUNDLE:
-        default:
-            throw std::runtime_error("Invalid command list type");
-    }        
-}
-
-bool DX12GraphicsDevice::CreateDebugCallback()
+bool DX12RenderingServer::CreateDebugCallback()
 {
     ID3D12Debug* l_debugInterface;
 
@@ -275,7 +46,7 @@ bool DX12GraphicsDevice::CreateDebugCallback()
     return true;
 }
 
-bool DX12GraphicsDevice::CreatePhysicalDevices()
+bool DX12RenderingServer::CreatePhysicalDevices()
 {
     // Create a DirectX graphics interface factory.
     UINT l_DXGIFlag = 0;
@@ -447,7 +218,7 @@ bool DX12GraphicsDevice::CreatePhysicalDevices()
     return true;
 }
 
-bool DX12GraphicsDevice::CreateGlobalCommandQueues()
+bool DX12RenderingServer::CreateGlobalCommandQueues()
 {
     // Set up the description of the command queues.
     D3D12_COMMAND_QUEUE_DESC l_graphicCommandQueueDesc = {};
@@ -468,30 +239,33 @@ bool DX12GraphicsDevice::CreateGlobalCommandQueues()
     l_copyCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     l_copyCommandQueueDesc.NodeMask = 0;
 
-    m_directCommandQueue = CreateCommandQueue(&l_graphicCommandQueueDesc, m_device, L"DirectCommandQueue");
-    m_computeCommandQueue = CreateCommandQueue(&l_computeCommandQueueDesc, m_device, L"ComputeCommandQueue");
-    m_copyCommandQueue = CreateCommandQueue(&l_copyCommandQueueDesc, m_device, L"CopyCommandQueue");
+    m_directCommandQueue = CreateCommandQueue(&l_graphicCommandQueueDesc, L"DirectCommandQueue");
+    m_computeCommandQueue = CreateCommandQueue(&l_computeCommandQueueDesc, L"ComputeCommandQueue");
+    m_copyCommandQueue = CreateCommandQueue(&l_copyCommandQueueDesc, L"CopyCommandQueue");
 
     Log(Success, "Global CommandQueues have been created.");
 
     return true;
 }
 
-bool DX12GraphicsDevice::CreateGlobalCommandAllocators()
+bool DX12RenderingServer::CreateGlobalCommandAllocators()
 {
-    m_copyCommandAllocator = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, m_device, L"CopyCommandAllocator");
+    m_copyCommandAllocator = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, L"CopyCommandAllocator");
 
+    m_directCommandAllocators.resize(m_swapChainImageCount);
+    m_computeCommandAllocators.resize(m_swapChainImageCount);
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
-        m_directCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, (L"DirectCommandAllocator_" + std::to_wstring(i)).c_str());
-        m_computeCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, (L"ComputeCommandAllocator_" + std::to_wstring(i)).c_str());
+        m_directCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, (L"DirectCommandAllocator_" + std::to_wstring(i)).c_str());
+        m_computeCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, (L"ComputeCommandAllocator_" + std::to_wstring(i)).c_str());
     }
 
     Log(Success, "Global CommandAllocators have been created.");
 
+    m_GlobalCommandLists.resize(m_swapChainImageCount);
     for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
     {
-        m_GlobalCommandLists[i] = static_cast<DX12CommandList*>(m_RenderingComponentPool->AddCommandList());
+        m_GlobalCommandLists[i] = static_cast<DX12CommandList*>(AddCommandList());
         CreateCommandList(m_GlobalCommandLists[i], i, L"GPUBufferCommandList");
     }
 
@@ -500,8 +274,11 @@ bool DX12GraphicsDevice::CreateGlobalCommandAllocators()
     return true;
 }
 
-bool DX12GraphicsDevice::CreateSyncPrimitives()
+bool DX12RenderingServer::CreateSyncPrimitives()
 {
+    m_directCommandQueueFence.resize(m_swapChainImageCount);
+    m_computeCommandQueueFence.resize(m_swapChainImageCount);
+    m_copyCommandQueueFence.resize(m_swapChainImageCount);
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
         if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence[i]))))
@@ -527,21 +304,32 @@ bool DX12GraphicsDevice::CreateSyncPrimitives()
     }
     Log(Verbose, "Fences for global CommandQueues have been created.");
 
+    m_directCommandQueueSemaphore.resize(m_swapChainImageCount, std::atomic<uint64_t>(0));
+    m_computeCommandQueueSemaphore.resize(m_swapChainImageCount, std::atomic<uint64_t>(0));
+    m_copyCommandQueueSemaphore.resize(m_swapChainImageCount, std::atomic<uint64_t>(0));
+
+    m_directCommandQueueFence.resize(m_swapChainImageCount);
+    m_computeCommandQueueFence.resize(m_swapChainImageCount);
+    m_copyCommandQueueFence.resize(m_swapChainImageCount);
+
+    m_directCommandQueueFenceEvent.resize(m_swapChainImageCount, std::atomic<HANDLE>(nullptr));
+    m_computeCommandQueueFenceEvent.resize(m_swapChainImageCount, std::atomic<HANDLE>(nullptr));
+    
     return true;
 }
 
-bool DX12GraphicsDevice::CreateGlobalDescriptorHeaps()
+bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
 {
-    m_CSUDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaxDescriptorCount, L"GlobalCSUDescHeap_ShaderVisible");
-    m_ShaderNonVisibleCSUDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaxDescriptorCount, L"GlobalCSUDescHeap_ShaderNonVisible", false);
-    m_SamplerDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 128, L"GlobalSamplerDescHeap");
-    m_RTVDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 256, L"GlobalRTVDescHeap", false);
-    m_DSVDescHeap = new DX12DescriptorHeap(m_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 256, L"GlobalDSVDescHeap", false);
+    m_CSUDescHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaxDescriptorCount, L"GlobalCSUDescHeap_ShaderVisible");
+    m_ShaderNonVisibleCSUDescHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaxDescriptorCount, L"GlobalCSUDescHeap_ShaderNonVisible", false);
+    m_SamplerDescHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 128, L"GlobalSamplerDescHeap");
+    m_RTVDescHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 256, L"GlobalRTVDescHeap", false);
+    m_DSVDescHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 256, L"GlobalDSVDescHeap", false);
 
-    return m_CSUDescHeap && m_ShaderNonVisibleCSUDescHeap && m_SamplerDescHeap && m_RTVDescHeap && m_DSVDescHeap;
+    return true;
 }
 
-bool DX12GraphicsDevice::CreateMipmapGenerator()
+bool DX12RenderingServer::CreateMipmapGenerator()
 {
     D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
     samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
@@ -629,7 +417,7 @@ bool DX12GraphicsDevice::CreateMipmapGenerator()
     return true;
 }
 
-bool DX12GraphicsDevice::CreateSwapChain()
+bool DX12RenderingServer::CreateSwapChain()
 {
     // Set the swap chain to use double buffering.
     m_swapChainDesc.BufferCount = m_swapChainImageCount;

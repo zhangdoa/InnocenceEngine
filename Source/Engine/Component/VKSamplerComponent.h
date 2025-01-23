@@ -1,6 +1,6 @@
 #pragma once
 #include "SamplerComponent.h"
-#include "vulkan/vulkan.h"
+#include "../RenderingServer/VK/VKHeaders.h"
 
 namespace Inno
 {

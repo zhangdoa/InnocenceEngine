@@ -115,22 +115,22 @@ bool VXGIConvertPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingContext = reinterpret_cast<VXGIConvertPassRenderingContext*>(renderingContext);
 	auto l_numThreadGroup = l_renderingContext->m_resolution / 8;
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_AlbedoVolume, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NormalVolume, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_AlbedoVolume, 1);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NormalVolume, 2);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
 
-	l_renderingServer->Dispatch(m_RenderPassComp,l_numThreadGroup, l_numThreadGroup, l_numThreadGroup);
+	// l_renderingServer->Dispatch(m_RenderPassComp,l_numThreadGroup, l_numThreadGroup, l_numThreadGroup);
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_AlbedoVolume, 1);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NormalVolume, 2);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_AlbedoVolume, 1);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NormalVolume, 2);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

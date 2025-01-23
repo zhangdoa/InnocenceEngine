@@ -41,8 +41,8 @@ namespace Inno
 		SkeletonComponent* AddSkeletonComponent();
 		AnimationComponent* AddAnimationComponent();
 
-		bool InitializeSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU);
-		bool InitializeAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU);
+		bool InitializeSkeletonComponent(SkeletonComponent* rhs);
+		bool InitializeAnimationComponent(AnimationComponent* rhs);
 
 		bool PlayAnimation(ModelComponent* rhs, const char* animationName, bool isLooping);
 		bool StopAnimation(ModelComponent* rhs, const char* animationName);

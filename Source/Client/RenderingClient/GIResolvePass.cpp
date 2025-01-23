@@ -673,18 +673,18 @@ bool GIResolvePass::generateSkyRadiance()
 
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	l_renderingServer->CommandListBegin(m_skyRadianceRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_skyRadianceRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_skyRadianceRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_skyRadianceRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_skyRadianceRenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_skyRadianceRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 1);
+	// l_renderingServer->BindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 1);
 
-	l_renderingServer->Dispatch(m_skyRadianceRenderPassComp, 1, 1, 1);
+	// l_renderingServer->Dispatch(m_skyRadianceRenderPassComp, 1, 1, 1);
 
-	l_renderingServer->UnbindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 1);
+	// l_renderingServer->UnbindGPUResource(m_skyRadianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 1);
 
-	l_renderingServer->CommandListEnd(m_skyRadianceRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_skyRadianceRenderPassComp);
 
 	return true;
 }
@@ -693,19 +693,19 @@ bool GIResolvePass::generateSkyIrradiance()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->CommandListBegin(m_skyIrradianceRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_skyIrradianceRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_skyIrradianceRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_skyIrradianceRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_skyIrradianceRenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_skyIrradianceRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 0);
-	l_renderingServer->BindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 1);
+	// l_renderingServer->BindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 0);
+	// l_renderingServer->BindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 1);
 
-	l_renderingServer->Dispatch(m_skyIrradianceRenderPassComp, 1, 1, 1);
+	// l_renderingServer->Dispatch(m_skyIrradianceRenderPassComp, 1, 1, 1);
 
-	l_renderingServer->UnbindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 0);
-	l_renderingServer->UnbindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 1);
+	// l_renderingServer->UnbindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyRadianceVolume, 0);
+	// l_renderingServer->UnbindGPUResource(m_skyIrradianceRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 1);
 
-	l_renderingServer->CommandListEnd(m_skyIrradianceRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_skyIrradianceRenderPassComp);
 
 	return true;
 }
@@ -731,27 +731,27 @@ bool GIResolvePass::litSurfels()
 	l_surfelLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_surfelLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_surfelLitWorkload, 2, 1);
+	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_surfelLitWorkload, 2, 1);
 
-	l_renderingServer->CommandListBegin(m_surfelRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_surfelRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_surfelRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_surfelRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_surfelRenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_surfelRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 2);
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 3);
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelGPUBufferComp, 4);
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 5);
-	l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 1);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 2);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 3);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelGPUBufferComp, 4);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 5);
+	// l_renderingServer->BindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6);
 
-	l_renderingServer->Dispatch(m_surfelRenderPassComp, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
+	// l_renderingServer->Dispatch(m_surfelRenderPassComp, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	l_renderingServer->UnbindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelGPUBufferComp, 4);
-	l_renderingServer->UnbindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 5);
-	l_renderingServer->UnbindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6);
+	// l_renderingServer->UnbindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelGPUBufferComp, 4);
+	// l_renderingServer->UnbindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 5);
+	// l_renderingServer->UnbindGPUResource(m_surfelRenderPassComp, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6);
 
-	l_renderingServer->CommandListEnd(m_surfelRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_surfelRenderPassComp);
 
 	return true;
 }
@@ -775,25 +775,25 @@ bool GIResolvePass::litBricks()
 	l_brickLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_brickLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_brickLitWorkload, 3, 1);
+	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_brickLitWorkload, 3, 1);
 
-	l_renderingServer->CommandListBegin(m_brickRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_brickRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_brickRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_brickRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_brickRenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_brickRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickGPUBufferComp, 2);
-	l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 3);
-	l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 4);
+	// l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 1);
+	// l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickGPUBufferComp, 2);
+	// l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 3);
+	// l_renderingServer->BindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 4);
 
-	l_renderingServer->Dispatch(m_brickRenderPassComp, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
+	// l_renderingServer->Dispatch(m_brickRenderPassComp, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	l_renderingServer->UnbindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickGPUBufferComp, 2);
-	l_renderingServer->UnbindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 3);
-	l_renderingServer->UnbindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 4);
+	// l_renderingServer->UnbindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickGPUBufferComp, 2);
+	// l_renderingServer->UnbindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_surfelIrradianceGPUBufferComp, 3);
+	// l_renderingServer->UnbindGPUResource(m_brickRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 4);
 
-	l_renderingServer->CommandListEnd(m_brickRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_brickRenderPassComp);
 
 	return true;
 }
@@ -818,28 +818,28 @@ bool GIResolvePass::litProbes()
 	l_probeLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_probeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_probeLitWorkload, 4, 1);
+	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_probeLitWorkload, 4, 1);
 
-	l_renderingServer->CommandListBegin(m_probeRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_probeRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_probeRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_probeRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_probeRenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_probeRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 2);
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeGPUBufferComp, 3);
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickFactorGPUBufferComp, 4);
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 5);
-	l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeVolume, 6);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 2);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeGPUBufferComp, 3);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickFactorGPUBufferComp, 4);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 5);
+	// l_renderingServer->BindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeVolume, 6);
 
-	l_renderingServer->Dispatch(m_probeRenderPassComp, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
+	// l_renderingServer->Dispatch(m_probeRenderPassComp, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeGPUBufferComp, 3);
-	l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickFactorGPUBufferComp, 4);
-	l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 5);
-	l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeVolume, 6);
+	// l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeGPUBufferComp, 3);
+	// l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickFactorGPUBufferComp, 4);
+	// l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_brickIrradianceGPUBufferComp, 5);
+	// l_renderingServer->UnbindGPUResource(m_probeRenderPassComp, ShaderStage::Compute, m_probeVolume, 6);
 
-	l_renderingServer->CommandListEnd(m_probeRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_probeRenderPassComp);
 
 	return true;
 }
@@ -860,29 +860,28 @@ bool GIResolvePass::generateIrradianceVolume()
 	l_irradianceVolumeLitWorkload.numThreadGroups = TVec4<uint32_t>(8, 4, 8, 0);
 	l_irradianceVolumeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_irradianceVolumeLitWorkload, 5, 1);
+	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_irradianceVolumeLitWorkload, 5, 1);
 
-	l_renderingServer->CommandListBegin(m_irradianceVolumeRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_irradianceVolumeRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_irradianceVolumeRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_irradianceVolumeRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_irradianceVolumeRenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_irradianceVolumeRenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolumeSamplerComp, 6);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolumeSamplerComp, 6);
 
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 2);
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_probeVolume, 3);
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolume, 4);
-	l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 5);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 2);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_probeVolume, 3);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolume, 4);
+	// l_renderingServer->BindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 5);
 
-	// @TODO: Buggy on OpenGL + Nvidia
-	l_renderingServer->Dispatch(m_irradianceVolumeRenderPassComp, 8, 4, 8);
+	// l_renderingServer->Dispatch(m_irradianceVolumeRenderPassComp, 8, 4, 8);
 
-	l_renderingServer->UnbindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_probeVolume, 3);
-	l_renderingServer->UnbindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolume, 4);
-	l_renderingServer->UnbindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 5);
+	// l_renderingServer->UnbindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_probeVolume, 3);
+	// l_renderingServer->UnbindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_irradianceVolume, 4);
+	// l_renderingServer->UnbindGPUResource(m_irradianceVolumeRenderPassComp, ShaderStage::Compute, m_skyIrradianceGPUBufferComp, 5);
 
-	l_renderingServer->CommandListEnd(m_irradianceVolumeRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_irradianceVolumeRenderPassComp);
 
 	return true;
 }

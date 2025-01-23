@@ -3,7 +3,7 @@
 #include "../ImGui/imgui_impl_dx12.cpp"
 
 #include "../../RenderingServer/DX12/DX12RenderingServer.h"
-#include "../../RenderingServer/DX12/DX12Helper.h"
+#include "../../RenderingServer/DX12/DX12Helper_Common.h"
 
 #include "../../Interface/IRenderPass.h"
 
@@ -151,14 +151,14 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 	f_InitializeJob = [&]() 
 	{
 		auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
-		auto l_device = reinterpret_cast<ID3D12Device*>(l_renderingServer->GetDevice());
-		auto l_CSUDescHeap = reinterpret_cast<ID3D12DescriptorHeap*>(l_renderingServer->GetCSUDescHeap());
+		auto l_device = l_renderingServer->GetDevice().Get();
+		auto l_descHeap = l_renderingServer->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		auto l_newHandle = l_descHeap.GetNewHandle();
 		auto l_swapChainCount = l_renderingServer->GetSwapChainImageCount();
 
-		ImGui_ImplDX12_Init(l_device, l_renderingServer->GetSwapChainImageCount(),
-			DXGI_FORMAT_R8G8B8A8_UNORM, l_CSUDescHeap,
-			l_renderingServer->GetCSUDescHeapCPUHandle(),
-			l_renderingServer->GetCSUDescHeapGPUHandle());
+		ImGui_ImplDX12_Init(l_device, l_swapChainCount,
+			DXGI_FORMAT_R8G8B8A8_UNORM, l_descHeap.GetHeap().Get(),
+			l_newHandle.CPUHandle, l_newHandle.GPUHandle);
 		
 		m_RenderPass->Initialize();
 	};

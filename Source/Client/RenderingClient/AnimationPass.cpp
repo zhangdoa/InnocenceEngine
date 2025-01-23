@@ -160,52 +160,52 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto& l_AnimationDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetAnimationDrawCallInfo();
 
-	if (l_AnimationDrawCallInfo.size())
-	{
-		l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-		l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-		// Don't clean render targets since they are from previous pass
+	// if (l_AnimationDrawCallInfo.size())
+	// {
+	// 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// 	// Don't clean render targets since they are from previous pass
 
-		for (auto i : l_AnimationDrawCallInfo)
-		{
-			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
-			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
+	// 	for (auto i : l_AnimationDrawCallInfo)
+	// 	{
+	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
+	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
 
-			if (i.drawCallInfo.mesh->m_ObjectStatus == ObjectStatus::Activated)
-			{
-				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
-				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
+	// 		if (i.drawCallInfo.mesh->m_ObjectStatus == ObjectStatus::Activated)
+	// 		{
+	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
+	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
 
-				// if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
-				// {
-				// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
-				// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
-				// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
-				// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
-				// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
-				// }
+	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
+	// 			{
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
+	// 			}
 
-				// l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, i.drawCallInfo.mesh);
+	// 			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, i.drawCallInfo.mesh);
 
-				// if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
-				// {
-				// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
-				// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
-				// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
-				// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
-				// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
-				// }
-			}
-		}
+	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
+	// 			{
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
+	// 			}
+	// 		}
+	// 	}
 
-		l_renderingServer->CommandListEnd(m_RenderPassComp);
-	}
-	else
-	{
-		l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-		l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-		l_renderingServer->CommandListEnd(m_RenderPassComp);
-	}
+	// 	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// }
+	// else
+	// {
+	// 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// 	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// }
 
 	return true;
 }

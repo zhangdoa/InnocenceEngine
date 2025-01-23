@@ -96,20 +96,20 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 2);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 2);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, 1, 1, 1);
+	// l_renderingServer->Dispatch(m_RenderPassComp, 1, 1, 1);
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 0);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceAverage, 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 	
 	return true;
 }

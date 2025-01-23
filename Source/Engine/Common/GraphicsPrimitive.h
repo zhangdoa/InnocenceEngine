@@ -39,11 +39,6 @@ namespace Inno
 			bool m_Write = false;
 		};
 
-		Accessibility Accessibility::Immutable = Accessibility(false, false);
-		Accessibility Accessibility::ReadOnly = Accessibility(true, false);
-		Accessibility Accessibility::WriteOnly = Accessibility(false, true);
-		Accessibility Accessibility::ReadWrite = Accessibility(true, true);
-
 		using Index = uint32_t;
 
 		enum class MeshUsage { Invalid, Static, Dynamic, Skeletal };

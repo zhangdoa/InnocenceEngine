@@ -49,11 +49,11 @@ namespace Inno
 			}
 		}
 
-		Model* processSceneJsonData(const json& j, bool AsyncUploadGPUResource = true);
-		bool processAnimationJsonData(const json& j, bool AsyncUploadGPUResource = true);
-		ArrayRangeInfo processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
-		SkeletonComponent* processSkeletonJsonData(const json& j, const char* name, bool AsyncUploadGPUResource = true);
-		MaterialComponent* processMaterialJsonData(const json& j, const char* name, bool AsyncUploadGPUResource = true);
+		Model* processSceneJsonData(const json& j);
+		bool processAnimationJsonData(const json& j);
+		ArrayRangeInfo processMeshJsonData(const json& j);
+		SkeletonComponent* processSkeletonJsonData(const json& j, const char* name);
+		MaterialComponent* processMaterialJsonData(const json& j, const char* name);
 
 		bool assignComponentRuntimeData();
 
@@ -349,34 +349,34 @@ void JSONWrapper::from_json(const json& j, CameraComponent& p)
 	p.m_ISO = j["ISO"];
 }
 
-Model* JSONWrapper::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
+Model* JSONWrapper::loadModelFromDisk(const char* fileName)
 {
 	json j;
 
 	loadJsonDataFromDisk(fileName, j);
 
-	return processSceneJsonData(j, AsyncUploadGPUResource);
+	return processSceneJsonData(j);
 }
 
-Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResource)
+Model* JSONWrapper::processSceneJsonData(const json& j)
 {
 	Model* l_result;
 
 	if (j.find("Meshes") != j.end())
 	{
 		l_result = g_Engine->Get<AssetSystem>()->AddModel();
-		l_result->renderableSets = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
+		l_result->renderableSets = processMeshJsonData(j["Meshes"]);
 	}
 
 	if (j.find("Animations") != j.end())
 	{
-		processAnimationJsonData(j["Animations"], AsyncUploadGPUResource);
+		processAnimationJsonData(j["Animations"]);
 	}
 
 	return l_result;
 }
 
-bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPUResource)
+bool JSONWrapper::processAnimationJsonData(const json& j)
 {
 	for (auto i : j)
 	{
@@ -407,13 +407,13 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		g_Engine->Get<IOService>()->deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
 		g_Engine->Get<AssetSystem>()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
-		g_Engine->Get<AnimationService>()->InitializeAnimationComponent(l_ADC, AsyncUploadGPUResource);
+		g_Engine->Get<AnimationService>()->InitializeAnimationComponent(l_ADC);
 	}
 
 	return true;
 }
 
-ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
+ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j)
 {
 	auto l_result = g_Engine->Get<AssetSystem>()->AddRenderableSets(j.size());
 
@@ -428,13 +428,13 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 		{
 			std::string l_materialName = i["Name"];
 			l_materialName += "_Material";
-			l_currentRenderableSet->material = processMaterialJsonData(i["Material"], l_materialName.c_str(), AsyncUploadGPUResource);
+			l_currentRenderableSet->material = processMaterialJsonData(i["Material"], l_materialName.c_str());
 		}
 		else
 		{
 			l_currentRenderableSet->material = g_Engine->getRenderingServer()->AddMaterialComponent();
 			l_currentRenderableSet->material->m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_currentRenderableSet->material, AsyncUploadGPUResource);
+			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_currentRenderableSet->material);
 		}
 
 		MeshShape l_meshShape = MeshShape(i["MeshShape"].get<int32_t>());
@@ -485,13 +485,13 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				{
 					std::string l_skeletonName = i["Name"];
 					l_skeletonName += "_Skeleton";
-					l_currentRenderableSet->skeleton = processSkeletonJsonData(i, l_skeletonName.c_str(), AsyncUploadGPUResource);
+					l_currentRenderableSet->skeleton = processSkeletonJsonData(i, l_skeletonName.c_str());
 				}
 
 				l_currentRenderableSet->mesh->m_MeshShape = MeshShape::Customized;
 				l_currentRenderableSet->mesh->m_ObjectStatus = ObjectStatus::Created;
 
-				g_Engine->getRenderingServer()->InitializeMeshComponent(l_mesh, AsyncUploadGPUResource);
+				g_Engine->getRenderingServer()->InitializeMeshComponent(l_mesh);
 
 				g_Engine->Get<AssetSystem>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
 			}
@@ -509,7 +509,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 	return l_result;
 }
 
-SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const char* name, bool AsyncUploadGPUResource)
+SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const char* name)
 {
 	SkeletonComponent* l_SamplerComp;
 
@@ -535,13 +535,13 @@ SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const cha
 		}
 
 		g_Engine->Get<AssetSystem>()->RecordLoadedSkeleton(name, l_SamplerComp);
-		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SamplerComp, AsyncUploadGPUResource);
+		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SamplerComp);
 
 		return l_SamplerComp;
 	}
 }
 
-MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const char* name, bool AsyncUploadGPUResource)
+MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const char* name)
 {
 	auto l_MeshComp = g_Engine->getRenderingServer()->AddMaterialComponent();
 	l_MeshComp->m_InstanceName = (std::string(name) + ("//")).c_str();
@@ -582,7 +582,7 @@ MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const cha
 
 	l_MeshComp->m_ObjectStatus = ObjectStatus::Created;
 
-	g_Engine->getRenderingServer()->InitializeMaterialComponent(l_MeshComp, AsyncUploadGPUResource);
+	g_Engine->getRenderingServer()->InitializeMaterialComponent(l_MeshComp);
 
 	return l_MeshComp;
 }

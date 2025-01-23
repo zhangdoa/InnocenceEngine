@@ -209,24 +209,24 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		l_renderingServer->UploadGPUBufferComponent(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 
-		l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-		l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-		l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+		// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+		// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+		// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
+		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_GIGPUBufferComp, 1);
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_probeSphereMeshGPUBufferComp, 2);
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
+		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_GIGPUBufferComp, 1);
+		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_probeSphereMeshGPUBufferComp, 2);
+		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
 
-		l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_probeSphereMeshData.size());
+		// l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_probeSphereMeshData.size());
 
-		l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
+		// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
 
-		l_renderingServer->CommandListEnd(m_RenderPassComp);
+		// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-		l_renderingServer->ExecuteCommandList(m_RenderPassComp, GPUEngineType::Graphics);
+		// l_renderingServer->ExecuteCommandList(m_RenderPassComp, GPUEngineType::Graphics);
 
 		
 	}

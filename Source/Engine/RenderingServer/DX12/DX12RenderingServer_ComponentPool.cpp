@@ -1,4 +1,4 @@
-#include "DX12RenderingComponentPool.h"
+#include "DX12RenderingServer.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 
@@ -10,7 +10,7 @@
 
 using namespace Inno;
 
-void DX12RenderingComponentPool::Initialize()
+bool DX12RenderingServer::InitializePool()
 {
     auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -24,9 +24,11 @@ void DX12RenderingComponentPool::Initialize()
     m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
     m_SamplerComponentPool = TObjectPool<DX12SamplerComponent>::Create(256);
     m_GPUBufferComponentPool = TObjectPool<DX12GPUBufferComponent>::Create(256);
+
+	return true;
 }
 
-void DX12RenderingComponentPool::Terminate()
+bool DX12RenderingServer::TerminatePool()
 {
 	delete m_MeshComponentPool;
 	delete m_TextureComponentPool;
@@ -38,6 +40,8 @@ void DX12RenderingComponentPool::Terminate()
 	delete m_PSOPool;
 	delete m_CommandListPool;
 	delete m_SemaphorePool;
+
+	return true;
 }
 
 AddComponent(DX12, Mesh);
@@ -48,22 +52,22 @@ AddComponent(DX12, ShaderProgram);
 AddComponent(DX12, Sampler);
 AddComponent(DX12, GPUBuffer);
 
-IPipelineStateObject* DX12RenderingComponentPool::AddPipelineStateObject()
+IPipelineStateObject* DX12RenderingServer::AddPipelineStateObject()
 {
     return m_PSOPool->Spawn();
 }
 
-ICommandList* DX12RenderingComponentPool::AddCommandList()
+ICommandList* DX12RenderingServer::AddCommandList()
 {
     return m_CommandListPool->Spawn();
 }
 
-ISemaphore* DX12RenderingComponentPool::AddSemaphore()
+ISemaphore* DX12RenderingServer::AddSemaphore()
 {
     return m_SemaphorePool->Spawn();
 }
 
-bool DX12RenderingComponentPool::Delete(MeshComponent *rhs)
+bool DX12RenderingServer::DeleteMeshComponent(MeshComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshComponent *>(rhs);
 	if(l_rhs->m_DefaultHeapBuffer_VB)
@@ -85,7 +89,7 @@ bool DX12RenderingComponentPool::Delete(MeshComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(TextureComponent *rhs)
+bool DX12RenderingServer::DeleteTextureComponent(TextureComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
@@ -99,7 +103,7 @@ bool DX12RenderingComponentPool::Delete(TextureComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(MaterialComponent *rhs)
+bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialComponent *>(rhs);
 
@@ -110,7 +114,7 @@ bool DX12RenderingComponentPool::Delete(MaterialComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(RenderPassComponent *rhs)
+bool DX12RenderingServer::DeleteRenderPassComponent(RenderPassComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent *>(rhs);
 	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
@@ -128,22 +132,22 @@ bool DX12RenderingComponentPool::Delete(RenderPassComponent *rhs)
 	m_PSOPool->Destroy(l_PSO);
 
 	if (l_rhs->m_DepthStencilRenderTarget.m_IsOwned && l_rhs->m_DepthStencilRenderTarget.m_Texture)
-		Delete(l_rhs->m_DepthStencilRenderTarget.m_Texture);
+		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget.m_Texture);
 
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
 		if (l_rhs->m_RenderTargets[i].m_IsOwned && l_rhs->m_RenderTargets[i].m_Texture)
-			Delete(l_rhs->m_RenderTargets[i].m_Texture);
+			DeleteTextureComponent(l_rhs->m_RenderTargets[i].m_Texture);
 	}
 
-	Delete(l_rhs->m_ShaderProgram);
+	DeleteShaderProgramComponent(l_rhs->m_ShaderProgram);
 
 	m_RenderPassComponentPool->Destroy(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(ShaderProgramComponent *rhs)
+bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent *>(rhs);
 	m_ShaderProgramComponentPool->Destroy(l_rhs);
@@ -151,7 +155,7 @@ bool DX12RenderingComponentPool::Delete(ShaderProgramComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(SamplerComponent *rhs)
+bool DX12RenderingServer::DeleteSamplerComponent(SamplerComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12SamplerComponent *>(rhs);
 	m_SamplerComponentPool->Destroy(l_rhs);
@@ -159,7 +163,7 @@ bool DX12RenderingComponentPool::Delete(SamplerComponent *rhs)
 	return false;
 }
 
-bool DX12RenderingComponentPool::Delete(GPUBufferComponent *rhs)
+bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
@@ -174,7 +178,7 @@ bool DX12RenderingComponentPool::Delete(GPUBufferComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(IPipelineStateObject *rhs)
+bool DX12RenderingServer::Delete(IPipelineStateObject *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12PipelineStateObject *>(rhs);
 	l_rhs->m_PSO.ReleaseAndGetAddressOf();
@@ -183,7 +187,7 @@ bool DX12RenderingComponentPool::Delete(IPipelineStateObject *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(ICommandList *rhs)
+bool DX12RenderingServer::Delete(ICommandList *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12CommandList *>(rhs);
 	l_rhs->m_DirectCommandList.ReleaseAndGetAddressOf();
@@ -195,7 +199,7 @@ bool DX12RenderingComponentPool::Delete(ICommandList *rhs)
 	return true;
 }
 
-bool DX12RenderingComponentPool::Delete(ISemaphore *rhs)
+bool DX12RenderingServer::Delete(ISemaphore *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12Semaphore *>(rhs);
 	

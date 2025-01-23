@@ -1,6 +1,10 @@
 #pragma once
 #include "../Common/STL14.h"
 
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 namespace Inno
 {
 	using HRClock = std::chrono::high_resolution_clock;

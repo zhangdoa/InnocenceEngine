@@ -34,12 +34,7 @@
 #endif
 
 #if defined INNO_RENDERER_DIRECTX
-#include "RenderingServer/DX11/DX11RenderingServer.h"
 #include "RenderingServer/DX12/DX12RenderingServer.h"
-#endif
-
-#if defined INNO_RENDERER_OPENGL
-#include "RenderingServer/GL/GLRenderingServer.h"
 #endif
 
 #if defined INNO_RENDERER_VULKAN
@@ -183,7 +178,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 
 	if (l_renderingServerArgPos == std::string::npos)
 	{
-		Log(Warning, "No rendering backend argument found, use default OpenGL rendering backend.");
+		Log(Error, "No rendering backend argument found.");
 	}
 	else
 	{
@@ -192,47 +187,27 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 
 		if (l_rendererArguments == "0")
 		{
-#if defined INNO_RENDERER_OPENGL
-			l_result.renderingServer = RenderingServer::GL;
+#if defined INNO_RENDERER_DIRECTX
+			l_result.renderingServer = RenderingServer::DX12;
 #else
-			Log(Warning, "OpenGL is not supported on current platform, no rendering backend will be launched.");
+			Log(Warning, "DirectX 12 is not supported on current platform.");
 #endif
 		}
 		else if (l_rendererArguments == "1")
 		{
-#if defined INNO_RENDERER_DIRECTX
-			l_result.renderingServer = RenderingServer::DX11;
+#if defined INNO_RENDERER_VULKAN
+			l_result.renderingServer = RenderingServer::VK;
 #else
-			Log(Warning, "DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
+			Log(Warning, "Vulkan is not supported on current platform.");
 #endif
 		}
 		else if (l_rendererArguments == "2")
 		{
-#if defined INNO_RENDERER_DIRECTX
-			l_result.renderingServer = RenderingServer::DX12;
-#else
-			Log(Warning, "DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
-#endif
-		}
-		else if (l_rendererArguments == "3")
-		{
-#if defined INNO_RENDERER_VULKAN
-			l_result.renderingServer = RenderingServer::VK;
-#else
-			Log(Warning, "Vulkan is not supported on current platform, use default OpenGL rendering backend.");
-#endif
-		}
-		else if (l_rendererArguments == "4")
-		{
 #if defined INNO_RENDERER_METAL
 			l_result.renderingServer = RenderingServer::MT;
 #else
-			Log(Warning, "Metal is not supported on current platform, use default OpenGL rendering backend.");
+			Log(Warning, "Metal is not supported on current platform.");
 #endif
-		}
-		else
-		{
-			Log(Warning, "Unsupported rendering backend, use default OpenGL rendering backend.");
 		}
 	}
 
@@ -307,16 +282,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 
 	switch (m_pImpl->m_initConfig.renderingServer)
 	{
-	case RenderingServer::GL:
-#if defined INNO_RENDERER_OPENGL
-		m_pImpl->m_RenderingServer = std::make_unique<GLRenderingServer>();
-#endif
-		break;
-	case RenderingServer::DX11:
-#if defined INNO_RENDERER_DIRECTX
-		m_pImpl->m_RenderingServer = std::make_unique<DX11RenderingServer>();
-#endif
-		break;
 	case RenderingServer::DX12:
 #if defined INNO_RENDERER_DIRECTX
 		m_pImpl->m_RenderingServer = std::make_unique<DX12RenderingServer>();
@@ -416,7 +381,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	SystemSetup(RenderingContextService);
 	SystemSetup(AnimationService);
 
-	if (!m_pImpl->m_RenderingServer->Setup())
+	if (!m_pImpl->m_RenderingServer->Setup(nullptr))
 	{
 		Log(Error, "Rendering Server can't be setup!");
 		return false;

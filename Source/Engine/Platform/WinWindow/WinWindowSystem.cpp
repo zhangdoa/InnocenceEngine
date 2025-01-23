@@ -5,7 +5,6 @@
 #include "../../Services/RenderingContextService.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
-#include "GLWindowSurface/WinGLWindowSurface.h"
 #include "VKWindowSurface/WinVKWindowSurface.h"
 
 #include "../../Engine.h"
@@ -107,14 +106,6 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	WinWindowSystemNS::m_InitConfig = g_Engine->getInitConfig();
 	switch (WinWindowSystemNS::m_InitConfig.renderingServer)
 	{
-	case RenderingServer::GL:
-		WinWindowSystemNS::m_WindowSurface = new WinGLWindowSurface();
-		break;
-	case RenderingServer::DX11:
-#if defined INNO_PLATFORM_WIN
-		WinWindowSystemNS::m_WindowSurface = new WinDXWindowSurface();
-#endif
-		break;
 	case RenderingServer::DX12:
 #if defined INNO_PLATFORM_WIN
 		WinWindowSystemNS::m_WindowSurface = new WinDXWindowSurface();

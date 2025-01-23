@@ -1,14 +1,14 @@
 #pragma once
 #include "../../Common/LogService.h"
-#include "../../Component/DX12TextureComponent.h"
+
 #include "../../Component/DX12RenderPassComponent.h"
-#include "../../Component/DX12ShaderProgramComponent.h"
 #include "../IRenderingServer.h"
 
 namespace Inno
 {
 	namespace DX12Helper
 	{
+		D3D12_DESCRIPTOR_HEAP_DESC GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, wchar_t* name, bool shaderVisible = true);
         D3D12_DESCRIPTOR_RANGE_TYPE GetDescriptorRangeType(DX12RenderPassComponent* DX12RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
         void CreateInputLayout(DX12PipelineStateObject* PSO);
 		bool CreateShaderPrograms(DX12RenderPassComponent *DX12RenderPassComp);

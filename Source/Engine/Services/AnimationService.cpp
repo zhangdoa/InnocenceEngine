@@ -184,26 +184,16 @@ AnimationComponent* AnimationService::AddAnimationComponent()
 	return l_ADC;
 }
 
-bool AnimationService::InitializeSkeletonComponent(SkeletonComponent* rhs, bool AsyncUploadToGPU)
+bool AnimationService::InitializeSkeletonComponent(SkeletonComponent* rhs)
 {
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool AnimationService::InitializeAnimationComponent(AnimationComponent* rhs, bool AsyncUploadToGPU)
+bool AnimationService::InitializeAnimationComponent(AnimationComponent* rhs)
 {
-	if (AsyncUploadToGPU)
-	{
-		m_Impl->m_uninitializedAnimations.push(rhs);
-	}
-	else
-	{
-		auto l_AnimationComponentInitializeTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("AnimationComponentInitializeTask", ITask::Type::Once, 2),
-			[=]() { m_Impl->initializeAnimation(rhs); });
-		l_AnimationComponentInitializeTask->Activate();
-		l_AnimationComponentInitializeTask->Wait();
-	}
+	m_Impl->m_uninitializedAnimations.push(rhs);
 
 	return true;
 }

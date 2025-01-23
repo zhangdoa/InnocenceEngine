@@ -112,31 +112,31 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_BillboardGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Billboard);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
+	// auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 
-	auto& l_billboardPassDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetBillboardPassDrawCallInfo();
-	auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
+	// auto& l_billboardPassDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetBillboardPassDrawCallInfo();
+	// auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
 
-	for (uint32_t i = 0; i < l_drawCallCount; i++)
-	{
-		auto l_iconTexture = l_billboardPassDrawCallInfo[i].iconTexture;
-		auto l_offset = l_billboardPassDrawCallInfo[i].meshConstantBufferOffset;
-		auto l_instanceCount = l_billboardPassDrawCallInfo[i].instanceCount;
+	// for (uint32_t i = 0; i < l_drawCallCount; i++)
+	// {
+	// 	auto l_iconTexture = l_billboardPassDrawCallInfo[i].iconTexture;
+	// 	auto l_offset = l_billboardPassDrawCallInfo[i].meshConstantBufferOffset;
+	// 	auto l_instanceCount = l_billboardPassDrawCallInfo[i].instanceCount;
 
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_BillboardGPUBufferComp, 1, l_offset, l_instanceCount);
+	// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_BillboardGPUBufferComp, 1, l_offset, l_instanceCount);
 
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
+	// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
 
-		l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_mesh, l_instanceCount);
+	// 	l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_mesh, l_instanceCount);
 
-		l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
-	}
+	// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
+	// }
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

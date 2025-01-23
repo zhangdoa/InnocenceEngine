@@ -45,7 +45,7 @@ bool AssetSystem::FindLoaded##funcName(const char * fileName, type value) \
 
 namespace AssetSystemNS
 {
-	std::function<void(ModelComponent*, bool)> f_LoadModelTask;
+	std::function<void(ModelComponent*)> f_LoadModelTask;
 
 	TObjectPool<RenderableSet>* m_renderableSetPool;
 	TObjectPool<Model>* m_modelPool;
@@ -70,17 +70,17 @@ bool AssetSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->Get<ComponentManager>()->RegisterType<ModelComponent>(32768, this);
 
-	f_LoadModelTask = [=](ModelComponent* i, bool AsyncLoad)
+	f_LoadModelTask = [=](ModelComponent* i)
 	{
 		if (!i->m_modelFileName.empty())
 		{
-			i->m_Model = LoadModel(i->m_modelFileName.c_str(), AsyncLoad);
+			i->m_Model = LoadModel(i->m_modelFileName.c_str());
 		}
 		else if (i->m_MeshShape != MeshShape::Customized)
 		{
 			i->m_Model = AddModel(i->m_MeshShape, ShaderModel::Opaque);
 			auto l_pair = GetRenderableSet(i->m_Model->renderableSets.m_startOffset);
-			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_pair->material, AsyncLoad);
+			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_pair->material);
 		}
 		else
 		{
@@ -147,7 +147,7 @@ bool AssetSystem::ConvertModel(const char* fileName, const char* exportPath)
 	}
 }
 
-Model* AssetSystem::LoadModel(const char* fileName, bool AsyncUploadGPUResource)
+Model* AssetSystem::LoadModel(const char* fileName)
 {
 	auto l_extension = g_Engine->Get<IOService>()->getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
@@ -160,7 +160,7 @@ Model* AssetSystem::LoadModel(const char* fileName, bool AsyncUploadGPUResource)
 		}
 		else
 		{
-			auto l_result = JSONWrapper::loadModelFromDisk(fileName, AsyncUploadGPUResource);
+			auto l_result = JSONWrapper::loadModelFromDisk(fileName);
 			RecordLoadedModel(fileName, l_result);
 
 			return l_result;
@@ -207,14 +207,7 @@ bool AssetSystem::LoadAssetsForComponents(bool AsyncLoad)
 	auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
 	for (auto i : l_modelComponents)
 	{
-		if (AsyncLoad)
-		{
-			auto l_loadModelTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Load Model Task", ITask::Type::Once, 4), f_LoadModelTask, i, true);
-		}
-		else
-		{
-			f_LoadModelTask(i, false);
-		}
+		auto l_loadModelTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Load Model Task", ITask::Type::Once, 4), f_LoadModelTask, i);
 	}
 
 	return true;

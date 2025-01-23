@@ -48,24 +48,9 @@ namespace Inno
 
 	class DX12DescriptorHeap
 	{
-	public:
-		explicit DX12DescriptorHeap(ComPtr<ID3D12Device> device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, wchar_t* name, bool shaderVisible = true)
-			: m_Desc{ type, numDescriptors, shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE }
-			, m_ShaderVisible(shaderVisible)
-		{
-			m_Heap = DX12Device->CreateDescriptorHeap(m_Desc);
-			if (m_Heap)
-				Log(Success, "DescriptorHeap", name, " has been created.");
-			else
-				Log(Error, "Can't create DescriptorHeap for ", name, "!");
+		friend class DX12RenderingServer;
 		
-			m_Heap->SetName(name);
-			m_Handle.CPUHandle = m_Heap->GetCPUDescriptorHandleForHeapStart();
-			if (m_ShaderVisible)
-				m_Handle.GPUHandle = m_Heap->GetGPUDescriptorHandleForHeapStart();
-			m_DescriptorSize = device->GetDescriptorHandleIncrementSize(type);
-		}
-
+	public:
 		ComPtr<ID3D12DescriptorHeap> GetHeap() const { return m_Heap; }
 
 		DX12DescriptorHandle GetNewHandle()

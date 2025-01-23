@@ -158,45 +158,45 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
 
-	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	auto l_drawCallCount = l_drawCallInfo.size();
+	// auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
+	// auto l_drawCallCount = l_drawCallInfo.size();
 
-	for (uint32_t i = 0; i < l_drawCallCount; i++)
-	{
-		auto l_drawCallData = l_drawCallInfo[i];
-		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::MainCamera);
-		//if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			//if (l_drawCallData.material->m_ShaderModel == ShaderModel::Transparent)
-			{
-				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
-				{
-					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
-					l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+	// for (uint32_t i = 0; i < l_drawCallCount; i++)
+	// {
+	// 	auto l_drawCallData = l_drawCallInfo[i];
+	// 	auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::MainCamera);
+	// 	//if (l_visible && l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+	// 	{
+	// 		//if (l_drawCallData.material->m_ShaderModel == ShaderModel::Transparent)
+	// 		{
+	// 			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+	// 			{
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
 
-					l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
-				}
-			}
-		}
-	}
+	// 				l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	return true;
 }

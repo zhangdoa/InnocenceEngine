@@ -1,6 +1,6 @@
 #pragma once
-#include "vulkan/vulkan.h"
 #include "TextureComponent.h"
+#include "../RenderingServer/VK/VKHeaders.h"
 
 namespace Inno
 {

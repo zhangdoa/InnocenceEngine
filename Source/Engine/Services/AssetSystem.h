@@ -23,7 +23,7 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool ConvertModel(const char* fileName, const char* exportPath);
-		Model* LoadModel(const char* fileName, bool AsyncUploadGPUResource = true);
+		Model* LoadModel(const char* fileName);
 		TextureComponent* LoadTexture(const char* fileName);
 		bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
 		bool SaveTexture(const char* fileName, TextureComponent* TextureComp);

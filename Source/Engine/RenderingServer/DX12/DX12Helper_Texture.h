@@ -1,8 +1,7 @@
 #pragma once
 #include "../../Common/LogService.h"
+
 #include "../../Component/DX12TextureComponent.h"
-#include "../../Component/DX12RenderPassComponent.h"
-#include "../../Component/DX12ShaderProgramComponent.h"
 #include "../IRenderingServer.h"
 
 namespace Inno

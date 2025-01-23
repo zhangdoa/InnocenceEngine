@@ -1,6 +1,6 @@
 #pragma once
 #include "GPUBufferComponent.h"
-#include "vulkan/vulkan.h"
+#include "../RenderingServer/VK/VKHeaders.h"
 
 namespace Inno
 {
