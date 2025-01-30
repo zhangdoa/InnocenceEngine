@@ -119,7 +119,7 @@ namespace Inno
 			// LuminanceHistogramPass::Get().Setup();
 			// LuminanceAveragePass::Get().Setup();
 
-			SunShadowGeometryProcessPass::Get().Setup();
+			//SunShadowGeometryProcessPass::Get().Setup();
 			// SunShadowBlurOddPass::Get().Setup();
 			// SunShadowBlurEvenPass::Get().Setup();
 			// VXGIRenderer::Get().Setup(&m_VXGIRendererSystemConfig);
@@ -141,6 +141,16 @@ namespace Inno
 			// FinalBlendPass::Get().Setup();
 
 			// BSDFTestPass::Get().Setup();
+
+			auto f_getUserPipelineOutputFunc = []()
+			{
+				// return FinalBlendPass::Get().GetResult();
+				return OpaquePass::Get().GetResult();
+			};
+			
+			auto l_renderingServer = g_Engine->getRenderingServer();
+
+			l_renderingServer->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 		};
 
 		f_InitializeJob = [&]() {
@@ -170,7 +180,7 @@ namespace Inno
 			// LuminanceHistogramPass::Get().Initialize();
 			// LuminanceAveragePass::Get().Initialize();
 
-			SunShadowGeometryProcessPass::Get().Initialize();
+			//SunShadowGeometryProcessPass::Get().Initialize();
 			// SunShadowBlurOddPass::Get().Initialize();
 			// SunShadowBlurEvenPass::Get().Initialize();
 			// VXGIRenderer::Get().Initialize();
@@ -192,14 +202,6 @@ namespace Inno
 			// FinalBlendPass::Get().Initialize();
 
 			// BSDFTestPass::Get().Initialize();
-
-			auto f_getUserPipelineOutputFunc = []()
-			{
-				// return FinalBlendPass::Get().GetResult();
-				return SunShadowGeometryProcessPass::Get().GetResult();
-			};
-
-			l_renderingServer->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 		};
 
 		f_PrepareJob = [&]() {
@@ -223,16 +225,16 @@ namespace Inno
 			// l_renderingServer->WaitCommandQueue(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			// l_renderingServer->ExecuteCommandList(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 
-			SunShadowGeometryProcessPass::Get().PrepareCommandList();
+			//SunShadowGeometryProcessPass::Get().PrepareCommandList();
 
 			// The blurring would cause precision errors and then flickering when camera rotates
 			// SunShadowBlurOddPass::Get().PrepareCommandList();
 			// SunShadowBlurEvenPass::Get().PrepareCommandList();
 
-			l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-			l_renderingServer->WaitCommandQueue(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
+			// l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+			// l_renderingServer->WaitCommandQueue(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			l_renderingServer->WaitCommandQueue(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			// l_renderingServer->WaitCommandQueue(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			// l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 			// l_renderingServer->WaitCommandQueue(SunShadowBlurOddPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			// l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
@@ -480,7 +482,7 @@ namespace Inno
 			// BRDFLUTPass::Get().Terminate();
 			// SunShadowBlurEvenPass::Get().Terminate();
 			// SunShadowBlurOddPass::Get().Terminate();
-			SunShadowGeometryProcessPass::Get().Terminate();
+			//SunShadowGeometryProcessPass::Get().Terminate();
 
 			// LuminanceAveragePass::Get().Terminate();
 			// LuminanceHistogramPass::Get().Terminate();

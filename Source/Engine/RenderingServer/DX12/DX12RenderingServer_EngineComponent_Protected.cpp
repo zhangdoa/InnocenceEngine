@@ -45,7 +45,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent *rhs)
 	l_rhs->m_VBV.StrideInBytes = sizeof(Vertex);
 	l_rhs->m_VBV.SizeInBytes = l_verticesDataSize;
 
-	Log(Verbose, "Vertex Buffer ", l_rhs->m_DefaultHeapBuffer_VB, " is initialized.");
+	Log(Verbose, l_rhs->m_InstanceName, " Vertex Buffer is initialized.");
 
 	// indices
 	auto l_indicesDataSize = uint32_t(sizeof(Index) * l_rhs->m_Indices.size());
@@ -75,7 +75,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent *rhs)
 	l_rhs->m_IBV.BufferLocation = l_rhs->m_DefaultHeapBuffer_IB->GetGPUVirtualAddress();
 	l_rhs->m_IBV.SizeInBytes = l_indicesDataSize;
 
-	Log(Verbose, "Index Buffer ", l_rhs->m_DefaultHeapBuffer_IB, " is initialized.");
+	Log(Verbose, l_rhs->m_InstanceName, " Index Buffer is initialized.");
 
 	UpdateMeshComponent(l_rhs);
 
@@ -89,21 +89,13 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
 
+	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_DX12TextureDesc = GetDX12TextureDesc(l_rhs->m_TextureDesc);
 	l_rhs->m_PixelDataSize = GetTexturePixelDataSize(l_rhs->m_TextureDesc);
 	l_rhs->m_WriteState = GetTextureWriteState(l_rhs->m_TextureDesc);
 	l_rhs->m_ReadState = GetTextureReadState(l_rhs->m_TextureDesc);
 
-	if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment
-	 || l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment
-	  || l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
-	{
-		l_rhs->m_CurrentState = l_rhs->m_WriteState;
-	}
-	else
-	{
-		l_rhs->m_CurrentState = l_rhs->m_ReadState;
-	}
+	l_rhs->m_CurrentState = l_rhs->m_ReadState;
 
 	// Create the empty texture.
 	D3D12_CLEAR_VALUE l_clearValue = {};
@@ -175,13 +167,13 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent *rhs)
 	
 	// Create SRV and UAV
 	l_rhs->m_SRV = CreateSRV(l_rhs, 0);
-	if (l_rhs->m_TextureDesc.UseMipMap)
-	{
-		for (uint32_t TopMip = 1; TopMip < 4; TopMip++)
-		{
-			auto l_SRV = CreateSRV(l_rhs, TopMip);
-		}
-	}
+	// if (l_rhs->m_TextureDesc.UseMipMap)
+	// {
+	// 	for (uint32_t TopMip = 1; TopMip < 4; TopMip++)
+	// 	{
+	// 		auto l_SRV = CreateSRV(l_rhs, TopMip);
+	// 	}
+	// }
 
 	if (l_rhs->m_TextureDesc.Usage != TextureUsage::DepthAttachment 
 	&& l_rhs->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment)
@@ -189,13 +181,13 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent *rhs)
 		if (!l_rhs->m_TextureDesc.IsSRGB)
 		{
 			l_rhs->m_UAV = CreateUAV(l_rhs, 0);
-			if (l_rhs->m_TextureDesc.UseMipMap)
-			{
-				for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
-				{
-					auto l_UAV = CreateUAV(l_rhs, TopMip + 1);
-				}
-			}
+			// if (l_rhs->m_TextureDesc.UseMipMap)
+			// {
+			// 	for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
+			// 	{
+			// 		auto l_UAV = CreateUAV(l_rhs, TopMip + 1);
+			// 	}
+			// }
 		}
 	}
 
@@ -204,7 +196,6 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent *rhs)
 		GenerateMipmap(l_rhs);
 	}
 
-	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	Log(Verbose, "Texture ", l_rhs->m_InstanceName, " is initialized.");
@@ -338,6 +329,7 @@ bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent *rhs)
 bool DX12RenderingServer::InitializeImpl(SamplerComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12SamplerComponent *>(rhs);
+	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 
 	l_rhs->m_Sampler.SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod, l_rhs->m_SamplerDesc.m_MagFilterMethod);
 	l_rhs->m_Sampler.SamplerDesc.AddressU = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
@@ -352,10 +344,9 @@ bool DX12RenderingServer::InitializeImpl(SamplerComponent *rhs)
 	l_rhs->m_Sampler.SamplerDesc.MinLOD = l_rhs->m_SamplerDesc.m_MinLOD;
 	l_rhs->m_Sampler.SamplerDesc.MaxLOD = l_rhs->m_SamplerDesc.m_MaxLOD;
 
-	l_rhs->m_Sampler.Handle = GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER).GetNewHandle();
+	l_rhs->m_Sampler.Handle = m_SamplerDescHeapAccessor.GetNewHandle();
 	GetDevice()->CreateSampler(&l_rhs->m_Sampler.SamplerDesc, l_rhs->m_Sampler.Handle.CPUHandle);
 
-	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -365,6 +356,7 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
+	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 
 	auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize);
@@ -407,7 +399,6 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 		UploadGPUBufferComponent(l_rhs, l_rhs->m_InitialData);
 	}
 
-	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;

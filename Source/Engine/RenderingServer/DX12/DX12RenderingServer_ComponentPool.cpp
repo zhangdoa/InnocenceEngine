@@ -23,7 +23,7 @@ bool DX12RenderingServer::InitializePool()
     m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
     m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
     m_SamplerComponentPool = TObjectPool<DX12SamplerComponent>::Create(256);
-    m_GPUBufferComponentPool = TObjectPool<DX12GPUBufferComponent>::Create(256);
+    m_GPUBufferComponentPool = TObjectPool<DX12GPUBufferComponent>::Create(l_renderingCapability.maxBuffers);
 
 	return true;
 }
@@ -160,7 +160,7 @@ bool DX12RenderingServer::DeleteSamplerComponent(SamplerComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12SamplerComponent *>(rhs);
 	m_SamplerComponentPool->Destroy(l_rhs);
 
-	return false;
+	return true;
 }
 
 bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)

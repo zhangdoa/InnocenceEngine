@@ -31,11 +31,13 @@ bool DX12RenderingServer::CreateHardwareResources()
 
 bool DX12RenderingServer::ReleaseHardwareResources()
 {
-    m_SamplerDescHeap.GetHeap().ReleaseAndGetAddressOf();
-    m_DSVDescHeap.GetHeap().ReleaseAndGetAddressOf();
-    m_RTVDescHeap.GetHeap().ReleaseAndGetAddressOf();
-    m_ShaderNonVisibleCSUDescHeap.GetHeap().ReleaseAndGetAddressOf();
-    m_CSUDescHeap.GetHeap().ReleaseAndGetAddressOf();
+    // @TODO: Release accessors first
+
+    m_SamplerDescHeap.ReleaseAndGetAddressOf();
+    m_DSVDescHeap.ReleaseAndGetAddressOf();
+    m_RTVDescHeap.ReleaseAndGetAddressOf();
+    m_CSUDescHeap_ShaderNonVisible.ReleaseAndGetAddressOf();
+    m_CSUDescHeap.ReleaseAndGetAddressOf();
 
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
@@ -132,9 +134,9 @@ bool DX12RenderingServer::PostPresent()
 {
 	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+	// GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
+	// GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
+	// GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
 
     return true;
 }

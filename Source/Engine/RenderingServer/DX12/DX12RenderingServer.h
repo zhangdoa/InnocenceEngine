@@ -50,12 +50,13 @@ namespace Inno
 
         bool ClearTextureComponent(TextureComponent* rhs) override;
         bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
-        uint32_t GetIndex(GPUResourceComponent* rhs) override;
+        uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
         bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
         bool BindRenderPassComponent(RenderPassComponent* rhs) override;
         bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
-        bool Bind(RenderPassComponent* renderPass, GPUResourceComponent* resource, ShaderStage shaderStage, uint32_t rootParameterIndex, Accessibility bindingAccessibility) override;
+        bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) override;
+        bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount) override;
         void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
         bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
         bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
@@ -81,8 +82,9 @@ namespace Inno
         ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType);
         ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
         ComPtr<ID3D12GraphicsCommandList> GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType);
-        DX12DescriptorHeap& GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, bool isShaderVisible = true);
-        
+        DX12DescriptorHeapAccessor& GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility = Accessibility::ReadOnly
+        , Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
+
     protected:
         // In DX12RenderingServer_ComponentPool.cpp
         bool InitializeImpl(MeshComponent* rhs) override;
@@ -123,9 +125,6 @@ namespace Inno
 
         // APIs for DX12 objects
         // In DX12RenderingServer_DX12Object.cpp
-        DX12SRV CreateSRV(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle);
-        DX12UAV CreateUAV(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter);
-
         ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name = "");
         ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
         ComPtr<ID3D12Resource> CreateReadBackHeapBuffer(UINT64 size, const char* name = "");
@@ -139,7 +138,16 @@ namespace Inno
 
         // APIs for engine components
         // In DX12RenderingServer_EngineComponent_Private.cpp
-        DX12DescriptorHeap CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, wchar_t* name = L"", bool shaderVisible = true);
+        DX12DescriptorHeapAccessor CreateDescriptorHeapAccessor
+        (
+            ComPtr<ID3D12DescriptorHeap> descHeap, 
+            D3D12_DESCRIPTOR_HEAP_DESC desc, 
+            uint32_t maxDescriptors, 
+            uint32_t descriptorSize, 
+            const DX12DescriptorHandle& firstHandle,
+            bool shaderVisible,
+            const wchar_t* name
+        );
         bool CreateRTV(DX12RenderPassComponent* rhs);
         bool CreateDSV(DX12RenderPassComponent* rhs);
         DX12SRV CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip);
@@ -147,12 +155,15 @@ namespace Inno
         DX12UAV CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice);
         DX12UAV CreateUAV(DX12GPUBufferComponent* rhs);
         DX12CBV CreateCBV(DX12GPUBufferComponent* rhs);
-
+        
         bool CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp);
+        D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(DX12RenderPassComponent* DX12RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
         bool CreatePSO(DX12RenderPassComponent* DX12RenderPassComp);
         bool CreateCommandList(DX12CommandList* commandList, size_t swapChainImageIndex, const std::wstring& name);
         bool CreateFenceEvents(DX12RenderPassComponent* DX12RenderPassComp);
 
+        bool BindComputeResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
+        bool BindGraphicsResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
         bool SetDescriptorHeaps(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool SetRenderTargets(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool PreparePipeline(DX12RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
@@ -199,12 +210,32 @@ namespace Inno
         ComPtr<ID3D12CommandAllocator> m_copyCommandAllocator = nullptr;
         std::vector<DX12CommandList*> m_GlobalCommandLists;
 
-        DX12DescriptorHeap m_CSUDescHeap;
-        DX12DescriptorHeap m_ShaderNonVisibleCSUDescHeap;
-        DX12DescriptorHeap m_RTVDescHeap;
-        DX12DescriptorHeap m_DSVDescHeap;
-        DX12DescriptorHeap m_SamplerDescHeap;
+        ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = nullptr;
+        DX12DescriptorHeapAccessor m_GPUBuffer_CBV_DescHeapAccessor;
 
+        DX12DescriptorHeapAccessor m_GPUBuffer_SRV_DescHeapAccessor;
+
+        DX12DescriptorHeapAccessor m_MaterialTexture_SRV_DescHeapAccessor; // @TODO: This is only for read-only material textures
+        DX12DescriptorHeapAccessor m_RenderTarget_SRV_DescHeapAccessor; // @TODO: Change this to for render targets since they can't be together with the read-only material textures
+
+        DX12DescriptorHeapAccessor m_GPUBuffer_UAV_DescHeapAccessor;
+        DX12DescriptorHeapAccessor m_MaterialTexture_UAV_DescHeapAccessor;
+        DX12DescriptorHeapAccessor m_RenderTarget_UAV_DescHeapAccessor;
+
+        ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap_ShaderNonVisible = nullptr;
+        DX12DescriptorHeapAccessor m_GPUBuffer_UAV_DescHeapAccessor_ShaderNonVisible;
+        DX12DescriptorHeapAccessor m_MaterialTexture_UAV_DescHeapAccessor_ShaderNonVisible;
+        DX12DescriptorHeapAccessor m_RenderTarget_UAV_DescHeapAccessor_ShaderNonVisible;
+
+        ComPtr<ID3D12DescriptorHeap> m_RTVDescHeap = nullptr;
+        DX12DescriptorHeapAccessor m_RTVDescHeapAccessor;
+
+        ComPtr<ID3D12DescriptorHeap> m_DSVDescHeap = nullptr;
+        DX12DescriptorHeapAccessor m_DSVDescHeapAccessor;
+
+        ComPtr<ID3D12DescriptorHeap> m_SamplerDescHeap = nullptr;
+        DX12DescriptorHeapAccessor m_SamplerDescHeapAccessor;
+        
         ID3D12RootSignature* m_2DMipmapRootSignature = nullptr;
         ID3D12RootSignature* m_3DMipmapRootSignature = nullptr;
         ID3D12PipelineState* m_2DMipmapPSO = nullptr;

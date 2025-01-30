@@ -44,6 +44,7 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
@@ -60,10 +61,9 @@ bool BillboardPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
-
-	m_RenderPassComp->m_OnResize = std::bind(&BillboardPass::InitializeResourceBindingLayoutDescs, this);
 
 	return true;
 }
@@ -75,18 +75,8 @@ bool BillboardPass::Initialize()
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
-
-    InitializeResourceBindingLayoutDescs();
 	
 	return true;
-}
-
-void BillboardPass::InitializeResourceBindingLayoutDescs()
-{
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = m_SamplerComp;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 }
 
 bool BillboardPass::Terminate()
@@ -111,6 +101,9 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_BillboardGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Billboard);
+
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = m_SamplerComp;
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

@@ -42,17 +42,20 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 3;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
@@ -60,14 +63,15 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_RenderPassComp->m_OnResize = std::bind(&FinalBlendPass::InitializeResourceBindingLayoutDescs, this);
 	m_ObjectStatus = ObjectStatus::Created;
 	
 	return true;
@@ -85,20 +89,6 @@ bool FinalBlendPass::Initialize()
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
-}
-
-void FinalBlendPass::InitializeResourceBindingLayoutDescs()
-{
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Compute;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = LuminanceAveragePass::Get().GetResult();
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Compute;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Compute;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Compute;
 }
 
 bool FinalBlendPass::Terminate()
@@ -124,6 +114,16 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
+
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
+
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = LuminanceAveragePass::Get().GetResult();
+
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
+
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

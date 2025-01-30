@@ -314,6 +314,7 @@ bool RenderingContextServiceImpl::updateMeshData()
 	l_animationDrawCallInfoVector.clear();
 	l_animationCBVector.clear();
 
+	uint32_t l_drawCallIndex = 0;
 	auto l_cullingResultCount = m_cullingResults.size();
 	for (size_t i = 0; i < l_cullingResultCount; i++)
 	{
@@ -356,7 +357,7 @@ bool RenderingContextServiceImpl::updateMeshData()
 		DrawCallInfo l_drawCallInfo;
 
 		l_drawCallInfo.mesh = l_mesh;
-		l_drawCallInfo.m_PerObjectConstantBufferIndex = (uint32_t)i;
+		l_drawCallInfo.m_PerObjectConstantBufferIndex = l_drawCallIndex;
 		l_drawCallInfo.meshUsage = l_modelComponent->m_meshUsage;
 		l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
 
@@ -365,7 +366,7 @@ bool RenderingContextServiceImpl::updateMeshData()
 		l_perObjectCB.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 		l_perObjectCB.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 		l_perObjectCB.UUID = (float)l_transformComponent->m_UUID;
-		l_perObjectCB.m_MaterialIndex = (uint32_t)i; // @TODO: The material is duplicated per object, this should be fixed
+		l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
 
 		l_perObjectCBVector.emplace_back(l_perObjectCB);
 
@@ -375,10 +376,12 @@ bool RenderingContextServiceImpl::updateMeshData()
 		auto l_renderingServer = g_Engine->getRenderingServer();
 		for (size_t i = 0; i < MaxTextureSlotCount; i++)
 		{
-			l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_material->m_TextureSlots[i].m_Texture);
+			l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_material->m_TextureSlots[i].m_Texture, Accessibility::ReadOnly);
 		}
 
 		l_materialCBVector.emplace_back(l_materialCB);
+		l_drawCallInfoVector.emplace_back(l_drawCallInfo);
+		l_drawCallIndex++;
 
 		if (l_modelComponent->m_meshUsage == MeshUsage::Skeletal)
 		{
@@ -402,8 +405,6 @@ bool RenderingContextServiceImpl::updateMeshData()
 			animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)l_animationCBVector.size();
 			l_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
 		}
-
-		l_drawCallInfoVector.emplace_back(l_drawCallInfo);
 	}
 
 	m_drawCallInfoVector.SetValue(std::move(l_drawCallInfoVector));

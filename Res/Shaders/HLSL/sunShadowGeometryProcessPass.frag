@@ -1,10 +1,23 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 0)]]
+cbuffer RootConstants : register(b0)
+{
+	uint m_ObjectIndex;
+};
+
 [[vk::binding(0, 1)]]
-Texture2D t2d_albedo : register(t0);
+StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+
+[[vk::binding(1, 1)]]
+StructuredBuffer<Material_CB> g_Materials : register(t1);
+
+[[vk::binding(2, 1)]]
+Texture2D g_2DTextures[] : register(t2);
+
 [[vk::binding(0, 2)]]
-SamplerState in_samplerTypeWrap : register(s0);
+SamplerState g_Samplers[] : register(s0);
 
 struct PixelInputType
 {
@@ -25,10 +38,16 @@ PixelOutputType main(PixelInputType input)
 	float depth = input.posCS.z / input.posCS.w;
 	depth = depth * 0.5 + 0.5;
 
+	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
+	Material_CB materialCBuffer = g_Materials[perObjectCB.m_MaterialIndex];
+	SamplerState sampler = g_Samplers[0];
+
 	float transparency;
-	if (materialCBuffer.textureSlotMask & 0x00000002)
+	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;
+	if (albedoTextureIndex != 0)
 	{
-		float4 l_albedo = t2d_albedo.Sample(in_samplerTypeWrap, input.texCoord);
+		Texture2D t2d_albedo = g_2DTextures[albedoTextureIndex];
+		float4 l_albedo = t2d_albedo.Sample(sampler, input.texCoord);
 		transparency = l_albedo.a;
 	}
 	else

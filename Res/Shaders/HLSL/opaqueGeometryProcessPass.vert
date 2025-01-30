@@ -12,25 +12,42 @@ struct PixelInputType
 	float3 tangentWS : TANGENT;
 };
 
+[[vk::binding(0, 0)]]
+cbuffer RootConstants : register(b0)
+{
+	uint m_ObjectIndex;
+};
+
+[[vk::binding(1, 0)]]
+cbuffer PerFrameConstantBuffer : register(b1)
+{
+    PerFrame_CB g_Frame;
+}
+
+[[vk::binding(0, 1)]]
+StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+
 PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 PosLS = float4(input.posLS.xyz, 1.0f);
-	float4 posWS = mul(PosLS, perObjectCBuffer.m);
-	float4 posVS = mul(posWS, perFrameCBuffer.v);
-	output.posCS_orig = mul(posVS, perFrameCBuffer.p_original);
+	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
 
-	float4 posWS_prev = mul(PosLS, perObjectCBuffer.m_prev);
-	float4 posVS_prev = mul(posWS_prev, perFrameCBuffer.v_prev);
-	output.posCS_prev = mul(posVS_prev, perFrameCBuffer.p_original);
+	float4 posLS = float4(input.posLS.xyz, 1.0f);
+	float4 posWS = mul(posLS, perObjectCB.m);
+	float4 posVS = mul(posWS, g_Frame.v);
+	output.posCS_orig = mul(posVS, g_Frame.p_original);
 
-	output.posCS = mul(posVS, perFrameCBuffer.p_jittered);
+	float4 posWS_prev = mul(posLS, perObjectCB.m_prev);
+	float4 posVS_prev = mul(posWS_prev, g_Frame.v_prev);
+	output.posCS_prev = mul(posVS_prev, g_Frame.p_original);
+
+	output.posCS = mul(posVS, g_Frame.p_jittered);
 
 	output.posWS = posWS.xyz;
 	output.texCoord = input.texCoord;
-	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCBuffer.normalMat).xyz;
-	output.tangentWS = mul(float4(input.tangentLS, 0.0f), perObjectCBuffer.normalMat).xyz;
+	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCB.normalMat).xyz;
+	output.tangentWS = mul(float4(input.tangentLS, 0.0f), perObjectCB.normalMat).xyz;
 
 	return output;
 }

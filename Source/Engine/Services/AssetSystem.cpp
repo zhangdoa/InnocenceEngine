@@ -208,6 +208,7 @@ bool AssetSystem::LoadAssetsForComponents(bool AsyncLoad)
 	for (auto i : l_modelComponents)
 	{
 		auto l_loadModelTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Load Model Task", ITask::Type::Once, 4), f_LoadModelTask, i);
+		l_loadModelTask->Activate();
 	}
 
 	return true;

@@ -449,6 +449,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		if (Get<SceneSystem>()->isLoadingScene())
 			return;
 
+		m_pImpl->m_PreRenderingTask->Wait();
 		m_pImpl->m_RenderingClient->Prepare();
 		m_pImpl->m_RenderingClient->Render();
 	});
@@ -458,12 +459,12 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			if (Get<HIDService>()->IsResizing())
 				return true;
 
-			m_pImpl->m_PreRenderingTask->Wait();
+			m_pImpl->m_RenderingClientTask->Wait();
 			
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-
+			
+			m_pImpl->m_RenderingServer->Update();
 			m_pImpl->m_RenderingServer->TransferDataToGPU();
-
 			m_pImpl->m_RenderingServer->FinalizeSwapChain();
 
 			Get<GUISystem>()->Render();

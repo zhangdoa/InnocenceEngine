@@ -1,38 +1,29 @@
-[[vk::binding(0, 0)]]
-cbuffer perFrameCBuffer : register(b0)
+cbuffer RootConstants : register(b0)
 {
-	PerFrame_CB perFrameCBuffer;
-};
-
-[[vk::binding(1, 0)]]
-cbuffer perObjectCBuffer : register(b1)
-{
-	PerObject_CB perObjectCBuffer;
+	uint m_ObjectIndex;
 };
 
 [[vk::binding(2, 0)]]
-cbuffer materialCBuffer : register(b2)
-{
-	Material_CB materialCBuffer;
-};
-
-[[vk::binding(3, 0)]]
-cbuffer pointLightCBuffer : register(b3)
+cbuffer pointLightCBuffer : register(b2)
 {
 	PointLight_CB pointLights[NR_POINT_LIGHTS];
 };
 
-[[vk::binding(4, 0)]]
-cbuffer sphereLightCBuffer : register(b4)
+[[vk::binding(3, 0)]]
+cbuffer sphereLightCBuffer : register(b3)
 {
 	SphereLight_CB sphereLights[NR_SPHERE_LIGHTS];
 };
 
-[[vk::binding(5, 0)]]
-cbuffer CSMCBuffer : register(b5)
+cbuffer RootConstants : register(b0)
 {
-	CSM_CB CSMs[NR_CSM_SPLITS];
+	uint m_ObjectIndex;
 };
+
+StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+StructuredBuffer<Material_CB>  g_Materials : register(t1);
+Texture2D g_2DTextures[] : register(t2);
+SamplerState g_Samplers[] : register(s0);
 
 [[vk::binding(6, 0)]]
 cbuffer dispatchParamsCBuffer : register(b6)

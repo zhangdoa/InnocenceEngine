@@ -48,42 +48,41 @@ bool OpaquePass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	// t0 - per frame constant buffer
+	// b1 - per frame constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Vertex;
 
-	// t1 - per object constant buffer
+	// t0 - per object constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
 
-	// t2 - material constant buffer
+	// t1 - material constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 
-	// t3 - textures
+	// t2 - textures
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_TextureUsage = TextureUsage::Sample;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
 
 	// s0 - sampler
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Pixel;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
-
+	
 	m_ObjectStatus = ObjectStatus::Created;
 	
 	return true;
@@ -97,10 +96,6 @@ bool OpaquePass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Material);
-	
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -130,6 +125,16 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
+	auto l_perFrameCBuffer = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perObjectCBuffer = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_materialCBuffer = GetGPUBufferComponent(GPUBufferUsageType::Material);
+
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_perFrameCBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perObjectCBuffer, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_materialCBuffer, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 5);
+
 	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -147,4 +152,9 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 RenderPassComponent* OpaquePass::GetRenderPassComp()
 {
 	return m_RenderPassComp;
+}
+
+GPUResourceComponent* OpaquePass::GetResult()
+{
+	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }

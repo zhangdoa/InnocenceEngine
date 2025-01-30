@@ -14,7 +14,6 @@ namespace Inno
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
-        void InitializeResourceBindingLayoutDescs() override;
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent *GetRenderPassComp() override;
 

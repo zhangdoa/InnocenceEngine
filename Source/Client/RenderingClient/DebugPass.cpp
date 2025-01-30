@@ -77,6 +77,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
@@ -89,10 +90,9 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Vertex;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
-
-	m_RenderPassComp->m_OnResize = std::bind(&DebugPass::InitializeResourceBindingLayoutDescs, this);
 
 	m_debugSphereConstantBuffer.reserve(m_maxDebugMeshes);
 	m_debugCubeConstantBuffer.reserve(m_maxDebugMeshes);
@@ -120,19 +120,9 @@ bool DebugPass::Initialize()
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
-    InitializeResourceBindingLayoutDescs();
-
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
-}
-
-void DebugPass::InitializeResourceBindingLayoutDescs()
-{
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = m_debugMaterialGPUBufferComp;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Vertex;
 }
 
 bool DebugPass::Terminate()
@@ -156,7 +146,8 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = m_debugMaterialGPUBufferComp;
 // 	if (l_renderingConfig.drawDebugObject)
 // 	{
 // 		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);

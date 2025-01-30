@@ -20,7 +20,7 @@ namespace Inno
 
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
-		bool Update() override { return true; }
+		bool Update() override;
 		bool OnFrameEnd() override { return true; }
 		bool Terminate() override;
 
@@ -57,7 +57,7 @@ namespace Inno
 		void InitializeSamplerComponent(SamplerComponent* rhs);
 		void InitializeGPUBufferComponent(GPUBufferComponent* rhs);
 
-		virtual uint32_t GetIndex(GPUResourceComponent* rhs) { return 0; }
+		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
 
 		virtual bool UpdateMeshComponent(MeshComponent* rhs) { return false; }
 
@@ -79,12 +79,12 @@ namespace Inno
 		virtual bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) { return false; }
 		virtual bool BindRenderPassComponent(RenderPassComponent* rhs) { return false; }
 		virtual bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) { return false; }
-		virtual bool Bind(RenderPassComponent* renderPass, GPUResourceComponent* resource, ShaderStage shaderStage, uint32_t rootParameterIndex, Accessibility bindingAccessibility) { return false; }
-		virtual bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount = SIZE_MAX) { return false; }
+		virtual bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) { return false; }
+		virtual bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
 		virtual void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) {}
 		virtual bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount = 1) { return false; }
 		virtual bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount = 1) { return false; }
-		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount = SIZE_MAX) { return false; }
+		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
 		virtual bool CommandListEnd(RenderPassComponent* rhs) { return false; }
 		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) { return false; }
 		virtual bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
@@ -134,7 +134,7 @@ namespace Inno
 		virtual bool InitializeImpl(GPUBufferComponent* rhs) { return false; }
 
 		virtual bool UploadImpl(GPUBufferComponent* rhs) { return false; }
-		virtual bool PrepareRenderTargets(RenderPassComponent* renderPass, ICommandList* commandList);
+		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility);
 		
 		virtual bool InitializePool() { return false; }
 		virtual bool TerminatePool() { return false; }
@@ -170,8 +170,6 @@ namespace Inno
         std::unordered_set<MaterialComponent*> m_initializedMaterials;
         std::vector<RenderPassComponent*> m_initializedRenderPasses;
 		
-        std::vector<GPUBufferComponent*> m_uninitializedBuffers;
-
 	private:
 		bool ExecuteResize();
 		bool PreResize();

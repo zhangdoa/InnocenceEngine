@@ -52,7 +52,7 @@ bool VKRenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureCompo
 	return true;
 }
 
-uint32_t VKRenderingServer::GetIndex(GPUResourceComponent* rhs)
+uint32_t VKRenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
 {
 	return 0;
 }
@@ -87,7 +87,7 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
-	PrepareRenderTargets(l_rhs, l_commandList);
+	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::WriteOnly);
 
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
@@ -129,6 +129,8 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 		vkCmdBindPipeline(l_commandList->m_ComputeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
 
+	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::ReadOnly);
+
 	return true;
 }
 
@@ -137,7 +139,7 @@ bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t inde
 	return true;
 }
 
-bool VKRenderingServer::Bind(RenderPassComponent* renderPass, GPUResourceComponent* resource, ShaderStage shaderStage, uint32_t rootParameterIndex, Accessibility bindingAccessibility)
+bool VKRenderingServer::Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc)
 {
     return false;
 }

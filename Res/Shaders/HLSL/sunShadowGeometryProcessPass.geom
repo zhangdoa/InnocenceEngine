@@ -14,6 +14,12 @@ struct PixelInputType
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
 
+[[vk::binding(1, 0)]]
+cbuffer CSMCBuffer : register(b1)
+{
+	CSM_CB CSMs[NR_CSM_SPLITS];
+};
+
 [maxvertexcount(3 * NR_CSM_SPLITS)]
 void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputType> outStream)
 {

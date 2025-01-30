@@ -82,12 +82,12 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_TextureUsage = TextureUsage::Sample;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Pixel;
@@ -107,10 +107,6 @@ bool SunShadowGeometryProcessPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Material);
-	
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -140,18 +136,21 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Material);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 
 	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
-	auto l_RenderingServer = g_Engine->getRenderingServer();
-	
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
 		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::Sun);
 		if (l_visible && l_drawCallData.meshUsage != MeshUsage::Skeletal)
 		{
-			l_RenderingServer->PushRootConstants(m_RenderPassComp, l_drawCallData.m_PerObjectConstantBufferIndex);			
+			l_renderingServer->PushRootConstants(m_RenderPassComp, l_drawCallData.m_PerObjectConstantBufferIndex);			
 			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
 		}
 	}

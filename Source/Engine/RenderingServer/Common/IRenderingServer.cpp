@@ -75,26 +75,18 @@ bool IRenderingServer::Initialize()
 	m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
 	m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(4);
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_IsRootConstant = true;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
+
+	// t0 - 2D texture (single image from the user pipeline)
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
 	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;
 
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	// s0 - sampler
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
 	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-	// m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = m_SwapChainGPUBufferComp;
-
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
-
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 2;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = m_SwapChainSamplerComp;
 
 	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainSPC;
 
@@ -103,6 +95,11 @@ bool IRenderingServer::Initialize()
 	m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "RenderingServer has been initialized.");
 
+	return true;
+}
+
+bool IRenderingServer::Update()
+{
 	return true;
 }
 
@@ -162,10 +159,7 @@ void IRenderingServer::InitializeSamplerComponent(SamplerComponent* rhs)
 
 void IRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 {
-	if (std::find(m_uninitializedBuffers.begin(), m_uninitializedBuffers.end(), rhs) != m_uninitializedBuffers.end())
-		return;
-
-	m_uninitializedBuffers.emplace_back(rhs);
+	InitializeImpl(rhs);
 }
 
 void IRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
@@ -317,35 +311,28 @@ void IRenderingServer::TransferDataToGPU()
 			m_initializedMaterials.emplace(l_Material);
 		}
 	}
-
-	for (auto rhs : m_uninitializedBuffers)
-	{
-		InitializeImpl(rhs);
-	}
-
-	m_uninitializedBuffers.clear();
 }
 
-bool IRenderingServer::PrepareRenderTargets(RenderPassComponent* renderPass, ICommandList* commandList)
+bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
 
 	if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 	{
-		TryToTransitState(renderPass->m_RenderTargets[renderPass->m_CurrentFrame].m_Texture, commandList, Accessibility::WriteOnly);
+		TryToTransitState(renderPass->m_RenderTargets[renderPass->m_CurrentFrame].m_Texture, commandList, accessibility);
 	}
 	else
 	{
 		for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			TryToTransitState(renderPass->m_RenderTargets[i].m_Texture, commandList, Accessibility::WriteOnly);
+			TryToTransitState(renderPass->m_RenderTargets[i].m_Texture, commandList, accessibility);
 		}
 	}
 
 	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 	{
-		TryToTransitState(renderPass->m_DepthStencilRenderTarget.m_Texture, commandList, Accessibility::WriteOnly);
+		TryToTransitState(renderPass->m_DepthStencilRenderTarget.m_Texture, commandList, accessibility);
 	}
 
 	return true;
@@ -466,7 +453,8 @@ bool IRenderingServer::FinalizeSwapChain()
 
 	ClearRenderTargets(m_SwapChainRenderPassComp);
 
-	//Bind(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 

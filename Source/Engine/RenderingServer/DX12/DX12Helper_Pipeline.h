@@ -8,8 +8,7 @@ namespace Inno
 {
 	namespace DX12Helper
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, wchar_t* name, bool shaderVisible = true);
-        D3D12_DESCRIPTOR_RANGE_TYPE GetDescriptorRangeType(DX12RenderPassComponent* DX12RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
+		D3D12_DESCRIPTOR_HEAP_DESC GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, bool shaderVisible);
         void CreateInputLayout(DX12PipelineStateObject* PSO);
 		bool CreateShaderPrograms(DX12RenderPassComponent *DX12RenderPassComp);
 

@@ -21,7 +21,7 @@ namespace Inno
 	}
 }
 
-D3D12_DESCRIPTOR_HEAP_DESC DX12Helper::GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, wchar_t* name, bool shaderVisible)
+D3D12_DESCRIPTOR_HEAP_DESC DX12Helper::GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, bool shaderVisible)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC l_Desc = {};
 	l_Desc.Type = type;
@@ -31,38 +31,7 @@ D3D12_DESCRIPTOR_HEAP_DESC DX12Helper::GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HE
 	return l_Desc;
 }
 
-D3D12_DESCRIPTOR_RANGE_TYPE DX12Helper::GetDescriptorRangeType(DX12RenderPassComponent* DX12RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc)
-{
-	if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
-		return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-
-	if (resourceBinderLayoutDesc.m_BindingAccessibility == Accessibility::ReadOnly)
-	{
-		if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer)
-		{
-			if (resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
-				return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-			else if (resourceBinderLayoutDesc.m_ResourceAccessibility.CanWrite())
-				return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		}
-		else if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Image)
-		{
-			if (resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
-				return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		}
-	}
-	else if (resourceBinderLayoutDesc.m_BindingAccessibility.CanWrite())
-	{
-		if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer
-		|| resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Image)
-			return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	}
-
-	Log(Error, DX12RenderPassComp->m_InstanceName, "Trying to create RootSignature with GPUResourceType that shouldn't/can't be bound.");
-	return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-}
-
-void Inno::DX12Helper::CreateInputLayout(Inno::DX12PipelineStateObject* PSO)
+void DX12Helper::CreateInputLayout(DX12PipelineStateObject* PSO)
 {
     static D3D12_INPUT_ELEMENT_DESC l_polygonLayout[6];
 

@@ -165,17 +165,23 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 			g_Engine->getRenderingServer()->InitializeMeshComponent(m_unitIcosahedronMesh);
 			g_Engine->getRenderingServer()->InitializeMeshComponent(m_unitSphereMesh);
 
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicNormalTexture);
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicAlbedoTexture);
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicMetallicTexture);
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicRoughnessTexture);
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicAOTexture);
+			//D3D12 ERROR: CGraphicsCommandList::SetGraphicsRootDescriptorTable:
+			// Descriptor (at CPU Handle 0x0000013140081000) which has an underlying stale or released resource is invalid for use.
+			// [ EXECUTION ERROR #1042: DESCRIPTOR_HANDLE_WITH_INVALID_RESOURCE]
 
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_iconTemplate_DirectionalLight);
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_iconTemplate_PointLight);
-			g_Engine->getRenderingServer()->InitializeTextureComponent(m_iconTemplate_SphereLight);
+			// sRGB issues
 
-			g_Engine->getRenderingServer()->InitializeMaterialComponent(m_defaultMaterial);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicNormalTexture);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicAlbedoTexture);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicMetallicTexture);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicRoughnessTexture);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_basicAOTexture);
+
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_iconTemplate_DirectionalLight);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_iconTemplate_PointLight);
+			// g_Engine->getRenderingServer()->InitializeTextureComponent(m_iconTemplate_SphereLight);
+
+			// g_Engine->getRenderingServer()->InitializeMaterialComponent(m_defaultMaterial);
 		});
 
 	l_DefaultAssetInitializationTask->Activate();

@@ -2,6 +2,10 @@
 #include "STL14.h"
 #include "Enum.h"
 
+#ifdef max
+#undef max
+#endif
+
 namespace Inno
 {
 	class GPUResourceComponent;
@@ -262,19 +266,20 @@ namespace Inno
 
 		struct IGPUMemory {};
 
-		const uint32_t MaxDescriptorCount = 65536;
 		struct ResourceBindingLayoutDesc
 		{
 			GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
-			GPUResourceComponent* m_GPUResource = nullptr;
 			ShaderStage m_ShaderStage = ShaderStage::Invalid;
 			Accessibility m_BindingAccessibility = Accessibility::ReadOnly;
 			Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
 			uint32_t m_DescriptorSetIndex = 0;
 			uint32_t m_DescriptorIndex = 0;
 			uint32_t m_SubresourceCount = 1;
-			bool m_IndirectBinding = false;
 			bool m_IsRootConstant = false;
+			TextureUsage m_TextureUsage = TextureUsage::Invalid;
+
+			// Deprecated
+			bool m_IndirectBinding = false;
 		};
 	}
 

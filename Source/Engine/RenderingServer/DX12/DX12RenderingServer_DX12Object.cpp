@@ -11,39 +11,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-DX12SRV DX12RenderingServer::CreateSRV(D3D12_SHADER_RESOURCE_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle)
-{
-	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	DX12SRV l_result = {};
-	l_result.SRVDesc = desc;
-	l_result.Handle = m_CSUDescHeap.GetNewHandle();
-
-	m_device->CreateShaderResourceView(resourceHandle.Get(), &l_result.SRVDesc, l_result.Handle.CPUHandle);
-
-	return l_result;
-}
-
-DX12UAV DX12RenderingServer::CreateUAV(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter)
-{
-	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	DX12UAV l_result = {};
-	l_result.UAVDesc = desc;
-
-	auto l_descHandle = m_CSUDescHeap.GetNewHandle();
-	auto l_descHandle_ShaderNonVisible = m_ShaderNonVisibleCSUDescHeap.GetNewHandle();
-
-	l_result.Handle.CPUHandle = l_descHandle_ShaderNonVisible.CPUHandle;
-	l_result.Handle.GPUHandle = l_descHandle.GPUHandle;
-	l_result.Handle.m_Index = l_descHandle.m_Index; // @TODO: Not sure which one is correct
-
-	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
-	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
-
-	return l_result;
-}
-
 ComPtr<ID3D12Resource> DX12RenderingServer::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name)
 {
 	ComPtr<ID3D12Resource> l_uploadHeapBuffer;
@@ -214,7 +181,7 @@ ComPtr<ID3D12DescriptorHeap> DX12RenderingServer::CreateDescriptorHeap(D3D12_DES
 	auto l_HResult = m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&l_descriptorHeap));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create DescriptorHeap.");
+		Log(Error, "Can't create ", name, " descriptor heap.");
 		return 0;
 	}
 
@@ -223,4 +190,25 @@ ComPtr<ID3D12DescriptorHeap> DX12RenderingServer::CreateDescriptorHeap(D3D12_DES
 #endif // INNO_DEBUG
 
 	return l_descriptorHeap;
+}
+
+DX12DescriptorHandle DX12DescriptorHeapAccessor::GetNewHandle()
+{
+	if (m_CurrentHandle.m_Index == m_Desc.m_MaxDescriptors)
+	{
+		Log(Error, "Descriptor heap for ", m_Desc.m_Name, " is full.");
+		return {};
+	}
+
+	auto l_handle = m_CurrentHandle;
+	if (m_Desc.m_ShaderVisible)
+		m_CurrentHandle.GPUHandle.ptr += m_Desc.m_DescriptorSize;
+
+	m_CurrentHandle.CPUHandle.ptr += m_Desc.m_DescriptorSize;
+	
+	Log(Verbose, "New handle on ", m_Desc.m_Name, " with index ", m_CurrentHandle.m_Index, " has been created.");
+	
+	m_CurrentHandle.m_Index++;
+	
+	return l_handle;
 }

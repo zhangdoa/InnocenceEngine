@@ -47,12 +47,12 @@ struct VertexInputType
 
 struct PerFrame_CB
 {
-	matrix p_original; // 0 - 3
-	matrix p_jittered; // 4 - 7
-	matrix v; // 8 - 11
-	matrix v_prev; // 12 - 15
-	matrix p_inv; // 16 - 19
-	matrix v_inv; // 20 - 23
+	float4x4 p_original; // 0 - 3
+	float4x4 p_jittered; // 4 - 7
+	float4x4 v; // 8 - 11
+	float4x4 v_prev; // 12 - 15
+	float4x4 p_inv; // 16 - 19
+	float4x4 v_inv; // 20 - 23
 	float zNear; // Tight packing 24
 	float zFar; // Tight packing 24
 	float minLogLuminance; // Tight packing 24
@@ -71,20 +71,29 @@ struct PerFrame_CB
 
 struct PerObject_CB
 {
-	matrix m;
-	matrix m_prev;
-	matrix normalMat;
-	float UUID;
-	float padding[3];
+	float4x4 m; // 0 - 3
+	float4x4 m_prev; // 4 - 7
+	float4x4 normalMat; // 8 - 11
+	float UUID; // Tight packing 12
+	uint m_MaterialIndex; // Tight packing 12
+	uint padding_a; // Tight packing 12
+	uint padding_b; // Tight packing 12
+	float4 padding_c[3]; // 13 - 15
 };
 
+static const uint MaxTextureSlotCount = 7;
 struct Material_CB
 {
 	float4 albedo; // 0
 	float4 MRAT; // 1
-	uint textureSlotMask; // 2
-	uint materialType; // 2
-	float padding3[13]; // 3 - 15
+	uint m_TextureIndices_0; // Tight packing 2
+	uint m_TextureIndices_1; // Tight packing 2
+	uint m_TextureIndices_2; // Tight packing 2
+	uint m_TextureIndices_3; // Tight packing 2
+	uint m_TextureIndices_4; // Tight packing 3
+	uint m_TextureIndices_5; // Tight packing 3
+	uint m_TextureIndices_6; // Tight packing 3
+	uint materialType; // Tight packing 3
 };
 
 // w component of luminousFlux is attenuationRadius
@@ -118,8 +127,8 @@ struct SH9
 
 struct CSM_CB
 {
-	matrix p;
-	matrix v;
+	float4x4 p;
+	float4x4 v;
 	float4 AABBMax;
 	float4 AABBMin;
 	float4 padding[6];
@@ -133,11 +142,11 @@ struct DispatchParam_CB
 
 struct GI_CB
 {
-	matrix p;
-	matrix r[6];
-	matrix t;
-	matrix p_inv;
-	matrix v_inv[6];
+	float4x4 p;
+	float4x4 r[6];
+	float4x4 t;
+	float4x4 p_inv;
+	float4x4 v_inv[6];
 	float4 probeCount;
 	float4 probeRange;
 	float4 workload;
@@ -161,7 +170,7 @@ struct VoxelizationPass_CB
 
 struct AnimationPass_CB
 {
-	matrix rootOffsetMatrix; // 0-3
+	float4x4 rootOffsetfloat4x4; // 0-3
 	float duration; // 4
 	int numChannels; // 4
 	int numTicks; // 4
@@ -224,7 +233,7 @@ bool SphereInsideFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar
 	return result;
 }
 
-float4 ClipToView(float4 clip, matrix in_p_inv)
+float4 ClipToView(float4 clip, float4x4 in_p_inv)
 {
 	// View space position.
 	float4 view = mul(clip, in_p_inv);
@@ -234,7 +243,7 @@ float4 ClipToView(float4 clip, matrix in_p_inv)
 	return view;
 }
 
-float4 ScreenToView(float4 screen, float2 in_viewportSize, matrix in_p_inv)
+float4 ScreenToView(float4 screen, float2 in_viewportSize, float4x4 in_p_inv)
 {
 	// Convert to normalized texture coordinates
 	float2 texCoord = screen.xy / in_viewportSize;
@@ -546,5 +555,3 @@ struct Probe
 	float skyVisibility[6];
 	uint padding[10];
 };
-
-#include "common/CBuffers.hlsl"

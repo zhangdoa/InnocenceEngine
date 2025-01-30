@@ -1,18 +1,23 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 0)]]
+cbuffer RootConstants : register(b0)
+{
+	uint m_ObjectIndex;
+};
+
 [[vk::binding(0, 1)]]
-Texture2D t2d_normal : register(t0);
+StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+
 [[vk::binding(1, 1)]]
-Texture2D t2d_albedo : register(t1);
+StructuredBuffer<Material_CB> g_Materials : register(t1);
+
 [[vk::binding(2, 1)]]
-Texture2D t2d_metallic : register(t2);
-[[vk::binding(3, 1)]]
-Texture2D t2d_roughness : register(t3);
-[[vk::binding(4, 1)]]
-Texture2D t2d_ao : register(t4);
+Texture2D g_2DTextures[] : register(t2);
+
 [[vk::binding(0, 2)]]
-SamplerState in_samplerTypeWrap : register(s0);
+SamplerState g_Sampler : register(s0);
 
 struct PixelInputType
 {
@@ -37,23 +42,30 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
+	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
+	Material_CB materialCBuffer = g_Materials[perObjectCB.m_MaterialIndex];
+
 	float3 normalWS = normalize(input.normalWS);
-	if (materialCBuffer.textureSlotMask & 0x00000001)
+	uint normalTextureIndex = materialCBuffer.m_TextureIndices_0;
+	if (normalTextureIndex != 0)
 	{
 		float3 N = normalize(input.normalWS);
 		float3 T = normalize(input.tangentWS);
 		float3 B = cross(N, T);
 		float3x3 TBN = float3x3(T, B, N);
 
-		float3 normalTS = normalize(t2d_normal.Sample(in_samplerTypeWrap, input.texCoord).rgb * 2.0f - 1.0f);
+		Texture2D t2d_normal = g_2DTextures[normalTextureIndex];
+		float3 normalTS = normalize(t2d_normal.Sample(g_Sampler, input.texCoord).rgb * 2.0f - 1.0f);
 		normalWS = normalize(mul(normalTS, TBN));
 	}
 
 	float transparency = 1.0;
 	float3 out_albedo = materialCBuffer.albedo.rgb;
-	if (materialCBuffer.textureSlotMask & 0x00000002)
+	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;
+	if (albedoTextureIndex != 0)
 	{
-		out_albedo = t2d_albedo.Sample(in_samplerTypeWrap, input.texCoord).rgb;
+		Texture2D t2d_albedo = g_2DTextures[albedoTextureIndex];
+		out_albedo = t2d_albedo.Sample(g_Sampler, input.texCoord).rgb;
 		// @TODO: weird discard result
 		// transparency = l_albedo.a;
 		// if (transparency < 0.1)
@@ -66,22 +78,28 @@ PixelOutputType main(PixelInputType input)
 		// }
 	}
 
-	float out_metallic = out_metallic = materialCBuffer.MRAT.r;
-	if (materialCBuffer.textureSlotMask & 0x00000004)
+	float out_metallic = materialCBuffer.MRAT.r;
+	uint metallicTextureIndex = materialCBuffer.m_TextureIndices_2;
+	if (metallicTextureIndex != 0)
 	{
-		out_metallic = t2d_metallic.Sample(in_samplerTypeWrap, input.texCoord).r;
+		Texture2D t2d_metallic = g_2DTextures[albedoTextureIndex];
+		out_metallic = t2d_metallic.Sample(g_Sampler, input.texCoord).r;
 	}
 
 	float out_roughness = materialCBuffer.MRAT.g;
-	if (materialCBuffer.textureSlotMask & 0x00000008)
+	uint roughnessTextureIndex = materialCBuffer.m_TextureIndices_3;
+	if (roughnessTextureIndex != 0)
 	{
-		out_roughness = t2d_roughness.Sample(in_samplerTypeWrap, input.texCoord).r;
+		Texture2D t2d_roughness = g_2DTextures[roughnessTextureIndex];
+		out_roughness = t2d_roughness.Sample(g_Sampler, input.texCoord).r;
 	}
 
 	float out_AO = materialCBuffer.MRAT.b;
-	if (materialCBuffer.textureSlotMask & 0x00000010)
+	uint aoTextureIndex = materialCBuffer.m_TextureIndices_4;
+	if (aoTextureIndex != 0)
 	{
-		out_AO = t2d_ao.Sample(in_samplerTypeWrap, input.texCoord).r;
+		Texture2D t2d_ao = g_2DTextures[aoTextureIndex];
+		out_AO = t2d_ao.Sample(g_Sampler, input.texCoord).r;
 	}
 
 	float4 motionVec = (input.posCS_orig / input.posCS_orig.w - input.posCS_prev / input.posCS_prev.w);
@@ -91,5 +109,5 @@ PixelOutputType main(PixelInputType input)
 	output.opaquePassRT2 = float4(out_albedo, out_roughness);
 	output.opaquePassRT3 = float4(motionVec.xy * 0.5, out_AO, transparency);
 
-  return output;
+	return output;
 }

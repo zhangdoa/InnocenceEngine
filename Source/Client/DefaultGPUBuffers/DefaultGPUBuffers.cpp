@@ -24,6 +24,19 @@ namespace DefaultGPUBuffers
 
 bool DefaultGPUBuffers::Setup()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+		
+	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
+	m_PerObjectGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
+	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
+	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
+	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
+	m_CSMGPUBufferComp = l_renderingServer->AddGPUBufferComponent("CSMCBuffer/");
+	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DispatchParamsCBuffer/");
+	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
+	m_animationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
+	m_billboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
+
 	return true;
 }
 
@@ -33,65 +46,55 @@ bool DefaultGPUBuffers::Initialize()
 	
 	auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
-	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
-	m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 	m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
 	m_PerFrameCBufferGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
 
-	m_PerObjectGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
 	m_PerObjectGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;	
 	m_PerObjectGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_PerObjectGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_PerObjectGPUBufferComp);
 
-	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
 	m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;		
 	m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
 	m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_MaterialGPUBufferComp);
 
-	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
 	m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
 	m_PointLightGPUBufferComp->m_ElementSize = sizeof(PointLightConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_PointLightGPUBufferComp);
 
-	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
 	m_SphereLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxSphereLights;
 	m_SphereLightGPUBufferComp->m_ElementSize = sizeof(SphereLightConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_SphereLightGPUBufferComp);
 
-	m_CSMGPUBufferComp = l_renderingServer->AddGPUBufferComponent("CSMCBuffer/");
 	m_CSMGPUBufferComp->m_ElementCount = l_RenderingCapability.maxCSMSplits;
 	m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_CSMGPUBufferComp);
 
 	// @TODO: get rid of hard-code stuffs
-	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DispatchParamsCBuffer/");
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 8;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_DispatchParamsGPUBufferComp);
 
-	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
 	m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
 	m_GICBufferGPUBufferComp->m_ElementCount = 1;
 
 	l_renderingServer->InitializeGPUBufferComponent(m_GICBufferGPUBufferComp);
 
-	m_animationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
 	m_animationGPUBufferComp->m_ElementCount = 512;
 	m_animationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
 
 	l_renderingServer->InitializeGPUBufferComponent(m_animationGPUBufferComp);
 
-	m_billboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
 	m_billboardGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_billboardGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
 	m_billboardGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;

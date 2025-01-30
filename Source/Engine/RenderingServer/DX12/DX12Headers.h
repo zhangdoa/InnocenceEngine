@@ -46,30 +46,31 @@ namespace Inno
 		DX12DescriptorHandle Handle;
 	};
 
-	class DX12DescriptorHeap
+	struct DX12DescriptorHeapAccessorDesc
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC m_HeapDesc = {};
+		const wchar_t* m_Name = nullptr;
+		bool m_ShaderVisible = false;
+		uint32_t m_MaxDescriptors = 0;
+		uint32_t m_DescriptorSize = 0;
+	};
+	
+	class DX12DescriptorHeapAccessor
 	{
 		friend class DX12RenderingServer;
 		
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetHeap() const { return m_Heap; }
-
-		DX12DescriptorHandle GetNewHandle()
-		{
-			auto l_handle = m_Handle;
-			if (m_ShaderVisible)
-				m_Handle.GPUHandle.ptr += m_DescriptorSize;
-
-			m_Handle.CPUHandle.ptr += m_DescriptorSize;
-			m_Handle.m_Index++;
-
-			return l_handle;
-		}
+		uint32_t GetOffsetFromHeapStart() const { return m_OffsetFromHeapStart; }
+		const DX12DescriptorHeapAccessorDesc& GetDesc() const { return m_Desc; }
+		const DX12DescriptorHandle& GetFirstHandle() const { return m_FirstHandle; }
+		DX12DescriptorHandle GetNewHandle();
 
 	private:
 		ComPtr<ID3D12DescriptorHeap> m_Heap = 0;
-		D3D12_DESCRIPTOR_HEAP_DESC m_Desc = {};
-		bool m_ShaderVisible = false;
-		uint32_t m_DescriptorSize = 0;
-		DX12DescriptorHandle m_Handle = {};
+		uint32_t m_OffsetFromHeapStart = 0;
+		DX12DescriptorHeapAccessorDesc m_Desc = {};
+		DX12DescriptorHandle m_FirstHandle = {};
+		DX12DescriptorHandle m_CurrentHandle = {};
 	};
 }

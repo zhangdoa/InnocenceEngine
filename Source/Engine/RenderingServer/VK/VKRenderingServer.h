@@ -48,12 +48,12 @@ namespace Inno
 
 		bool ClearTextureComponent(TextureComponent* rhs) override;
 		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
-		uint32_t GetIndex(GPUResourceComponent* rhs) override;
+		uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
 		bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
-		bool Bind(RenderPassComponent* renderPass, GPUResourceComponent* resource, ShaderStage shaderStage, uint32_t rootParameterIndex, Accessibility bindingAccessibility) override;
+		bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) override;
 		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
 		bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;

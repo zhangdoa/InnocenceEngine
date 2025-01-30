@@ -8,7 +8,7 @@
             "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
             "args": [
                 "-mode 0",
-                "-renderer 2",
+                "-renderer 0",
                 "-loglevel 0"
             ],
             "stopAtEntry": false,
@@ -33,7 +33,7 @@
             "program": "${workspaceFolder}/Bin/RelWithDebInfo/Baker.exe",
             "args": [
                 "-mode 0",
-                "-renderer 2",
+                "-renderer 0",
                 "-loglevel 1"
             ],
             "stopAtEntry": false,

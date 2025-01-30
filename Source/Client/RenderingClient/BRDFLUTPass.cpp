@@ -37,10 +37,9 @@ bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
-
-	m_RenderPassComp->m_OnResize = std::bind(&BRDFLUTPass::InitializeResourceBindingLayoutDescs, this);
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -54,17 +53,9 @@ bool BRDFLUTPass::Initialize()
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
-    InitializeResourceBindingLayoutDescs();
-
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
-}
-
-void Inno::BRDFLUTPass::InitializeResourceBindingLayoutDescs()
-{
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
 }
 
 bool BRDFLUTPass::Terminate()
@@ -90,7 +81,7 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
-
+    //m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
 	l_renderingServer->Dispatch(m_RenderPassComp, 32, 32, 1);
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);

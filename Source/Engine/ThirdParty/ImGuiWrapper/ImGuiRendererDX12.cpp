@@ -152,12 +152,12 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 	{
 		auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
 		auto l_device = l_renderingServer->GetDevice().Get();
-		auto l_descHeap = l_renderingServer->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		auto l_newHandle = l_descHeap.GetNewHandle();
+		auto& l_descHeapAccessor = l_renderingServer->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
+		auto l_newHandle = l_descHeapAccessor.GetNewHandle();
 		auto l_swapChainCount = l_renderingServer->GetSwapChainImageCount();
 
 		ImGui_ImplDX12_Init(l_device, l_swapChainCount,
-			DXGI_FORMAT_R8G8B8A8_UNORM, l_descHeap.GetHeap().Get(),
+			DXGI_FORMAT_R8G8B8A8_UNORM, l_descHeapAccessor.GetHeap().Get(),
 			l_newHandle.CPUHandle, l_newHandle.GPUHandle);
 		
 		m_RenderPass->Initialize();
