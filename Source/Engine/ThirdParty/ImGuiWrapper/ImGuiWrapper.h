@@ -14,8 +14,8 @@ namespace Inno
 		}
 		bool Setup();
 		bool Initialize();
-		bool Update();
-		bool Render();
+		bool Prepare();
+		bool ExecuteCommands();
 		bool Terminate();
 
 	private:

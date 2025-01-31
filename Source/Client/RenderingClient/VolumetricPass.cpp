@@ -586,7 +586,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 	return true;
 }
 
-bool VolumetricPass::Render(bool visualize)
+bool VolumetricPass::ExecuteCommands(bool visualize)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

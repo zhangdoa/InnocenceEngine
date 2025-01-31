@@ -198,19 +198,14 @@ bool ImGuiWrapper::Initialize()
 		{
 			Log(Error, "Failed to load font.");
 		}
-		
+
 		ImGuiWrapperNS::m_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 	}
 
 	return true;
 }
 
-bool ImGuiWrapper::Update()
-{
-	return true;
-}
-
-bool ImGuiWrapper::Render()
+bool ImGuiWrapper::Prepare()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
@@ -226,8 +221,19 @@ bool ImGuiWrapper::Render()
 		}
 		ImGui::Render();
 
-		ImGuiWrapperNS::m_rendererImpl->Render();
+		ImGuiWrapperNS::m_rendererImpl->Prepare();
 	}
+
+	return true;
+}
+
+bool ImGuiWrapper::ExecuteCommands()
+{
+	if (ImGuiWrapperNS::m_isParity)
+	{
+		ImGuiWrapperNS::m_rendererImpl->ExecuteCommands();
+	}
+
 	return true;
 }
 

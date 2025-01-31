@@ -11,5 +11,6 @@ namespace Inno
 		TextureDesc m_TextureDesc = {};
 	
 		void* m_TextureData = 0;
+		bool m_NeedUploadToGPU = false;
 	};
 }

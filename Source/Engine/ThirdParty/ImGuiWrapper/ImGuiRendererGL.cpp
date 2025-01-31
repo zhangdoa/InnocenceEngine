@@ -38,7 +38,7 @@ bool ImGuiRendererGL::NewFrame()
 	return true;
 }
 
-bool ImGuiRendererGL::Render()
+bool ImGuiRendererGL::Prepare()
 {
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<GLRenderPassComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());

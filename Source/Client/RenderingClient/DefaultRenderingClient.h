@@ -13,7 +13,7 @@ namespace Inno
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Prepare() override;
-		bool Render(IRenderingConfig* renderingConfig = nullptr) override;
+		bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) override;
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;

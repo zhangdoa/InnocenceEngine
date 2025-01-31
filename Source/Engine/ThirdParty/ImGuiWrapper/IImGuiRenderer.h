@@ -12,7 +12,8 @@ namespace Inno
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiRenderer);
 
 		virtual bool NewFrame() = 0;
-		virtual bool Render() = 0;
+		virtual bool Prepare() = 0;
+		virtual bool ExecuteCommands() = 0;
 
 		virtual void ShowRenderResult(RenderPassType renderPassType) = 0;
 	};

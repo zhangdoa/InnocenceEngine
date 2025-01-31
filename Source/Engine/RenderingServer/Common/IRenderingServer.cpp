@@ -159,7 +159,10 @@ void IRenderingServer::InitializeSamplerComponent(SamplerComponent* rhs)
 
 void IRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 {
-	InitializeImpl(rhs);
+	if (m_initializedGPUBuffers.find(rhs) != m_initializedGPUBuffers.end())
+		return;
+
+	m_uninitializedGPUBuffers.push(rhs);
 }
 
 void IRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
@@ -167,9 +170,7 @@ void IRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
 	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), rhs) != m_initializedRenderPasses.end())
 		return;
 
-	InitializeImpl(rhs);
-	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
-		m_initializedRenderPasses.push_back(rhs);
+	m_uninitializedRenderPasses.push(rhs);
 }
 
 bool IRenderingServer::ReserveRenderTargets(RenderPassComponent* rhs)
@@ -225,7 +226,7 @@ bool IRenderingServer::CreateRenderTargets(RenderPassComponent* rhs)
 
 			InitializeImpl(l_TextureComp);
 
-			Log(Verbose, "Render target: ", rhs->m_RenderTargets[i].m_Texture->m_InstanceName.c_str(), " has been initialized.");
+			Log(Verbose, "Render target: ", rhs->m_RenderTargets[i].m_Texture->m_InstanceName.c_str(), " has been created.");
 		}
 	}
 
@@ -256,7 +257,8 @@ bool IRenderingServer::CreateRenderTargets(RenderPassComponent* rhs)
 			rhs->m_DepthStencilRenderTarget.m_Texture->m_TextureData = nullptr;
 
 			InitializeImpl(rhs->m_DepthStencilRenderTarget.m_Texture);
-			Log(Verbose, "", rhs->m_InstanceName.c_str(), " depth stencil target has been initialized.");
+
+			Log(Verbose, "", rhs->m_InstanceName.c_str(), " depth stencil target has been created.");
 		}
 	}
 
@@ -311,6 +313,71 @@ void IRenderingServer::TransferDataToGPU()
 			m_initializedMaterials.emplace(l_Material);
 		}
 	}
+
+	while (m_uninitializedGPUBuffers.size() > 0)
+	{
+		GPUBufferComponent* l_GPUBuffer;
+		m_uninitializedGPUBuffers.tryPop(l_GPUBuffer);
+
+		if (!l_GPUBuffer)
+			continue;
+
+		InitializeImpl(l_GPUBuffer);
+		if (l_GPUBuffer->m_ObjectStatus == ObjectStatus::Activated)
+			m_initializedGPUBuffers.emplace(l_GPUBuffer);
+	}
+
+	while (m_uninitializedRenderPasses.size() > 0)
+	{
+		RenderPassComponent* l_RenderPass;
+		m_uninitializedRenderPasses.tryPop(l_RenderPass);
+
+		if (!l_RenderPass)
+			continue;
+
+		InitializeImpl(l_RenderPass);
+		if (l_RenderPass->m_ObjectStatus == ObjectStatus::Activated)
+			m_initializedRenderPasses.push_back(l_RenderPass);
+	}
+
+	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
+
+	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
+	Open(l_commandList, GPUEngineType::Graphics);
+	
+	for (auto i : m_initializedMeshes)
+	{
+		if (i->m_NeedUploadToGPU)
+		{
+			UploadToGPU(l_commandList, i);
+			i->m_NeedUploadToGPU = false;
+		}
+	}
+
+	for (auto i : m_initializedTextures)
+	{
+		if (i->m_NeedUploadToGPU)
+		{
+			UploadToGPU(l_commandList, i);
+			i->m_NeedUploadToGPU = false;
+		}
+	}
+
+	for (auto i : m_initializedGPUBuffers)
+	{
+		if (i->m_NeedUploadToGPU)
+		{
+			UploadToGPU(l_commandList, i);
+			i->m_NeedUploadToGPU = false;
+		}
+	}
+
+	Close(l_commandList, GPUEngineType::Graphics);
+
+	auto l_semaphore = m_GlobalSemaphores[l_currentFrame];
+	Execute(l_commandList, l_semaphore, GPUEngineType::Graphics);
+
+	Wait(l_semaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
 }
 
 bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility)
@@ -348,33 +415,32 @@ bool IRenderingServer::Present()
 	CommandListEnd(m_SwapChainRenderPassComp);
 
 	ExecuteCommandList(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
-	WaitCommandQueue(m_SwapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 
 	PresentImpl();
 
-	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
-	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Compute);
+	WaitFence(nullptr, GPUEngineType::Graphics);
+	WaitFence(nullptr, GPUEngineType::Compute);
+	WaitFence(nullptr, GPUEngineType::Copy);
 
 	PostPresent();
 
 	if (m_needResize)
 	{
-		ResizeImpl();
+		ExecuteResize();
 
-		m_SwapChainRenderPassComp->m_CurrentFrame = 0;
 		m_needResize = false;
 	}
 
 	return true;
 }
 
-bool IRenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent*()>&& getUserPipelineOutputFunc)
+bool IRenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent* ()>&& getUserPipelineOutputFunc)
 {
 	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
 	return true;
 }
 
-GPUResourceComponent *IRenderingServer::GetUserPipelineOutput()
+GPUResourceComponent* IRenderingServer::GetUserPipelineOutput()
 {
 	return m_GetUserPipelineOutputFunc();
 }
@@ -385,7 +451,23 @@ bool IRenderingServer::Resize()
 	return true;
 }
 
-bool IRenderingServer::Upload(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
+bool IRenderingServer::WriteMappedMemory(MeshComponent* rhs)
+{
+	if (rhs->m_MappedMemory_VB == nullptr || rhs->m_MappedMemory_IB == nullptr)
+	{
+		Log(Error, "Can't upload data to mesh: ", rhs->m_InstanceName, " because it's not mapped.");
+		return false;
+	}
+
+	std::memcpy((char*)rhs->m_MappedMemory_VB, &rhs->m_Vertices[0], rhs->m_Vertices.size() * sizeof(Vertex));
+	std::memcpy((char*)rhs->m_MappedMemory_IB, &rhs->m_Indices[0], rhs->m_Indices.size() * sizeof(Index));
+
+	rhs->m_NeedUploadToGPU = true;
+
+	return true;
+}
+
+bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_size = rhs->m_TotalSize;
 	if (range != SIZE_MAX)
@@ -396,10 +478,10 @@ bool IRenderingServer::Upload(GPUBufferComponent* rhs, const void* GPUBufferValu
 		Log(Error, "Can't upload data to GPU buffer: ", rhs->m_InstanceName, " because it's not mapped.");
 		return false;
 	}
-	
+
 	std::memcpy((char*)rhs->m_MappedMemory + startOffset * rhs->m_ElementSize, GPUBufferValue, l_size);
 
-	UploadImpl(rhs);
+	rhs->m_NeedUploadToGPU = true;
 
 	return true;
 }
@@ -413,9 +495,7 @@ bool IRenderingServer::InitializeImpl(MaterialComponent* rhs)
 		auto l_texture = rhs->m_TextureSlots[i].m_Texture;
 		if (l_texture)
 		{
-			InitializeImpl(l_texture);
-			rhs->m_TextureSlots[i].m_Texture = l_texture;
-			rhs->m_TextureSlots[i].m_Activated = true;
+			InitializeTextureComponent(l_texture);
 		}
 		else
 		{
@@ -428,6 +508,57 @@ bool IRenderingServer::InitializeImpl(MaterialComponent* rhs)
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
+}
+
+bool IRenderingServer::InitializeImpl(RenderPassComponent *rhs)
+{
+	bool l_result = true;
+
+	l_result &= ReserveRenderTargets(rhs);
+
+	l_result &= CreateRenderTargets(rhs);
+
+	rhs->m_PipelineStateObject = AddPipelineStateObject();
+
+	l_result &= CreatePipelineStateObject(rhs);
+
+	if (rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		rhs->m_CommandLists.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
+	}
+	else
+	{
+		rhs->m_CommandLists.resize(1);
+	}
+
+	for (size_t i = 0; i < rhs->m_CommandLists.size(); i++)
+	{
+		rhs->m_CommandLists[i] = AddCommandList();
+	}
+
+    auto l_tempName = std::string(rhs->m_InstanceName.c_str());
+    auto l_tempNameL = std::wstring(l_tempName.begin(), l_tempName.end());
+
+    for (size_t i = 0; i < rhs->m_CommandLists.size(); i++)
+    {
+        CreateCommandList(rhs->m_CommandLists[i], i, l_tempNameL);
+    }
+
+	Log(Verbose, rhs->m_InstanceName, " CommandList has been created.");
+
+	rhs->m_Semaphores.resize(rhs->m_CommandLists.size());
+	for (size_t i = 0; i < rhs->m_Semaphores.size(); i++)
+	{
+		rhs->m_Semaphores[i] = AddSemaphore();
+	}
+	
+	Log(Verbose, rhs->m_InstanceName, " Semaphore has been created.");
+
+	CreateFenceEvents(rhs);
+
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
+
+	return l_result;
 }
 
 uint32_t IRenderingServer::GetSwapChainImageCount()
@@ -459,8 +590,6 @@ bool IRenderingServer::FinalizeSwapChain()
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
-
-	//Unbind(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 

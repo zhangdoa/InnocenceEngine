@@ -15,5 +15,6 @@ namespace Inno
 		bool m_isAtomicCounter = false;
 		void* m_InitialData = 0;
 		void* m_MappedMemory = 0;
+		bool m_NeedUploadToGPU = false;
 	};
 }

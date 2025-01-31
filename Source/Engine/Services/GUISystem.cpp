@@ -17,7 +17,7 @@ bool GUISystem::Setup(ISystemConfig* systemConfig)
 {
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
-	};
+		};
 	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
 
 	return 	ImGuiWrapper::Get().Setup();
@@ -32,18 +32,19 @@ bool GUISystem::Update()
 {
 	if (m_showImGui)
 	{
-		ImGuiWrapper::Get().Update();
+		ImGuiWrapper::Get().Prepare();
 	}
 
 	return true;
 }
 
-bool GUISystem::Render()
+bool GUISystem::ExecuteCommands()
 {
 	if (m_showImGui)
 	{
-		ImGuiWrapper::Get().Render();
+		ImGuiWrapper::Get().ExecuteCommands();
 	}
+
 	return true;
 }
 

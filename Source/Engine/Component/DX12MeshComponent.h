@@ -13,7 +13,5 @@ namespace Inno
 		ComPtr<ID3D12Resource> m_DefaultHeapBuffer_IB = 0;
 		D3D12_VERTEX_BUFFER_VIEW m_VBV;
 		D3D12_INDEX_BUFFER_VIEW m_IBV;
-		void* m_MappedUploadHeapBuffer_VB;
-		void* m_MappedUploadHeapBuffer_IB;
 	};
 }

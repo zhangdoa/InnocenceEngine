@@ -6,7 +6,7 @@ namespace VolumetricPass
 {
 	bool Setup();
 	bool Initialize();
-	bool Render(bool visualize);
+	bool ExecuteCommands(bool visualize);
 	bool Terminate();
 
 	GPUResourceComponent* GetRayMarchingResult();

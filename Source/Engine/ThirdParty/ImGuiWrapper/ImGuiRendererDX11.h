@@ -11,7 +11,7 @@ namespace Inno
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
 		bool NewFrame() override;
-		bool Render() override;
+		bool Prepare() override;
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;

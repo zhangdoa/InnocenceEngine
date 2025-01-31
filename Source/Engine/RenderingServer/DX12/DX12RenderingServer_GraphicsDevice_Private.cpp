@@ -254,14 +254,14 @@ bool DX12RenderingServer::CreateGlobalCommandQueues()
 
 bool DX12RenderingServer::CreateGlobalCommandAllocators()
 {
-    m_copyCommandAllocator = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, L"CopyCommandAllocator");
-
     m_directCommandAllocators.resize(m_swapChainImageCount);
     m_computeCommandAllocators.resize(m_swapChainImageCount);
+    m_copyCommandAllocators.resize(m_swapChainImageCount);    
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
         m_directCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, (L"DirectCommandAllocator_" + std::to_wstring(i)).c_str());
         m_computeCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, (L"ComputeCommandAllocator_" + std::to_wstring(i)).c_str());
+        m_copyCommandAllocators[i] = CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, (L"CopyCommandAllocator_" + std::to_wstring(i)).c_str());
     }
 
     Log(Success, "Global CommandAllocators have been created.");
@@ -269,8 +269,9 @@ bool DX12RenderingServer::CreateGlobalCommandAllocators()
     m_GlobalCommandLists.resize(m_swapChainImageCount);
     for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
     {
-        m_GlobalCommandLists[i] = static_cast<DX12CommandList*>(AddCommandList());
-        CreateCommandList(m_GlobalCommandLists[i], i, L"GPUBufferCommandList");
+        auto l_commandList = static_cast<DX12CommandList*>(AddCommandList());
+        CreateCommandList(l_commandList, i, L"GPUBufferCommandList");
+        m_GlobalCommandLists[i] = l_commandList;
     }
 
     Log(Success, "Global CommandLists have been created.");
@@ -280,45 +281,41 @@ bool DX12RenderingServer::CreateGlobalCommandAllocators()
 
 bool DX12RenderingServer::CreateSyncPrimitives()
 {
-    m_directCommandQueueFence.resize(m_swapChainImageCount);
-    m_computeCommandQueueFence.resize(m_swapChainImageCount);
-    m_copyCommandQueueFence.resize(m_swapChainImageCount);
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
+    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence))))
     {
-        if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence[i]))))
-        {
-            Log(Error, "Can't create Fence for direct CommandQueue!");
-            return false;
-        }
-        if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence[i]))))
-        {
-            Log(Error, "Can't create Fence for compute CommandQueue!");
-            return false;
-        }
-        if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence[i]))))
-        {
-            Log(Error, "Can't create Fence for copy CommandQueue!");
-            return false;
-        }
-#ifdef INNO_DEBUG
-        m_directCommandQueueFence[i]->SetName((L"DirectCommandQueueFence_" + std::to_wstring(i)).c_str());
-        m_computeCommandQueueFence[i]->SetName((L"ComputeCommandQueueFence_" + std::to_wstring(i)).c_str());
-        m_copyCommandQueueFence[i]->SetName((L"CopyCommandQueueFence_" + std::to_wstring(i)).c_str());
-#endif // INNO_DEBUG
+        Log(Error, "Can't create Fence for direct CommandQueue!");
+        return false;
     }
+    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence))))
+    {
+        Log(Error, "Can't create Fence for compute CommandQueue!");
+        return false;
+    }
+    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence))))
+    {
+        Log(Error, "Can't create Fence for copy CommandQueue!");
+        return false;
+    }
+#ifdef INNO_DEBUG
+    m_directCommandQueueFence->SetName(L"DirectCommandQueueFence");
+    m_computeCommandQueueFence->SetName(L"ComputeCommandQueueFence");
+    m_copyCommandQueueFence->SetName(L"CopyCommandQueueFence");
+#endif // INNO_DEBUG
+
     Log(Verbose, "Fences for global CommandQueues have been created.");
 
-    m_directCommandQueueSemaphore.resize(m_swapChainImageCount, std::atomic<uint64_t>(0));
-    m_computeCommandQueueSemaphore.resize(m_swapChainImageCount, std::atomic<uint64_t>(0));
-    m_copyCommandQueueSemaphore.resize(m_swapChainImageCount, std::atomic<uint64_t>(0));
+    Log(Verbose, "Fence events for global CommandQueues have been created.");
 
-    m_directCommandQueueFence.resize(m_swapChainImageCount);
-    m_computeCommandQueueFence.resize(m_swapChainImageCount);
-    m_copyCommandQueueFence.resize(m_swapChainImageCount);
-
-    m_directCommandQueueFenceEvent.resize(m_swapChainImageCount, std::atomic<HANDLE>(nullptr));
-    m_computeCommandQueueFenceEvent.resize(m_swapChainImageCount, std::atomic<HANDLE>(nullptr));
-
+    m_GlobalSemaphores.resize(m_swapChainImageCount);
+    for (size_t i = 0; i < m_GlobalSemaphores.size(); i++)
+    { 
+        auto l_semaphore = static_cast<DX12Semaphore*>(AddSemaphore());
+        l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+        l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+        l_semaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+        m_GlobalSemaphores[i] = l_semaphore;
+    }
+    
     return true;
 }
 

@@ -29,7 +29,7 @@ bool ImGuiRendererMT::NewFrame()
 	return true;
 }
 
-bool ImGuiRendererMT::Render()
+bool ImGuiRendererMT::Prepare()
 {
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 

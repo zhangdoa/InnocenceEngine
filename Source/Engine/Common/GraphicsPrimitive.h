@@ -212,7 +212,8 @@ namespace Inno
 		{
 			Invalid,
 			Graphics,
-			Compute
+			Compute,
+			Copy
 		};
 
 		enum class ShaderStage

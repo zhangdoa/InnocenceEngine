@@ -37,7 +37,7 @@ bool AssetSystem::FindLoaded##funcName(const char * fileName, type value) \
 	} \
 	else \
 	{ \
-	Log(Verbose, "", fileName, " has not been loaded."); \
+	Log(Verbose, "", fileName, " is not loaded yet."); \
 	\
 	return false; \
 	} \

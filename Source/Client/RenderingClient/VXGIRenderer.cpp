@@ -66,7 +66,7 @@ bool VXGIRenderer::Initialize()
 	return true;
 }
 
-bool VXGIRenderer::Render(IRenderingConfig* renderingConfig)
+bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 {
 	VXGIRenderingConfig* l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(renderingConfig);
 	auto l_renderingServer = g_Engine->getRenderingServer();

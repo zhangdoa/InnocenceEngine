@@ -39,26 +39,23 @@ bool DX12RenderingServer::ReleaseHardwareResources()
     m_CSUDescHeap_ShaderNonVisible.ReleaseAndGetAddressOf();
     m_CSUDescHeap.ReleaseAndGetAddressOf();
 
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        m_directCommandQueueFence[i].ReleaseAndGetAddressOf();
-        m_computeCommandQueueFence[i].ReleaseAndGetAddressOf();
-        m_copyCommandQueueFence[i].ReleaseAndGetAddressOf();
-    }
+    m_directCommandQueueFence.ReleaseAndGetAddressOf();
+    m_computeCommandQueueFence.ReleaseAndGetAddressOf();
+    m_copyCommandQueueFence.ReleaseAndGetAddressOf();
 
     for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
     {
-        m_GlobalCommandLists[i]->m_DirectCommandList.ReleaseAndGetAddressOf();
-        m_GlobalCommandLists[i]->m_ComputeCommandList.ReleaseAndGetAddressOf();
-        m_GlobalCommandLists[i]->m_CopyCommandList.ReleaseAndGetAddressOf();
+        auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[i]);
+        l_commandList->m_DirectCommandList.ReleaseAndGetAddressOf();
+        l_commandList->m_ComputeCommandList.ReleaseAndGetAddressOf();
+        l_commandList->m_CopyCommandList.ReleaseAndGetAddressOf();
     }
-
-    m_copyCommandAllocator.ReleaseAndGetAddressOf();
 
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
         m_directCommandAllocators[i].ReleaseAndGetAddressOf();
         m_computeCommandAllocators[i].ReleaseAndGetAddressOf();
+        m_copyCommandAllocators[i].ReleaseAndGetAddressOf();
     }
 
     m_directCommandQueue.ReleaseAndGetAddressOf();
@@ -120,6 +117,7 @@ bool DX12RenderingServer::AssignSwapChainImages()
         l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
     }
 
+    m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
     return true;
 }
 
@@ -133,10 +131,9 @@ bool DX12RenderingServer::PresentImpl()
 bool DX12RenderingServer::PostPresent()
 {
 	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-
-	// GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-	// GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-	// GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
+	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
+	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
 
     return true;
 }
@@ -149,21 +146,10 @@ bool DX12RenderingServer::ResizeImpl()
     m_swapChainDesc.Height = (UINT)l_screenResolution.y;
 
     m_swapChainImages.clear();
-	
-	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
-	WaitFence(m_SwapChainRenderPassComp, GPUEngineType::Compute);
-    for (int i = 0; i < m_swapChainImageCount; i++)
-    {
-        UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore[i];
-        GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT)->Signal(m_directCommandQueueFence[i].Get(), l_directCommandFinishedSemaphore);
-        if (m_directCommandQueueFence[i]->GetCompletedValue() < l_directCommandFinishedSemaphore)
-        {
-            m_directCommandQueueFence[i]->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent[i]);
-            WaitForSingleObject(m_directCommandQueueFenceEvent[i], INFINITE);
-        }
-    }
 
     m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
+
+    m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
     if (!GetSwapChainImages())
         return false;
@@ -207,7 +193,7 @@ bool DX12RenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, Re
 
 	rhs->m_PipelineStateObject = AddPipelineStateObject();
 
-	CreatePSO(l_rhs);
+	CreatePipelineStateObject(l_rhs);
 
 	if (rhs->m_OnResize)
 		rhs->m_OnResize();

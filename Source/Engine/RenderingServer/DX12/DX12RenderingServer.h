@@ -19,6 +19,8 @@ namespace Inno
     public:
         INNO_CLASS_CONCRETE_NON_COPYABLE(DX12RenderingServer);
 
+        bool Update() override;
+        
         // Inherited via IRenderingServer
         // In DX12RenderingServer_ComponentPool.cpp
         MeshComponent* AddMeshComponent(const char* name = "") override;
@@ -44,12 +46,10 @@ namespace Inno
         virtual	bool Delete(ISemaphore* rhs) override;
 
         // In DX12RenderingServer.cpp
-        bool UpdateMeshComponent(MeshComponent* rhs) override;
-
-        bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
-
         bool ClearTextureComponent(TextureComponent* rhs) override;
         bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
+        bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
+
         uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
         bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
@@ -89,15 +89,25 @@ namespace Inno
         // In DX12RenderingServer_ComponentPool.cpp
         bool InitializeImpl(MeshComponent* rhs) override;
         bool InitializeImpl(TextureComponent* rhs) override;
-        bool InitializeImpl(RenderPassComponent* rhs) override;
         bool InitializeImpl(ShaderProgramComponent* rhs) override;
         bool InitializeImpl(SamplerComponent* rhs) override;
         bool InitializeImpl(GPUBufferComponent* rhs) override;
 
-        bool UploadImpl(GPUBufferComponent* rhs) override;
+        bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) override;
+        bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) override;
+        bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) override;
+
+        bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject) override;
+        bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) override;
+        bool Execute(ICommandList* commandList, ISemaphore* semaphore, GPUEngineType GPUEngineType) override;
+        bool Wait(ISemaphore* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
 
         bool InitializePool() override;
         bool TerminatePool() override;
+        
+        bool CreatePipelineStateObject(RenderPassComponent* rhs) override;
+        bool CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name) override;
+        bool CreateFenceEvents(RenderPassComponent* rhs) override;
 
         // In DX12RenderingServer_GraphicsDevice_Protected.cpp
         bool CreateHardwareResources() override;
@@ -158,17 +168,12 @@ namespace Inno
         
         bool CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp);
         D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(DX12RenderPassComponent* DX12RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
-        bool CreatePSO(DX12RenderPassComponent* DX12RenderPassComp);
-        bool CreateCommandList(DX12CommandList* commandList, size_t swapChainImageIndex, const std::wstring& name);
-        bool CreateFenceEvents(DX12RenderPassComponent* DX12RenderPassComp);
 
         bool BindComputeResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
         bool BindGraphicsResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
         bool SetDescriptorHeaps(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool SetRenderTargets(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool PreparePipeline(DX12RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
-        bool ExecuteCommandList(DX12CommandList* commandList, DX12Semaphore* semaphore, GPUEngineType GPUEngineType);
-        bool WaitCommandQueue(DX12Semaphore* rhs, GPUEngineType queueType, GPUEngineType semaphoreType);
         bool WaitFence(DX12Semaphore* rhs, GPUEngineType GPUEngineType);
         bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
@@ -197,18 +202,12 @@ namespace Inno
         ComPtr<ID3D12CommandQueue> m_computeCommandQueue = nullptr;
         ComPtr<ID3D12CommandQueue> m_copyCommandQueue = nullptr;
 
-        std::vector<uint64_t> m_directCommandQueueSemaphore;
-        std::vector<uint64_t> m_computeCommandQueueSemaphore;
-        std::vector<uint64_t> m_copyCommandQueueSemaphore;
-        std::vector<ComPtr<ID3D12Fence>> m_directCommandQueueFence;
-        std::vector<ComPtr<ID3D12Fence>> m_computeCommandQueueFence;
-        std::vector<ComPtr<ID3D12Fence>> m_copyCommandQueueFence;
-        std::vector<HANDLE> m_directCommandQueueFenceEvent;
-        std::vector<HANDLE> m_computeCommandQueueFenceEvent;
+        ComPtr<ID3D12Fence> m_directCommandQueueFence = nullptr;
+        ComPtr<ID3D12Fence> m_computeCommandQueueFence = nullptr;
+        ComPtr<ID3D12Fence> m_copyCommandQueueFence = nullptr;
         std::vector<ComPtr<ID3D12CommandAllocator>> m_directCommandAllocators;
         std::vector<ComPtr<ID3D12CommandAllocator>> m_computeCommandAllocators;
-        ComPtr<ID3D12CommandAllocator> m_copyCommandAllocator = nullptr;
-        std::vector<DX12CommandList*> m_GlobalCommandLists;
+        std::vector<ComPtr<ID3D12CommandAllocator>> m_copyCommandAllocators;
 
         ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap = nullptr;
         DX12DescriptorHeapAccessor m_GPUBuffer_CBV_DescHeapAccessor;

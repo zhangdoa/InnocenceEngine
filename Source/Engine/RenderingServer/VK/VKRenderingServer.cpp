@@ -19,11 +19,6 @@ using namespace VKHelper;
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 
-bool VKRenderingServer::UpdateMeshComponent(MeshComponent* rhs)
-{
-	return true;
-}
-
 // @TODO: The command list should be passed as a parameter.
 bool VKRenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 {

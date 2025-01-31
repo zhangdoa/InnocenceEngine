@@ -135,11 +135,6 @@ bool MTRenderingServer::DeleteGPUBufferComponent(GPUBufferComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::UpdateMeshComponent(MeshComponent* rhs)
-{
-	return true;
-}
-
 bool MTRenderingServer::ClearTextureComponent(TextureComponent* rhs)
 {
 	return true;

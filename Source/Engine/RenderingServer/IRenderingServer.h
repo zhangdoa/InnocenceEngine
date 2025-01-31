@@ -59,15 +59,11 @@ namespace Inno
 
 		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
 
-		virtual bool UpdateMeshComponent(MeshComponent* rhs) { return false; }
-
-		virtual bool ClearGPUBufferComponent(GPUBufferComponent* rhs) { return false; }
-
-		virtual bool ClearTextureComponent(TextureComponent* rhs) { return false; }
-		virtual bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) { return false; }
-
 		bool ReserveRenderTargets(RenderPassComponent* rhs);
         bool CreateRenderTargets(RenderPassComponent* rhs);
+		virtual bool CreatePipelineStateObject(RenderPassComponent* rhs) {	return false; }
+        virtual bool CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name) {	return false; }
+        virtual bool CreateFenceEvents(RenderPassComponent* rhs) {	return false; }
 
 		// Rendering APIs
 		virtual void TransferDataToGPU();
@@ -108,32 +104,44 @@ namespace Inno
 		virtual bool BeginCapture() { return false; }
 		virtual bool EndCapture() { return false; }
 
-	private:
-		bool Upload(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range);
+	protected:
+		bool WriteMappedMemory(MeshComponent* rhs);
+		bool WriteMappedMemory(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range);
 
 	public:
+		virtual bool ClearTextureComponent(TextureComponent* rhs) { return false; }
+		virtual bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) { return false; }
+		virtual bool ClearGPUBufferComponent(GPUBufferComponent* rhs) { return false; }
+
 		template<typename T>
 		bool UploadGPUBufferComponent(GPUBufferComponent* rhs, const T* GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
-			return Upload(rhs, GPUBufferValue, startOffset, range);
+			return WriteMappedMemory(rhs, GPUBufferValue, startOffset, range);
 		}
 
 		template<typename T>
 		bool UploadGPUBufferComponent(GPUBufferComponent* rhs, const std::vector<T>& GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
-			return Upload(rhs, &GPUBufferValue[0], startOffset, range);
+			return UploadGPUBufferComponent(rhs, &GPUBufferValue[0], startOffset, range);
 		}
-		
+
 	protected:
 		virtual bool InitializeImpl(MeshComponent* rhs) { return false; }
 		virtual bool InitializeImpl(TextureComponent* rhs) { return false; }
 		virtual bool InitializeImpl(MaterialComponent* rhs);
-		virtual bool InitializeImpl(RenderPassComponent* rhs) { return false; }
+		virtual bool InitializeImpl(RenderPassComponent* rhs);
 		virtual	bool InitializeImpl(ShaderProgramComponent* rhs) { return false; }
 		virtual bool InitializeImpl(SamplerComponent* rhs) { return false; }
 		virtual bool InitializeImpl(GPUBufferComponent* rhs) { return false; }
 
-		virtual bool UploadImpl(GPUBufferComponent* rhs) { return false; }
+		virtual bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) { return false; }
+		virtual bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) { return false; }
+		virtual bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
+		virtual bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
+		virtual bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) { return false; }
+		virtual bool Execute(ICommandList* commandList, ISemaphore* semaphore, GPUEngineType GPUEngineType) { return false; }
+		virtual bool Wait(ISemaphore* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
+
 		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility);
 		
 		virtual bool InitializePool() { return false; }
@@ -155,6 +163,9 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
         TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 		
+		std::vector<ICommandList*> m_GlobalCommandLists;
+		std::vector<ISemaphore*> m_GlobalSemaphores;
+
 		const uint32_t m_swapChainImageCount = 2;		
         std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;
         RenderPassComponent* m_SwapChainRenderPassComp;
@@ -164,10 +175,13 @@ namespace Inno
 		ThreadSafeQueue<MeshComponent*> m_uninitializedMeshes;
 		ThreadSafeQueue<TextureComponent*> m_uninitializedTextures;
 		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
+		ThreadSafeQueue<GPUBufferComponent*> m_uninitializedGPUBuffers;
+		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
 
         std::unordered_set<MeshComponent*> m_initializedMeshes;
         std::unordered_set<TextureComponent*> m_initializedTextures;
         std::unordered_set<MaterialComponent*> m_initializedMaterials;
+		std::unordered_set<GPUBufferComponent*> m_initializedGPUBuffers;
         std::vector<RenderPassComponent*> m_initializedRenderPasses;
 		
 	private:

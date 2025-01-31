@@ -42,8 +42,6 @@ namespace Inno
 		virtual	bool Delete(ICommandList* rhs) override;
 		virtual	bool Delete(ISemaphore* rhs) override;
 
-		bool UpdateMeshComponent(MeshComponent* rhs) override;
-
 		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
 
 		bool ClearTextureComponent(TextureComponent* rhs) override;
@@ -86,7 +84,7 @@ namespace Inno
 		bool InitializeImpl(SamplerComponent* rhs) override;
 		bool InitializeImpl(GPUBufferComponent* rhs) override;
 
-        bool UploadImpl(GPUBufferComponent* rhs) override;
+        bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) override;
 		
 		bool InitializePool() override;
 		bool TerminatePool() override;

@@ -34,8 +34,10 @@ namespace Inno
 	public:
 		std::atomic<uint64_t> m_DirectCommandQueueSemaphore = 0;
 		std::atomic<uint64_t> m_ComputeCommandQueueSemaphore = 0;
+		std::atomic<uint64_t> m_CopyCommandQueueSemaphore = 0;
 		HANDLE m_DirectCommandQueueFenceEvent = 0;
 		HANDLE m_ComputeCommandQueueFenceEvent = 0;
+		HANDLE m_CopyCommandQueueFenceEvent = 0;
 	};
 
 	class DX12RenderPassComponent : public RenderPassComponent

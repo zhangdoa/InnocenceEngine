@@ -359,7 +359,7 @@ bool VKRenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 }
 
 // @TODO: The command list should be passed as a parameter.
-bool VKRenderingServer::UploadImpl(GPUBufferComponent* rhs)
+bool VKRenderingServer::UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<VKGPUBufferComponent*>(rhs);
 	if (!l_rhs->m_DeviceLocalMemory)

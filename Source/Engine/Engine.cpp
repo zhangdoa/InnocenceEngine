@@ -108,9 +108,10 @@ namespace Inno
 		std::function<void()> f_SceneLoadingFinishedCallback;
 
 		Handle<ITask> m_LogicClientUpdateTask;
-		Handle<ITask> m_PreCullingTask;
+		Handle<ITask> m_ComponentSystemUpdateTask;
 		Handle<ITask> m_CullingTask;
-		Handle<ITask> m_PreRenderingTask;
+		Handle<ITask> m_RenderingServerPreparationTask;
+		Handle<ITask> m_RenderingContextPreparationTask;
 		Handle<ITask> m_RenderingClientTask;
 		Handle<ITask> m_RenderingServerTask;
 
@@ -387,11 +388,21 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	if (!m_pImpl->m_RenderingClient->Setup())
-	{
-		Log(Error, "Rendering Client can't be setup!");
-		return false;
-	}
+	ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
+	auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		if (!m_pImpl->m_RenderingClient->Setup())
+		{
+			Log(Error, "Rendering Client can't be setup!");
+			return false;
+		}
+		
+		SystemSetup(GUISystem);
+
+		return true;
+		});
+
+	l_DefaultRenderingClientSetupTask->Activate();
+	l_DefaultRenderingClientSetupTask->Wait();
 
 	if (!m_pImpl->m_LogicClient->Setup())
 	{
@@ -399,17 +410,15 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	SystemSetup(GUISystem);
-
 	m_pImpl->m_LogicClientUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Logic Client Update Task"), [&]()
-		{			
+		{
 			if (Get<SceneSystem>()->isLoadingScene())
 				return;
 
 			m_pImpl->m_LogicClient->Update();
 		});
 
-	m_pImpl->m_PreCullingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Pre-Culling Task"), [&]()
+	m_pImpl->m_ComponentSystemUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Component System Update Task"), [&]()
 		{
 			if (Get<SceneSystem>()->isLoadingScene())
 				return true;
@@ -418,7 +427,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			Get<TransformSystem>()->Update();
 			Get<CameraSystem>()->Update();
 			Get<LightSystem>()->Update();
-			
+
 			SystemUpdate(EntityManager);
 			return true;
 		});
@@ -428,13 +437,13 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			if (Get<SceneSystem>()->isLoadingScene())
 				return;
 
-			m_pImpl->m_PreCullingTask->Wait();
+			m_pImpl->m_ComponentSystemUpdateTask->Wait();
 			Get<PhysicsSystem>()->Update();
 			Get<BVHService>()->Update();
 			Get<PhysicsSystem>()->RunCulling();
 		});
 
-	m_pImpl->m_PreRenderingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Pre-Rendering Task"), [&]()
+	m_pImpl->m_RenderingContextPreparationTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Context Preparation Task"), [&]()
 		{
 			if (Get<SceneSystem>()->isLoadingScene())
 				return;
@@ -444,15 +453,21 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			Get<AnimationService>()->Update();
 		});
 
-	m_pImpl->m_RenderingClientTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Client Task", ITask::Type::Recurrent, 2), [&]()
-	{
-		if (Get<SceneSystem>()->isLoadingScene())
-			return;
+	m_pImpl->m_RenderingServerPreparationTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Server Preparation Task", ITask::Type::Recurrent, 2), [&]()
+		{
+			m_pImpl->m_RenderingServer->Update();
+		});
 
-		m_pImpl->m_PreRenderingTask->Wait();
-		m_pImpl->m_RenderingClient->Prepare();
-		m_pImpl->m_RenderingClient->Render();
-	});
+	m_pImpl->m_RenderingClientTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Client Task", ITask::Type::Recurrent, 2), [&]()
+		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return;
+
+			m_pImpl->m_RenderingServerPreparationTask->Wait();
+			m_pImpl->m_RenderingContextPreparationTask->Wait();
+			m_pImpl->m_RenderingClient->Prepare();
+			Get<GUISystem>()->Update();
+		});
 
 	m_pImpl->m_RenderingServerTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Server Task", ITask::Type::Recurrent, 2), [&]()
 		{
@@ -460,14 +475,16 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 				return true;
 
 			m_pImpl->m_RenderingClientTask->Wait();
-			
+
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-			
-			m_pImpl->m_RenderingServer->Update();
+
 			m_pImpl->m_RenderingServer->TransferDataToGPU();
+
+			m_pImpl->m_RenderingClient->ExecuteCommands();
+
 			m_pImpl->m_RenderingServer->FinalizeSwapChain();
 
-			Get<GUISystem>()->Render();
+			Get<GUISystem>()->ExecuteCommands();
 
 			m_pImpl->m_RenderingServer->Present();
 
@@ -479,7 +496,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 			if (Get<SceneSystem>()->isLoadingScene())
 				return false;
-				
+
 			SystemOnFrameEnd(TransformSystem);
 			SystemOnFrameEnd(LightSystem);
 			SystemOnFrameEnd(CameraSystem);
@@ -488,22 +505,22 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		});
 
 	m_pImpl->f_SceneLoadingStartedCallback = [&]()
-	{
-		m_pImpl->m_LogicClientUpdateTask->Deactivate();
-		m_pImpl->m_PreCullingTask->Deactivate();
-		m_pImpl->m_CullingTask->Deactivate();
-		m_pImpl->m_PreRenderingTask->Deactivate();
-		m_pImpl->m_RenderingClientTask->Deactivate();
-	};
+		{
+			m_pImpl->m_LogicClientUpdateTask->Deactivate();
+			m_pImpl->m_ComponentSystemUpdateTask->Deactivate();
+			m_pImpl->m_CullingTask->Deactivate();
+			m_pImpl->m_RenderingContextPreparationTask->Deactivate();
+			m_pImpl->m_RenderingClientTask->Deactivate();
+		};
 
 	m_pImpl->f_SceneLoadingFinishedCallback = [&]()
-	{
-		m_pImpl->m_LogicClientUpdateTask->Activate();
-		m_pImpl->m_PreCullingTask->Activate();
-		m_pImpl->m_CullingTask->Activate();
-		m_pImpl->m_PreRenderingTask->Activate();
-		m_pImpl->m_RenderingClientTask->Activate();
-	};
+		{
+			m_pImpl->m_LogicClientUpdateTask->Activate();
+			m_pImpl->m_ComponentSystemUpdateTask->Activate();
+			m_pImpl->m_CullingTask->Activate();
+			m_pImpl->m_RenderingContextPreparationTask->Activate();
+			m_pImpl->m_RenderingClientTask->Activate();
+		};
 
 	Get<SceneSystem>()->AddSceneLoadingStartedCallback(&m_pImpl->f_SceneLoadingStartedCallback, -1);
 	Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&m_pImpl->f_SceneLoadingFinishedCallback, 10);
@@ -533,11 +550,24 @@ bool Engine::Initialize()
 	SystemInit(RenderingContextService);
 	SystemInit(AnimationService);
 
-	m_pImpl->m_RenderingClient->Initialize();
-	
-	m_pImpl->m_RenderingServerTask->Activate();
+	ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
+	auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		if (!m_pImpl->m_RenderingClient->Initialize())
+		{
+			Log(Error, "Rendering Client can't be setup!");
+			return false;
+		}
 
-	SystemInit(GUISystem);
+		SystemInit(GUISystem);
+
+		return true;
+		});
+
+	l_DefaultRenderingClientInitializationTask->Activate();
+	l_DefaultRenderingClientInitializationTask->Wait();
+
+	m_pImpl->m_RenderingServerPreparationTask->Activate();
+	m_pImpl->m_RenderingServerTask->Activate();
 
 	m_pImpl->m_LogicClient->Initialize();
 
@@ -567,14 +597,28 @@ bool Engine::ExecuteDefaultTask()
 
 bool Engine::Terminate()
 {
+	m_pImpl->m_RenderingServerTask->Deactivate();
+	m_pImpl->m_RenderingClientTask->Deactivate();
+	m_pImpl->m_RenderingServerPreparationTask->Deactivate();
+	m_pImpl->m_RenderingContextPreparationTask->Deactivate();
+	m_pImpl->m_CullingTask->Deactivate();
+	m_pImpl->m_ComponentSystemUpdateTask->Deactivate();
+	m_pImpl->m_LogicClientUpdateTask->Deactivate();
+
+	ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
+	auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		if (!m_pImpl->m_RenderingClient->Terminate())
+		{
+			Log(Error, "Rendering client can't be terminated!");
+			return false;
+		}
+		return true;
+		});
+	l_DefaultRenderingClientTerminationTask->Activate();
+	l_DefaultRenderingClientTerminationTask->Wait();
+
 	Get<TaskScheduler>()->Freeze();
 	Get<TaskScheduler>()->Reset();
-
-	if (!m_pImpl->m_RenderingClient->Terminate())
-	{
-		Log(Error, "Rendering client can't be terminated!");
-		return false;
-	}
 
 	if (!m_pImpl->m_LogicClient->Terminate())
 	{

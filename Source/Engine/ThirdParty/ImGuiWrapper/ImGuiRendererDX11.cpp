@@ -40,7 +40,7 @@ bool ImGuiRendererDX11::NewFrame()
 	return true;
 }
 
-bool ImGuiRendererDX11::Render()
+bool ImGuiRendererDX11::Prepare()
 {
 	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<DX11RenderPassComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
 	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_Engine->getRenderingServer());

@@ -29,7 +29,12 @@ bool ImGuiRendererVK::NewFrame()
 	return true;
 }
 
-bool ImGuiRendererVK::Render()
+bool ImGuiRendererVK::Prepare()
+{
+	return true;
+}
+
+bool ImGuiRendererVK::ExecuteCommands()
 {
 	return true;
 }

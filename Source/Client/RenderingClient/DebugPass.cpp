@@ -278,7 +278,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 						l_vertices[j] = l_cameraComponent->m_splitFrustumVerticesWS[i * 8 + j].m_pos;
 // 					}
 // 					g_Engine->Get<TemplateAssetService>()->FulfillVerticesAndIndices(m_debugCameraFrustumMeshComps[i], l_indices, l_vertices, 6);
-// 					l_renderingServer->UpdateMeshComponent(m_debugCameraFrustumMeshComps[i]);
+// 					l_renderingServer->UploadMeshComponent(m_debugCameraFrustumMeshComps[i]);
 
 // 					DebugPerObjectConstantBuffer l_meshData;
 // 					l_meshData.m = Math::generateIdentityMatrix<float>();
