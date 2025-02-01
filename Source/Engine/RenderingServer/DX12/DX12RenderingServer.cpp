@@ -848,7 +848,7 @@ DX12DescriptorHeapAccessor& DX12RenderingServer::GetDescriptorHeapAccessor(GPURe
 			default:
 			{
 				assert(false);
-				Log(Error, "Invalid texture sampler type");
+				Log(Error, "Invalid texture sampler type.");
 			}
 			}
 		}
@@ -866,7 +866,7 @@ DX12DescriptorHeapAccessor& DX12RenderingServer::GetDescriptorHeapAccessor(GPURe
 			default:
 			{
 				assert(false);
-				Log(Error, "Invalid texture sampler type");
+				Log(Error, "Invalid texture sampler type.");
 			}
 			}
 		}

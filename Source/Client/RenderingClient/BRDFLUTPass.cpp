@@ -7,9 +7,6 @@
 
 using namespace Inno;
 
-
-
-
 bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
@@ -18,14 +15,20 @@ bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp/";
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("BRDFLUTPass/");
+	m_Result = l_renderingServer->AddTextureComponent("BRDF LUT/");
+	m_Result->m_TextureDesc.Width = 512;
+	m_Result->m_TextureDesc.Height = 512;
+	m_Result->m_TextureDesc.DepthOrArraySize = 1;
+	m_Result->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_Result->m_TextureDesc.GPUAccessibility = Accessibility::ReadWrite;
+	m_Result->m_TextureDesc.PixelDataType = TexturePixelDataType::Float16;
+	m_Result->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = 512;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = 512;
-	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::Sample;
 	l_RenderPassDesc.m_Resizable = false;
 	
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
@@ -36,7 +39,7 @@ bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;	
     m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
@@ -52,6 +55,7 @@ bool BRDFLUTPass::Initialize()
 
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeTextureComponent(m_Result);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -81,7 +85,7 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
-    //m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
+    l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 0);
 	l_renderingServer->Dispatch(m_RenderPassComp, 32, 32, 1);
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
@@ -96,5 +100,5 @@ RenderPassComponent *BRDFLUTPass::GetRenderPassComp()
 
 GPUResourceComponent *BRDFLUTPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	return m_Result;
 }

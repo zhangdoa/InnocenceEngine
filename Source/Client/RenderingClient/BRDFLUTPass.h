@@ -23,5 +23,6 @@ namespace Inno
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
+		TextureComponent *m_Result;
 	};
 } // namespace Inno
