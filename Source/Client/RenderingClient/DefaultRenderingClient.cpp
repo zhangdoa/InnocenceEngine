@@ -290,8 +290,11 @@ namespace Inno
 		// 	AnimationPass::Get().PrepareCommandList();
 		// 	SSAOPass::Get().PrepareCommandList();
 
-		l_renderingServer->ExecuteCommandList(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-		l_renderingServer->WaitCommandQueue(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+		if (OpaquePass::Get().GetRenderPassComp()->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			l_renderingServer->ExecuteCommandList(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+			l_renderingServer->WaitCommandQueue(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+		}
 
 		// 	l_renderingServer->ExecuteCommandList(AnimationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 

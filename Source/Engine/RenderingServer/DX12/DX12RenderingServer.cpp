@@ -290,7 +290,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 	{
 		if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::Sample)
 		{
-			auto l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
+			auto& l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
 				, resourceBindingLayoutDesc.m_ResourceAccessibility, TextureUsage::Sample);
 			commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_textureDescHeapAccessor.GetFirstHandle().GPUHandle);
 		}
@@ -358,7 +358,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 	{
 		if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::Sample)
 		{
-			auto l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
+			auto& l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
 				, resourceBindingLayoutDesc.m_ResourceAccessibility, TextureUsage::Sample);
 			commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_textureDescHeapAccessor.GetFirstHandle().GPUHandle);
 		}

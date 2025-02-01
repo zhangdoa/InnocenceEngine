@@ -211,11 +211,6 @@ bool LightSystem::Update()
 	return true;
 }
 
-bool LightSystem::OnFrameEnd()
-{
-	return true;
-}
-
 bool LightSystem::Terminate()
 {
 	return true;

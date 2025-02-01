@@ -148,11 +148,6 @@ bool CameraSystem::Update()
 	return true;
 }
 
-bool CameraSystem::OnFrameEnd()
-{
-	return true;
-}
-
 bool CameraSystem::Terminate()
 {
 	return true;

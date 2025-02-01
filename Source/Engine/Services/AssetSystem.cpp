@@ -111,11 +111,6 @@ bool AssetSystem::Update()
 	return true;
 }
 
-bool AssetSystem::OnFrameEnd()
-{
-	return true;
-}
-
 bool AssetSystem::Terminate()
 {
 	return true;

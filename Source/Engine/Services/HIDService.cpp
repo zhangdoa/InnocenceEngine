@@ -18,13 +18,13 @@ bool HIDService::Initialize()
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_ObjectStatus = ObjectStatus::Activated;
-		Log(Success, "EventSystem has been initialized.");
+		Log(Success, "HIDService has been initialized.");
 
 		return true;
 	}
 	else
 	{
-		Log(Error, "Object is not created!");
+		Log(Error, "HIDService is not created!");
 		return false;
 	}
 }
@@ -74,7 +74,7 @@ bool HIDService::Update()
 bool HIDService::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "EventSystem has been terminated.");
+	Log(Success, "HIDService has been terminated.");
 
 	return true;
 }

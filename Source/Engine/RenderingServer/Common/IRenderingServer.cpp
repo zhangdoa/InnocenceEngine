@@ -452,10 +452,13 @@ bool IRenderingServer::Resize()
 }
 
 bool IRenderingServer::WriteMappedMemory(MeshComponent* rhs)
-{
+{	
 	if (rhs->m_MappedMemory_VB == nullptr || rhs->m_MappedMemory_IB == nullptr)
 	{
-		Log(Error, "Can't upload data to mesh: ", rhs->m_InstanceName, " because it's not mapped.");
+		if (rhs->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			Log(Error, "Can't upload data to mesh: ", rhs->m_InstanceName, " because it's not mapped.");
+		}
 		return false;
 	}
 
@@ -469,13 +472,19 @@ bool IRenderingServer::WriteMappedMemory(MeshComponent* rhs)
 
 bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
+	if (rhs->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_size = rhs->m_TotalSize;
 	if (range != SIZE_MAX)
 		l_size = range * rhs->m_ElementSize;
 
 	if (rhs->m_MappedMemory == nullptr)
 	{
-		Log(Error, "Can't upload data to GPU buffer: ", rhs->m_InstanceName, " because it's not mapped.");
+		if (rhs->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			Log(Error, "Can't upload data to GPU buffer: ", rhs->m_InstanceName, " because it's not mapped.");
+		}
 		return false;
 	}
 

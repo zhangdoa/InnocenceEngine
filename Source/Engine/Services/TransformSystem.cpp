@@ -94,7 +94,7 @@ bool TransformSystem::Setup(ISystemConfig* systemConfig)
 				i->m_globalTransformMatrix = Math::TransformVectorToTransformMatrix(i->m_globalTransformVector);
 			}
 		}
-	};
+		};
 
 	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishCallback, 1);
 
@@ -116,22 +116,18 @@ bool TransformSystem::Initialize()
 
 bool TransformSystem::Update()
 {
-    if (g_Engine->Get<SceneSystem>()->isLoadingScene())
-        return true;
+	if (g_Engine->Get<SceneSystem>()->isLoadingScene())
+		return true;
 
-	SimulateTransformComponents();
-
-	return true;
-}
-
-bool TransformSystem::OnFrameEnd()
-{
 	auto l_component = g_Engine->Get<ComponentManager>()->GetAll<TransformComponent>();
 
 	std::for_each(l_component.begin(), l_component.end(), [&](TransformComponent* val)
 		{
 			val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
 		});
+
+	SimulateTransformComponents();
+
 	return true;
 }
 
@@ -145,7 +141,7 @@ ObjectStatus TransformSystem::GetStatus()
 	return ObjectStatus();
 }
 
-const TransformComponent *Inno::TransformSystem::GetRootTransformComponent()
+const TransformComponent* TransformSystem::GetRootTransformComponent()
 {
-    return m_RootTransformComponent;
+	return m_RootTransformComponent;
 }

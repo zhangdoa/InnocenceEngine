@@ -79,6 +79,8 @@ bool PhysicsSystemImpl::Setup()
 	PhysXWrapper::get().Setup();
 #endif
 
+	m_RootPhysicsComponent = AddPhysicsComponent(m_RootPDCEntity);
+
 	f_SceneLoadingStartedCallback = [&]()
 		{
 			Log(Verbose, "Clearing all physics system data...");

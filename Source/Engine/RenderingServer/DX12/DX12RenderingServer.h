@@ -214,8 +214,8 @@ namespace Inno
 
         DX12DescriptorHeapAccessor m_GPUBuffer_SRV_DescHeapAccessor;
 
-        DX12DescriptorHeapAccessor m_MaterialTexture_SRV_DescHeapAccessor; // @TODO: This is only for read-only material textures
-        DX12DescriptorHeapAccessor m_RenderTarget_SRV_DescHeapAccessor; // @TODO: Change this to for render targets since they can't be together with the read-only material textures
+        DX12DescriptorHeapAccessor m_MaterialTexture_SRV_DescHeapAccessor;
+        DX12DescriptorHeapAccessor m_RenderTarget_SRV_DescHeapAccessor;
 
         DX12DescriptorHeapAccessor m_GPUBuffer_UAV_DescHeapAccessor;
         DX12DescriptorHeapAccessor m_MaterialTexture_UAV_DescHeapAccessor;

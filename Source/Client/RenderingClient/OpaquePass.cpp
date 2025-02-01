@@ -119,6 +119,9 @@ ObjectStatus OpaquePass::GetStatus()
 
 bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);

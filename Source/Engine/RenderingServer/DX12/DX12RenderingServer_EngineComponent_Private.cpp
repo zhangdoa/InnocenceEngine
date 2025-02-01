@@ -110,7 +110,7 @@ DX12SRV DX12RenderingServer::CreateSRV(DX12GPUBufferComponent* rhs)
 	l_desc.Buffer.StructureByteStride = rhs->m_isAtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
 	l_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, rhs->m_GPUAccessibility);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadWrite);
 
 	DX12SRV l_result = {};
 	l_result.SRVDesc = l_desc;
@@ -155,8 +155,8 @@ DX12UAV DX12RenderingServer::CreateUAV(DX12GPUBufferComponent* rhs)
 	DX12UAV l_result = {};
 	l_result.UAVDesc = l_desc;
 
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, rhs->m_GPUAccessibility);
-	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, rhs->m_GPUAccessibility, TextureUsage::Invalid, false);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite);
+	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite, TextureUsage::Invalid, false);
 
 	auto l_descHandle = l_descHeapAccessor.GetNewHandle();
 	auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
@@ -173,7 +173,7 @@ DX12UAV DX12RenderingServer::CreateUAV(DX12GPUBufferComponent* rhs)
 
 DX12CBV DX12RenderingServer::CreateCBV(DX12GPUBufferComponent* rhs)
 {
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, rhs->m_GPUAccessibility);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadOnly);
 	DX12CBV l_result;
 
 	l_result.CBVDesc.BufferLocation = rhs->m_UploadHeapBuffer->GetGPUVirtualAddress();

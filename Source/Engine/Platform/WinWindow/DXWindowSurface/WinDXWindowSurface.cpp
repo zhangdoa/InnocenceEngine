@@ -49,7 +49,7 @@ bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
 			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance(), NULL); // instance, param
 
 		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->SetWindowHandle(l_hwnd);
-		
+
 		Log(Success, "A new window handle has been created.");
 	}
 

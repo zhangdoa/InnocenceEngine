@@ -16,7 +16,6 @@ namespace Inno
 		virtual bool Setup(ISystemConfig* systemConfig = nullptr) = 0;
 		virtual bool Initialize() = 0;
 		virtual bool Update() { return true; };
-		virtual bool OnFrameEnd() { return true; };
 		virtual bool Terminate() = 0;
 		virtual ObjectStatus GetStatus() = 0;
 	};

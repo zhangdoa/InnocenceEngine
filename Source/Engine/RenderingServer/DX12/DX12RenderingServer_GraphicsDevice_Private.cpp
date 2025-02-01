@@ -368,7 +368,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             auto l_currentHandle = l_firstGPUBufferSRVHandle;
             D3D12_SHADER_RESOURCE_VIEW_DESC l_SRVDesc = {};
             l_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-            l_SRVDesc.Format = DXGI_FORMAT_R32_UINT;
+            l_SRVDesc.Format = DXGI_FORMAT_R32_SINT;
             l_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             for (uint32_t i = 0; i < l_maxGPUBuffers; i++)
             {
@@ -388,7 +388,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             auto l_currentHandle = l_firstGPUBufferUAVHandle;
             D3D12_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc = {};
             l_UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-            l_UAVDesc.Format = DXGI_FORMAT_R32_UINT;            
+            l_UAVDesc.Format = DXGI_FORMAT_R32_SINT;            
             for (uint32_t i = 0; i < l_maxGPUBuffers; i++)
             {
                 m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
@@ -409,7 +409,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             auto l_currentHandle = l_firstMaterialTextureSRVHandle;
             D3D12_SHADER_RESOURCE_VIEW_DESC l_SRVDesc = {};
             l_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            l_SRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            l_SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
             l_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             for (uint32_t i = 0; i < l_maxMaterialTextures; i++)
             {
@@ -429,7 +429,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             auto l_currentHandle = l_firstMaterialTextureUAVHandle;
             D3D12_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc = {};
             l_UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-            l_UAVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            l_UAVDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
             for (uint32_t i = 0; i < l_maxMaterialTextures; i++)
             {
                 m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
@@ -449,8 +449,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             
             auto l_currentHandle = l_firstRenderTargetTextureSRVHandle;
             D3D12_SHADER_RESOURCE_VIEW_DESC l_SRVDesc = {};
-            l_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-            l_SRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            l_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            l_SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
             l_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;            
             for (uint32_t i = 0; i < l_maxRenderTargetTextures; i++)
             {
@@ -469,8 +469,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
 
             auto l_currentHandle = l_firstRenderTargetTextureUAVHandle;
             D3D12_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc = {};
-            l_UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-            l_UAVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;            
+            l_UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+            l_UAVDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;            
             for (uint32_t i = 0; i < l_maxRenderTargetTextures; i++)
             {
                 m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);

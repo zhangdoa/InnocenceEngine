@@ -14,7 +14,7 @@ using namespace Inno;
 
 namespace WinWindowSystemNS
 {
-	LRESULT CALLBACK ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT CALLBACK ProcessWindowsEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	IWindowSurface* m_WindowSurface;
@@ -31,7 +31,7 @@ namespace WinWindowSystemNS
 
 using namespace WinWindowSystemNS;
 
-LRESULT WinWindowSystemNS::ProcessEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT WinWindowSystemNS::ProcessWindowsEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	for (auto i : m_WindowEventCallbacks)
 	{
@@ -237,10 +237,6 @@ bool WinWindowSystem::SetWindowHandle(HWND hwnd)
 
 LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// For to eliminate fake OpenGL window handle event
-	if (hwnd != m_WindowHandle)
-		return ProcessEvent(hwnd, uMsg, wParam, lParam);
-
 	switch (uMsg)
 	{
 	case WM_DESTROY:
@@ -268,7 +264,7 @@ LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM
 	}
 	default:
 	{
-		return ProcessEvent(hwnd, uMsg, wParam, lParam);
+		return ProcessWindowsEvent(hwnd, uMsg, wParam, lParam);
 	}
 	}
 }

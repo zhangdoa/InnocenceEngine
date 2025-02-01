@@ -71,13 +71,6 @@ m_pImpl->m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \
 }
 
-#define SystemOnFrameEnd( className ) \
-if (!Get<##className>()->OnFrameEnd()) \
-{ \
-m_pImpl->m_ObjectStatus = ObjectStatus::Suspended; \
-return false; \
-}
-
 #define SystemTerm( className ) \
 if (!Get<##className>()->Terminate()) \
 { \
@@ -423,7 +416,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			if (Get<SceneSystem>()->isLoadingScene())
 				return true;
 
-			m_pImpl->m_LogicClientUpdateTask->Wait();
+			m_pImpl->m_LogicClientUpdateTask->Wait(); // Not wait, but check if it's done and consume the result
 			Get<TransformSystem>()->Update();
 			Get<CameraSystem>()->Update();
 			Get<LightSystem>()->Update();
@@ -475,12 +468,37 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 				return true;
 
 			m_pImpl->m_RenderingClientTask->Wait();
+			// m_pImpl->m_RenderingServer->Update();
+
+			// if (!Get<SceneSystem>()->isLoadingScene())
+			// {
+			// 	m_pImpl->m_LogicClient->Update();
+
+			// 	Get<TransformSystem>()->Update();
+			// 	Get<CameraSystem>()->Update();
+			// 	Get<LightSystem>()->Update();
+
+			// 	SystemUpdate(EntityManager);
+
+			// 	Get<PhysicsSystem>()->Update();
+			// 	Get<BVHService>()->Update();
+			// 	Get<PhysicsSystem>()->RunCulling();
+
+			// 	Get<RenderingContextService>()->Update();
+			// 	Get<AnimationService>()->Update();
+
+			// 	m_pImpl->m_RenderingClient->Prepare();
+			// 	Get<GUISystem>()->Update();
+			// }
 
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
 			m_pImpl->m_RenderingServer->TransferDataToGPU();
 
-			m_pImpl->m_RenderingClient->ExecuteCommands();
+			if (!Get<SceneSystem>()->isLoadingScene())
+			{
+				m_pImpl->m_RenderingClient->ExecuteCommands();
+			}
 
 			m_pImpl->m_RenderingServer->FinalizeSwapChain();
 
@@ -490,16 +508,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 			m_pImpl->m_WindowSystem->GetWindowSurface()->swapBuffer();
 
-			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
+			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
 			m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
-
-			if (Get<SceneSystem>()->isLoadingScene())
-				return false;
-
-			SystemOnFrameEnd(TransformSystem);
-			SystemOnFrameEnd(LightSystem);
-			SystemOnFrameEnd(CameraSystem);
 
 			return true;
 		});

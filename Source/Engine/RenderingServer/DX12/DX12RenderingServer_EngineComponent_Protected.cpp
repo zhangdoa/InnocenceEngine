@@ -170,6 +170,11 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent *rhs)
 		{
 			auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 			l_rhs->m_UploadHeapBuffers[i] = CreateUploadHeapBuffer(&l_resourceDesc);
+
+#ifdef INNO_DEBUG
+	auto l_name = "UploadHeap_Texture_" + std::to_string(i);
+	SetObjectName(l_rhs, l_rhs->m_UploadHeapBuffers[i], l_name.c_str());
+#endif // INNO_DEBUG
 		}
 
 		UploadToGPU(&l_commandList, l_rhs);

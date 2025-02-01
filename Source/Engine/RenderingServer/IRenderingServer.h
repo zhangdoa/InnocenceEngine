@@ -21,7 +21,6 @@ namespace Inno
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
-		bool OnFrameEnd() override { return true; }
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override { return m_ObjectStatus; }
