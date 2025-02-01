@@ -1,5 +1,5 @@
 #include "BRDFLUTMSPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -10,7 +10,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 {

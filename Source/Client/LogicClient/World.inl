@@ -589,23 +589,11 @@ namespace Inno
 		auto tCamera =
 			Math::getInvertTranslationMatrix(
 				l_cameraTransformComponent->m_globalTransformVector.m_pos);
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_ndcSpace = Math::mul(l_ndcSpace, pCamera.inverse());
+		l_ndcSpace = pCamera.inverse() * l_ndcSpace;
 		l_ndcSpace.z = -1.0f;
 		l_ndcSpace.w = 0.0f;
-		l_ndcSpace = Math::mul(l_ndcSpace, rCamera.inverse());
-		l_ndcSpace = Math::mul(l_ndcSpace, tCamera.inverse());
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-
-		l_ndcSpace = Math::mul(pCamera.inverse(), l_ndcSpace);
-		l_ndcSpace.z = -1.0f;
-		l_ndcSpace.w = 0.0f;
-		l_ndcSpace = Math::mul(tCamera.inverse(), l_ndcSpace);
-		l_ndcSpace = Math::mul(rCamera.inverse(), l_ndcSpace);
-#endif
+		l_ndcSpace = tCamera.inverse() * l_ndcSpace;
+		l_ndcSpace = rCamera.inverse() * l_ndcSpace;
 		l_ndcSpace = l_ndcSpace.normalize();
 		return l_ndcSpace;
 	}

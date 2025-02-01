@@ -1,9 +1,6 @@
 #cmakedefine INNO_DEBUG
 #cmakedefine INNO_RELEASE
 
-#cmakedefine USE_ROW_MAJOR_MEMORY_LAYOUT
-#cmakedefine USE_COLUMN_MAJOR_MEMORY_LAYOUT
-
 #cmakedefine INNO_PLATFORM_WIN
 #cmakedefine INNO_PLATFORM_LINUX
 #cmakedefine INNO_PLATFORM_MAC

@@ -1,5 +1,5 @@
 #include "DebugPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
@@ -16,7 +16,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool DebugPass::Setup(ISystemConfig *systemConfig)
 {
@@ -146,7 +146,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-    // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = m_debugMaterialGPUBufferComp;
 // 	if (l_renderingConfig.drawDebugObject)
 // 	{
@@ -290,7 +290,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 				auto l_rCamera = Math::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
 // 				auto l_tCamera = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
 
-// 				auto l_vertices = Math::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
+// 				auto l_vertices = Math::GenerateFrustumInWorldSpace(l_pCamera, l_rCamera, l_tCamera);
 
 // 				for (auto& j : l_vertices)
 // 				{
@@ -335,12 +335,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 							DebugPerObjectConstantBuffer l_meshData;
 
 // 							auto l_aabbLS = i->m_SplitAABBLS[j];
-// #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-// 							auto l_centerWS = Math::mul(l_aabbLS.m_center, l_r);
-// #endif
-// #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-// 							auto l_centerWS = Math::mul(l_r, l_aabbLS.m_center);
-// #endif
+// 							auto l_centerWS = l_r * l_aabbLS.m_center;
 
 // 							auto l_t = Math::toTranslationMatrix(l_centerWS);
 // 							auto l_s = Math::generateIdentityMatrix<float>();

@@ -1,5 +1,5 @@
 #include "SurfelGITestPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
@@ -13,7 +13,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
 {
@@ -116,8 +116,8 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (l_probes.size() > 0)
 	{
-		auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-		auto l_GIGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::GI);
+		auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+		auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 		m_probeSphereMeshData.clear();
 

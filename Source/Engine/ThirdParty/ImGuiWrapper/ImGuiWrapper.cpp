@@ -35,6 +35,7 @@
 #include "../../Common/RingBuffer.h"
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
+#include "../../Services/PhysicsSystem.h"
 #include "../../Services/SceneSystem.h"
 #include "../../Services/AssetSystem.h"
 #include "../../Services/RenderingConfigurationService.h"
@@ -252,6 +253,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 {
 	ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Culling result: %d", g_Engine->Get<PhysicsSystem>()->GetCullingResult().size());
 	ImGui::Checkbox("Show concurrency profiler", &m_showConcurrencyProfiler);
 	ImGui::Checkbox("Use Motion Blur", &m_renderingConfig.useMotionBlur);
 	ImGui::Checkbox("Use TAA", &m_renderingConfig.useTAA);

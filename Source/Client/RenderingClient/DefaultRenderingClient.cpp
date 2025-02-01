@@ -1,6 +1,5 @@
 #pragma once
 #include "DefaultRenderingClient.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
 #include "TiledFrustumGenerationPass.h"
@@ -101,7 +100,6 @@ namespace Inno
 		f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
-		DefaultGPUBuffers::Setup();
 		// GIDataLoader::Setup();
 		// BRDFLUTPass::Get().Setup();
 		// BRDFLUTMSPass::Get().Setup();
@@ -155,7 +153,6 @@ namespace Inno
 	{
 		auto l_renderingServer = g_Engine->getRenderingServer();
 
-		DefaultGPUBuffers::Initialize();
 		// GIDataLoader::Initialize();
 		// BRDFLUTPass::Get().Initialize();
 		// BRDFLUTMSPass::Get().Initialize();
@@ -208,8 +205,6 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Prepare()
 	{
-		DefaultGPUBuffers::Upload();
-
 		// TiledFrustumGenerationPass::Get().PrepareCommandList();
 		// LightCullingPass::Get().PrepareCommandList();
 
@@ -503,8 +498,6 @@ namespace Inno
 		// GIResolvePass::Terminate();
 		// LightCullingPass::Get().Terminate();
 		// TiledFrustumGenerationPass::Get().Terminate();
-
-		DefaultGPUBuffers::Terminate();
 
 		m_ObjectStatus = ObjectStatus::Terminated;
 

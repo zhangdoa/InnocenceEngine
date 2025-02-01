@@ -1,5 +1,5 @@
 #include "TiledFrustumGenerationPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -10,7 +10,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool TiledFrustumGenerationPass::Setup(ISystemConfig *systemConfig)
 {	
@@ -82,8 +82,8 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	DispatchParamsConstantBuffer l_tiledFrustumWorkload;
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;

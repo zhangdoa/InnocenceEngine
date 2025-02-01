@@ -1,8 +1,7 @@
 #include "SurfelGenerator.h"
 
-#include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
-
 #include "../../Engine/Common/MathHelper.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -13,7 +12,7 @@ using namespace Inno;
 #include "Baker.h"
 #include "Serializer.h"
 
-using namespace DefaultGPUBuffers;
+
 
 namespace Inno
 {
@@ -178,16 +177,16 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = l_t;
 
-            l_renderingServer->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->UploadGPUBufferComponent(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-            auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-            auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
             l_renderingServer->CommandListBegin(m_RenderPassComp_Surfel, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Surfel);
             l_renderingServer->ClearRenderTargets(m_RenderPassComp_Surfel);
             l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, m_SamplerComp_Surfel, 8);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
 
             uint32_t l_offset = 0;
 

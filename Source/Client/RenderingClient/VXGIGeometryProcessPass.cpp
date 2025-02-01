@@ -1,5 +1,5 @@
 #include "VXGIGeometryProcessPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -10,7 +10,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {
@@ -157,9 +157,9 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

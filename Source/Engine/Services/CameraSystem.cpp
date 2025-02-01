@@ -92,21 +92,19 @@ void CameraSystemNS::GenerateFrustum(CameraComponent* cameraComponent)
 {
 	// get frustum vertices in view space
 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(cameraComponent->m_Owner);
-	if (l_transformComponent != nullptr)
-	{
-		auto l_rCamera = Math::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
-		auto l_tCamera = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
-		auto l_frustumVerticesVS = Math::generateFrustumVerticesVS(cameraComponent->m_projectionMatrix);
+	if (l_transformComponent == nullptr)
+		return;
 
-		// calculate split vertices in world space and assemble AABBs
-		auto l_frustumVerticesWS = Math::viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
-		cameraComponent->m_splitFrustumVerticesWS.resize(32);
-		SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, cameraComponent->m_splitFrustumVerticesWS);
+	auto l_pCamera = cameraComponent->m_projectionMatrix;
+	auto l_frustumVerticesVS = Math::GenerateFrustumInViewSpace(l_pCamera);
 
-		auto l_pCamera = cameraComponent->m_projectionMatrix;
-		auto l_vertices = Math::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
-		cameraComponent->m_frustum = Math::makeFrustum(&l_vertices[0]);
-	}
+	auto l_rCamera = Math::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
+	auto l_tCamera = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
+	auto l_frustumVerticesWS = Math::ViewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
+	cameraComponent->m_frustum = Math::ToFrustum(&l_frustumVerticesWS[0]);
+
+	cameraComponent->m_splitFrustumVerticesWS.resize(m_CSMSplitFactors.size() * 8);
+	SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, cameraComponent->m_splitFrustumVerticesWS);
 }
 
 void CameraSystemNS::GenerateRayOfEye(CameraComponent* cameraComponent)

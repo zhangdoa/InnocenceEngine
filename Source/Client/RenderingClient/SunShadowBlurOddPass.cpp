@@ -1,5 +1,5 @@
 #include "SunShadowBlurOddPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -10,7 +10,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool SunShadowBlurOddPass::Setup(ISystemConfig *systemConfig)
 {
@@ -105,7 +105,7 @@ bool SunShadowBlurOddPass::PrepareCommandList(IRenderingContext* renderingContex
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
-	auto l_perFrameGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perFrameGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

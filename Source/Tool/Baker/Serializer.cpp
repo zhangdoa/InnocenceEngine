@@ -1,7 +1,5 @@
 #include "Serializer.h"
 
-#include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
-
 #include "../../Engine/Common/MathHelper.h"
 
 #include "../../Engine/Engine.h"
@@ -12,7 +10,7 @@ using namespace Inno;
 #include "../../Engine/Common/IOService.h"
 #include "Baker.h"
 
-using namespace DefaultGPUBuffers;
+
 
 namespace Inno
 {

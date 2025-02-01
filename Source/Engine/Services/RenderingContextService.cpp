@@ -30,37 +30,48 @@ namespace Inno
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		DoubleBuffer<PerFrameConstantBuffer, true> m_perFrameCB;
+		mutable std::shared_mutex m_Mutex;
 
-		DoubleBuffer<std::vector<CSMConstantBuffer>, true> m_CSMCBVector;
+		PerFrameConstantBuffer m_perFrameCB;
 
-		DoubleBuffer<std::vector<PointLightConstantBuffer>, true> m_pointLightCBVector;
-		DoubleBuffer<std::vector<SphereLightConstantBuffer>, true> m_sphereLightCBVector;
+		std::vector<CSMConstantBuffer> m_CSMCBVector;
 
-		uint32_t m_drawCallCount = 0;
-		DoubleBuffer<std::vector<DrawCallInfo>, true> m_drawCallInfoVector;
-		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_perObjectCBVector;
-		DoubleBuffer<std::vector<MaterialConstantBuffer>, true> m_materialCBVector;
+		std::vector<PointLightConstantBuffer> m_pointLightCBVector;
+		std::vector<SphereLightConstantBuffer> m_sphereLightCBVector;
 
-		DoubleBuffer<std::vector<AnimationDrawCallInfo>, true> m_animationDrawCallInfoVector;
-		DoubleBuffer<std::vector<AnimationConstantBuffer>, true> m_animationCBVector;
+		std::vector<DrawCallInfo> m_drawCallInfoVector;
+		std::vector<PerObjectConstantBuffer> m_perObjectCBVector;
+		std::vector<MaterialConstantBuffer> m_materialCBVector;
 
-		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_directionalLightPerObjectCB;
-		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_pointLightPerObjectCB;
-		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_sphereLightPerObjectCB;
+		std::vector<AnimationDrawCallInfo> m_animationDrawCallInfoVector;
+		std::vector<AnimationConstantBuffer> m_animationCBVector;
 
-		DoubleBuffer<std::vector<BillboardPassDrawCallInfo>, true> m_billboardPassDrawCallInfoVector;
-		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_billboardPassPerObjectCB;
+		std::vector<PerObjectConstantBuffer> m_directionalLightPerObjectCB;
+		std::vector<PerObjectConstantBuffer> m_pointLightPerObjectCB;
+		std::vector<PerObjectConstantBuffer> m_sphereLightPerObjectCB;
 
-		DoubleBuffer<std::vector<DebugPassDrawCallInfo>, true> m_debugPassDrawCallInfoVector;
-		DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_debugPassPerObjectCB;
+		std::vector<BillboardPassDrawCallInfo> m_billboardPassDrawCallInfoVector;
+		std::vector<PerObjectConstantBuffer> m_billboardPassPerObjectCB;
 
-		std::vector<CullingResult> m_cullingResults;
+		std::vector<DebugPassDrawCallInfo> m_debugPassDrawCallInfoVector;
+		std::vector<PerObjectConstantBuffer> m_debugPassPerObjectCB;
+
+		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
+		GPUBufferComponent* m_PerObjectGPUBufferComp;
+		GPUBufferComponent* m_MaterialGPUBufferComp;
+		GPUBufferComponent* m_PointLightGPUBufferComp;
+		GPUBufferComponent* m_SphereLightGPUBufferComp;
+		GPUBufferComponent* m_CSMGPUBufferComp;
+		GPUBufferComponent* m_DispatchParamsGPUBufferComp;
+		GPUBufferComponent* m_GICBufferGPUBufferComp;
+		GPUBufferComponent* m_animationGPUBufferComp;
+		GPUBufferComponent* m_billboardGPUBufferComp;
+
+		std::vector<DispatchParamsConstantBuffer> m_DispatchParamsConstantBuffer;
 
 		std::vector<Vec2> m_haltonSampler;
 		int32_t m_currentHaltonStep = 0;
 
-		std::function<void()> f_sceneLoadingStartedCallback;
 		std::function<void()> f_sceneLoadingFinishedCallback;
 
 		bool Setup(ISystemConfig* systemConfig);
@@ -71,11 +82,12 @@ namespace Inno
 		float radicalInverse(uint32_t n, uint32_t base);
 		void initializeHaltonSampler();
 
-		bool updatePerFrameConstantBuffer();
-		bool updateLightData();
-		bool updateMeshData();
-		bool updateBillboardPassData();
-		bool updateDebuggerPassData();
+		bool UpdatePerFrameConstantBuffer();
+		bool UpdateLightData();
+		bool UpdateDrawCalls();
+		bool UpdateBillboardPassData();
+		bool UpdateDebuggerPassData();
+		bool UploadGPUBuffers();
 	};
 }
 
@@ -104,31 +116,27 @@ void RenderingContextServiceImpl::initializeHaltonSampler()
 
 bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
-	f_sceneLoadingStartedCallback = [&]()
-		{
-			Log(Verbose, "Clearing all rendering context data...");
+	auto l_renderingServer = g_Engine->getRenderingServer();
 
-			m_cullingResults.clear();
-
-			m_drawCallCount = 0;
-
-			Log(Success, "All rendering context data has been cleared.");
-		};
+	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
+	m_PerObjectGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
+	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
+	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
+	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
+	m_CSMGPUBufferComp = l_renderingServer->AddGPUBufferComponent("CSMCBuffer/");
+	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DispatchParamsCBuffer/");
+	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
+	m_animationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
+	m_billboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
 
 	f_sceneLoadingFinishedCallback = [&]()
 		{
-			// @TODO:
-			std::vector<BillboardPassDrawCallInfo> l_billboardPassDrawCallInfoVectorA(3);
-			l_billboardPassDrawCallInfoVectorA[0].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-			l_billboardPassDrawCallInfoVectorA[1].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
-			l_billboardPassDrawCallInfoVectorA[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
-			auto l_billboardPassDrawCallInfoVectorB = l_billboardPassDrawCallInfoVectorA;
-
-			m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorA));
-			m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorB));
+			m_billboardPassDrawCallInfoVector.resize(3);
+			m_billboardPassDrawCallInfoVector[0].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
+			m_billboardPassDrawCallInfoVector[1].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
+			m_billboardPassDrawCallInfoVector[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
 		};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 0);
 	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -141,6 +149,66 @@ bool RenderingContextServiceImpl::Initialize()
 	{
 		initializeHaltonSampler();
 
+		auto l_renderingServer = g_Engine->getRenderingServer();
+
+		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
+
+		m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
+		m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
+		m_PerFrameCBufferGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
+
+		m_PerObjectGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_PerObjectGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_PerObjectGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_PerObjectGPUBufferComp);
+
+		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
+		m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_MaterialGPUBufferComp);
+
+		m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
+		m_PointLightGPUBufferComp->m_ElementSize = sizeof(PointLightConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_PointLightGPUBufferComp);
+
+		m_SphereLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxSphereLights;
+		m_SphereLightGPUBufferComp->m_ElementSize = sizeof(SphereLightConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_SphereLightGPUBufferComp);
+
+		m_CSMGPUBufferComp->m_ElementCount = l_RenderingCapability.maxCSMSplits;
+		m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_CSMGPUBufferComp);
+
+		// @TODO: get rid of hard-code stuffs
+		m_DispatchParamsGPUBufferComp->m_ElementCount = 8;
+		m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_DispatchParamsGPUBufferComp);
+
+		m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
+		m_GICBufferGPUBufferComp->m_ElementCount = 1;
+
+		l_renderingServer->InitializeGPUBufferComponent(m_GICBufferGPUBufferComp);
+
+		m_animationGPUBufferComp->m_ElementCount = 512;
+		m_animationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
+
+		l_renderingServer->InitializeGPUBufferComponent(m_animationGPUBufferComp);
+
+		m_billboardGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_billboardGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+		m_billboardGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+
+		l_renderingServer->InitializeGPUBufferComponent(m_billboardGPUBufferComp);
+
+
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "RenderingContextService has been initialized.");
 		return true;
@@ -152,7 +220,7 @@ bool RenderingContextServiceImpl::Initialize()
 	}
 }
 
-bool RenderingContextServiceImpl::updatePerFrameConstantBuffer()
+bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 {
 	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
 	if (l_camera == nullptr)
@@ -162,12 +230,10 @@ bool RenderingContextServiceImpl::updatePerFrameConstantBuffer()
 	if (l_cameraTransformComponent == nullptr)
 		return false;
 
-	PerFrameConstantBuffer l_PerFrameCB;
-
 	auto l_p = l_camera->m_projectionMatrix;
 
-	l_PerFrameCB.p_original = l_p;
-	l_PerFrameCB.p_jittered = l_p;
+	m_perFrameCB.p_original = l_p;
+	m_perFrameCB.p_jittered = l_p;
 
 	auto l_renderingConfigurationService = g_Engine->Get<RenderingConfigurationService>();
 	auto l_renderingConfig = l_renderingConfigurationService->GetRenderingConfig();
@@ -180,8 +246,8 @@ bool RenderingContextServiceImpl::updatePerFrameConstantBuffer()
 		{
 			l_currentHaltonStep = 0;
 		}
-		l_PerFrameCB.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / l_screenResolution.x;
-		l_PerFrameCB.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / l_screenResolution.y;
+		m_perFrameCB.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / l_screenResolution.x;
+		m_perFrameCB.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / l_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
@@ -189,27 +255,27 @@ bool RenderingContextServiceImpl::updatePerFrameConstantBuffer()
 
 	auto t = Math::getInvertTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
-	l_PerFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
+	m_perFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 
-	l_PerFrameCB.v = r * t;
+	m_perFrameCB.v = r * t;
 
 	auto r_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
 	auto t_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	l_PerFrameCB.v_prev = r_prev * t_prev;
+	m_perFrameCB.v_prev = r_prev * t_prev;
 
-	l_PerFrameCB.zNear = l_camera->m_zNear;
-	l_PerFrameCB.zFar = l_camera->m_zFar;
+	m_perFrameCB.zNear = l_camera->m_zNear;
+	m_perFrameCB.zFar = l_camera->m_zFar;
 
-	l_PerFrameCB.p_inv = l_p.inverse();
-	l_PerFrameCB.v_inv = l_PerFrameCB.v.inverse();
-	l_PerFrameCB.viewportSize.x = (float)l_screenResolution.x;
-	l_PerFrameCB.viewportSize.y = (float)l_screenResolution.y;
-	l_PerFrameCB.minLogLuminance = -10.0f;
-	l_PerFrameCB.maxLogLuminance = 16.0f;
-	l_PerFrameCB.aperture = l_camera->m_aperture;
-	l_PerFrameCB.shutterTime = l_camera->m_shutterTime;
-	l_PerFrameCB.ISO = l_camera->m_ISO;
+	m_perFrameCB.p_inv = l_p.inverse();
+	m_perFrameCB.v_inv = m_perFrameCB.v.inverse();
+	m_perFrameCB.viewportSize.x = (float)l_screenResolution.x;
+	m_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
+	m_perFrameCB.minLogLuminance = -10.0f;
+	m_perFrameCB.maxLogLuminance = 16.0f;
+	m_perFrameCB.aperture = l_camera->m_aperture;
+	m_perFrameCB.shutterTime = l_camera->m_shutterTime;
+	m_perFrameCB.ISO = l_camera->m_ISO;
 
 	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
 	if (l_sun == nullptr)
@@ -219,21 +285,19 @@ bool RenderingContextServiceImpl::updatePerFrameConstantBuffer()
 	if (l_sunTransformComponent == nullptr)
 		return false;
 
-	l_PerFrameCB.sun_direction = Math::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
-	l_PerFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
+	m_perFrameCB.sun_direction = Math::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+	m_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;
 	auto l_renderingCapability = l_renderingConfigurationService->GetRenderingCapability();
 	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
-	l_PerFrameCB.activeCascade = currentCascade;
-	m_perFrameCB.SetValue(std::move(l_PerFrameCB));
+	m_perFrameCB.activeCascade = currentCascade;
 
 	auto& l_SplitAABB = l_sun->m_SplitAABBWS;
 	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
 	auto& l_ProjectionMatrices = l_sun->m_ProjectionMatrices;
 
-	auto& l_CSMCBVector = m_CSMCBVector.GetOldValue();
-	l_CSMCBVector.clear();
+	m_CSMCBVector.clear();
 
 	if (l_SplitAABB.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
 	{
@@ -247,78 +311,65 @@ bool RenderingContextServiceImpl::updatePerFrameConstantBuffer()
 			l_CSMCB.AABBMax = l_SplitAABB[j].m_boundMax;
 			l_CSMCB.AABBMin = l_SplitAABB[j].m_boundMin;
 
-			l_CSMCBVector.emplace_back(l_CSMCB);
+			m_CSMCBVector.emplace_back(l_CSMCB);
 		}
 	}
-
-	m_CSMCBVector.SetValue(std::move(l_CSMCBVector));
 
 	return true;
 }
 
-bool RenderingContextServiceImpl::updateLightData()
+bool RenderingContextServiceImpl::UpdateLightData()
 {
-	auto& l_PointLightCB = m_pointLightCBVector.GetOldValue();
-	auto& l_SphereLightCB = m_sphereLightCBVector.GetOldValue();
-
-	l_PointLightCB.clear();
-	l_SphereLightCB.clear();
+	m_pointLightCBVector.clear();
+	m_sphereLightCBVector.clear();
 
 	auto& l_lightComponents = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
 	auto l_lightComponentCount = l_lightComponents.size();
 
-	if (l_lightComponentCount > 0)
+	if (l_lightComponentCount == 0)
+		return false;
+
+	for (size_t i = 0; i < l_lightComponentCount; i++)
 	{
-		for (size_t i = 0; i < l_lightComponentCount; i++)
+		auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_lightComponents[i]->m_Owner);
+		if (l_transformComponent == nullptr)
+			continue;
+
+		if (l_lightComponents[i]->m_LightType == LightType::Point)
 		{
-			auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_lightComponents[i]->m_Owner);
-			if (l_transformComponent != nullptr)
-			{
-				if (l_lightComponents[i]->m_LightType == LightType::Point)
-				{
-					PointLightConstantBuffer l_data;
-					l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
-					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
-					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
-					l_PointLightCB.emplace_back(l_data);
-				}
-				else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
-				{
-					SphereLightConstantBuffer l_data;
-					l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
-					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
-					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
-					l_SphereLightCB.emplace_back(l_data);
-				}
-			}
+			PointLightConstantBuffer l_data;
+			l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
+			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
+			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
+			m_pointLightCBVector.emplace_back(l_data);
+		}
+		else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
+		{
+			SphereLightConstantBuffer l_data;
+			l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
+			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
+			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
+			m_sphereLightCBVector.emplace_back(l_data);
 		}
 	}
-
-	m_pointLightCBVector.SetValue(std::move(l_PointLightCB));
-	m_sphereLightCBVector.SetValue(std::move(l_SphereLightCB));
 
 	return true;
 }
 
-bool RenderingContextServiceImpl::updateMeshData()
+bool RenderingContextServiceImpl::UpdateDrawCalls()
 {
-	auto& l_drawCallInfoVector = m_drawCallInfoVector.GetOldValue();
-	auto& l_perObjectCBVector = m_perObjectCBVector.GetOldValue();
-	auto& l_materialCBVector = m_materialCBVector.GetOldValue();
-	auto& l_animationDrawCallInfoVector = m_animationDrawCallInfoVector.GetOldValue();
-	auto& l_animationCBVector = m_animationCBVector.GetOldValue();
-
-	l_drawCallInfoVector.clear();
-	l_perObjectCBVector.clear();
-	l_materialCBVector.clear();
-	l_animationDrawCallInfoVector.clear();
-	l_animationCBVector.clear();
+	m_drawCallInfoVector.clear();
+	m_perObjectCBVector.clear();
+	m_materialCBVector.clear();
+	m_animationDrawCallInfoVector.clear();
+	m_animationCBVector.clear();
 
 	uint32_t l_drawCallIndex = 0;
-	auto l_cullingResultCount = m_cullingResults.size();
+	auto& l_cullingResults = g_Engine->Get<PhysicsSystem>()->GetCullingResult();
+	auto l_cullingResultCount = l_cullingResults.size();
 	for (size_t i = 0; i < l_cullingResultCount; i++)
 	{
-		auto l_cullingResult = m_cullingResults[i];
+		auto& l_cullingResult = l_cullingResults[i];
 		if (l_cullingResult.m_PhysicsComponent == nullptr)
 			continue;
 
@@ -368,7 +419,7 @@ bool RenderingContextServiceImpl::updateMeshData()
 		l_perObjectCB.UUID = (float)l_transformComponent->m_UUID;
 		l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
 
-		l_perObjectCBVector.emplace_back(l_perObjectCB);
+		m_perObjectCBVector.emplace_back(l_perObjectCB);
 
 		MaterialConstantBuffer l_materialCB;
 		l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
@@ -379,8 +430,8 @@ bool RenderingContextServiceImpl::updateMeshData()
 			l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_material->m_TextureSlots[i].m_Texture, Accessibility::ReadOnly);
 		}
 
-		l_materialCBVector.emplace_back(l_materialCB);
-		l_drawCallInfoVector.emplace_back(l_drawCallInfo);
+		m_materialCBVector.emplace_back(l_materialCB);
+		m_drawCallInfoVector.emplace_back(l_drawCallInfo);
 		l_drawCallIndex++;
 
 		if (l_modelComponent->m_meshUsage == MeshUsage::Skeletal)
@@ -400,52 +451,37 @@ bool RenderingContextServiceImpl::updateMeshData()
 			l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
 			l_animationCB.rootOffsetMatrix = Math::generateIdentityMatrix<float>();
 
-			l_animationCBVector.emplace_back(l_animationCB);
+			m_animationCBVector.emplace_back(l_animationCB);
 
-			animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)l_animationCBVector.size();
-			l_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
+			animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)m_animationCBVector.size();
+			m_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
 		}
 	}
-
-	m_drawCallInfoVector.SetValue(std::move(l_drawCallInfoVector));
-	m_perObjectCBVector.SetValue(std::move(l_perObjectCBVector));
-	m_materialCBVector.SetValue(std::move(l_materialCBVector));
-	m_animationDrawCallInfoVector.SetValue(std::move(l_animationDrawCallInfoVector));
-	m_animationCBVector.SetValue(std::move(l_animationCBVector));
 
 	// @TODO: use GPU to do OIT
 
 	return true;
 }
 
-bool RenderingContextServiceImpl::updateBillboardPassData()
+bool RenderingContextServiceImpl::UpdateBillboardPassData()
 {
 	auto& l_lightComponents = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
 
 	auto l_totalBillboardDrawCallCount = l_lightComponents.size();
-
 	if (l_totalBillboardDrawCallCount == 0)
-	{
 		return false;
-	}
 
-	auto& l_billboardPassDrawCallInfoVector = m_billboardPassDrawCallInfoVector.GetOldValue();
-	auto& l_billboardPassPerObjectCB = m_billboardPassPerObjectCB.GetOldValue();
-	auto& l_directionalLightPerObjectCB = m_directionalLightPerObjectCB.GetOldValue();
-	auto& l_pointLightPerObjectCB = m_pointLightPerObjectCB.GetOldValue();
-	auto& l_sphereLightPerObjectCB = m_sphereLightPerObjectCB.GetOldValue();
-
-	auto l_billboardPassDrawCallInfoCount = l_billboardPassDrawCallInfoVector.size();
+	auto l_billboardPassDrawCallInfoCount = m_billboardPassDrawCallInfoVector.size();
 	for (size_t i = 0; i < l_billboardPassDrawCallInfoCount; i++)
 	{
-		l_billboardPassDrawCallInfoVector[i].instanceCount = 0;
+		m_billboardPassDrawCallInfoVector[i].instanceCount = 0;
 	}
 
-	l_billboardPassPerObjectCB.clear();
+	m_billboardPassPerObjectCB.clear();
 
-	l_directionalLightPerObjectCB.clear();
-	l_pointLightPerObjectCB.clear();
-	l_sphereLightPerObjectCB.clear();
+	m_directionalLightPerObjectCB.clear();
+	m_pointLightPerObjectCB.clear();
+	m_sphereLightPerObjectCB.clear();
 
 	for (auto i : l_lightComponents)
 	{
@@ -460,18 +496,18 @@ bool RenderingContextServiceImpl::updateBillboardPassData()
 		switch (i->m_LightType)
 		{
 		case LightType::Directional:
-			l_directionalLightPerObjectCB.emplace_back(l_meshCB);
-			l_billboardPassDrawCallInfoVector[0].instanceCount++;
+			m_directionalLightPerObjectCB.emplace_back(l_meshCB);
+			m_billboardPassDrawCallInfoVector[0].instanceCount++;
 			break;
 		case LightType::Point:
-			l_pointLightPerObjectCB.emplace_back(l_meshCB);
-			l_billboardPassDrawCallInfoVector[1].instanceCount++;
+			m_pointLightPerObjectCB.emplace_back(l_meshCB);
+			m_billboardPassDrawCallInfoVector[1].instanceCount++;
 			break;
 		case LightType::Spot:
 			break;
 		case LightType::Sphere:
-			l_sphereLightPerObjectCB.emplace_back(l_meshCB);
-			l_billboardPassDrawCallInfoVector[2].instanceCount++;
+			m_sphereLightPerObjectCB.emplace_back(l_meshCB);
+			m_billboardPassDrawCallInfoVector[2].instanceCount++;
 			break;
 		case LightType::Disk:
 			break;
@@ -484,26 +520,58 @@ bool RenderingContextServiceImpl::updateBillboardPassData()
 		}
 	}
 
-	l_billboardPassDrawCallInfoVector[0].meshConstantBufferOffset = 0;
-	l_billboardPassDrawCallInfoVector[1].meshConstantBufferOffset = (uint32_t)l_directionalLightPerObjectCB.size();
-	l_billboardPassDrawCallInfoVector[2].meshConstantBufferOffset = (uint32_t)(l_directionalLightPerObjectCB.size() + l_pointLightPerObjectCB.size());
+	m_billboardPassDrawCallInfoVector[0].meshConstantBufferOffset = 0;
+	m_billboardPassDrawCallInfoVector[1].meshConstantBufferOffset = (uint32_t)m_directionalLightPerObjectCB.size();
+	m_billboardPassDrawCallInfoVector[2].meshConstantBufferOffset = (uint32_t)(m_directionalLightPerObjectCB.size() + m_pointLightPerObjectCB.size());
 
-	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_directionalLightPerObjectCB.begin(), l_directionalLightPerObjectCB.end());
-	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_pointLightPerObjectCB.begin(), l_pointLightPerObjectCB.end());
-	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_sphereLightPerObjectCB.begin(), l_sphereLightPerObjectCB.end());
-
-	m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVector));
-	m_billboardPassPerObjectCB.SetValue(std::move(l_billboardPassPerObjectCB));
-	m_directionalLightPerObjectCB.SetValue(std::move(l_directionalLightPerObjectCB));
-	m_pointLightPerObjectCB.SetValue(std::move(l_pointLightPerObjectCB));
-	m_sphereLightPerObjectCB.SetValue(std::move(l_sphereLightPerObjectCB));
+	m_billboardPassPerObjectCB.insert(m_billboardPassPerObjectCB.end(), m_directionalLightPerObjectCB.begin(), m_directionalLightPerObjectCB.end());
+	m_billboardPassPerObjectCB.insert(m_billboardPassPerObjectCB.end(), m_pointLightPerObjectCB.begin(), m_pointLightPerObjectCB.end());
+	m_billboardPassPerObjectCB.insert(m_billboardPassPerObjectCB.end(), m_sphereLightPerObjectCB.begin(), m_sphereLightPerObjectCB.end());
 
 	return true;
 }
 
-bool RenderingContextServiceImpl::updateDebuggerPassData()
+bool RenderingContextServiceImpl::UpdateDebuggerPassData()
 {
 	// @TODO: Implementation
+
+	return true;
+}
+
+bool RenderingContextServiceImpl::UploadGPUBuffers()
+{
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->UploadGPUBufferComponent(m_PerFrameCBufferGPUBufferComp, &m_perFrameCB);
+
+	if (m_perObjectCBVector.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_PerObjectGPUBufferComp, m_perObjectCBVector, 0, m_perObjectCBVector.size());
+	}
+	if (m_materialCBVector.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_MaterialGPUBufferComp, m_materialCBVector, 0, m_materialCBVector.size());
+	}
+	if (m_pointLightCBVector.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_PointLightGPUBufferComp, m_pointLightCBVector, 0, m_pointLightCBVector.size());
+	}
+	if (m_sphereLightCBVector.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_SphereLightGPUBufferComp, m_sphereLightCBVector, 0, m_sphereLightCBVector.size());
+	}
+	if (m_CSMCBVector.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
+	}
+	if (m_animationCBVector.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_animationGPUBufferComp, m_animationCBVector, 0, m_animationCBVector.size());
+	}
+	if (m_billboardPassPerObjectCB.size() > 0)
+	{
+		l_renderingServer->UploadGPUBufferComponent(m_billboardGPUBufferComp, m_billboardPassPerObjectCB, 0, m_billboardPassPerObjectCB.size());
+	}
 
 	return true;
 }
@@ -512,18 +580,19 @@ bool RenderingContextServiceImpl::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
-		updatePerFrameConstantBuffer();
+		std::lock_guard<std::shared_mutex> l_lock(m_Mutex);
 
-		updateLightData();
+		UpdatePerFrameConstantBuffer();
 
-		// copy culling data pack for local scope
-		m_cullingResults = g_Engine->Get<PhysicsSystem>()->GetCullingResult();
+		UpdateLightData();
 
-		updateMeshData();
+		UpdateDrawCalls();
 
-		updateBillboardPassData();
+		UpdateBillboardPassData();
 
-		updateDebuggerPassData();
+		UpdateDebuggerPassData();
+
+		UploadGPUBuffers();
 
 		return true;
 	}
@@ -536,6 +605,18 @@ bool RenderingContextServiceImpl::Update()
 
 bool RenderingContextServiceImpl::Terminate()
 {
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	l_renderingServer->DeleteGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_PerObjectGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_MaterialGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_PointLightGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_SphereLightGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_CSMGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_DispatchParamsGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_GICBufferGPUBufferComp);
+	l_renderingServer->DeleteGPUBufferComponent(m_billboardGPUBufferComp);
+
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "RenderingContextService has been terminated.");
 	return true;
@@ -544,9 +625,6 @@ bool RenderingContextServiceImpl::Terminate()
 bool RenderingContextService::Setup(ISystemConfig* systemConfig)
 {
 	m_Impl = new RenderingContextServiceImpl();
-
-	g_Engine->Get<ComponentManager>()->RegisterType<SkeletonComponent>(2048, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<AnimationComponent>(16384, this);
 
 	return m_Impl->Setup(systemConfig);
 }
@@ -573,67 +651,65 @@ ObjectStatus RenderingContextService::GetStatus()
 	return m_Impl->m_ObjectStatus;
 }
 
+GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsageType usageType)
+{
+	GPUBufferComponent* l_result;
+
+	switch (usageType)
+	{
+	case GPUBufferUsageType::PerFrame: l_result = m_Impl->m_PerFrameCBufferGPUBufferComp;
+		break;
+	case GPUBufferUsageType::Mesh: l_result = m_Impl->m_PerObjectGPUBufferComp;
+		break;
+	case GPUBufferUsageType::Material: l_result = m_Impl->m_MaterialGPUBufferComp;
+		break;
+	case GPUBufferUsageType::PointLight: l_result = m_Impl->m_PointLightGPUBufferComp;
+		break;
+	case GPUBufferUsageType::SphereLight: l_result = m_Impl->m_SphereLightGPUBufferComp;
+		break;
+	case GPUBufferUsageType::CSM: l_result = m_Impl->m_CSMGPUBufferComp;
+		break;
+	case GPUBufferUsageType::ComputeDispatchParam: l_result = m_Impl->m_DispatchParamsGPUBufferComp;
+		break;
+	case GPUBufferUsageType::GI:l_result = m_Impl->m_GICBufferGPUBufferComp;
+		break;
+	case GPUBufferUsageType::Animation: l_result = m_Impl->m_animationGPUBufferComp;
+		break;
+	case GPUBufferUsageType::Billboard: l_result = m_Impl->m_billboardGPUBufferComp;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
 const PerFrameConstantBuffer& RenderingContextService::GetPerFrameConstantBuffer()
 {
-	return m_Impl->m_perFrameCB.GetNewValue();
-}
-
-const std::vector<CSMConstantBuffer>& RenderingContextService::GetCSMConstantBuffer()
-{
-	return m_Impl->m_CSMCBVector.GetNewValue();
-}
-
-const std::vector<PointLightConstantBuffer>& RenderingContextService::GetPointLightConstantBuffer()
-{
-	return m_Impl->m_pointLightCBVector.GetNewValue();
-}
-
-const std::vector<SphereLightConstantBuffer>& RenderingContextService::GetSphereLightConstantBuffer()
-{
-	return m_Impl->m_sphereLightCBVector.GetNewValue();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
+	return m_Impl->m_perFrameCB;
 }
 
 const std::vector<DrawCallInfo>& RenderingContextService::GetDrawCallInfo()
 {
-	return m_Impl->m_drawCallInfoVector.GetNewValue();
-}
-
-const std::vector<PerObjectConstantBuffer>& RenderingContextService::GetPerObjectConstantBuffer()
-{
-	return m_Impl->m_perObjectCBVector.GetNewValue();
-}
-
-const std::vector<MaterialConstantBuffer>& RenderingContextService::GetMaterialConstantBuffer()
-{
-	return m_Impl->m_materialCBVector.GetNewValue();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
+	return m_Impl->m_drawCallInfoVector;
 }
 
 const std::vector<AnimationDrawCallInfo>& RenderingContextService::GetAnimationDrawCallInfo()
 {
-	return m_Impl->m_animationDrawCallInfoVector.GetNewValue();
-}
-
-const std::vector<AnimationConstantBuffer>& RenderingContextService::GetAnimationConstantBuffer()
-{
-	return m_Impl->m_animationCBVector.GetNewValue();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
+	return m_Impl->m_animationDrawCallInfoVector;
 }
 
 const std::vector<BillboardPassDrawCallInfo>& RenderingContextService::GetBillboardPassDrawCallInfo()
 {
-	return m_Impl->m_billboardPassDrawCallInfoVector.GetNewValue();
-}
-
-const std::vector<PerObjectConstantBuffer>& RenderingContextService::GetBillboardPassPerObjectConstantBuffer()
-{
-	return m_Impl->m_billboardPassPerObjectCB.GetNewValue();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
+	return m_Impl->m_billboardPassDrawCallInfoVector;
 }
 
 const std::vector<DebugPassDrawCallInfo>& RenderingContextService::GetDebugPassDrawCallInfo()
 {
-	return m_Impl->m_debugPassDrawCallInfoVector.GetNewValue();
-}
-
-const std::vector<PerObjectConstantBuffer>& RenderingContextService::GetDebugPassPerObjectConstantBuffer()
-{
-	return m_Impl->m_debugPassPerObjectCB.GetNewValue();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
+	return m_Impl->m_debugPassDrawCallInfoVector;
 }

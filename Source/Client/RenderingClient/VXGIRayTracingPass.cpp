@@ -1,5 +1,5 @@
 #include "VXGIRayTracingPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Common/Timer.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
@@ -11,7 +11,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 {	

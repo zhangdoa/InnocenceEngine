@@ -1,5 +1,5 @@
 #include "OpaquePass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -8,7 +8,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool OpaquePass::Setup(ISystemConfig *systemConfig)
 {
@@ -128,9 +128,9 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_perFrameCBuffer = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_perObjectCBuffer = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	auto l_materialCBuffer = GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_perFrameCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perObjectCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_materialCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_perFrameCBuffer, 1);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perObjectCBuffer, 2);

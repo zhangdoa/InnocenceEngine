@@ -1,8 +1,7 @@
 #include "ProbeGenerator.h"
 
-#include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
-
 #include "../../Engine/Common/MathHelper.h"
+#include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -13,7 +12,7 @@ using namespace Inno;
 #include "Baker.h"
 #include "Serializer.h"
 
-using namespace DefaultGPUBuffers;
+
 
 namespace Inno
 {
@@ -131,8 +130,8 @@ namespace Inno
 
             Log(Success, "There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
 
-            auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-            auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
             l_renderingServer->UploadGPUBufferComponent(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
             l_renderingServer->UploadGPUBufferComponent(l_MaterialGPUBufferComp, Config::Get().m_staticMeshMaterialConstantBuffer, 0, Config::Get().m_staticMeshMaterialConstantBuffer.size());
@@ -162,16 +161,16 @@ namespace Inno
             l_GICameraConstantBuffer[1] = Math::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(l_eyePos);
 
-            l_renderingServer->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->UploadGPUBufferComponent(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
             Log(Success, "Start to draw probe height map...");
 
-            auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
             l_renderingServer->CommandListBegin(m_RenderPassComp_Probe, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Probe);
             l_renderingServer->ClearRenderTargets(m_RenderPassComp_Probe);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
 
             uint32_t l_offset = 0;
 

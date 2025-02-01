@@ -564,72 +564,40 @@ namespace Inno
 		};
 
 		/*
-
-		matrix4x4 mathematical convention :
+		The universal matrix4x4 mathematical convention:
+		The matrix dimensions are m x n, where m is the row number and n is the column number.
+		The element subscript is written with the row index first, and then the column index.
 		| a00 a01 a02 a03 |
 		| a10 a11 a12 a13 |
 		| a20 a21 a22 a23 |
 		| a30 a31 a32 a33 |
-
 		*/
 
-		/* Column-Major vector4 mathematical convention
-
-		vector4(a matrix4x1) :
+		/* 
+		The column vector4 mathematical convention:
+		vector4(equivalent to a 4x1 matrix):
 		| x |
 		| y |
 		| z |
 		| w |
 
-		use right/post-multiplication, need to access each rows of the matrix then each elements,
-		for C/C++, it's cache-friendly with Row-Major memory layout;
-		for Fortan/Matlab, it's cache-friendly with Column-Major memory layout.
+		Using post-multiplication, each element of the resulting vector is computed as the dot product of a matrix row and the vector.
+		With a row-major layout in C/C++, where rows are stored contiguously, this access pattern is more cache-friendly.
 
-		matrix4x4 * vector4 :
+		vector4' = matrix4x4 * vector4:
 		| x' = a00 * x  + a01 * y + a02 * z + a03 * w |
 		| y' = a10 * x  + a11 * y + a12 * z + a13 * w |
 		| z' = a20 * x  + a21 * y + a22 * z + a23 * w |
 		| w' = a30 * x  + a31 * y + a32 * z + a33 * w |
-
 		*/
 
-		/* Row-Major vector4 mathematical convention
-
-		vector4(a matrix1x4) :
-		| x y z w |
-
-		use left/pre-multiplication, need to access each columns of the matrix then each elements,
-		for C/C++, it's cache-friendly with Column-Major memory layout;
-		for Fortan/Matlab, it's cache-friendly with Row-Major memory layout.
-
-		vector4 * matrix4x4 :
-		| x' = x * a00 + y * a10 + z * a20 + w * a30 |
-		| y' = x * a01 + y * a11 + z * a21 + w * a31 |
-		| z' = x * a02 + y * a12 + z * a22 + w * a32 |
-		| w' = x * a03 + y * a13 + z * a23 + w * a33 |
-
-		*/
-
-		/* Column-Major memory layout (in C/C++)
-		matrix4x4 :
-		[columnIndex][rowIndex]
-		| m00 <-> a00 m10 <-> a01 m20 <-> a02 m30 <-> a03 |
-		| m01 <-> a10 m11 <-> a11 m21 <-> a12 m31 <-> a13 |
-		| m02 <-> a20 m12 <-> a21 m22 <-> a22 m32 <-> a23 |
-		| m03 <-> a30 m13 <-> a31 m23 <-> a32 m33 <-> a33 |
-		vector4 :
-		m00 <-> x m10 <-> y m20 <-> z m30 <-> w
-		*/
-
-		/* Row-Major memory layout (in C/C++)
-		matrix4x4 :
+		/* The row-major memory layout (in C/C++)
+		matrix4x4:
 		[rowIndex][columnIndex]
 		| m00 <-> a00 m01 <-> a01 m02 <-> a02 m03 <-> a03 |
 		| m10 <-> a10 m11 <-> a11 m12 <-> a12 m13 <-> a13 |
 		| m20 <-> a20 m21 <-> a21 m22 <-> a22 m23 <-> a23 |
 		| m30 <-> a30 m31 <-> a31 m32 <-> a32 m33 <-> a33 |
-		vector4 :
-		m00 <-> x m01 <-> y m02 <-> z m03 <-> w  (best choice)
 		*/
 
 		template <class T>
@@ -715,35 +683,6 @@ namespace Inno
 				return *this;
 			}
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-			auto TMat4::operator*(const TMat4<T>& rhs) const -> TMat4<T>
-			{
-				// @TODO: replace with SIMD impl
-				TMat4<T> l_m;
-
-				l_m.m00 = m00 * rhs.m00 + m10 * rhs.m01 + m20 * rhs.m02 + m30 * rhs.m03;
-				l_m.m01 = m01 * rhs.m00 + m11 * rhs.m01 + m21 * rhs.m02 + m31 * rhs.m03;
-				l_m.m02 = m02 * rhs.m00 + m12 * rhs.m01 + m22 * rhs.m02 + m32 * rhs.m03;
-				l_m.m03 = m03 * rhs.m00 + m13 * rhs.m01 + m23 * rhs.m02 + m33 * rhs.m03;
-
-				l_m.m10 = m00 * rhs.m10 + m10 * rhs.m11 + m20 * rhs.m12 + m30 * rhs.m13;
-				l_m.m11 = m01 * rhs.m10 + m11 * rhs.m11 + m21 * rhs.m12 + m31 * rhs.m13;
-				l_m.m12 = m02 * rhs.m10 + m12 * rhs.m11 + m22 * rhs.m12 + m32 * rhs.m13;
-				l_m.m13 = m03 * rhs.m10 + m13 * rhs.m11 + m23 * rhs.m12 + m33 * rhs.m13;
-
-				l_m.m20 = m00 * rhs.m20 + m10 * rhs.m21 + m20 * rhs.m22 + m30 * rhs.m23;
-				l_m.m21 = m01 * rhs.m20 + m11 * rhs.m21 + m21 * rhs.m22 + m31 * rhs.m23;
-				l_m.m22 = m02 * rhs.m20 + m12 * rhs.m21 + m22 * rhs.m22 + m32 * rhs.m23;
-				l_m.m23 = m03 * rhs.m20 + m13 * rhs.m21 + m23 * rhs.m22 + m33 * rhs.m23;
-
-				l_m.m30 = m00 * rhs.m30 + m10 * rhs.m31 + m20 * rhs.m32 + m30 * rhs.m33;
-				l_m.m31 = m01 * rhs.m30 + m11 * rhs.m31 + m21 * rhs.m32 + m31 * rhs.m33;
-				l_m.m32 = m02 * rhs.m30 + m12 * rhs.m31 + m22 * rhs.m32 + m32 * rhs.m33;
-				l_m.m33 = m03 * rhs.m30 + m13 * rhs.m31 + m23 * rhs.m32 + m33 * rhs.m33;
-
-				return l_m;
-			}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 			auto operator*(const TMat4<T>& rhs) const -> TMat4<T>
 			{
 				// @TODO: replace with SIMD impl
@@ -771,7 +710,6 @@ namespace Inno
 
 				return l_m;
 			}
-#endif
 
 			auto operator*(const T rhs) const -> TMat4<T>
 			{

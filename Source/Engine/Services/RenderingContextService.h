@@ -13,6 +13,20 @@
 
 namespace Inno
 {
+	enum class GPUBufferUsageType
+	{
+		PerFrame,
+		Mesh,
+		Material,
+		PointLight,
+		SphereLight,
+		CSM,
+		ComputeDispatchParam,
+		GI,
+		Animation,
+		Billboard
+	};
+
 	struct AnimationDrawCallInfo
 	{
 		AnimationInstance animationInstance;
@@ -33,23 +47,14 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
+		GPUBufferComponent* GetGPUBufferComponent(GPUBufferUsageType usageType);
+
 		const PerFrameConstantBuffer& GetPerFrameConstantBuffer();
-		const std::vector<CSMConstantBuffer>& GetCSMConstantBuffer();
-		const std::vector<PointLightConstantBuffer>& GetPointLightConstantBuffer();
-		const std::vector<SphereLightConstantBuffer>& GetSphereLightConstantBuffer();
 
 		const std::vector<DrawCallInfo>& GetDrawCallInfo();
-		const std::vector<PerObjectConstantBuffer>& GetPerObjectConstantBuffer();
-		const std::vector<MaterialConstantBuffer>& GetMaterialConstantBuffer();
-
 		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
-		const std::vector<PerObjectConstantBuffer>& GetBillboardPassPerObjectConstantBuffer();
-
 		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
-		const std::vector<PerObjectConstantBuffer>& GetDebugPassPerObjectConstantBuffer();
-
 		const std::vector<AnimationDrawCallInfo>& GetAnimationDrawCallInfo();
-		const std::vector<AnimationConstantBuffer>& GetAnimationConstantBuffer();
 
 	private:
 		RenderingContextServiceImpl* m_Impl;

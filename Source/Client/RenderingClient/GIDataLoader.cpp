@@ -1,7 +1,7 @@
 #include "GIDataLoader.h"
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Common/IOService.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/SceneSystem.h"
@@ -13,7 +13,7 @@ using namespace Inno;
 
 #include "../../Engine/Common/IOService.h"
 
-using namespace DefaultGPUBuffers;
+
 
 namespace GIDataLoader
 {

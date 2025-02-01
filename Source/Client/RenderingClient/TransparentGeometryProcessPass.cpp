@@ -5,14 +5,14 @@
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
 
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 
 #include "../../Engine/Engine.h"
 
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
@@ -154,9 +154,9 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	l_renderingServer->ClearGPUBufferComponent(m_RT1);
 	l_renderingServer->ClearTextureComponent(m_HeadPtr);
 
-	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

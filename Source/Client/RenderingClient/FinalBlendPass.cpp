@@ -1,5 +1,5 @@
 #include "FinalBlendPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -12,7 +12,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 {
@@ -113,7 +113,7 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
 
@@ -123,7 +123,7 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = m_RenderPassComp->m_RenderTargets[0].m_Texture;
 
-    // m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+    // m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

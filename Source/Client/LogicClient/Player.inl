@@ -340,7 +340,7 @@ namespace Inno
 
             auto l_lp = m_cameraPlayerDistance;
             m_cameraPlayerDistance.w = 1.0f;
-            auto l_gp = Math::mul(l_m, m_cameraPlayerDistance);
+            auto l_gp = l_m * m_cameraPlayerDistance;
 
             m_playerCameraTransformComponent->m_localTransformVector_target.m_pos = l_gp;
             m_playerCameraTransformComponent->m_localTransformVector.m_pos = l_gp;

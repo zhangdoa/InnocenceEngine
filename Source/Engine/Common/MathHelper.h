@@ -405,23 +405,8 @@ namespace Inno
 			}
 		}
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 		template <class T>
-		auto mul(const TVec4<T>& lhs, const TMat4<T>& rhs) -> TVec4<T>
-		{
-			// @TODO: replace with SIMD impl
-			TVec4<T> l_TVec4;
-
-			l_TVec4.x = lhs.x * rhs.m00 + lhs.y * rhs.m10 + lhs.z * rhs.m20 + lhs.w * rhs.m30;
-			l_TVec4.y = lhs.x * rhs.m01 + lhs.y * rhs.m11 + lhs.z * rhs.m21 + lhs.w * rhs.m31;
-			l_TVec4.z = lhs.x * rhs.m02 + lhs.y * rhs.m12 + lhs.z * rhs.m22 + lhs.w * rhs.m32;
-			l_TVec4.w = lhs.x * rhs.m03 + lhs.y * rhs.m13 + lhs.z * rhs.m23 + lhs.w * rhs.m33;
-
-			return l_TVec4;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto mul(const TMat4<T>& lhs, const TVec4<T>& rhs) -> TVec4<T>
+		auto operator*(const TMat4<T>& lhs, const TVec4<T>& rhs) -> TVec4<T>
 		{
 			// @TODO: replace with SIMD impl
 			TVec4<T> l_TVec4;
@@ -433,7 +418,6 @@ namespace Inno
 
 			return l_TVec4;
 		}
-#endif
 
 		template <class T>
 		auto generateIdentityMatrix() -> TMat4<T>
@@ -449,29 +433,6 @@ namespace Inno
 		}
 
 		/*
-		 Column-Major memory layout and
-		 Row-Major vector4 mathematical convention
-
-		 vector4(a matrix1x4) :
-		 | x y z w |
-
-		 matrix4x4
-		 [columnIndex][rowIndex]
-		 | m00 <-> a00(1.0) m10 <->  a01(0.0) m20 <->  a02(0.0) m30 <->  a03(0.0) |
-		 | m01 <-> a10(0.0) m11 <->  a11(1.0) m21 <->  a12(0.0) m31 <->  a13(0.0) |
-		 | m02 <-> a20(0.0) m12 <->  a21(0.0) m22 <->  a22(1.0) m32 <->  a23(0.0) |
-		 | m03 <-> a30(Tx ) m13 <->  a31(Ty ) m23 <->  a32(Tz ) m33 <->  a33(1.0) |
-
-		 in
-
-		 vector4 * matrix4x4 :
-		 | x' = x * a00(1.0) + y * a10(0.0) + z * a20(0.0) + w * a30 (Tx) |
-		 | y' = x * a01(0.0) + y * a11(1.0) + z * a21(0.0) + w * a31 (Ty) |
-		 | z' = x * a02(0.0) + y * a12(0.0) + z * a22(1.0) + w * a32 (Tz) |
-		 | w' = x * a03(0.0) + y * a13(0.0) + z * a23(0.0) + w * a33(1.0) |
-
-		 --------------------------------------------
-
 		 Row-Major memory layout and
 		 Column-Major vector4 mathematical convention
 
@@ -497,24 +458,6 @@ namespace Inno
 		 | w' = a30(0.0) * x  + a31(0.0) * y + a32(0.0) * z + a33(1.0) * w |
 		 */
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
-		{
-			// @TODO: replace with SIMD impl
-			TMat4<T> l_m;
-
-			l_m.m00 = one<T>;
-			l_m.m11 = one<T>;
-			l_m.m22 = one<T>;
-			l_m.m30 = rhs.x;
-			l_m.m31 = rhs.y;
-			l_m.m32 = rhs.z;
-			l_m.m33 = one<T>;
-
-			return l_m;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 		template <class T>
 		auto toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
 		{
@@ -531,32 +474,8 @@ namespace Inno
 
 			return l_m;
 		}
-#endif
 
 		/*
-		 Column-Major memory layout and
-		 Row-Major vector4 mathematical convention
-
-		 vector4(a matrix1x4) :
-		 | x y z w |
-
-		 matrix4x4
-		 [columnIndex][rowIndex]
-		 | m00 <-> a00(1 - 2*qy2 - 2*qz2) m10 <->  a01(2*qx*qy + 2*qz*qw) m20 <->  a02(2*qx*qz - 2*qy*qw) m30 <->  a03(0.0) |
-		 | m01 <-> a10(2*qx*qy - 2*qz*qw) m11 <->  a11(1 - 2*qx2 - 2*qz2) m21 <->  a12(2*qy*qz + 2*qx*qw) m31 <->  a13(0.0) |
-		 | m02 <-> a20(2*qx*qz + 2*qy*qw) m12 <->  a21(2*qy*qz - 2*qx*qw) m22 <->  a22(1 - 2*qx2 - 2*qy2) m32 <->  a23(0.0) |
-		 | m03 <-> a30(       0.0       ) m13 <->  a31(       0.0       ) m23 <->  a32(       0.0       ) m33 <->  a33(1.0) |
-
-		 in
-
-		 vector4 * matrix4x4 :
-		 | x' = x * a00(1 - 2*qy2 - 2*qz2) + y * a10(2*qx*qy - 2*qz*qw) + z * a20(2*qx*qz + 2*qy*qw) + w * a30(       0.0       ) |
-		 | y' = x * a01(2*qx*qy + 2*qz*qw) + y * a11(1 - 2*qx2 - 2*qz2) + z * a21(2*qy*qz - 2*qx*qw) + w * a31(       0.0       ) |
-		 | z' = x * a02(2*qx*qz - 2*qy*qw) + y * a12(2*qy*qz + 2*qx*qw) + z * a22(1 - 2*qx2 - 2*qy2) + w * a32(       0.0       ) |
-		 | w' = x * a03(       0.0       ) + y * a13(       0.0       ) + z * a23(       0.0       ) + w * a33(       1.0       ) |
-
-		 --------------------------------------------
-
 		 Row-Major memory layout and
 		 Column-Major vector4 mathematical convention
 
@@ -581,37 +500,6 @@ namespace Inno
 		 | z' = a20(2*qx*qz - 2*qy*qw) * x  + a21(2*qy*qz + 2*qx*qw) * y + a22(1 - 2*qx2 - 2*qy2) * z + a23(       0.0       ) * w |
 		 | w' = a30(       0.0       ) * x  + a31(       0.0       ) * y + a32(       0.0       ) * z + a33(       1.0       ) * w |
 		 */
-
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
-		{
-			// @TODO: replace with SIMD impl
-			TMat4<T> l_m;
-
-			l_m.m00 = (one<T> -two<T> *rhs.y * rhs.y - two<T> *rhs.z * rhs.z);
-			l_m.m01 = (two<T> *rhs.x * y + two<T> *rhs.z * rhs.w);
-			l_m.m02 = (two<T> *rhs.x * rhs.z - two<T> *rhs.y * rhs.w);
-			l_m.m03 = (T());
-
-			l_m.m10 = (two<T> *rhs.x * rhs.y - two<T> *rhs.z * rhs.w);
-			l_m.m11 = (one<T> -two<T> *rhs.x * rhs.x - two<T> *rhs.z * rhs.z);
-			l_m.m12 = (two<T> *rhs.y * rhs.z + two<T> *rhs.x * rhs.w);
-			l_m.m13 = (T());
-
-			l_m.m20 = (two<T> *rhs.x * rhs.z + two<T> *rhs.y * rhs.w);
-			l_m.m21 = (two<T> *rhs.y * rhs.z - two<T> *rhs.x * rhs.w);
-			l_m.m22 = (one<T> -two<T> *rhs.x * rhs.x - two<T> *rhs.y * rhs.y);
-			l_m.m23 = (T());
-
-			l_m.m30 = (T());
-			l_m.m31 = (T());
-			l_m.m32 = (T());
-			l_m.m33 = (one<T>);
-
-			return l_m;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 		template <class T>
 		auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
 		{
@@ -640,7 +528,6 @@ namespace Inno
 
 			return l_m;
 		}
-#endif
 
 		template <class T>
 		auto toScaleMatrix(const TVec4<T>& rhs) -> TMat4<T>
@@ -656,21 +543,6 @@ namespace Inno
 			return l_m;
 		}
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto toPosVector(const TMat4<T>& rhs) -> TVec4<T>
-		{
-			// @TODO: replace with SIMD impl
-			TVec4<T> l_result;
-
-			l_result.x = rhs.m30;
-			l_result.y = rhs.m31;
-			l_result.z = rhs.m32;
-			l_result.w = one<T>;
-
-			return l_result;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 		template <class T>
 		auto toPosVector(const TMat4<T>& rhs) -> TVec4<T>
 		{
@@ -684,55 +556,7 @@ namespace Inno
 
 			return l_result;
 		}
-#endif
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto toQuatRotator(const TVec4<T>& rhs) -> TMat4<T>
-		{
-			// @TODO: replace with SIMD impl
-			TVec4<T> l_result;
-
-			T trace = rhs.m00 + rhs.m11 + rhs.m22;
-			if (trace > zero<T>)
-			{
-				T s = half<T> / std::sqrt(trace + one<T>);
-				l_result.w = half<T> *half<T> / s;
-				l_result.x = (rhs.m12 - rhs.m21) * s;
-				l_result.y = (rhs.m20 - rhs.m02) * s;
-				l_result.z = (rhs.m01 - rhs.m10) * s;
-			}
-			else
-			{
-				if (rhs.m00 > rhs.m11 && rhs.m00 > rhs.m22)
-				{
-					T s = two<T> *sqrtf(one<T> +rhs.m00 - rhs.m11 - rhs.m22);
-					l_result.w = (rhs.m12 - rhs.m21) / s;
-					l_result.x = half<T> *half<T> *s;
-					l_result.y = (rhs.m10 + rhs.m01) / s;
-					l_result.z = (rhs.m20 + rhs.m02) / s;
-				}
-				else if (rhs.m11 > rhs.m22)
-				{
-					T s = two<T> *sqrtf(one<T> +rhs.m11 - rhs.m00 - rhs.m22);
-					l_result.w = (rhs.m20 - rhs.m02) / s;
-					l_result.x = (rhs.m10 + rhs.m01) / s;
-					l_result.y = half<T> *half<T> *s;
-					l_result.z = (rhs.m21 + rhs.m12) / s;
-				}
-				else
-				{
-					T s = two<T> *sqrtf(one<T> +rhs.m22 - rhs.m00 - rhs.m11);
-					l_result.w = (rhs.m01 - rhs.m10) / s;
-					l_result.x = (rhs.m20 + rhs.m02) / s;
-					l_result.y = (rhs.m21 + rhs.m12) / s;
-					l_result.z = half<T> *half<T> *s;
-				}
-			}
-
-			return l_result;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 		template <class T>
 		auto toQuatRotator(const TMat4<T>& rhs) -> TVec4<T>
 		{
@@ -778,7 +602,6 @@ namespace Inno
 
 			return l_result;
 		}
-#endif
 
 		template <class T>
 		auto toScaleVector(const TMat4<T>& rhs) -> TVec4<T>
@@ -794,52 +617,11 @@ namespace Inno
 			return l_result;
 		}
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 		/*
-		Assume symmetric view frustum
-
-		Column-Major matrix memory layout and
-		Row-Major vector4 mathematical convention
-
-		vector4(a matrix1x4) :
-		| x y z w |
-
-		matrix4x4
-		[columnIndex][rowIndex]
-		| m00 <-> a00(1.0/tan(FOVX/2.0)) m10 <->  a01(             0.0             ) m20 <->  a02(                0.0               ) m30 <->  a03(                   0.0                  ) |
-		| m01 <-> a10(       0.0       ) m11 <->  a11(1.0/(tan(FOVX/2.0) / WHRatio)) m21 <->  a12(                0.0               ) m31 <->  a13(                   0.0                  ) |
-		| m02 <-> a20(       0.0       ) m12 <->  a21(             0.0             ) m22 <->  a22(-(zFar + zNear) / ((zFar - zNear))) m32 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) |
-		| m03 <-> a30(       0.0       ) m13 <->  a31(              0.0            ) m23 <->  a32(               -1.0               ) m33 <->  a33(                   1.0                  ) |
-		*/
-		template <class T>
-		auto TMat4::generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) -> TMat4<T>
-		{
-			TMat4<T> l_m;
-
-			l_m.m00 = one<T> / tan(FOVX / two<T>);
-			l_m.m11 = one<T> / (tan(FOVX / two<T>) / WHRatio);
-			l_m.m22 = (-(zFar + zNear) / ((zFar - zNear)));
-			l_m.m23 = -one<T>;
-			l_m.m32 = (-(two<T> *zFar * zNear) / ((zFar - zNear)));
-
-			return l_m;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
-		/*
-		Assume symmetric view frustum
-
-		Row-Major matrix memory layout and
-		Column-Major vector4 mathematical convention
-
-		vector4(a matrix4x1) :
-		| x |
-		| y |
-		| z |
-		| w |
-
+		Assuming symmetric view frustum:
 		[rowIndex][columnIndex]
-		| m00 <-> a00(1.0/tan(FOVX/2.0)) m10 <-> a01(              0.0            ) m20 <-> a02(                   0.0                  ) m30 <-> a03( 0.0) |
-		| m01 <-> a01(       0.0       ) m11 <-> a11(1.0/(tan(FOVX/2.0) / WHRatio)) m21 <-> a21(                   0.0                  ) m31 <-> a31( 0.0) |
+		| m00 <-> a00(1.0/tan(FOV_X/2.0)) m10 <-> a01(              0.0            ) m20 <-> a02(                   0.0                  ) m30 <-> a03( 0.0) |
+		| m01 <-> a01(       0.0       ) m11 <-> a11(1.0/(tan(FOV_X/2.0) / WHRatio)) m21 <-> a21(                   0.0                  ) m31 <-> a31( 0.0) |
 		| m02 <-> a02(       0.0       ) m12 <-> a12(              0.0            ) m22 <-> a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <-> a32(-1.0) |
 		| m03 <-> a03(       0.0       ) m13 <-> a13(              0.0            ) m23 <-> a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m33 <-> a33( 1.0) |
 		*/
@@ -856,25 +638,7 @@ namespace Inno
 
 			return l_m;
 		}
-#endif
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) -> TMat4<T>
-		{
-			TMat4<T> l_m;
-
-			l_m.m00 = (two<T> / (right - left));
-			l_m.m11 = (two<T> / (up - bottom));
-			l_m.m22 = (-two<T> / (zFar - zNear));
-			l_m.m30 = (-(right + left) / (right - left));
-			l_m.m31 = (-(up + bottom) / (up - bottom));
-			l_m.m32 = (-(zFar + zNear) / (zFar - zNear));
-			l_m.m33 = one<T>;
-
-			return l_m;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 		template <class T>
 		auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) -> TMat4<T>
 		{
@@ -894,43 +658,7 @@ namespace Inno
 
 			return l_m;
 		}
-#endif
 
-#if defined(USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-		template <class T>
-		auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
-		{
-			// @TODO: replace with SIMD impl
-			TMat4<T> l_m;
-			TVec4<T> l_X;
-			TVec4<T> l_Y;
-			TVec4<T> l_Z = (eyePos - centerPos).normalize();
-
-			l_X = upDir.cross(l_Z);
-			l_X = l_X.normalize();
-			l_Y = l_Z.cross(l_X);
-			l_Y = l_Y.normalize();
-
-			l_m.m00 = l_X.x;
-			l_m.m01 = l_Y.x;
-			l_m.m02 = l_Z.x;
-			l_m.m03 = T();
-			l_m.m10 = l_X.y;
-			l_m.m11 = l_Y.y;
-			l_m.m12 = l_Z.y;
-			l_m.m13 = T();
-			l_m.m20 = l_X.z;
-			l_m.m21 = l_Y.z;
-			l_m.m22 = l_Z.z;
-			l_m.m23 = T();
-			l_m.m30 = eyePos.x;
-			l_m.m31 = eyePos.y;
-			l_m.m32 = eyePos.z;
-			l_m.m33 = one<T>;
-
-			return l_m;
-		}
-#elif defined(USE_ROW_MAJOR_MEMORY_LAYOUT)
 		template <class T>
 		auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
 		{
@@ -964,44 +692,34 @@ namespace Inno
 
 			return l_m;
 		}
-#endif
 
 		template <class T>
-		auto worldToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) -> TVec4<T>
+		auto WorldToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) -> TVec4<T>
 		{
 			auto l_result = rhs;
 			auto l_m = cameraT * cameraR;
 			l_m = l_m.inverse();
-#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
-			l_result = mul(l_result, l_m);
-#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-			l_result = mul(l_m, l_result);
-#endif
+			l_result = l_m * l_result;
+
 			return l_result;
 		}
 
 		template <class T>
-		auto viewToWorldSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) -> TVec4<T>
+		auto ViewToWorldSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) -> TVec4<T>
 		{
 			auto l_result = rhs;
 			auto l_m = cameraT * cameraR;
-#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
-			l_result = mul(l_result, l_m);
-#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-			l_result = mul(l_m, l_result);
-#endif
+			l_result = l_m * l_result;
+
 			return l_result;
 		}
 
 		template <class T>
-		auto viewToClipSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) -> TVec4<T>
+		auto ViewToClipSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) -> TVec4<T>
 		{
 			auto l_result = rhs;
-#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
-			l_result = Math::mul(l_result, cameraP);
-#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-			l_result = Math::mul(cameraP, l_result);
-#endif
+			l_result = cameraP * l_result;
+
 			// perspective division
 			l_result = l_result * (one<T> / l_result.w);
 
@@ -1009,14 +727,11 @@ namespace Inno
 		}
 
 		template <class T>
-		auto clipToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) -> TVec4<T>
+		auto ClipToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) -> TVec4<T>
 		{
 			auto l_result = rhs;
-#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
-			l_result = Math::mul(l_result, cameraP.inverse());
-#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-			l_result = Math::mul(cameraP.inverse(), l_result);
-#endif
+			l_result = cameraP.inverse() * l_result;
+
 			// perspective division
 			l_result = l_result * (one<T> / l_result.w);
 
@@ -1024,21 +739,32 @@ namespace Inno
 		}
 
 		template <class T>
-		T distanceToSphere(const TVec4<T>& lhs, const TSphere<T>& rhs)
+		T SignedDistance(const TVec4<T>& point, const TSphere<T>& plane)
 		{
 			auto l_dir = lhs - rhs.m_center;
-			return l_dir.length() - rhs.m_radius;
+			return std::abs(l_dir.length() - rhs.m_radius);
 		}
 
 		template <class T>
-		T distanceToPlane(const TVec4<T>& lhs, const TPlane<T>& rhs)
+		T Distance(const TVec4<T>& lhs, const TSphere<T>& rhs)
 		{
-			auto l_dot = lhs * rhs.m_normal;
-			return l_dot - rhs.m_distance;
+			return std::abs(SignedDistance(lhs, rhs));
 		}
 
 		template <class T>
-		T closestPoint(const TVec4<T>& lhs, const TSphere<T>& rhs)
+		T SignedDistance(const TVec4<T>& point, const TPlane<T>& plane)
+		{
+			return point * plane.m_normal - plane.m_distance;
+		}
+
+		template <class T>
+		T Distance(const TVec4<T>& lhs, const TPlane<T>& rhs)
+		{
+			return std::abs(SignedDistance(lhs, rhs));
+		}
+
+		template <class T>
+		T ClosestPoint(const TVec4<T>& lhs, const TSphere<T>& rhs)
 		{
 			auto l_dir = lhs - rhs.m_center;
 			l_dir = l_dir.normalize();
@@ -1046,7 +772,7 @@ namespace Inno
 		}
 
 		template <class T>
-		T closestPoint(const TVec4<T>& lhs, const TPlane<T>& rhs)
+		T ClosestPoint(const TVec4<T>& lhs, const TPlane<T>& rhs)
 		{
 			auto l_dot = lhs * rhs.m_normal;
 			auto l_distance = l_dot - rhs.m_distance;
@@ -1054,10 +780,9 @@ namespace Inno
 		}
 
 		template <class T>
-		bool isPointOnSphere(const TVec4<T>& lhs, const TSphere<T>& rhs)
+		bool IsOn(const TVec4<T>& lhs, const TSphere<T>& rhs)
 		{
-			auto l_distance = (lhs - rhs.m_center).length();
-			if (std::abs(l_distance - rhs.m_radius) > epsilon<T, 4>)
+			if (Distance(lhs, rhs) > epsilon<T, 4>)
 			{
 				return false;
 			}
@@ -1065,10 +790,9 @@ namespace Inno
 		}
 
 		template <class T>
-		bool isPointOnPlane(const TVec4<T>& lhs, const TPlane<T>& rhs)
+		bool IsOn(const TVec4<T>& lhs, const TPlane<T>& rhs)
 		{
-			auto l_distance = lhs * rhs.m_normal;
-			if (std::abs(l_distance - rhs.m_distance) > epsilon<T, 4>)
+			if (Distance(lhs, rhs) > epsilon<T, 4>)
 			{
 				return false;
 			}
@@ -1076,7 +800,7 @@ namespace Inno
 		}
 
 		template <class T>
-		bool isPointInAABB(const TVec4<T>& lhs, const TAABB<T>& rhs)
+		bool IsIn(const TVec4<T>& lhs, const TAABB<T>& rhs)
 		{
 			if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
 			{
@@ -1097,29 +821,29 @@ namespace Inno
 		}
 
 		template <class T>
-		bool isPointInFrustum(const TVec4<T>& lhs, const TFrustum<T>& rhs)
+		bool IsIn(const TVec4<T>& lhs, const TFrustum<T>& rhs)
 		{
-			if (distanceToPlane(lhs, rhs.m_px) > zero<T>)
+			if (Distance(lhs, rhs.m_px) > zero<T>)
 			{
 				return false;
 			}
-			if (distanceToPlane(lhs, rhs.m_nx) > zero<T>)
+			if (Distance(lhs, rhs.m_nx) > zero<T>)
 			{
 				return false;
 			}
-			if (distanceToPlane(lhs, rhs.m_py) > zero<T>)
+			if (Distance(lhs, rhs.m_py) > zero<T>)
 			{
 				return false;
 			}
-			if (distanceToPlane(lhs, rhs.m_ny) > zero<T>)
+			if (Distance(lhs, rhs.m_ny) > zero<T>)
 			{
 				return false;
 			}
-			if (distanceToPlane(lhs, rhs.m_pz) > zero<T>)
+			if (Distance(lhs, rhs.m_pz) > zero<T>)
 			{
 				return false;
 			}
-			if (distanceToPlane(lhs, rhs.m_nz) > zero<T>)
+			if (Distance(lhs, rhs.m_nz) > zero<T>)
 			{
 				return false;
 			}
@@ -1127,7 +851,7 @@ namespace Inno
 		}
 
 		template <class T>
-		bool intersectCheck(const TAABB<T>& lhs, const TAABB<T>& rhs)
+		bool IsOverlap(const TAABB<T>& lhs, const TAABB<T>& rhs)
 		{
 			if (std::abs(rhs.m_center.x - lhs.m_center.x) > (rhs.m_extend.x + lhs.m_extend.x) / two<T>)
 			{
@@ -1148,7 +872,7 @@ namespace Inno
 		}
 
 		template <class T>
-		bool intersectCheck(const TAABB<T>& lhs, const TRay<T>& rhs)
+		bool IsOverlap(const TAABB<T>& lhs, const TRay<T>& rhs)
 		{
 			T txmin, txmax, tymin, tymax, tzmin, tzmax;
 			T l_invDirectionX = std::isinf(one<T> / rhs.m_direction.x) ? zero<T> : one<T> / rhs.m_direction.x;
@@ -1206,29 +930,29 @@ namespace Inno
 		}
 
 		template <class T>
-		bool intersectCheck(const TFrustum<T>& lhs, const TSphere<T>& rhs)
+		bool IsOverlap(const TFrustum<T>& lhs, const TSphere<T>& rhs)
 		{
-			if (distanceToPlane(Vec4(rhs.m_center, one<T>), lhs.m_px) > rhs.m_radius)
+			if (SignedDistance(TVec4(rhs.m_center, one<T>), lhs.m_px) < -rhs.m_radius)
 			{
 				return false;
 			}
-			if (distanceToPlane(Vec4(rhs.m_center, one<T>), lhs.m_nx) > rhs.m_radius)
+			if (SignedDistance(TVec4(rhs.m_center, one<T>), lhs.m_nx) < -rhs.m_radius)
 			{
 				return false;
 			}
-			if (distanceToPlane(Vec4(rhs.m_center, one<T>), lhs.m_py) > rhs.m_radius)
+			if (SignedDistance(TVec4(rhs.m_center, one<T>), lhs.m_py) < -rhs.m_radius)
 			{
 				return false;
 			}
-			if (distanceToPlane(Vec4(rhs.m_center, one<T>), lhs.m_ny) > rhs.m_radius)
+			if (SignedDistance(TVec4(rhs.m_center, one<T>), lhs.m_ny) < -rhs.m_radius)
 			{
 				return false;
 			}
-			if (distanceToPlane(Vec4(rhs.m_center, one<T>), lhs.m_pz) > rhs.m_radius)
+			if (SignedDistance(TVec4(rhs.m_center, one<T>), lhs.m_pz) < -rhs.m_radius)
 			{
 				return false;
 			}
-			if (distanceToPlane(Vec4(rhs.m_center, one<T>), lhs.m_nz) > rhs.m_radius)
+			if (SignedDistance(TVec4(rhs.m_center, one<T>), lhs.m_nz) < -rhs.m_radius)
 			{
 				return false;
 			}
@@ -1236,21 +960,21 @@ namespace Inno
 		}
 
 		template <class T>
-		bool intersectCheck(const TFrustum<T>& lhs, const TAABB<T>& rhs)
+		bool IsOverlap(const TFrustum<T>& lhs, const TAABB<T>& rhs)
 		{
-			auto l_isCenterInside = isPointInFrustum(rhs.m_center, lhs);
+			auto l_isCenterInside = IsIn(rhs.m_center, lhs);
 			if (l_isCenterInside)
 			{
 				return true;
 			}
 
-			auto l_isMaxInside = isPointInFrustum(rhs.m_boundMax, lhs);
+			auto l_isMaxInside = IsIn(rhs.m_boundMax, lhs);
 			if (l_isMaxInside)
 			{
 				return true;
 			}
 
-			auto l_isMinInside = isPointInFrustum(rhs.m_boundMin, lhs);
+			auto l_isMinInside = IsIn(rhs.m_boundMin, lhs);
 			if (l_isMinInside)
 			{
 				return true;
@@ -1351,17 +1075,10 @@ namespace Inno
 		template <class T>
 		auto calcGlobalPos(const TMat4<T>& parentTransformationMatrix, const TVec4<T>& localPos) -> TVec4<T>
 		{
-#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
 			auto result = TVec4<T>();
-			result = Math::mul(localPos, parentTransformationMatrix);
+			result = parentTransformationMatrix * localPos;
 			result = result * (one<T> / result.w);
 			return result;
-#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-			auto result = TVec4<T>();
-			result = Math::mul(parentTransformationMatrix, localPos);
-			result = result * (one<T> / result.w);
-			return result;
-#endif
 		}
 
 		template <class T>
@@ -1575,7 +1292,7 @@ namespace Inno
 		}
 
 		template <class T>
-		auto makePlane(const TVec3<T>& a, const TVec3<T>& b, const TVec3<T>& c) -> TPlane<T>
+		auto ToPlane(const TVec3<T>& a, const TVec3<T>& b, const TVec3<T>& c) -> TPlane<T>
 		{
 			TPlane<T> l_result;
 
@@ -1586,7 +1303,7 @@ namespace Inno
 		};
 
 		template <class T>
-		inline auto generateNDC(TVertex<T>* vertices)
+		inline auto GenerateNDC(TVertex<T>* vertices)
 		{
 			vertices[0].m_pos = TVec3<T>(one<T>, one<T>, one<T>);
 			vertices[0].m_texCoord = TVec2<T>(one<T>, one<T>);
@@ -1704,12 +1421,8 @@ namespace Inno
 		inline auto rotateAABBToNewSpace(const TAABB<T>& lhs, const TMat4<T>& rhs) -> TAABB<T>
 		{
 			auto l_lhs = lhs;
-			#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-			l_lhs.m_center = Math::mul(l_lhs.m_center, rhs);
-	#endif
-	#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-			l_lhs.m_center = Math::mul(rhs, l_lhs.m_center);
-	#endif
+			l_lhs.m_center = rhs * l_lhs.m_center;
+
 			l_lhs.m_boundMin = l_lhs.m_center - l_lhs.m_extend * 0.5f;
 			l_lhs.m_boundMax = l_lhs.m_center + l_lhs.m_extend * 0.5f;
 
@@ -1717,16 +1430,16 @@ namespace Inno
 		}
 
 		template <class T>
-		inline auto makeFrustum(const TVertex<T>* vertices) -> TFrustum<T>
+		inline auto ToFrustum(const TVertex<T>* vertices) -> TFrustum<T>
 		{
 			TFrustum<T> l_result;
 
-			l_result.m_px = makePlane(vertices[2].m_pos, vertices[6].m_pos, vertices[7].m_pos);
-			l_result.m_nx = makePlane(vertices[0].m_pos, vertices[4].m_pos, vertices[1].m_pos);
-			l_result.m_py = makePlane(vertices[0].m_pos, vertices[3].m_pos, vertices[7].m_pos);
-			l_result.m_ny = makePlane(vertices[1].m_pos, vertices[5].m_pos, vertices[6].m_pos);
-			l_result.m_pz = makePlane(vertices[0].m_pos, vertices[1].m_pos, vertices[2].m_pos);
-			l_result.m_nz = makePlane(vertices[4].m_pos, vertices[7].m_pos, vertices[6].m_pos);
+			l_result.m_px = ToPlane(vertices[0].m_pos, vertices[4].m_pos, vertices[1].m_pos);
+			l_result.m_nx = ToPlane(vertices[2].m_pos, vertices[6].m_pos, vertices[7].m_pos);
+			l_result.m_py = ToPlane(vertices[0].m_pos, vertices[3].m_pos, vertices[7].m_pos);
+			l_result.m_ny = ToPlane(vertices[1].m_pos, vertices[5].m_pos, vertices[6].m_pos);
+			l_result.m_pz = ToPlane(vertices[0].m_pos, vertices[1].m_pos, vertices[2].m_pos);
+			l_result.m_nz = ToPlane(vertices[4].m_pos, vertices[7].m_pos, vertices[6].m_pos);
 
 			return l_result;
 		}
@@ -1738,12 +1451,7 @@ namespace Inno
 
 			for (auto& i : l_vertices)
 			{
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-				i.m_pos = Math::mul(Vec4(i.m_pos, 1.0f), Tm).xyz();
-#endif
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-				i.m_pos = Math::mul(Tm, Vec4(i.m_pos, 1.0f)).xyz();
-#endif
+				i.m_pos = (Tm * Vec4(i.m_pos, 1.0f)).xyz();
 			}
 
 			auto l_boundMin = maxVec3<T>;
@@ -1760,13 +1468,13 @@ namespace Inno
 			return l_result;
 		};
 
-		inline std::vector<Vertex> worldToViewSpace(const std::vector<Vertex>& rhs, Mat4 t, Mat4 r)
+		inline std::vector<Vertex> WorldToViewSpace(const std::vector<Vertex>& rhs, Mat4 t, Mat4 r)
 		{
 			auto l_result = rhs;
 
 			for (auto& l_vertexData : l_result)
 			{
-				auto l_mulPos = Math::worldToViewSpace(Vec4(l_vertexData.m_pos, 1.0f), t, r);
+				auto l_mulPos = Math::WorldToViewSpace(Vec4(l_vertexData.m_pos, 1.0f), t, r);
 				l_vertexData.m_pos = l_mulPos.xyz();
 			}
 
@@ -1778,13 +1486,13 @@ namespace Inno
 			return l_result;
 		}
 
-		inline std::vector<Vertex> viewToWorldSpace(const std::vector<Vertex>& rhs, Mat4 t, Mat4 r)
+		inline std::vector<Vertex> ViewToWorldSpace(const std::vector<Vertex>& rhs, Mat4 t, Mat4 r)
 		{
 			auto l_result = rhs;
 
 			for (auto& l_vertexData : l_result)
 			{
-				auto l_mulPos = Math::viewToWorldSpace(Vec4(l_vertexData.m_pos, 1.0f), t, r);
+				auto l_mulPos = Math::ViewToWorldSpace(Vec4(l_vertexData.m_pos, 1.0f), t, r);
 				l_vertexData.m_pos = l_mulPos.xyz();
 			}
 
@@ -1796,38 +1504,40 @@ namespace Inno
 			return l_result;
 		}
 
-		inline std::vector<Vertex> generateFrustumVerticesVS(Mat4 p)
+		inline std::vector<Vertex> GenerateFrustumInViewSpace(Mat4 p)
 		{
 			std::vector<Vertex> rhs(8);
 
-			Math::generateNDC<float>(&rhs[0]);
+			Math::GenerateNDC<float>(&rhs[0]);
 
 			for (auto& i : rhs)
 			{
-				i.m_pos = Math::clipToViewSpace(Vec4(i.m_pos, 1.0f), p).xyz();
+				i.m_pos = Math::ClipToViewSpace(Vec4(i.m_pos, 1.0f), p).xyz();
 			}
-
-			// near clip plane first
-			// @TODO: reverse only along Z axis, not simple mirrored version
-			std::reverse(rhs.begin(), rhs.end());
 
 			std::vector<Vertex> l_vertices(8);
 
-			for (uint32_t i = 0; i < 8; i++)
-			{
-				l_vertices[i] = rhs[i];
-			}
+			// The definition of projection matrix implies the near plane has z=-1 in NDC, so after the clip-to-view space transformation,
+			// the near plane is with the vertices 4-7. We need to sort the vertices so that the near plane is first again in the view space.
+			l_vertices[0] = rhs[4];
+			l_vertices[1] = rhs[5];
+			l_vertices[2] = rhs[6];
+			l_vertices[3] = rhs[7];
+			l_vertices[4] = rhs[0];
+			l_vertices[5] = rhs[1];
+			l_vertices[6] = rhs[2];
+			l_vertices[7] = rhs[3];
 
 			return l_vertices;
 		}
 
-		inline std::vector<Vertex> generateFrustumVerticesWS(Mat4 p, Mat4 r, Mat4 t)
+		inline std::vector<Vertex> GenerateFrustumInWorldSpace(Mat4 p, Mat4 r, Mat4 t)
 		{
-			auto rhs = generateFrustumVerticesVS(p);
+			auto rhs = GenerateFrustumInViewSpace(p);
 
 			for (auto& i : rhs)
 			{
-				i.m_pos = Math::viewToWorldSpace(Vec4(i.m_pos, 1.0f), t, r).xyz();
+				i.m_pos = Math::ViewToWorldSpace(Vec4(i.m_pos, 1.0f), t, r).xyz();
 			}
 
 			for (auto& i : rhs)

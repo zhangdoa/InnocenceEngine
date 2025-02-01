@@ -1,5 +1,5 @@
 #include "VXGIRenderer.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/SceneSystem.h"
 #include "../../Engine/Services/PhysicsSystem.h"
@@ -19,7 +19,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 {

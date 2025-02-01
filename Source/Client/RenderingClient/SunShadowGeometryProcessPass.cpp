@@ -1,5 +1,5 @@
 #include "SunShadowGeometryProcessPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -8,7 +8,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
@@ -137,9 +137,9 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 	
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = GetGPUBufferComponent(GPUBufferUsageType::Material);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 	// m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 
 	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();

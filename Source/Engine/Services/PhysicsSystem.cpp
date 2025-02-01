@@ -65,7 +65,8 @@ namespace Inno
 
 		std::unordered_map<ModelComponent*, ArrayRangeInfo> m_ComponentOwnerLUT;
 
-		DoubleBuffer<std::vector<CullingResult>, true> m_CullingResults;
+		std::vector<CullingResult> m_CullingResults;
+		mutable std::shared_mutex m_CullingResultsMutex;
 
 		std::function<void()> f_SceneLoadingStartedCallback;
 	};
@@ -353,52 +354,43 @@ void PhysicsSystem::RunCulling()
 
 	m_Impl->m_VisibleSceneBoundary.Reset();
 
-	auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_CullingResultsMutex);
 
-	auto& l_cullingResultVector = m_Impl->m_CullingResults.GetOldValue();
-	l_cullingResultVector.clear();
+	m_Impl->m_CullingResults.clear();
+	m_Impl->m_CullingResults.reserve(m_Impl->m_Components.size());
 
-	if (l_cullingResultVector.capacity() < l_modelComponents.size())
-		m_Impl->m_CullingResults.Reserve(l_modelComponents.size());
-
-	// @TODO: Not stable
 	auto visibilityCheck = [&](PhysicsComponent* PDC) -> bool {
-		//return Math::intersectCheck(l_mainCamera->m_frustum, PDC->m_SphereWS);
-		return true;
+		return Math::IsOverlap(l_mainCamera->m_frustum, PDC->m_SphereWS);
 		};
 
 	auto onPassed = [&](PhysicsComponent* PDC) {
-		CullingResult l_cullingResult;
+		CullingResult l_cullingResult = {};
 		l_cullingResult.m_PhysicsComponent = PDC;
 		l_cullingResult.m_VisibilityMask |= VisibilityMask::MainCamera;
-		l_cullingResultVector.emplace_back(l_cullingResult);
+		m_Impl->m_CullingResults.emplace_back(l_cullingResult);
 		};
 
 	m_Impl->RunCulling(std::move(visibilityCheck), std::move(onPassed));
 
-	auto sunVisibilityCheck = [&](PhysicsComponent* PDC) -> bool {
-		auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
-		auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
-		auto l_sphereRadius = (m_Impl->m_VisibleSceneBoundary.m_Max - m_Impl->m_VisibleSceneBoundary.m_AABB.m_center).length();
-		auto l_spherePosLS = Math::mul(l_sunRotationInv, Vec4(PDC->m_SphereWS.m_center, 1.0f));
-		auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
-		return l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius;
-		};
+	// auto sunVisibilityCheck = [&](PhysicsComponent* PDC) -> bool {
+	// 	auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
+	// 	auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
+	// 	auto l_sphereRadius = (m_Impl->m_VisibleSceneBoundary.m_Max - m_Impl->m_VisibleSceneBoundary.m_AABB.m_center).length();
+	// 	auto l_spherePosLS = l_sunRotationInv * Vec4(PDC->m_SphereWS.m_center, 1.0f);
+	// 	auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
+	// 	return l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius;
+	// 	};
 
-	auto onSunPassed = [&](PhysicsComponent* PDC) {
-		CullingResult l_cullingResult;
-		l_cullingResult.m_PhysicsComponent = PDC;
-		l_cullingResult.m_VisibilityMask |= VisibilityMask::Sun;
-		l_cullingResultVector.emplace_back(l_cullingResult);
-		};
+	// auto onSunPassed = [&](PhysicsComponent* PDC) {
+	// 	CullingResult l_cullingResult;
+	// 	l_cullingResult.m_PhysicsComponent = PDC;
+	// 	l_cullingResult.m_VisibilityMask |= VisibilityMask::Sun;
+	// 	l_cullingResults.emplace_back(l_cullingResult);
+	// 	};
 
-	m_Impl->RunCulling(std::move(sunVisibilityCheck), std::move(onSunPassed));
-
+	// m_Impl->RunCulling(std::move(sunVisibilityCheck), std::move(onSunPassed));
 
 	auto l_BVHService = g_Engine->Get<BVHService>();
-
-
-	m_Impl->m_CullingResults.SetValue(std::move(l_cullingResultVector));
 
 	m_Impl->m_VisibleSceneBoundary.m_AABB = Math::GenerateAABB(m_Impl->m_VisibleSceneBoundary.m_Max, m_Impl->m_VisibleSceneBoundary.m_Min);
 	m_Impl->m_TotalSceneBoundary.m_AABB = Math::GenerateAABB(m_Impl->m_TotalSceneBoundary.m_Max, m_Impl->m_TotalSceneBoundary.m_Min);
@@ -406,7 +398,8 @@ void PhysicsSystem::RunCulling()
 
 const std::vector<CullingResult>& PhysicsSystem::GetCullingResult()
 {
-	return m_Impl->m_CullingResults.GetNewValue();
+	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_CullingResultsMutex);
+	return m_Impl->m_CullingResults;
 }
 
 AABB PhysicsSystem::GetVisibleSceneAABB()

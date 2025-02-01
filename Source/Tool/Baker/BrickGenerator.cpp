@@ -1,7 +1,5 @@
 #include "BrickGenerator.h"
 
-#include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
-
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Common/TaskScheduler.h"
@@ -18,7 +16,7 @@ using namespace Inno;
 #include "Baker.h"
 #include "Serializer.h"
 
-using namespace DefaultGPUBuffers;
+
 
 namespace Inno
 {
@@ -267,9 +265,9 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(pos);
 
-            l_renderingServer->UploadGPUBufferComponent(GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->UploadGPUBufferComponent(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-            auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
             auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Cube);
 
@@ -278,7 +276,7 @@ namespace Inno
             l_renderingServer->CommandListBegin(m_RenderPassComp_BrickFactor, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_BrickFactor);
             l_renderingServer->ClearRenderTargets(m_RenderPassComp_BrickFactor);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
 
             for (uint32_t i = 0; i < bricksCount; i++)
             {
@@ -449,7 +447,7 @@ namespace Inno
                 l_bricksCubePerObjectConstantBuffer[i].UUID = (float)i + 1.0f;
             }
 
-            auto l_MeshGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
             l_renderingServer->UploadGPUBufferComponent(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
             // assign bricks to probe by the depth test result

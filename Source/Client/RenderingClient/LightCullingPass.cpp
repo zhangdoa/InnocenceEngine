@@ -1,5 +1,5 @@
 #include "LightCullingPass.h"
-#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
@@ -11,7 +11,7 @@
 using namespace Inno;
 
 
-using namespace DefaultGPUBuffers;
+
 
 
 bool LightCullingPass::Setup(ISystemConfig *systemConfig)
@@ -137,9 +137,9 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_PointLightGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::PointLight);
-	auto l_dispatchParamsGPUBufferComp = GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
+	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_lightListIndexCounter = 1;
 	l_renderingServer->UploadGPUBufferComponent(m_lightListIndexCounter, &l_lightListIndexCounter);

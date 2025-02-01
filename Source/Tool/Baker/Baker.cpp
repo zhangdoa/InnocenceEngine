@@ -1,5 +1,4 @@
 #include "Baker.h"
-#include "../../Client/DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Common/IOService.h"
@@ -159,7 +158,6 @@ bool BakerRenderingClient::Setup(ISystemConfig* systemConfig)
 {
 	auto l_BakerRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit("BakerRenderingClientSetupTask", 2,
 		[]() {
-			DefaultGPUBuffers::Setup();
 			Baker::Setup();
 		});
 	l_BakerRenderingClientSetupTask->Wait();
@@ -169,12 +167,6 @@ bool BakerRenderingClient::Setup(ISystemConfig* systemConfig)
 
 bool BakerRenderingClient::Initialize()
 {
-	auto l_BakerRenderingClientInitializeTask = g_Engine->Get<TaskScheduler>()->Submit("BakerRenderingClientInitializeTask", 2,
-		[]() {
-			DefaultGPUBuffers::Initialize();
-		});
-	l_BakerRenderingClientInitializeTask->Wait();
-
 	return true;
 }
 
@@ -185,8 +177,6 @@ bool BakerRenderingClient::Render(IRenderingConfig* renderingConfig)
 
 bool BakerRenderingClient::Terminate()
 {
-	DefaultGPUBuffers::Terminate();
-
 	return true;
 }
 
