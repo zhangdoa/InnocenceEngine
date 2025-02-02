@@ -100,6 +100,113 @@ bool IRenderingServer::Initialize()
 
 bool IRenderingServer::Update()
 {
+	while (m_uninitializedMeshes.size() > 0)
+	{
+		MeshComponent* l_Mesh;
+		m_uninitializedMeshes.tryPop(l_Mesh);
+
+		if (!l_Mesh)
+			continue;
+
+		InitializeImpl(l_Mesh);
+		if (l_Mesh->m_ObjectStatus == ObjectStatus::Activated)
+			m_initializedMeshes.emplace(l_Mesh);
+	}
+
+	while (m_uninitializedTextures.size() > 0)
+	{
+		TextureComponent* l_Texture;
+		m_uninitializedTextures.tryPop(l_Texture);
+
+		if (!l_Texture)
+			continue;
+
+		InitializeImpl(l_Texture);
+		if (l_Texture->m_ObjectStatus == ObjectStatus::Activated)
+			m_initializedTextures.emplace(l_Texture);
+	}
+
+	while (m_uninitializedMaterials.size() > 0)
+	{
+		MaterialComponent* l_Material;
+		m_uninitializedMaterials.tryPop(l_Material);
+
+		if (!l_Material)
+			continue;
+
+		InitializeImpl(l_Material);
+		if (l_Material->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			for (size_t i = 0; i < MaxTextureSlotCount; i++)
+			{
+				auto l_texture = l_Material->m_TextureSlots[i].m_Texture;
+				if (l_texture && m_initializedTextures.find(l_texture) == m_initializedTextures.end())
+					m_initializedTextures.emplace(l_texture);
+			}
+			m_initializedMaterials.emplace(l_Material);
+		}
+	}
+
+	while (m_uninitializedGPUBuffers.size() > 0)
+	{
+		GPUBufferComponent* l_GPUBuffer;
+		m_uninitializedGPUBuffers.tryPop(l_GPUBuffer);
+
+		if (!l_GPUBuffer)
+			continue;
+
+		InitializeImpl(l_GPUBuffer);
+		if (l_GPUBuffer->m_ObjectStatus == ObjectStatus::Activated)
+			m_initializedGPUBuffers.emplace(l_GPUBuffer);
+	}
+
+	while (m_uninitializedRenderPasses.size() > 0)
+	{
+		RenderPassComponent* l_RenderPass;
+		m_uninitializedRenderPasses.tryPop(l_RenderPass);
+
+		if (!l_RenderPass)
+			continue;
+
+		InitializeImpl(l_RenderPass);
+		if (l_RenderPass->m_ObjectStatus == ObjectStatus::Activated)
+			m_initializedRenderPasses.push_back(l_RenderPass);
+	}
+
+	auto l_currentFrame = GetCurrentFrame();
+
+	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
+	Open(l_commandList, GPUEngineType::Graphics);
+
+	for (auto i : m_initializedMeshes)
+	{
+		if (i->m_NeedUploadToGPU)
+		{
+			UploadToGPU(l_commandList, i);
+			i->m_NeedUploadToGPU = false;
+		}
+	}
+
+	for (auto i : m_initializedTextures)
+	{
+		if (i->m_NeedUploadToGPU)
+		{
+			UploadToGPU(l_commandList, i);
+			i->m_NeedUploadToGPU = false;
+		}
+	}
+
+	for (auto i : m_initializedGPUBuffers)
+	{
+		if (i->m_NeedUploadToGPU)
+		{
+			UploadToGPU(l_commandList, i);
+			i->m_NeedUploadToGPU = false;
+		}
+	}
+
+	Close(l_commandList, GPUEngineType::Graphics);
+
 	return true;
 }
 
@@ -265,119 +372,59 @@ bool IRenderingServer::CreateRenderTargets(RenderPassComponent* rhs)
 	return true;
 }
 
-void IRenderingServer::TransferDataToGPU()
+void IRenderingServer::ExecuteGlobalCommands()
 {
-	while (m_uninitializedMeshes.size() > 0)
-	{
-		MeshComponent* l_Mesh;
-		m_uninitializedMeshes.tryPop(l_Mesh);
-
-		if (!l_Mesh)
-			continue;
-
-		InitializeImpl(l_Mesh);
-		if (l_Mesh->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedMeshes.emplace(l_Mesh);
-	}
-
-	while (m_uninitializedTextures.size() > 0)
-	{
-		TextureComponent* l_Texture;
-		m_uninitializedTextures.tryPop(l_Texture);
-
-		if (!l_Texture)
-			continue;
-
-		InitializeImpl(l_Texture);
-		if (l_Texture->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedTextures.emplace(l_Texture);
-	}
-
-	while (m_uninitializedMaterials.size() > 0)
-	{
-		MaterialComponent* l_Material;
-		m_uninitializedMaterials.tryPop(l_Material);
-
-		if (!l_Material)
-			continue;
-
-		InitializeImpl(l_Material);
-		if (l_Material->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			for (size_t i = 0; i < MaxTextureSlotCount; i++)
-			{
-				auto l_texture = l_Material->m_TextureSlots[i].m_Texture;
-				if (l_texture && m_initializedTextures.find(l_texture) == m_initializedTextures.end())
-					m_initializedTextures.emplace(l_texture);
-			}
-			m_initializedMaterials.emplace(l_Material);
-		}
-	}
-
-	while (m_uninitializedGPUBuffers.size() > 0)
-	{
-		GPUBufferComponent* l_GPUBuffer;
-		m_uninitializedGPUBuffers.tryPop(l_GPUBuffer);
-
-		if (!l_GPUBuffer)
-			continue;
-
-		InitializeImpl(l_GPUBuffer);
-		if (l_GPUBuffer->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedGPUBuffers.emplace(l_GPUBuffer);
-	}
-
-	while (m_uninitializedRenderPasses.size() > 0)
-	{
-		RenderPassComponent* l_RenderPass;
-		m_uninitializedRenderPasses.tryPop(l_RenderPass);
-
-		if (!l_RenderPass)
-			continue;
-
-		InitializeImpl(l_RenderPass);
-		if (l_RenderPass->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedRenderPasses.push_back(l_RenderPass);
-	}
-
-	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
+	auto l_currentFrame = GetCurrentFrame();
 
 	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
-	Open(l_commandList, GPUEngineType::Graphics);
+	Execute(l_commandList, GPUEngineType::Graphics);
 	
-	for (auto i : m_initializedMeshes)
-	{
-		if (i->m_NeedUploadToGPU)
-		{
-			UploadToGPU(l_commandList, i);
-			i->m_NeedUploadToGPU = false;
-		}
-	}
+	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 
-	for (auto i : m_initializedTextures)
-	{
-		if (i->m_NeedUploadToGPU)
-		{
-			UploadToGPU(l_commandList, i);
-			i->m_NeedUploadToGPU = false;
-		}
-	}
+	// Insert the wait command on the GPU side here so any later render passes don't have to wait for this.
+	WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Compute, GPUEngineType::Graphics);
+}
 
-	for (auto i : m_initializedGPUBuffers)
-	{
-		if (i->m_NeedUploadToGPU)
-		{
-			UploadToGPU(l_commandList, i);
-			i->m_NeedUploadToGPU = false;
-		}
-	}
+bool IRenderingServer::CommandListBegin(RenderPassComponent* rhs, size_t frameIndex)
+{
+	if (rhs->m_RenderPassDesc.m_UseMultiFrames)
+		rhs->m_CurrentFrame = GetCurrentFrame();
+	else
+		rhs->m_CurrentFrame = frameIndex;
 
-	Close(l_commandList, GPUEngineType::Graphics);
+	Open(rhs->m_CommandLists[rhs->m_CurrentFrame], rhs->m_RenderPassDesc.m_GPUEngineType, rhs->m_PipelineStateObject);
 
-	auto l_semaphore = m_GlobalSemaphores[l_currentFrame];
-	Execute(l_commandList, l_semaphore, GPUEngineType::Graphics);
+	return true;
+}
 
-	Wait(l_semaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+bool IRenderingServer::SignalOnGPU(RenderPassComponent* rhs, GPUEngineType queueType)
+{
+	auto l_semaphore = rhs == nullptr ? nullptr : rhs->m_Semaphores[rhs->m_CurrentFrame];
+
+	return SignalOnGPU(l_semaphore, queueType);
+}
+
+bool IRenderingServer::WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+{
+	auto l_semaphore = rhs == nullptr ? nullptr : rhs->m_Semaphores[rhs->m_CurrentFrame];
+
+	return WaitOnGPU(l_semaphore, queueType, semaphoreType);
+}
+
+bool IRenderingServer::CommandListEnd(RenderPassComponent* rhs)
+{
+	auto l_commandList = rhs->m_CommandLists[rhs->m_CurrentFrame];
+	ChangeRenderTargetStates(rhs, l_commandList, Accessibility::ReadOnly);
+
+	Close(l_commandList, rhs->m_RenderPassDesc.m_GPUEngineType);
+
+	return true;
+}
+
+bool IRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
+{
+	return Execute(rhs->m_CommandLists[rhs->m_CurrentFrame], GPUEngineType);
 }
 
 bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility)
@@ -407,20 +454,11 @@ bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass,
 
 bool IRenderingServer::Present()
 {
-	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
-	auto l_commandList = m_SwapChainRenderPassComp->m_CommandLists[l_currentFrame];
-
-	CommandListBegin(m_SwapChainRenderPassComp, l_currentFrame);
-	TryToTransitState(m_SwapChainRenderPassComp->m_RenderTargets[l_currentFrame].m_Texture, l_commandList, Accessibility::ReadOnly);
-	CommandListEnd(m_SwapChainRenderPassComp);
-
-	ExecuteCommandList(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
-
 	PresentImpl();
 
-	WaitFence(nullptr, GPUEngineType::Graphics);
-	WaitFence(nullptr, GPUEngineType::Compute);
-	WaitFence(nullptr, GPUEngineType::Copy);
+	WaitOnCPU(nullptr, GPUEngineType::Graphics);
+	WaitOnCPU(nullptr, GPUEngineType::Compute);
+	WaitOnCPU(nullptr, GPUEngineType::Copy);
 
 	PostPresent();
 
@@ -585,15 +623,22 @@ uint32_t IRenderingServer::GetCurrentFrame()
 	return m_SwapChainRenderPassComp->m_CurrentFrame;
 }
 
-bool IRenderingServer::FinalizeSwapChain()
+bool IRenderingServer::PrepareSwapChainCommands()
 {
+	auto l_userPipelineOutput = m_GetUserPipelineOutputFunc();
+	if (!l_userPipelineOutput)
+		return false;
+
+	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);
 
 	BindRenderPassComponent(m_SwapChainRenderPassComp);
 
 	ClearRenderTargets(m_SwapChainRenderPassComp);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_GetUserPipelineOutputFunc(), 0);
+	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, l_userPipelineOutput, 0);
 	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
@@ -602,7 +647,24 @@ bool IRenderingServer::FinalizeSwapChain()
 
 	CommandListEnd(m_SwapChainRenderPassComp);
 
+	return true;
+}
+
+bool IRenderingServer::ExecuteSwapChainCommands()
+{
+	auto l_userPipelineOutput = m_GetUserPipelineOutputFunc();
+	if (!l_userPipelineOutput)
+		return false;
+
+	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	// We don't know on which queue the user pipeline output is, so we need to wait for all.
+	WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Compute);
+	WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+
 	ExecuteCommandList(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
+	SignalOnGPU(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
 
 	return true;
 }

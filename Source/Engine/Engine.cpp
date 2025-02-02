@@ -448,7 +448,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 				Get<RenderingContextService>()->Update();
 				Get<AnimationService>()->Update();
-				m_pImpl->m_RenderingClient->Prepare();
+				m_pImpl->m_RenderingClient->Update();
 			}
 
 			m_pImpl->m_RenderingServer->Update();
@@ -462,7 +462,10 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 				return;
 
 			m_pImpl->m_RenderingServerPreparationTask->Wait();
+			
+			m_pImpl->m_RenderingClient->PrepareCommands();			
 			Get<GUISystem>()->Update();
+			m_pImpl->m_RenderingServer->PrepareSwapChainCommands();
 		});
 
 	m_pImpl->m_RenderingServerTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Server Task", ITask::Type::Recurrent, 2), [&]()
@@ -474,14 +477,14 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
-			m_pImpl->m_RenderingServer->TransferDataToGPU();
+			m_pImpl->m_RenderingServer->ExecuteGlobalCommands();
 
 			if (!Get<SceneSystem>()->isLoadingScene())
 			{
 				m_pImpl->m_RenderingClient->ExecuteCommands();
 			}
 
-			m_pImpl->m_RenderingServer->FinalizeSwapChain();
+			m_pImpl->m_RenderingServer->ExecuteSwapChainCommands();
 
 			Get<GUISystem>()->ExecuteCommands();
 

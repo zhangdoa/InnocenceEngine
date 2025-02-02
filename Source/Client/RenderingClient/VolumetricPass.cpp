@@ -600,23 +600,23 @@ bool VolumetricPass::ExecuteCommands(bool visualize)
 	}
 
 	l_renderingServer->ExecuteCommandList(m_froxelizationRenderPassComp, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_froxelizationRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_renderingServer->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_renderingServer->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_renderingServer->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute);
-	l_renderingServer->WaitCommandQueue(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
+	l_renderingServer->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_rayMarchingRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_renderingServer->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Compute);
-	l_renderingServer->WaitCommandQueue(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
+	l_renderingServer->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	if (visualize)
 	{
 		l_renderingServer->ExecuteCommandList(m_visualizationRenderPassComp, GPUEngineType::Graphics);
-		l_renderingServer->WaitCommandQueue(m_visualizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+		l_renderingServer->WaitOnGPU(m_visualizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	}
 
 	return true;

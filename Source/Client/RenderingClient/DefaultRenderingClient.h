@@ -12,7 +12,8 @@ namespace Inno
 		// Inherited via IRenderingClient
 		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
-		bool Prepare() override;
+		bool Update() override;
+		bool PrepareCommands() override;
 		bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) override;
 		bool Terminate() override;
 

@@ -16,11 +16,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12RenderingServer::Update()
-{
-	return true;
-}
-
 // @TODO: The command list should be passed as a parameter.
 bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
 {
@@ -124,22 +119,6 @@ uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bind
 	return 0;
 }
 
-bool DX12RenderingServer::CommandListBegin(RenderPassComponent* rhs, size_t frameIndex)
-{
-	if (rhs->m_RenderPassDesc.m_UseMultiFrames)
-		rhs->m_CurrentFrame = GetCurrentFrame();
-	else
-		rhs->m_CurrentFrame = frameIndex;
-
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(rhs->m_CommandLists[rhs->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
-
-	Open(l_commandList, GPUEngineType::Graphics, l_PSO);
-	Open(l_commandList, GPUEngineType::Compute, l_PSO);
-
-	return true;
-}
-
 bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
@@ -160,87 +139,78 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 
 bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t index)
 {
-	if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics && rhs->m_RenderPassDesc.m_RenderTargetCount)
-	{
-		auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
-		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-		auto f_clearRTAsUAV = [&](DX12TextureComponent* l_RT)
-			{
-				if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
-				{
-					l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-						l_RT->m_UAV.Handle.GPUHandle,
-						l_RT->m_UAV.Handle.CPUHandle,
-						l_RT->m_DefaultHeapBuffer.Get(),
-						(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-						0,
-						NULL);
-				}
-				else
-				{
-					l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-						l_RT->m_UAV.Handle.GPUHandle,
-						l_RT->m_UAV.Handle.CPUHandle,
-						l_RT->m_DefaultHeapBuffer.Get(),
-						l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
-						0,
-						NULL);
-				}
-			};
+	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
+		return true;
 
-		if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
+	if (rhs->m_RenderPassDesc.m_RenderTargetCount == 0)
+		return true;
+
+	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto f_clearRenderTargetAsUAV = [&](DX12TextureComponent* l_RT)
 		{
-			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 			{
-				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(l_RT->m_UAV.Handle.GPUHandle, l_RT->m_UAV.Handle.CPUHandle,
+					l_RT->m_DefaultHeapBuffer.Get(), (UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
 			}
 			else
 			{
-				if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
-				{
-					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
-				}
-				else
-				{
-					for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-					{
-						l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
-					}
-				}
+				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(l_RT->m_UAV.Handle.GPUHandle, l_RT->m_UAV.Handle.CPUHandle,
+					l_RT->m_DefaultHeapBuffer.Get(), l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
 			}
+		};
+
+	if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
+	{
+		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		{
+			l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 		}
 		else
 		{
-			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 			{
-				f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame].m_Texture));
+				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 			}
 			else
 			{
-				if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
+				for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 				{
-					f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(index));
-				}
-				else
-				{
-
-					for (auto i : l_rhs->m_RenderTargets)
-					{
-						f_clearRTAsUAV(reinterpret_cast<DX12TextureComponent*>(i.m_Texture));
-					}
+					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 				}
 			}
 		}
-
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
+	}
+	else
+	{
+		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			auto l_flag = D3D12_CLEAR_FLAG_DEPTH;
-			if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
-			{
-				l_flag |= D3D12_CLEAR_FLAG_STENCIL;
-			}
-			l_commandList->m_DirectCommandList->ClearDepthStencilView(l_rhs->m_DSVDescCPUHandle, l_flag, 1.0f, 0x00, 0, nullptr);
+			f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame].m_Texture));
 		}
+		else
+		{
+			if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
+			{
+				f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(index));
+			}
+			else
+			{
+				for (auto i : l_rhs->m_RenderTargets)
+				{
+					f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(i.m_Texture));
+				}
+			}
+		}
+	}
+
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
+	{
+		auto l_flag = D3D12_CLEAR_FLAG_DEPTH;
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
+			l_flag |= D3D12_CLEAR_FLAG_STENCIL;
+
+		l_commandList->m_DirectCommandList->ClearDepthStencilView(l_rhs->m_DSVDescCPUHandle, l_flag, 1.0f, 0x00, 0, nullptr);
 	}
 
 	return true;
@@ -308,7 +278,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
 		auto l_handle = reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.Handle.GPUHandle;
-		commandList->m_DirectCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_handle);
+		commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_handle);
 	}
 
 	assert(false);
@@ -404,13 +374,9 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
 	if (shaderStage == ShaderStage::Compute)
-	{
 		return BindComputeResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
-	}
 	else
-	{
 		return BindGraphicsResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
-	}
 
 	return false;
 }
@@ -421,13 +387,9 @@ void DX12RenderingServer::PushRootConstants(RenderPassComponent* rhs, size_t roo
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-	{
 		l_commandList->m_DirectCommandList->SetGraphicsRoot32BitConstants(0, 1, &rootConstants, 0);
-	}
 	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
 		l_commandList->m_ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &rootConstants, 0);
-	}
 }
 
 bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount)
@@ -459,42 +421,12 @@ bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t 
 	return true;
 }
 
-bool DX12RenderingServer::CommandListEnd(RenderPassComponent* rhs)
-{
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-
-	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::ReadOnly);
-
-	Close(l_commandList, GPUEngineType::Graphics);
-	Close(l_commandList, GPUEngineType::Compute);
-
-	return true;
-}
-
-bool DX12RenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
-{
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-
-	return Execute(l_commandList, l_semaphore, GPUEngineType);
-}
-
-bool DX12RenderingServer::WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
-{
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
-	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-
-	return Wait(l_semaphore, queueType, semaphoreType);
-}
-
-bool DX12RenderingServer::WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::WaitOnCPU(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
 	auto l_semaphore = l_rhs == nullptr ? nullptr : reinterpret_cast<DX12Semaphore*>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 
-	return WaitFence(l_semaphore, GPUEngineType);
+	return WaitOnCPU(l_semaphore, GPUEngineType);
 }
 
 bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility)

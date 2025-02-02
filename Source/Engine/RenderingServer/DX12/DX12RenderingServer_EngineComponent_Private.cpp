@@ -576,7 +576,7 @@ bool DX12RenderingServer::Open(ICommandList* commandList, GPUEngineType GPUEngin
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
 	auto l_pipelineStateObject = reinterpret_cast<DX12PipelineStateObject*>(pipelineStateObject);
 	auto l_PSO = l_pipelineStateObject ? l_pipelineStateObject->m_PSO.Get() : nullptr;
-	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
+	auto l_currentFrame = GetCurrentFrame();
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{
 		auto l_DX12CommandList = l_commandList->m_DirectCommandList;
@@ -618,54 +618,54 @@ bool DX12RenderingServer::Close(ICommandList* commandList, GPUEngineType GPUEngi
 	return true;
 }
 
-bool DX12RenderingServer::Execute(ICommandList* commandList, ISemaphore* semaphore, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType)
 {
-	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(semaphore);
-	auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphores[l_currentFrame]);
+	auto l_isOnGlobalSemaphore = l_semaphore == l_globalSemaphore;
 
-	if (GPUEngineType == GPUEngineType::Graphics)
+	if (queueType == GPUEngineType::Graphics)
 	{
 		l_globalSemaphore->m_DirectCommandQueueSemaphore.fetch_add(1);
 		uint64_t l_directCommandFinishedSemaphore = l_globalSemaphore->m_DirectCommandQueueSemaphore.load();
-		l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
 
-		ID3D12CommandList* l_directCommandLists[] = { l_commandList->m_DirectCommandList.Get() };
-		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
+		if (l_semaphore && !l_isOnGlobalSemaphore)
+			l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+
 		m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
 	}
-	else if (GPUEngineType == GPUEngineType::Compute)
+	else if (queueType == GPUEngineType::Compute)
 	{
 		l_globalSemaphore->m_ComputeCommandQueueSemaphore.fetch_add(1);
 		UINT64 l_computeCommandFinishedSemaphore = l_globalSemaphore->m_ComputeCommandQueueSemaphore.load();
-		l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
 
-		ID3D12CommandList* l_computeCommandLists[] = { l_commandList->m_ComputeCommandList.Get() };
-		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
+		if (l_semaphore && !l_isOnGlobalSemaphore)
+			l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
+		
 		m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
 	}
-	else if (GPUEngineType == GPUEngineType::Copy)
+	else if (queueType == GPUEngineType::Copy)
 	{
 		l_globalSemaphore->m_CopyCommandQueueSemaphore.fetch_add(1);
 		UINT64 l_copyCommandFinishedSemaphore = l_globalSemaphore->m_CopyCommandQueueSemaphore.load();
-		l_semaphore->m_CopyCommandQueueSemaphore = l_copyCommandFinishedSemaphore;
 
-		ID3D12CommandList* l_copyCommandLists[] = { l_commandList->m_CopyCommandList.Get() };
-		m_copyCommandQueue->ExecuteCommandLists(1, l_copyCommandLists);
+		if (l_semaphore && !l_isOnGlobalSemaphore)
+			l_semaphore->m_CopyCommandQueueSemaphore = l_copyCommandFinishedSemaphore;
+
 		m_copyCommandQueue->Signal(m_copyCommandQueueFence.Get(), l_copyCommandFinishedSemaphore);
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::Wait(ISemaphore* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool DX12RenderingServer::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12Fence* fence = nullptr;
-	uint64_t semaphore = 0;
-	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
-	auto l_rhs = reinterpret_cast<DX12Semaphore*>(rhs);
+	uint64_t semaphoreValue = 0;
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_semaphore = semaphore ? reinterpret_cast<DX12Semaphore*>(semaphore) : reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 
 	if (queueType == GPUEngineType::Graphics)
 	{
@@ -683,33 +683,57 @@ bool DX12RenderingServer::Wait(ISemaphore* rhs, GPUEngineType queueType, GPUEngi
 	if (semaphoreType == GPUEngineType::Graphics)
 	{
 		fence = m_directCommandQueueFence.Get();
-		semaphore = l_rhs->m_DirectCommandQueueSemaphore;
+		semaphoreValue = l_semaphore->m_DirectCommandQueueSemaphore;
 	}
 	else if (semaphoreType == GPUEngineType::Compute)
 	{
 		fence = m_computeCommandQueueFence.Get();
-		semaphore = l_rhs->m_ComputeCommandQueueSemaphore;
+		semaphoreValue = l_semaphore->m_ComputeCommandQueueSemaphore;
 	}
 	else if (semaphoreType == GPUEngineType::Copy)
 	{
 		fence = m_copyCommandQueueFence.Get();
-		semaphore = l_rhs->m_CopyCommandQueueSemaphore;
+		semaphoreValue = l_semaphore->m_CopyCommandQueueSemaphore;
 	}
 
 	if (commandQueue && fence)
 	{
-		commandQueue->Wait(fence, semaphore);
+		commandQueue->Wait(fence, semaphoreValue);
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::WaitFence(DX12Semaphore* rhs, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::Execute(ICommandList* commandList, GPUEngineType queueType)
+{
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+
+	if (queueType == GPUEngineType::Graphics)
+	{
+		ID3D12CommandList* l_directCommandLists[] = { l_commandList->m_DirectCommandList.Get() };
+		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
+	}
+	else if (queueType == GPUEngineType::Compute)
+	{
+		ID3D12CommandList* l_computeCommandLists[] = { l_commandList->m_ComputeCommandList.Get() };
+		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
+	}
+	else if (queueType == GPUEngineType::Copy)
+	{
+		ID3D12CommandList* l_copyCommandLists[] = { l_commandList->m_CopyCommandList.Get() };
+		m_copyCommandQueue->ExecuteCommandLists(1, l_copyCommandLists);
+	}
+
+	return true;
+}
+
+bool DX12RenderingServer::WaitOnCPU(DX12Semaphore* rhs, GPUEngineType GPUEngineType)
 {
 	UINT64 semaphore = 0;
 	HANDLE* fenceEvent = nullptr;
-	auto l_currentFrame = m_SwapChainRenderPassComp->m_CurrentFrame;
-	auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphores[l_currentFrame]);
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{

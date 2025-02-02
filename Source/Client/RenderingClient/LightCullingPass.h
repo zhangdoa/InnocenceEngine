@@ -16,6 +16,7 @@ namespace Inno
 
 		bool Setup(ISystemConfig *systemConfig = nullptr) override;
 		bool Initialize() override;
+		bool Update() override;		
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
@@ -43,7 +44,6 @@ namespace Inno
 		Math::TVec4<uint32_t> m_numThreads;
 		Math::TVec4<uint32_t> m_numThreadGroups;
 
-		bool CreateResources();
 		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno

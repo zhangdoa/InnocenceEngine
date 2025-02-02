@@ -59,8 +59,8 @@ namespace Inno
 		bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		bool CommandListEnd(RenderPassComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
-		bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
-		bool WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
+		bool WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
+		bool WaitOnCPU(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 
 		bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
 

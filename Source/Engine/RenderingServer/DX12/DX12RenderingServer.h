@@ -19,8 +19,6 @@ namespace Inno
     public:
         INNO_CLASS_CONCRETE_NON_COPYABLE(DX12RenderingServer);
 
-        bool Update() override;
-        
         // Inherited via IRenderingServer
         // In DX12RenderingServer_ComponentPool.cpp
         MeshComponent* AddMeshComponent(const char* name = "") override;
@@ -49,10 +47,13 @@ namespace Inno
         bool ClearTextureComponent(TextureComponent* rhs) override;
         bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
         bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
-
+        
+        bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) override;
+        bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) override;
+        bool Execute(ICommandList* commandList, GPUEngineType queueType) override;
+        
         uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
-        bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
         bool BindRenderPassComponent(RenderPassComponent* rhs) override;
         bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
         bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) override;
@@ -60,10 +61,7 @@ namespace Inno
         void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
         bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
         bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
-        bool CommandListEnd(RenderPassComponent* rhs) override;
-        bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
-        bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
-        bool WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
+        bool WaitOnCPU(RenderPassComponent* rhs, GPUEngineType queueType) override;
 
         bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
 
@@ -99,8 +97,6 @@ namespace Inno
 
         bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject) override;
         bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) override;
-        bool Execute(ICommandList* commandList, ISemaphore* semaphore, GPUEngineType GPUEngineType) override;
-        bool Wait(ISemaphore* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
 
         bool InitializePool() override;
         bool TerminatePool() override;
@@ -174,7 +170,7 @@ namespace Inno
         bool SetDescriptorHeaps(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool SetRenderTargets(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool PreparePipeline(DX12RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
-        bool WaitFence(DX12Semaphore* rhs, GPUEngineType GPUEngineType);
+        bool WaitOnCPU(DX12Semaphore* rhs, GPUEngineType GPUEngineType);
         bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
         bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp);

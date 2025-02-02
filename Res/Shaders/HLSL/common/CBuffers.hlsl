@@ -28,7 +28,7 @@ SamplerState g_Samplers[] : register(s0);
 [[vk::binding(6, 0)]]
 cbuffer dispatchParamsCBuffer : register(b6)
 {
-	DispatchParam_CB dispatchParams[8];
+	DispatchParams_CB dispatchParams[8];
 }
 
 [[vk::binding(7, 0)]]

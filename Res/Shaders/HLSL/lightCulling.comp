@@ -9,6 +9,24 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+	PerFrame_CB g_Frame;
+}
+
+[[vk::binding(1, 0)]]
+cbuffer PointLightCBuffer : register(b1)
+{
+	PointLight_CB g_PointLights[NR_POINT_LIGHTS];
+};
+
+[[vk::binding(2, 0)]]
+cbuffer PerFrameConstantBuffer : register(b2)
+{
+	DispatchParams_CB g_DispatchParams[NUM_DISPATCH_PARAMS];
+}
+
 [[vk::binding(0, 1)]]
 RWStructuredBuffer<Frustum> in_Frustums : register(u0);
 [[vk::binding(1, 1)]]
@@ -18,9 +36,9 @@ RWStructuredBuffer<uint> g_LightIndexList : register(u2);
 [[vk::binding(3, 1)]]
 RWTexture2D<uint2> g_LightGrid : register(u3);
 [[vk::binding(4, 1)]]
-RWTexture2D<float4> g_DebugTexture : register(u4);
+RWTexture2D<float4> g_DebugHeatMap : register(u4);
 [[vk::binding(0, 2)]]
-Texture2D DepthTextureVS : register(t0);
+Texture2D g_DepthTextureViewSpace : register(t0);
 [[vk::binding(0, 3)]]
 SamplerState in_samplerTypePoint : register(s0);
 
@@ -44,9 +62,9 @@ void AppendLight(uint lightIndex)
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
 void main(ComputeInputType input)
 {
-	// Calculate min & max depth in threadgroup / tile.
+	// Calculate min & max depth in thread group / tile.
 	int2 texCoord = input.dispatchThreadID.xy;
-	float fDepth = DepthTextureVS.Load(int3(texCoord, 0)).r;
+	float fDepth = g_DepthTextureViewSpace.Load(int3(texCoord, 0)).r;
 
 	uint uDepth = asuint(fDepth);
 
@@ -58,7 +76,7 @@ void main(ComputeInputType input)
 		l_uMaxDepth = 0;
 		l_LightCount = 0;
 		l_LightIndexStartOffset = 0;
-		l_TileFrustum = in_Frustums[input.groupID.x + (input.groupID.y * dispatchParams[1].numThreadGroups.x)];
+		l_TileFrustum = in_Frustums[input.groupID.x + (input.groupID.y * g_DispatchParams[1].numThreadGroups.x)];
 	}
 
 	GroupMemoryBarrierWithGroupSync();
@@ -73,9 +91,9 @@ void main(ComputeInputType input)
 	float fMaxDepth = asfloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
-	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), perFrameCBuffer.p_inv).z;
-	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), perFrameCBuffer.p_inv).z;
-	float nearClipVS = ClipToView(float4(0, 0, 0, 1), perFrameCBuffer.p_inv).z;
+	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), g_Frame.p_inv).z;
+	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), g_Frame.p_inv).z;
+	float nearClipVS = ClipToView(float4(0, 0, 0, 1), g_Frame.p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { float3(0, 0, -1), -minDepthVS };
@@ -84,11 +102,11 @@ void main(ComputeInputType input)
 	uint i = 0u;
 	for (i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		PointLight_CB light = pointLights[i];
+		PointLight_CB light = g_PointLights[i];
 		// w component of luminousFlux is the attenuation radius
 		if (light.luminousFlux.w > 0.0f)
 		{
-			float4 lightPos_VS = mul(light.position, perFrameCBuffer.v);
+			float4 lightPos_VS = mul(light.position, g_Frame.v);
 			Sphere sphere = { lightPos_VS.xyz, light.luminousFlux.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{
@@ -118,15 +136,15 @@ void main(ComputeInputType input)
 	}
 
 	// Write to debug heat map texture
-	g_DebugTexture[texCoord] = float4(0, 0, 0, 0);
+	g_DebugHeatMap[texCoord] = float4(0, 0, 0, 0);
 
 	if (input.groupThreadID.x == 0 || input.groupThreadID.y == 0)
 	{
-		g_DebugTexture[texCoord] = float4(0, 0, 0, 0.9f);
+		g_DebugHeatMap[texCoord] = float4(0, 0, 0, 0.9f);
 	}
 	else if (input.groupThreadID.x == 1 || input.groupThreadID.y == 1)
 	{
-		g_DebugTexture[texCoord] = float4(1, 1, 1, 0.5f);
+		g_DebugHeatMap[texCoord] = float4(1, 1, 1, 0.5f);
 	}
 	else if (l_LightCount > 0)
 	{
@@ -140,10 +158,10 @@ void main(ComputeInputType input)
 		{
 			heat = debugColors[l_LightCount - 1];
 		}
-		g_DebugTexture[texCoord] = heat;
+		g_DebugHeatMap[texCoord] = heat;
 	}
 	else
 	{
-		g_DebugTexture[texCoord] = float4(0, 0, 0, 1);
+		g_DebugHeatMap[texCoord] = float4(0, 0, 0, 1);
 	}
 }

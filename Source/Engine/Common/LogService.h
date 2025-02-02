@@ -1,8 +1,8 @@
 #pragma once
 #include "STL14.h"
+#include "Enum.h"
 
-namespace Inno
-{
+namespace Inno {
 	enum class LogLevel { Verbose, Success, Warning, Error };
 
 	class LogService
@@ -19,7 +19,7 @@ namespace Inno
 				return;
 			}
 			LogStartOfLine(logLevel, context);
-			LogContent(std::forward<Args>(values) ...);
+			LogContent(std::forward<Args>(values)...);
 			LogEndOfLine();
 		}
 
@@ -29,20 +29,21 @@ namespace Inno
 		template<typename Arg>
 		void LogContent(Arg&& value)
 		{
-			LogImpl(value);
+			LogImpl(std::forward<Arg>(value));
 		}
 
 		template<typename T, typename... Args>
 		void LogContent(T&& first, Args&&... values)
 		{
 			LogContent(std::forward<T>(first));
-			LogContent(std::forward<Args>(values) ...);
+			LogContent(std::forward<Args>(values)...);
 		}
 
 	private:
 		void LogStartOfLine(LogLevel logLevel, const char* context);
 		void LogEndOfLine();
 
+		// Existing overloads…
 		void LogImpl(const void* logMessage);
 		void LogImpl(bool logMessage);
 		void LogImpl(uint8_t logMessage);
@@ -58,10 +59,17 @@ namespace Inno
 		void LogImpl(const char* logMessage);
 		void LogImpl(const wchar_t* logMessage);
 
+		template<typename T,
+			typename = std::enable_if_t<std::is_enum_v<T> && Inno::Enum::IsRegisteredEnum<T>::value>>
+		void LogImpl(T value)
+		{
+			LogImpl(Inno::Enum::ToString(value));
+		}
+
 		std::ofstream m_LogFile;
 		std::mutex m_Mutex;
 		LogLevel m_LogLevel;
 	};
 
-	#define Log(level, ...) g_Engine->Get<LogService>()->Print(LogLevel::level, __FUNCTION__, __VA_ARGS__)
+#define Log(level, ...) g_Engine->Get<LogService>()->Print(LogLevel::level, __FUNCTION__, __VA_ARGS__)
 }

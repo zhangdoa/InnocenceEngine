@@ -96,7 +96,7 @@ bool OpaquePass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_ObjectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
 }
@@ -149,6 +149,8 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+	
 	return true;
 }
 
@@ -159,5 +161,11 @@ RenderPassComponent* OpaquePass::GetRenderPassComp()
 
 GPUResourceComponent* OpaquePass::GetResult()
 {
+	if (!m_RenderPassComp)
+		return nullptr;
+	
+	if (m_RenderPassComp->m_RenderTargets.size() == 0)
+		return nullptr;
+
 	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
 }

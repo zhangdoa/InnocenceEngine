@@ -135,23 +135,6 @@ function(build_physx)
     set(PHYSX_LIBS ${PHYSX_LIBS} PARENT_SCOPE)
     set(PHYSX_INCLUDE_DIR "${PHYSX_DIR}/physx/include" PARENT_SCOPE)
 endfunction()
-
-function(build_glad)
-    # Path to glad directory
-    set(GLAD_SOURCES_DIR "${INNO_GITSUBMODULE_DIRECTORIES}/GLAD")
-
-    # Install the dependencies
-    execute_process(
-        COMMAND ${Python_EXECUTABLE} -m pip install -r ${GLAD_SOURCES_DIR}/requirements.txt
-        )
-
-    # Path to glad cmake files
-    add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
-
-    # Specify glad settings
-    set(GLAD_HEADER_LIB_NAME "glad_gl_core_46")
-    glad_add_library(${GLAD_HEADER_LIB_NAME} REPRODUCIBLE API gl:core=4.6)
-endfunction()
     
 build_third_party(
     assimp
@@ -160,5 +143,3 @@ build_third_party(
 )
 
 build_physx()
-
-build_glad()

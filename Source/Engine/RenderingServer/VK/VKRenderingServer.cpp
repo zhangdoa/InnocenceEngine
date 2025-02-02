@@ -383,7 +383,7 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngineTy
 	return true;
 }
 
-bool VKRenderingServer::WaitCommandQueue(RenderPassComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType != semaphoreType)
 	{
@@ -413,7 +413,7 @@ bool VKRenderingServer::WaitCommandQueue(RenderPassComponent *rhs, GPUEngineType
 	return true;
 }
 
-bool VKRenderingServer::WaitFence(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
+bool VKRenderingServer::WaitOnCPU(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType)
 	{

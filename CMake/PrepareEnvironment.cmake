@@ -38,36 +38,10 @@ file(COPY
     ${IMGUI_SRC}/backends/imgui_impl_dx12.cpp
     DESTINATION ${IMGUI_DST}
 )
-file(COPY
-    ${IMGUI_SRC}/backends/imgui_impl_opengl3.h
-    ${IMGUI_SRC}/backends/imgui_impl_opengl3.cpp
-    ${IMGUI_SRC}/backends/imgui_impl_opengl3_loader.h 
-    DESTINATION ${IMGUI_DST}
-)
 elseif (APPLE)
     message(STATUS "Support for ImGUI is not ready on macOS yet")
 elseif (UNIX)
-message(STATUS "Linux detected. Applying Linux-specific ImGui fix...")
-
-# Define the ImGui file paths
-set(IMGUI_HEADER ${IMGUI_SRC}/backends/imgui_impl_opengl3.h)
-set(TEMP_HEADER ${CMAKE_BINARY_DIR}/temp.h.new)
-
-# Add custom commands to modify the ImGui header
-add_custom_command(
-    OUTPUT ${IMGUI_HEADER}
-    COMMAND echo "#define IMGUI_IMPL_OPENGL_LOADER_GLAD" > ${TEMP_HEADER}
-    COMMAND cat ${IMGUI_HEADER} >> ${TEMP_HEADER}
-    COMMAND mv -f ${TEMP_HEADER} ${IMGUI_HEADER}
-    DEPENDS ${IMGUI_HEADER}
-    COMMENT "Updating ImGui OpenGL loader header for Linux"
-)
-file(COPY
-    ${IMGUI_SRC}/backends/imgui_impl_opengl3.h
-    ${IMGUI_SRC}/backends/imgui_impl_opengl3.cpp
-    ${IMGUI_SRC}/backends/imgui_impl_opengl3_loader.h 
-    DESTINATION ${IMGUI_DST}
-)
+message(STATUS "Linux detected.")
 else()
     # Fallback for unknown platforms
     message(FATAL_ERROR "Unsupported platform detected!")
@@ -83,19 +57,6 @@ file(COPY
 file(COPY
     ${INNO_GITSUBMODULE_DIRECTORIES}/QDarkStyleSheet/qdarkstyle/dark/darkstyle.qss
     DESTINATION ${CMAKE_SOURCE_DIR}/Source/Editor/qdarkstyle/
-)
-
-# Download Khronos headers
-message(STATUS "Downloading Khronos headers...")
-file(MAKE_DIRECTORY ${INNO_EXTERNAL_DIRECTORIES}/Include/GL)
-file(DOWNLOAD
-    https://www.khronos.org/registry/OpenGL/api/GL/wglext.h
-    ${INNO_EXTERNAL_INCLUDE_DIRECTORIES}/GL/wglext.h
-)
-
-file(DOWNLOAD
-    https://www.khronos.org/registry/OpenGL/api/GL/glext.h
-    ${INNO_EXTERNAL_INCLUDE_DIRECTORIES}/GL/glext.h
 )
 
 # Include the module for downloading DXC binaries

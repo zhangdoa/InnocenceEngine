@@ -8,6 +8,9 @@ static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
 static const int NR_CSM_SPLITS = 4;
 
+// @TODO: Do not hardcode this
+static const int NUM_DISPATCH_PARAMS = 8;
+
 static const float FLT_MIN = 1.175494351e-38;
 static const float FLT_MAX = 3.402823466e+38;
 
@@ -134,7 +137,7 @@ struct CSM_CB
 	float4 padding[6];
 };
 
-struct DispatchParam_CB
+struct DispatchParams_CB
 {
 	uint4 numThreadGroups;
 	uint4 numThreads;
@@ -181,7 +184,7 @@ struct AnimationPass_CB
 struct Plane
 {
 	float3 N;
-	float  d;
+	float d;
 };
 
 Plane ComputePlane(float3 p0, float3 p1, float3 p2)
@@ -199,13 +202,13 @@ Plane ComputePlane(float3 p0, float3 p1, float3 p2)
 
 struct Frustum
 {
-	Plane planes[4]; // LRTB
+	Plane planes[4]; // Left, right, top, bottom
 };
 
 struct Sphere
 {
 	float3 c;
-	float  r;
+	float r;
 };
 
 bool SphereInsidePlane(Sphere sphere, Plane plane)

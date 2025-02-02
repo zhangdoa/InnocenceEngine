@@ -57,7 +57,7 @@ bool BRDFLUTPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeTextureComponent(m_Result);
 
-	m_ObjectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
 }
@@ -80,6 +80,9 @@ ObjectStatus BRDFLUTPass::GetStatus()
 
 bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
@@ -90,6 +93,8 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+	
 	return true;
 }
 

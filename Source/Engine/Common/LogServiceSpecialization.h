@@ -1,4 +1,5 @@
 #include "LogService.h"
+#include "Enum.h"
 #include "MathHelper.h"
 #include "Object.h"
 

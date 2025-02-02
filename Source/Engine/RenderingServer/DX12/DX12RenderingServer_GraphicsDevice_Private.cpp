@@ -304,17 +304,13 @@ bool DX12RenderingServer::CreateSyncPrimitives()
 
     Log(Verbose, "Fences for global CommandQueues have been created.");
 
+    auto l_GlobalSemaphore = static_cast<DX12Semaphore*>(AddSemaphore());
+    l_GlobalSemaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+    l_GlobalSemaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+    l_GlobalSemaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+    m_GlobalSemaphore = l_GlobalSemaphore;
+    
     Log(Verbose, "Fence events for global CommandQueues have been created.");
-
-    m_GlobalSemaphores.resize(m_swapChainImageCount);
-    for (size_t i = 0; i < m_GlobalSemaphores.size(); i++)
-    { 
-        auto l_semaphore = static_cast<DX12Semaphore*>(AddSemaphore());
-        l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-        l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-        l_semaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-        m_GlobalSemaphores[i] = l_semaphore;
-    }
     
     return true;
 }

@@ -6,6 +6,15 @@
 #undef max
 #endif
 
+INNO_ENUM
+(
+	GPUEngineType,
+	Invalid,
+	Graphics,
+	Compute,
+	Copy
+);
+
 namespace Inno
 {
 	class GPUResourceComponent;
@@ -206,14 +215,6 @@ namespace Inno
 			BlendDesc m_BlendDesc = {};
 			RasterizerDesc m_RasterizerDesc = {};
 			ViewportDesc m_ViewportDesc = {};
-		};
-
-		enum class GPUEngineType
-		{
-			Invalid,
-			Graphics,
-			Compute,
-			Copy
 		};
 
 		enum class ShaderStage

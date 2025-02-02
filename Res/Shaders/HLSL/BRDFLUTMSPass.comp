@@ -1,38 +1,85 @@
-// shadertype=hlsl
+// ============================================================================
+// BRDF LUT Multi-Scattering Correction Shader
+//
+// This shader computes an approximation of multiple-bounce surface reflection.
+// It reads a precomputed BRDF LUT (from the split-sum integration) where the 
+// blue channel stores an extra term, RsF1. According to Real-Time Rendering
+// (4th edition, section "9.8.2 Multiple-Bounce Surface Reflection"), the 
+// multi-scattering term is given by the cosine-weighted average of RsF1 over 
+// the hemisphere, scaled by a factor (typically 2).
+// ============================================================================
+
 #include "common/common.hlsl"
 
+// ----------------------------------------------------------------------------
+// ComputeInputType structure
+//
+// Contains information about the current thread's group and dispatch IDs.
 struct ComputeInputType
 {
-	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
-	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
-	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
-	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+	uint3 groupID : SV_GroupID; // Thread group ID.
+	uint3 groupThreadID : SV_GroupThreadID; // Local thread ID within the group.
+	uint3 dispatchThreadID : SV_DispatchThreadID; // Global thread ID.
+	uint  groupIndex : SV_GroupIndex; // Flattened local index within the group.
 };
 
+// ----------------------------------------------------------------------------
+// Texture Bindings
+//
+// - in_BRDFLUT: Input texture that contains the precomputed split-sum BRDF LUT.
+//             The blue channel (".b") is assumed to store the extra RsF1 term.
+// - out_BRDFLUTMSPassRT0: Output texture where the multi-scattering corrected value
+//             will be written.
+// ----------------------------------------------------------------------------
 [[vk::binding(0, 0)]]
 Texture2D in_BRDFLUT : register(t0);
+
 [[vk::binding(0, 1)]]
 RWTexture2D<float4> out_BRDFLUTMSPassRT0 : register(u0);
 
+// ----------------------------------------------------------------------------
+// Multi-Scattering Correction Compute Shader
+//
+// Each thread processes one texel in the output LUT. The y-coordinate maps to a 
+// particular view/roughness value, and for that row the shader integrates the extra 
+// RsF1 term (from the blue channel) along the x-axis using cosine weighting. The 
+// final result approximates the contribution from multiple scattering, scaled by 2.
+// ----------------------------------------------------------------------------
 [numthreads(16, 16, 1)]
 void main(ComputeInputType input)
 {
-	float averangeRsF1 = 0.0;
-	float currentRsF1 = 0.0;
+	// We will compute a cosine-weighted average of the RsF1 term.
+	float averageRsF1 = 0.0;
+
+	// The LUT is assumed to be 512x512.
 	const uint textureSize = 512u;
 
-	// "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection", "The function $\overline{RsF1}$ is the cosine-weighted average value of RsF1 over the hemisphere"
+	// For the current row (determined by the y-coordinate of the thread),
+	// loop over the x-axis samples.
 	for (uint i = 0u; i < textureSize; ++i)
 	{
-		currentRsF1 = in_BRDFLUT[int2(i, input.dispatchThreadID.y)].b;
-		// cos-weighted
+		// Fetch the precomputed RsF1 value from the blue channel of the LUT.
+		float currentRsF1 = in_BRDFLUT[int2(i, input.dispatchThreadID.y)].b;
+
+		// Determine the cosine weight for this sample.
+		// We map the sample index to a cosine factor (mu) in the range [0, 1].
 		float mu = float(i) / float(textureSize);
+
+		// Weight the RsF1 value by the cosine factor.
 		currentRsF1 *= mu;
-		averangeRsF1 += currentRsF1;
+
+		// Accumulate the weighted value.
+		averageRsF1 += currentRsF1;
 	}
 
-	averangeRsF1 /= float(textureSize);
-	averangeRsF1 *= 2;
+	// Compute the average by dividing by the number of samples.
+	averageRsF1 /= float(textureSize);
 
-	out_BRDFLUTMSPassRT0[input.dispatchThreadID.xy] = float4(averangeRsF1, averangeRsF1, averangeRsF1, 1.0);
+	// Scale the average by 2. This scaling factor comes from the multiple scattering
+	// formulation in the literature (e.g., Real-Time Rendering, 4th edition).
+	averageRsF1 *= 2.0;
+
+	// Write the final result into the output texture.
+	// Here we store the same value in the R, G, and B channels with alpha set to 1.
+	out_BRDFLUTMSPassRT0[input.dispatchThreadID.xy] = float4(averageRsF1, averageRsF1, averageRsF1, 1.0);
 }

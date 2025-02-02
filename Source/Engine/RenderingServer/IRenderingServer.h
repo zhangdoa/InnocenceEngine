@@ -65,13 +65,14 @@ namespace Inno
         virtual bool CreateFenceEvents(RenderPassComponent* rhs) {	return false; }
 
 		// Rendering APIs
-		virtual void TransferDataToGPU();
+		virtual void ExecuteGlobalCommands();
 		uint32_t GetSwapChainImageCount();
 		RenderPassComponent* GetSwapChainRenderPassComponent();
 		uint32_t GetCurrentFrame();
-		virtual bool FinalizeSwapChain();
+		virtual bool PrepareSwapChainCommands();
+		virtual bool ExecuteSwapChainCommands();
 		
-		virtual bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) { return false; }
+		virtual bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex);
 		virtual bool BindRenderPassComponent(RenderPassComponent* rhs) { return false; }
 		virtual bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) { return false; }
 		virtual bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) { return false; }
@@ -79,11 +80,12 @@ namespace Inno
 		virtual void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) {}
 		virtual bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount = 1) { return false; }
 		virtual bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount = 1) { return false; }
+		virtual bool SignalOnGPU(RenderPassComponent* rhs, GPUEngineType queueType);
+		virtual bool WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType);
+		virtual bool CommandListEnd(RenderPassComponent* rhs);
 		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
-		virtual bool CommandListEnd(RenderPassComponent* rhs) { return false; }
-		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) { return false; }
-		virtual bool WaitCommandQueue(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
-		virtual bool WaitFence(RenderPassComponent* rhs, GPUEngineType GPUEngineType) { return false; }
+		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType);
+		virtual bool WaitOnCPU(RenderPassComponent* rhs, GPUEngineType GPUEngineType)  { return false; }
 		virtual bool Present();
 
 		virtual bool TryToTransitState(TextureComponent *rhs, ICommandList *commandList, Accessibility accessibility) { return false; }
@@ -124,6 +126,10 @@ namespace Inno
 			return UploadGPUBufferComponent(rhs, &GPUBufferValue[0], startOffset, range);
 		}
 
+		virtual bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) { return false; }
+		virtual bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
+		virtual bool Execute(ICommandList* commandList, GPUEngineType queueType) { return false; }
+
 	protected:
 		virtual bool InitializeImpl(MeshComponent* rhs) { return false; }
 		virtual bool InitializeImpl(TextureComponent* rhs) { return false; }
@@ -138,8 +144,6 @@ namespace Inno
 		virtual bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
 		virtual bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
 		virtual bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) { return false; }
-		virtual bool Execute(ICommandList* commandList, ISemaphore* semaphore, GPUEngineType GPUEngineType) { return false; }
-		virtual bool Wait(ISemaphore* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
 
 		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility);
 		
@@ -163,7 +167,7 @@ namespace Inno
         TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 		
 		std::vector<ICommandList*> m_GlobalCommandLists;
-		std::vector<ISemaphore*> m_GlobalSemaphores;
+		ISemaphore* m_GlobalSemaphore;
 
 		const uint32_t m_swapChainImageCount = 2;		
         std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;

@@ -69,7 +69,7 @@ bool BRDFLUTMSPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeTextureComponent(m_Result);
 
-	m_ObjectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
 }
@@ -92,6 +92,9 @@ ObjectStatus BRDFLUTMSPass::GetStatus()
 
 bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+			
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
@@ -101,9 +104,11 @@ bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
     l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 1);
 	l_renderingServer->Dispatch(m_RenderPassComp, 32, 32, 1);
-
+	
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+	
 	return true;
 }
 

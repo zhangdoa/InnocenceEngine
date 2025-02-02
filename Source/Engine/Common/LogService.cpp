@@ -129,6 +129,8 @@ void LogService::LogStartOfLine(LogLevel logLevel, const char* context)
 	std::cout << LoggerNS::ResetColor();
 	
 	m_LogFile << LoggerNS::GetTimestamp;
+	m_LogFile << "[" << LoggerNS::LogLevelToString(logLevel) << "]";
+	m_LogFile << "[" << context << "] ";
 }
 
 void LogService::LogEndOfLine()

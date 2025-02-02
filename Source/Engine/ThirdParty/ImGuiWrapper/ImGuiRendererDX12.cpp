@@ -72,14 +72,17 @@ bool ImGuiRenderPass::Initialize()
 	// The actual rendering is called by the rendering server
 	m_RenderPassComp->m_CustomCommandsFunc = [&](ICommandList* cmdList)
 		{
-			auto l_dx12renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
-			auto l_swapChainRenderPassComp = reinterpret_cast<DX12RenderPassComponent*>(l_dx12renderingServer->GetSwapChainRenderPassComponent());
-			l_dx12renderingServer->WaitCommandQueue(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+			auto l_renderingServer = g_Engine->getRenderingServer();
+			auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
+			auto l_currentFrame =l_renderingServer->GetCurrentFrame();
 
 			auto dx12CmdList = reinterpret_cast<DX12CommandList*>(cmdList);
 			auto directCommandList = dx12CmdList->m_DirectCommandList.Get();
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), directCommandList);
+
+			// Change the swap chain state to read only.
+			l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_RenderTargets[l_currentFrame].m_Texture, dx12CmdList, Accessibility::ReadOnly);
 		};
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -175,16 +178,21 @@ bool ImGuiRendererDX12::Prepare()
 {
 	m_RenderPass->PrepareCommandList(nullptr);
 
-
 	return true;
 }
 
 bool ImGuiRendererDX12::ExecuteCommands()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	l_renderingServer->ExecuteCommandList(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
-	l_renderingServer->WaitCommandQueue(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+	auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
 
+	// Let the swap chain rendering finish.
+	l_renderingServer->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);	
+	l_renderingServer->ExecuteCommandList(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
+	l_renderingServer->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
+
+	// Let the ImGui rendering finish.
+	l_renderingServer->WaitOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 	return true;
 }
 
