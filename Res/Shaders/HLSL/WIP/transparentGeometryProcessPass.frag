@@ -39,14 +39,14 @@ void main(PixelInputType input)
 	float roughness = materialCBuffer.MRAT.y;
 
 	// Specular BRDF
-	float3 FresnelFactor = fresnelSchlick(F0, F90, NdotV);
+	float3 FresnelFactor = Fresnel_Schlick(F0, F90, NdotV);
 	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
 	float3 Frss = FresnelFactor * D * G / PI;
 
 	// "Real-Time Rendering", 4th edition, pg. 624, "14.5.1 Coverage and Transmittance"
 	float thickness = materialCBuffer.MRAT.w;
-	float d = thickness / max(NdotV, eps);
+	float d = thickness / max(NdotV, EPSILON);
 
 	// transmittance luminance defined as "F0/albedo"
 	float3 sigma = -(log(F0));

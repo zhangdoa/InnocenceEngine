@@ -5,10 +5,15 @@
 
 #include "../Engine.h"
 using namespace Inno;
-;
 
 bool HIDService::Setup(ISystemConfig* systemConfig)
 {
+	m_PreviousFrameButtonStates.reserve(m_InputConfig.totalKeyCodes);
+	for (int i = 0; i < m_InputConfig.totalKeyCodes; i++)
+	{
+		m_PreviousFrameButtonStates.emplace_back(ButtonState(i, false));
+	}
+
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
@@ -37,10 +42,39 @@ bool HIDService::Update()
 		return false;
 	}
 
-	auto l_buttonStates = g_Engine->getWindowSystem()->GetButtonState();
-	for (auto& i : l_buttonStates)
+	g_Engine->getWindowSystem()->ConsumeEvents([this](const std::vector<IWindowEvent*>& l_events)
+		{
+			for (auto l_event : l_events)
+			{
+				if (l_event->GetType() == WindowEventType::Button)
+				{
+					auto l_buttonState = static_cast<ButtonState*>(l_event);
+					ButtonStateCallback(*l_buttonState);
+				}
+				else if (l_event->GetType() == WindowEventType::Mouse)
+				{
+					auto l_mouseState = static_cast<MouseState*>(l_event);
+					MouseMovementCallback(*l_mouseState);
+				}
+			}
+		});
+
+	if (m_ButtonEvents.size() != 0)
 	{
-		ButtonStateCallback(i);
+		for (auto& l_previousButtonState : m_PreviousFrameButtonStates)
+		{
+			auto l_pair = m_ButtonEvents.find(l_previousButtonState);
+			if (l_pair != m_ButtonEvents.end())
+			{
+				for (auto& l_event : l_pair->second)
+				{
+					if (l_event.m_eventLifeTime != EventLifeTime::Continuous)
+						continue;
+
+					ExecuteEvent(l_event);
+				}
+			}
+		}
 	}
 
 	if (m_MouseMovementEvents.size() != 0)
@@ -66,8 +100,6 @@ bool HIDService::Update()
 		}
 	}
 
-	m_PreviousFrameButtonStates = l_buttonStates;
-
 	return true;
 }
 
@@ -81,7 +113,11 @@ bool HIDService::Terminate()
 
 void HIDService::AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
-	m_ButtonEvents.emplace(buttonState, buttonEvent);
+	auto l_result = m_ButtonEvents.find(buttonState);
+	if (l_result != m_ButtonEvents.end())
+		l_result->second.emplace(buttonEvent);
+	else
+		m_ButtonEvents.emplace(buttonState, std::set<ButtonEvent>{ buttonEvent });
 }
 
 void HIDService::AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
@@ -98,24 +134,23 @@ Vec2 HIDService::GetMousePosition()
 	return Vec2(m_MouseLastX, m_MouseLastY);
 }
 
-void HIDService::ButtonStateCallback(ButtonState buttonState)
+void HIDService::ButtonStateCallback(const ButtonState& buttonState)
 {
-	auto l_buttonEvents = m_ButtonEvents.equal_range(buttonState);
-	auto l_resultCount = std::distance(l_buttonEvents.first, l_buttonEvents.second);
-	if (!l_resultCount)
-		return;
-
-	for (auto it = l_buttonEvents.first; it != l_buttonEvents.second; it++)
+	auto& l_previousFrameButtonState = m_PreviousFrameButtonStates[buttonState.m_Code];
+	auto l_result = m_ButtonEvents.find(buttonState);
+	if (l_result != m_ButtonEvents.end())
 	{
-		if (it->second.m_eventLifeTime == EventLifeTime::Continuous && it->second.m_eventHandle)
-			ExecuteEvent(it->second);
-		else if (m_PreviousFrameButtonStates.size())
+		for (auto& l_event : l_result->second)
 		{
-			auto l_previousFrameButtonState = m_PreviousFrameButtonStates[it->first.m_code];
-			if (l_previousFrameButtonState.m_isPressed != it->first.m_isPressed && it->second.m_eventHandle)
-				ExecuteEvent(it->second);
+			if (l_event.m_eventLifeTime == EventLifeTime::Continuous)
+				continue;
+
+			if (l_previousFrameButtonState.m_isPressed != buttonState.m_isPressed)
+				ExecuteEvent(l_event);
 		}
 	}
+
+	l_previousFrameButtonState.m_isPressed = buttonState.m_isPressed;
 }
 
 void HIDService::WindowResizeCallback(int32_t width, int32_t height)
@@ -127,13 +162,13 @@ void HIDService::WindowResizeCallback(int32_t width, int32_t height)
 	m_IsResizing = false;
 }
 
-void HIDService::MouseMovementCallback(float mouseXPos, float mouseYPos)
+void HIDService::MouseMovementCallback(const MouseState& mouseState)
 {
-	m_MouseXOffset = mouseXPos - m_MouseLastX;
-	m_MouseYOffset = m_MouseLastY - mouseYPos;
+	m_MouseXOffset = mouseState.m_X - m_MouseLastX;
+	m_MouseYOffset = m_MouseLastY - mouseState.m_Y;
 
-	m_MouseLastX = mouseXPos;
-	m_MouseLastY = mouseYPos;
+	m_MouseLastX = mouseState.m_X;
+	m_MouseLastY = mouseState.m_Y;
 }
 
 bool HIDService::IsResizing()

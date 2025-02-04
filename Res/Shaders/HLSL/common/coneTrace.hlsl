@@ -1,5 +1,3 @@
-#include "common/common.hlsl"
-
 static const float3 CONES[] =
 {
 	float3(0.57735, 0.57735, 0.57735),

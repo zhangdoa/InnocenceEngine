@@ -227,7 +227,7 @@ namespace Inno
 
             l_renderingServer->ExecuteCommandList(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
             l_renderingServer->WaitOnGPU(m_RenderPassComp_Surfel, GPUEngineType::Graphics, GPUEngineType::Graphics);
-            l_renderingServer->WaitOnCPU(m_RenderPassComp_Surfel, GPUEngineType::Graphics);
+            l_renderingServer->WaitOnCPU(GPUEngineType::Graphics);
 
             return true;
         }

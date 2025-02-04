@@ -68,6 +68,7 @@ namespace Inno
 		virtual void ExecuteGlobalCommands();
 		uint32_t GetSwapChainImageCount();
 		RenderPassComponent* GetSwapChainRenderPassComponent();
+		uint32_t GetPreviousFrame();
 		uint32_t GetCurrentFrame();
 		virtual bool PrepareSwapChainCommands();
 		virtual bool ExecuteSwapChainCommands();
@@ -85,8 +86,8 @@ namespace Inno
 		virtual bool CommandListEnd(RenderPassComponent* rhs);
 		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
 		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType);
-		virtual bool WaitOnCPU(RenderPassComponent* rhs, GPUEngineType GPUEngineType)  { return false; }
 		virtual bool Present();
+		virtual bool PostPresent() { return false; }
 
 		virtual bool TryToTransitState(TextureComponent *rhs, ICommandList *commandList, Accessibility accessibility) { return false; }
 
@@ -129,6 +130,8 @@ namespace Inno
 		virtual bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) { return false; }
 		virtual bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
 		virtual bool Execute(ICommandList* commandList, GPUEngineType queueType) { return false; }
+        virtual uint64_t GetSemaphoreValue(GPUEngineType queueType) { return 0; }
+		virtual bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) { return false; }
 
 	protected:
 		virtual bool InitializeImpl(MeshComponent* rhs) { return false; }
@@ -156,7 +159,6 @@ namespace Inno
 		virtual bool AssignSwapChainImages() = 0;
 
 		virtual bool PresentImpl() { return false; }
-		virtual bool PostPresent() { return false; }
 
 		virtual bool ResizeImpl() { return false; }
 
@@ -169,7 +171,10 @@ namespace Inno
 		std::vector<ICommandList*> m_GlobalCommandLists;
 		ISemaphore* m_GlobalSemaphore;
 
-		const uint32_t m_swapChainImageCount = 2;		
+		const uint32_t m_swapChainImageCount = 2;
+		uint32_t m_PreviousFrame = 1;
+		uint32_t m_CurrentFrame	= 0;
+
         std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;
         RenderPassComponent* m_SwapChainRenderPassComp;
         ShaderProgramComponent* m_SwapChainSPC;

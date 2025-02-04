@@ -67,7 +67,7 @@ void main(ComputeInputType input)
 			}
 			sigmaS = max(sigmaS, MIN_SIGMA);
 			sigmaE = max(sigmaE, MIN_SIGMA);
-			pMie = max(pMie, eps);
+			pMie = max(pMie, EPSILON);
 
 			float3 S = Lscat.xyz * sigmaS * pMie;
 			float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;

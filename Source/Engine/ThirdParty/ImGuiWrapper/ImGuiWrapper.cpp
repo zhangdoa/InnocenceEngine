@@ -20,10 +20,6 @@
 #include "ImGuiRendererDX12.h"
 #endif
 
-#if defined INNO_RENDERER_OPENGL
-#include "ImGuiRendererGL.h"
-#endif
-
 #if defined INNO_RENDERER_VULKAN
 #include "ImGuiRendererVK.h"
 #endif
@@ -88,16 +84,6 @@ bool ImGuiWrapper::Setup()
 
 	switch (l_initConfig.renderingServer)
 	{
-	case RenderingServer::GL:
-#if defined INNO_RENDERER_OPENGL
-		m_rendererImpl = new ImGuiRendererGL();
-#endif
-		break;
-	case RenderingServer::DX11:
-#if defined INNO_RENDERER_DIRECTX
-		ImGuiWrapperNS::m_isParity = false;
-#endif
-		break;
 	case RenderingServer::DX12:
 #if defined INNO_RENDERER_DIRECTX
 		m_rendererImpl = new ImGuiRendererDX12();

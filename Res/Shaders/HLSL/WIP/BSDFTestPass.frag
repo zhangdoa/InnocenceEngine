@@ -48,7 +48,7 @@ PixelOutputType main(PixelInputType input)
 	F0 = lerp(F0, out_albedo, out_metallic);
 
 	float F90 = 1.0;
-	float3 F = fresnelSchlick(F0, F90, LdotH);
+	float3 F = Fresnel_Schlick(F0, F90, LdotH);
 	float G = V_SmithGGXCorrelated(NdotV, NdotL, out_roughness);
 	float D = D_GGX(NdotH, out_roughness);
 	float3 Frss = F * G * D;

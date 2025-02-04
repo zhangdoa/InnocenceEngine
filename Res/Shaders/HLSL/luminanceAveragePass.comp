@@ -9,6 +9,12 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
 [[vk::binding(0, 1)]]
 RWStructuredBuffer<uint> in_histogram : register(u0);
 [[vk::binding(1, 1)]]
@@ -39,9 +45,9 @@ void main(ComputeInputType input)
 
 	if (input.groupIndex == 0)
 	{
-		float weightedLogAverage = (histogramShared[0] / max(perFrameCBuffer.viewportSize.x * perFrameCBuffer.viewportSize.y - (float)countForThisBin, 1.0)) - 1.0;
-		float range = perFrameCBuffer.maxLogLuminance - perFrameCBuffer.minLogLuminance;
-		float weightedAverageLuminance = exp2(weightedLogAverage / 254.0 * range + perFrameCBuffer.minLogLuminance);
+		float weightedLogAverage = (histogramShared[0] / max(g_Frame.viewportSize.x * g_Frame.viewportSize.y - (float)countForThisBin, 1.0)) - 1.0;
+		float range = g_Frame.maxLogLuminance - g_Frame.minLogLuminance;
+		float weightedAverageLuminance = exp2(weightedLogAverage / 254.0 * range + g_Frame.minLogLuminance);
 		float luminanceLastFrame = out_average[0];
 		float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame) * 0.5;
 

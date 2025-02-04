@@ -1,5 +1,7 @@
 #pragma once
 #include "../../Interface/IWindowSystem.h"
+#include "../../Engine.h"
+#include "../../Common/DoubleBuffer.h"
 #include <SDKDDKVer.h>
 #include <windows.h>
 #include <windowsx.h>
@@ -19,14 +21,28 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		IWindowSurface* GetWindowSurface() override;
-		const std::vector<ButtonState>& GetButtonState() override;
+		bool SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam) override;
+		void ConsumeEvents(const WindowEventProcessCallback& p_Callback) override;
 
-		bool SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam) override;
 		bool AddEventCallback(WindowEventCallback* callback) override;
 
 		LPCSTR GetApplicationName();
 		HINSTANCE GetApplicationInstance();
 		HWND GetWindowHandle();
 		bool SetWindowHandle(HWND hwnd);
+
+	private:
+		static LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+		IWindowSurface* m_WindowSurface;
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		InitConfig m_InitConfig;
+
+		DoubleBuffer<std::vector<IWindowEvent*>> m_WindowEvents;
+		std::set<WindowEventCallback*> m_WindowEventCallbacks;
+
+		HINSTANCE m_ApplicationInstance;
+		LPCSTR m_ApplicationName;
+		HWND m_WindowHandle;
 	};
 }

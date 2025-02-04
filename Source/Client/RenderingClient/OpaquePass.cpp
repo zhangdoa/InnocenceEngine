@@ -138,13 +138,17 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 5);
 
-	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	auto l_drawCallCount = l_drawCallInfo.size();
+	auto& l_drawCallList = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
+	auto l_drawCallCount = l_drawCallList.size();
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
-		auto& l_drawCallData = l_drawCallInfo[i];
-		l_renderingServer->PushRootConstants(m_RenderPassComp, l_drawCallData.m_PerObjectConstantBufferIndex);
-		l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
+		auto& l_drawCall = l_drawCallList[i];
+		auto l_visible = static_cast<uint32_t>(l_drawCall.m_VisibilityMask & VisibilityMask::MainCamera);
+		if (l_visible && l_drawCall.meshUsage != MeshUsage::Skeletal)
+		{
+			l_renderingServer->PushRootConstants(m_RenderPassComp, l_drawCall.m_PerObjectConstantBufferIndex);
+			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCall.mesh);
+		}
 	}
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);

@@ -40,8 +40,8 @@ float3 rayleigh_coeff(float3 rgb)
 	return rgb * float3(0.00000519673, 0.0000121427, 0.0000296453);
 }
 
-#define iSteps 16
-#define jSteps 8
+#define iStEPSILON 16
+#define jStEPSILON 8
 
 float2 raySphereIntersection(float3 eyePos, float3 rayDir, float shpereRadius)
 {
@@ -73,7 +73,7 @@ float3 atmosphere(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIntensi
 	}
 
 	p.y = min(p.y, raySphereIntersection(eyePos, eyeDir, planetRadius).x);
-	float iStepSize = (p.y - p.x) / float(iSteps);
+	float iStepSize = (p.y - p.x) / float(iStEPSILON);
 
 	// Initialize the primary ray time.
 	float iTime = 0.0;
@@ -92,7 +92,7 @@ float3 atmosphere(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIntensi
 	float pMie = mie_Schlick(cosTheta, g);
 
 	// Sample the primary ray.
-	for (int i = 0; i < iSteps; i++)
+	for (int i = 0; i < iStEPSILON; i++)
 	{
 		// Calculate the primary ray sample position.
 		float3 iPos = eyePos + eyeDir * (iTime + iStepSize * 0.5);
@@ -109,7 +109,7 @@ float3 atmosphere(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIntensi
 		iOdMie += odStepMie;
 
 		// Calculate the step size of the secondary ray.
-		float jStepSize = raySphereIntersection(iPos, sunPos, atmosphereRadius).y / float(jSteps);
+		float jStepSize = raySphereIntersection(iPos, sunPos, atmosphereRadius).y / float(jStEPSILON);
 
 		// Initialize the secondary ray time.
 		float jTime = 0.0;
@@ -119,7 +119,7 @@ float3 atmosphere(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIntensi
 		float jOdMie = 0.0;
 
 		// Sample the secondary ray.
-		for (int j = 0; j < jSteps; j++)
+		for (int j = 0; j < jStEPSILON; j++)
 		{
 			// Calculate the secondary ray sample position.
 			float3 jPos = iPos + sunPos * (jTime + jStepSize * 0.5);

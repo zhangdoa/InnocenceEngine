@@ -112,11 +112,11 @@ bool LightCullingPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeGPUBufferComponent(m_lightListIndexCounter);
-
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+
+	l_renderingServer->InitializeGPUBufferComponent(m_lightListIndexCounter);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -145,12 +145,15 @@ bool LightCullingPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->DeleteGPUBufferComponent(m_lightListIndexCounter);
+	l_renderingServer->DeleteGPUBufferComponent(m_lightIndexList);
+	l_renderingServer->DeleteTextureComponent(m_lightGrid);
+	l_renderingServer->DeleteTextureComponent(m_heatMap);
+
+	l_renderingServer->DeleteSamplerComponent(m_SamplerComp);
 	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->DeleteShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->DeleteSamplerComponent(m_SamplerComp);
-
-	l_renderingServer->DeleteGPUBufferComponent(m_lightListIndexCounter);
-
+	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
@@ -227,7 +230,7 @@ GPUResourceComponent* LightCullingPass::GetHeatMap()
 	return m_heatMap;
 }
 
-bool Inno::LightCullingPass::RenderTargetsCreationFunc()
+bool LightCullingPass::RenderTargetsCreationFunc()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

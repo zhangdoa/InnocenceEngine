@@ -1,4 +1,5 @@
 #include "WinWindowSystem.h"
+
 #include "../../Common/LogService.h"
 #include "../../Services/HIDService.h"
 #include "../../Services/RenderingConfigurationService.h"
@@ -10,91 +11,9 @@
 #include "../../Engine.h"
 
 using namespace Inno;
-;
-
-namespace WinWindowSystemNS
-{
-	LRESULT CALLBACK ProcessWindowsEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-	IWindowSurface* m_WindowSurface;
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	InitConfig m_InitConfig;
-
-	std::vector<ButtonState> m_ButtonStates;
-	std::set<WindowEventCallback*> m_WindowEventCallbacks;
-
-	HINSTANCE m_ApplicationInstance;
-	LPCSTR m_ApplicationName;
-	HWND m_WindowHandle;
-};
-
-using namespace WinWindowSystemNS;
-
-LRESULT WinWindowSystemNS::ProcessWindowsEvent(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	for (auto i : m_WindowEventCallbacks)
-	{
-		(*i)(hwnd, uMsg, (uint64_t)wParam, (int64_t)lParam);
-	}
-
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-	{
-		m_ButtonStates[(uint64_t)wParam].m_isPressed = true;
-		return 0;
-	}
-	case WM_KEYUP:
-	{
-		m_ButtonStates[(uint64_t)wParam].m_isPressed = false;
-		return 0;
-	}
-	case WM_LBUTTONDOWN:
-	{
-		m_ButtonStates[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
-		return 0;
-	}
-	case WM_LBUTTONUP:
-	{
-		m_ButtonStates[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
-
-		return 0;
-	}
-	case WM_RBUTTONDOWN:
-	{
-		m_ButtonStates[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
-		return 0;
-	}
-	case WM_RBUTTONUP:
-	{
-		m_ButtonStates[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
-		return 0;
-	}
-
-	case WM_MOUSEMOVE:
-	{
-		auto l_mouseCurrentX = GET_X_LPARAM(lParam);
-		auto l_mouseCurrentY = GET_Y_LPARAM(lParam);
-		g_Engine->Get<HIDService>()->MouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
-		return 0;
-	}
-	// Any other messages send to the default message handler as our application won't make use of them.
-	default:
-	{
-		return DefWindowProc(hwnd, uMsg, wParam, lParam);
-	}
-	}
-}
 
 bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
-	m_ButtonStates.resize(g_Engine->Get<HIDService>()->GetInputConfig().totalKeyCodes);
-	for (size_t i = 0; i < m_ButtonStates.size(); i++)
-	{
-		m_ButtonStates[i].m_code = (uint32_t)i;
-	}
-
 	auto l_systemConfig = reinterpret_cast<IWindowSystemConfig*>(systemConfig);
 	m_ApplicationInstance = static_cast<HINSTANCE>(l_systemConfig->m_AppHook);
 	if (l_systemConfig->m_ExtraHook)
@@ -103,17 +22,17 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_ApplicationName = g_Engine->GetApplicationName().c_str();
-	WinWindowSystemNS::m_InitConfig = g_Engine->getInitConfig();
-	switch (WinWindowSystemNS::m_InitConfig.renderingServer)
+	m_InitConfig = g_Engine->getInitConfig();
+	switch (m_InitConfig.renderingServer)
 	{
 	case RenderingServer::DX12:
 #if defined INNO_PLATFORM_WIN
-		WinWindowSystemNS::m_WindowSurface = new WinDXWindowSurface();
+		m_WindowSurface = new WinDXWindowSurface();
 #endif
 		break;
 	case RenderingServer::VK:
 #if defined INNO_RENDERER_VULKAN
-		WinWindowSystemNS::m_WindowSurface = new WinVKWindowSurface();
+		m_WindowSurface = new WinVKWindowSurface();
 #endif
 		break;
 	default:
@@ -123,11 +42,11 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	IWindowSurfaceConfig l_surfaceConfig;
 	l_surfaceConfig.hInstance = m_ApplicationInstance;
 	l_surfaceConfig.hwnd = m_WindowHandle;
-	l_surfaceConfig.WindowProc = WinWindowSystemNS::WindowProcedure;
+	l_surfaceConfig.WindowProc = WinWindowSystem::WindowProcedure;
 
-	WinWindowSystemNS::m_WindowSurface->Setup(&l_surfaceConfig);
+	m_WindowSurface->Setup(&l_surfaceConfig);
 
-	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "WinWindowSystem Setup finished.");
 
 	return true;
@@ -135,26 +54,21 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 
 bool WinWindowSystem::Initialize()
 {
-	WinWindowSystemNS::m_WindowSurface->Initialize();
+	m_WindowSurface->Initialize();
 	Log(Success, "WinWindowSystem has been initialized.");
 	return true;
 }
 
 bool WinWindowSystem::Update()
 {
-	if (WinWindowSystemNS::m_InitConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode != EngineMode::Host)
+		return true;
+
+	MSG msg = { 0 };
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{
-		MSG msg;
-
-		// Initialize the message structure.
-		ZeroMemory(&msg, sizeof(MSG));
-
-		// Handle the windows messages.
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
 	}
 
 	return true;
@@ -162,9 +76,9 @@ bool WinWindowSystem::Update()
 
 bool WinWindowSystem::Terminate()
 {
-	WinWindowSystemNS::m_WindowSurface->Terminate();
+	m_WindowSurface->Terminate();
 
-	if (WinWindowSystemNS::m_InitConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Show the mouse cursor.
 		ShowCursor(true);
@@ -182,30 +96,144 @@ bool WinWindowSystem::Terminate()
 
 	PostQuitMessage(0);
 
-	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "WinWindowSystem has been terminated.");
 	return true;
 }
 
 ObjectStatus WinWindowSystem::GetStatus()
 {
-	return WinWindowSystemNS::m_ObjectStatus;
+	return m_ObjectStatus;
 }
 
 IWindowSurface* WinWindowSystem::GetWindowSurface()
 {
-	return WinWindowSystemNS::m_WindowSurface;
+	return m_WindowSurface;
 }
 
-const std::vector<ButtonState>& WinWindowSystem::GetButtonState()
+void WinWindowSystem::ConsumeEvents(const WindowEventProcessCallback& p_Callback)
 {
-	return m_ButtonStates;
+	m_WindowEvents.Read([&](auto const& l_FrontBuffer)
+		{
+			p_Callback(l_FrontBuffer);
+		});
+
+	m_WindowEvents.Flip();
+	m_WindowEvents.Write([](auto& l_BackBuffer)
+		{
+			for (auto i : l_BackBuffer)
+			{
+				delete i;
+			}
+			l_BackBuffer.clear();
+		});
 }
 
-bool WinWindowSystem::SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam)
+bool WinWindowSystem::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
-	WinWindowSystemNS::WindowProcedure(m_WindowHandle, uMsg, wParam, lParam);
-	return true;
+	for (auto i : m_WindowEventCallbacks)
+	{
+		(*i)(windowHook, uMsg, (uint64_t)wParam, (int64_t)lParam);
+	}
+
+	HWND hwnd = (HWND)windowHook;
+	switch (uMsg)
+	{
+	case WM_DESTROY:
+	{
+		Log(Warning, "WM_DESTROY signal received.");
+		m_ObjectStatus = ObjectStatus::Suspended;
+		return true;
+	}
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+		EndPaint(hwnd, &ps);
+		return true;
+	}
+	case WM_SIZE:
+	{
+		if (lParam && g_Engine->GetStatus() == ObjectStatus::Activated)
+		{
+			auto l_width = lParam & 0xffff;
+			auto l_height = (lParam & 0xffff0000) >> 16;
+
+			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
+			g_Engine->Get<HIDService>()->WindowResizeCallback(l_newResolution.x, l_newResolution.y);
+			
+			return true;
+		}
+
+		return false;
+	}
+	case WM_KEYDOWN:
+	{
+		auto l_buttonState = new ButtonState((uint32_t)wParam, true);
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_buttonState);
+			});
+
+		return true;
+	}
+	case WM_KEYUP:
+	{
+		auto l_buttonState = new ButtonState((uint32_t)wParam, false);
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_buttonState);
+			});
+		return true;
+	}
+	case WM_LBUTTONDOWN:
+	{
+		auto l_buttonState = new ButtonState(INNO_MOUSE_BUTTON_LEFT, true);
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_buttonState);
+			});
+		return true;
+	}
+	case WM_LBUTTONUP:
+	{
+		auto l_buttonState = new ButtonState(INNO_MOUSE_BUTTON_LEFT, false);
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_buttonState);
+			});
+		return true;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		auto l_buttonState = new ButtonState(INNO_MOUSE_BUTTON_RIGHT, true);
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_buttonState);
+			});
+		return true;
+	}
+	case WM_RBUTTONUP:
+	{
+		auto l_buttonState = new ButtonState(INNO_MOUSE_BUTTON_RIGHT, false);
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_buttonState);
+			});
+		return true;
+	}
+	case WM_MOUSEMOVE:
+	{
+		auto l_mouseState = new MouseState(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		m_WindowEvents.Write([&](auto& l_BackBuffer)
+			{
+				l_BackBuffer.push_back(l_mouseState);
+			});
+		return true;
+	}
+	}
+	return false;
 }
 
 bool WinWindowSystem::AddEventCallback(WindowEventCallback* callback)
@@ -235,36 +263,13 @@ bool WinWindowSystem::SetWindowHandle(HWND hwnd)
 	return true;
 }
 
-LRESULT CALLBACK WinWindowSystemNS::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WinWindowSystem::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch (uMsg)
+	auto l_processed = g_Engine->getWindowSystem()->SendEvent(hwnd, uMsg, wParam, lParam);
+	if (l_processed)
 	{
-	case WM_DESTROY:
-	{
-		Log(Warning, "WM_DESTROY signal received.");
-		WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		return 0;
 	}
-	case WM_PAINT:
-	{
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hwnd, &ps);
-		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-		EndPaint(hwnd, &ps);
-	}
-	case WM_SIZE:
-	{
-		if (lParam && g_Engine->GetStatus() == ObjectStatus::Activated)
-		{
-			auto l_width = lParam & 0xffff;
-			auto l_height = (lParam & 0xffff0000) >> 16;
 
-			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
-			g_Engine->Get<HIDService>()->WindowResizeCallback(l_newResolution.x, l_newResolution.y);
-		}
-	}
-	default:
-	{
-		return ProcessWindowsEvent(hwnd, uMsg, wParam, lParam);
-	}
-	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

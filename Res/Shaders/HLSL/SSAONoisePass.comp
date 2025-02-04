@@ -1,0 +1,175 @@
+// ============================================================================
+// Screen Space Ambient Occlusion (SSAO) Compute Shader
+//
+// This shader approximates ambient occlusion by sampling nearby positions in
+// view-space and comparing their depths to the current pixel’s depth. A kernel
+// of sample directions (provided in SSAO_Kernels) is rotated via a per-pixel
+// TBN matrix, then scaled and offset from the current view-space position.
+// The shader projects each sample into screen-space and compares its depth to
+// the sample’s expected depth (with a bias). A smoothstep function is used to
+// weight contributions based on the depth difference. The final occlusion is
+// accumulated, averaged, and inverted (1.0 - occlusion) before writing to the
+// output texture.
+// ============================================================================
+
+#include "common/common.hlsl"
+
+// -----------------------------------------------------------------------------
+// ComputeInputType Structure
+// Contains thread group and dispatch identifiers.
+// -----------------------------------------------------------------------------
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;// 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;// 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;// 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;// Flattened local index of the thread within a thread group.
+};
+
+// -----------------------------------------------------------------------------
+// SSAO Parameters
+// -----------------------------------------------------------------------------
+static const int sampleCount = 32; // Number of samples in the SSAO kernel.
+static const float radius = 0.5f; // Sampling radius in view-space.
+static const float bias = 0.05f; // Depth bias to avoid self-occlusion.
+
+// -----------------------------------------------------------------------------
+// Constant Buffers
+// -----------------------------------------------------------------------------
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+	PerFrame_CB g_Frame; // Contains view, projection, and other per-frame matrices.
+}
+
+[[vk::binding(1, 0)]]
+cbuffer SSAOKernelCBuffer : register(b1)
+{
+	float4 SSAO_Kernels[64]; // Array of sample directions (kernel) in tangent-space.
+};
+
+// -----------------------------------------------------------------------------
+// Texture and Sampler Bindings
+// -----------------------------------------------------------------------------
+[[vk::binding(0, 1)]]
+Texture2D in_position : register(t0); // Position texture (world-space positions).
+[[vk::binding(1, 1)]]
+Texture2D in_normal : register(t1); // Normal texture (world-space normals).
+[[vk::binding(2, 1)]]
+Texture2D in_randomRot : register(t2); // Random rotation texture (for TBN variation).
+
+[[vk::binding(0, 2)]]
+SamplerState in_samplerTypePoint : register(s0); // Point sampler for precise texture lookups.
+[[vk::binding(1, 2)]]
+SamplerState in_samplerTypeWrap : register(s1); // Wrap sampler for the random rotation texture.
+
+// Output render target.
+[[vk::binding(0, 3)]]
+RWTexture2D<float4> out_SSAOPassRT0 : register(u0);
+
+// -----------------------------------------------------------------------------
+// Main Compute Shader Function
+// -----------------------------------------------------------------------------
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	// -------------------------------------------------------------------------
+	// 1. Determine the current pixel's coordinate.
+	// -------------------------------------------------------------------------
+	float2 readCoord = (float2)input.dispatchThreadID.xy;
+
+	// -------------------------------------------------------------------------
+	// 2. Fetch the per-pixel random rotation vector.
+	//    - Using wrap addressing to avoid seams.
+	// -------------------------------------------------------------------------
+	float3 randomRot = in_randomRot.SampleLevel(in_samplerTypeWrap, readCoord, 0.0).xyz;
+
+	// -------------------------------------------------------------------------
+	// 3. Retrieve and transform the pixel's world-space position to view-space.
+	//    - The position texture stores world-space positions.
+	//    - Multiplying by the view matrix (g_Frame.v) converts them to view-space.
+	// -------------------------------------------------------------------------
+	float4 posWS = float4(in_position[readCoord].xyz, 1.0f);
+	float4 posVS = mul(posWS, g_Frame.v);
+
+	// -------------------------------------------------------------------------
+	// 4. Retrieve and transform the pixel's world-space normal to view-space.
+	//    - The alpha channel (if any) is ignored by setting it to 0.
+	//    - The transformed normal is then normalized.
+	// -------------------------------------------------------------------------
+	float4 normalWS = float4(in_normal[readCoord].xyz, 0.0f);
+	float4 normalVS = mul(normalWS, g_Frame.v);
+	normalVS = normalize(normalVS);
+
+	// -------------------------------------------------------------------------
+	// 5. Construct the TBN (Tangent, Bitangent, Normal) matrix.
+	//    - The random rotation vector introduces variation.
+	//    - Tangent is computed by removing the normal's component from randomRot.
+	//    - Bitangent is the cross product of the normal and tangent.
+	//    - This TBN matrix rotates sample directions from tangent-space to view-space.
+	// -------------------------------------------------------------------------
+	float3 tangent = normalize(randomRot - normalVS.xyz * dot(randomRot, normalVS.xyz));
+	float3 bitangent = cross(normalVS.xyz, tangent);
+	float3x3 TBN = float3x3(tangent, bitangent, normalVS.xyz);
+
+	// -------------------------------------------------------------------------
+	// 6. Initialize occlusion accumulator.
+	// -------------------------------------------------------------------------
+	float occlusion = 0.0f;
+
+	// -------------------------------------------------------------------------
+	// 7. Loop over the SSAO sample kernel.
+	//    For each sample, transform it to view-space, offset from the current
+	//    pixel's view-space position, project to screen-space, and compare depths.
+	// -------------------------------------------------------------------------
+	for (int i = 0; i < sampleCount; ++i)
+	{
+		// a. Transform the i-th kernel sample from tangent-space to view-space.
+		float3 sampleDirVS = mul(SSAO_Kernels[i].xyz, TBN);
+
+		// b. Compute the sample's view-space position.
+		//    - Offset the current pixel's view-space position by the sample direction.
+		//    - Multiply by the sampling radius.
+		float3 samplePosVS = posVS.xyz + sampleDirVS * radius;
+
+		// c. Project the sample view-space position to clip-space, then to texture-space.
+		float4 samplePosClip = float4(samplePosVS, 1.0f);
+		samplePosClip = mul(samplePosClip, g_Frame.p_jittered); // Apply projection matrix
+		samplePosClip.xyz /= samplePosClip.w;                   // Perspective divide
+		// Map from clip-space (-1,1) to texture-space (0,1)
+		samplePosClip.xyz = samplePosClip.xyz * 0.5f + 0.5f;
+		samplePosClip = saturate(samplePosClip);                // Clamp to [0, 1]
+
+		// d. Flip the y-coordinate as the texture is stored top-down.
+		samplePosClip.y = 1.0f - samplePosClip.y;
+
+		// e. Fetch the depth (position) at the sample coordinate.
+		//    - Use a point sampler for an exact lookup.
+		float4 samplePosWS = in_position.SampleLevel(in_samplerTypePoint, samplePosClip.xy, 0.0);
+		// Remove any alpha influence and convert to homogeneous coordinates.
+		samplePosWS.w = 1.0f;
+		// Transform the fetched world-space position into view-space.
+		float4 samplePosVS_fromTex = mul(samplePosWS, g_Frame.v);
+
+		// f. Compute a range check factor using smoothstep:
+		//    - This weights the occlusion contribution based on the distance (depth difference)
+		float rangeCheck = smoothstep(0.0, 1.0, radius / max(abs(posVS.z - samplePosVS_fromTex.z), EPSILON));
+
+		// g. Determine if the sample is occluded:
+		//    - If the sampled depth is further away than the expected sample position (plus bias),
+		//      then the sample is considered occluded.
+		//    - Multiply by the range weight.
+		occlusion += (samplePosVS_fromTex.z > samplePosVS.z + bias ? 1.0f : 0.0f) * rangeCheck;
+	}
+
+	// -------------------------------------------------------------------------
+	// 8. Average and invert the occlusion.
+	//    - The final occlusion is 1 minus the average occlusion contribution.
+	// -------------------------------------------------------------------------
+	occlusion = 1.0f - (occlusion / float(sampleCount));
+
+	// -------------------------------------------------------------------------
+	// 9. Write the computed occlusion to the output texture.
+	// -------------------------------------------------------------------------
+	out_SSAOPassRT0[input.dispatchThreadID.xy] = float4(occlusion, occlusion, occlusion, 1.0f);
+}

@@ -405,14 +405,14 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 		if (l_material->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
-		DrawCallInfo l_drawCallInfo;
+		DrawCallInfo l_drawCallInfo = {};
 
 		l_drawCallInfo.mesh = l_mesh;
 		l_drawCallInfo.m_PerObjectConstantBufferIndex = l_drawCallIndex;
 		l_drawCallInfo.meshUsage = l_modelComponent->m_meshUsage;
 		l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
 
-		PerObjectConstantBuffer l_perObjectCB;
+		PerObjectConstantBuffer l_perObjectCB = {};
 		l_perObjectCB.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 		l_perObjectCB.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 		l_perObjectCB.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
@@ -421,13 +421,15 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 
 		m_perObjectCBVector.emplace_back(l_perObjectCB);
 
-		MaterialConstantBuffer l_materialCB;
+		MaterialConstantBuffer l_materialCB = {};
 		l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
 
 		auto l_renderingServer = g_Engine->getRenderingServer();
 		for (size_t i = 0; i < MaxTextureSlotCount; i++)
 		{
-			l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_material->m_TextureSlots[i].m_Texture, Accessibility::ReadOnly);
+			auto l_texture = l_material->m_TextureSlots[i].m_Texture;
+			if (l_texture != nullptr)
+				l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
 		}
 
 		m_materialCBVector.emplace_back(l_materialCB);

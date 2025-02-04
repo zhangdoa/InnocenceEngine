@@ -89,7 +89,7 @@ namespace Inno
 	struct alignas(16) MaterialConstantBuffer
 	{
 		MaterialAttributes m_MaterialAttributes;
-		uint32_t m_TextureIndices[MaxTextureSlotCount] = { 0, 0, 0, 0, 0, 0, 0 };
+		int32_t m_TextureIndices[MaxTextureSlotCount] = { -1, -1, -1, -1, -1, -1, -1 };
 		uint32_t m_MaterialType = 0;
 	};
 

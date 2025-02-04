@@ -269,6 +269,9 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
 		{
 			auto l_image = reinterpret_cast<DX12TextureComponent*>(resource);
+			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
+				return false;
+			
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_image->m_UAV.Handle.GPUHandle);
 			else
@@ -337,6 +340,9 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
 		{
 			auto l_image = reinterpret_cast<DX12TextureComponent*>(resource);
+			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
+				return false;
+
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_image->m_UAV.Handle.GPUHandle);
 			else
@@ -419,14 +425,6 @@ bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t 
 	l_commandList->m_DirectCommandList->DrawInstanced(1, (uint32_t)instanceCount, 0, 0);
 
 	return true;
-}
-
-bool DX12RenderingServer::WaitOnCPU(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
-{
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
-	auto l_semaphore = l_rhs == nullptr ? nullptr : reinterpret_cast<DX12Semaphore*>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-
-	return WaitOnCPU(l_semaphore, GPUEngineType);
 }
 
 bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility)
@@ -697,14 +695,15 @@ ComPtr<ID3D12Device8> DX12RenderingServer::GetDevice()
 
 ComPtr<ID3D12CommandAllocator> DX12RenderingServer::GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType)
 {
+	auto l_currentFrame = GetCurrentFrame();
 	switch (commandListType)
 	{
 	case D3D12_COMMAND_LIST_TYPE_DIRECT:
-		return m_directCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
+		return m_directCommandAllocators[l_currentFrame];
 	case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-		return m_computeCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
+		return m_computeCommandAllocators[l_currentFrame];
 	case D3D12_COMMAND_LIST_TYPE_COPY:
-		return m_copyCommandAllocators[m_SwapChainRenderPassComp->m_CurrentFrame];
+		return m_copyCommandAllocators[l_currentFrame];
 	case D3D12_COMMAND_LIST_TYPE_BUNDLE:
 	default:
 		throw std::runtime_error("Invalid command list type");
@@ -729,7 +728,8 @@ ComPtr<ID3D12CommandQueue> DX12RenderingServer::GetGlobalCommandQueue(D3D12_COMM
 
 ComPtr<ID3D12GraphicsCommandList> DX12RenderingServer::GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[m_SwapChainRenderPassComp->m_CurrentFrame]);
+	auto l_currentFrame = GetCurrentFrame();	
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[l_currentFrame]);
 	switch (commandListType)
 	{
 	case D3D12_COMMAND_LIST_TYPE_DIRECT:

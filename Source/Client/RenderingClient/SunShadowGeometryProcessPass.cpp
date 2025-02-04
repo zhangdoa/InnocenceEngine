@@ -7,9 +7,6 @@
 
 using namespace Inno;
 
-
-
-
 bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
@@ -59,34 +56,41 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(6);
+
+	// b0 - Object Index
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IsRootConstant = true;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
+	// b1 - PerObjectCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
 
+	// b2 - CSM
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Geometry;
 
+	// t0 - Material
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 
+	// t1 - Textures
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_TextureUsage = TextureUsage::Sample;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
 
+	// s0 - Sampler
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
@@ -107,7 +111,7 @@ bool SunShadowGeometryProcessPass::Initialize()
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
 
-	m_ObjectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
 }
@@ -130,32 +134,42 @@ ObjectStatus SunShadowGeometryProcessPass::GetStatus()
 
 bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
-	
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 
-	auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	auto l_drawCallCount = l_drawCallInfo.size();
+	auto l_perObjectCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_CSMCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	auto l_materialCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_perObjectCBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_CSMCBuffer, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_materialCBuffer, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_SamplerComp, 5);
+
+	auto& l_drawCallList = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
+	auto l_drawCallCount = l_drawCallList.size();
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
-		auto l_drawCallData = l_drawCallInfo[i];
-		auto l_visible = static_cast<uint32_t>(l_drawCallData.m_VisibilityMask & VisibilityMask::Sun);
-		if (l_visible && l_drawCallData.meshUsage != MeshUsage::Skeletal)
+		auto& l_drawCall = l_drawCallList[i];
+		auto l_visible = static_cast<uint32_t>(l_drawCall.m_VisibilityMask & VisibilityMask::Sun);
+		if (l_visible && l_drawCall.meshUsage != MeshUsage::Skeletal)
 		{
-			l_renderingServer->PushRootConstants(m_RenderPassComp, l_drawCallData.m_PerObjectConstantBufferIndex);			
-			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
+			l_renderingServer->PushRootConstants(m_RenderPassComp, l_drawCall.m_PerObjectConstantBufferIndex);			
+			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCall.mesh);
 		}
 	}
 	
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
+
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }

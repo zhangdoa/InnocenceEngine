@@ -42,10 +42,12 @@ namespace Inno
 		virtual	bool Delete(ICommandList* rhs) override;
 		virtual	bool Delete(ISemaphore* rhs) override;
 
-		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
-
 		bool ClearTextureComponent(TextureComponent* rhs) override;
 		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
+		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
+
+		bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
+
 		uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
@@ -60,7 +62,6 @@ namespace Inno
 		bool CommandListEnd(RenderPassComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 		bool WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
-		bool WaitOnCPU(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
 
 		bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
 

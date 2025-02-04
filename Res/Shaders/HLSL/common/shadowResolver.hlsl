@@ -27,7 +27,7 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 	float Ex = shadowMapValue.r;
 	float E_x2 = shadowMapValue.g;
 	float variance = E_x2 - (Ex * Ex);
-	variance = max(variance, eps);
+	variance = max(variance, EPSILON);
 	float mD = currentDepth - Ex;
 	float pMax = variance / (variance + (mD * mD));
 	shadow = max(pMax, float(currentDepth >= Ex));
@@ -136,6 +136,6 @@ float SunShadowResolver(float3 fragPos, Texture2DArray shadowMap, SamplerState i
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
 {
-	float zLinear = perFrameCBuffer.zNear * perFrameCBuffer.zFar / (perFrameCBuffer.zFar + perFrameCBuffer.zNear - depthSample * (perFrameCBuffer.zFar - perFrameCBuffer.zNear));
+	float zLinear = g_Frame.zNear * g_Frame.zFar / (g_Frame.zFar + g_Frame.zNear - depthSample * (g_Frame.zFar - g_Frame.zNear));
 	return zLinear;
 }

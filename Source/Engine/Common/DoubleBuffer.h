@@ -1,124 +1,81 @@
 #pragma once
+
 #include "STL14.h"
-#include "Template.h"
 
 namespace Inno
 {
-	template <typename T, bool ThreadSafe = false>
+	template <typename BufferType>
 	class DoubleBuffer
 	{
 	public:
-		DoubleBuffer() = default;
-		~DoubleBuffer() = default;
-
-		template <typename U = T &>
-		EnableType<U, ThreadSafe> GetOldValue()
+		DoubleBuffer()
+			: m_FrontIndex(0)
+			, m_ReadersCount(0)
 		{
-			std::shared_lock<std::shared_mutex> lock{m_Mutex};
-
-			if (m_IsAReady)
-			{
-				return m_B;
-			}
-			else
-			{
-				return m_A;
-			}
 		}
 
-		template <typename U = T &>
-		DisableType<U, ThreadSafe> GetOldValue()
+		// Non-copyable and non-movable to avoid accidental duplication
+		DoubleBuffer(const DoubleBuffer&) = delete;
+		DoubleBuffer& operator=(const DoubleBuffer&) = delete;
+
+		/**
+		 * Write to the back buffer.
+		 * The producer calls this to modify the buffer that is NOT currently visible to readers.
+		 */
+		template <typename Func>
+		auto Write(Func&& p_Func)
 		{
-			if (m_IsAReady)
-			{
-				return m_B;
-			}
-			else
-			{
-				return m_A;
-			}
+			// Single-producer assumption: no need for locks among multiple writers
+			int l_BackIndex = 1 - m_FrontIndex.load(std::memory_order_relaxed);
+			p_Func(m_Buffers[l_BackIndex]);
 		}
 
-		template <typename U = T &>
-		EnableType<U, ThreadSafe> GetNewValue()
+		/**
+		 * Read from the front buffer.
+		 * Each consumer calls this to safely inspect the buffer that is currently 'front.'
+		 */
+		template <typename Func>
+		auto Read(Func&& p_Func) const
 		{
-			std::shared_lock<std::shared_mutex> lock{m_Mutex};
+			// Indicate a read is active
+			m_ReadersCount.fetch_add(1, std::memory_order_acquire);
 
-			if (m_IsAReady)
-			{
-				return m_A;
-			}
-			else
-			{
-				return m_B;
-			}
+			// Snapshot the front index once
+			int l_LocalFront = m_FrontIndex.load(std::memory_order_relaxed);
+
+			// Perform the read
+			p_Func(m_Buffers[l_LocalFront]);
+
+			// Indicate this read is done
+			m_ReadersCount.fetch_sub(1, std::memory_order_release);
 		}
 
-		template <typename U = T &>
-		DisableType<U, ThreadSafe> GetNewValue()
+		/**
+		 * Flip the front and back buffers.
+		 * The producer calls this once (or more) per frame/interval.
+		 */
+		void Flip()
 		{
-			if (m_IsAReady)
+			// Wait for all readers to finish
+			while (m_ReadersCount.load(std::memory_order_acquire) != 0)
 			{
-				return m_A;
+				// Busy-wait spin
+				std::this_thread::yield();
 			}
-			else
-			{
-				return m_B;
-			}
-		}
 
-		template <typename U = void>
-		EnableType<U, ThreadSafe> SetValue(T &&value)
-		{
-			std::unique_lock<std::shared_mutex> lock{m_Mutex};
-
-			if (m_IsAReady)
-			{
-				m_B = std::move(value);
-				m_IsAReady = false;
-			}
-			else
-			{
-				m_A = std::move(value);
-				m_IsAReady = true;
-			}
-		}
-
-		template <typename U = void>
-		DisableType<U, ThreadSafe> SetValue(T &&value)
-		{
-			if (m_IsAReady)
-			{
-				m_B = std::move(value);
-				m_IsAReady = false;
-			}
-			else
-			{
-				m_A = std::move(value);
-				m_IsAReady = true;
-			}
-		}
-
-		template <typename U = void>
-		EnableType<U, ThreadSafe> Reserve(size_t elementCount)
-		{
-			std::unique_lock<std::shared_mutex> lock{m_Mutex};
-
-			m_A.reserve(elementCount);
-			m_B.reserve(elementCount);
-		}
-
-		template <typename U = void>
-		DisableType<U, ThreadSafe> Reserve(size_t elementCount)
-		{
-			m_A.reserve(elementCount);
-			m_B.reserve(elementCount);
+			// Flip front/back
+			int l_OldFront = m_FrontIndex.load(std::memory_order_relaxed);
+			m_FrontIndex.store(1 - l_OldFront, std::memory_order_release);
 		}
 
 	private:
-		std::atomic<bool> m_IsAReady = false;
-		mutable std::shared_mutex m_Mutex;
-		T m_A;
-		T m_B;
+		// 0 or 1 - index of current front buffer
+		std::atomic<int> m_FrontIndex;
+
+		// Number of active readers
+		mutable std::atomic<int> m_ReadersCount;
+
+		// Storage for two buffers
+		BufferType m_Buffers[2];
 	};
 }

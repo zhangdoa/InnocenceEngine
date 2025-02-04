@@ -11,18 +11,25 @@ struct ComputeInputType
 
 #define RGB_TO_LUM float3(0.2125, 0.7154, 0.0721)
 
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
 [[vk::binding(0, 1)]]
 Texture2D<float4> in_luminance : register(t0);
-[[vk::binding(1, 1)]]
-RWStructuredBuffer<uint> out_histogram : register(u1);
+
+[[vk::binding(0, 2)]]
+RWStructuredBuffer<uint> out_histogram : register(u0);
 
 groupshared uint histogramShared[256];
 
-uint colorToBin(float3 hdrColor, float minLogLum, float inverseLogLumRange)
+uint ComputeBinIndex(float3 colorHDR, float minLogLum, float inverseLogLumRange)
 {
-	float lum = dot(hdrColor, RGB_TO_LUM);
+	float lum = dot(colorHDR, RGB_TO_LUM);
 
-	if (lum < eps)
+	if (lum < EPSILON)
 	{
 		return 0;
 	}
@@ -38,18 +45,18 @@ void main(ComputeInputType input)
 	histogramShared[input.groupIndex] = 0;
 	GroupMemoryBarrierWithGroupSync();
 
-	float2 dimF;
-	float level;
-	in_luminance.GetDimensions(0, dimF.x, dimF.y, level);
+	float2 l_DimensionFloat;
+	float l_MipLevel;
+	in_luminance.GetDimensions(0, l_DimensionFloat.x, l_DimensionFloat.y, l_MipLevel);
 
-	uint2 dim = uint2(dimF);
+	uint2 l_Dimension = uint2(l_DimensionFloat);
 
-	if (input.dispatchThreadID.x < dim.x && input.dispatchThreadID.y < dim.y)
+	if (input.dispatchThreadID.x < l_Dimension.x && input.dispatchThreadID.y < l_Dimension.y)
 	{
-		float3 hdrColor = in_luminance[int2(input.dispatchThreadID.xy)].xyz;
-		uint binIndex = colorToBin(hdrColor, perFrameCBuffer.minLogLuminance, 1.0 / (perFrameCBuffer.maxLogLuminance - perFrameCBuffer.minLogLuminance));
+		float3 l_ColorHDR = in_luminance[int2(input.dispatchThreadID.xy)].xyz;
+		uint l_BinIndex = ComputeBinIndex(l_ColorHDR, g_Frame.minLogLuminance, 1.0 / (g_Frame.maxLogLuminance - g_Frame.minLogLuminance));
 
-		InterlockedAdd(histogramShared[binIndex], 1);
+		InterlockedAdd(histogramShared[l_BinIndex], 1);
 	}
 
 	GroupMemoryBarrierWithGroupSync();

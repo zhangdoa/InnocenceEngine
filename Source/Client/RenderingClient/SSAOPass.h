@@ -9,7 +9,7 @@ namespace Inno
 		INNO_CLASS_SINGLETON(SSAOPass)
 
 		bool Setup(ISystemConfig *systemConfig = nullptr) override;
-		bool Initialize() override;
+		bool Initialize() override;	
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
@@ -26,10 +26,13 @@ namespace Inno
 		SamplerComponent *m_SamplerComp_RandomRot;
 
 		uint32_t m_kernelSize = 64;
-		std::vector<Math::Vec4> m_SSAOKernel;
-		std::vector<Math::Vec4> m_SSAONoise;
+		std::vector<Math::Vec4> m_Kernel;
+		std::vector<Math::Vec4> m_Noise;
 
-		GPUBufferComponent *m_SSAOKernelGPUBuffer;
-		TextureComponent *m_SSAONoiseTextureComp;
+		GPUBufferComponent *m_KernelGPUBuffer;
+		TextureComponent *m_NoiseTexture;
+		TextureComponent* m_Result;
+
+		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno

@@ -2,12 +2,6 @@
 #include "Common/ClassTemplate.h"
 #include "Common/LogService.h"
 
-#include "Interface/IWindowSystem.h"
-#include "RenderingServer/IRenderingServer.h"
-
-#include "Interface/IRenderingClient.h"
-#include "Interface/ILogicClient.h"
-
 #include "../Client/ClientMetadata.h"
 
 #define PPCAT_NX(A, B) A ## B
@@ -25,14 +19,17 @@ namespace Inno
 {
 	enum EngineMode { Host, Slave };
 
-	enum RenderingServer { GL, DX11, DX12, VK, MT };
+	enum RenderingServer { DX12, VK, MT };
 
 	struct InitConfig
 	{
 		EngineMode engineMode = EngineMode::Host;
-		RenderingServer renderingServer = RenderingServer::GL;
+		RenderingServer renderingServer = RenderingServer::DX12;
 		LogLevel logLevel = LogLevel::Success;
 	};
+
+	class IWindowSystem;
+	class IRenderingServer;
 
 	class EngineImpl;
 	class Engine

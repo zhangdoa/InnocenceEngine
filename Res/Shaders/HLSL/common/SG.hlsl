@@ -46,10 +46,10 @@ float3 SGInnerProduct(in SG x, in SG y)
 }
 
 float SGsharpnessFromThreshold(in float amplitude,
-	in float epsilon,
+	in float EPSILONilon,
 	in float cosTheta)
 {
-	return (log(epsilon) - log(amplitude)) / (cosTheta - 1.0f);
+	return (log(EPSILONilon) - log(amplitude)) / (cosTheta - 1.0f);
 }
 
 float3 SGIrradianceFitted(in SG lightingLobe, in float3 normal)

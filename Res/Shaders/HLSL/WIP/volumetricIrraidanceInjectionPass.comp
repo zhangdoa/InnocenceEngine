@@ -45,7 +45,7 @@ void main(ComputeInputType input)
 
 		//Lo *= 1.0 - SunShadowResolver(eyePos, in_SunShadow, in_samplerTypePoint);
 
-		uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / BLOCK_SIZE));
+		uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / LIGHT_CULLING_BLOCK_SIZE));
 
 		uint startOffset = in_LightGrid[tileIndex].x;
 		uint lightCount = in_LightGrid[tileIndex].y;
@@ -60,8 +60,8 @@ void main(ComputeInputType input)
 			float lightAttRadius = light.luminousFlux.w;
 
 			float attenuation = 1.0;
-			float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
-			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+			float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, EPSILON);
+			attenuation *= CalculateDistanceAttenuation(unormalizedL, invSqrAttRadius);
 
 			float3 luminousFlux = light.luminousFlux.xyz * attenuation;
 

@@ -1,6 +1,6 @@
 // shadertype=hlsl
 
-static const float eps = 0.00001;
+static const float EPSILON = 0.00001;
 static const float PI = 3.14159265359;
 static const float SQRT2 = 1.41421356237;
 
@@ -14,7 +14,7 @@ static const int NUM_DISPATCH_PARAMS = 8;
 static const float FLT_MIN = 1.175494351e-38;
 static const float FLT_MAX = 3.402823466e+38;
 
-static const float sunAngularRadius = 0.000071;
+static const float SUN_ANGULAR_RADIUS = 0.000071;
 
 // Listing 45 [https://google.github.io/filament/Filament.md.html]
 static const float4 debugColors[16] = {
@@ -46,7 +46,7 @@ struct VertexInputType
 	uint instanceId : SV_InstanceID;
 };
 
-#define BLOCK_SIZE 16
+#define LIGHT_CULLING_BLOCK_SIZE 16
 
 struct PerFrame_CB
 {
@@ -89,13 +89,13 @@ struct Material_CB
 {
 	float4 albedo; // 0
 	float4 MRAT; // 1
-	uint m_TextureIndices_0; // Tight packing 2
-	uint m_TextureIndices_1; // Tight packing 2
-	uint m_TextureIndices_2; // Tight packing 2
-	uint m_TextureIndices_3; // Tight packing 2
-	uint m_TextureIndices_4; // Tight packing 3
-	uint m_TextureIndices_5; // Tight packing 3
-	uint m_TextureIndices_6; // Tight packing 3
+	int m_TextureIndices_0; // Tight packing 2
+	int m_TextureIndices_1; // Tight packing 2
+	int m_TextureIndices_2; // Tight packing 2
+	int m_TextureIndices_3; // Tight packing 2
+	int m_TextureIndices_4; // Tight packing 3
+	int m_TextureIndices_5; // Tight packing 3
+	int m_TextureIndices_6; // Tight packing 3
 	uint materialType; // Tight packing 3
 };
 

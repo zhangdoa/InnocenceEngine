@@ -19,7 +19,16 @@ using namespace VKHelper;
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 
-// @TODO: The command list should be passed as a parameter.
+bool VKRenderingServer::ClearTextureComponent(TextureComponent *rhs)
+{
+	return true;
+}
+
+bool VKRenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureComponent *rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
@@ -37,13 +46,17 @@ bool VKRenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::ClearTextureComponent(TextureComponent *rhs)
+bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
 {
-	return true;
-}
+	if (queueType == GPUEngineType::Graphics)
+	{
+		vkWaitForFences(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	}
+	else if (queueType == GPUEngineType::Compute)
+	{
+		vkWaitForFences(m_device, 1, &m_computeQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	}
 
-bool VKRenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureComponent *rhs)
-{
 	return true;
 }
 
@@ -409,25 +422,6 @@ bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueT
 	}
 
 	vkWaitSemaphores(m_device, &waitInfo, std::numeric_limits<uint64_t>::max());
-
-	return true;
-}
-
-bool VKRenderingServer::WaitOnCPU(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
-{
-	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType)
-	{
-		return true;
-	}
-
-	if (GPUEngineType == GPUEngineType::Graphics)
-	{
-		vkWaitForFences(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-	}
-	else if (GPUEngineType == GPUEngineType::Compute)
-	{
-		vkWaitForFences(m_device, 1, &m_computeQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-	}
 
 	return true;
 }

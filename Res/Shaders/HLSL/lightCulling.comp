@@ -59,7 +59,7 @@ void AppendLight(uint lightIndex)
 	}
 }
 
-[numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
+[numthreads(LIGHT_CULLING_BLOCK_SIZE, LIGHT_CULLING_BLOCK_SIZE, 1)]
 void main(ComputeInputType input)
 {
 	// Calculate min & max depth in thread group / tile.
@@ -100,7 +100,7 @@ void main(ComputeInputType input)
 
 	// Cull point light
 	uint i = 0u;
-	for (i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
+	for (i = input.groupIndex; i < NR_POINT_LIGHTS; i += LIGHT_CULLING_BLOCK_SIZE * LIGHT_CULLING_BLOCK_SIZE)
 	{
 		PointLight_CB light = g_PointLights[i];
 		// w component of luminousFlux is the attenuation radius
@@ -130,7 +130,7 @@ void main(ComputeInputType input)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Write to global light index list
-	for (i = input.groupIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
+	for (i = input.groupIndex; i < l_LightCount; i += LIGHT_CULLING_BLOCK_SIZE * LIGHT_CULLING_BLOCK_SIZE)
 	{
 		g_LightIndexList[l_LightIndexStartOffset + i] = l_LightList[i];
 	}

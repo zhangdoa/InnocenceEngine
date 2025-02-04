@@ -117,7 +117,11 @@ bool DX12RenderingServer::AssignSwapChainImages()
         l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
     }
 
-    m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+    m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+    m_PreviousFrame = m_CurrentFrame == 0 ? 1 : 0;
+
+    m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
+
     return true;
 }
 
@@ -130,10 +134,13 @@ bool DX12RenderingServer::PresentImpl()
 
 bool DX12RenderingServer::PostPresent()
 {
-	m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-	GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+    m_PreviousFrame = m_CurrentFrame;
+    m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+    m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
+
+    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
+    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
+    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
 
     return true;
 }

@@ -1,0 +1,359 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
+[[vk::binding(1, 0)]]
+cbuffer PointLightCBuffer : register(b1)
+{
+	PointLight_CB g_PointLights[NR_POINT_LIGHTS];
+};
+
+[[vk::binding(2, 0)]]
+cbuffer SphereLightCBuffer : register(b2)
+{
+	SphereLight_CB g_SphereLights[NR_SPHERE_LIGHTS];
+};
+
+[[vk::binding(3, 0)]]
+cbuffer CSMCBuffer : register(b3)
+{
+	CSM_CB CSMs[NR_CSM_SPLITS];
+};
+
+[[vk::binding(4, 0)]]
+cbuffer VoxelizationPassCBuffer : register(b4)
+{
+	VoxelizationPass_CB g_VoxelizationPassCBuffer;
+};
+
+[[vk::binding(5, 0)]]
+cbuffer GICBuffer : register(b5)
+{
+	GI_CB GICBuffer;
+};
+
+[[vk::binding(0, 1)]]
+Texture2D in_opaquePassRT0 : register(t0);
+[[vk::binding(1, 1)]]
+Texture2D in_opaquePassRT1 : register(t1);
+[[vk::binding(2, 1)]]
+Texture2D in_opaquePassRT2 : register(t2);
+[[vk::binding(3, 1)]]
+Texture2D in_opaquePassRT3 : register(t3);
+[[vk::binding(4, 1)]]
+Texture2D in_BRDFLUT : register(t4);
+[[vk::binding(5, 1)]]
+Texture2D in_BRDFMSLUT : register(t5);
+[[vk::binding(6, 1)]]
+Texture2D in_SSAO : register(t6);
+[[vk::binding(7, 1)]]
+Texture2DArray in_SunShadow : register(t7);
+[[vk::binding(8, 1)]]
+Texture2D<uint2> in_LightGrid : register(t8);
+[[vk::binding(9, 1)]]
+StructuredBuffer<uint> in_LightIndexList : register(t9);
+[[vk::binding(10, 1)]]
+Texture3D<float4> in_IrradianceVolume : register(t10);
+[[vk::binding(11, 1)]]
+Texture3D<float4> in_VolumetricFog : register(t11);
+[[vk::binding(0, 2)]]
+SamplerState in_samplerTypePoint : register(s0);
+[[vk::binding(0, 3)]]
+RWTexture2D<float4> out_lightPassRT0 : register(u0);
+[[vk::binding(1, 3)]]
+RWTexture2D<float4> out_lightPassRT1 : register(u1);
+
+#include "common/coneTrace.hlsl"
+#include "common/BSDF.hlsl"
+#include "common/shadowResolver.hlsl"
+
+//#define uni_drawCSMSplitArea
+
+float4 GetFog(in Texture3D<float4> voxelTexture,
+	in SamplerState in_samplerTypePoint,
+	in float3 P,
+	in float3 N,
+	in VoxelizationPass_CB g_VoxelizationPassCBuffer)
+{
+	float4 posVS = mul(float4(P, 1.0), g_Frame.v);
+	float4 posCS = mul(posVS, g_Frame.p_original);
+	posCS /= posCS.w;
+	posCS.z = -posVS.z / (g_Frame.zFar - g_Frame.zNear);
+	posCS.z = 1.0 - exp(-posCS.z * 8);
+
+	float3 tc = posCS.xyz;
+	tc.xy = tc.xy * 0.5f + 0.5f;
+	float4 result = voxelTexture.Sample(in_samplerTypePoint, tc);
+
+	return result;
+}
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	out_lightPassRT0[input.dispatchThreadID.xy] = float4(0.0, 0.0, 0.0, 0.0);
+	out_lightPassRT1[input.dispatchThreadID.xy] = float4(0.0, 0.0, 0.0, 0.0);
+
+	float4 GPassRT0 = in_opaquePassRT0[input.dispatchThreadID.xy];
+
+	if (GPassRT0.a)
+	{
+		float4 GPassRT1 = in_opaquePassRT1[input.dispatchThreadID.xy];
+		float4 GPassRT2 = in_opaquePassRT2[input.dispatchThreadID.xy];
+		float4 GPassRT3 = in_opaquePassRT3[input.dispatchThreadID.xy];
+
+		float l_SSAO = in_SSAO[input.dispatchThreadID.xy].x;
+
+		float3 l_Position_WorldSpace = GPassRT0.xyz;
+		float l_Metallic = GPassRT1.w;
+		float3 l_Normal_WorldSpace = GPassRT1.xyz;
+		float l_Roughness = GPassRT2.w;
+		float3 l_Albedo = GPassRT2.xyz;
+		
+		float l_AmbienceOcclusion = 1.0 - GPassRT3.z;
+		l_AmbienceOcclusion *= l_SSAO;
+
+		float3 l_Luminance = float3(0, 0, 0);
+		float3 N = normalize(l_Normal_WorldSpace);
+
+#ifdef uni_drawCSMSplitArea
+		float3 L = normalize(-g_Frame.sun_direction.xyz);
+		float NdotL = max(dot(N, L), 0.0);
+
+		l_Luminance = float3(NdotL, NdotL, NdotL);
+
+		int splitIndex = NR_CSM_SPLITS;
+		for (int i = 0; i < NR_CSM_SPLITS; i++)
+		{
+			if (l_Position_WorldSpace.x >= CSMs[i].AABBMin.x &&
+				l_Position_WorldSpace.y >= CSMs[i].AABBMin.y &&
+				l_Position_WorldSpace.z >= CSMs[i].AABBMin.z &&
+				l_Position_WorldSpace.x <= CSMs[i].AABBMax.x &&
+				l_Position_WorldSpace.y <= CSMs[i].AABBMax.y &&
+				l_Position_WorldSpace.z <= CSMs[i].AABBMax.z)
+			{
+				splitIndex = i;
+				break;
+			}
+		}
+
+		if (splitIndex == 0)
+		{
+			l_Luminance.g = 0;
+			l_Luminance.b = 0;
+		}
+		else if (splitIndex == 1)
+		{
+			l_Luminance.b = 0;
+		}
+		else if (splitIndex == 2)
+		{
+			l_Luminance.r = 0;
+			l_Luminance.b = 0;
+		}
+		else if (splitIndex == 3)
+		{
+			l_Luminance.r = 0;
+			l_Luminance.g = 0;
+		}
+
+		l_Luminance *= 1.0 - SunShadowResolver(l_Position_WorldSpace, in_SunShadow, in_samplerTypePoint);
+#else
+		float3 F0 = float3(0.04, 0.04, 0.04);
+		F0 = lerp(F0, l_Albedo, l_Metallic);
+
+		float3 V = normalize(g_Frame.camera_posWS.xyz - l_Position_WorldSpace);
+		float NdotV = max(dot(N, V), 0.0);
+
+		// direction l_PointLight, sun l_PointLight
+		float3 D = normalize(-g_Frame.sun_direction.xyz);
+		float r = sin(SUN_ANGULAR_RADIUS);
+		float d = cos(SUN_ANGULAR_RADIUS);
+		float DdotV = dot(D, V);
+		float3 S = V - DdotV * D;
+		float3 L = DdotV < d ? normalize(d * D + normalize(S) * r) : V;
+
+		float3 HD = normalize(V + D);
+		float3 HL = normalize(V + L);
+
+		float DdotHD = max(dot(D, HD), 0.0);
+
+		float LdotHL = max(dot(L, HL), 0.0);
+		float NdotHL = max(dot(N, HL), 0.0);
+
+		float NdotL = max(dot(N, L), 0.0);
+		float NdotD = max(dot(N, D), 0.0);
+
+		float F90 = 1.0;
+		float3 FresnelFactor = Fresnel_Schlick(F0, F90, LdotHL);
+		float3 Ft = ComputeDiffuseBRDF(NdotV, NdotD, DdotHD, l_Roughness, l_Metallic, FresnelFactor, l_Albedo);
+		float3 Fr = ComputeSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, l_Roughness, F0, FresnelFactor);
+
+		float3 l_LuminanceFromSun = g_Frame.sun_illuminance.xyz * NdotD * Ft + g_Frame.sun_illuminance.xyz * NdotL * Fr;
+		l_Luminance += l_LuminanceFromSun;
+
+		float l_ShadowFactor = 1.0 - SunShadowResolver(l_Position_WorldSpace, in_SunShadow, in_samplerTypePoint);
+		l_Luminance *= l_ShadowFactor;
+
+		// point punctual l_PointLight
+		// Get the index of the current pixel in the l_PointLight grid.
+		uint2 l_TileIndex = uint2(floor((float2)input.dispatchThreadID.xy / LIGHT_CULLING_BLOCK_SIZE));
+
+		// Get the start position and offset of the l_PointLight in the l_PointLight index list.
+		uint l_StartOffset = in_LightGrid[l_TileIndex].x;
+		uint l_LightCount = in_LightGrid[l_TileIndex].y;
+
+		[loop]
+		for (uint i = 0; i < l_LightCount; ++i)
+		{
+			uint l_LightIndex = in_LightIndexList[l_StartOffset + i];
+			PointLight_CB l_PointLight = g_PointLights[l_LightIndex];
+
+			float3 L_unnormalized = l_PointLight.position.xyz - l_Position_WorldSpace;
+			float l_LightAttenuationRadius = l_PointLight.luminousFlux.w;
+
+			float3 L = normalize(L_unnormalized);
+			float3 H = normalize(V + L);
+
+			float LdotH = max(dot(L, H), 0.0);
+			float NdotH = max(dot(N, H), 0.0);
+			float NdotL = max(dot(N, L), 0.0);
+
+			float l_Attenuation = 1.0;
+			float l_InvertedSquareAttenuationRadius = 1.0 / max(l_LightAttenuationRadius * l_LightAttenuationRadius, EPSILON);
+			l_Attenuation *= CalculateDistanceAttenuation(L_unnormalized, l_InvertedSquareAttenuationRadius);
+
+			float3 l_LuminousFlux = l_PointLight.luminousFlux.xyz * l_Attenuation;
+			l_Luminance += CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotH, LdotH, l_Roughness, l_Metallic, F0, l_Albedo, l_LuminousFlux);
+		}
+
+		// // sphere area l_PointLight
+		// [loop]
+		// for (uint i = 0; i < NR_SPHERE_LIGHTS; ++i)
+		// {
+		// 	float3 L_unnormalized = g_SphereLights[i].position.xyz - l_Position_WorldSpace;
+		// 	float l_LightSphereRadius = g_SphereLights[i].l_LuminousFlux.w;
+
+		// 	float3 L = normalize(L_unnormalized);
+		// 	float3 H = normalize(V + L);
+
+		// 	float LdotH = max(dot(L, H), 0.0);
+		// 	float NdotH = max(dot(N, H), 0.0);
+		// 	float NdotL = max(dot(N, L), 0.0);
+
+		// 	float sqrDist = dot(L_unnormalized, L_unnormalized);
+
+		// 	float Beta = acos(NdotL);
+		// 	float H2 = sqrt(sqrDist);
+		// 	float h = H2 / l_LightSphereRadius;
+		// 	float x = sqrt(max(h * h - 1, EPSILON));
+		// 	float y = -x * (1 / tan(Beta));
+		// 	//y = clamp(y, -1.0, 1.0);
+		// 	float l_Illuminance = 0;
+
+		// 	if (h * cos(Beta) > 1)
+		// 	{
+		// 		l_Illuminance = cos(Beta) / (h * h);
+		// 	}
+		// 	else
+		// 	{
+		// 		l_Illuminance = (1 / max(PI * h * h, EPSILON))
+		// 			* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, EPSILON)))
+		// 			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, EPSILON)) / x));
+		// 	}
+		// 	l_Illuminance *= PI;
+
+		// 	l_Luminance += CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotH, LdotH, l_Roughness, l_Metallic, F0, l_Albedo, l_Illuminance * g_SphereLights[i].l_LuminousFlux.xyz);
+		// }
+
+		//// GI
+		//// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
+		//float3 nSquared = N * N;
+		//int3 isNegative = (N < 0.0);
+		//float3 GISampleCoord = (l_Position_WorldSpace - GICBuffer.irradianceVolumeOffset.xyz) / g_Frame.l_Position_WorldSpaceNormalizer.xyz;
+		//int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
+
+		//GISampleCoord.z /= 6.0;
+
+		//if ((!isOutside.x) && (!isOutside.y) && (!isOutside.z))
+		//{
+		//	float3 GISampleCoordPX = GISampleCoord;
+		//	float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 1.0 / 6.0);
+		//	float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 2.0 / 6.0);
+		//	float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 3.0 / 6.0);
+		//	float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4.0 / 6.0);
+		//	float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 5.0 / 6.0);
+
+		//	float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		//	if (isNegative.x)
+		//	{
+		//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(in_samplerTypePoint, GISampleCoordNX);
+		//	}
+		//	else
+		//	{
+		//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(in_samplerTypePoint, GISampleCoordPX);
+		//	}
+		//	if (isNegative.y)
+		//	{
+		//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(in_samplerTypePoint, GISampleCoordNY);
+		//	}
+		//	else
+		//	{
+		//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(in_samplerTypePoint, GISampleCoordPY);
+		//	}
+		//	if (isNegative.z)
+		//	{
+		//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(in_samplerTypePoint, GISampleCoordNZ);
+		//	}
+		//	else
+		//	{
+		//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(in_samplerTypePoint, GISampleCoordPZ);
+		//	}
+
+		//	l_Luminance += indirectLight.xyz;
+		//}
+
+		// float3 R = -reflect(V, N);
+
+		// float3 l_IndirectDiffuse = ConeTraceRadianceDiffuse(in_IrradianceVolume, in_samplerTypePoint, l_Position_WorldSpace, l_Normal_WorldSpace, g_VoxelizationPassCBuffer).xyz;
+		// float3 l_IndirectSpecular = ConeTraceRadianceSpecular(in_IrradianceVolume, in_samplerTypePoint, l_Position_WorldSpace, l_Normal_WorldSpace, R, g_VoxelizationPassCBuffer).xyz;
+
+		// float NDotR = max(dot(N, R), EPSILON);
+		// float NDotHR = 1.0;
+		// float RdotHR = max(dot(R, N), EPSILON);
+		// float3 l_IndirectFresnelFactor = Fresnel_Schlick(F0, F90, RdotHR);
+		// float3 l_IndirectFt = CalculateBTDF(NdotV, NDotR, RdotHR, l_Roughness, l_Metallic, l_IndirectFresnelFactor, l_Albedo);
+		// float3 l_IndirectFr = CalculateBRDF_Indirect(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NDotR, NDotHR, RdotHR, l_Roughness, F0, l_IndirectFresnelFactor);
+
+		// l_Luminance += l_IndirectDiffuse * l_IndirectFt;
+		// l_Luminance += l_IndirectSpecular * l_IndirectFr;
+
+		// // Volumetric Fog
+		// float4 l_Fog = GetFog(in_VolumetricFog, in_samplerTypePoint, l_Position_WorldSpace, l_Normal_WorldSpace, g_VoxelizationPassCBuffer);
+
+		// if (l_Fog.a)
+		// {
+		// 	l_Luminance = l_Fog.a * l_Luminance + l_Fog.xyz;
+		// }
+
+		// ambient occlusion
+		//l_Luminance *= l_AmbienceOcclusion;
+#endif
+
+		out_lightPassRT0[input.dispatchThreadID.xy] = float4(l_Luminance, 1.0);
+		//out_lightPassRT1[input.dispatchThreadID.xy] = float4(l_IndirectDiffuse + l_LuminanceFromSun * l_ShadowFactor, 1.0);
+	}
+}

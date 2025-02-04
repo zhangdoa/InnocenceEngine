@@ -32,10 +32,10 @@ namespace Inno
 		}
 	};
 	
-	using ButtonEvent = Event<void>;
+	using ButtonEvent = Event<std::function<void()>>;
 	using MouseMovementEvent = Event<std::function<void(float)>>;
 	enum class MouseMovementAxis { Horizontal, Vertical };
-	using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
+	using ButtonEventMap = std::unordered_map<ButtonState, std::set<ButtonEvent>, ButtonStateHasher>;
 	using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
 
 	class HIDService : public ISystem
@@ -55,9 +55,7 @@ namespace Inno
 		void AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent);
 		void AddMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent);
 
-		void ButtonStateCallback(ButtonState buttonState);
 		void WindowResizeCallback(int32_t width, int32_t height);
-		void MouseMovementCallback(float mouseXPos, float mouseYPos);
 		void ScrollCallback(float xOffset, float yOffset);
 
 		bool IsResizing();
@@ -65,6 +63,9 @@ namespace Inno
 
 	private:
 		void ExecuteEvent(const ButtonEvent& buttonEvent);
+
+		void ButtonStateCallback(const ButtonState& buttonState);
+		void MouseMovementCallback(const MouseState& mouseState);
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 

@@ -17,7 +17,7 @@ StructuredBuffer<Material_CB> g_Materials : register(t1);
 Texture2D g_2DTextures[] : register(t2);
 
 [[vk::binding(0, 2)]]
-SamplerState g_Samplers[] : register(s0);
+SamplerState g_Sampler : register(s0);
 
 struct PixelInputType
 {
@@ -40,14 +40,13 @@ PixelOutputType main(PixelInputType input)
 
 	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
 	Material_CB materialCBuffer = g_Materials[perObjectCB.m_MaterialIndex];
-	SamplerState sampler = g_Samplers[0];
 
 	float transparency;
 	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;
-	if (albedoTextureIndex != 0)
+	if (albedoTextureIndex != -1)
 	{
 		Texture2D t2d_albedo = g_2DTextures[albedoTextureIndex];
-		float4 l_albedo = t2d_albedo.Sample(sampler, input.texCoord);
+		float4 l_albedo = t2d_albedo.Sample(g_Sampler, input.texCoord);
 		transparency = l_albedo.a;
 	}
 	else

@@ -51,7 +51,9 @@ namespace Inno
         bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) override;
         bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) override;
         bool Execute(ICommandList* commandList, GPUEngineType queueType) override;
-        
+        uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
+      	bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
+
         uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
         bool BindRenderPassComponent(RenderPassComponent* rhs) override;
@@ -61,8 +63,7 @@ namespace Inno
         void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
         bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
         bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
-        bool WaitOnCPU(RenderPassComponent* rhs, GPUEngineType queueType) override;
-
+ 
         bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
 
         bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
@@ -170,7 +171,6 @@ namespace Inno
         bool SetDescriptorHeaps(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool SetRenderTargets(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool PreparePipeline(DX12RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
-        bool WaitOnCPU(DX12Semaphore* rhs, GPUEngineType GPUEngineType);
         bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
         bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp);

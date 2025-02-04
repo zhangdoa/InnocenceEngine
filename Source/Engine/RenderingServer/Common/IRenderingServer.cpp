@@ -456,14 +456,16 @@ bool IRenderingServer::Present()
 {
 	PresentImpl();
 
-	WaitOnCPU(nullptr, GPUEngineType::Graphics);
-	WaitOnCPU(nullptr, GPUEngineType::Compute);
-	WaitOnCPU(nullptr, GPUEngineType::Copy);
-
-	PostPresent();
-
 	if (m_needResize)
 	{
+		auto l_graphicsSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+		auto l_computeSemaphoreValue = GetSemaphoreValue(GPUEngineType::Compute);
+		auto l_copySemaphoreValue = GetSemaphoreValue(GPUEngineType::Copy);
+
+		WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
+		WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
+		WaitOnCPU(l_copySemaphoreValue, GPUEngineType::Copy);
+		
 		ExecuteResize();
 
 		m_needResize = false;
@@ -541,14 +543,7 @@ bool IRenderingServer::InitializeImpl(MaterialComponent* rhs)
 	{
 		auto l_texture = rhs->m_TextureSlots[i].m_Texture;
 		if (l_texture)
-		{
 			InitializeTextureComponent(l_texture);
-		}
-		else
-		{
-			// @TODO: Maybe not necessary to use the default texture.
-			rhs->m_TextureSlots[i].m_Texture = l_defaultMaterial->m_TextureSlots[i].m_Texture;
-		}
 	}
 
 	rhs->m_GPUResourceType = GPUResourceType::Material;
@@ -618,9 +613,14 @@ RenderPassComponent* IRenderingServer::GetSwapChainRenderPassComponent()
 	return m_SwapChainRenderPassComp;
 }
 
+uint32_t IRenderingServer::GetPreviousFrame()
+{
+	return m_PreviousFrame;
+}
+
 uint32_t IRenderingServer::GetCurrentFrame()
 {
-	return m_SwapChainRenderPassComp->m_CurrentFrame;
+	return m_CurrentFrame;
 }
 
 bool IRenderingServer::PrepareSwapChainCommands()
@@ -632,7 +632,7 @@ bool IRenderingServer::PrepareSwapChainCommands()
 	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	CommandListBegin(m_SwapChainRenderPassComp, m_SwapChainRenderPassComp->m_CurrentFrame);
+	CommandListBegin(m_SwapChainRenderPassComp, GetCurrentFrame());
 
 	BindRenderPassComponent(m_SwapChainRenderPassComp);
 

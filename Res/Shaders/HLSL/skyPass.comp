@@ -10,6 +10,12 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+	PerFrame_CB g_Frame; // Contains view, projection, and other per-frame matrices.
+}
+
 [[vk::binding(0, 1)]]
 RWTexture2D<float4> out_skyPassRT0 : register(u0);
 
@@ -18,17 +24,17 @@ void main(ComputeInputType input)
 {
 	float3 color = float3(0.0, 0.0, 0.0);
 
-	float3 eyedir = get_world_normal(input.dispatchThreadID.xy, perFrameCBuffer.viewportSize.xy, perFrameCBuffer.p_inv, perFrameCBuffer.v_inv);
-	float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
+	float3 eyedir = get_world_normal(input.dispatchThreadID.xy, g_Frame.viewportSize.xy, g_Frame.p_inv, g_Frame.v_inv);
+	float3 lightdir = -g_Frame.sun_direction.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
-	float3 eye_position = perFrameCBuffer.camera_posWS.xyz + float3(0.0, planetRadius, 0.0);
+	float3 eye_position = g_Frame.camera_posWS.xyz + float3(0.0, planetRadius, 0.0);
 
 	color = atmosphere(
 		eyedir, // normalized ray direction
 		eye_position, // ray origin
 		lightdir, // position of the sun
-		perFrameCBuffer.sun_illuminance.xyz, // intensity of the sun
+		g_Frame.sun_illuminance.xyz, // intensity of the sun
 		planetRadius, // radius of the planet in meters
 		planetRadius + atmosphereHeight, // radius of the atmosphere in meters
 		float3(5.8e-6, 13.5e-6, 33.1e-6), // Rayleigh scattering coefficient
@@ -39,7 +45,7 @@ void main(ComputeInputType input)
 	);
 
 	int2 writeCoord = input.dispatchThreadID.xy;
-	writeCoord.y = perFrameCBuffer.viewportSize.y - writeCoord.y;
+	writeCoord.y = g_Frame.viewportSize.y - writeCoord.y;
 
 	out_skyPassRT0[writeCoord] = float4(color, 1.0);
 }

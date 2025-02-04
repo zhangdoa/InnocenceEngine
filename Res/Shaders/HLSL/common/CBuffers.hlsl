@@ -31,12 +31,6 @@ cbuffer dispatchParamsCBuffer : register(b6)
 	DispatchParams_CB dispatchParams[8];
 }
 
-[[vk::binding(7, 0)]]
-cbuffer SSAOKernelCBuffer : register(b7)
-{
-	float4 SSAOKernels[64];
-};
-
 [[vk::binding(8, 0)]]
 cbuffer GICBuffer : register(b8)
 {

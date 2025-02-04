@@ -192,7 +192,7 @@ namespace Inno
 
             l_renderingServer->ExecuteCommandList(m_RenderPassComp_Probe, GPUEngineType::Graphics);
             l_renderingServer->WaitOnGPU(m_RenderPassComp_Probe, GPUEngineType::Graphics, GPUEngineType::Graphics);
-            l_renderingServer->WaitOnCPU(m_RenderPassComp_Probe, GPUEngineType::Graphics);
+            l_renderingServer->WaitOnCPU(GPUEngineType::Graphics);
 
             Log(Success, "Start to generate probe location...");
 

@@ -728,50 +728,60 @@ bool DX12RenderingServer::Execute(ICommandList* commandList, GPUEngineType queue
 	return true;
 }
 
-bool DX12RenderingServer::WaitOnCPU(DX12Semaphore* rhs, GPUEngineType GPUEngineType)
+uint64_t DX12RenderingServer::GetSemaphoreValue(GPUEngineType queueType)
 {
-	UINT64 semaphore = 0;
+	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
+
+	if (queueType == GPUEngineType::Graphics)
+		return l_semaphore->m_DirectCommandQueueSemaphore;	
+	else if (queueType == GPUEngineType::Compute)
+		return l_semaphore->m_ComputeCommandQueueSemaphore;
+	else if (queueType == GPUEngineType::Copy)
+		return l_semaphore->m_CopyCommandQueueSemaphore;
+
+	return 0;
+}
+
+bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
+{
+	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
+	UINT64 l_semaphoreValue = 0;
 	HANDLE* fenceEvent = nullptr;
-	auto l_currentFrame = GetCurrentFrame();
-	auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 
-	if (GPUEngineType == GPUEngineType::Graphics)
+	if (queueType == GPUEngineType::Graphics)
 	{
-		semaphore = rhs == nullptr ? l_globalSemaphore->m_DirectCommandQueueSemaphore : rhs->m_DirectCommandQueueSemaphore;
-		fenceEvent = rhs == nullptr ? &l_globalSemaphore->m_DirectCommandQueueFenceEvent : &rhs->m_DirectCommandQueueFenceEvent;
+		fenceEvent = &l_semaphore->m_DirectCommandQueueFenceEvent;
 	}
-	else if (GPUEngineType == GPUEngineType::Compute)
+	else if (queueType == GPUEngineType::Compute)
 	{
-		semaphore = rhs == nullptr ? l_globalSemaphore->m_ComputeCommandQueueSemaphore : rhs->m_ComputeCommandQueueSemaphore;
-		fenceEvent = rhs == nullptr ? &l_globalSemaphore->m_ComputeCommandQueueFenceEvent : &rhs->m_ComputeCommandQueueFenceEvent;
+		fenceEvent = &l_semaphore->m_ComputeCommandQueueFenceEvent;
 	}
-	else if (GPUEngineType == GPUEngineType::Copy)
+	else if (queueType == GPUEngineType::Copy)
 	{
-		semaphore = rhs == nullptr ? l_globalSemaphore->m_CopyCommandQueueSemaphore : rhs->m_CopyCommandQueueSemaphore;
-		fenceEvent = rhs == nullptr ? &l_globalSemaphore->m_CopyCommandQueueFenceEvent : &rhs->m_CopyCommandQueueFenceEvent;
+		fenceEvent = &l_semaphore->m_CopyCommandQueueFenceEvent;
 	}
 
-	if (GPUEngineType == GPUEngineType::Graphics)
+	if (queueType == GPUEngineType::Graphics)
 	{
-		if (m_directCommandQueueFence->GetCompletedValue() < semaphore)
+		if (m_directCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			m_directCommandQueueFence->SetEventOnCompletion(semaphore, *fenceEvent);
+			m_directCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
 			WaitForSingleObject(*fenceEvent, INFINITE);
 		}
 	}
-	else if (GPUEngineType == GPUEngineType::Compute)
+	else if (queueType == GPUEngineType::Compute)
 	{
-		if (m_computeCommandQueueFence->GetCompletedValue() < semaphore)
+		if (m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			m_computeCommandQueueFence->SetEventOnCompletion(semaphore, *fenceEvent);
+			m_computeCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
 			WaitForSingleObject(*fenceEvent, INFINITE);
 		}
 	}
-	else if (GPUEngineType == GPUEngineType::Copy)
+	else if (queueType == GPUEngineType::Copy)
 	{
-		if (m_copyCommandQueueFence->GetCompletedValue() < semaphore)
+		if (m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			m_copyCommandQueueFence->SetEventOnCompletion(semaphore, *fenceEvent);
+			m_copyCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
 			WaitForSingleObject(*fenceEvent, INFINITE);
 		}
 	}

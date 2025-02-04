@@ -372,23 +372,24 @@ void PhysicsSystem::RunCulling()
 
 	m_Impl->RunCulling(std::move(visibilityCheck), std::move(onPassed));
 
-	// auto sunVisibilityCheck = [&](PhysicsComponent* PDC) -> bool {
-	// 	auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
-	// 	auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
-	// 	auto l_sphereRadius = (m_Impl->m_VisibleSceneBoundary.m_Max - m_Impl->m_VisibleSceneBoundary.m_AABB.m_center).length();
-	// 	auto l_spherePosLS = l_sunRotationInv * Vec4(PDC->m_SphereWS.m_center, 1.0f);
-	// 	auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
-	// 	return l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius;
-	// 	};
+	auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
+	auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
+	auto l_sphereRadius = (m_Impl->m_VisibleSceneBoundary.m_Max - m_Impl->m_VisibleSceneBoundary.m_AABB.m_center).length();	
 
-	// auto onSunPassed = [&](PhysicsComponent* PDC) {
-	// 	CullingResult l_cullingResult;
-	// 	l_cullingResult.m_PhysicsComponent = PDC;
-	// 	l_cullingResult.m_VisibilityMask |= VisibilityMask::Sun;
-	// 	l_cullingResults.emplace_back(l_cullingResult);
-	// 	};
+	auto sunVisibilityCheck = [&](PhysicsComponent* PDC) -> bool {
+		auto l_spherePosLS = l_sunRotationInv * Vec4(PDC->m_SphereWS.m_center, 1.0f);
+		auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
+		return l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius;
+		};
 
-	// m_Impl->RunCulling(std::move(sunVisibilityCheck), std::move(onSunPassed));
+	auto onSunPassed = [&](PhysicsComponent* PDC) {
+		CullingResult l_cullingResult;
+		l_cullingResult.m_PhysicsComponent = PDC;
+		l_cullingResult.m_VisibilityMask |= VisibilityMask::Sun;
+		m_Impl->m_CullingResults.emplace_back(l_cullingResult);
+		};
+
+	m_Impl->RunCulling(std::move(sunVisibilityCheck), std::move(onSunPassed));
 
 	auto l_BVHService = g_Engine->Get<BVHService>();
 
