@@ -168,8 +168,11 @@ GPUResourceComponent* OpaquePass::GetResult()
 	if (!m_RenderPassComp)
 		return nullptr;
 	
-	if (m_RenderPassComp->m_RenderTargets.size() == 0)
+	if (m_RenderPassComp->m_OutputMergerTargets.size() == 0)
 		return nullptr;
 
-	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
+
+	return m_RenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture;
 }

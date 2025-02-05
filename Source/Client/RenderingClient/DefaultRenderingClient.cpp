@@ -300,7 +300,7 @@ namespace Inno
 		if (SunShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+			l_renderingServer->SignalOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 		}
 
 		if (OpaquePass::Get().GetStatus() == ObjectStatus::Activated)
@@ -365,13 +365,12 @@ namespace Inno
 			l_renderingServer->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(FinalBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 			l_renderingServer->SignalOnGPU(FinalBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-		}	
+		}
 
 		// l_renderingServer->WaitOnGPU(l_canvasOwner, GPUEngineType::Graphics,  l_canvasOwner->m_RenderPassDesc.m_GPUEngineType);
 		// l_renderingServer->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 		// l_renderingServer->WaitOnGPU(BillboardPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 		// l_renderingServer->WaitOnGPU(DebugPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-
 
 		// l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 		// l_renderingServer->WaitOnGPU(SunShadowBlurOddPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);

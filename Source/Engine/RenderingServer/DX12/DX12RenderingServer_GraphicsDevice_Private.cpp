@@ -689,8 +689,7 @@ bool DX12RenderingServer::CreateSwapChain()
     // Set to full screen or windowed mode.
     // @TODO: finish this feature
 
-    // Discard the back buffer contents after presenting.
-    m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
     // Don't set the advanced flags.
     m_swapChainDesc.Flags = 0;

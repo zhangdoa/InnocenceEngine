@@ -203,20 +203,32 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 	return m_RenderPassComp;
 }
 
-bool Inno::AnimationPass::RenderTargetsReservationFunc()
+bool AnimationPass::RenderTargetsReservationFunc()
 {
-	m_RenderPassComp->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
+	auto l_renderingServer = g_Engine->getRenderingServer();	
+	m_RenderPassComp->m_OutputMergerTargets.resize(l_renderingServer->GetSwapChainImageCount());
+
+	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
+	{
+		if (m_RenderPassComp->m_OutputMergerTargets[i] == nullptr)
+			l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTargets[i]);
+
+		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
+		l_outputMergerTarget->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
+	}
 
     return true;
 }
 
 bool AnimationPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
 	{
-		m_RenderPassComp->m_RenderTargets[i].m_Texture = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[i].m_Texture;
+		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
+		for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
+		{
+			l_outputMergerTarget->m_RenderTargets[i].m_Texture = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[i]->m_RenderTargets[j].m_Texture;
+		}
 	}
 
 	return true;
@@ -224,16 +236,16 @@ bool AnimationPass::RenderTargetsCreationFunc()
 
 bool AnimationPass::DepthStencilRenderTargetsReservationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
 	return true;
 }
 
 bool AnimationPass::DepthStencilRenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	m_RenderPassComp->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture;
+	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
+	{
+		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
+		l_outputMergerTarget->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[i]->m_DepthStencilRenderTarget.m_Texture;
+	}
 
 	return true;
 }

@@ -518,7 +518,7 @@ bool VKRenderingServer::PresentImpl()
 	return true;
 }
 
-bool Inno::VKRenderingServer::PostPresent()
+bool Inno::VKRenderingServer::UpdateFrameIndex()
 {
     return false;
 }

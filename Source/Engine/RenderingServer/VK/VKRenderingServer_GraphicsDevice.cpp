@@ -78,11 +78,19 @@ bool VKRenderingServer::GetSwapChainImages()
 
 bool VKRenderingServer::AssignSwapChainImages()
 {
-    m_SwapChainRenderPassComp->m_RenderTargets.resize(m_swapChainImageCount);
+	if (m_SwapChainRenderPassComp->m_OutputMergerTargets.size() == 0)
+		m_SwapChainRenderPassComp->m_OutputMergerTargets.resize(m_swapChainImageCount);
 
-	for (size_t i = 0; i < m_swapChainImages.size(); i++)
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
-		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(m_SwapChainRenderPassComp->m_RenderTargets[i].m_Texture);
+		auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTargets[i];
+		if (l_outputMergerTarget->m_RenderTargets.size() == 0)
+		{
+			l_outputMergerTarget->m_RenderTargets.resize(1);
+			l_outputMergerTarget->m_RenderTargets[0].m_Texture = AddTextureComponent((m_SwapChainRenderPassComp->m_InstanceName.c_str() + std::string("_RT_") + std::to_string(i) + "/").c_str());
+		}
+
+		auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_RenderTargets[0].m_Texture);
 		l_VKTextureComp->m_TextureDesc = m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc;
 		l_VKTextureComp->m_image = m_swapChainImages[i];
 		l_VKTextureComp->m_VKTextureDesc = GetVKTextureDesc(l_VKTextureComp->m_TextureDesc);

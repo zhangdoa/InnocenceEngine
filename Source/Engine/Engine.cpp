@@ -100,18 +100,7 @@ namespace Inno
 		std::function<void()> f_SceneLoadingStartedCallback;
 		std::function<void()> f_SceneLoadingFinishedCallback;
 
-		Handle<ITask> m_RenderingWriteToUploadHeapTask;
-		Handle<ITask> m_RenderingCopyUploadToDefaultHeapTask;
 		Handle<ITask> m_RenderingExecutionTask;
-
-		uint64_t m_CopyUploadToDefaultHeapSemaphoreValue = 0;
-
-		uint64_t m_LastGraphicsSemaphoreValue = 0;
-		uint64_t m_LastComputeSemaphoreValue = 0;
-		uint64_t m_LastCopySemaphoreValue = 0;
-		uint64_t m_CurrentGraphicsSemaphoreValue = 0;
-		uint64_t m_CurrentComputeSemaphoreValue = 0;
-		uint64_t m_CurrentCopySemaphoreValue = 0;
 
 		float m_tickTime = 0;
 	};
@@ -384,6 +373,51 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
+	m_pImpl->m_RenderingServer->SetUploadHeapPreparationCallback([&]()
+		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return true;
+
+			// Simulation
+			m_pImpl->m_LogicClient->Update();
+
+			// Update components
+			Get<TransformSystem>()->Update();
+			Get<CameraSystem>()->Update();
+			Get<LightSystem>()->Update();
+
+			SystemUpdate(EntityManager);
+
+			// Culling
+			Get<PhysicsSystem>()->Update();
+			Get<BVHService>()->Update();
+			Get<PhysicsSystem>()->RunCulling();
+
+			Get<RenderingContextService>()->Update();
+			Get<AnimationService>()->Update();
+			m_pImpl->m_RenderingClient->Update();
+
+			return true;
+		});
+
+	m_pImpl->m_RenderingServer->SetCommandPreparationCallback([&]()
+		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return true;
+
+			m_pImpl->m_RenderingClient->PrepareCommands();
+			return true;
+		});
+
+	m_pImpl->m_RenderingServer->SetCommandExecutionCallback([&]()
+		{
+			if (Get<SceneSystem>()->isLoadingScene())
+				return true;
+
+			m_pImpl->m_RenderingClient->ExecuteCommands();
+			return true;
+		});
+
 	SystemSetup(RenderingContextService);
 	SystemSetup(AnimationService);
 
@@ -409,84 +443,14 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	m_pImpl->m_RenderingWriteToUploadHeapTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Write to Upload Heap Task", ITask::Type::Recurrent, 2), [&]()
-		{
-			return true;
-		});
-	m_pImpl->m_RenderingCopyUploadToDefaultHeapTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Copy Upload Heap to Default Heap Task", ITask::Type::Recurrent, 2), [&]()
-		{
-
-
-			return true;
-		});
-
 	m_pImpl->m_RenderingExecutionTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Execution Task", ITask::Type::Recurrent, 2), [&]()
 		{
 			if (Get<HIDService>()->IsResizing())
 				return true;
 
-			if (!Get<SceneSystem>()->isLoadingScene())
-			{
-				// Simulation
-				m_pImpl->m_LogicClient->Update();
-
-				// Update components
-				Get<TransformSystem>()->Update();
-				Get<CameraSystem>()->Update();
-				Get<LightSystem>()->Update();
-
-				SystemUpdate(EntityManager);
-
-				// Culling
-				Get<PhysicsSystem>()->Update();
-				Get<BVHService>()->Update();
-				Get<PhysicsSystem>()->RunCulling();
-
-				// Writing to upload heap has to be done after the copying upload to default heap is done
-				m_pImpl->m_RenderingServer->WaitOnCPU(m_pImpl->m_CopyUploadToDefaultHeapSemaphoreValue, GPUEngineType::Graphics);
-
-				Get<RenderingContextService>()->Update();
-				Get<AnimationService>()->Update();
-				m_pImpl->m_RenderingClient->Update();
-			}
-
-			m_pImpl->m_RenderingServer->Update();
-			
-			m_pImpl->m_CopyUploadToDefaultHeapSemaphoreValue = m_pImpl->m_RenderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
-
-			m_pImpl->m_RenderingServer->ExecuteGlobalCommands();
-
-			if (!Get<SceneSystem>()->isLoadingScene())
-			{
-				m_pImpl->m_RenderingClient->PrepareCommands();
-				m_pImpl->m_RenderingServer->PrepareSwapChainCommands();
-				Get<GUISystem>()->Update();
-			}
-		
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
-			if (!Get<SceneSystem>()->isLoadingScene())
-			{
-				m_pImpl->m_RenderingClient->ExecuteCommands();
-				m_pImpl->m_RenderingServer->ExecuteSwapChainCommands();
-				Get<GUISystem>()->ExecuteCommands();
-
-				m_pImpl->m_CurrentGraphicsSemaphoreValue = m_pImpl->m_RenderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
-				m_pImpl->m_CurrentComputeSemaphoreValue = m_pImpl->m_RenderingServer->GetSemaphoreValue(GPUEngineType::Compute);
-				m_pImpl->m_CurrentCopySemaphoreValue = m_pImpl->m_RenderingServer->GetSemaphoreValue(GPUEngineType::Copy);
-			}
-
-			m_pImpl->m_RenderingServer->Present();
-
-			m_pImpl->m_RenderingServer->WaitOnCPU(m_pImpl->m_LastGraphicsSemaphoreValue, GPUEngineType::Graphics);
-			m_pImpl->m_RenderingServer->WaitOnCPU(m_pImpl->m_LastComputeSemaphoreValue, GPUEngineType::Compute);
-			m_pImpl->m_RenderingServer->WaitOnCPU(m_pImpl->m_LastCopySemaphoreValue, GPUEngineType::Copy);
-
-			m_pImpl->m_RenderingServer->PostPresent();
-	
-			m_pImpl->m_LastGraphicsSemaphoreValue = m_pImpl->m_CurrentGraphicsSemaphoreValue;
-			m_pImpl->m_LastComputeSemaphoreValue = m_pImpl->m_CurrentComputeSemaphoreValue;
-			m_pImpl->m_LastCopySemaphoreValue = m_pImpl->m_CurrentCopySemaphoreValue;
+			m_pImpl->m_RenderingServer->Update();
 
 			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
@@ -497,14 +461,10 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	m_pImpl->f_SceneLoadingStartedCallback = [&]()
 		{
-			m_pImpl->m_RenderingWriteToUploadHeapTask->Deactivate();
-			m_pImpl->m_RenderingCopyUploadToDefaultHeapTask->Deactivate();
 		};
 
 	m_pImpl->f_SceneLoadingFinishedCallback = [&]()
 		{
-			m_pImpl->m_RenderingWriteToUploadHeapTask->Activate();
-			m_pImpl->m_RenderingCopyUploadToDefaultHeapTask->Activate();
 		};
 
 	Get<SceneSystem>()->AddSceneLoadingStartedCallback(&m_pImpl->f_SceneLoadingStartedCallback, -1);
@@ -582,8 +542,6 @@ bool Engine::ExecuteDefaultTask()
 bool Engine::Terminate()
 {
 	m_pImpl->m_RenderingExecutionTask->Deactivate();
-	m_pImpl->m_RenderingWriteToUploadHeapTask->Deactivate();
-	m_pImpl->m_RenderingCopyUploadToDefaultHeapTask->Deactivate();
 
 	ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
 	auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {

@@ -8,6 +8,7 @@ using namespace Inno;
 #include "../../Engine.h"
 
 #include "DX12Helper_Common.h"
+#include "DX12Helper_Texture.h"
 
 using namespace DX12Helper;
 
@@ -102,11 +103,10 @@ bool DX12RenderingServer::GetSwapChainImages()
 
 bool DX12RenderingServer::AssignSwapChainImages()
 {
-    m_SwapChainRenderPassComp->m_RenderTargets.resize(m_swapChainImageCount);
-
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
-        auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(m_SwapChainRenderPassComp->m_RenderTargets[i].m_Texture);
+        auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTargets[i];
+        auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_RenderTargets[0].m_Texture);
 
         l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
         l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
@@ -118,13 +118,21 @@ bool DX12RenderingServer::AssignSwapChainImages()
     }
 
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-    m_PreviousFrame = m_CurrentFrame == 0 ? 1 : 0;
+    m_PreviousFrame = GetPreviousFrame();
 
     m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
 
     return true;
 }
 
+bool DX12RenderingServer::BeginFrame()
+{
+    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
+    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
+    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+       
+    return true;
+}
 bool DX12RenderingServer::PresentImpl()
 {
     m_swapChain->Present(0, 0);
@@ -132,15 +140,11 @@ bool DX12RenderingServer::PresentImpl()
     return true;
 }
 
-bool DX12RenderingServer::PostPresent()
+bool DX12RenderingServer::UpdateFrameIndex()
 {
     m_PreviousFrame = m_CurrentFrame;
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
     m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
-
-    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
 
     return true;
 }
@@ -164,48 +168,51 @@ bool DX12RenderingServer::ResizeImpl()
     return true;
 }
 
-bool DX12RenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs)
+bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
 {
-	if (!rhs->m_RenderPassDesc.m_Resizable)
-		return true;
+    for (size_t i = 0; i < rhs->m_OutputMergerTargets.size(); i++)
+    {
+        auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(rhs->m_OutputMergerTargets[i]);
+        if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+        {
+            auto& l_RTV = l_outputMergerTarget->m_RTV;
+            if (l_RTV.m_Handles.size() == 0)
+            {
+                l_RTV.m_Desc = GetRTVDesc(rhs->m_RenderPassDesc.m_RenderTargetDesc);
+                l_RTV.m_Handles.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
+                for (size_t j = 0; j < l_RTV.m_Handles.size(); j++)
+                    l_RTV.m_Handles[j] = m_RTVDescHeapAccessor.GetNewHandle().CPUHandle;
+            }
 
-	rhs->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
-	rhs->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
+            for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
+            {
+                auto& l_renderTarget = l_outputMergerTarget->m_RenderTargets[j];
+                auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_renderTarget.m_Texture);
+                auto l_ResourceHandle = l_renderTargetTexture->m_DefaultHeapBuffer;
 
-	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
-	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
+                m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_RTV.m_Desc, l_RTV.m_Handles[j]);
+            }
+        }
+        if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+        {
+            auto& l_renderTarget = l_outputMergerTarget->m_DepthStencilRenderTarget;
+            if (l_renderTarget.m_Texture)
+            {
+                auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_renderTarget.m_Texture);
+                auto l_ResourceHandle = l_renderTargetTexture->m_DefaultHeapBuffer;
+                auto& l_DSV = l_outputMergerTarget->m_DSV;
+                if (l_DSV.m_Handle.ptr == 0)
+                {
+                    l_DSV.m_Desc = GetDSVDesc(l_renderTarget.m_Texture->m_TextureDesc, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
+                    l_DSV.m_Handle = m_DSVDescHeapAccessor.GetNewHandle().CPUHandle;
+                }
 
-	ReserveRenderTargets(rhs);
-	CreateRenderTargets(rhs);
+                m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_DSV.m_Desc, l_DSV.m_Handle);
+            }
+        }
+    }
 
-	// @TODO: Move this to the base class.
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
-	if (rhs->m_RenderPassDesc.m_UseOutputMerger)
-	{
-		for (size_t i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-		{
-			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_RenderTargets[i].m_Texture)->m_DefaultHeapBuffer;
-			m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_rhs->m_RTVDesc, l_rhs->m_RTVDescCPUHandles[i]);
-		}
-	}
-
-	if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-	{
-		if (rhs->m_DepthStencilRenderTarget.m_Texture != nullptr)
-		{
-			auto l_ResourceHandle = reinterpret_cast<DX12TextureComponent*>(rhs->m_DepthStencilRenderTarget.m_Texture)->m_DefaultHeapBuffer;
-			m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_rhs->m_DSVDesc, l_rhs->m_DSVDescCPUHandle);
-		}
-	}
-
-	rhs->m_PipelineStateObject = AddPipelineStateObject();
-
-	CreatePipelineStateObject(l_rhs);
-
-	if (rhs->m_OnResize)
-		rhs->m_OnResize();
-
-	return true;
+    return true;
 }
 
 bool DX12RenderingServer::BeginCapture()

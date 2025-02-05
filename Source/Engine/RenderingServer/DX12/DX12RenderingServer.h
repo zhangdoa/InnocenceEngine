@@ -7,7 +7,7 @@
 #include "../../Component/DX12MeshComponent.h"
 #include "../../Component/DX12TextureComponent.h"
 #include "../../Component/DX12MaterialComponent.h"
-#include "../../Component/DX12RenderPassComponent.h"
+#include "../../Component/RenderPassComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
 #include "../../Component/DX12SamplerComponent.h"
 #include "../../Component/DX12GPUBufferComponent.h"
@@ -31,6 +31,7 @@ namespace Inno
         IPipelineStateObject* AddPipelineStateObject() override;
         ICommandList* AddCommandList() override;
         ISemaphore* AddSemaphore() override;
+        bool Add(IOutputMergerTarget*& rhs) override;
 
         virtual	bool DeleteMeshComponent(MeshComponent* rhs) override;
         virtual	bool DeleteTextureComponent(TextureComponent* rhs) override;
@@ -42,6 +43,7 @@ namespace Inno
         virtual	bool Delete(IPipelineStateObject* rhs) override;
         virtual	bool Delete(ICommandList* rhs) override;
         virtual	bool Delete(ISemaphore* rhs) override;
+        virtual bool Delete(IOutputMergerTarget* rhs) override;
 
         // In DX12RenderingServer.cpp
         bool ClearTextureComponent(TextureComponent* rhs) override;
@@ -112,12 +114,14 @@ namespace Inno
         bool GetSwapChainImages() override;
         bool AssignSwapChainImages() override;
 
+        bool OnOutputMergerTargetsCreated(RenderPassComponent* rhs) override;
+        
+        bool BeginFrame() override;
         bool PresentImpl() override;
-        bool PostPresent() override;
+        bool UpdateFrameIndex() override;
 
         bool ResizeImpl() override;
-        bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs) override;
-
+      
     private:
         // Global initialization functions
         // In DX12RenderingServer_GraphicsDevice_Private.cpp
@@ -155,25 +159,27 @@ namespace Inno
             bool shaderVisible,
             const wchar_t* name
         );
-        bool CreateRTV(DX12RenderPassComponent* rhs);
-        bool CreateDSV(DX12RenderPassComponent* rhs);
+
         DX12SRV CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip);
-        DX12SRV CreateSRV(DX12GPUBufferComponent* rhs);
         DX12UAV CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice);
-        DX12UAV CreateUAV(DX12GPUBufferComponent* rhs);
-        DX12CBV CreateCBV(DX12GPUBufferComponent* rhs);
+
+        bool CreateSRV(DX12GPUBufferComponent* rhs);
+        bool CreateUAV(DX12GPUBufferComponent* rhs);
+        bool CreateCBV(DX12GPUBufferComponent* rhs);
         
-        bool CreateRootSignature(DX12RenderPassComponent* DX12RenderPassComp);
-        D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(DX12RenderPassComponent* DX12RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
+        bool CreateRootSignature(RenderPassComponent* RenderPassComp);
+        D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(RenderPassComponent* RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
 
         bool BindComputeResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
         bool BindGraphicsResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
-        bool SetDescriptorHeaps(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
-        bool SetRenderTargets(DX12RenderPassComponent* renderPass, DX12CommandList* commandList);
-        bool PreparePipeline(DX12RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
+        bool SetDescriptorHeaps(RenderPassComponent* renderPass, DX12CommandList* commandList);
+        bool SetRenderTargets(RenderPassComponent* renderPass, DX12CommandList* commandList);
+        bool PreparePipeline(RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
         bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
         bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp);
+
+        bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent);
 
         // DX12 objects
         int32_t m_videoCardMemory = 0;
@@ -240,12 +246,13 @@ namespace Inno
         TObjectPool<DX12MeshComponent>* m_MeshComponentPool = nullptr;
         TObjectPool<DX12MaterialComponent>* m_MaterialComponentPool = nullptr;
         TObjectPool<DX12TextureComponent>* m_TextureComponentPool = nullptr;
-        TObjectPool<DX12RenderPassComponent>* m_RenderPassComponentPool = nullptr;
+        TObjectPool<RenderPassComponent>* m_RenderPassComponentPool = nullptr;
         TObjectPool<DX12ShaderProgramComponent>* m_ShaderProgramComponentPool = nullptr;
         TObjectPool<DX12SamplerComponent>* m_SamplerComponentPool = nullptr;
         TObjectPool<DX12GPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
         TObjectPool<DX12PipelineStateObject>* m_PSOPool = nullptr;
         TObjectPool<DX12CommandList>* m_CommandListPool = nullptr;
         TObjectPool<DX12Semaphore>* m_SemaphorePool = nullptr;
+        TObjectPool<DX12OutputMergerTarget>* m_OutputMergerTargetPool = nullptr;
     };
 }

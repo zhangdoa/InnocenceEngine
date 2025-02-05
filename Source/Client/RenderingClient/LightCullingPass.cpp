@@ -179,6 +179,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
@@ -197,7 +198,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightGrid, 6);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_heatMap, 7);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture, 8);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[l_currentFrame]->m_DepthStencilRenderTarget.m_Texture, 8);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 9);
 

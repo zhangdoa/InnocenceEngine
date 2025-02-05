@@ -131,5 +131,14 @@ RenderPassComponent* SunShadowBlurOddPass::GetRenderPassComp()
 
 GPUResourceComponent* SunShadowBlurOddPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	if (!m_RenderPassComp)
+		return nullptr;
+	
+	if (m_RenderPassComp->m_OutputMergerTargets.size() == 0)
+		return nullptr;
+
+	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
+
+	return m_RenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture;
 }

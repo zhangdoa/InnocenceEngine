@@ -18,6 +18,7 @@ INNO_ENUM
 namespace Inno
 {
 	class GPUResourceComponent;
+	class TextureComponent;
 	namespace Type
 	{
 		class Accessibility
@@ -38,7 +39,7 @@ namespace Inno
 			{
 				return !(*this == rhs);
 			}
-			
+
 			static Accessibility Immutable;
 			static Accessibility ReadOnly;
 			static Accessibility WriteOnly;
@@ -249,7 +250,7 @@ namespace Inno
 
 		struct IPipelineStateObject {};
 
-		enum class GPUResourceType 
+		enum class GPUResourceType
 		{
 			Invalid,
 			Sampler,
@@ -288,6 +289,18 @@ namespace Inno
 	struct ICommandList {};
 
 	struct ISemaphore {};
+
+	struct RenderTarget
+	{
+		TextureComponent* m_Texture = nullptr;
+		bool m_IsOwned = false;
+	};
+
+	struct IOutputMergerTarget
+	{
+		std::vector<RenderTarget> m_RenderTargets;
+		RenderTarget m_DepthStencilRenderTarget = {};
+	};
 }
 
 using namespace Inno::Type;

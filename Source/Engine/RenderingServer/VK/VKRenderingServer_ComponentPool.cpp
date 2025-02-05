@@ -67,6 +67,11 @@ ISemaphore* VKRenderingServer::AddSemaphore()
 	return m_SemaphorePool->Spawn();
 }
 
+bool VKRenderingServer::Add(IOutputMergerTarget*& rhs)
+{
+	return false;
+}
+
 bool VKRenderingServer::DeleteMeshComponent(MeshComponent *rhs)
 {
 	return true;
@@ -126,5 +131,10 @@ bool VKRenderingServer::Delete(ISemaphore *rhs)
 	
 	m_SemaphorePool->Destroy(l_rhs);
 
+	return true;
+}
+
+bool VKRenderingServer::Delete(IOutputMergerTarget* rhs)
+{
 	return true;
 }

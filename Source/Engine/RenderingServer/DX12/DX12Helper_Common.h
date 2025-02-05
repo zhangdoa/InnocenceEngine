@@ -2,6 +2,8 @@
 #include "../../Common/LogService.h"
 #include "../../Common/Object.h"
 
+#include "DX12Headers.h"
+
 namespace Inno
 {
 	namespace DX12Helper

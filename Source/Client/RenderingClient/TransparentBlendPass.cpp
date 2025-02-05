@@ -103,16 +103,16 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 
 	GPUResourceComponent* l_canvas = nullptr;
 
-	if (renderingContext == nullptr)
-	{
-		l_renderingServer->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0].m_Texture);
-		l_canvas = m_RenderPassComp->m_RenderTargets[0].m_Texture;
-	}
-	else
-	{
-		auto l_renderingContext = reinterpret_cast<TransparentBlendPassRenderingContext*>(renderingContext);
-		l_canvas = l_renderingContext->m_output;
-	}
+	// if (renderingContext == nullptr)
+	// {
+	// 	l_renderingServer->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0].m_Texture);
+	// 	l_canvas = m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	// }
+	// else
+	// {
+	// 	auto l_renderingContext = reinterpret_cast<TransparentBlendPassRenderingContext*>(renderingContext);
+	// 	l_canvas = l_renderingContext->m_output;
+	// }
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
@@ -146,5 +146,14 @@ RenderPassComponent* TransparentBlendPass::GetRenderPassComp()
 
 GPUResourceComponent* TransparentBlendPass::GetResult()
 {
-	return m_RenderPassComp->m_RenderTargets[0].m_Texture;
+	if (!m_RenderPassComp)
+		return nullptr;
+	
+	if (m_RenderPassComp->m_OutputMergerTargets.size() == 0)
+		return nullptr;
+
+	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
+
+	return m_RenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture;
 }

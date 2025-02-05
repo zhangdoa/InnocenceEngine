@@ -230,7 +230,11 @@ bool TransparentGeometryProcessPass::DepthStencilRenderTargetsCreationFunc()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	m_RenderPassComp->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget.m_Texture;
+	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
+	{
+		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
+		l_outputMergerTarget->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[i]->m_DepthStencilRenderTarget.m_Texture;
+	}
 
     return true;
 }

@@ -157,14 +157,7 @@ bool VKRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 	{
 		l_result &= CreateRenderPass(l_rhs);
 		l_result &= CreateViewportAndScissor(l_rhs);
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
-		{
-			l_result &= CreateMultipleFramebuffers(l_rhs);
-		}
-		else
-		{
-			l_result &= CreateSingleFramebuffer(l_rhs);
-		}
+		l_result &= CreateFramebuffers(l_rhs);
 	}
 
 	l_result &= CreateDescriptorSetLayout(m_dummyEmptyDescriptorLayout, l_rhs);
@@ -187,14 +180,7 @@ bool VKRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 	l_result &= CreateCommandPool(m_windowSurface, GPUEngineType::Graphics, l_rhs->m_GraphicsCommandPool);
 	l_result &= CreateCommandPool(m_windowSurface, GPUEngineType::Compute, l_rhs->m_ComputeCommandPool);
 
-	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
-	{
-		l_rhs->m_CommandLists.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	}
-	else
-	{
-		l_rhs->m_CommandLists.resize(1);
-	}
+	l_rhs->m_CommandLists.resize(GetSwapChainImageCount());
 
 	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
 	{
@@ -350,7 +336,8 @@ bool VKRenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 		}
 	}
 
-	vkMapMemory(m_device, l_rhs->m_HostStagingMemory, 0, l_rhs->m_TotalSize, 0, &l_rhs->m_MappedMemory);
+	// @TODO: Fix it.
+	//vkMapMemory(m_device, l_rhs->m_HostStagingMemory, 0, l_rhs->m_TotalSize, 0, &l_rhs->m_MappedMemory);
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -414,7 +401,7 @@ bool VKRenderingServer::CreateImageView(VKTextureComponent *VKTextureComp)
 bool VKRenderingServer::ReserveFramebuffer(VKRenderPassComponent* VKRenderPassComp)
 {
 	// @TODO: reconsider how to implement multi-frame support properly
-	auto l_framebufferCount = VKRenderPassComp->m_RenderPassDesc.m_UseMultiFrames ? VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount : 1;
+	auto l_framebufferCount = GetSwapChainImageCount();
 	VKRenderPassComp->m_Framebuffers.reserve(l_framebufferCount);
 	for (size_t i = 0; i < l_framebufferCount; i++)
 	{
@@ -770,9 +757,10 @@ bool VKRenderingServer::CreateViewportAndScissor(VKRenderPassComponent *VKRender
 	return true;
 }
 
-bool VKRenderingServer::CreateSingleFramebuffer(VKRenderPassComponent *VKRenderPassComp)
+bool VKRenderingServer::CreateFramebuffers(VKRenderPassComponent *VKRenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
+
 	VkFramebufferCreateInfo l_framebufferCInfo = {};
 	l_framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	l_framebufferCInfo.renderPass = l_PSO->m_RenderPass;
@@ -780,84 +768,37 @@ bool VKRenderingServer::CreateSingleFramebuffer(VKRenderPassComponent *VKRenderP
 	l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
 	l_framebufferCInfo.layers = 1;
 
-	std::vector<VkImageView> l_attachments(l_PSO->m_AttachmentDescs.size());
-
-	VkFramebufferAttachmentsCreateInfo l_framebufferAttachmentsCInfo = {};
-	l_framebufferAttachmentsCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
-	l_framebufferAttachmentsCInfo.attachmentImageInfoCount = 0;
-
-	if (VKRenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
+	for (size_t i = 0; i < VKRenderPassComp->m_OutputMergerTargets.size(); i++)
 	{
-		for (size_t i = 0; i < VKRenderPassComp->m_RenderTargets.size(); i++)
-		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_RenderTargets[i].m_Texture);
-			l_attachments[i] = l_VKTextureComp->m_imageView;
-		}
+		auto l_outputMergerTarget = VKRenderPassComp->m_OutputMergerTargets[i];
+		auto l_attachmentCount = l_outputMergerTarget->m_RenderTargets.size();
 
+		// The depth-stencil attachment
 		if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_DepthStencilRenderTarget.m_Texture);
-			l_attachments[l_attachments.size() - 1] = l_VKTextureComp->m_imageView;
-		}
-		l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
-		if (l_attachments.size())
-		{
-			l_framebufferCInfo.pAttachments = &l_attachments[0];
-		}
-	}
-	else
-	{
-		l_framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-		l_framebufferCInfo.pNext = &l_framebufferAttachmentsCInfo;
-	}
-
-	if (vkCreateFramebuffer(m_device, &l_framebufferCInfo, nullptr, &VKRenderPassComp->m_Framebuffers[0]) != VK_SUCCESS)
-	{
-		Log(Error, "", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
-	}
-
-#ifdef INNO_DEBUG
-	SetObjectName(VKRenderPassComp, VKRenderPassComp->m_Framebuffers[0], VK_OBJECT_TYPE_FRAMEBUFFER, "FrameBuffer");
-#endif //  INNO_DEBUG
-
-	Log(Verbose, "Single VkFramebuffer has been created for ", VKRenderPassComp->m_InstanceName.c_str());
-
-	return true;
-}
-
-bool VKRenderingServer::CreateMultipleFramebuffers(VKRenderPassComponent *VKRenderPassComp)
-{
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
-
-	VkFramebufferCreateInfo l_framebufferCInfo = {};
-	l_framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	l_framebufferCInfo.renderPass = l_PSO->m_RenderPass;
-	l_framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-	l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-	l_framebufferCInfo.layers = 1;
-
-	for (size_t i = 0; i < VKRenderPassComp->m_RenderTargets.size(); i++)
-	{
-		auto l_attachmentCount = VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable ? 2 : 1;
+			l_attachmentCount += 1;
 		std::vector<VkImageView> l_attachments(l_attachmentCount);
 
 		if (VKRenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_RenderTargets[i].m_Texture);
-			l_attachments[0] = l_VKTextureComp->m_imageView;
-			if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+			for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
 			{
-				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent *>(VKRenderPassComp->m_DepthStencilRenderTarget.m_Texture);
-				l_attachments[1] = l_VKTextureComp->m_imageView;
+				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_RenderTargets[j].m_Texture);
+				l_attachments[j] = l_VKTextureComp->m_imageView;
 			}
-			l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
-			l_framebufferCInfo.pAttachments = &l_attachments[0];
 		}
 		else
 		{
 			l_framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
 		}
 
+		if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		{
+			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_DepthStencilRenderTarget.m_Texture);
+			l_attachments[l_attachmentCount - 1] = l_VKTextureComp->m_imageView;
+		}
+
+		l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
+		l_framebufferCInfo.pAttachments = &l_attachments[0];
 		if (vkCreateFramebuffer(m_device, &l_framebufferCInfo, nullptr, &VKRenderPassComp->m_Framebuffers[i]) != VK_SUCCESS)
 		{
 			Log(Error, "", VKRenderPassComp->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
@@ -865,12 +806,12 @@ bool VKRenderingServer::CreateMultipleFramebuffers(VKRenderPassComponent *VKRend
 		}
 
 #ifdef INNO_DEBUG
-	auto l_name = "FrameBuffer_" + std::to_string(i);
-	SetObjectName(VKRenderPassComp, VKRenderPassComp->m_Framebuffers[i], VK_OBJECT_TYPE_FRAMEBUFFER, l_name.c_str());
-#endif //  INNO_DEBUG
+		auto l_name = "FrameBuffer_" + std::to_string(i);
+		SetObjectName(VKRenderPassComp, VKRenderPassComp->m_Framebuffers[i], VK_OBJECT_TYPE_FRAMEBUFFER, l_name.c_str());
+	#endif //  INNO_DEBUG
 	}
 
-	Log(Verbose, "Multiple VkFramebuffers have been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	Log(Verbose, "VkFramebuffers have been created for ", VKRenderPassComp->m_InstanceName.c_str());
 
 	return true;
 }
@@ -999,14 +940,7 @@ bool VKRenderingServer::CreateComputePipelines(VKRenderPassComponent *VKRenderPa
 
 bool VKRenderingServer::CreateCommandBuffers(VKRenderPassComponent *VKRenderPassComp)
 {
-	if (VKRenderPassComp->m_RenderPassDesc.m_UseMultiFrames)
-	{
-		VKRenderPassComp->m_CommandLists.resize(VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-	}
-	else
-	{
-		VKRenderPassComp->m_CommandLists.resize(1);
-	}
+	VKRenderPassComp->m_CommandLists.resize(GetSwapChainImageCount());
 
 	for (size_t i = 0; i < VKRenderPassComp->m_CommandLists.size(); i++)
 	{

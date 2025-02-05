@@ -315,52 +315,61 @@ bool DX12RenderingServer::InitializeImpl(SamplerComponent *rhs)
 
 bool DX12RenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 {
+	auto l_count = GetSwapChainImageCount();
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent *>(rhs);
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
+	l_rhs->m_MappedMemories.resize(l_count);
+	l_rhs->m_DeviceMemories.resize(l_count);
 
 	auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize);
-	l_rhs->m_UploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc);
+	bool l_needDefaultHeap = l_rhs->m_GPUAccessibility.CanRead() && !l_rhs->m_CPUAccessibility.CanRead();
+
+	for (uint32_t i = 0; i < l_count; ++i)
+	{
+		auto l_mappedMemory = new DX12MappedMemory();
+		l_mappedMemory->m_UploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc);
 
 #ifdef INNO_DEBUG
-	SetObjectName(rhs, l_rhs->m_UploadHeapBuffer, "UploadHeap_General");
+		SetObjectName(rhs, l_mappedMemory->m_UploadHeapBuffer, ("UploadHeap_" + std::to_string(i)).c_str());
 #endif // INNO_DEBUG
 
-	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
-	{
-		if (l_rhs->m_CPUAccessibility == Accessibility::Immutable || l_rhs->m_CPUAccessibility == Accessibility::WriteOnly)
+		if (l_needDefaultHeap)
 		{
 			auto l_defaultHeapResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-			l_rhs->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc);
+
+			auto l_deviceMemory = new DX12DeviceMemory();
+			l_deviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc);
+
 #ifdef INNO_DEBUG
-			SetObjectName(rhs, l_rhs->m_DefaultHeapBuffer, "DefaultHeap_General");
+			SetObjectName(rhs, l_deviceMemory->m_DefaultHeapBuffer, ("DefaultHeap_" + std::to_string(i)).c_str());
 #endif // INNO_DEBUG
 
-			l_rhs->m_UAV = CreateUAV(l_rhs);
+			l_rhs->m_DeviceMemories[i] = l_deviceMemory;
 		}
-		else
+
+		CD3DX12_RANGE m_readRange(0, 0);
+		l_mappedMemory->m_UploadHeapBuffer->Map(0, &m_readRange, &l_mappedMemory->m_Address);
+		l_rhs->m_MappedMemories[i] = l_mappedMemory;
+
+		// @TODO: Write to all mapped memory only once.
+		if (l_rhs->m_InitialData)
 		{
-			Log(Warning, "Not support CPU-readable default heap GPU buffer currently.");
+			WriteMappedMemory(l_rhs, l_rhs->m_InitialData, 0, l_rhs->m_TotalSize);
+			l_mappedMemory->m_NeedUploadToGPU = false;
+
+			DX12CommandList l_commandList = {};
+			l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
+
+			UploadToGPU(&l_commandList, l_rhs);
+			ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
 		}
 	}
 
-	l_rhs->m_SRV = CreateSRV(l_rhs);
-
-	CD3DX12_RANGE m_readRange(0, 0);
-	l_rhs->m_UploadHeapBuffer->Map(0, &m_readRange, &l_rhs->m_MappedMemory);
-
-	if (l_rhs->m_InitialData)
-	{
-		WriteMappedMemory(l_rhs, l_rhs->m_InitialData, 0, l_rhs->m_TotalSize);
-		l_rhs->m_NeedUploadToGPU = false;
-		
-		DX12CommandList l_commandList = {};
-		l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-		UploadToGPU(&l_commandList, l_rhs);
-		ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-	}
+	CreateSRV(l_rhs);
+	if (l_needDefaultHeap)
+		CreateUAV(l_rhs);
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -419,20 +428,29 @@ bool DX12RenderingServer::UploadToGPU(ICommandList* commandList, TextureComponen
 bool DX12RenderingServer::UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent*>(rhs);
-	if (!l_rhs->m_DefaultHeapBuffer)
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(l_rhs->m_MappedMemories[l_currentFrame]);
+	auto l_deviceMemory = l_rhs->m_DeviceMemories[l_currentFrame];
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+
+	return UploadToGPU(l_commandList, l_mappedMemory, l_deviceMemory, l_rhs);
+}
+
+bool DX12RenderingServer::UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent)
+{
+	if (!deviceMemory->m_DefaultHeapBuffer)
 		return true;
 
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-	auto l_DX12CommandList = l_commandList->m_DirectCommandList;
+	auto l_DX12CommandList = commandList->m_DirectCommandList;
 
-	if (l_rhs->m_ObjectStatus == ObjectStatus::Activated)
+	if (GPUBufferComponent->m_ObjectStatus == ObjectStatus::Activated)
 	{
-		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
 	}
 
-	l_DX12CommandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_rhs->m_UploadHeapBuffer.Get());
+	l_DX12CommandList->CopyResource(deviceMemory->m_DefaultHeapBuffer.Get(), mappedMemory->m_UploadHeapBuffer.Get());
 
-	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 	return true;
 }

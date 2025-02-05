@@ -48,12 +48,11 @@ bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Graphics;
-	l_RenderPassDesc.m_RenderTargetCount = l_renderingServer->GetSwapChainImageCount();
+	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
 	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&ImGuiRenderPass::RenderTargetsReservationFunc, this);
 	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&ImGuiRenderPass::RenderTargetsCreationFunc, this);
-	l_RenderPassDesc.m_UseMultiFrames = true;
 	l_RenderPassDesc.m_UseOutputMerger = true;
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
@@ -81,8 +80,8 @@ bool ImGuiRenderPass::Initialize()
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), directCommandList);
 
-			// Change the swap chain state to read only.
-			l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_RenderTargets[l_currentFrame].m_Texture, dx12CmdList, Accessibility::ReadOnly);
+			// Change the swap chain image state to read-only.
+			l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture, dx12CmdList, Accessibility::ReadOnly);
 		};
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -120,7 +119,17 @@ RenderPassComponent* ImGuiRenderPass::GetRenderPassComp()
 
 bool ImGuiRenderPass::RenderTargetsReservationFunc()
 {
-	m_RenderPassComp->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
+	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());	
+	m_RenderPassComp->m_OutputMergerTargets.resize(l_renderingServer->GetSwapChainImageCount());
+
+	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
+	{
+		if (m_RenderPassComp->m_OutputMergerTargets[i] == nullptr)
+			l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTargets[i]);
+
+		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
+		l_outputMergerTarget->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
+	}
 
 	return true;
 }
@@ -128,11 +137,13 @@ bool ImGuiRenderPass::RenderTargetsReservationFunc()
 bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
-	auto l_swapChainRenderPassComp = reinterpret_cast<DX12RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
+	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
 
-	for (size_t i = 0; i < m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
 	{
-		m_RenderPassComp->m_RenderTargets[i].m_Texture = l_swapChainRenderPassComp->m_RenderTargets[i].m_Texture;
+		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
+		for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
+			l_outputMergerTarget->m_RenderTargets[j].m_Texture = l_swapChainRenderPassComp->m_OutputMergerTargets[i]->m_RenderTargets[j].m_Texture;
 	}
 
 	return true;
@@ -187,7 +198,7 @@ bool ImGuiRendererDX12::ExecuteCommands()
 	auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
 
 	// Let the swap chain rendering finish.
-	l_renderingServer->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);	
+	l_renderingServer->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	l_renderingServer->ExecuteCommandList(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
 	l_renderingServer->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
 

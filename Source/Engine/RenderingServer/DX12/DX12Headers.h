@@ -7,6 +7,8 @@
 #include <DXProgrammableCapture.h>
 #include <DXGIDebug.h>
 
+#include "../../Common/GraphicsPrimitive.h"
+
 using namespace Microsoft::WRL;
 
 namespace Inno
@@ -46,6 +48,19 @@ namespace Inno
 		DX12DescriptorHandle Handle;
 	};
 
+	struct DX12RTV
+	{
+		// Assuming that all render targets have the same format
+		D3D12_RENDER_TARGET_VIEW_DESC m_Desc = {};
+		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_Handles;
+	};
+
+	struct DX12DSV
+	{
+		D3D12_DEPTH_STENCIL_VIEW_DESC m_Desc = {};
+		D3D12_CPU_DESCRIPTOR_HANDLE m_Handle;
+	};
+
 	struct DX12DescriptorHeapAccessorDesc
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC m_HeapDesc = {};
@@ -72,5 +87,49 @@ namespace Inno
 		DX12DescriptorHeapAccessorDesc m_Desc = {};
 		DX12DescriptorHandle m_FirstHandle = {};
 		DX12DescriptorHandle m_CurrentHandle = {};
+	};
+
+	class DX12PipelineStateObject : public IPipelineStateObject
+	{
+	public:
+		D3D12_INPUT_ELEMENT_DESC m_InputLayoutDesc = {};
+		D3D12_DEPTH_STENCIL_DESC m_DepthStencilDesc = {};
+		D3D12_BLEND_DESC m_BlendDesc = {};
+		D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE m_PrimitiveTopologyType;
+		D3D12_RASTERIZER_DESC m_RasterizerDesc = {};
+		D3D12_VIEWPORT m_Viewport = {};
+		D3D12_RECT m_Scissor = {};
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC m_GraphicsPSODesc = {};
+		D3D12_COMPUTE_PIPELINE_STATE_DESC m_ComputePSODesc = {};
+		ComPtr<ID3D12PipelineState> m_PSO = 0;
+		ComPtr<ID3D12RootSignature> m_RootSignature = 0;
+	};
+
+	class DX12CommandList : public ICommandList
+	{
+	public:
+		ComPtr<ID3D12GraphicsCommandList> m_DirectCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList> m_ComputeCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList> m_CopyCommandList = 0;
+	};
+
+	class DX12Semaphore : public ISemaphore
+	{
+	public:
+		std::atomic<uint64_t> m_DirectCommandQueueSemaphore = 0;
+		std::atomic<uint64_t> m_ComputeCommandQueueSemaphore = 0;
+		std::atomic<uint64_t> m_CopyCommandQueueSemaphore = 0;
+		HANDLE m_DirectCommandQueueFenceEvent = 0;
+		HANDLE m_ComputeCommandQueueFenceEvent = 0;
+		HANDLE m_CopyCommandQueueFenceEvent = 0;
+	};
+
+	class DX12OutputMergerTarget : public IOutputMergerTarget
+	{
+	public:		
+		DX12RTV m_RTV = {};
+		DX12DSV m_DSV = {};
 	};
 }

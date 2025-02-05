@@ -189,6 +189,7 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
@@ -198,8 +199,8 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_KernelGPUBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[1].m_Texture, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[1].m_Texture, 3);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NoiseTexture, 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 5);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_RandomRot, 6);

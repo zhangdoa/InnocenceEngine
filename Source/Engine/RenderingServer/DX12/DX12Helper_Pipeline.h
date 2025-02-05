@@ -1,8 +1,10 @@
 #pragma once
 #include "../../Common/LogService.h"
 
-#include "../../Component/DX12RenderPassComponent.h"
+#include "../../Component/RenderPassComponent.h"
 #include "../IRenderingServer.h"
+
+#include "DX12Headers.h"
 
 namespace Inno
 {
@@ -10,7 +12,7 @@ namespace Inno
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors, bool shaderVisible);
         void CreateInputLayout(DX12PipelineStateObject* PSO);
-		bool CreateShaderPrograms(DX12RenderPassComponent *DX12RenderPassComp);
+		bool CreateShaderPrograms(RenderPassComponent *RenderPassComp);
 
 		D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 		D3D12_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);

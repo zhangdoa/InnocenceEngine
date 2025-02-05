@@ -28,10 +28,12 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
 	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
 
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_deviceMemory = l_rhs->m_DeviceMemories[l_currentFrame];
 	l_commandList->ClearUnorderedAccessViewUint(
-		l_rhs->m_UAV.Handle.GPUHandle,
-		l_rhs->m_UAV.Handle.CPUHandle,
-		l_rhs->m_DefaultHeapBuffer.Get(),
+		l_deviceMemory->m_UAV.Handle.GPUHandle,
+		l_deviceMemory->m_UAV.Handle.CPUHandle,
+		l_deviceMemory->m_DefaultHeapBuffer.Get(),
 		&zero,
 		0,
 		NULL);
@@ -121,7 +123,7 @@ uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bind
 
 bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::WriteOnly);
@@ -145,7 +147,7 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 	if (rhs->m_RenderPassDesc.m_RenderTargetCount == 0)
 		return true;
 
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto f_clearRenderTargetAsUAV = [&](DX12TextureComponent* l_RT)
 		{
@@ -161,45 +163,32 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 			}
 		};
 
+	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(l_rhs->m_OutputMergerTargets[l_rhs->m_CurrentFrame]);
 	if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+			l_commandList->m_DirectCommandList->ClearRenderTargetView(l_outputMergerTarget->m_RTV.m_Handles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 		}
 		else
 		{
-			if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
+			for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
-			}
-			else
-			{
-				for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-				{
-					l_commandList->m_DirectCommandList->ClearRenderTargetView(l_rhs->m_RTVDescCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
-				}
+				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_outputMergerTarget->m_RTV.m_Handles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 			}
 		}
 	}
 	else
 	{
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame].m_Texture));
+			f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_RenderTargets[index].m_Texture));
 		}
 		else
 		{
-			if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
+			for (auto i : l_outputMergerTarget->m_RenderTargets)
 			{
-				f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(index));
-			}
-			else
-			{
-				for (auto i : l_rhs->m_RenderTargets)
-				{
-					f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(i.m_Texture));
-				}
+				f_clearRenderTargetAsUAV(reinterpret_cast<DX12TextureComponent*>(i.m_Texture));
 			}
 		}
 	}
@@ -210,7 +199,7 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
 			l_flag |= D3D12_CLEAR_FLAG_STENCIL;
 
-		l_commandList->m_DirectCommandList->ClearDepthStencilView(l_rhs->m_DSVDescCPUHandle, l_flag, 1.0f, 0x00, 0, nullptr);
+		l_commandList->m_DirectCommandList->ClearDepthStencilView(l_outputMergerTarget->m_DSV.m_Handle, l_flag, 1.0f, 0x00, 0, nullptr);
 	}
 
 	return true;
@@ -230,13 +219,16 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		if (l_buffer->m_ObjectStatus != ObjectStatus::Activated)
 			return false;
 
-		auto& l_SRV = l_buffer->m_SRV;
-		auto& l_UAV = l_buffer->m_UAV;
+		auto l_currentFrame = GetCurrentFrame();
+		auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(l_buffer->m_MappedMemories[l_currentFrame]);
+		auto l_deviceMemory = l_buffer->m_DeviceMemories[l_currentFrame];
+		auto& l_SRV = l_deviceMemory->m_SRV;
+		auto& l_UAV = l_deviceMemory->m_UAV;
 		if (resourceBindingLayoutDesc.m_BindingAccessibility == Accessibility::ReadOnly)
 		{
 			if (l_buffer->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
-				auto l_GPUVirtualAddress = l_buffer->m_UploadHeapBuffer->GetGPUVirtualAddress();
+				auto l_GPUVirtualAddress = l_mappedMemory->m_UploadHeapBuffer->GetGPUVirtualAddress();
 				commandList->m_ComputeCommandList->SetComputeRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
 				return true;
 			}
@@ -302,13 +294,16 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		if (l_buffer->m_ObjectStatus != ObjectStatus::Activated)
 			return false;
 
-		auto& l_SRV = l_buffer->m_SRV;
-		auto& l_UAV = l_buffer->m_UAV;
+		auto l_currentFrame = GetCurrentFrame();
+		auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(l_buffer->m_MappedMemories[l_currentFrame]);
+		auto l_deviceMemory = l_buffer->m_DeviceMemories[l_currentFrame];
+		auto& l_SRV = l_deviceMemory->m_SRV;
+		auto& l_UAV = l_deviceMemory->m_UAV;
 		if (resourceBindingLayoutDesc.m_BindingAccessibility == Accessibility::ReadOnly)
 		{
 			if (l_buffer->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
-				auto l_GPUVirtualAddress = l_buffer->m_UploadHeapBuffer->GetGPUVirtualAddress();
+				auto l_GPUVirtualAddress = l_mappedMemory->m_UploadHeapBuffer->GetGPUVirtualAddress();
 				commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
 				return true;
 			}
@@ -363,7 +358,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 
 bool DX12RenderingServer::Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc)
 {
-	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent*>(renderPass);
+	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 	auto l_GPUResourceType = resourceBindingLayoutDesc.m_GPUResourceType;
 
@@ -376,7 +371,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 	if (!renderPass)
 		return false;
 
-	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent*>(renderPass);
+	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
 	if (shaderStage == ShaderStage::Compute)
@@ -389,7 +384,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 
 void DX12RenderingServer::PushRootConstants(RenderPassComponent* rhs, size_t rootConstants)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
@@ -400,7 +395,7 @@ void DX12RenderingServer::PushRootConstants(RenderPassComponent* rhs, size_t roo
 
 bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent*>(renderPass);
+	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
 	auto l_mesh = reinterpret_cast<DX12MeshComponent*>(mesh);
@@ -415,7 +410,7 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 
 bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<DX12RenderPassComponent*>(renderPass);
+	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
 
@@ -443,7 +438,7 @@ bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList*
 
 bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
-	auto l_rhs = reinterpret_cast<DX12RenderPassComponent*>(renderPass);
+	auto l_rhs = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	l_commandList->m_ComputeCommandList->Dispatch(threadGroupX, threadGroupY, threadGroupZ);

@@ -3,6 +3,7 @@
 
 namespace Inno
 {
+	// @TODO: Implement multi-buffering for textures.
 	class TextureComponent : public GPUResourceComponent
 	{
 	public:

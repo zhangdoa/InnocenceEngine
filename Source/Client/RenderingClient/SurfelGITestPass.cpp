@@ -91,7 +91,7 @@ bool SurfelGITestPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
+	//m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
 	l_renderingServer->InitializeGPUBufferComponent(m_probeSphereMeshGPUBufferComp);
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);

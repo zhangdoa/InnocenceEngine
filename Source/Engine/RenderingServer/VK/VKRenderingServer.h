@@ -30,6 +30,7 @@ namespace Inno
 		IPipelineStateObject* AddPipelineStateObject() override;
 		ICommandList* AddCommandList() override;
 		ISemaphore* AddSemaphore() override;
+        bool Add(IOutputMergerTarget*& rhs) override;		
 
 		virtual	bool DeleteMeshComponent(MeshComponent* rhs) override;
 		virtual	bool DeleteTextureComponent(TextureComponent* rhs) override;
@@ -41,6 +42,7 @@ namespace Inno
 		virtual	bool Delete(IPipelineStateObject* rhs) override;
 		virtual	bool Delete(ICommandList* rhs) override;
 		virtual	bool Delete(ISemaphore* rhs) override;
+		virtual bool Delete(IOutputMergerTarget* rhs) override;
 
 		bool ClearTextureComponent(TextureComponent* rhs) override;
 		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
@@ -96,7 +98,7 @@ namespace Inno
 		bool AssignSwapChainImages() override;
 
 		bool PresentImpl() override;
-		bool PostPresent() override;
+		bool UpdateFrameIndex() override;
 
 		bool ResizeImpl() override;
 		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs) override;
@@ -176,7 +178,7 @@ namespace Inno
 		bool CreateRenderPass(VKRenderPassComponent* VKRenderPassComp, VkFormat* overrideFormat = nullptr);
 		bool CreateViewportAndScissor(VKRenderPassComponent* VKRenderPassComp);
 		bool CreateSingleFramebuffer(VKRenderPassComponent* VKRenderPassComp);
-		bool CreateMultipleFramebuffers(VKRenderPassComponent* VKRenderPassComp);
+		bool CreateFramebuffers(VKRenderPassComponent* VKRenderPassComp);
 		bool CreatePipelineLayout(VKRenderPassComponent* VKRenderPassComp);
 		bool CreateGraphicsPipelines(VKRenderPassComponent* VKRenderPassComp);
 		bool CreateComputePipelines(VKRenderPassComponent* VKRenderPassComp);

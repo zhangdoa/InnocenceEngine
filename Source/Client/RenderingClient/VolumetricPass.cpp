@@ -648,5 +648,6 @@ GPUResourceComponent *VolumetricPass::GetRayMarchingResult()
 
 GPUResourceComponent *VolumetricPass::GetVisualizationResult()
 {
-	return m_visualizationRenderPassComp->m_RenderTargets[0].m_Texture;
+	//return m_visualizationRenderPassComp->m_RenderTargets[0].m_Texture;
+	return nullptr;
 }

@@ -87,18 +87,18 @@ void DX12Helper::CreateInputLayout(DX12PipelineStateObject* PSO)
     PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
 }
 
-bool DX12Helper::CreateShaderPrograms(DX12RenderPassComponent* DX12RenderPassComp)
+bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 {
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RenderPassComp->m_PipelineStateObject);
-	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RenderPassComp->m_ShaderProgram);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
+	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
 	
 	if (!l_DX12SPC || !l_PSO)
 	{
-		Log(Verbose, "Skipping creating ShaderPrograms for ", DX12RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Skipping creating ShaderPrograms for ", RenderPassComp->m_InstanceName.c_str());
 		return true;
 	}
 
-	if (DX12RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+	if (RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 #ifdef USE_DXIL
 		if (l_DX12SPC->m_VSBuffer.size())
