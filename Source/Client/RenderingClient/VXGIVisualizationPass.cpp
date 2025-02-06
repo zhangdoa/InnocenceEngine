@@ -130,11 +130,11 @@ GPUResourceComponent* VXGIVisualizationPass::GetResult()
 	if (!m_RenderPassComp)
 		return nullptr;
 	
-	if (m_RenderPassComp->m_OutputMergerTargets.size() == 0)
+	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return nullptr;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
-	return m_RenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture;
+	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
 }

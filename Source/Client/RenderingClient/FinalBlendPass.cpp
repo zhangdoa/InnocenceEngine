@@ -131,8 +131,8 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 2);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture, 3);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0], 2);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0], 3);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LuminanceAveragePass::Get().GetResult(), 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 5);
 

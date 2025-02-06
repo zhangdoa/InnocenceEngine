@@ -228,13 +228,8 @@ bool Inno::TransparentGeometryProcessPass::DepthStencilRenderTargetsReservationF
 
 bool TransparentGeometryProcessPass::DepthStencilRenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
-	{
-		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
-		l_outputMergerTarget->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[i]->m_DepthStencilRenderTarget.m_Texture;
-	}
+	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
+	l_outputMergerTarget->m_DepthStencilOutput = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput;
 
     return true;
 }

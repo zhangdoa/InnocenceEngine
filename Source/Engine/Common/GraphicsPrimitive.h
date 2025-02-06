@@ -267,7 +267,15 @@ namespace Inno
 			Readback
 		};
 
-		struct IGPUMemory {};
+		struct IMappedMemory
+		{
+			void* m_Address = 0;
+			bool m_NeedUploadToGPU = false;
+		};
+
+		struct IDeviceMemory
+		{
+		};
 
 		struct ResourceBindingLayoutDesc
 		{
@@ -290,16 +298,10 @@ namespace Inno
 
 	struct ISemaphore {};
 
-	struct RenderTarget
-	{
-		TextureComponent* m_Texture = nullptr;
-		bool m_IsOwned = false;
-	};
-
 	struct IOutputMergerTarget
 	{
-		std::vector<RenderTarget> m_RenderTargets;
-		RenderTarget m_DepthStencilRenderTarget = {};
+		std::vector<TextureComponent*> m_ColorOutputs;
+		TextureComponent* m_DepthStencilOutput = nullptr;
 	};
 }
 

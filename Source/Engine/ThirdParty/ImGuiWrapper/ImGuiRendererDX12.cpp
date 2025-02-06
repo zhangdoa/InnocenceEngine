@@ -81,7 +81,7 @@ bool ImGuiRenderPass::Initialize()
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), directCommandList);
 
 			// Change the swap chain image state to read-only.
-			l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture, dx12CmdList, Accessibility::ReadOnly);
+			l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::ReadOnly);
 		};
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -120,16 +120,12 @@ RenderPassComponent* ImGuiRenderPass::GetRenderPassComp()
 bool ImGuiRenderPass::RenderTargetsReservationFunc()
 {
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());	
-	m_RenderPassComp->m_OutputMergerTargets.resize(l_renderingServer->GetSwapChainImageCount());
 
-	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
-	{
-		if (m_RenderPassComp->m_OutputMergerTargets[i] == nullptr)
-			l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTargets[i]);
+	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
+		l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTarget);
 
-		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
-		l_outputMergerTarget->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-	}
+	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
+	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
 
 	return true;
 }
@@ -138,13 +134,10 @@ bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
 	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
-
-	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
-	{
-		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
-		for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
-			l_outputMergerTarget->m_RenderTargets[j].m_Texture = l_swapChainRenderPassComp->m_OutputMergerTargets[i]->m_RenderTargets[j].m_Texture;
-	}
+	
+	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
+	for (size_t j = 0; j < l_outputMergerTarget->m_ColorOutputs.size(); j++)
+		l_outputMergerTarget->m_ColorOutputs[j] = l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[j];
 
 	return true;
 }

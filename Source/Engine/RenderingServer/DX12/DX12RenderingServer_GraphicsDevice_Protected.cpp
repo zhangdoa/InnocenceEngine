@@ -103,19 +103,22 @@ bool DX12RenderingServer::GetSwapChainImages()
 
 bool DX12RenderingServer::AssignSwapChainImages()
 {
+    auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTarget;
+    auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
+    l_DX12TextureComp->m_DeviceMemories.resize(GetSwapChainImageCount());
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
-        auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTargets[i];
-        auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_RenderTargets[0].m_Texture);
-
-        l_DX12TextureComp->m_DefaultHeapBuffer = m_swapChainImages[i];
-        l_DX12TextureComp->m_DX12TextureDesc = l_DX12TextureComp->m_DefaultHeapBuffer->GetDesc();
-        l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
-        l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
-
-        l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
+        auto l_DX12DeviceMemory = new DX12DeviceMemory();
+        l_DX12DeviceMemory->m_DefaultHeapBuffer = m_swapChainImages[i];
+        l_DX12TextureComp->m_DeviceMemories[i] = l_DX12DeviceMemory;   
     }
+    
+    auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_DX12TextureComp->m_DeviceMemories[0]);
+    l_DX12TextureComp->m_DX12TextureDesc = l_DX12DeviceMemory->m_DefaultHeapBuffer->GetDesc();
+    l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
+    l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
+    l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
 
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
     m_PreviousFrame = GetPreviousFrame();
@@ -170,45 +173,61 @@ bool DX12RenderingServer::ResizeImpl()
 
 bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
 {
-    for (size_t i = 0; i < rhs->m_OutputMergerTargets.size(); i++)
+    auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(rhs->m_OutputMergerTarget);
+    if (rhs->m_RenderPassDesc.m_UseOutputMerger)
     {
-        auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(rhs->m_OutputMergerTargets[i]);
-        if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+        auto& l_RTVs = l_outputMergerTarget->m_RTVs;
+        if (l_RTVs.size() == 0)
         {
-            auto& l_RTV = l_outputMergerTarget->m_RTV;
-            if (l_RTV.m_Handles.size() == 0)
+            l_RTVs.resize(GetSwapChainImageCount());
+            for (size_t i = 0; i < l_RTVs.size(); i++)
             {
+                auto& l_RTV = l_RTVs[i];
                 l_RTV.m_Desc = GetRTVDesc(rhs->m_RenderPassDesc.m_RenderTargetDesc);
                 l_RTV.m_Handles.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
                 for (size_t j = 0; j < l_RTV.m_Handles.size(); j++)
-                    l_RTV.m_Handles[j] = m_RTVDescHeapAccessor.GetNewHandle().CPUHandle;
-            }
-
-            for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
-            {
-                auto& l_renderTarget = l_outputMergerTarget->m_RenderTargets[j];
-                auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_renderTarget.m_Texture);
-                auto l_ResourceHandle = l_renderTargetTexture->m_DefaultHeapBuffer;
-
-                m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_RTV.m_Desc, l_RTV.m_Handles[j]);
+                {
+                    auto l_handle = m_RTVDescHeapAccessor.GetNewHandle();
+                    l_RTV.m_Handles[j] = l_handle.CPUHandle;
+                }
             }
         }
-        if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-        {
-            auto& l_renderTarget = l_outputMergerTarget->m_DepthStencilRenderTarget;
-            if (l_renderTarget.m_Texture)
-            {
-                auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_renderTarget.m_Texture);
-                auto l_ResourceHandle = l_renderTargetTexture->m_DefaultHeapBuffer;
-                auto& l_DSV = l_outputMergerTarget->m_DSV;
-                if (l_DSV.m_Handle.ptr == 0)
-                {
-                    l_DSV.m_Desc = GetDSVDesc(l_renderTarget.m_Texture->m_TextureDesc, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
-                    l_DSV.m_Handle = m_DSVDescHeapAccessor.GetNewHandle().CPUHandle;
-                }
 
-                m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_DSV.m_Desc, l_DSV.m_Handle);
+        for (size_t i = 0; i < l_RTVs.size(); i++)
+        {
+            auto& l_RTV = l_RTVs[i];
+            for (size_t j = 0; j < l_outputMergerTarget->m_ColorOutputs.size(); j++)
+            {
+                auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[j]);
+                auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_renderTargetTexture->m_DeviceMemories[i]);
+
+                auto l_ResourceHandle = l_DeviceMemory->m_DefaultHeapBuffer;
+                m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_RTV.m_Desc, l_RTV.m_Handles[j]);
             }
+
+        }
+    }
+
+    if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+    {
+        auto& l_DSVs = l_outputMergerTarget->m_DSVs;
+        if (l_DSVs.size() == 0)
+        {
+            l_DSVs.resize(GetSwapChainImageCount());
+            for (size_t i = 0; i < l_DSVs.size(); i++)
+            {
+                l_DSVs[i].m_Desc = GetDSVDesc(rhs->m_RenderPassDesc.m_RenderTargetDesc, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
+                l_DSVs[i].m_Handle = m_DSVDescHeapAccessor.GetNewHandle().CPUHandle;
+            }
+        }
+
+        auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_DepthStencilOutput);
+        for (size_t i = 0; i < l_DSVs.size(); i++)
+        {
+            auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_renderTargetTexture->m_DeviceMemories[i]);
+            auto l_ResourceHandle = l_DeviceMemory->m_DefaultHeapBuffer;
+
+            m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_DSVs[i].m_Desc, l_DSVs[i].m_Handle);
         }
     }
 

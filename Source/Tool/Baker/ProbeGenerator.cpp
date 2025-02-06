@@ -202,7 +202,7 @@ namespace Inno
             //#ifdef DEBUG_
             auto l_TextureComp = l_renderingServer->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture->m_TextureDesc;
-            l_TextureComp->m_TextureData = l_probePosTextureResults.data();
+            l_TextureComp->m_InitialData = l_probePosTextureResults.data();
             g_Engine->Get<AssetSystem>()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
             //#endif // DEBUG_
 

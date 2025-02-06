@@ -3,17 +3,6 @@
 
 namespace Inno
 {
-	struct IMappedMemory
-	{
-		void* m_Address = 0;
-		bool m_NeedUploadToGPU = false;
-	};
-
-	// @TODO: Use this as a base class for all GPU-side memory accessors.
-	struct IDeviceMemory
-	{
-	};
-
 	class GPUBufferComponent : public GPUResourceComponent
 	{
 	public:
@@ -26,5 +15,6 @@ namespace Inno
 		bool m_isAtomicCounter = false;
 		void* m_InitialData = 0;
 		std::vector<IMappedMemory*> m_MappedMemories;
+		std::vector<IDeviceMemory*> m_DeviceMemories;
 	};
 }

@@ -14,7 +14,6 @@ using namespace Microsoft::WRL;
 namespace Inno
 {
 #define USE_DXIL
-
 	struct DX12DescriptorHandle
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle;
@@ -128,8 +127,23 @@ namespace Inno
 
 	class DX12OutputMergerTarget : public IOutputMergerTarget
 	{
-	public:		
-		DX12RTV m_RTV = {};
-		DX12DSV m_DSV = {};
+	public:
+		std::vector<DX12RTV> m_RTVs;
+		std::vector<DX12DSV> m_DSVs;
+	};
+
+	struct DX12MappedMemory : public IMappedMemory
+	{
+		ComPtr<ID3D12Resource> m_UploadHeapBuffer = 0;
+		DX12CBV m_CBV = {};
+	};
+	
+	struct DX12DeviceMemory : public IDeviceMemory
+	{
+		ComPtr<ID3D12Resource> m_DefaultHeapBuffer = 0;
+		ComPtr<ID3D12Resource> m_ReadBackHeapBuffer = 0;
+
+		DX12SRV m_SRV = {};
+		DX12UAV m_UAV = {};
 	};
 }

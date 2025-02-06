@@ -23,7 +23,7 @@ bool DX12RenderingServer::InitializePool()
 	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
 	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
 	m_SamplerComponentPool = TObjectPool<DX12SamplerComponent>::Create(256);
-	m_GPUBufferComponentPool = TObjectPool<DX12GPUBufferComponent>::Create(l_renderingCapability.maxBuffers);
+	m_GPUBufferComponentPool = TObjectPool<GPUBufferComponent>::Create(l_renderingCapability.maxBuffers);
 	m_OutputMergerTargetPool = TObjectPool<DX12OutputMergerTarget>::Create(128);
 
 	return true;
@@ -100,10 +100,26 @@ bool DX12RenderingServer::DeleteTextureComponent(TextureComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
 
-	if (l_rhs->m_DefaultHeapBuffer)
-		l_rhs->m_DefaultHeapBuffer.ReleaseAndGetAddressOf();
+	for (auto i : l_rhs->m_DeviceMemories)
+	{
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+		if (l_DX12DeviceMemory->m_DefaultHeapBuffer)
+			l_DX12DeviceMemory->m_DefaultHeapBuffer.ReleaseAndGetAddressOf();
+		
+		if (l_DX12DeviceMemory->m_ReadBackHeapBuffer)
+			l_DX12DeviceMemory->m_ReadBackHeapBuffer.ReleaseAndGetAddressOf();
+	}
 
-	l_rhs->m_UploadHeapBuffers.clear();
+	l_rhs->m_DeviceMemories.clear();
+
+	for (auto i : l_rhs->m_MappedMemories)
+	{
+		auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
+		if (l_DX12MappedMemory->m_UploadHeapBuffer)
+			l_DX12MappedMemory->m_UploadHeapBuffer.ReleaseAndGetAddressOf();
+	}
+
+	l_rhs->m_MappedMemories.clear();
 
 	m_TextureComponentPool->Destroy(l_rhs);
 
@@ -115,7 +131,6 @@ bool DX12RenderingServer::DeleteTextureComponent(TextureComponent* rhs)
 bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialComponent*>(rhs);
-
 
 	m_MaterialComponentPool->Destroy(l_rhs);
 
@@ -176,24 +191,23 @@ bool DX12RenderingServer::DeleteSamplerComponent(SamplerComponent* rhs)
 
 bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12GPUBufferComponent*>(rhs);
-
-	for (auto i : l_rhs->m_DeviceMemories)
+	for (auto i : rhs->m_DeviceMemories)
 	{
-		if (i->m_DefaultHeapBuffer)
-			i->m_DefaultHeapBuffer.ReleaseAndGetAddressOf();
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+		if (l_DX12DeviceMemory->m_DefaultHeapBuffer)
+			l_DX12DeviceMemory->m_DefaultHeapBuffer.ReleaseAndGetAddressOf();
 	}
 
-	l_rhs->m_DeviceMemories.clear();
+	rhs->m_DeviceMemories.clear();
 
-	for (auto i : l_rhs->m_MappedMemories)
+	for (auto i : rhs->m_MappedMemories)
 	{
 		auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
 		if (l_DX12MappedMemory->m_UploadHeapBuffer)
 			l_DX12MappedMemory->m_UploadHeapBuffer.ReleaseAndGetAddressOf();
 	}
 
-	m_GPUBufferComponentPool->Destroy(l_rhs);
+	m_GPUBufferComponentPool->Destroy(rhs);
 
 	return true;
 }
@@ -232,16 +246,16 @@ bool DX12RenderingServer::Delete(IOutputMergerTarget* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12OutputMergerTarget*>(rhs);
 
-	for (auto& j : l_rhs->m_RenderTargets)
+	for (auto& j : l_rhs->m_ColorOutputs)
 	{
-		if (j.m_IsOwned)
-			DeleteTextureComponent(j.m_Texture);
+		if (j)
+			DeleteTextureComponent(j);
 	}
 
-	l_rhs->m_RenderTargets.clear();
+	l_rhs->m_ColorOutputs.clear();
 
-	if (l_rhs->m_DepthStencilRenderTarget.m_IsOwned)
-		DeleteTextureComponent(l_rhs->m_DepthStencilRenderTarget.m_Texture);
+	if (l_rhs->m_DepthStencilOutput)
+		DeleteTextureComponent(l_rhs->m_DepthStencilOutput);
 
 	m_OutputMergerTargetPool->Destroy(l_rhs);
 

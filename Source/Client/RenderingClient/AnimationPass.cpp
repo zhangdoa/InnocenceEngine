@@ -8,7 +8,7 @@
 
 using namespace Inno;
 
-bool AnimationPass::Setup(ISystemConfig *systemConfig)
+bool AnimationPass::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -40,7 +40,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Vertex;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
@@ -84,7 +84,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_IndirectBinding = true;
-    m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = ShaderStage::Pixel;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = ShaderStage::Pixel;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 0;
@@ -104,7 +104,7 @@ bool AnimationPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
 	m_ObjectStatus = ObjectStatus::Created;
-	
+
 	return true;
 }
 
@@ -146,8 +146,8 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_AnimationGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Animation);
 
 	auto& l_AnimationDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetAnimationDrawCallInfo();
-    // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-    // m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	// m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
 	// if (l_AnimationDrawCallInfo.size())
 	// {
 	// 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
@@ -166,22 +166,22 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
 	// 			}
 
 	// 			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, i.drawCallInfo.mesh);
 
 	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0].m_Texture, 3);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1].m_Texture, 4);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2].m_Texture, 5);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3].m_Texture, 6);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture, 7);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
 	// 			}
 	// 		}
 	// 	}
@@ -205,30 +205,22 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 
 bool AnimationPass::RenderTargetsReservationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();	
-	m_RenderPassComp->m_OutputMergerTargets.resize(l_renderingServer->GetSwapChainImageCount());
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
+		l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTarget);
 
-	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
-	{
-		if (m_RenderPassComp->m_OutputMergerTargets[i] == nullptr)
-			l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTargets[i]);
+	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
+	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
 
-		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
-		l_outputMergerTarget->m_RenderTargets.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
-	}
-
-    return true;
+	return true;
 }
 
 bool AnimationPass::RenderTargetsCreationFunc()
 {
-	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
+	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
+	for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 	{
-		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
-		for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
-		{
-			l_outputMergerTarget->m_RenderTargets[i].m_Texture = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[i]->m_RenderTargets[j].m_Texture;
-		}
+		l_outputMergerTarget->m_ColorOutputs[i] = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[i];
 	}
 
 	return true;
@@ -241,11 +233,7 @@ bool AnimationPass::DepthStencilRenderTargetsReservationFunc()
 
 bool AnimationPass::DepthStencilRenderTargetsCreationFunc()
 {
-	for (size_t i = 0; i < m_RenderPassComp->m_OutputMergerTargets.size(); i++)
-	{
-		auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTargets[i];
-		l_outputMergerTarget->m_DepthStencilRenderTarget.m_Texture = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[i]->m_DepthStencilRenderTarget.m_Texture;
-	}
-
+	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
+	l_outputMergerTarget->m_DepthStencilOutput = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput;
 	return true;
 }

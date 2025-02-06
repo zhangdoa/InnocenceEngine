@@ -38,21 +38,23 @@ DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(Com
 	return l_descHeapAccessor;
 }
 
-DX12SRV DX12RenderingServer::CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip)
+bool DX12RenderingServer::CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip)
 {
 	auto l_desc = GetSRVDesc(rhs->m_TextureDesc, rhs->m_DX12TextureDesc, mostDetailedMip);
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage);
 
-	DX12SRV l_result = {};
-	l_result.SRVDesc = l_desc;
-	l_result.Handle = l_descHeapAccessor.GetNewHandle();
+	for (auto i : rhs->m_DeviceMemories)
+	{
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+		l_DX12DeviceMemory->m_SRV.SRVDesc = l_desc;
+		l_DX12DeviceMemory->m_SRV.Handle = l_descHeapAccessor.GetNewHandle();
+		m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), &l_DX12DeviceMemory->m_SRV.SRVDesc, l_DX12DeviceMemory->m_SRV.Handle.CPUHandle);
+	}
 
-	m_device->CreateShaderResourceView(rhs->m_DefaultHeapBuffer.Get(), &l_result.SRVDesc, l_result.Handle.CPUHandle);
-
-	return l_result;
+	return true;
 }
 
-DX12UAV DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice)
+bool DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice)
 {
 	auto l_desc = GetUAVDesc(rhs->m_TextureDesc, rhs->m_DX12TextureDesc, mipSlice);
 
@@ -65,17 +67,29 @@ DX12UAV DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSl
 	auto l_descHandle = l_descHeapAccessor.GetNewHandle();
 	auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
 
-	l_result.Handle.CPUHandle = l_descHandle_ShaderNonVisible.CPUHandle;
-	l_result.Handle.GPUHandle = l_descHandle.GPUHandle;
-	l_result.Handle.m_Index = l_descHandle.m_Index; // @TODO: Not sure which one is correct
+	for (auto i : rhs->m_DeviceMemories)
+	{
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);		
+		DX12UAV l_result = {};
+		l_result.UAVDesc = l_desc;
 
-	m_device->CreateUnorderedAccessView(rhs->m_DefaultHeapBuffer.Get(), 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
-	m_device->CreateUnorderedAccessView(rhs->m_DefaultHeapBuffer.Get(), 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
+		auto l_descHandle = l_descHeapAccessor.GetNewHandle();
+		auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
 
-	return l_result;
+		l_result.Handle.CPUHandle = l_descHandle_ShaderNonVisible.CPUHandle;
+		l_result.Handle.GPUHandle = l_descHandle.GPUHandle;
+		l_result.Handle.m_Index = l_descHandle.m_Index;
+
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
+
+		l_DX12DeviceMemory->m_UAV = l_result;		
+	}
+
+	return true;
 }
 
-bool DX12RenderingServer::CreateSRV(DX12GPUBufferComponent* rhs)
+bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_desc = {};
 	l_desc.Format = rhs->m_isAtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
@@ -88,15 +102,16 @@ bool DX12RenderingServer::CreateSRV(DX12GPUBufferComponent* rhs)
 
 	for (auto i : rhs->m_DeviceMemories)
 	{
-		i->m_SRV.SRVDesc = l_desc;
-		i->m_SRV.Handle = l_descHeapAccessor.GetNewHandle();
-		m_device->CreateShaderResourceView(i->m_DefaultHeapBuffer.Get(), &i->m_SRV.SRVDesc, i->m_SRV.Handle.CPUHandle);
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+		l_DX12DeviceMemory->m_SRV.SRVDesc = l_desc;
+		l_DX12DeviceMemory->m_SRV.Handle = l_descHeapAccessor.GetNewHandle();
+		m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), &l_DX12DeviceMemory->m_SRV.SRVDesc, l_DX12DeviceMemory->m_SRV.Handle.CPUHandle);
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateUAV(DX12GPUBufferComponent* rhs)
+bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
 	l_desc.Format = rhs->m_isAtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
@@ -109,6 +124,7 @@ bool DX12RenderingServer::CreateUAV(DX12GPUBufferComponent* rhs)
 
 	for (auto i : rhs->m_DeviceMemories)
 	{
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);		
 		DX12UAV l_result = {};
 		l_result.UAVDesc = l_desc;
 
@@ -117,18 +133,18 @@ bool DX12RenderingServer::CreateUAV(DX12GPUBufferComponent* rhs)
 
 		l_result.Handle.CPUHandle = l_descHandle_ShaderNonVisible.CPUHandle;
 		l_result.Handle.GPUHandle = l_descHandle.GPUHandle;
-		l_result.Handle.m_Index = l_descHandle.m_Index; // @TODO: Not sure which one is correct
+		l_result.Handle.m_Index = l_descHandle.m_Index;
 
-		m_device->CreateUnorderedAccessView(i->m_DefaultHeapBuffer.Get(), rhs->m_isAtomicCounter ? i->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
-		m_device->CreateUnorderedAccessView(i->m_DefaultHeapBuffer.Get(), rhs->m_isAtomicCounter ? i->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_isAtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_isAtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
 
-		i->m_UAV = l_result;
+		l_DX12DeviceMemory->m_UAV = l_result;
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateCBV(DX12GPUBufferComponent* rhs)
+bool DX12RenderingServer::CreateCBV(GPUBufferComponent* rhs)
 {
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadOnly);
 
@@ -335,17 +351,19 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
 		{
 			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)RenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
 
-			auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTargets[0]);
+			auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTarget);
+			auto l_RTV = l_DX12OutputMergerTarget->m_RTVs[0];
 			for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = l_DX12OutputMergerTarget->m_RTV.m_Desc.Format;
+				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = l_RTV.m_Desc.Format;
 			}
 		}
 
 		if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTargets[0]);
-			l_PSO->m_GraphicsPSODesc.DSVFormat = l_DX12OutputMergerTarget->m_DSV.m_Desc.Format;
+			auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTarget);
+			auto l_DSV = l_DX12OutputMergerTarget->m_DSVs[0];
+			l_PSO->m_GraphicsPSODesc.DSVFormat = l_DSV.m_Desc.Format;
 			l_PSO->m_GraphicsPSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
 		}
 
@@ -471,11 +489,11 @@ bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, DX12
 
 	auto l_commandList = commandList->m_DirectCommandList;
 	auto l_currentFrame = GetCurrentFrame();
-	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTargets[l_currentFrame]);
+	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE* l_DSV = NULL;
 	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-		l_DSV = &l_outputMergerTarget->m_DSV.m_Handle;
+		l_DSV = &l_outputMergerTarget->m_DSVs[l_currentFrame].m_Handle;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE* l_RTVs = NULL;
 	uint32_t l_RTCount = 0;
@@ -483,7 +501,7 @@ bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, DX12
 	{
 		if (renderPass->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			l_RTVs = &l_outputMergerTarget->m_RTV.m_Handles[0];
+			l_RTVs = &l_outputMergerTarget->m_RTVs[l_currentFrame].m_Handles[0];
 			l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
 		}
 	}

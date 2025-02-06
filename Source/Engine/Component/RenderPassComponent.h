@@ -21,7 +21,7 @@ namespace Inno
 		std::function<void()> m_OnResize;
 		std::function<void(ICommandList*)> m_CustomCommandsFunc;
 
-		std::vector<IOutputMergerTarget*> m_OutputMergerTargets;
+		IOutputMergerTarget* m_OutputMergerTarget;
 		IPipelineStateObject* m_PipelineStateObject = 0;
 		std::vector<ICommandList*> m_CommandLists;
 		std::vector<ISemaphore*> m_Semaphores;

@@ -10,7 +10,7 @@
 #include "../../Component/RenderPassComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
 #include "../../Component/DX12SamplerComponent.h"
-#include "../../Component/DX12GPUBufferComponent.h"
+#include "../../Component/GPUBufferComponent.h"
 
 namespace Inno
 {
@@ -160,12 +160,12 @@ namespace Inno
             const wchar_t* name
         );
 
-        DX12SRV CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip);
-        DX12UAV CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice);
+        bool CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip);
+        bool CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice);
 
-        bool CreateSRV(DX12GPUBufferComponent* rhs);
-        bool CreateUAV(DX12GPUBufferComponent* rhs);
-        bool CreateCBV(DX12GPUBufferComponent* rhs);
+        bool CreateSRV(GPUBufferComponent* rhs);
+        bool CreateUAV(GPUBufferComponent* rhs);
+        bool CreateCBV(GPUBufferComponent* rhs);
         
         bool CreateRootSignature(RenderPassComponent* RenderPassComp);
         D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(RenderPassComponent* RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
@@ -178,7 +178,7 @@ namespace Inno
         bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
         bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp);
-
+        bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, DX12TextureComponent* TextureComponent);
         bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent);
 
         // DX12 objects
@@ -249,7 +249,7 @@ namespace Inno
         TObjectPool<RenderPassComponent>* m_RenderPassComponentPool = nullptr;
         TObjectPool<DX12ShaderProgramComponent>* m_ShaderProgramComponentPool = nullptr;
         TObjectPool<DX12SamplerComponent>* m_SamplerComponentPool = nullptr;
-        TObjectPool<DX12GPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
+        TObjectPool<GPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
         TObjectPool<DX12PipelineStateObject>* m_PSOPool = nullptr;
         TObjectPool<DX12CommandList>* m_CommandListPool = nullptr;
         TObjectPool<DX12Semaphore>* m_SemaphorePool = nullptr;

@@ -96,19 +96,19 @@ bool VKRenderingServer::InitializeImpl(TextureComponent *rhs)
 
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
-	if (l_rhs->m_TextureData != nullptr)
+	if (l_rhs->m_InitialData != nullptr)
 	{
 		CreateHostStagingBuffer(l_rhs->m_VKTextureDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, l_stagingBuffer, l_stagingBufferMemory);
 
 		void *l_mappedMemory;
 		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_mappedMemory);
-		std::memcpy(l_mappedMemory, l_rhs->m_TextureData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
+		std::memcpy(l_mappedMemory, l_rhs->m_InitialData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
 	}
 
 	VkCommandBuffer l_commandBuffer = OpenTemporaryCommandBuffer(m_globalCommandPool);
 
-	if (l_rhs->m_TextureData != nullptr)
+	if (l_rhs->m_InitialData != nullptr)
 	{
 		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		CopyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
@@ -121,7 +121,7 @@ bool VKRenderingServer::InitializeImpl(TextureComponent *rhs)
 
 	CloseTemporaryCommandBuffer(m_globalCommandPool, m_graphicsQueue, l_commandBuffer);
 
-	if (l_rhs->m_TextureData != nullptr)
+	if (l_rhs->m_InitialData != nullptr)
 	{
 		vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 		vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
@@ -768,21 +768,25 @@ bool VKRenderingServer::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 	l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
 	l_framebufferCInfo.layers = 1;
 
-	for (size_t i = 0; i < VKRenderPassComp->m_OutputMergerTargets.size(); i++)
-	{
-		auto l_outputMergerTarget = VKRenderPassComp->m_OutputMergerTargets[i];
-		auto l_attachmentCount = l_outputMergerTarget->m_RenderTargets.size();
+	auto l_outputMergerTarget = VKRenderPassComp->m_OutputMergerTarget;
+	auto l_attachmentCount = l_outputMergerTarget->m_ColorOutputs.size();
 
-		// The depth-stencil attachment
-		if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-			l_attachmentCount += 1;
+	// The depth-stencil attachment
+	if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		l_attachmentCount += 1;
+
+	auto l_swapChainImageCount = GetSwapChainImageCount();
+	for (size_t i = 0; i < l_swapChainImageCount; i++)
+	{
 		std::vector<VkImageView> l_attachments(l_attachmentCount);
 
 		if (VKRenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
+			for (size_t j = 0; j < l_outputMergerTarget->m_ColorOutputs.size(); j++)
 			{
-				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_RenderTargets[j].m_Texture);
+				auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_ColorOutputs[j]);
+
+				// @TODO: Use the image view from textures of different frames
 				l_attachments[j] = l_VKTextureComp->m_imageView;
 			}
 		}
@@ -793,7 +797,7 @@ bool VKRenderingServer::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 
 		if (VKRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_DepthStencilRenderTarget.m_Texture);
+			auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_DepthStencilOutput);
 			l_attachments[l_attachmentCount - 1] = l_VKTextureComp->m_imageView;
 		}
 

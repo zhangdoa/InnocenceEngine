@@ -201,22 +201,22 @@ namespace Inno
 
                     if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
                     {
-                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
-                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
-                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
-                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
-                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0], 3);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1], 4);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2], 5);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3], 6);
+                        l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4], 7);
                     }
 
                     l_renderingServer->DrawIndexedInstanced(m_RenderPassComp_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
                     if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
                     {
-                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
-                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
-                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
-                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
-                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0], 3);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1], 4);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2], 5);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3], 6);
+                        l_renderingServer->UnbindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4], 7);
                     }
                 }
 
@@ -241,7 +241,7 @@ namespace Inno
             auto l_posWSMetallic = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[0].m_Texture);
             auto l_normalRoughness = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[1].m_Texture);
             auto l_albedoAO = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture);
-            auto l_depthStencilRT = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture);
+            auto l_depthStencilRT = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Surfel, m_RenderPassComp_Surfel->m_DepthStencilRenderTarget);
 
             g_Engine->Get<AssetSystem>()->SaveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_RenderTargets[2].m_Texture->m_TextureDesc, l_albedoAO.data());
 
@@ -286,7 +286,7 @@ namespace Inno
                 probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
             }
 
-            g_Engine->Get<AssetSystem>()->SaveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_DepthStencilRenderTarget.m_Texture->m_TextureDesc, l_DSTextureCompData.data());
+            g_Engine->Get<AssetSystem>()->SaveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), m_RenderPassComp_Surfel->m_DepthStencilRenderTarget->m_TextureDesc, l_DSTextureCompData.data());
             surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
             l_index++;

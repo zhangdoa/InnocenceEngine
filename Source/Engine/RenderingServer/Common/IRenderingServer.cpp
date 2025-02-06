@@ -238,21 +238,17 @@ bool IRenderingServer::ReserveRenderTargets(RenderPassComponent* rhs)
 	}
 	else
 	{
-		rhs->m_OutputMergerTargets.resize(m_swapChainImageCount);
-		for (size_t i = 0; i < rhs->m_OutputMergerTargets.size(); i++)
-		{
-			IOutputMergerTarget* l_outputMergerTarget = nullptr;
-			Add(l_outputMergerTarget);
-			l_outputMergerTarget->m_RenderTargets.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
-			for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
-			{
-				auto& l_renderTarget = l_outputMergerTarget->m_RenderTargets[j];
-				l_renderTarget.m_IsOwned = true;
-				l_renderTarget.m_Texture = AddTextureComponent((std::string(rhs->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "_" + std::to_string(j) + "/").c_str());
-				Log(Verbose, "Render target: ", l_renderTarget.m_Texture->m_InstanceName, " has been allocated at: ", l_renderTarget.m_Texture);
-			}
+		if (!rhs->m_OutputMergerTarget)
+			Add(rhs->m_OutputMergerTarget);
 
-			rhs->m_OutputMergerTargets[i] = l_outputMergerTarget;
+		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto l_swapChainImageCount = GetSwapChainImageCount();
+		l_outputMergerTarget->m_ColorOutputs.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
+		for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
+		{
+			auto& l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
+			l_renderTarget = AddTextureComponent((std::string(rhs->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
+			Log(Verbose, "Render target: ", l_renderTarget->m_InstanceName, " has been allocated at: ", l_renderTarget);
 		}
 	}
 
@@ -263,14 +259,10 @@ bool IRenderingServer::ReserveRenderTargets(RenderPassComponent* rhs)
 	}
 	else if (rhs->m_RenderPassDesc.m_UseDepthBuffer)
 	{
-		for (size_t i = 0; i < rhs->m_OutputMergerTargets.size(); i++)
-		{
-			auto l_outputMergerTarget = rhs->m_OutputMergerTargets[i];
-			auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilRenderTarget;
-			l_depthStencilRenderTarget.m_IsOwned = true;
-			l_depthStencilRenderTarget.m_Texture = AddTextureComponent((std::string(rhs->m_InstanceName.c_str()) + "_DS_" + std::to_string(i) + "/").c_str());
-			Log(Verbose, "", rhs->m_InstanceName.c_str(), " depth stencil target has been allocated.");
-		}
+		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
+		l_depthStencilRenderTarget = AddTextureComponent((std::string(rhs->m_InstanceName.c_str()) + "_DS/").c_str());
+		Log(Verbose, rhs->m_InstanceName.c_str(), " depth stencil target has been allocated.");
 	}
 
 	return true;
@@ -285,21 +277,17 @@ bool IRenderingServer::CreateRenderTargets(RenderPassComponent* rhs)
 	}
 	else
 	{
-		for (size_t i = 0; i < rhs->m_OutputMergerTargets.size(); i++)
+		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 		{
-			auto l_outputMergerTarget = rhs->m_OutputMergerTargets[i];
-			for (size_t j = 0; j < l_outputMergerTarget->m_RenderTargets.size(); j++)
-			{
-				auto& l_renderTarget = l_outputMergerTarget->m_RenderTargets[j];
-				auto l_TextureComp = l_renderTarget.m_Texture;
-				l_TextureComp->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
-				l_TextureComp->m_TextureData = nullptr;
+			auto l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
+			l_renderTarget->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
+			l_renderTarget->m_InitialData = nullptr;
 
-				InitializeImpl(l_TextureComp);
-
-				Log(Verbose, "Render target: ", l_renderTarget.m_Texture->m_InstanceName, " has been created.");
-			}
+			InitializeImpl(l_renderTarget);
 		}
+
+		Log(Verbose, "Render target: ", rhs->m_InstanceName, " have been created.");
 	}
 
 	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc)
@@ -309,31 +297,28 @@ bool IRenderingServer::CreateRenderTargets(RenderPassComponent* rhs)
 	}
 	else if (rhs->m_RenderPassDesc.m_UseDepthBuffer)
 	{
-		for (size_t i = 0; i < rhs->m_OutputMergerTargets.size(); i++)
+		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
+		l_depthStencilRenderTarget->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
+
+		if (rhs->m_RenderPassDesc.m_UseStencilBuffer)
 		{
-			auto l_outputMergerTarget = rhs->m_OutputMergerTargets[i];
-			auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilRenderTarget;
-			l_depthStencilRenderTarget.m_Texture->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
-
-			if (rhs->m_RenderPassDesc.m_UseStencilBuffer)
-			{
-				l_depthStencilRenderTarget.m_Texture->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
-				l_depthStencilRenderTarget.m_Texture->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-				l_depthStencilRenderTarget.m_Texture->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
-			}
-			else
-			{
-				l_depthStencilRenderTarget.m_Texture->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
-				l_depthStencilRenderTarget.m_Texture->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-				l_depthStencilRenderTarget.m_Texture->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
-			}
-
-			l_depthStencilRenderTarget.m_Texture->m_TextureData = nullptr;
-
-			InitializeImpl(l_depthStencilRenderTarget.m_Texture);
-
-			Log(Verbose, "", rhs->m_InstanceName, " depth stencil target has been created.");
+			l_depthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
+			l_depthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
+			l_depthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
+		else
+		{
+			l_depthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
+			l_depthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
+			l_depthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+		}
+
+		l_depthStencilRenderTarget->m_InitialData = nullptr;
+
+		InitializeImpl(l_depthStencilRenderTarget);
+
+		Log(Verbose, rhs->m_InstanceName, " depth stencil target has been created.");
 	}
 
 	return true;
@@ -381,17 +366,17 @@ bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass,
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
 
-	auto l_outputMergerTarget = renderPass->m_OutputMergerTargets[renderPass->m_CurrentFrame];
-	for (size_t i = 0; i < l_outputMergerTarget->m_RenderTargets.size(); i++)
+	auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
+	for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 	{
-		auto& l_renderTarget = l_outputMergerTarget->m_RenderTargets[i];
-		TryToTransitState(l_renderTarget.m_Texture, commandList, accessibility);
+		auto& l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
+		TryToTransitState(l_renderTarget, commandList, accessibility);
 	}
 
 	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 	{
-		auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilRenderTarget;
-		TryToTransitState(l_depthStencilRenderTarget.m_Texture, commandList, accessibility);
+		auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
+		TryToTransitState(l_depthStencilRenderTarget, commandList, accessibility);
 	}
 
 	return true;
@@ -455,7 +440,7 @@ bool IRenderingServer::WriteMappedMemory(MeshComponent* rhs)
 	return true;
 }
 
-bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
+bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	if (rhs->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
@@ -465,8 +450,7 @@ bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, const void* GP
 		l_size = range * rhs->m_ElementSize;
 
 	auto l_currentFrame = GetCurrentFrame();
-	auto l_mappedMemory = rhs->m_MappedMemories[l_currentFrame];
-	if (l_mappedMemory == nullptr)
+	if (mappedMemory == nullptr)
 	{
 		if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 		{
@@ -475,9 +459,9 @@ bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, const void* GP
 		return false;
 	}
 
-	std::memcpy((char*)l_mappedMemory->m_Address + startOffset * rhs->m_ElementSize, GPUBufferValue, l_size);
+	std::memcpy((char*)mappedMemory->m_Address + startOffset * rhs->m_ElementSize, GPUBufferValue, l_size);
 
-	l_mappedMemory->m_NeedUploadToGPU = true;
+	mappedMemory->m_NeedUploadToGPU = true;
 
 	return true;
 }
@@ -547,12 +531,8 @@ bool IRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 
 bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* rhs)
 {
-    for (auto i : rhs->m_OutputMergerTargets)
-    {
-        Delete(i);
-    }
-
-    rhs->m_OutputMergerTargets.clear();
+    Delete(rhs->m_OutputMergerTarget);
+    rhs->m_OutputMergerTarget = nullptr;
 
     Delete(rhs->m_PipelineStateObject);
 
@@ -699,15 +679,22 @@ bool IRenderingServer::PrepareGlobalCommands()
 
 	for (auto i : m_initializedTextures)
 	{
-		if (i->m_NeedUploadToGPU)
+		if (i->m_MappedMemories.size() == 0)
+			continue;
+
+		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
+		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
 			UploadToGPU(l_commandList, i);
-			i->m_NeedUploadToGPU = false;
+			l_mappedMemory->m_NeedUploadToGPU = false;
 		}
 	}
 
 	for (auto i : m_initializedGPUBuffers)
 	{
+		if (i->m_MappedMemories.size() == 0)
+			continue;
+					
 		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{

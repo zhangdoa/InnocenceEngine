@@ -44,7 +44,7 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 		l_TextureComp->m_TextureDesc.UseMipMap = true;
 		l_TextureComp->m_TextureDesc.Width = width;
 		l_TextureComp->m_TextureDesc.Height = height;
-		l_TextureComp->m_TextureData = l_rawData;
+		l_TextureComp->m_InitialData = l_rawData;
 		l_TextureComp->m_ObjectStatus = ObjectStatus::Created;
 
 		Log(Verbose, "STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");

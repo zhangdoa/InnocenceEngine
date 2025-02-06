@@ -113,12 +113,12 @@ bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingConte
 	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 0);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
 	// l_renderingServer->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
 	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0].m_Texture, 2);
+	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
 	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
@@ -135,11 +135,11 @@ GPUResourceComponent* SunShadowBlurEvenPass::GetResult()
 	if (!m_RenderPassComp)
 		return nullptr;
 	
-	if (m_RenderPassComp->m_OutputMergerTargets.size() == 0)
+	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return nullptr;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
-	return m_RenderPassComp->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture;
+	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
 }

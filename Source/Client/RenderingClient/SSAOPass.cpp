@@ -136,7 +136,7 @@ bool SSAOPass::Setup(ISystemConfig* systemConfig)
 	m_NoiseTexture->m_TextureDesc.Height = l_textureSize;
 	m_NoiseTexture->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_NoiseTexture->m_TextureData = &m_Noise[0];
+	m_NoiseTexture->m_InitialData = &m_Noise[0];
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -199,8 +199,8 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_KernelGPUBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[0].m_Texture, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTargets[l_currentFrame]->m_RenderTargets[1].m_Texture, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 3);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_NoiseTexture, 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 5);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_RandomRot, 6);

@@ -11,7 +11,9 @@ namespace Inno
 		static const char* GetTypeName() { return "TextureComponent"; };
 		TextureDesc m_TextureDesc = {};
 	
-		void* m_TextureData = 0;
-		bool m_NeedUploadToGPU = false;
+		std::vector<IMappedMemory*> m_MappedMemories;
+		std::vector<IDeviceMemory*> m_DeviceMemories;		
+		void* m_InitialData = 0;
+		uint32_t m_PixelDataSize = 0;
 	};
 }

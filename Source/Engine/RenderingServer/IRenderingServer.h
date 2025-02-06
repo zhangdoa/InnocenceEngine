@@ -110,7 +110,7 @@ namespace Inno
 
 	protected:
 		bool WriteMappedMemory(MeshComponent* rhs);
-		bool WriteMappedMemory(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range);
+		bool WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* GPUBufferValue, size_t startOffset, size_t range);
 
 	public:
 		virtual bool ClearTextureComponent(TextureComponent* rhs) { return false; }
@@ -120,7 +120,8 @@ namespace Inno
 		template<typename T>
 		bool UploadGPUBufferComponent(GPUBufferComponent* rhs, const T* GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
-			return WriteMappedMemory(rhs, GPUBufferValue, startOffset, range);
+			auto l_mappedMemory = rhs->m_MappedMemories[GetCurrentFrame()];
+			return WriteMappedMemory(rhs, l_mappedMemory, GPUBufferValue, startOffset, range);
 		}
 
 		template<typename T>
