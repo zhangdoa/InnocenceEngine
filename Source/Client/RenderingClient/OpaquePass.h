@@ -10,6 +10,7 @@ namespace Inno
 
 		bool Setup(ISystemConfig *systemConfig = nullptr) override;
 		bool Initialize() override;
+		bool Update() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
@@ -23,5 +24,6 @@ namespace Inno
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
+		GPUBufferComponent* m_IndirectDrawCommand;		
 	};
 } // namespace Inno

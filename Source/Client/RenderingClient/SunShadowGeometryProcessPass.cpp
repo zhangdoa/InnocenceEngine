@@ -4,6 +4,7 @@
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Common/Timer.h"
 
 using namespace Inno;
 
@@ -26,11 +27,15 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
+	m_IndirectDrawCommand = l_renderingServer->AddGPUBufferComponent("SunShadowGeometryProcessPass/IndirectDrawCommand/");
+	m_IndirectDrawCommand->m_Usage = GPUBufferUsage::IndirectDraw;
+
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
 	l_RenderPassDesc.m_Resizable = false;
+	l_RenderPassDesc.m_IndirectDraw = true;
 	
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2DArray;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = m_shadowMapResolution;
@@ -110,8 +115,31 @@ bool SunShadowGeometryProcessPass::Initialize()
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->InitializeGPUBufferComponent(m_IndirectDrawCommand);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
+
+	return true;
+}
+
+bool SunShadowGeometryProcessPass::Update()
+{
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (m_IndirectDrawCommand->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	auto l_renderingServer = g_Engine->getRenderingServer();
+
+	auto& l_drawCallList = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
+	auto f_drawCallValid = [](const DrawCallInfo& drawCall) 
+	{ 
+		auto l_visible = static_cast<uint32_t>(drawCall.m_VisibilityMask & VisibilityMask::Sun);
+		return l_visible && drawCall.meshUsage != MeshUsage::Skeletal;
+	};
+
+	l_renderingServer->UpdateIndirectDrawCommand(m_IndirectDrawCommand, l_drawCallList, f_drawCallValid);
 
 	return true;
 }
@@ -136,7 +164,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
-	
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
@@ -154,19 +182,8 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_SamplerComp, 5);
 
-	auto& l_drawCallList = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	auto l_drawCallCount = l_drawCallList.size();
-	for (uint32_t i = 0; i < l_drawCallCount; i++)
-	{
-		auto& l_drawCall = l_drawCallList[i];
-		auto l_visible = static_cast<uint32_t>(l_drawCall.m_VisibilityMask & VisibilityMask::Sun);
-		if (l_visible && l_drawCall.meshUsage != MeshUsage::Skeletal)
-		{
-			l_renderingServer->PushRootConstants(m_RenderPassComp, l_drawCall.m_PerObjectConstantBufferIndex);			
-			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCall.mesh);
-		}
-	}
-	
+	l_renderingServer->ExecuteIndirect(m_RenderPassComp, m_IndirectDrawCommand);
+
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

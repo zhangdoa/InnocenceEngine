@@ -389,6 +389,52 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 	return false;
 }
 
+bool DX12RenderingServer::UpdateIndirectDrawCommand(GPUBufferComponent* indirectDrawCommand, const std::vector<DrawCallInfo>& drawCallList, std::function<bool(const DrawCallInfo&)>&& isDrawCallValid)
+{
+	auto l_indirectDrawCommandList = reinterpret_cast<DX12IndirectDrawCommandList*>(indirectDrawCommand->m_IndirectDrawCommandList);
+	auto l_drawCallCount = drawCallList.size();
+	l_indirectDrawCommandList->m_CommandList.clear();
+	for (uint32_t i = 0; i < l_drawCallCount; i++)
+	{
+		auto& l_drawCall = drawCallList[i];
+		if (!isDrawCallValid(l_drawCall))
+			continue;
+
+		auto l_mesh = reinterpret_cast<DX12MeshComponent*>(l_drawCall.mesh);
+		DX12DrawIndirectCommand l_command;
+		l_command.RootConstant = l_drawCall.m_PerObjectConstantBufferIndex;
+		l_command.VBV = l_mesh->m_VBV;
+		l_command.IBV = l_mesh->m_IBV;
+		l_command.DrawIndexedArgs.BaseVertexLocation = 0;
+		l_command.DrawIndexedArgs.IndexCountPerInstance = (uint32_t)l_mesh->m_IndexCount;
+		l_command.DrawIndexedArgs.StartIndexLocation = 0;
+		l_command.DrawIndexedArgs.StartInstanceLocation = 0;
+		l_command.DrawIndexedArgs.InstanceCount = 1;
+		l_indirectDrawCommandList->m_CommandList.emplace_back(l_command);
+	}
+
+	auto l_mappedMemory = indirectDrawCommand->m_MappedMemories[GetCurrentFrame()];
+	WriteMappedMemory(indirectDrawCommand, l_mappedMemory, l_indirectDrawCommandList->m_CommandList.data(), 0, l_indirectDrawCommandList->m_CommandList.size());
+	
+	return true;
+}
+
+bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand)
+{
+	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);	
+	auto l_indirectDrawCommandList = reinterpret_cast<DX12IndirectDrawCommandList*>(indirectDrawCommand->m_IndirectDrawCommandList);
+	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(indirectDrawCommand->m_DeviceMemories[GetCurrentFrame()]);
+
+	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+
+	UINT drawCommandCount = l_indirectDrawCommandList->m_CommandList.size();
+	l_commandList->m_DirectCommandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), drawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
+
+	return true;
+}
+
 void DX12RenderingServer::PushRootConstants(RenderPassComponent* rhs, size_t rootConstants)
 {
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);

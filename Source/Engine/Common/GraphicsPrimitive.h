@@ -240,16 +240,20 @@ namespace Inno
 			bool m_UseDepthBuffer = false;
 			bool m_UseStencilBuffer = false;
 			bool m_UseOutputMerger = true;
+			bool m_IndirectDraw = false;
 			TextureDesc m_RenderTargetDesc = {};
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 			std::function<bool()> m_RenderTargetsReservationFunc;
 			std::function<bool()> m_RenderTargetsCreationFunc;
+			std::function<bool()> m_RenderTargetsRemovalFunc;
 			std::function<bool()> m_DepthStencilRenderTargetsReservationFunc;
 			std::function<bool()> m_DepthStencilRenderTargetsCreationFunc;
+			std::function<bool()> m_DepthStencilRenderTargetsRemovalFunc;
 		};
 
 		struct IPipelineStateObject {};
-
+		struct IIndirectDrawCommandList {};
+	
 		enum class GPUResourceType
 		{
 			Invalid,

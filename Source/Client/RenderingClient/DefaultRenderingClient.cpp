@@ -214,6 +214,8 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Update()
 	{
+		SunShadowGeometryProcessPass::Get().Update();
+		OpaquePass::Get().Update();
 		TiledFrustumGenerationPass::Get().Update();
 		LightCullingPass::Get().Update();
 		
@@ -235,7 +237,7 @@ namespace Inno
 		}
 
 		SunShadowGeometryProcessPass::Get().PrepareCommandList();
-
+		
 		OpaquePass::Get().PrepareCommandList();
 
 		SSAOPass::Get().PrepareCommandList();

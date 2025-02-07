@@ -92,10 +92,10 @@ bool DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice
 bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_desc = {};
-	l_desc.Format = rhs->m_isAtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
+	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
 	l_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	l_desc.Buffer.NumElements = (uint32_t)rhs->m_ElementCount;
-	l_desc.Buffer.StructureByteStride = rhs->m_isAtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
+	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
 	l_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadWrite);
@@ -114,10 +114,10 @@ bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
-	l_desc.Format = rhs->m_isAtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
+	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
 	l_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	l_desc.Buffer.NumElements = (uint32_t)rhs->m_ElementCount;
-	l_desc.Buffer.StructureByteStride = rhs->m_isAtomicCounter ? (uint32_t)rhs->m_ElementSize : 0;
+	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? (uint32_t)rhs->m_ElementSize : 0;
 
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite);
 	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite, TextureUsage::Invalid, false);
@@ -135,8 +135,8 @@ bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 		l_result.Handle.GPUHandle = l_descHandle.GPUHandle;
 		l_result.Handle.m_Index = l_descHandle.m_Index;
 
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_isAtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_isAtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
 
 		l_DX12DeviceMemory->m_UAV = l_result;
 	}
@@ -169,7 +169,7 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 {
 	if (RenderPassComp->m_ResourceBindingLayoutDescs.empty())
 	{
-		Log(Verbose, "Skipping creating RootSignature for ", RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Skipping creating RootSignature for ", RenderPassComp->m_InstanceName);
 		return true;
 	}
 
@@ -245,11 +245,11 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 			l_error->Release();
 
-			Log(Error, "", RenderPassComp->m_InstanceName.c_str(), " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+			Log(Error, RenderPassComp->m_InstanceName, " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			Log(Error, "", RenderPassComp->m_InstanceName.c_str(), " Can't serialize RootSignature.");
+			Log(Error, RenderPassComp->m_InstanceName, " Can't serialize RootSignature.");
 		}
 		return false;
 	}
@@ -259,7 +259,7 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "", RenderPassComp->m_InstanceName.c_str(), " Can't create RootSignature.");
+		Log(Error, RenderPassComp->m_InstanceName, " Can't create RootSignature.");
 		return false;
 	}
 
@@ -267,7 +267,41 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 	SetObjectName(RenderPassComp, l_PSO->m_RootSignature, "RootSignature");
 #endif // INNO_DEBUG
 
-	Log(Verbose, "", RenderPassComp->m_InstanceName.c_str(), " RootSignature has been created.");
+	Log(Verbose, RenderPassComp->m_InstanceName, " RootSignature has been created.");
+
+	if (RenderPassComp->m_RenderPassDesc.m_IndirectDraw)
+	{
+		D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[4] = {};
+
+		// 1. Constant argument.
+		argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT;
+		argumentDescs[0].Constant.RootParameterIndex = 0; // The root signature slot for the constant.
+		argumentDescs[0].Constant.DestOffsetIn32BitValues = 0; // Start at offset 0.
+		argumentDescs[0].Constant.Num32BitValuesToSet = 1; // Number of 32-bit values.
+
+		// 2. Vertex buffer view.
+		argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
+
+		// 3. Index buffer view.
+		argumentDescs[2].Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
+
+		// 4. Draw indexed arguments.
+		argumentDescs[3].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+
+		D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+		commandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
+		commandSignatureDesc.pArgumentDescs = argumentDescs;
+		commandSignatureDesc.ByteStride = sizeof(DX12DrawIndirectCommand);
+
+		l_HResult = m_device->CreateCommandSignature(&commandSignatureDesc, l_PSO->m_RootSignature.Get(), IID_PPV_ARGS(&l_PSO->m_IndirectCommandSignature));
+		if (FAILED(l_HResult))
+		{
+			Log(Error, RenderPassComp->m_InstanceName, " Can't create CommandSignature.");
+			return false;
+		}
+
+		Log(Verbose, RenderPassComp->m_InstanceName, " CommandSignature has been created.");
+	}
 
 	return true;
 }
@@ -374,7 +408,7 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
 		l_PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
 		if (!l_PSO->m_RootSignature.Get())
 		{
-			Log(Verbose, "Skipping creating DX12 PSO for ", RenderPassComp->m_InstanceName.c_str());
+			Log(Verbose, "Skipping creating DX12 PSO for ", RenderPassComp->m_InstanceName);
 			return true;
 		}
 
@@ -386,7 +420,7 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
 		auto l_HResult = m_device->CreateGraphicsPipelineState(&l_PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
 		if (FAILED(l_HResult))
 		{
-			Log(Error, RenderPassComp->m_InstanceName.c_str(), " Can't create Graphics PSO.");
+			Log(Error, RenderPassComp->m_InstanceName, " Can't create Graphics PSO.");
 			return false;
 		}
 	}
@@ -399,7 +433,7 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
 
 		if (FAILED(l_HResult))
 		{
-			Log(Error, RenderPassComp->m_InstanceName.c_str(), " Can't create Compute PSO.");
+			Log(Error, RenderPassComp->m_InstanceName, " Can't create Compute PSO.");
 			return false;
 		}
 	}
@@ -408,7 +442,7 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
 	SetObjectName(RenderPassComp, l_PSO->m_PSO, "PSO");
 #endif // INNO_DEBUG
 
-	Log(Verbose, "", RenderPassComp->m_InstanceName.c_str(), " PSO has been created.");
+	Log(Verbose, RenderPassComp->m_InstanceName, " PSO has been created.");
 
 	return true;
 }
@@ -437,28 +471,28 @@ bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* rhs)
 		l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
 		{
-			Log(Error, RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for direct CommandQueue.");
+			Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for direct CommandQueue.");
 			result = false;
 		}
 
 		l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
 		{
-			Log(Error, RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for compute CommandQueue.");
+			Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for compute CommandQueue.");
 			result = false;
 		}
 
 		l_semaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 		if (l_semaphore->m_CopyCommandQueueFenceEvent == NULL)
 		{
-			Log(Error, RenderPassComp->m_InstanceName.c_str(), " Can't create fence event for copy CommandQueue.");
+			Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for copy CommandQueue.");
 			result = false;
 		}
 	}
 
 	if (result)
 	{
-		Log(Verbose, RenderPassComp->m_InstanceName.c_str(), " Fence events have been created.");
+		Log(Verbose, RenderPassComp->m_InstanceName, " Fence events have been created.");
 	}
 
 	return result;

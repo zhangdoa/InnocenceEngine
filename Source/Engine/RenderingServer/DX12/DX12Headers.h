@@ -20,6 +20,22 @@ namespace Inno
 		D3D12_GPU_DESCRIPTOR_HANDLE GPUHandle;
 		uint32_t m_Index = 0;
 	};
+	
+ #pragma pack(push, 1)
+	struct DX12DrawIndirectCommand
+	{
+		UINT RootConstant;
+		D3D12_VERTEX_BUFFER_VIEW VBV;
+		D3D12_INDEX_BUFFER_VIEW IBV;
+		D3D12_DRAW_INDEXED_ARGUMENTS DrawIndexedArgs;
+	};
+#pragma pack(pop)
+
+	class DX12IndirectDrawCommandList : public IIndirectDrawCommandList
+	{
+	public:
+		std::vector<DX12DrawIndirectCommand> m_CommandList;
+	};
 
 	struct DX12CBV
 	{
@@ -104,6 +120,7 @@ namespace Inno
 		D3D12_COMPUTE_PIPELINE_STATE_DESC m_ComputePSODesc = {};
 		ComPtr<ID3D12PipelineState> m_PSO = 0;
 		ComPtr<ID3D12RootSignature> m_RootSignature = 0;
+        ComPtr<ID3D12CommandSignature> m_IndirectCommandSignature = 0;
 	};
 
 	class DX12CommandList : public ICommandList

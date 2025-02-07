@@ -12,6 +12,7 @@ using namespace Inno;
 
 using namespace DX12Helper;
 
+
 bool DX12RenderingServer::CreateHardwareResources()
 {
     bool l_result = true;
@@ -128,6 +129,11 @@ bool DX12RenderingServer::AssignSwapChainImages()
     return true;
 }
 
+bool DX12RenderingServer::ReleaseSwapChainImages()
+{  
+    return true;
+}
+
 bool DX12RenderingServer::BeginFrame()
 {
     GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
@@ -143,7 +149,7 @@ bool DX12RenderingServer::PresentImpl()
     return true;
 }
 
-bool DX12RenderingServer::UpdateFrameIndex()
+bool DX12RenderingServer::EndFrame()
 {
     m_PreviousFrame = m_CurrentFrame;
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
@@ -154,6 +160,8 @@ bool DX12RenderingServer::UpdateFrameIndex()
 
 bool DX12RenderingServer::ResizeImpl()
 {
+    Log(Verbose, "Resizing the swap chain.");
+   
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
     m_swapChainDesc.Width = (UINT)l_screenResolution.x;
@@ -161,6 +169,10 @@ bool DX12RenderingServer::ResizeImpl()
 
     m_swapChainImages.clear();
 
+    auto l_semaphoreValue = m_directCommandQueueFence->GetCompletedValue();
+    auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
+
+    Log(Verbose, "The current frame is ", m_CurrentFrame, " and the previous frame is ", m_PreviousFrame);
     m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
 
     m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();

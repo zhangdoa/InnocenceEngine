@@ -73,6 +73,7 @@ bool IRenderingServer::Initialize()
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
+	l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
 
 	m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 	m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
@@ -109,7 +110,7 @@ bool IRenderingServer::Initialize()
 bool IRenderingServer::Update()
 {
 	auto l_currentFrame = GetCurrentFrame();
- 
+	
 	// Because we are about to reset the current frame's command allocators, we need to make sure that the command lists are not in use.
 	WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
@@ -119,16 +120,20 @@ bool IRenderingServer::Update()
 
 	InitializeComponents();
 
+	m_UploadHeapPreparationCallback();
+
+	// Let any unfinished copy/upload commands from the previous run finish before we start preparing the global commands.
 	WaitOnCPU(m_CopyUploadToDefaultHeapSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	PrepareGlobalCommands();
 
-	ExecuteGlobalCommands();	
+	ExecuteGlobalCommands();
 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 	m_CopyUploadToDefaultHeapSemaphoreValues[l_currentFrame] = GetSemaphoreValue(GPUEngineType::Graphics);
 
 	if (!g_Engine->Get<SceneSystem>()->isLoadingScene())
 	{
 		m_CommandPreparationCallback();
+
 		PrepareSwapChainCommands();
 		g_Engine->Get<GUISystem>()->Update();
 
@@ -154,7 +159,8 @@ bool IRenderingServer::Update()
 	m_CopySemaphoreValues[l_currentFrame] = GetSemaphoreValue(GPUEngineType::Copy);
 
 	Present();
-	UpdateFrameIndex();
+
+	EndFrame();
 
 	return true;
 }
@@ -388,6 +394,11 @@ bool IRenderingServer::Present()
 
 	if (m_needResize)
 	{
+		// The present operation might be an asynchronous operation, so we need to make sure that the GPU has finished the present operation.
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Copy);
+
 		auto l_graphicsSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
 		auto l_computeSemaphoreValue = GetSemaphoreValue(GPUEngineType::Compute);
 		auto l_copySemaphoreValue = GetSemaphoreValue(GPUEngineType::Copy);
@@ -531,8 +542,8 @@ bool IRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 
 bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* rhs)
 {
-    Delete(rhs->m_OutputMergerTarget);
-    rhs->m_OutputMergerTarget = nullptr;
+	Delete(rhs->m_OutputMergerTarget);
+	rhs->m_OutputMergerTarget = nullptr;
 
     Delete(rhs->m_PipelineStateObject);
 
@@ -661,8 +672,6 @@ bool IRenderingServer::InitializeComponents()
 
 bool IRenderingServer::PrepareGlobalCommands()
 {
-	m_UploadHeapPreparationCallback();
-
 	auto l_currentFrame = GetCurrentFrame();
 
 	auto l_commandList = m_GlobalCommandLists[l_currentFrame];

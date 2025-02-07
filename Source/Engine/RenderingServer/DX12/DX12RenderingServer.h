@@ -49,12 +49,12 @@ namespace Inno
         bool ClearTextureComponent(TextureComponent* rhs) override;
         bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
         bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
-        
+
         bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) override;
         bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) override;
         bool Execute(ICommandList* commandList, GPUEngineType queueType) override;
         uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
-      	bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
+        bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
 
         uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 
@@ -62,10 +62,13 @@ namespace Inno
         bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
         bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) override;
         bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount) override;
+
+        bool UpdateIndirectDrawCommand(GPUBufferComponent* indirectDrawCommand, const std::vector<DrawCallInfo>& drawCallList, std::function<bool(const DrawCallInfo&)>&& isDrawCallValid) override;
+        bool ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand) override;
         void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
         bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
         bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
- 
+
         bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
 
         bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
@@ -84,7 +87,7 @@ namespace Inno
         ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
         ComPtr<ID3D12GraphicsCommandList> GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType);
         DX12DescriptorHeapAccessor& GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility = Accessibility::ReadOnly
-        , Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
+            , Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
 
     protected:
         // In DX12RenderingServer_ComponentPool.cpp
@@ -103,7 +106,7 @@ namespace Inno
 
         bool InitializePool() override;
         bool TerminatePool() override;
-        
+
         bool CreatePipelineStateObject(RenderPassComponent* rhs) override;
         bool CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name) override;
         bool CreateFenceEvents(RenderPassComponent* rhs) override;
@@ -113,15 +116,16 @@ namespace Inno
         bool ReleaseHardwareResources() override;
         bool GetSwapChainImages() override;
         bool AssignSwapChainImages() override;
+        bool ReleaseSwapChainImages() override;
 
         bool OnOutputMergerTargetsCreated(RenderPassComponent* rhs) override;
-        
+
         bool BeginFrame() override;
         bool PresentImpl() override;
-        bool UpdateFrameIndex() override;
+        bool EndFrame() override;
 
         bool ResizeImpl() override;
-      
+
     private:
         // Global initialization functions
         // In DX12RenderingServer_GraphicsDevice_Private.cpp
@@ -151,10 +155,10 @@ namespace Inno
         // In DX12RenderingServer_EngineComponent_Private.cpp
         DX12DescriptorHeapAccessor CreateDescriptorHeapAccessor
         (
-            ComPtr<ID3D12DescriptorHeap> descHeap, 
-            D3D12_DESCRIPTOR_HEAP_DESC desc, 
-            uint32_t maxDescriptors, 
-            uint32_t descriptorSize, 
+            ComPtr<ID3D12DescriptorHeap> descHeap,
+            D3D12_DESCRIPTOR_HEAP_DESC desc,
+            uint32_t maxDescriptors,
+            uint32_t descriptorSize,
             const DX12DescriptorHandle& firstHandle,
             bool shaderVisible,
             const wchar_t* name
@@ -166,7 +170,7 @@ namespace Inno
         bool CreateSRV(GPUBufferComponent* rhs);
         bool CreateUAV(GPUBufferComponent* rhs);
         bool CreateCBV(GPUBufferComponent* rhs);
-        
+
         bool CreateRootSignature(RenderPassComponent* RenderPassComp);
         D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(RenderPassComponent* RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
 
@@ -236,7 +240,7 @@ namespace Inno
 
         ComPtr<ID3D12DescriptorHeap> m_SamplerDescHeap = nullptr;
         DX12DescriptorHeapAccessor m_SamplerDescHeapAccessor;
-        
+
         ID3D12RootSignature* m_2DMipmapRootSignature = nullptr;
         ID3D12RootSignature* m_3DMipmapRootSignature = nullptr;
         ID3D12PipelineState* m_2DMipmapPSO = nullptr;

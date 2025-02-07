@@ -322,6 +322,15 @@ bool DX12RenderingServer::InitializeImpl(SamplerComponent* rhs)
 
 bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 {
+	if (rhs->m_Usage == GPUBufferUsage::IndirectDraw)
+	{
+		rhs->m_ElementSize = sizeof(DX12DrawIndirectCommand);
+
+		// @TODO: The maximum draw call allowed should not be this hard-coded.
+		rhs->m_ElementCount = 256;
+		rhs->m_IndirectDrawCommandList = new DX12IndirectDrawCommandList();
+	}
+
 	auto l_swapChainImageCount = GetSwapChainImageCount();
 
 	rhs->m_GPUResourceType = GPUResourceType::Buffer;
@@ -376,10 +385,13 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 		ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
 	}
 
-	CreateSRV(rhs);
+	if (rhs->m_Usage != GPUBufferUsage::IndirectDraw)
+	{
+		CreateSRV(rhs);
 
-	if (l_needDefaultHeap)
-		CreateUAV(rhs);
+		if (l_needDefaultHeap)
+			CreateUAV(rhs);
+	}
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -462,15 +474,16 @@ bool DX12RenderingServer::UploadToGPU(DX12CommandList* commandList, DX12MappedMe
 		return true;
 
 	auto l_DX12CommandList = commandList->m_DirectCommandList;
-
+	auto l_beforeState = GPUBufferComponent->m_Usage == GPUBufferUsage::IndirectDraw ? D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	auto l_afterState = D3D12_RESOURCE_STATE_COPY_DEST;
 	if (GPUBufferComponent->m_ObjectStatus == ObjectStatus::Activated)
 	{
-		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), l_beforeState, l_afterState));
 	}
 
 	l_DX12CommandList->CopyResource(deviceMemory->m_DefaultHeapBuffer.Get(), mappedMemory->m_UploadHeapBuffer.Get());
 
-	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), l_afterState, l_beforeState));
 
 	return true;
 }

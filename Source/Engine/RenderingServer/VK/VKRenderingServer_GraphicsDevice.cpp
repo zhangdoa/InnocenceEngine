@@ -107,6 +107,11 @@ bool VKRenderingServer::AssignSwapChainImages()
     return true;
 }
 
+bool VKRenderingServer::ReleaseSwapChainImages()
+{
+   return true;
+}
+
 std::vector<const char *> VKRenderingServer::GetRequiredExtensions()
 {
 #if defined INNO_PLATFORM_WIN

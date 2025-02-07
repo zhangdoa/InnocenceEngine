@@ -5,14 +5,9 @@
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
 
-
-
 #include "../../Engine/Engine.h"
 
 using namespace Inno;
-
-
-
 
 bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 {	
@@ -24,7 +19,7 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	m_atomicCounterGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_atomicCounterGPUBufferComp->m_ElementSize = sizeof(uint32_t);
 	m_atomicCounterGPUBufferComp->m_ElementCount = 1;
-	m_atomicCounterGPUBufferComp->m_isAtomicCounter = true;
+	m_atomicCounterGPUBufferComp->m_Usage = GPUBufferUsage::AtomicCounter;
 
 	uint32_t l_averangeFragmentPerPixel = 4;
 	m_RT0 = l_renderingServer->AddGPUBufferComponent("TransparentGeometryProcessPassRT0/");

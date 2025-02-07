@@ -96,9 +96,10 @@ namespace Inno
 		bool ReleaseHardwareResources() override;
 		bool GetSwapChainImages() override;
 		bool AssignSwapChainImages() override;
+		bool ReleaseSwapChainImages() override;
 
 		bool PresentImpl() override;
-		bool UpdateFrameIndex() override;
+		bool EndFrame() override;
 
 		bool ResizeImpl() override;
 		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs) override;
