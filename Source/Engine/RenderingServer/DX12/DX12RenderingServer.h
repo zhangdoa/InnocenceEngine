@@ -7,10 +7,8 @@
 #include "../../Component/DX12MeshComponent.h"
 #include "../../Component/DX12TextureComponent.h"
 #include "../../Component/DX12MaterialComponent.h"
-#include "../../Component/RenderPassComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
 #include "../../Component/DX12SamplerComponent.h"
-#include "../../Component/GPUBufferComponent.h"
 
 namespace Inno
 {
@@ -45,33 +43,30 @@ namespace Inno
         virtual	bool Delete(ISemaphore* rhs) override;
         virtual bool Delete(IOutputMergerTarget* rhs) override;
 
-        // In DX12RenderingServer.cpp
-        bool Clear(TextureComponent* rhs) override;
-        bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
-        bool Clear(GPUBufferComponent* rhs) override;
-
-        bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) override;
-        bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) override;
-        bool Execute(ICommandList* commandList, GPUEngineType queueType) override;
-        uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
-        bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
-
-        uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
-
+        // In DX12RenderingServer_CommandListAPI.cpp
         bool BindRenderPassComponent(RenderPassComponent* rhs) override;
         bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
         bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount) override;
+        bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
 
         bool UpdateIndirectDrawCommand(GPUBufferComponent* indirectDrawCommand, const std::vector<DrawCallInfo>& drawCallList, std::function<bool(const DrawCallInfo&)>&& isDrawCallValid) override;
         bool ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand) override;
         void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
         bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
         bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
-
-        bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
-
+        
+        bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) override;
+        bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) override;
+        bool Execute(ICommandList* commandList, GPUEngineType queueType) override;
+        uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
+        bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
         bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
+        // In DX12RenderingServer_EngineComponent_Public.cpp
+        bool Clear(TextureComponent* rhs) override;
+        bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
+        bool Clear(GPUBufferComponent* rhs) override; 
+        uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
         Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
         std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
         bool GenerateMipmap(TextureComponent* rhs) override;
@@ -80,7 +75,7 @@ namespace Inno
         bool BeginCapture() override;
         bool EndCapture() override;
 
-        // Getters
+        // In DX12RenderingServer_APISpecific.cpp
         ComPtr<ID3D12Device8> GetDevice();
         ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType);
         ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
@@ -106,16 +101,16 @@ namespace Inno
         bool InitializePool() override;
         bool TerminatePool() override;
 
-        bool CreatePipelineStateObject(RenderPassComponent* rhs) override;
-        bool CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name) override;
-        bool CreateFenceEvents(RenderPassComponent* rhs) override;
-
         // In DX12RenderingServer_GraphicsDevice_Protected.cpp
         bool CreateHardwareResources() override;
         bool ReleaseHardwareResources() override;
         bool GetSwapChainImages() override;
         bool AssignSwapChainImages() override;
         bool ReleaseSwapChainImages() override;
+
+        bool CreatePipelineStateObject(RenderPassComponent* rhs) override;
+        bool CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name) override;
+        bool CreateFenceEvents(RenderPassComponent* rhs) override;
 
         bool OnOutputMergerTargetsCreated(RenderPassComponent* rhs) override;
 

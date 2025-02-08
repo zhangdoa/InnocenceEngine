@@ -72,7 +72,7 @@ bool IRenderingServer::Initialize()
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
 	l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
 
 	m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
@@ -237,10 +237,10 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 
 bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 {
-	if (rhs->m_RenderPassDesc.m_RenderTargetsReservationFunc)
+	if (rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc)
 	{
 		Log(Verbose, "Calling customized render targets reservation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_RenderTargetsReservationFunc();
+		rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc();
 	}
 	else
 	{
@@ -258,10 +258,10 @@ bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 		}
 	}
 
-	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc)
+	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc)
 	{
 		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc();
+		rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc();
 	}
 	else if (rhs->m_RenderPassDesc.m_UseDepthBuffer)
 	{
@@ -276,10 +276,10 @@ bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 
 bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
 {
-	if (rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc)
+	if (rhs->m_RenderPassDesc.m_RenderTargetsInitializationFunc)
 	{
 		Log(Verbose, "Calling customized render targets creation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc();
+		rhs->m_RenderPassDesc.m_RenderTargetsInitializationFunc();
 	}
 	else
 	{
@@ -296,10 +296,10 @@ bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
 		Log(Verbose, "Render target: ", rhs->m_InstanceName, " have been created.");
 	}
 
-	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc)
+	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc)
 	{
 		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc();
+		rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc();
 	}
 	else if (rhs->m_RenderPassDesc.m_UseDepthBuffer)
 	{

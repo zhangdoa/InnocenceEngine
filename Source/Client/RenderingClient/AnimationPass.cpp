@@ -22,10 +22,10 @@ bool AnimationPass::Setup(ISystemConfig* systemConfig)
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
-	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&AnimationPass::RenderTargetsReservationFunc, this);
-	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&AnimationPass::RenderTargetsCreationFunc, this);
-	l_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsReservationFunc, this);
-	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&AnimationPass::RenderTargetsReservationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&AnimationPass::RenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsReservationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc = std::bind(&AnimationPass::DepthStencilRenderTargetsCreationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;

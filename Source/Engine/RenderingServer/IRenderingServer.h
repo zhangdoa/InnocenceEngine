@@ -25,7 +25,7 @@ namespace Inno
 
 		ObjectStatus GetStatus() override { return m_ObjectStatus; }
 
-		// Component-related APIs
+		// Component Pool APIs
 		virtual MeshComponent* AddMeshComponent(const char* name = "") = 0;
 		virtual TextureComponent* AddTextureComponent(const char* name = "") = 0;
 		virtual MaterialComponent* AddMaterialComponent(const char* name = "") = 0;
@@ -58,8 +58,6 @@ namespace Inno
 		void Initialize(SamplerComponent* rhs);
 		void Initialize(GPUBufferComponent* rhs);
 
-		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
-
 		// Rendering Stage APIs
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
 		void SetCommandPreparationCallback(std::function<bool()>&& callback);
@@ -90,31 +88,42 @@ namespace Inno
 		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
 		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType);
 		virtual bool Present();
+		virtual bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) { return false; }
+
+		virtual bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) { return false; }
+		virtual bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
+		virtual bool Execute(ICommandList* commandList, GPUEngineType queueType) { return false; }
+		virtual uint64_t GetSemaphoreValue(GPUEngineType queueType) { return 0; }
+		virtual bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) { return false; }
 
 		virtual bool SetUserPipelineOutput(std::function<GPUResourceComponent* ()>&& getUserPipelineOutputFunc);
 		virtual GPUResourceComponent* GetUserPipelineOutput();
 
-		virtual bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) { return false; }
+		virtual bool Resize();
 
+		// Component APIs
+		virtual bool Clear(TextureComponent* rhs) { return false; }
+		virtual bool Copy(TextureComponent* lhs, TextureComponent* rhs) { return false; }
+		virtual bool Clear(GPUBufferComponent* rhs) { return false; }
+		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
 		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
 		virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) { return std::vector<Vec4>(); }
 		virtual bool GenerateMipmap(TextureComponent* rhs) { return false; }
 
-		virtual bool Resize();
-
 		// Debug use only
 		virtual bool BeginCapture() { return false; }
 		virtual bool EndCapture() { return false; }
+
+		// Raytracing-related APIs
+		virtual bool CreateAccelerationStructure() { return false; }
+		virtual bool BuildAccelerationStructure() { return false; }
+		virtual bool DispatchRays() { return false; }
 
 	protected:
 		bool WriteMappedMemory(MeshComponent* rhs);
 		bool WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* GPUBufferValue, size_t startOffset, size_t range);
 
 	public:
-		virtual bool Clear(TextureComponent* rhs) { return false; }
-		virtual bool Copy(TextureComponent* lhs, TextureComponent* rhs) { return false; }
-		virtual bool Clear(GPUBufferComponent* rhs) { return false; }
-
 		template<typename T>
 		bool Upload(GPUBufferComponent* rhs, const T* GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
@@ -127,12 +136,6 @@ namespace Inno
 		{
 			return Upload(rhs, &GPUBufferValue[0], startOffset, range);
 		}
-
-		virtual bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) { return false; }
-		virtual bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
-		virtual bool Execute(ICommandList* commandList, GPUEngineType queueType) { return false; }
-		virtual uint64_t GetSemaphoreValue(GPUEngineType queueType) { return 0; }
-		virtual bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) { return false; }
 
 	protected:
 		virtual bool InitializeImpl(MeshComponent* rhs) { return false; }
@@ -147,6 +150,7 @@ namespace Inno
 		virtual bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) { return false; }
 		virtual bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) { return false; }
 		virtual bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
+		
 		virtual bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
 		virtual bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) { return false; }
 
@@ -170,7 +174,6 @@ namespace Inno
 
 		virtual bool BeginFrame() { return false; }
 		virtual bool PresentImpl() { return false; }
-
 		virtual bool WaitAllOnCPU() { return false; }
 		virtual bool ResizeImpl() { return false; }
 		virtual bool EndFrame() { return false; }

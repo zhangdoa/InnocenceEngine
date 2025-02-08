@@ -13,6 +13,10 @@ namespace Inno
 		ShaderFilePath m_GSPath = "";
 		ShaderFilePath m_PSPath = "";
 		ShaderFilePath m_CSPath = "";
+		ShaderFilePath m_RayGenPath = "";
+		ShaderFilePath m_AnyHitPath = "";
+		ShaderFilePath m_ClosestHitPath = "";
+		ShaderFilePath m_MissPath = "";
 	};
 
 	class ShaderProgramComponent : public Component

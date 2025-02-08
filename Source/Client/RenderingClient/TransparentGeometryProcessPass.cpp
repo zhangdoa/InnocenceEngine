@@ -48,8 +48,8 @@ bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&TransparentGeometryProcessPass::DepthStencilRenderTargetsCreationFunc, this);
-	l_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc = std::bind(&TransparentGeometryProcessPass::DepthStencilRenderTargetsReservationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc = std::bind(&TransparentGeometryProcessPass::DepthStencilRenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&TransparentGeometryProcessPass::DepthStencilRenderTargetsReservationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;

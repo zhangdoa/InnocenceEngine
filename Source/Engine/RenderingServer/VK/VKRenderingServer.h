@@ -44,31 +44,28 @@ namespace Inno
 		virtual	bool Delete(ISemaphore* rhs) override;
 		virtual bool Delete(IOutputMergerTarget* rhs) override;
 
-		bool Clear(TextureComponent* rhs) override;
-		bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
-		bool Clear(GPUBufferComponent* rhs) override;
-
-		bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
-
-		uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
-
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
 		bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
-
 		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
+		bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
+		
 		void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
 		bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
 		bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount) override;
-		bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
+		
 		bool CommandListEnd(RenderPassComponent* rhs) override;
+		bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
-		bool WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
-
-		bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
-
 		bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
+		
+		bool WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) override;
+		bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
 
+		bool Clear(TextureComponent* rhs) override;
+		bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
+		bool Clear(GPUBufferComponent* rhs) override;
+		uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 		Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
 		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
 		bool GenerateMipmap(TextureComponent* rhs) override;

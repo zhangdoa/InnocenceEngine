@@ -26,8 +26,8 @@ bool BillboardPass::Setup(ISystemConfig* systemConfig)
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsCreationFunc, this);
-	l_RenderPassDesc.m_DepthStencilRenderTargetsReservationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsReservationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc = std::bind(&BillboardPass::DepthStencilRenderTargetsReservationFunc, this);
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;

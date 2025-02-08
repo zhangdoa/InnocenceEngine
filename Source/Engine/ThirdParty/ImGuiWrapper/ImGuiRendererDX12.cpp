@@ -51,8 +51,8 @@ bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
-	l_RenderPassDesc.m_RenderTargetsReservationFunc = std::bind(&ImGuiRenderPass::RenderTargetsReservationFunc, this);
-	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&ImGuiRenderPass::RenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&ImGuiRenderPass::RenderTargetsReservationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&ImGuiRenderPass::RenderTargetsCreationFunc, this);
 	l_RenderPassDesc.m_UseOutputMerger = true;
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;

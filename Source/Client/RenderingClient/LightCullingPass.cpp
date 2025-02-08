@@ -26,7 +26,7 @@ bool LightCullingPass::Setup(ISystemConfig* systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&LightCullingPass::RenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&LightCullingPass::RenderTargetsCreationFunc, this);
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("LightCullingPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";

@@ -243,11 +243,11 @@ namespace Inno
 			bool m_IndirectDraw = false;
 			TextureDesc m_RenderTargetDesc = {};
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
-			std::function<bool()> m_RenderTargetsReservationFunc;
 			std::function<bool()> m_RenderTargetsCreationFunc;
+			std::function<bool()> m_RenderTargetsInitializationFunc;
 			std::function<bool()> m_RenderTargetsRemovalFunc;
-			std::function<bool()> m_DepthStencilRenderTargetsReservationFunc;
 			std::function<bool()> m_DepthStencilRenderTargetsCreationFunc;
+			std::function<bool()> m_DepthStencilRenderTargetsInitializationFunc;
 			std::function<bool()> m_DepthStencilRenderTargetsRemovalFunc;
 		};
 
@@ -306,6 +306,14 @@ namespace Inno
 	{
 		std::vector<TextureComponent*> m_ColorOutputs;
 		TextureComponent* m_DepthStencilOutput = nullptr;
+	};
+
+	struct IShaderBindingTable {};
+
+	struct AccelerationStructureDesc
+	{
+		bool m_IsTopLevel = false;
+		std::vector<GPUResourceComponent*> m_Instances;
 	};
 }
 

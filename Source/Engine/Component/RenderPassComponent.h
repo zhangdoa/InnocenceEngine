@@ -21,8 +21,10 @@ namespace Inno
 		std::function<void()> m_OnResize;
 		std::function<void(ICommandList*)> m_CustomCommandsFunc;
 
-		IOutputMergerTarget* m_OutputMergerTarget;
+		IOutputMergerTarget* m_OutputMergerTarget = 0;
 		IPipelineStateObject* m_PipelineStateObject = 0;
+		IPipelineStateObject* m_RaytracingPipelineStateObject = 0;
+		std::vector<IShaderBindingTable*> m_ShaderBindingTables;
 		std::vector<ICommandList*> m_CommandLists;
 		std::vector<ISemaphore*> m_Semaphores;
 	};

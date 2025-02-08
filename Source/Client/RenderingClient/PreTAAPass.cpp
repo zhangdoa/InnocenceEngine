@@ -25,7 +25,7 @@ bool PreTAAPass::Setup(ISystemConfig* systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&PreTAAPass::RenderTargetsCreationFunc, this);
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&PreTAAPass::RenderTargetsCreationFunc, this);
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
