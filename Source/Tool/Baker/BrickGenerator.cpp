@@ -32,7 +32,7 @@ namespace Inno
             m_SPC_BrickFactor->m_ShaderFilePaths.m_GSPath = "GIBakeBrickFactorPass.geom/";
             m_SPC_BrickFactor->m_ShaderFilePaths.m_PSPath = "GIBakeBrickFactorPass.frag/";
 
-            l_renderingServer->InitializeShaderProgramComponent(m_SPC_BrickFactor);
+            l_renderingServer->Initialize(m_SPC_BrickFactor);
 
             m_RenderPassComp_BrickFactor = l_renderingServer->AddRenderPassComponent("GIBakeBrickFactorPass/");
 
@@ -73,7 +73,7 @@ namespace Inno
 
             m_RenderPassComp_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 
-            l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp_BrickFactor);
+            l_renderingServer->Initialize(m_RenderPassComp_BrickFactor);
         }
 
         bool BrickGenerator::generateBrickCaches(std::vector<Surfel>& surfelCaches)
@@ -265,7 +265,7 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(pos);
 
-            l_renderingServer->UploadGPUBufferComponent(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->Upload(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
             auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 
@@ -448,7 +448,7 @@ namespace Inno
             }
 
             auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-            l_renderingServer->UploadGPUBufferComponent(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
+            l_renderingServer->Upload(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
             // assign bricks to probe by the depth test result
             auto l_probesCount = probes.size();

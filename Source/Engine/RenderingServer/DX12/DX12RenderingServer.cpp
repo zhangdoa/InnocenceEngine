@@ -17,7 +17,7 @@ using namespace Inno;
 using namespace DX12Helper;
 
 // @TODO: The command list should be passed as a parameter.
-bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
+bool DX12RenderingServer::Clear(GPUBufferComponent* rhs)
 {
 	const uint32_t zero = 0;
 	auto l_commandList = GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -42,7 +42,7 @@ bool DX12RenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
 }
 
 // @TODO: The command list should be passed as a parameter.
-bool DX12RenderingServer::ClearTextureComponent(TextureComponent* rhs)
+bool DX12RenderingServer::Clear(TextureComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
 	auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
@@ -86,7 +86,7 @@ bool DX12RenderingServer::ClearTextureComponent(TextureComponent* rhs)
 }
 
 // @TODO: The command list should be passed as a parameter.
-bool DX12RenderingServer::CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs)
+bool DX12RenderingServer::Copy(TextureComponent* lhs, TextureComponent* rhs)
 {
 	auto l_commandList = GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	l_commandList->Reset(GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT).Get(), nullptr);
@@ -360,16 +360,6 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 	}
 
 	assert(false);
-	return false;
-}
-
-bool DX12RenderingServer::Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc)
-{
-	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	auto l_GPUResourceType = resourceBindingLayoutDesc.m_GPUResourceType;
-
-	// @TODO: Finish this
 	return false;
 }
 
@@ -706,7 +696,7 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent* rhs)
 	// 	l_copy->m_TextureDesc = l_rhs->m_TextureDesc;
 	// 	l_copy->m_InitialData = l_rhs->m_InitialData;
 	// 	l_copy->m_TextureDesc.IsSRGB = false;
-	// 	InitializeTextureComponent(l_copy);
+	// 	Initialize(l_copy);
 
 	// 	D3D12_RESOURCE_BARRIER barrier[2] = {};
 	// 	barrier[0].Type = barrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

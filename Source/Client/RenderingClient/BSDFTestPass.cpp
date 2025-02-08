@@ -119,9 +119,9 @@ bool BSDFTestPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -132,7 +132,7 @@ bool BSDFTestPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -152,8 +152,8 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->UploadGPUBufferComponent(l_MeshGPUBufferComp, m_meshConstantBuffer);
-	l_renderingServer->UploadGPUBufferComponent(l_MaterialGPUBufferComp, m_materialConstantBuffer);
+	l_renderingServer->Upload(l_MeshGPUBufferComp, m_meshConstantBuffer);
+	l_renderingServer->Upload(l_MaterialGPUBufferComp, m_materialConstantBuffer);
 
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 

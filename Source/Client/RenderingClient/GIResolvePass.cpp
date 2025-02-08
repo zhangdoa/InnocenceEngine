@@ -95,7 +95,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_surfelGPUBufferComp->m_ElementSize = sizeof(Surfel);
 				m_surfelGPUBufferComp->m_InitialData = &l_surfels[0];
 
-				l_renderingServer->InitializeGPUBufferComponent(m_surfelGPUBufferComp);
+				l_renderingServer->Initialize(m_surfelGPUBufferComp);
 
 				m_surfelIrradianceGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SurfelIrradianceGPUBuffer/");
 				m_surfelIrradianceGPUBufferComp->m_CPUAccessibility = Accessibility::Immutable;
@@ -103,7 +103,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_surfelIrradianceGPUBufferComp->m_ElementCount = l_surfels.size();
 				m_surfelIrradianceGPUBufferComp->m_ElementSize = sizeof(Vec4);
 
-				l_renderingServer->InitializeGPUBufferComponent(m_surfelIrradianceGPUBufferComp);
+				l_renderingServer->Initialize(m_surfelIrradianceGPUBufferComp);
 
 				auto l_bricks = GIDataLoader::GetBricks();
 
@@ -136,7 +136,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_brickGPUBufferComp->m_ElementSize = sizeof(uint32_t) * 2;
 				m_brickGPUBufferComp->m_InitialData = &l_brickConstantBuffer[0];
 
-				l_renderingServer->InitializeGPUBufferComponent(m_brickGPUBufferComp);
+				l_renderingServer->Initialize(m_brickGPUBufferComp);
 
 				m_brickIrradianceGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BrickIrradianceGPUBuffer/");
 				m_brickIrradianceGPUBufferComp->m_CPUAccessibility = Accessibility::Immutable;
@@ -144,7 +144,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_brickIrradianceGPUBufferComp->m_ElementCount = l_bricks.size();
 				m_brickIrradianceGPUBufferComp->m_ElementSize = sizeof(Vec4);
 
-				l_renderingServer->InitializeGPUBufferComponent(m_brickIrradianceGPUBufferComp);
+				l_renderingServer->Initialize(m_brickIrradianceGPUBufferComp);
 
 				auto l_brickFactors = GIDataLoader::GetBrickFactors();
 
@@ -155,7 +155,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_brickFactorGPUBufferComp->m_ElementSize = sizeof(BrickFactor);
 				m_brickFactorGPUBufferComp->m_InitialData = &l_brickFactors[0];
 
-				l_renderingServer->InitializeGPUBufferComponent(m_brickFactorGPUBufferComp);
+				l_renderingServer->Initialize(m_brickFactorGPUBufferComp);
 
 				std::vector<Probe> l_probes = GIDataLoader::GetProbes();
 
@@ -234,7 +234,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_probeGPUBufferComp->m_ElementSize = sizeof(Probe);
 				m_probeGPUBufferComp->m_InitialData = &l_probes[0];
 
-				l_renderingServer->InitializeGPUBufferComponent(m_probeGPUBufferComp);
+				l_renderingServer->Initialize(m_probeGPUBufferComp);
 
 				auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -248,7 +248,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_probeVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 				m_probeVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
-				l_renderingServer->InitializeTextureComponent(m_probeVolume);
+				l_renderingServer->Initialize(m_probeVolume);
 
 				m_irradianceVolume = l_renderingServer->AddTextureComponent("IrradianceVolume/");
 				m_irradianceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
@@ -260,7 +260,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_irradianceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 				m_irradianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
-				l_renderingServer->InitializeTextureComponent(m_irradianceVolume);
+				l_renderingServer->Initialize(m_irradianceVolume);
 
 				m_GIDataLoaded = true;
 			});
@@ -281,31 +281,31 @@ bool GIResolvePass::DeleteGPUBuffers()
 		[&]() {
 			if (m_surfelGPUBufferComp)
 			{
-				l_renderingServer->DeleteGPUBufferComponent(m_surfelGPUBufferComp);
+				l_renderingServer->Delete(m_surfelGPUBufferComp);
 			}
 			if (m_surfelIrradianceGPUBufferComp)
 			{
-				l_renderingServer->DeleteGPUBufferComponent(m_surfelIrradianceGPUBufferComp);
+				l_renderingServer->Delete(m_surfelIrradianceGPUBufferComp);
 			}
 			if (m_brickGPUBufferComp)
 			{
-				l_renderingServer->DeleteGPUBufferComponent(m_brickGPUBufferComp);
+				l_renderingServer->Delete(m_brickGPUBufferComp);
 			}
 			if (m_brickIrradianceGPUBufferComp)
 			{
-				l_renderingServer->DeleteGPUBufferComponent(m_brickIrradianceGPUBufferComp);
+				l_renderingServer->Delete(m_brickIrradianceGPUBufferComp);
 			}
 			if (m_brickFactorGPUBufferComp)
 			{
-				l_renderingServer->DeleteGPUBufferComponent(m_brickFactorGPUBufferComp);
+				l_renderingServer->Delete(m_brickFactorGPUBufferComp);
 			}
 			if (m_probeGPUBufferComp)
 			{
-				l_renderingServer->DeleteGPUBufferComponent(m_probeGPUBufferComp);
+				l_renderingServer->Delete(m_probeGPUBufferComp);
 			}
 			if (m_probeVolume)
 			{
-				l_renderingServer->DeleteTextureComponent(m_probeVolume);
+				l_renderingServer->Delete(m_probeVolume);
 			}
 
 			m_GIDataLoaded = false;
@@ -343,27 +343,27 @@ bool GIResolvePass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_skyRadianceSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_skyRadianceRenderPassComp);
+	l_renderingServer->Initialize(m_skyRadianceSPC);
+	l_renderingServer->Initialize(m_skyRadianceRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_skyIrradianceSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_skyIrradianceRenderPassComp);
+	l_renderingServer->Initialize(m_skyIrradianceSPC);
+	l_renderingServer->Initialize(m_skyIrradianceRenderPassComp);
 
-	l_renderingServer->InitializeTextureComponent(m_skyRadianceVolume);
-	l_renderingServer->InitializeGPUBufferComponent(m_skyIrradianceGPUBufferComp);
+	l_renderingServer->Initialize(m_skyRadianceVolume);
+	l_renderingServer->Initialize(m_skyIrradianceGPUBufferComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_surfelSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_surfelRenderPassComp);
+	l_renderingServer->Initialize(m_surfelSPC);
+	l_renderingServer->Initialize(m_surfelRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_brickSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_brickRenderPassComp);
+	l_renderingServer->Initialize(m_brickSPC);
+	l_renderingServer->Initialize(m_brickRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_probeSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_probeRenderPassComp);
+	l_renderingServer->Initialize(m_probeSPC);
+	l_renderingServer->Initialize(m_probeRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_irradianceVolumeSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_irradianceVolumeRenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_irradianceVolumeSamplerComp);
+	l_renderingServer->Initialize(m_irradianceVolumeSPC);
+	l_renderingServer->Initialize(m_irradianceVolumeRenderPassComp);
+	l_renderingServer->Initialize(m_irradianceVolumeSamplerComp);
 
 	return true;
 }
@@ -731,7 +731,7 @@ bool GIResolvePass::litSurfels()
 	l_surfelLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_surfelLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_surfelLitWorkload, 2, 1);
+	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_surfelLitWorkload, 2, 1);
 
 	// l_renderingServer->CommandListBegin(m_surfelRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_surfelRenderPassComp);
@@ -775,7 +775,7 @@ bool GIResolvePass::litBricks()
 	l_brickLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_brickLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_brickLitWorkload, 3, 1);
+	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_brickLitWorkload, 3, 1);
 
 	// l_renderingServer->CommandListBegin(m_brickRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_brickRenderPassComp);
@@ -818,7 +818,7 @@ bool GIResolvePass::litProbes()
 	l_probeLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_probeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_probeLitWorkload, 4, 1);
+	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_probeLitWorkload, 4, 1);
 
 	// l_renderingServer->CommandListBegin(m_probeRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_probeRenderPassComp);
@@ -860,7 +860,7 @@ bool GIResolvePass::generateIrradianceVolume()
 	l_irradianceVolumeLitWorkload.numThreadGroups = TVec4<uint32_t>(8, 4, 8, 0);
 	l_irradianceVolumeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	// l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_irradianceVolumeLitWorkload, 5, 1);
+	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_irradianceVolumeLitWorkload, 5, 1);
 
 	// l_renderingServer->CommandListBegin(m_irradianceVolumeRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_irradianceVolumeRenderPassComp);
@@ -920,8 +920,8 @@ bool GIResolvePass::PrepareCommandList()
 		l_GIConstantBuffer.probeRange.w = m_minProbePos.y;
 		l_GIConstantBuffer.irradianceVolumeOffset.w = m_minProbePos.z;
 
-		l_renderingServer->UploadGPUBufferComponent(l_PerFrameCBufferGPUBufferComp, &l_PerFrameConstantBuffer);
-		l_renderingServer->UploadGPUBufferComponent(l_GIGPUBufferComp, &l_GIConstantBuffer);
+		l_renderingServer->Upload(l_PerFrameCBufferGPUBufferComp, &l_PerFrameConstantBuffer);
+		l_renderingServer->Upload(l_GIGPUBufferComp, &l_GIConstantBuffer);
 
 		generateSkyRadiance();
 		generateSkyIrradiance();
@@ -945,12 +945,12 @@ bool GIResolvePass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_skyRadianceRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_skyIrradianceRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_surfelRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_brickRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_probeRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_irradianceVolumeRenderPassComp);
+	l_renderingServer->Delete(m_skyRadianceRenderPassComp);
+	l_renderingServer->Delete(m_skyIrradianceRenderPassComp);
+	l_renderingServer->Delete(m_surfelRenderPassComp);
+	l_renderingServer->Delete(m_brickRenderPassComp);
+	l_renderingServer->Delete(m_probeRenderPassComp);
+	l_renderingServer->Delete(m_irradianceVolumeRenderPassComp);
 
 	return true;
 }

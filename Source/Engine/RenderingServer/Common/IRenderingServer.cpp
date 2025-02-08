@@ -40,7 +40,7 @@ bool IRenderingServer::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_SwapChainRenderPassComp = AddRenderPassComponent("SwapChain/");
-	m_SwapChainSPC = AddShaderProgramComponent("SwapChain/");
+	m_SwapChainShaderProgramComp = AddShaderProgramComponent("SwapChain/");
 	m_SwapChainSamplerComp = AddSamplerComponent("SwapChain/");
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -57,11 +57,11 @@ bool IRenderingServer::Initialize()
 		return false;
 	}
 
-	m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
-	m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
+	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
+	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
 
-	InitializeShaderProgramComponent(m_SwapChainSPC);
-	InitializeSamplerComponent(m_SwapChainSamplerComp);
+	Initialize(m_SwapChainShaderProgramComp);
+	Initialize(m_SwapChainSamplerComp);
 
 	if (!GetSwapChainImages())
 	{
@@ -92,9 +92,9 @@ bool IRenderingServer::Initialize()
 	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
 
-	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainSPC;
+	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainShaderProgramComp;
 
-	InitializeRenderPassComponent(m_SwapChainRenderPassComp);
+	Initialize(m_SwapChainRenderPassComp);
 
 	m_CopyUploadToDefaultHeapSemaphoreValues.resize(m_swapChainImageCount, 0);
 	m_GraphicsSemaphoreValues.resize(m_swapChainImageCount, 0);
@@ -168,9 +168,9 @@ bool IRenderingServer::Update()
 bool IRenderingServer::Terminate()
 {
 	auto l_result = true;
-	l_result &= DeleteSamplerComponent(m_SwapChainSamplerComp);
-	l_result &= DeleteShaderProgramComponent(m_SwapChainSPC);
-	l_result &= DeleteRenderPassComponent(m_SwapChainRenderPassComp);
+	l_result &= Delete(m_SwapChainSamplerComp);
+	l_result &= Delete(m_SwapChainShaderProgramComp);
+	l_result &= Delete(m_SwapChainRenderPassComp);
 
 	l_result &= ReleaseHardwareResources();
 	l_result &= TerminatePool();
@@ -185,7 +185,7 @@ bool IRenderingServer::Terminate()
 	return l_result;
 }
 
-void IRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
+void IRenderingServer::Initialize(MeshComponent* rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 		return;
@@ -193,7 +193,7 @@ void IRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
 	m_uninitializedMeshes.push(rhs);
 }
 
-void IRenderingServer::InitializeTextureComponent(TextureComponent* rhs)
+void IRenderingServer::Initialize(TextureComponent* rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 		return;
@@ -201,7 +201,7 @@ void IRenderingServer::InitializeTextureComponent(TextureComponent* rhs)
 	m_uninitializedTextures.push(rhs);
 }
 
-void IRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
+void IRenderingServer::Initialize(MaterialComponent* rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 		return;
@@ -209,17 +209,17 @@ void IRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
 	m_uninitializedMaterials.push(rhs);
 }
 
-void IRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
+void IRenderingServer::Initialize(ShaderProgramComponent* rhs)
 {
 	InitializeImpl(rhs);
 }
 
-void IRenderingServer::InitializeSamplerComponent(SamplerComponent* rhs)
+void IRenderingServer::Initialize(SamplerComponent* rhs)
 {
 	InitializeImpl(rhs);
 }
 
-void IRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
+void IRenderingServer::Initialize(GPUBufferComponent* rhs)
 {
 	if (m_initializedGPUBuffers.find(rhs) != m_initializedGPUBuffers.end())
 		return;
@@ -227,7 +227,7 @@ void IRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
 	m_uninitializedGPUBuffers.push(rhs);
 }
 
-void IRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
+void IRenderingServer::Initialize(RenderPassComponent* rhs)
 {
 	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), rhs) != m_initializedRenderPasses.end())
 		return;
@@ -235,7 +235,7 @@ void IRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
 	m_uninitializedRenderPasses.push(rhs);
 }
 
-bool IRenderingServer::ReserveRenderTargets(RenderPassComponent* rhs)
+bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 {
 	if (rhs->m_RenderPassDesc.m_RenderTargetsReservationFunc)
 	{
@@ -274,7 +274,7 @@ bool IRenderingServer::ReserveRenderTargets(RenderPassComponent* rhs)
 	return true;
 }
 
-bool IRenderingServer::CreateRenderTargets(RenderPassComponent* rhs)
+bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
 {
 	if (rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc)
 	{
@@ -485,7 +485,7 @@ bool IRenderingServer::InitializeImpl(MaterialComponent* rhs)
 	{
 		auto l_texture = rhs->m_TextureSlots[i].m_Texture;
 		if (l_texture)
-			InitializeTextureComponent(l_texture);
+			Initialize(l_texture);
 	}
 
 	rhs->m_GPUResourceType = GPUResourceType::Material;
@@ -498,9 +498,9 @@ bool IRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 {
 	bool l_result = true;
 
-	l_result &= ReserveRenderTargets(rhs);
+	l_result &= CreateOutputMergerTargets(rhs);
 
-	l_result &= CreateRenderTargets(rhs);
+	l_result &= InitializeOutputMergerTargets(rhs);
 
 	l_result &=	OnOutputMergerTargetsCreated(rhs);
 
@@ -828,8 +828,8 @@ bool IRenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, Rende
 	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
 	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
 
-	ReserveRenderTargets(rhs);
-	CreateRenderTargets(rhs);
+	CreateOutputMergerTargets(rhs);
+	InitializeOutputMergerTargets(rhs);
 
     OnOutputMergerTargetsCreated(rhs);
 

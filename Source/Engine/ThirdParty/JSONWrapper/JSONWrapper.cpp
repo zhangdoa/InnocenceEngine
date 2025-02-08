@@ -434,7 +434,7 @@ ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 		{
 			l_currentRenderableSet->material = g_Engine->getRenderingServer()->AddMaterialComponent();
 			l_currentRenderableSet->material->m_ObjectStatus = ObjectStatus::Created;
-			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_currentRenderableSet->material);
+			g_Engine->getRenderingServer()->Initialize(l_currentRenderableSet->material);
 		}
 
 		MeshShape l_meshShape = MeshShape(i["MeshShape"].get<int32_t>());
@@ -491,7 +491,7 @@ ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 				l_currentRenderableSet->mesh->m_MeshShape = MeshShape::Customized;
 				l_currentRenderableSet->mesh->m_ObjectStatus = ObjectStatus::Created;
 
-				g_Engine->getRenderingServer()->InitializeMeshComponent(l_mesh);
+				g_Engine->getRenderingServer()->Initialize(l_mesh);
 
 				g_Engine->Get<AssetSystem>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
 			}
@@ -578,7 +578,7 @@ MaterialComponent* JSONWrapper::ProcessMaterial(const json& j, const char* name)
 
 	l_MeshComp->m_ObjectStatus = ObjectStatus::Created;
 
-	g_Engine->getRenderingServer()->InitializeMaterialComponent(l_MeshComp);
+	g_Engine->getRenderingServer()->Initialize(l_MeshComp);
 
 	return l_MeshComp;
 }

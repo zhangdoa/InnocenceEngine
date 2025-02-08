@@ -179,8 +179,8 @@ bool GIDataLoader::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	l_renderingServer->InitializeTextureComponent(m_testSampleCubemap);
-	l_renderingServer->InitializeTextureComponent(m_testSample3DTexture);
+	l_renderingServer->Initialize(m_testSampleCubemap);
+	l_renderingServer->Initialize(m_testSample3DTexture);
 
 	return true;
 }

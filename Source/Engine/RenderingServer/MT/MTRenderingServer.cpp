@@ -65,82 +65,82 @@ GPUBufferComponent* MTRenderingServer::AddGPUBufferComponent(const char* name)
 	return nullptr;
 }
 
-bool MTRenderingServer::InitializeMeshComponent(MeshComponent* rhs)
+bool MTRenderingServer::Initialize(MeshComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeTextureComponent(TextureComponent* rhs)
+bool MTRenderingServer::Initialize(TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeMaterialComponent(MaterialComponent* rhs)
+bool MTRenderingServer::Initialize(MaterialComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeRenderPassComponent(RenderPassComponent* rhs)
+bool MTRenderingServer::Initialize(RenderPassComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
+bool MTRenderingServer::Initialize(ShaderProgramComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeSamplerComponent(SamplerComponent* rhs)
+bool MTRenderingServer::Initialize(SamplerComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::InitializeGPUBufferComponent(GPUBufferComponent* rhs)
+bool MTRenderingServer::Initialize(GPUBufferComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteMeshComponent(MeshComponent* rhs)
+bool MTRenderingServer::Delete(MeshComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteTextureComponent(TextureComponent* rhs)
+bool MTRenderingServer::Delete(TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteMaterialComponent(MaterialComponent* rhs)
+bool MTRenderingServer::Delete(MaterialComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
+bool MTRenderingServer::Delete(RenderPassComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
+bool MTRenderingServer::Delete(ShaderProgramComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteSamplerComponent(SamplerComponent* rhs)
+bool MTRenderingServer::Delete(SamplerComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::DeleteGPUBufferComponent(GPUBufferComponent* rhs)
+bool MTRenderingServer::Delete(GPUBufferComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::ClearTextureComponent(TextureComponent* rhs)
+bool MTRenderingServer::Clear(TextureComponent* rhs)
 {
 	return true;
 }
 
-bool MTRenderingServer::CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs)
+bool MTRenderingServer::Copy(TextureComponent* lhs, TextureComponent* rhs)
 {
 	return true;
 }
@@ -150,7 +150,7 @@ bool MTRenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, co
 	return true;
 }
 
-bool MTRenderingServer::ClearGPUBufferComponent(GPUBufferComponent* rhs)
+bool MTRenderingServer::Clear(GPUBufferComponent* rhs)
 {
 	return true;
 }

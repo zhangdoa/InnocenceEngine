@@ -147,12 +147,12 @@ bool SSAOPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp_RandomRot);
-	l_renderingServer->InitializeGPUBufferComponent(m_KernelGPUBuffer);
-	l_renderingServer->InitializeTextureComponent(m_NoiseTexture);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_SamplerComp);
+	l_renderingServer->Initialize(m_SamplerComp_RandomRot);
+	l_renderingServer->Initialize(m_KernelGPUBuffer);
+	l_renderingServer->Initialize(m_NoiseTexture);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -163,12 +163,12 @@ bool SSAOPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteTextureComponent(m_NoiseTexture);
-	l_renderingServer->DeleteGPUBufferComponent(m_KernelGPUBuffer);
-	l_renderingServer->DeleteSamplerComponent(m_SamplerComp_RandomRot);
-	l_renderingServer->DeleteSamplerComponent(m_SamplerComp);
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->DeleteShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->Delete(m_NoiseTexture);
+	l_renderingServer->Delete(m_KernelGPUBuffer);
+	l_renderingServer->Delete(m_SamplerComp_RandomRot);
+	l_renderingServer->Delete(m_SamplerComp);
+	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -230,7 +230,7 @@ bool SSAOPass::RenderTargetsCreationFunc()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	if (m_Result)
-		l_renderingServer->DeleteTextureComponent(m_Result);
+		l_renderingServer->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -239,7 +239,7 @@ bool SSAOPass::RenderTargetsCreationFunc()
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_renderingServer->InitializeTextureComponent(m_Result);
+	l_renderingServer->Initialize(m_Result);
 
 	return true;
 }

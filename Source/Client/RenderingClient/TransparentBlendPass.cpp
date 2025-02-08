@@ -73,8 +73,8 @@ bool TransparentBlendPass::Initialize()
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -85,7 +85,7 @@ bool TransparentBlendPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -105,7 +105,7 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 
 	// if (renderingContext == nullptr)
 	// {
-	// 	l_renderingServer->ClearTextureComponent(m_RenderPassComp->m_RenderTargets[0].m_Texture);
+	// 	l_renderingServer->Clear(m_RenderPassComp->m_RenderTargets[0].m_Texture);
 	// 	l_canvas = m_RenderPassComp->m_RenderTargets[0].m_Texture;
 	// }
 	// else

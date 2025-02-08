@@ -112,11 +112,11 @@ bool LightCullingPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_SamplerComp);
 
-	l_renderingServer->InitializeGPUBufferComponent(m_lightListIndexCounter);
+	l_renderingServer->Initialize(m_lightListIndexCounter);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -128,7 +128,7 @@ bool LightCullingPass::Update()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_lightListIndexCounter = 1;
-	l_renderingServer->UploadGPUBufferComponent(m_lightListIndexCounter, &l_lightListIndexCounter);
+	l_renderingServer->Upload(m_lightListIndexCounter, &l_lightListIndexCounter);
 
 	DispatchParamsConstantBuffer lightCullingWorkload;
 	lightCullingWorkload.numThreadGroups = m_numThreadGroups;
@@ -136,7 +136,7 @@ bool LightCullingPass::Update()
 
 	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &lightCullingWorkload, 1, 1);
+	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &lightCullingWorkload, 1, 1);
 
 	return true;
 }
@@ -145,14 +145,14 @@ bool LightCullingPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteGPUBufferComponent(m_lightListIndexCounter);
-	l_renderingServer->DeleteGPUBufferComponent(m_lightIndexList);
-	l_renderingServer->DeleteTextureComponent(m_lightGrid);
-	l_renderingServer->DeleteTextureComponent(m_heatMap);
+	l_renderingServer->Delete(m_lightListIndexCounter);
+	l_renderingServer->Delete(m_lightIndexList);
+	l_renderingServer->Delete(m_lightGrid);
+	l_renderingServer->Delete(m_heatMap);
 
-	l_renderingServer->DeleteSamplerComponent(m_SamplerComp);
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->DeleteShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->Delete(m_SamplerComp);
+	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -236,11 +236,11 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	if (m_lightIndexList)
-		l_renderingServer->DeleteGPUBufferComponent(m_lightIndexList);
+		l_renderingServer->Delete(m_lightIndexList);
 	if (m_lightGrid)
-		l_renderingServer->DeleteTextureComponent(m_lightGrid);
+		l_renderingServer->Delete(m_lightGrid);
 	if (m_heatMap)
-		l_renderingServer->DeleteTextureComponent(m_heatMap);
+		l_renderingServer->Delete(m_heatMap);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -272,9 +272,9 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 	m_heatMap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_heatMap->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_renderingServer->InitializeGPUBufferComponent(m_lightIndexList);
-	l_renderingServer->InitializeTextureComponent(m_lightGrid);
-	l_renderingServer->InitializeTextureComponent(m_heatMap);
+	l_renderingServer->Initialize(m_lightIndexList);
+	l_renderingServer->Initialize(m_lightGrid);
+	l_renderingServer->Initialize(m_heatMap);
 
 	return true;
 }

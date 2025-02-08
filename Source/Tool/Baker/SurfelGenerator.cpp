@@ -28,7 +28,7 @@ namespace Inno
             m_SPC_Surfel->m_ShaderFilePaths.m_GSPath = "GIBakeSurfelPass.geom/";
             m_SPC_Surfel->m_ShaderFilePaths.m_PSPath = "GIBakeSurfelPass.frag/";
 
-            l_renderingServer->InitializeShaderProgramComponent(m_SPC_Surfel);
+            l_renderingServer->Initialize(m_SPC_Surfel);
 
             m_RenderPassComp_Surfel = l_renderingServer->AddRenderPassComponent("GIBakeSurfelPass/");
 
@@ -108,14 +108,14 @@ namespace Inno
 
             m_RenderPassComp_Surfel->m_ShaderProgram = m_SPC_Surfel;
 
-            l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp_Surfel);
+            l_renderingServer->Initialize(m_RenderPassComp_Surfel);
 
             m_SamplerComp_Surfel = l_renderingServer->AddSamplerComponent("GIBakeSurfelPass/");
 
             m_SamplerComp_Surfel->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
             m_SamplerComp_Surfel->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-            l_renderingServer->InitializeSamplerComponent(m_SamplerComp_Surfel);
+            l_renderingServer->Initialize(m_SamplerComp_Surfel);
         }
 
         bool SurfelGenerator::captureSurfels(std::vector<Probe>& probes)
@@ -177,7 +177,7 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = l_t;
 
-            l_renderingServer->UploadGPUBufferComponent(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->Upload(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
             auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
             auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);

@@ -62,10 +62,10 @@ bool LuminanceHistogramPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
 
-	l_renderingServer->InitializeGPUBufferComponent(m_luminanceHistogram);
+	l_renderingServer->Initialize(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -76,9 +76,9 @@ bool LuminanceHistogramPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->DeleteShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_luminanceHistogram);
+	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_renderingServer->Delete(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

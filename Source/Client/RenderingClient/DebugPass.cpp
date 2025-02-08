@@ -109,16 +109,16 @@ bool DebugPass::Initialize()
 
 	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 	{
-		l_renderingServer->InitializeMeshComponent(m_debugCameraFrustumMeshComps[i]);
+		l_renderingServer->Initialize(m_debugCameraFrustumMeshComps[i]);
 	}
 
-	l_renderingServer->InitializeGPUBufferComponent(m_debugSphereMeshGPUBufferComp);
-	l_renderingServer->InitializeGPUBufferComponent(m_debugCubeMeshGPUBufferComp);
-	l_renderingServer->InitializeGPUBufferComponent(m_debugCameraFrustumGPUBufferComp);
-	l_renderingServer->InitializeGPUBufferComponent(m_debugMaterialGPUBufferComp);
+	l_renderingServer->Initialize(m_debugSphereMeshGPUBufferComp);
+	l_renderingServer->Initialize(m_debugCubeMeshGPUBufferComp);
+	l_renderingServer->Initialize(m_debugCameraFrustumGPUBufferComp);
+	l_renderingServer->Initialize(m_debugMaterialGPUBufferComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -129,7 +129,7 @@ bool DebugPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -402,18 +402,18 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 			}
 // 		}
 
-// 		l_renderingServer->UploadGPUBufferComponent(m_debugMaterialGPUBufferComp, m_debugMaterialConstantBuffer, 0, m_debugMaterialConstantBuffer.size());
+// 		l_renderingServer->Upload(m_debugMaterialGPUBufferComp, m_debugMaterialConstantBuffer, 0, m_debugMaterialConstantBuffer.size());
 // 		if (m_debugSphereConstantBuffer.size())
 // 		{
-// 			l_renderingServer->UploadGPUBufferComponent(m_debugSphereMeshGPUBufferComp, m_debugSphereConstantBuffer, 0, m_debugSphereConstantBuffer.size());
+// 			l_renderingServer->Upload(m_debugSphereMeshGPUBufferComp, m_debugSphereConstantBuffer, 0, m_debugSphereConstantBuffer.size());
 // 		}
 // 		if (m_debugCubeConstantBuffer.size())
 // 		{
-// 			l_renderingServer->UploadGPUBufferComponent(m_debugCubeMeshGPUBufferComp, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
+// 			l_renderingServer->Upload(m_debugCubeMeshGPUBufferComp, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
 // 		}
 // 		if (m_debugCameraFrustumConstantBuffer.size())
 // 		{
-// 			l_renderingServer->UploadGPUBufferComponent(m_debugCameraFrustumGPUBufferComp, m_debugCameraFrustumConstantBuffer, 0, m_debugCameraFrustumConstantBuffer.size());
+// 			l_renderingServer->Upload(m_debugCameraFrustumGPUBufferComp, m_debugCameraFrustumConstantBuffer, 0, m_debugCameraFrustumConstantBuffer.size());
 // 		}
 
 // 		l_renderingServer->CommandListBegin(m_RenderPassComp, 0);

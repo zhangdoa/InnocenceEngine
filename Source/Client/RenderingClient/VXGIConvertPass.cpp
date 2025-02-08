@@ -82,10 +82,10 @@ bool VXGIConvertPass::Initialize()
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeTextureComponent(m_AlbedoVolume);
-	l_renderingServer->InitializeTextureComponent(m_NormalVolume);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_AlbedoVolume);
+	l_renderingServer->Initialize(m_NormalVolume);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -96,7 +96,7 @@ bool VXGIConvertPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

@@ -37,7 +37,7 @@ namespace Inno
             m_SPC_Probe->m_ShaderFilePaths.m_VSPath = "GIBakeProbePass.vert/";
             m_SPC_Probe->m_ShaderFilePaths.m_PSPath = "GIBakeProbePass.frag/";
 
-            l_renderingServer->InitializeShaderProgramComponent(m_SPC_Probe);
+            l_renderingServer->Initialize(m_SPC_Probe);
 
             m_RenderPassComp_Probe = l_renderingServer->AddRenderPassComponent("GIBakeProbePass/");
 
@@ -69,7 +69,7 @@ namespace Inno
 
             m_RenderPassComp_Probe->m_ShaderProgram = m_SPC_Probe;
 
-            l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp_Probe);
+            l_renderingServer->Initialize(m_RenderPassComp_Probe);
         }
 
         bool ProbeGenerator::gatherStaticMeshData()
@@ -133,8 +133,8 @@ namespace Inno
             auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
             auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-            l_renderingServer->UploadGPUBufferComponent(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
-            l_renderingServer->UploadGPUBufferComponent(l_MaterialGPUBufferComp, Config::Get().m_staticMeshMaterialConstantBuffer, 0, Config::Get().m_staticMeshMaterialConstantBuffer.size());
+            l_renderingServer->Upload(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
+            l_renderingServer->Upload(l_MaterialGPUBufferComp, Config::Get().m_staticMeshMaterialConstantBuffer, 0, Config::Get().m_staticMeshMaterialConstantBuffer.size());
 
             return true;
         }
@@ -161,7 +161,7 @@ namespace Inno
             l_GICameraConstantBuffer[1] = Math::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(l_eyePos);
 
-            l_renderingServer->UploadGPUBufferComponent(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->Upload(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
             Log(Success, "Start to draw probe height map...");
 

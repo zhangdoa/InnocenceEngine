@@ -359,23 +359,23 @@ bool VolumetricPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->Initialize(m_SamplerComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_froxelizationSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_froxelizationRenderPassComp);
+	l_renderingServer->Initialize(m_froxelizationSPC);
+	l_renderingServer->Initialize(m_froxelizationRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_irraidanceInjectionSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_irraidanceInjectionRenderPassComp);
+	l_renderingServer->Initialize(m_irraidanceInjectionSPC);
+	l_renderingServer->Initialize(m_irraidanceInjectionRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_rayMarchingSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_rayMarchingRenderPassComp);
+	l_renderingServer->Initialize(m_rayMarchingSPC);
+	l_renderingServer->Initialize(m_rayMarchingRenderPassComp);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_visualizationSPC);
-	l_renderingServer->InitializeRenderPassComponent(m_visualizationRenderPassComp);
+	l_renderingServer->Initialize(m_visualizationSPC);
+	l_renderingServer->Initialize(m_visualizationRenderPassComp);
 
-	l_renderingServer->InitializeTextureComponent(m_irraidanceInjectionResult);
-	l_renderingServer->InitializeTextureComponent(m_rayMarchingResult_A);
-	l_renderingServer->InitializeTextureComponent(m_rayMarchingResult_B);
+	l_renderingServer->Initialize(m_irraidanceInjectionResult);
+	l_renderingServer->Initialize(m_rayMarchingResult_A);
+	l_renderingServer->Initialize(m_rayMarchingResult_B);
 
 	return true;
 }
@@ -446,7 +446,7 @@ bool VolumetricPass::irraidanceInjection()
 	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
+	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
 
 	// l_renderingServer->CommandListBegin(m_irraidanceInjectionRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp);
@@ -510,7 +510,7 @@ bool VolumetricPass::rayMarching()
 	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
+	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
 
 	// l_renderingServer->CommandListBegin(m_rayMarchingRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp);
@@ -626,10 +626,10 @@ bool VolumetricPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_froxelizationRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_irraidanceInjectionRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_rayMarchingRenderPassComp);
-	l_renderingServer->DeleteRenderPassComponent(m_visualizationRenderPassComp);
+	l_renderingServer->Delete(m_froxelizationRenderPassComp);
+	l_renderingServer->Delete(m_irraidanceInjectionRenderPassComp);
+	l_renderingServer->Delete(m_rayMarchingRenderPassComp);
+	l_renderingServer->Delete(m_visualizationRenderPassComp);
 
 	return true;
 }

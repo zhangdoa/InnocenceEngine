@@ -19,17 +19,17 @@ using namespace VKHelper;
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 
-bool VKRenderingServer::ClearTextureComponent(TextureComponent *rhs)
+bool VKRenderingServer::Clear(TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::CopyTextureComponent(TextureComponent *lhs, TextureComponent *rhs)
+bool VKRenderingServer::Copy(TextureComponent *lhs, TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::ClearGPUBufferComponent(GPUBufferComponent *rhs)
+bool VKRenderingServer::Clear(GPUBufferComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
 
@@ -145,11 +145,6 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t index)
 {
 	return true;
-}
-
-bool VKRenderingServer::Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc)
-{
-    return false;
 }
 
 bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
@@ -561,11 +556,6 @@ bool VKRenderingServer::EndCapture()
 bool VKRenderingServer::ResizeImpl()
 {
 	return true;
-}
-
-bool Inno::VKRenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs)
-{
-    return false;
 }
 
 void *VKRenderingServer::GetVkInstance()

@@ -110,13 +110,13 @@ bool TransparentGeometryProcessPass::Initialize()
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeGPUBufferComponent(m_atomicCounterGPUBufferComp);
-	l_renderingServer->InitializeGPUBufferComponent(m_RT0);
-	l_renderingServer->InitializeGPUBufferComponent(m_RT1);
-	l_renderingServer->InitializeTextureComponent(m_HeadPtr);
+	l_renderingServer->Initialize(m_atomicCounterGPUBufferComp);
+	l_renderingServer->Initialize(m_RT0);
+	l_renderingServer->Initialize(m_RT1);
+	l_renderingServer->Initialize(m_HeadPtr);
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -127,7 +127,7 @@ bool TransparentGeometryProcessPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -144,10 +144,10 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	static uint32_t zero = 0;
-	l_renderingServer->UploadGPUBufferComponent(m_atomicCounterGPUBufferComp, &zero);
-	l_renderingServer->ClearGPUBufferComponent(m_RT0);
-	l_renderingServer->ClearGPUBufferComponent(m_RT1);
-	l_renderingServer->ClearTextureComponent(m_HeadPtr);
+	l_renderingServer->Upload(m_atomicCounterGPUBufferComp, &zero);
+	l_renderingServer->Clear(m_RT0);
+	l_renderingServer->Clear(m_RT1);
+	l_renderingServer->Clear(m_HeadPtr);
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);

@@ -32,21 +32,21 @@ namespace Inno
 		ISemaphore* AddSemaphore() override;
         bool Add(IOutputMergerTarget*& rhs) override;		
 
-		virtual	bool DeleteMeshComponent(MeshComponent* rhs) override;
-		virtual	bool DeleteTextureComponent(TextureComponent* rhs) override;
-		virtual	bool DeleteMaterialComponent(MaterialComponent* rhs) override;
-		virtual	bool DeleteRenderPassComponent(RenderPassComponent* rhs) override;
-		virtual	bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) override;
-		virtual	bool DeleteSamplerComponent(SamplerComponent* rhs) override;
-		virtual	bool DeleteGPUBufferComponent(GPUBufferComponent* rhs) override;
+		virtual	bool Delete(MeshComponent* rhs) override;
+		virtual	bool Delete(TextureComponent* rhs) override;
+		virtual	bool Delete(MaterialComponent* rhs) override;
+		virtual	bool Delete(RenderPassComponent* rhs) override;
+		virtual	bool Delete(ShaderProgramComponent* rhs) override;
+		virtual	bool Delete(SamplerComponent* rhs) override;
+		virtual	bool Delete(GPUBufferComponent* rhs) override;
 		virtual	bool Delete(IPipelineStateObject* rhs) override;
 		virtual	bool Delete(ICommandList* rhs) override;
 		virtual	bool Delete(ISemaphore* rhs) override;
 		virtual bool Delete(IOutputMergerTarget* rhs) override;
 
-		bool ClearTextureComponent(TextureComponent* rhs) override;
-		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
-		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
+		bool Clear(TextureComponent* rhs) override;
+		bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
+		bool Clear(GPUBufferComponent* rhs) override;
 
 		bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
 
@@ -55,7 +55,7 @@ namespace Inno
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;
 		bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
-		bool Bind(RenderPassComponent* renderPass, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc) override;
+
 		bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
 		bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
@@ -102,7 +102,6 @@ namespace Inno
 		bool EndFrame() override;
 
 		bool ResizeImpl() override;
-		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs) override;
 
 	private:
 		template <typename U, typename T>

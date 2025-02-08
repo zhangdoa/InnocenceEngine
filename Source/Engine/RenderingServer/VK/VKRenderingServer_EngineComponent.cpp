@@ -145,9 +145,9 @@ bool VKRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 
 	bool l_result = true;
 
-	l_result &= ReserveRenderTargets(l_rhs);
+	l_result &= CreateOutputMergerTargets(l_rhs);
 
-	l_result &= CreateRenderTargets(l_rhs);
+	l_result &= InitializeOutputMergerTargets(l_rhs);
 
 	l_result &= ReserveFramebuffer(l_rhs);
 

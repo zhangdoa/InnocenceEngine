@@ -22,27 +22,27 @@ namespace Inno
 		SamplerComponent* AddSamplerComponent(const char* name = "") override;
 		GPUBufferComponent* AddGPUBufferComponent(const char* name) override;
 
-		bool InitializeMeshComponent(MeshComponent* rhs) override;
-		bool InitializeTextureComponent(TextureComponent* rhs) override;
-		bool InitializeMaterialComponent(MaterialComponent* rhs) override;
-		bool InitializeRenderPassComponent(RenderPassComponent* rhs) override;
-		bool InitializeShaderProgramComponent(ShaderProgramComponent* rhs) override;
-		bool InitializeSamplerComponent(SamplerComponent* rhs) override;
-		bool InitializeGPUBufferComponent(GPUBufferComponent* rhs) override;
+		bool Initialize(MeshComponent* rhs) override;
+		bool Initialize(TextureComponent* rhs) override;
+		bool Initialize(MaterialComponent* rhs) override;
+		bool Initialize(RenderPassComponent* rhs) override;
+		bool Initialize(ShaderProgramComponent* rhs) override;
+		bool Initialize(SamplerComponent* rhs) override;
+		bool Initialize(GPUBufferComponent* rhs) override;
 
-		bool DeleteMeshComponent(MeshComponent* rhs) override;
-		bool DeleteTextureComponent(TextureComponent* rhs) override;
-		bool DeleteMaterialComponent(MaterialComponent* rhs) override;
-		bool DeleteRenderPassComponent(RenderPassComponent* rhs) override;
-		bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) override;
-		bool DeleteSamplerComponent(SamplerComponent* rhs) override;
-		bool DeleteGPUBufferComponent(GPUBufferComponent* rhs) override;
+		bool Delete(MeshComponent* rhs) override;
+		bool Delete(TextureComponent* rhs) override;
+		bool Delete(MaterialComponent* rhs) override;
+		bool Delete(RenderPassComponent* rhs) override;
+		bool Delete(ShaderProgramComponent* rhs) override;
+		bool Delete(SamplerComponent* rhs) override;
+		bool Delete(GPUBufferComponent* rhs) override;
 
-		bool ClearTextureComponent(TextureComponent* rhs) override;
-		bool CopyTextureComponent(TextureComponent* lhs, TextureComponent* rhs) override;
+		bool Clear(TextureComponent* rhs) override;
+		bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
 
 		bool UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) override;
-		bool ClearGPUBufferComponent(GPUBufferComponent* rhs) override;
+		bool Clear(GPUBufferComponent* rhs) override;
 
 		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassComponent(RenderPassComponent* rhs) override;

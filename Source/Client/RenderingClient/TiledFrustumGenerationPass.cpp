@@ -52,8 +52,8 @@ bool TiledFrustumGenerationPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -69,7 +69,7 @@ bool TiledFrustumGenerationPass::Update()
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;
 	l_tiledFrustumWorkload.numThreads = m_numThreads;
 
-	l_renderingServer->UploadGPUBufferComponent(l_dispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
+	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
 
 	return true;
 }
@@ -78,7 +78,7 @@ bool TiledFrustumGenerationPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -143,7 +143,7 @@ bool Inno::TiledFrustumGenerationPass::CreateResources()
 	auto l_elementCount = m_numThreads.x * m_numThreads.y;
 
 	if (m_tiledFrustum)
-		l_renderingServer->DeleteGPUBufferComponent(m_tiledFrustum);
+		l_renderingServer->Delete(m_tiledFrustum);
 
 	m_tiledFrustum = l_renderingServer->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
 	m_tiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -159,7 +159,7 @@ bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 
 	CreateResources();
 
-	l_renderingServer->InitializeGPUBufferComponent(m_tiledFrustum);
+	l_renderingServer->Initialize(m_tiledFrustum);
 
 	return true;
 }

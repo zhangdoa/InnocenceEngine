@@ -49,7 +49,7 @@ bool VXGIRenderer::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeGPUBufferComponent(m_VXGICBuffer);
+	l_renderingServer->Initialize(m_VXGICBuffer);
 	VXGIGeometryProcessPass::Get().Initialize();
 	VXGIConvertPass::Get().Initialize();
 	VXGILightPass::Get().Initialize();
@@ -116,19 +116,19 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 		l_voxelPassCB.coneTracingStep = (float)l_VXGIRenderingConfig->m_coneTracingStep;
 		l_voxelPassCB.coneTracingMaxDistance = l_VXGIRenderingConfig->m_coneTracingMaxDistance;
 
-		l_renderingServer->UploadGPUBufferComponent(m_VXGICBuffer, &l_voxelPassCB);
+		l_renderingServer->Upload(m_VXGICBuffer, &l_voxelPassCB);
 
 		if (m_isInitialLoadScene)
 		{
 			m_isInitialLoadScene = false;
 
 			f_renderGeometryPasses();
-			l_renderingServer->CopyTextureComponent(reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()), reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
+			l_renderingServer->Copy(reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()), reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
 		}
 		else
 		{
 			l_renderingServer->WaitOnGPU(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_renderingServer->ClearTextureComponent(reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
+			l_renderingServer->Clear(reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
 			
 			VXGIScreenSpaceFeedbackPassRenderingContext l_VXGIScreenSpaceFeedbackPassRenderingContext;
 			l_VXGIScreenSpaceFeedbackPassRenderingContext.m_output = VXGIScreenSpaceFeedbackPass::Get().GetResult();
@@ -175,11 +175,11 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 		l_voxelPassCB.coneTracingStep = (float)l_VXGIRenderingConfig->m_coneTracingStep;
 		l_voxelPassCB.coneTracingMaxDistance = l_VXGIRenderingConfig->m_coneTracingMaxDistance;
 
-		l_renderingServer->UploadGPUBufferComponent(m_VXGICBuffer, &l_voxelPassCB);
+		l_renderingServer->Upload(m_VXGICBuffer, &l_voxelPassCB);
 
 		////	
 		l_renderingServer->WaitOnGPU(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-		l_renderingServer->ClearGPUBufferComponent(reinterpret_cast<GPUBufferComponent*>(VXGIGeometryProcessPass::Get().GetResult()));
+		l_renderingServer->Clear(reinterpret_cast<GPUBufferComponent*>(VXGIGeometryProcessPass::Get().GetResult()));
 
 		f_renderGeometryPasses();
 

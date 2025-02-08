@@ -66,7 +66,7 @@ bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
 bool ImGuiRenderPass::Initialize()
 {
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
 
 	// The actual rendering is called by the rendering server
 	m_RenderPassComp->m_CustomCommandsFunc = [&](ICommandList* cmdList)
@@ -91,7 +91,7 @@ bool ImGuiRenderPass::Initialize()
 bool ImGuiRenderPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	return true;

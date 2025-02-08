@@ -72,37 +72,37 @@ bool VKRenderingServer::Add(IOutputMergerTarget*& rhs)
 	return false;
 }
 
-bool VKRenderingServer::DeleteMeshComponent(MeshComponent *rhs)
+bool VKRenderingServer::Delete(MeshComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteTextureComponent(TextureComponent *rhs)
+bool VKRenderingServer::Delete(TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteMaterialComponent(MaterialComponent *rhs)
+bool VKRenderingServer::Delete(MaterialComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteRenderPassComponent(RenderPassComponent *rhs)
+bool VKRenderingServer::Delete(RenderPassComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent *rhs)
+bool VKRenderingServer::Delete(ShaderProgramComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteSamplerComponent(SamplerComponent *rhs)
+bool VKRenderingServer::Delete(SamplerComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteGPUBufferComponent(GPUBufferComponent *rhs)
+bool VKRenderingServer::Delete(GPUBufferComponent *rhs)
 {
 	return true;
 }

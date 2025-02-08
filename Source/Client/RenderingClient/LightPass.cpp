@@ -182,9 +182,9 @@ bool LightPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -195,12 +195,12 @@ bool LightPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteSamplerComponent(m_SamplerComp);
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->DeleteShaderProgramComponent(m_ShaderProgramComp);
+	l_renderingServer->Delete(m_SamplerComp);
+	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 
-	l_renderingServer->DeleteTextureComponent(m_LuminanceResult);
-	l_renderingServer->DeleteTextureComponent(m_IlluminanceResult);
+	l_renderingServer->Delete(m_LuminanceResult);
+	l_renderingServer->Delete(m_IlluminanceResult);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -290,10 +290,10 @@ bool LightPass::RenderTargetsCreationFunc()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	if (m_LuminanceResult)
-		l_renderingServer->DeleteTextureComponent(m_LuminanceResult);
+		l_renderingServer->Delete(m_LuminanceResult);
 
 	if (m_IlluminanceResult)
-		l_renderingServer->DeleteTextureComponent(m_IlluminanceResult);
+		l_renderingServer->Delete(m_IlluminanceResult);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -302,13 +302,13 @@ bool LightPass::RenderTargetsCreationFunc()
 	m_LuminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_LuminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_renderingServer->InitializeTextureComponent(m_LuminanceResult);
+	l_renderingServer->Initialize(m_LuminanceResult);
 
 	m_IlluminanceResult = l_renderingServer->AddTextureComponent("LightPass Illuminance Result/");
 	m_IlluminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_IlluminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_renderingServer->InitializeTextureComponent(m_IlluminanceResult);
+	l_renderingServer->Initialize(m_IlluminanceResult);
 
 	return true;
 }

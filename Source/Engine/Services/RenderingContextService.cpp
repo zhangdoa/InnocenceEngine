@@ -157,56 +157,56 @@ bool RenderingContextServiceImpl::Initialize()
 		m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
 		m_PerFrameCBufferGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
+		l_renderingServer->Initialize(m_PerFrameCBufferGPUBufferComp);
 
 		m_PerObjectGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_PerObjectGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_PerObjectGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_PerObjectGPUBufferComp);
+		l_renderingServer->Initialize(m_PerObjectGPUBufferComp);
 
 		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
 		m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_MaterialGPUBufferComp);
+		l_renderingServer->Initialize(m_MaterialGPUBufferComp);
 
 		m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
 		m_PointLightGPUBufferComp->m_ElementSize = sizeof(PointLightConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_PointLightGPUBufferComp);
+		l_renderingServer->Initialize(m_PointLightGPUBufferComp);
 
 		m_SphereLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxSphereLights;
 		m_SphereLightGPUBufferComp->m_ElementSize = sizeof(SphereLightConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_SphereLightGPUBufferComp);
+		l_renderingServer->Initialize(m_SphereLightGPUBufferComp);
 
 		m_CSMGPUBufferComp->m_ElementCount = l_RenderingCapability.maxCSMSplits;
 		m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_CSMGPUBufferComp);
+		l_renderingServer->Initialize(m_CSMGPUBufferComp);
 
 		// @TODO: get rid of hard-code stuffs
 		m_DispatchParamsGPUBufferComp->m_ElementCount = 8;
 		m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_DispatchParamsGPUBufferComp);
+		l_renderingServer->Initialize(m_DispatchParamsGPUBufferComp);
 
 		m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
 		m_GICBufferGPUBufferComp->m_ElementCount = 1;
 
-		l_renderingServer->InitializeGPUBufferComponent(m_GICBufferGPUBufferComp);
+		l_renderingServer->Initialize(m_GICBufferGPUBufferComp);
 
 		m_animationGPUBufferComp->m_ElementCount = 512;
 		m_animationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
 
-		l_renderingServer->InitializeGPUBufferComponent(m_animationGPUBufferComp);
+		l_renderingServer->Initialize(m_animationGPUBufferComp);
 
 		m_billboardGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_billboardGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
 		m_billboardGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
-		l_renderingServer->InitializeGPUBufferComponent(m_billboardGPUBufferComp);
+		l_renderingServer->Initialize(m_billboardGPUBufferComp);
 
 
 		m_ObjectStatus = ObjectStatus::Activated;
@@ -544,35 +544,35 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->UploadGPUBufferComponent(m_PerFrameCBufferGPUBufferComp, &m_perFrameCB);
+	l_renderingServer->Upload(m_PerFrameCBufferGPUBufferComp, &m_perFrameCB);
 
 	if (m_perObjectCBVector.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_PerObjectGPUBufferComp, m_perObjectCBVector, 0, m_perObjectCBVector.size());
+		l_renderingServer->Upload(m_PerObjectGPUBufferComp, m_perObjectCBVector, 0, m_perObjectCBVector.size());
 	}
 	if (m_materialCBVector.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_MaterialGPUBufferComp, m_materialCBVector, 0, m_materialCBVector.size());
+		l_renderingServer->Upload(m_MaterialGPUBufferComp, m_materialCBVector, 0, m_materialCBVector.size());
 	}
 	if (m_pointLightCBVector.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_PointLightGPUBufferComp, m_pointLightCBVector, 0, m_pointLightCBVector.size());
+		l_renderingServer->Upload(m_PointLightGPUBufferComp, m_pointLightCBVector, 0, m_pointLightCBVector.size());
 	}
 	if (m_sphereLightCBVector.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_SphereLightGPUBufferComp, m_sphereLightCBVector, 0, m_sphereLightCBVector.size());
+		l_renderingServer->Upload(m_SphereLightGPUBufferComp, m_sphereLightCBVector, 0, m_sphereLightCBVector.size());
 	}
 	if (m_CSMCBVector.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
+		l_renderingServer->Upload(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
 	}
 	if (m_animationCBVector.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_animationGPUBufferComp, m_animationCBVector, 0, m_animationCBVector.size());
+		l_renderingServer->Upload(m_animationGPUBufferComp, m_animationCBVector, 0, m_animationCBVector.size());
 	}
 	if (m_billboardPassPerObjectCB.size() > 0)
 	{
-		l_renderingServer->UploadGPUBufferComponent(m_billboardGPUBufferComp, m_billboardPassPerObjectCB, 0, m_billboardPassPerObjectCB.size());
+		l_renderingServer->Upload(m_billboardGPUBufferComp, m_billboardPassPerObjectCB, 0, m_billboardPassPerObjectCB.size());
 	}
 
 	return true;
@@ -609,15 +609,15 @@ bool RenderingContextServiceImpl::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteGPUBufferComponent(m_PerFrameCBufferGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_PerObjectGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_MaterialGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_PointLightGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_SphereLightGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_CSMGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_DispatchParamsGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_GICBufferGPUBufferComp);
-	l_renderingServer->DeleteGPUBufferComponent(m_billboardGPUBufferComp);
+	l_renderingServer->Delete(m_PerFrameCBufferGPUBufferComp);
+	l_renderingServer->Delete(m_PerObjectGPUBufferComp);
+	l_renderingServer->Delete(m_MaterialGPUBufferComp);
+	l_renderingServer->Delete(m_PointLightGPUBufferComp);
+	l_renderingServer->Delete(m_SphereLightGPUBufferComp);
+	l_renderingServer->Delete(m_CSMGPUBufferComp);
+	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
+	l_renderingServer->Delete(m_GICBufferGPUBufferComp);
+	l_renderingServer->Delete(m_billboardGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "RenderingContextService has been terminated.");

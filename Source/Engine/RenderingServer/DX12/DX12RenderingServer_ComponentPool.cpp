@@ -74,7 +74,7 @@ bool DX12RenderingServer::Add(IOutputMergerTarget*& rhs)
 	return rhs != nullptr;
 }
 
-bool DX12RenderingServer::DeleteMeshComponent(MeshComponent* rhs)
+bool DX12RenderingServer::Delete(MeshComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshComponent*>(rhs);
 	if (l_rhs->m_DefaultHeapBuffer_VB)
@@ -96,7 +96,7 @@ bool DX12RenderingServer::DeleteMeshComponent(MeshComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::DeleteTextureComponent(TextureComponent* rhs)
+bool DX12RenderingServer::Delete(TextureComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
 
@@ -128,7 +128,7 @@ bool DX12RenderingServer::DeleteTextureComponent(TextureComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent* rhs)
+bool DX12RenderingServer::Delete(MaterialComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialComponent*>(rhs);
 
@@ -139,7 +139,7 @@ bool DX12RenderingServer::DeleteMaterialComponent(MaterialComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
+bool DX12RenderingServer::Delete(RenderPassComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
@@ -166,14 +166,14 @@ bool DX12RenderingServer::DeleteRenderPassComponent(RenderPassComponent* rhs)
 
 	DeleteRenderTargets(rhs);
 
-	DeleteShaderProgramComponent(rhs->m_ShaderProgram);
+	Delete(rhs->m_ShaderProgram);
 
 	m_RenderPassComponentPool->Destroy(rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
+bool DX12RenderingServer::Delete(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
 	m_ShaderProgramComponentPool->Destroy(l_rhs);
@@ -181,7 +181,7 @@ bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* r
 	return true;
 }
 
-bool DX12RenderingServer::DeleteSamplerComponent(SamplerComponent* rhs)
+bool DX12RenderingServer::Delete(SamplerComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(rhs);
 	m_SamplerComponentPool->Destroy(l_rhs);
@@ -189,7 +189,7 @@ bool DX12RenderingServer::DeleteSamplerComponent(SamplerComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::DeleteGPUBufferComponent(GPUBufferComponent* rhs)
+bool DX12RenderingServer::Delete(GPUBufferComponent* rhs)
 {
 	for (auto i : rhs->m_DeviceMemories)
 	{
@@ -249,13 +249,13 @@ bool DX12RenderingServer::Delete(IOutputMergerTarget* rhs)
 	for (auto& j : l_rhs->m_ColorOutputs)
 	{
 		if (j)
-			DeleteTextureComponent(j);
+			Delete(j);
 	}
 
 	l_rhs->m_ColorOutputs.clear();
 
 	if (l_rhs->m_DepthStencilOutput)
-		DeleteTextureComponent(l_rhs->m_DepthStencilOutput);
+		Delete(l_rhs->m_DepthStencilOutput);
 
 	m_OutputMergerTargetPool->Destroy(l_rhs);
 

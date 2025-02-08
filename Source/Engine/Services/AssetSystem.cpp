@@ -80,7 +80,7 @@ bool AssetSystem::Setup(ISystemConfig* systemConfig)
 		{
 			i->m_Model = AddModel(i->m_MeshShape, ShaderModel::Opaque);
 			auto l_pair = GetRenderableSet(i->m_Model->renderableSets.m_startOffset);
-			g_Engine->getRenderingServer()->InitializeMaterialComponent(l_pair->material);
+			g_Engine->getRenderingServer()->Initialize(l_pair->material);
 		}
 		else
 		{

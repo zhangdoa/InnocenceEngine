@@ -148,13 +148,13 @@ bool VXGIRayTracingPass::Initialize()
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_SamplerComp);
 
-	l_renderingServer->InitializeGPUBufferComponent(m_RaySBufferGPUBufferComp);
-	l_renderingServer->InitializeGPUBufferComponent(m_ProbeIndexSBufferGPUBufferComp);
-	l_renderingServer->InitializeTextureComponent(m_TextureComp);
+	l_renderingServer->Initialize(m_RaySBufferGPUBufferComp);
+	l_renderingServer->Initialize(m_ProbeIndexSBufferGPUBufferComp);
+	l_renderingServer->Initialize(m_TextureComp);
 		
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -165,7 +165,7 @@ bool VXGIRayTracingPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -195,7 +195,7 @@ bool VXGIRayTracingPass::PrepareCommandList(IRenderingContext* renderingContext)
 		m_ProbeIndex.emplace_back(l_sample);
 	}
 
-	l_renderingServer->UploadGPUBufferComponent(m_ProbeIndexSBufferGPUBufferComp, m_ProbeIndex);
+	l_renderingServer->Upload(m_ProbeIndexSBufferGPUBufferComp, m_ProbeIndex);
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

@@ -49,8 +49,8 @@ void AnimationServiceImpl::initializeAnimation(AnimationComponent* rhs)
 	l_keyData->m_ElementSize = sizeof(KeyData);
 	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferComponent(l_keyData);
-	g_Engine->getRenderingServer()->UploadGPUBufferComponent(l_keyData, &rhs->m_KeyData[0]);
+	g_Engine->getRenderingServer()->Initialize(l_keyData);
+	g_Engine->getRenderingServer()->Upload(l_keyData, &rhs->m_KeyData[0]);
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 

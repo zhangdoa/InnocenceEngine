@@ -93,10 +93,10 @@ bool SurfelGITestPass::Initialize()
 
 	//m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
-	l_renderingServer->InitializeGPUBufferComponent(m_probeSphereMeshGPUBufferComp);
-	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
-	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->InitializeSamplerComponent(m_SamplerComp);
+	l_renderingServer->Initialize(m_probeSphereMeshGPUBufferComp);
+	l_renderingServer->Initialize(m_ShaderProgramComp);
+	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -207,7 +207,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
 
-		l_renderingServer->UploadGPUBufferComponent(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
+		l_renderingServer->Upload(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 
 		// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 		// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
@@ -238,7 +238,7 @@ bool SurfelGITestPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->DeleteRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
