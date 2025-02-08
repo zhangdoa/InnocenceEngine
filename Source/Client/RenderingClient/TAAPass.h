@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class TAAPassRenderingContext: public IRenderingContext
+	class TAAPassRenderingContext : public IRenderingContext
 	{
 	public:
 		GPUResourceComponent* m_input;
@@ -12,7 +12,7 @@ namespace Inno
 		GPUResourceComponent* m_writeTexture;
 	};
 
-	class TAAPass: IRenderPass
+	class TAAPass : IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(TAAPass)
@@ -33,7 +33,9 @@ namespace Inno
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;
 
-		TextureComponent* m_oddTextureComp;
-		TextureComponent* m_evenTextureComp;
+		TextureComponent* m_OddTextureComp;
+		TextureComponent* m_EvenTextureComp;
+
+		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno

@@ -10,10 +10,7 @@
 
 using namespace Inno;
 
-
-
-
-bool PreTAAPass::Setup(ISystemConfig *systemConfig)
+bool PreTAAPass::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -25,38 +22,43 @@ bool PreTAAPass::Setup(ISystemConfig *systemConfig)
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
+	l_RenderPassDesc.m_RenderTargetsCreationFunc = std::bind(&PreTAAPass::RenderTargetsCreationFunc, this);
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(3);
+
+	// t0 - Light Pass Luminance Result
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;
 
+	// t1 - Sky Pass Result
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_TextureUsage = TextureUsage::ColorAttachment;
 
+	// u0 - Result
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_TextureUsage = TextureUsage::ColorAttachment;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_ObjectStatus = ObjectStatus::Created;
-	
+
 	return true;
 }
 
@@ -67,7 +69,7 @@ bool PreTAAPass::Initialize()
 	l_renderingServer->InitializeShaderProgramComponent(m_ShaderProgramComp);
 	l_renderingServer->InitializeRenderPassComponent(m_RenderPassComp);
 
-	m_ObjectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
 }
@@ -89,26 +91,34 @@ ObjectStatus PreTAAPass::GetStatus()
 }
 
 bool PreTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
-{	
+{
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	
+
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 2);
 
-	// l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 2);
 
-	// l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp);
+
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -120,14 +130,23 @@ RenderPassComponent* PreTAAPass::GetRenderPassComp()
 
 GPUResourceComponent* PreTAAPass::GetResult()
 {
-	if (!m_RenderPassComp)
-		return nullptr;
-	
-	if (!m_RenderPassComp->m_OutputMergerTarget)
-		return nullptr;
+	return m_Result;
+}
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
-	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
+bool PreTAAPass::RenderTargetsCreationFunc()
+{
+	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
+	if (m_Result)
+		l_renderingServer->DeleteTextureComponent(m_Result);
+
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
+
+	m_Result = l_renderingServer->AddTextureComponent("Pre-TAA Pass Result/");
+	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+
+	l_renderingServer->InitializeTextureComponent(m_Result);
+
+	return true;
 }

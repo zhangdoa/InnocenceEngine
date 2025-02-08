@@ -116,10 +116,14 @@ namespace Inno
 
 		TiledFrustumGenerationPass::Get().Setup();
 		LightCullingPass::Get().Setup();
-		
+
 		LightPass::Get().Setup();
 
 		SkyPass::Get().Setup();
+
+		PreTAAPass::Get().Setup();
+		TAAPass::Get().Setup();
+		PostTAAPass::Get().Setup();
 
 		LuminanceHistogramPass::Get().Setup();
 		LuminanceAveragePass::Get().Setup();
@@ -136,16 +140,14 @@ namespace Inno
 
 		// AnimationPass::Get().Setup();
 
-		// PreTAAPass::Get().Setup();
 		// TransparentGeometryProcessPass::Get().Setup();
 		// TransparentBlendPass::Get().Setup();
 		// VolumetricPass::Setup();
-		// TAAPass::Get().Setup();
-		// PostTAAPass::Get().Setup();
+
 		// MotionBlurPass::Get().Setup();
 		// BillboardPass::Get().Setup();
 		// DebugPass::Get().Setup();
-		
+
 		// BSDFTestPass::Get().Setup();
 
 		auto f_getUserPipelineOutputFunc = [this]()
@@ -175,7 +177,7 @@ namespace Inno
 		OpaquePass::Get().Initialize();
 
 		SSAOPass::Get().Initialize();
-		
+
 		TiledFrustumGenerationPass::Get().Initialize();
 		LightCullingPass::Get().Initialize();
 
@@ -183,11 +185,15 @@ namespace Inno
 
 		SkyPass::Get().Initialize();
 
+		PreTAAPass::Get().Initialize();
+		TAAPass::Get().Initialize();
+		PostTAAPass::Get().Initialize();
+
 		LuminanceHistogramPass::Get().Initialize();
 		LuminanceAveragePass::Get().Initialize();
 
 		FinalBlendPass::Get().Initialize();
-		
+
 		// GIResolvePass::Initialize();
 		// SurfelGITestPass::Get().Initialize();
 
@@ -195,13 +201,11 @@ namespace Inno
 		// SunShadowBlurEvenPass::Get().Initialize();
 		// VXGIRenderer::Get().Initialize();
 		// AnimationPass::Get().Initialize();
-	
-		// PreTAAPass::Get().Initialize();
+
 		// TransparentGeometryProcessPass::Get().Initialize();
 		// TransparentBlendPass::Get().Initialize();
 		// VolumetricPass::Initialize();
-		// TAAPass::Get().Initialize();
-		// PostTAAPass::Get().Initialize();
+
 		// MotionBlurPass::Get().Initialize();
 		// BillboardPass::Get().Initialize();
 		// DebugPass::Get().Initialize();
@@ -218,7 +222,7 @@ namespace Inno
 		OpaquePass::Get().Update();
 		TiledFrustumGenerationPass::Get().Update();
 		LightCullingPass::Get().Update();
-		
+
 		return true;
 	}
 
@@ -237,7 +241,7 @@ namespace Inno
 		}
 
 		SunShadowGeometryProcessPass::Get().PrepareCommandList();
-		
+
 		OpaquePass::Get().PrepareCommandList();
 
 		SSAOPass::Get().PrepareCommandList();
@@ -250,6 +254,33 @@ namespace Inno
 
 		SkyPass::Get().PrepareCommandList();
 
+		PreTAAPass::Get().PrepareCommandList();
+
+		TAAPassRenderingContext l_TAAPassRenderingContext;
+		if (m_isPassOdd)
+		{
+			l_TAAPassRenderingContext.m_readTexture = TAAPass::Get().GetOddResult();
+			l_TAAPassRenderingContext.m_writeTexture = TAAPass::Get().GetEvenResult();
+
+			m_isPassOdd = false;
+		}
+		else
+		{
+			l_TAAPassRenderingContext.m_readTexture = TAAPass::Get().GetEvenResult();
+			l_TAAPassRenderingContext.m_writeTexture = TAAPass::Get().GetOddResult();
+
+			m_isPassOdd = true;
+		}
+
+		l_TAAPassRenderingContext.m_input = PreTAAPass::Get().GetResult();
+		l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3];
+
+		TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
+
+		PostTAAPassRenderingContext l_PostTAAPassRenderingContext;
+		l_PostTAAPassRenderingContext.m_input = l_TAAPassRenderingContext.m_writeTexture;
+		PostTAAPass::Get().PrepareCommandList(&l_PostTAAPassRenderingContext);
+
 		LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
 		l_LuminanceHistogramPassRenderingContext.m_input = LightPass::Get().GetLuminanceResult();
 		LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
@@ -257,7 +288,7 @@ namespace Inno
 		LuminanceAveragePass::Get().PrepareCommandList();
 
 		FinalBlendPassRenderingContext l_FinalBlendPassRenderingContext;
-		l_FinalBlendPassRenderingContext.m_input = LightPass::Get().GetLuminanceResult();
+		l_FinalBlendPassRenderingContext.m_input = PostTAAPass::Get().GetResult();
 		FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
 
 		if (m_showLightHeatmap)
@@ -283,11 +314,11 @@ namespace Inno
 		if (m_ExecuteOneShotCommands)
 		{
 			if (BRDFLUTPass::Get().GetStatus() == ObjectStatus::Activated
-			&& BRDFLUTMSPass::Get().GetStatus() == ObjectStatus::Activated)
+				&& BRDFLUTMSPass::Get().GetStatus() == ObjectStatus::Activated)
 			{
 				l_renderingServer->ExecuteCommandList(BRDFLUTPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 				l_renderingServer->SignalOnGPU(BRDFLUTPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-				l_renderingServer->WaitOnGPU(BRDFLUTPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);		
+				l_renderingServer->WaitOnGPU(BRDFLUTPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 				l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 				l_renderingServer->SignalOnGPU(BRDFLUTMSPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 
@@ -308,20 +339,20 @@ namespace Inno
 		if (OpaquePass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->ExecuteCommandList(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);	
+			l_renderingServer->SignalOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 		}
 
 		if (SSAOPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->ExecuteCommandList(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Compute);	
+			l_renderingServer->SignalOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
 
 		if (TiledFrustumGenerationPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->ExecuteCommandList(TiledFrustumGenerationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(TiledFrustumGenerationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);			
+			l_renderingServer->SignalOnGPU(TiledFrustumGenerationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
 
 		if (LightCullingPass::Get().GetStatus() == ObjectStatus::Activated)
@@ -334,7 +365,7 @@ namespace Inno
 
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);			
+			l_renderingServer->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->WaitOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
@@ -347,9 +378,34 @@ namespace Inno
 			l_renderingServer->ExecuteCommandList(SkyPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
 
-		if (LuminanceHistogramPass::Get().GetStatus() == ObjectStatus::Activated)
+		if (PreTAAPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->WaitOnGPU(LightPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->WaitOnGPU(SkyPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		}
+
+		if (TAAPass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_renderingServer->WaitOnGPU(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		}
+
+		if (PostTAAPass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			l_renderingServer->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->ExecuteCommandList(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		}
+
+		if (LuminanceHistogramPass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			l_renderingServer->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 			l_renderingServer->SignalOnGPU(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
@@ -363,14 +419,13 @@ namespace Inno
 
 		if (FinalBlendPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(LightPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(FinalBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 			l_renderingServer->SignalOnGPU(FinalBlendPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
 
 		// l_renderingServer->WaitOnGPU(l_canvasOwner, GPUEngineType::Graphics,  l_canvasOwner->m_RenderPassDesc.m_GPUEngineType);
-		// l_renderingServer->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 		// l_renderingServer->WaitOnGPU(BillboardPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 		// l_renderingServer->WaitOnGPU(DebugPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
@@ -421,10 +476,6 @@ namespace Inno
 
 		// 	//VolumetricPass::ExecuteCommands(false);
 
-		// 	PreTAAPass::Get().PrepareCommandList();
-		// 	l_canvas = PreTAAPass::Get().GetResult();
-		// 	l_canvasOwner = PreTAAPass::Get().GetRenderPassComp();
-
 		// 	if (m_showTransparent)
 		// 	{
 		// 		TransparentGeometryProcessPass::Get().PrepareCommandList();
@@ -436,11 +487,6 @@ namespace Inno
 
 		// 	//l_renderingServer->WaitOnGPU(SunShadowBlurEvenPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-		// 	l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-		// 	l_renderingServer->WaitOnGPU(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		// 	l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-
-		// 	l_renderingServer->WaitOnGPU(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 		// 	if (m_showTransparent)
 		// 	{
 		// 		l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
@@ -463,45 +509,6 @@ namespace Inno
 		// 	l_renderingServer->WaitOnGPU(TransparentBlendPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 		// }
 
-		// if (l_renderingConfig.useTAA)
-		// {
-		// 	TAAPassRenderingContext l_TAAPassRenderingContext;
-		// 	if (m_isPassOdd)
-		// 	{
-		// 		l_TAAPassRenderingContext.m_readTexture = TAAPass::Get().GetOddResult();
-		// 		l_TAAPassRenderingContext.m_writeTexture = TAAPass::Get().GetEvenResult();
-
-		// 		m_isPassOdd = false;
-		// 	}
-		// 	else
-		// 	{
-		// 		l_TAAPassRenderingContext.m_readTexture = TAAPass::Get().GetEvenResult();
-		// 		l_TAAPassRenderingContext.m_writeTexture = TAAPass::Get().GetOddResult();
-
-		// 		m_isPassOdd = true;
-		// 	}
-
-		// 	l_TAAPassRenderingContext.m_input = l_canvas;
-		// 	l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3].m_Texture;
-
-		// 	TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
-
-		// 	PostTAAPassRenderingContext l_PostTAAPassRenderingContext;
-		// 	l_PostTAAPassRenderingContext.m_input = l_TAAPassRenderingContext.m_writeTexture;
-		// 	PostTAAPass::Get().PrepareCommandList(&l_PostTAAPassRenderingContext);
-
-		// 	l_renderingServer->WaitOnGPU(l_canvasOwner, GPUEngineType::Graphics, l_canvasOwner->m_RenderPassDesc.m_GPUEngineType);
-		// 	l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-		// 	l_renderingServer->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		// 	l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-
-		// 	l_renderingServer->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-		// 	l_renderingServer->ExecuteCommandList(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-		// 	l_renderingServer->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		// 	l_renderingServer->ExecuteCommandList(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-
-		// 	l_canvas = PostTAAPass::Get().GetResult();
-		// 	l_canvasOwner = PostTAAPass::Get().GetRenderPassComp();
 		// }
 
 		// if (l_renderingConfig.useMotionBlur)
@@ -540,28 +547,28 @@ namespace Inno
 	{
 		auto l_renderingServer = g_Engine->getRenderingServer();
 		auto l_graphicsSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
-		auto l_computeSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Compute);		
+		auto l_computeSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Compute);
 		l_renderingServer->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		l_renderingServer->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
-	
+
 		// BSDFTestPass::Get().Terminate();
 
 		FinalBlendPass::Get().Terminate();
-		
+
 		LuminanceAveragePass::Get().Terminate();
 		LuminanceHistogramPass::Get().Terminate();
-		
+
 		// DebugPass::Get().Terminate();
 		// BillboardPass::Get().Terminate();
 		// MotionBlurPass::Get().Terminate();
-		// PostTAAPass::Get().Terminate();
-		// TAAPass::Get().Terminate();
 
 		// VolumetricPass::Terminate();
 		// TransparentBlendPass::Get().Terminate();
 		// TransparentGeometryProcessPass::Get().Terminate();
 
-		// PreTAAPass::Get().Terminate();
+		PostTAAPass::Get().Terminate();
+		TAAPass::Get().Terminate();
+		PreTAAPass::Get().Terminate();
 
 		SkyPass::Get().Terminate();
 
@@ -572,7 +579,7 @@ namespace Inno
 
 		// AnimationPass::Get().Terminate();
 		SSAOPass::Get().Terminate();
-		
+
 		OpaquePass::Get().Terminate();
 		// VXGIRenderer::Get().Terminate();
 

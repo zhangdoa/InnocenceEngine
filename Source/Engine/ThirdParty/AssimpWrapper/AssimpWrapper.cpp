@@ -122,7 +122,7 @@ bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
 		json j;
 
 		ProcessAssimpScene(j, l_scene, l_exportFileName.c_str());
-		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), j);
+		JSONWrapper::Save(l_exportFileRelativePath.c_str(), j);
 
 		Log(Success, "", fileName, " has been converted.");
 	}

@@ -9,8 +9,8 @@ namespace Inno
 {
 	namespace JSONWrapper
 	{
-		bool loadJsonDataFromDisk(const char* fileName, json& data);
-		bool saveJsonDataToDisk(const char* fileName, const json& data);
+		bool Load(const char* fileName, json& data);
+		bool Save(const char* fileName, const json& data);
 
 		void to_json(json& j, const Entity& p);
 		void to_json(json& j, const Vec4& p);
@@ -33,9 +33,9 @@ namespace Inno
 		void from_json(const json& j, CameraComponent& p);
 		void from_json(const json& j, RenderPassComponent& p);
 
-		Model* loadModelFromDisk(const char* fileName);
+		Model* LoadModel(const char* fileName);
 
-		bool saveScene(const char* fileName);
-		bool loadScene(const char* fileName);
+		bool Save(const char* fileName);
+		bool Load(const char* fileName);
 	}
 }

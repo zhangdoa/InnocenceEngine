@@ -18,14 +18,14 @@ namespace Inno
 	namespace JSONWrapper
 	{
 		template<typename T>
-		inline void loadComponentData(const json& j, Entity* entity)
+		inline void Load(const json& j, Entity* entity)
 		{
 			auto l_result = g_Engine->Get<ComponentManager>()->Spawn<T>(entity, true, ObjectLifespan::Scene);
 			from_json(j, *l_result);
 		}
 
 		template<typename T>
-		inline bool saveComponentData(json& topLevel, T* rhs)
+		inline bool Save(json& topLevel, T* rhs)
 		{
 			json j;
 			to_json(j, *rhs);
@@ -49,19 +49,19 @@ namespace Inno
 			}
 		}
 
-		Model* processSceneJsonData(const json& j);
-		bool processAnimationJsonData(const json& j);
-		ArrayRangeInfo processMeshJsonData(const json& j);
-		SkeletonComponent* processSkeletonJsonData(const json& j, const char* name);
-		MaterialComponent* processMaterialJsonData(const json& j, const char* name);
+		Model* ProcessModel(const json& j);
+		bool ProcessAnimations(const json& j);
+		ArrayRangeInfo ProcessMeshes(const json& j);
+		SkeletonComponent* ProcessSkeleton(const json& j, const char* name);
+		MaterialComponent* ProcessMaterial(const json& j, const char* name);
 
-		bool assignComponentRuntimeData();
+		bool PostLoad();
 
 		ThreadSafeQueue<std::pair<TransformComponent*, ObjectName>> m_orphanTransformComponents;
 	}
 }
 
-bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
+bool JSONWrapper::Load(const char* fileName, json& data)
 {
 	std::ifstream i;
 
@@ -69,7 +69,7 @@ bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
 
 	if (!i.is_open())
 	{
-		Log(Error, "Can't open JSON file : ", fileName, "!");
+		Log(Error, "Can't open JSON file: ", fileName, "!");
 		return false;
 	}
 
@@ -79,14 +79,14 @@ bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
 	return true;
 }
 
-bool JSONWrapper::saveJsonDataToDisk(const char* fileName, const json& data)
+bool JSONWrapper::Save(const char* fileName, const json& data)
 {
 	std::ofstream o;
 	o.open(g_Engine->Get<IOService>()->getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
-	Log(Verbose, "JSON file : ", fileName, " has been saved.");
+	Log(Verbose, "JSON file: ", fileName, " has been saved.");
 
 	return true;
 }
@@ -289,12 +289,12 @@ void JSONWrapper::from_json(const json& j, TransformComponent& p)
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
 	if (l_parentTransformComponentEntityName == "RootTransform")
 	{
-		auto l_rootTranformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
-		p.m_parentTransformComponent = l_rootTranformComponent;
+		auto l_rootTransformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
+		p.m_parentTransformComponent = l_rootTransformComponent;
 	}
 	else
 	{
-		// JSON is an order-irrelevant format, so the parent transform component would always be instanciated in random point, then it's necessary to assign it later
+		// JSON is an order-irrelevant format, so the parent transform component would always be instantiated at some random points, and it's necessary to assign it later.
 		std::string l_parentName = l_parentTransformComponentEntityName;
 		l_parentName += "/";
 		m_orphanTransformComponents.push({ &p, ObjectName(l_parentName.c_str()) });
@@ -349,34 +349,34 @@ void JSONWrapper::from_json(const json& j, CameraComponent& p)
 	p.m_ISO = j["ISO"];
 }
 
-Model* JSONWrapper::loadModelFromDisk(const char* fileName)
+Model* JSONWrapper::LoadModel(const char* fileName)
 {
 	json j;
 
-	loadJsonDataFromDisk(fileName, j);
+	Load(fileName, j);
 
-	return processSceneJsonData(j);
+	return ProcessModel(j);
 }
 
-Model* JSONWrapper::processSceneJsonData(const json& j)
+Model* JSONWrapper::ProcessModel(const json& j)
 {
 	Model* l_result;
 
 	if (j.find("Meshes") != j.end())
 	{
 		l_result = g_Engine->Get<AssetSystem>()->AddModel();
-		l_result->renderableSets = processMeshJsonData(j["Meshes"]);
+		l_result->renderableSets = ProcessMeshes(j["Meshes"]);
 	}
 
 	if (j.find("Animations") != j.end())
 	{
-		processAnimationJsonData(j["Animations"]);
+		ProcessAnimations(j["Animations"]);
 	}
 
 	return l_result;
 }
 
-bool JSONWrapper::processAnimationJsonData(const json& j)
+bool JSONWrapper::ProcessAnimations(const json& j)
 {
 	for (auto i : j)
 	{
@@ -413,7 +413,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j)
 	return true;
 }
 
-ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j)
+ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 {
 	auto l_result = g_Engine->Get<AssetSystem>()->AddRenderableSets(j.size());
 
@@ -428,7 +428,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j)
 		{
 			std::string l_materialName = i["Name"];
 			l_materialName += "_Material";
-			l_currentRenderableSet->material = processMaterialJsonData(i["Material"], l_materialName.c_str());
+			l_currentRenderableSet->material = ProcessMaterial(i["Material"], l_materialName.c_str());
 		}
 		else
 		{
@@ -485,7 +485,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j)
 				{
 					std::string l_skeletonName = i["Name"];
 					l_skeletonName += "_Skeleton";
-					l_currentRenderableSet->skeleton = processSkeletonJsonData(i, l_skeletonName.c_str());
+					l_currentRenderableSet->skeleton = ProcessSkeleton(i, l_skeletonName.c_str());
 				}
 
 				l_currentRenderableSet->mesh->m_MeshShape = MeshShape::Customized;
@@ -509,39 +509,39 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j)
 	return l_result;
 }
 
-SkeletonComponent* JSONWrapper::processSkeletonJsonData(const json& j, const char* name)
+SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
 {
-	SkeletonComponent* l_SamplerComp;
+	SkeletonComponent* l_SkeletonComp;
 
 	// check if this file has already been loaded once
-	if (g_Engine->Get<AssetSystem>()->FindLoadedSkeleton(name, l_SamplerComp))
+	if (g_Engine->Get<AssetSystem>()->FindLoadedSkeleton(name, l_SkeletonComp))
 	{
-		return l_SamplerComp;
+		return l_SkeletonComp;
 	}
 	else
 	{
-		l_SamplerComp = g_Engine->Get<AnimationService>()->AddSkeletonComponent();
-		l_SamplerComp->m_InstanceName = (std::string(name) + ("//")).c_str();
+		l_SkeletonComp = g_Engine->Get<AnimationService>()->AddSkeletonComponent();
+		l_SkeletonComp->m_InstanceName = (std::string(name) + ("//")).c_str();
 
 		auto l_size = j["Bones"].size();
-		l_SamplerComp->m_BoneList.reserve(l_size);
-		l_SamplerComp->m_BoneList.fulfill();
+		l_SkeletonComp->m_BoneList.reserve(l_size);
+		l_SkeletonComp->m_BoneList.fulfill();
 
 		for (auto i : j["Bones"])
 		{
 			Bone l_boneData;
 			from_json(i["Transformation"], l_boneData.m_LocalToBoneSpace);
-			l_SamplerComp->m_BoneList[i["ID"]] = l_boneData;
+			l_SkeletonComp->m_BoneList[i["ID"]] = l_boneData;
 		}
 
-		g_Engine->Get<AssetSystem>()->RecordLoadedSkeleton(name, l_SamplerComp);
-		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SamplerComp);
+		g_Engine->Get<AssetSystem>()->RecordLoadedSkeleton(name, l_SkeletonComp);
+		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SkeletonComp);
 
-		return l_SamplerComp;
+		return l_SkeletonComp;
 	}
 }
 
-MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const char* name)
+MaterialComponent* JSONWrapper::ProcessMaterial(const json& j, const char* name)
 {
 	auto l_MeshComp = g_Engine->getRenderingServer()->AddMaterialComponent();
 	l_MeshComp->m_InstanceName = (std::string(name) + ("//")).c_str();
@@ -563,10 +563,6 @@ MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const cha
 
 				l_MeshComp->m_TextureSlots[l_textureSlotIndex].m_Texture = l_TextureComp;
 			}
-			else
-			{
-				l_MeshComp->m_TextureSlots[l_textureSlotIndex] = l_defaultMaterial->m_TextureSlots[l_textureSlotIndex];
-			}
 		}
 	}
 
@@ -587,7 +583,7 @@ MaterialComponent* JSONWrapper::processMaterialJsonData(const json& j, const cha
 	return l_MeshComp;
 }
 
-bool JSONWrapper::saveScene(const char* fileName)
+bool JSONWrapper::Save(const char* fileName)
 {
 	json topLevel;
 	topLevel["SceneName"] = fileName;
@@ -609,42 +605,42 @@ bool JSONWrapper::saveScene(const char* fileName)
 	{
 		if (i->m_Serializable)
 		{
-			saveComponentData(topLevel, i);
+			Save(topLevel, i);
 		}
 	}
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>())
 	{
 		if (i->m_Serializable)
 		{
-			saveComponentData(topLevel, i);
+			Save(topLevel, i);
 		}
 	}
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<LightComponent>())
 	{
 		if (i->m_Serializable)
 		{
-			saveComponentData(topLevel, i);
+			Save(topLevel, i);
 		}
 	}
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>())
 	{
 		if (i->m_Serializable)
 		{
-			saveComponentData(topLevel, i);
+			Save(topLevel, i);
 		}
 	}
 
-	saveJsonDataToDisk(fileName, topLevel);
+	Save(fileName, topLevel);
 
 	Log(Success, "Scene ", fileName, " has been saved.");
 
 	return true;
 }
 
-bool JSONWrapper::loadScene(const char* fileName)
+bool JSONWrapper::Load(const char* fileName)
 {
 	json j;
-	if (!loadJsonDataFromDisk(fileName, j))
+	if (!Load(fileName, j))
 	{
 		return false;
 	}
@@ -661,21 +657,21 @@ bool JSONWrapper::loadScene(const char* fileName)
 		{
 			uint32_t componentTypeID = k["ComponentType"];
 
-			if (componentTypeID == 1)
+			if (componentTypeID == TransformComponent::GetTypeID())
 			{
-				loadComponentData<TransformComponent>(k, l_entity);
+				Load<TransformComponent>(k, l_entity);
 			}
-			else if (componentTypeID == 2)
+			else if (componentTypeID == ModelComponent::GetTypeID())
 			{
-				loadComponentData<ModelComponent>(k, l_entity);
+				Load<ModelComponent>(k, l_entity);
 			}
-			else if (componentTypeID == 3)
+			else if (componentTypeID == LightComponent::GetTypeID())
 			{
-				loadComponentData<LightComponent>(k, l_entity);
+				Load<LightComponent>(k, l_entity);
 			}
-			else if (componentTypeID == 4)
+			else if (componentTypeID == CameraComponent::GetTypeID())
 			{
-				loadComponentData<CameraComponent>(k, l_entity);
+				Load<CameraComponent>(k, l_entity);
 			}
 			else
 			{
@@ -686,12 +682,12 @@ bool JSONWrapper::loadScene(const char* fileName)
 
 	Log(Success, "Scene loading finished.");
 
-	assignComponentRuntimeData();
+	PostLoad();
 
 	return true;
 }
 
-bool JSONWrapper::assignComponentRuntimeData()
+bool JSONWrapper::PostLoad()
 {
 	while (m_orphanTransformComponents.size() > 0)
 	{
@@ -706,7 +702,7 @@ bool JSONWrapper::assignComponentRuntimeData()
 			}
 			else
 			{
-				Log(Error, "Can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
+				Log(Error, "Can't find TransformComponent with entity name: ", l_orphan.second.c_str(), "!");
 			}
 		}
 	}

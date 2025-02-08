@@ -10,6 +10,12 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+	PerFrame_CB g_Frame; // Contains view, projection, and other per-frame matrices.
+}
+
 [[vk::binding(0, 1)]]
 Texture2D in_current : register(t0);
 [[vk::binding(1, 1)]]
@@ -23,7 +29,7 @@ RWTexture2D<float4> TAAPassRT0 : register(u0);
 void main(ComputeInputType input)
 {
 	float2 MotionVector = in_motionVector[input.dispatchThreadID.xy].xy;
-	int2 historyTexCoords = input.dispatchThreadID.xy - MotionVector * perFrameCBuffer.viewportSize.xy;
+	int2 historyTexCoords = input.dispatchThreadID.xy - MotionVector * g_Frame.viewportSize.xy;
 
 	float3 historyColor = in_history[input.dispatchThreadID.xy].rgb;
 	float3 currentColor = in_current[input.dispatchThreadID.xy].rgb;

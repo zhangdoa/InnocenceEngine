@@ -132,11 +132,12 @@ bool AssetSystem::ConvertModel(const char* fileName, const char* exportPath)
 			{
 				AssimpWrapper::ConvertModel(l_fileName.c_str(), exportPath);
 			});
+		tempTask->Activate();
 		return true;
 	}
 	else
 	{
-		Log(Warning, "", fileName, " is not supported!");
+		Log(Warning, fileName, " is not supported!");
 
 		return false;
 	}
@@ -155,7 +156,7 @@ Model* AssetSystem::LoadModel(const char* fileName)
 		}
 		else
 		{
-			auto l_result = JSONWrapper::loadModelFromDisk(fileName);
+			auto l_result = JSONWrapper::LoadModel(fileName);
 			RecordLoadedModel(fileName, l_result);
 
 			return l_result;
@@ -163,7 +164,7 @@ Model* AssetSystem::LoadModel(const char* fileName)
 	}
 	else
 	{
-		Log(Warning, "", fileName, " is not supported!");
+		Log(Warning, fileName, " is not supported!");
 		return nullptr;
 	}
 }
@@ -182,6 +183,11 @@ TextureComponent* AssetSystem::LoadTexture(const char* fileName)
 		if (l_TextureComp)
 		{
 			RecordLoadedTexture(fileName, l_TextureComp);
+		}
+		else
+		{
+			auto l_defaultMaterial = g_Engine->Get<TemplateAssetService>()->GetDefaultMaterialComponent();
+			l_TextureComp = l_defaultMaterial->m_TextureSlots[0].m_Texture;
 		}
 		return l_TextureComp;
 	}

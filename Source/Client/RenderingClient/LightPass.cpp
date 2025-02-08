@@ -168,7 +168,6 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_GPUResourceType = GPUResourceType::Sampler;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_IndirectBinding = true;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 

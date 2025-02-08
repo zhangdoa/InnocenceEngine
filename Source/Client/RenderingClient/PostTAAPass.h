@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class PostTAAPassRenderingContext: public IRenderingContext
+	class PostTAAPassRenderingContext : public IRenderingContext
 	{
 	public:
-		GPUResourceComponent* m_input;	
+		GPUResourceComponent* m_input;
 	};
 
 	class PostTAAPass : IRenderPass
@@ -14,19 +14,22 @@ namespace Inno
 	public:
 		INNO_CLASS_SINGLETON(PostTAAPass)
 
-		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassComponent *GetRenderPassComp() override;
+		RenderPassComponent* GetRenderPassComp() override;
 
-		GPUResourceComponent *GetResult();
+		GPUResourceComponent* GetResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
-		RenderPassComponent *m_RenderPassComp;
-		ShaderProgramComponent *m_ShaderProgramComp;
+		RenderPassComponent* m_RenderPassComp;
+		ShaderProgramComponent* m_ShaderProgramComp;
+		TextureComponent* m_Result;
+
+		bool RenderTargetsCreationFunc();
 	};
 } // namespace Inno

@@ -190,5 +190,5 @@ GPUResourceComponent* OpaquePass::GetResult()
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
-	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
+	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[2];
 }

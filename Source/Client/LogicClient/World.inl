@@ -78,7 +78,7 @@ namespace Inno
 		std::function<void()> f_runRayTracing;
 		std::function<void()> f_pauseGame;
 
-		float seed = 0.0f;
+		float m_seed = 0.0f;
 		bool allowUpdate = true;
 		uint32_t matrixDim = 8;
 	};
@@ -471,18 +471,18 @@ namespace Inno
 
 		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
 		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza_PBR.InnoScene");
 		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 		f_loadTestScene = []() {
-			g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+			g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza_PBR.InnoScene");
 			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
 			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
 			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 			};
 
 		f_convertModel = []() {
-			g_Engine->Get<AssetSystem>()->ConvertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
+			g_Engine->Get<AssetSystem>()->ConvertModel("..//Res//Models//Sponza_PBR//NewSponza_Merged.fbx", "..//Res//ConvertedAssets//");
 			};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
@@ -521,7 +521,7 @@ namespace Inno
 			return false;
 
 		auto l_tickTime = g_Engine->getTickTime();
-		seed += (l_tickTime / 1000.0f);
+		m_seed += (l_tickTime / 1000.0f);
 
 		auto l_seed = (1.0f - l_tickTime / 100.0f);
 		l_seed = l_seed > 0.0f ? l_seed : 0.01f;
@@ -602,18 +602,18 @@ namespace Inno
 	{
 		for (uint32_t i = 0; i < m_opaqueSphereModelComponents.size(); i += 4)
 		{
-			auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
+			auto l_albedoFactor1 = (sin(m_seed / 2.0f + i) + 1.0f) / 2.0f;
+			auto l_albedoFactor2 = (sin(m_seed / 3.0f + i) + 1.0f) / 2.0f;
+			auto l_albedoFactor3 = (sin(m_seed / 5.0f + i) + 1.0f) / 2.0f;
 
 			auto l_albedo1 = Vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
 			auto l_albedo2 = Vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
 			auto l_albedo3 = Vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
 			auto l_albedo4 = Vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
 
-			auto l_MRATFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
+			auto l_MRATFactor1 = ((sin(m_seed / 4.0f + i) + 1.0f) / 2.001f);
+			auto l_MRATFactor2 = ((sin(m_seed / 5.0f + i) + 1.0f) / 2.001f);
+			auto l_MRATFactor3 = ((sin(m_seed / 6.0f + i) + 1.0f) / 2.001f);
 
 			updateMaterial(m_opaqueSphereModelComponents[i]->m_Model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
 			updateMaterial(m_opaqueSphereModelComponents[i + 1]->m_Model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
@@ -623,17 +623,17 @@ namespace Inno
 
 		for (uint32_t i = 0; i < m_transparentCubeModelComponents.size(); i++)
 		{
-			auto l_albedo = Math::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-			l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
-			auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
+			auto l_albedo = Math::HSVtoRGB(Vec4((sin(m_seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+			l_albedo.w = sin(m_seed / 6.0f + i) * 0.5f + 0.5f;
+			auto l_MRAT = Vec4(0.0f, sin(m_seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(m_seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
 			updateMaterial(m_transparentCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Transparent);
 		}
 
 		for (uint32_t i = 0; i < m_volumetricCubeModelComponents.size(); i++)
 		{
-			auto l_albedo = Math::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-			l_albedo.w = clamp((float)sin(seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
-			auto l_MRAT = Vec4(clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
+			auto l_albedo = Math::HSVtoRGB(Vec4((sin(m_seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+			l_albedo.w = clamp((float)sin(m_seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
+			auto l_MRAT = Vec4(clamp((float)sin(m_seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
 			updateMaterial(m_volumetricCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Volumetric);
 		}
 

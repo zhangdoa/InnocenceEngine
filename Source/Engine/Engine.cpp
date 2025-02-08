@@ -375,6 +375,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	m_pImpl->m_RenderingServer->SetUploadHeapPreparationCallback([&]()
 		{
+			SystemUpdate(SceneSystem);
+			
 			if (Get<SceneSystem>()->isLoadingScene())
 				return true;
 
@@ -459,17 +461,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			return true;
 		});
 
-	m_pImpl->f_SceneLoadingStartedCallback = [&]()
-		{
-		};
-
-	m_pImpl->f_SceneLoadingFinishedCallback = [&]()
-		{
-		};
-
-	Get<SceneSystem>()->AddSceneLoadingStartedCallback(&m_pImpl->f_SceneLoadingStartedCallback, -1);
-	Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&m_pImpl->f_SceneLoadingFinishedCallback, 10);
-
 	m_pImpl->m_ObjectStatus = ObjectStatus::Created;
 	Log(Success, "Engine setup finished.");
 
@@ -527,7 +518,6 @@ bool Engine::ExecuteDefaultTask()
 
 	m_pImpl->m_WindowSystem->Update();
 	SystemUpdate(HIDService);
-	SystemUpdate(SceneSystem);
 
 	if (m_pImpl->m_WindowSystem->GetStatus() != ObjectStatus::Activated)
 	{

@@ -202,7 +202,9 @@ void main(ComputeInputType input)
 		float3 Ft = ComputeDiffuseBRDF(NdotV, NdotD, DdotHD, l_Roughness, l_Metallic, FresnelFactor, l_Albedo);
 		float3 Fr = ComputeSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, l_Roughness, F0, FresnelFactor);
 
-		float3 l_LuminanceFromSun = g_Frame.sun_illuminance.xyz * NdotD * Ft + g_Frame.sun_illuminance.xyz * NdotL * Fr;
+		float3 l_TransmittanceFactor = NdotD * Ft;
+		float3 l_ReflectanceFactor = NdotL * Fr;
+		float3 l_LuminanceFromSun = g_Frame.sun_illuminance.xyz * (l_TransmittanceFactor + l_ReflectanceFactor);
 		l_Luminance += l_LuminanceFromSun;
 
 		float l_ShadowFactor = 1.0 - SunShadowResolver(l_Position_WorldSpace, in_SunShadow, in_samplerTypePoint);

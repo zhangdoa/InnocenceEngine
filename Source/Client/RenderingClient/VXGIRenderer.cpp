@@ -18,9 +18,6 @@
 
 using namespace Inno;
 
-
-
-
 bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
