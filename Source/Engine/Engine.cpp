@@ -10,9 +10,9 @@
 #include "Services/TransformSystem.h"
 #include "Services/LightSystem.h"
 #include "Services/CameraSystem.h"
-#include "Services/SceneSystem.h"
-#include "Services/AssetSystem.h"
-#include "Services/PhysicsSystem.h"
+#include "Services/SceneService.h"
+#include "Services/AssetService.h"
+#include "Services/PhysicsSimulationService.h"
 #include "Services/BVHService.h"
 #include "Services/HIDService.h"
 #include "Services/RenderingConfigurationService.h"
@@ -311,9 +311,9 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<EntityManager>();
 	Get<ComponentManager>();
 
-	Get<AssetSystem>();
-	Get<SceneSystem>();
-	Get<PhysicsSystem>();
+	Get<AssetService>();
+	Get<SceneService>();
+	Get<PhysicsSimulationService>();
 
 	Get<TransformSystem>();
 	Get<LightSystem>();
@@ -357,9 +357,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	SystemSetup(EntityManager);
 
-	SystemSetup(AssetSystem);
-	SystemSetup(SceneSystem);
-	SystemSetup(PhysicsSystem);
+	SystemSetup(AssetService);
+	SystemSetup(SceneService);
+	SystemSetup(PhysicsSimulationService);
 
 	SystemSetup(TransformSystem);
 	SystemSetup(LightSystem);
@@ -375,9 +375,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	m_pImpl->m_RenderingServer->SetUploadHeapPreparationCallback([&]()
 		{
-			SystemUpdate(SceneSystem);
+			SystemUpdate(SceneService);
 			
-			if (Get<SceneSystem>()->isLoadingScene())
+			if (Get<SceneService>()->IsLoading())
 				return true;
 
 			// Simulation
@@ -391,9 +391,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			SystemUpdate(EntityManager);
 
 			// Culling
-			Get<PhysicsSystem>()->Update();
+			Get<PhysicsSimulationService>()->Update();
 			Get<BVHService>()->Update();
-			Get<PhysicsSystem>()->RunCulling();
+			Get<PhysicsSimulationService>()->RunCulling();
 
 			Get<RenderingContextService>()->Update();
 			Get<AnimationService>()->Update();
@@ -404,7 +404,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	m_pImpl->m_RenderingServer->SetCommandPreparationCallback([&]()
 		{
-			if (Get<SceneSystem>()->isLoadingScene())
+			if (Get<SceneService>()->IsLoading())
 				return true;
 
 			m_pImpl->m_RenderingClient->PrepareCommands();
@@ -413,7 +413,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 	m_pImpl->m_RenderingServer->SetCommandExecutionCallback([&]()
 		{
-			if (Get<SceneSystem>()->isLoadingScene())
+			if (Get<SceneService>()->IsLoading())
 				return true;
 
 			m_pImpl->m_RenderingClient->ExecuteCommands();
@@ -474,8 +474,8 @@ bool Engine::Initialize()
 
 	SystemInit(EntityManager);
 
-	SystemInit(SceneSystem);
-	SystemInit(PhysicsSystem);
+	SystemInit(SceneService);
+	SystemInit(PhysicsSimulationService);
 
 	SystemInit(TransformSystem);
 	SystemInit(LightSystem);
@@ -563,7 +563,7 @@ bool Engine::Terminate()
 	SystemTerm(GUISystem);
 	SystemTerm(RenderingContextService);
 
-	SystemTerm(PhysicsSystem);
+	SystemTerm(PhysicsSimulationService);
 
 	SystemTerm(TransformSystem);
 	SystemTerm(LightSystem);
@@ -582,7 +582,7 @@ bool Engine::Terminate()
 	}
 
 	SystemTerm(HIDService);
-	SystemTerm(SceneSystem);
+	SystemTerm(SceneService);
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "Engine has been terminated.");

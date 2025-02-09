@@ -61,6 +61,9 @@ namespace Inno
         uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
         bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
         bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
+        
+        bool Register(CollisionComponent* rhs) override;
+        bool DispatchRays(RenderPassComponent* rhs) override;
 
         // In DX12RenderingServer_EngineComponent_Public.cpp
         bool Clear(TextureComponent* rhs) override;
@@ -79,7 +82,7 @@ namespace Inno
         ComPtr<ID3D12Device8> GetDevice();
         ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType);
         ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
-        ComPtr<ID3D12GraphicsCommandList> GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType);
+        ComPtr<ID3D12GraphicsCommandList7> GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType);
         DX12DescriptorHeapAccessor& GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility = Accessibility::ReadOnly
             , Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
 
@@ -115,6 +118,7 @@ namespace Inno
         bool OnOutputMergerTargetsCreated(RenderPassComponent* rhs) override;
 
         bool BeginFrame() override;
+        bool PrepareRayTracing(ICommandList* commandList) override;
         bool PresentImpl() override;
         bool EndFrame() override;
 
@@ -135,15 +139,15 @@ namespace Inno
         // APIs for DX12 objects
         // In DX12RenderingServer_DX12Object.cpp
         ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name = "");
-        ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
+        ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
         ComPtr<ID3D12Resource> CreateReadBackHeapBuffer(UINT64 size, const char* name = "");
         ComPtr<ID3D12CommandQueue> CreateCommandQueue(D3D12_COMMAND_QUEUE_DESC* commandQueueDesc, const wchar_t* name = L"");
         ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, const wchar_t* name = L"");
-        ComPtr<ID3D12GraphicsCommandList> CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t* name = L"");
-        ComPtr<ID3D12GraphicsCommandList> CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator);
+        ComPtr<ID3D12GraphicsCommandList7> CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t* name = L"");
+        ComPtr<ID3D12GraphicsCommandList7> CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator);
         ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc, const wchar_t* name = L"");
 
-        bool ExecuteCommandListAndWait(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12CommandQueue> commandQueue);
+        bool ExecuteCommandListAndWait(ComPtr<ID3D12GraphicsCommandList7> commandList, ComPtr<ID3D12CommandQueue> commandQueue);
 
         // APIs for engine components
         // In DX12RenderingServer_EngineComponent_Private.cpp
@@ -166,6 +170,9 @@ namespace Inno
         bool CreateCBV(GPUBufferComponent* rhs);
 
         bool CreateRootSignature(RenderPassComponent* RenderPassComp);
+        bool CreateGraphicsPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO);
+        bool CreateRaytracingPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO);
+
         D3D12_DESCRIPTOR_RANGE1 GetDescriptorRange(RenderPassComponent* RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc);
 
         bool BindComputeResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
@@ -192,7 +199,7 @@ namespace Inno
         ComPtr<IDXGIAdapter4> m_adapter = nullptr;
         ComPtr<IDXGIOutput6> m_adapterOutput = nullptr;
 
-        ComPtr<ID3D12Device8> m_device = nullptr;
+        ComPtr<ID3D12Device9> m_device = nullptr;
 
         DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
         ComPtr<IDXGISwapChain4> m_swapChain = nullptr;

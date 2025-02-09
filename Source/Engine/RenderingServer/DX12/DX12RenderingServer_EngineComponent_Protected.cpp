@@ -1,4 +1,6 @@
 #include "DX12RenderingServer.h"
+#include <d3d12.h>
+#include <dxgiformat.h>
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -67,7 +69,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs)
 		return false;
 	}
 #ifdef INNO_DEBUG
-	SetObjectName(l_rhs, l_rhs->m_DefaultHeapBuffer_IB, "UploadHeap_IB");
+	SetObjectName(l_rhs, l_rhs->m_UploadHeapBuffer_IB, "UploadHeap_IB");
 #endif //  INNO_DEBUG
 
 	// Initialize the index buffer view.
@@ -94,11 +96,84 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs)
 	l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
 
 	UploadToGPU(&l_commandList, l_rhs);
+
+	// Create BLAS
+	D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
+	geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	geometryDesc.Triangles.VertexBuffer.StartAddress = l_rhs->m_DefaultHeapBuffer_VB->GetGPUVirtualAddress();
+	geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
+	geometryDesc.Triangles.VertexCount = static_cast<UINT>(l_rhs->m_Vertices.size());
+	geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+	geometryDesc.Triangles.IndexBuffer = l_rhs->m_DefaultHeapBuffer_IB->GetGPUVirtualAddress();
+	geometryDesc.Triangles.IndexCount = static_cast<UINT>(l_rhs->m_Indices.size());
+	geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+	geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.NumDescs = 1;
+	inputs.pGeometryDescs = &geometryDesc;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo = {};
+	m_device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &prebuildInfo);
+
+	if (prebuildInfo.ResultDataMaxSizeInBytes == 0)
+	{
+		Log(Error, "Failed to get prebuild info for BLAS!");
+		return false;
+	}
+
+	auto blasResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(prebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+	l_rhs->m_BLAS = CreateDefaultHeapBuffer(&blasResourceDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+	if (l_rhs->m_BLAS == nullptr)
+	{
+		Log(Error, "Failed to create BLAS buffer!");
+		return false;
+	}
+#ifdef INNO_DEBUG
+	SetObjectName(l_rhs, l_rhs->m_BLAS, "BLAS");
+#endif // INNO_DEBUG
+
+	auto scratchResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(prebuildInfo.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+	l_rhs->m_ScratchBuffer = CreateDefaultHeapBuffer(&scratchResourceDesc);
+	if (l_rhs->m_ScratchBuffer == nullptr)
+	{
+		Log(Error, "Failed to create scratch buffer for BLAS!");
+		return false;
+	}
+#ifdef INNO_DEBUG
+	SetObjectName(l_rhs, l_rhs->m_ScratchBuffer, "ScratchBuffer_BLAS");
+#endif // INNO_DEBUG
+
+	// Transition index and vertex buffers to NON_PIXEL_SHADER_RESOURCE state for BLAS build.
+	l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_rhs->m_DefaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+	buildDesc.Inputs = inputs;
+	buildDesc.ScratchAccelerationStructureData = l_rhs->m_ScratchBuffer->GetGPUVirtualAddress();
+	buildDesc.DestAccelerationStructureData = l_rhs->m_BLAS->GetGPUVirtualAddress();
+
+	l_commandList.m_DirectCommandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+
+	D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_rhs->m_BLAS.Get());
+
+	// Transition the vertex and index buffers back to their original states after BLAS build.
+	l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_rhs->m_DefaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+	l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_rhs->m_DefaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+
 	ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
+
+	Log(Verbose, l_rhs->m_InstanceName, " BLAS is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	// @TODO: Reset the upload heap buffers.
 	return true;
 }
 
@@ -126,13 +201,13 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 		{
 			l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
 			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
-			l_DX12DeviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, &l_clearValue);
+			l_DX12DeviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, D3D12_RESOURCE_STATE_COMMON, &l_clearValue);
 		}
 		else if (l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 		{
 			l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
-			l_DX12DeviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, &l_clearValue);
+			l_DX12DeviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, D3D12_RESOURCE_STATE_COMMON, &l_clearValue);
 		}
 		else if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment)
 		{
@@ -141,7 +216,7 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 			l_clearValue.Color[1] = l_rhs->m_TextureDesc.ClearColor[1];
 			l_clearValue.Color[2] = l_rhs->m_TextureDesc.ClearColor[2];
 			l_clearValue.Color[3] = l_rhs->m_TextureDesc.ClearColor[3];
-			l_DX12DeviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, &l_clearValue);
+			l_DX12DeviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, D3D12_RESOURCE_STATE_COMMON, &l_clearValue);
 		}
 		// It has to be written like this because:
 		// pOptimizedClearValue must be NULL
@@ -263,6 +338,22 @@ bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent* rhs)
 	{
 		LoadShaderFile(l_rhs->m_CSBuffer, l_rhs->m_ShaderFilePaths.m_CSPath);
 	}
+	if (l_rhs->m_ShaderFilePaths.m_RayGenPath != "")
+	{
+		LoadShaderFile(l_rhs->m_RayGenBuffer, l_rhs->m_ShaderFilePaths.m_RayGenPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_AnyHitPath != "")
+	{
+		LoadShaderFile(l_rhs->m_AnyHitBuffer, l_rhs->m_ShaderFilePaths.m_AnyHitPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_ClosestHitPath != "")
+	{
+		LoadShaderFile(l_rhs->m_ClosestHitBuffer, l_rhs->m_ShaderFilePaths.m_ClosestHitPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_MissPath != "")
+	{
+		LoadShaderFile(l_rhs->m_MissBuffer, l_rhs->m_ShaderFilePaths.m_MissPath);
+	}
 #else
 	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
 	{
@@ -287,6 +378,22 @@ bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent* rhs)
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
 		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderStage::Compute, l_rhs->m_ShaderFilePaths.m_CSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_RayGenPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_RayGenBuffer, ShaderStage::RayGen, l_rhs->m_ShaderFilePaths.m_RayGenPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_AnyHitPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_AnyHitBuffer, ShaderStage::AnyHit, l_rhs->m_ShaderFilePaths.m_AnyHitPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_ClosestHitPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_ClosestHitBuffer, ShaderStage::ClosestHit, l_rhs->m_ShaderFilePaths.m_ClosestHitPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_MissPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_MissBuffer, ShaderStage::Miss, l_rhs->m_ShaderFilePaths.m_MissPath);
 	}
 #endif
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;

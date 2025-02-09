@@ -3,8 +3,8 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
-#include "../../Engine/Services/AssetSystem.h"
-#include "../../Engine/Services/PhysicsSystem.h"
+#include "../../Engine/Services/AssetService.h"
+#include "../../Engine/Services/PhysicsSimulationService.h"
 #include "../../Engine/Services/BVHService.h"
 #include "../../Engine/Services/ComponentManager.h"
 
@@ -248,7 +248,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 		static bool l_drawCameraFrustums = true;
 // 		if (l_drawCameraFrustums)
 // 		{	
-// 			auto l_visibleSceneAABBWS = g_Engine->Get<PhysicsSystem>()->GetVisibleSceneAABB();
+// 			auto l_visibleSceneAABBWS = g_Engine->Get<PhysicsSimulationService>()->GetVisibleSceneAABB();
 // 			auto l_visibleSceneAABBMeshData = AddAABB(l_visibleSceneAABBWS);
 // 			l_visibleSceneAABBMeshData.materialID = 2;
 
@@ -373,7 +373,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 // 					for (size_t j = 0; j < i->m_Model->renderableSets.m_count; j++)
 // 					{
-// 						auto l_pair = g_Engine->Get<AssetSystem>()->GetRenderableSet(i->m_Model->renderableSets.m_startOffset + j);
+// 						auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(i->m_Model->renderableSets.m_startOffset + j);
 // 						auto l_skeleton = l_pair->skeleton;
 // 						if (!l_skeleton)
 // 							continue;
@@ -477,11 +477,11 @@ bool DebugPass::AddBVHNode(const BVHNode& node)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	static bool drawIntermediateBB = false;
-	if(node.PDC == nullptr && !drawIntermediateBB)
+	if(node.CollisionComponent == nullptr && !drawIntermediateBB)
 		return true;
 
 	auto l_cubeMeshData = AddAABB(node.m_AABB);
-	l_cubeMeshData.materialID = node.PDC == nullptr ? 3 : 5;
+	l_cubeMeshData.materialID = node.CollisionComponent == nullptr ? 3 : 5;
 
 	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
 

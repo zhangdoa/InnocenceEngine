@@ -3,7 +3,7 @@
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Common/TaskScheduler.h"
-#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
 
@@ -36,7 +36,7 @@ void Baker::Setup()
 
 void Baker::BakeProbeCache(const char* sceneName)
 {
-	g_Engine->Get<SceneSystem>()->loadScene(sceneName, false);
+	g_Engine->Get<SceneService>()->Load(sceneName, false);
 	auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("playerCharacterCamera");
 	if (l_playerCameraEntity.has_value())
 	{
@@ -46,7 +46,7 @@ void Baker::BakeProbeCache(const char* sceneName)
 	}
 
 	g_Engine->Update();
-	Config::Get().m_exportFileName = g_Engine->Get<SceneSystem>()->getCurrentSceneName();
+	Config::Get().m_exportFileName = g_Engine->Get<SceneService>()->GetCurrentSceneName();
 
 	std::vector<Probe> l_probes;
 

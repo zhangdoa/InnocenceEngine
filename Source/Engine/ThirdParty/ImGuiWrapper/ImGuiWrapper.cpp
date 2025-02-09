@@ -31,9 +31,9 @@
 #include "../../Common/RingBuffer.h"
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
-#include "../../Services/PhysicsSystem.h"
-#include "../../Services/SceneSystem.h"
-#include "../../Services/AssetSystem.h"
+#include "../../Services/PhysicsSimulationService.h"
+#include "../../Services/SceneService.h"
+#include "../../Services/AssetService.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/RenderingContextService.h"
 #include "../../RayTracer/RayTracer.h"
@@ -239,7 +239,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 {
 	ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Culling result: %d", g_Engine->Get<PhysicsSystem>()->GetCullingResult().size());
+	ImGui::Text("Culling result: %d", g_Engine->Get<PhysicsSimulationService>()->GetCullingResult().size());
 	ImGui::Checkbox("Show concurrency profiler", &m_showConcurrencyProfiler);
 	ImGui::Checkbox("Use Motion Blur", &m_renderingConfig.useMotionBlur);
 	ImGui::Checkbox("Use TAA", &m_renderingConfig.useTAA);
@@ -276,11 +276,11 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Save scene"))
 	{
-		g_Engine->Get<SceneSystem>()->saveScene(scene_filePath);
+		g_Engine->Get<SceneService>()->Save(scene_filePath);
 	}
 	if (ImGui::Button("Load scene"))
 	{
-		g_Engine->Get<SceneSystem>()->loadScene(scene_filePath, false);
+		g_Engine->Get<SceneService>()->Load(scene_filePath, false);
 	}
 
 	ImGui::End();
@@ -318,7 +318,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 
 	ImGui::Begin("World Explorer", 0);
 	{
-		auto l_sceneHierarchyMap = g_Engine->Get<SceneSystem>()->getSceneHierarchyMap();
+		auto l_sceneHierarchyMap = g_Engine->Get<SceneService>()->getSceneHierarchyMap();
 
 		for (auto& i : l_sceneHierarchyMap)
 		{
@@ -440,7 +440,7 @@ void ImGuiWrapperNS::showModelComponentPropertyEditor(void* rhs)
 		{
 			for (uint64_t j = 0; j < l_rhs->m_Model->renderableSets.m_count; j++)
 			{
-				auto l_renderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(l_rhs->m_Model->renderableSets.m_startOffset + j);
+				auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(l_rhs->m_Model->renderableSets.m_startOffset + j);
 
 				if (ImGui::Selectable(l_renderableSet->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_renderableSet->material))
 				{

@@ -10,8 +10,8 @@
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
 #include "../../Component/MeshComponent.h"
-#include "../../Component/PhysicsComponent.h"
-#include "../../Services/SceneSystem.h"
+#include "../../Component/CollisionComponent.h"
+#include "../../Services/SceneService.h"
 #include "../../Services/HIDService.h"
 
 #include "../../Engine.h"
@@ -35,13 +35,13 @@ namespace PhysXWrapperNS
 	bool Update();
 	bool Terminate();
 
-	bool createPxSphere(PhysicsComponent* rhs, Vec4 globalPos, float radius, bool isDynamic);
-	bool createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
-	PxConvexMesh* createPxConvexMesh(PhysicsComponent* rhs, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit);
-	PxTriangleMesh* createBV33TriangleMesh(PhysicsComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff);
-	PxTriangleMesh* createBV34TriangleMesh(PhysicsComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf);
+	bool createPxSphere(CollisionComponent* rhs, Vec4 globalPos, float radius, bool isDynamic);
+	bool createPxBox(CollisionComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
+	PxConvexMesh* createPxConvexMesh(CollisionComponent* rhs, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit);
+	PxTriangleMesh* createBV33TriangleMesh(CollisionComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff);
+	PxTriangleMesh* createBV34TriangleMesh(CollisionComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf);
 
-	bool createPxMesh(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex);
+	bool createPxMesh(CollisionComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex);
 
 	std::unordered_map<MeshComponent*, PxConvexMesh*> PhysXConvexMeshes;
 	std::unordered_map<MeshComponent*, PxTriangleMesh*> PhysXTriangleMeshes;
@@ -131,11 +131,11 @@ bool PhysXWrapperNS::Setup()
 		Log(Success, "All PhysX Actors have been removed.");
 	};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 1);
+	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 1);
 
 	m_PhysXUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("PhysXUpdateTask", ITask::Type::Recurrent, 3), [&]()
 		{
-			if (g_Engine->Get<SceneSystem>()->isLoadingScene())
+			if (g_Engine->Get<SceneService>()->IsLoading())
 				return;
 
 			gScene->simulate(g_Engine->getTickTime() / 1000.0f);
@@ -153,8 +153,8 @@ bool PhysXWrapperNS::Setup()
 
 					if (l_rigidBody->userData)
 					{
-						auto l_PDC = reinterpret_cast<PhysicsComponent*>(l_rigidBody->userData);
-						auto l_transformComponent = l_PDC->m_TransformComponent;
+						auto l_collisionComponent = reinterpret_cast<CollisionComponent*>(l_rigidBody->userData);
+						auto l_transformComponent = l_collisionComponent->m_TransformComponent;
 						l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
 						l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
 						l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
@@ -209,7 +209,7 @@ bool PhysXWrapperNS::Terminate()
 	return true;
 }
 
-bool PhysXWrapperNS::createPxSphere(PhysicsComponent* rhs, Vec4 globalPos, float radius, bool isDynamic)
+bool PhysXWrapperNS::createPxSphere(CollisionComponent* rhs, Vec4 globalPos, float radius, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 	PxRigidActor* l_actor;
@@ -233,7 +233,7 @@ bool PhysXWrapperNS::createPxSphere(PhysicsComponent* rhs, Vec4 globalPos, float
 		l_actor = body;
 	}
 
-	rhs->m_Proxy = l_actor;
+	rhs->m_SimulationProxy = l_actor;
 	gScene->addActor(*l_actor);
 	shape->release();
 	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
@@ -242,7 +242,7 @@ bool PhysXWrapperNS::createPxSphere(PhysicsComponent* rhs, Vec4 globalPos, float
 	return true;
 }
 
-bool PhysXWrapperNS::createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
+bool PhysXWrapperNS::createPxBox(CollisionComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
@@ -271,7 +271,7 @@ bool PhysXWrapperNS::createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot
 			l_actor = body;
 		}
 
-		rhs->m_Proxy = l_actor;
+		rhs->m_SimulationProxy = l_actor;
 		gScene->addActor(*l_actor);
 		shape->release();
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
@@ -281,7 +281,7 @@ bool PhysXWrapperNS::createPxBox(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot
 	return true;
 }
 
-PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsComponent* rhs, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit)
+PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(CollisionComponent* rhs, PxConvexMeshCookingType::Enum convexMeshCookingType, bool directInsertion, PxU32 gaussMapLimit)
 {
 	auto l_result = PhysXConvexMeshes.find(rhs->m_RenderableSet->mesh);
 	if (l_result != PhysXConvexMeshes.end())
@@ -380,7 +380,7 @@ void setupCommonCookingParams(PxCookingParams& params, bool skipMeshCleanup, boo
 }
 
 // Creates a triangle mesh using BVH33 midphase with different settings.
-PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff)
+PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(CollisionComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, bool cookingPerformance, bool meshSizePerfTradeoff)
 {
 	auto l_result = PhysXTriangleMeshes.find(rhs->m_RenderableSet->mesh);
 	if (l_result != PhysXTriangleMeshes.end())
@@ -474,7 +474,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsComponent* rhs, bo
 }
 
 // Creates a triangle mesh using BVH34 midphase with different settings.
-PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf)
+PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(CollisionComponent* rhs, bool skipMeshCleanup, bool skipEdgeData, bool inserted, const PxU32 numTrisPerLeaf)
 {
 	auto l_result = PhysXTriangleMeshes.find(rhs->m_RenderableSet->mesh);
 	if (l_result != PhysXTriangleMeshes.end())
@@ -552,7 +552,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsComponent* rhs, bo
 	return triMesh;
 }
 
-bool PhysXWrapperNS::createPxMesh(PhysicsComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex)
+bool PhysXWrapperNS::createPxMesh(CollisionComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic, bool isConvex)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
@@ -609,7 +609,7 @@ bool PhysXWrapperNS::createPxMesh(PhysicsComponent* rhs, Vec4 globalPos, Vec4 ro
 			l_actor = body;
 		}
 
-		rhs->m_Proxy = l_actor;
+		rhs->m_SimulationProxy = l_actor;
 		gScene->addActor(*l_actor);
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
 		Log(Verbose, "PxRigidActor has been created for ", rhs, ".");
@@ -638,24 +638,24 @@ bool PhysXWrapper::Terminate()
 	return PhysXWrapperNS::Terminate();
 }
 
-bool PhysXWrapper::createPxSphere(PhysicsComponent* rhs, float radius, bool isDynamic)
+bool PhysXWrapper::createPxSphere(CollisionComponent* rhs, float radius, bool isDynamic)
 {
 	return PhysXWrapperNS::createPxSphere(rhs, rhs->m_TransformComponent->m_localTransformVector_target.m_pos, radius, isDynamic);
 }
 
-bool PhysXWrapper::createPxBox(PhysicsComponent* rhs, bool isDynamic)
+bool PhysXWrapper::createPxBox(CollisionComponent* rhs, bool isDynamic)
 {
 	return PhysXWrapperNS::createPxBox(rhs, rhs->m_TransformComponent->m_localTransformVector_target.m_pos, rhs->m_TransformComponent->m_localTransformVector_target.m_rot, rhs->m_TransformComponent->m_localTransformVector_target.m_scale, isDynamic);
 }
 
-bool PhysXWrapper::createPxMesh(PhysicsComponent* rhs, bool isDynamic, bool isConvex)
+bool PhysXWrapper::createPxMesh(CollisionComponent* rhs, bool isDynamic, bool isConvex)
 {
 	return PhysXWrapperNS::createPxMesh(rhs, rhs->m_TransformComponent->m_localTransformVector_target.m_pos, rhs->m_TransformComponent->m_localTransformVector_target.m_rot, rhs->m_TransformComponent->m_localTransformVector_target.m_scale, isDynamic, isConvex);
 }
 
-bool PhysXWrapper::addForce(PhysicsComponent* rhs, Vec4 force)
+bool PhysXWrapper::addForce(CollisionComponent* rhs, Vec4 force)
 {
-	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(rhs->m_Proxy);
+	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(rhs->m_SimulationProxy);
 	l_rigidBody->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
 	return true;
 }

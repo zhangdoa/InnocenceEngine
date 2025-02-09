@@ -2,19 +2,15 @@
 #include "DefaultRenderingClient.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
-#include "TiledFrustumGenerationPass.h"
-#include "LightCullingPass.h"
-#include "GIDataLoader.h"
-#include "GIResolvePass.h"
-#include "SurfelGITestPass.h"
-#include "LuminanceHistogramPass.h"
-#include "LuminanceAveragePass.h"
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurOddPass.h"
 #include "SunShadowBlurEvenPass.h"
 #include "OpaquePass.h"
 #include "AnimationPass.h"
 #include "SSAOPass.h"
+#include "RadianceCachePass.h"
+#include "TiledFrustumGenerationPass.h"
+#include "LightCullingPass.h"
 #include "LightPass.h"
 #include "SkyPass.h"
 #include "PreTAAPass.h"
@@ -24,6 +20,8 @@
 #include "VXGIRenderer.h"
 #include "TAAPass.h"
 #include "PostTAAPass.h"
+#include "LuminanceHistogramPass.h"
+#include "LuminanceAveragePass.h"
 #include "MotionBlurPass.h"
 #include "BillboardPass.h"
 #include "DebugPass.h"
@@ -34,7 +32,7 @@
 #include "../../Engine/Services/HIDService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/AssetSystem.h"
+#include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Common/Task.h"
 #include "../../Engine/Common/TaskScheduler.h"
 
@@ -112,6 +110,8 @@ namespace Inno
 
 		OpaquePass::Get().Setup();
 
+		RadianceCachePass::Get().Setup();
+
 		SSAOPass::Get().Setup();
 
 		TiledFrustumGenerationPass::Get().Setup();
@@ -129,9 +129,6 @@ namespace Inno
 		LuminanceAveragePass::Get().Setup();
 
 		FinalBlendPass::Get().Setup();
-
-		// GIResolvePass::Setup();
-		// SurfelGITestPass::Get().Setup();
 
 		// SunShadowBlurOddPass::Get().Setup();
 		// SunShadowBlurEvenPass::Get().Setup();
@@ -176,6 +173,8 @@ namespace Inno
 
 		OpaquePass::Get().Initialize();
 
+		RadianceCachePass::Get().Initialize();
+
 		SSAOPass::Get().Initialize();
 
 		TiledFrustumGenerationPass::Get().Initialize();
@@ -193,9 +192,6 @@ namespace Inno
 		LuminanceAveragePass::Get().Initialize();
 
 		FinalBlendPass::Get().Initialize();
-
-		// GIResolvePass::Initialize();
-		// SurfelGITestPass::Get().Initialize();
 
 		// SunShadowBlurOddPass::Get().Initialize();
 		// SunShadowBlurEvenPass::Get().Initialize();
@@ -243,6 +239,8 @@ namespace Inno
 		SunShadowGeometryProcessPass::Get().PrepareCommandList();
 
 		OpaquePass::Get().PrepareCommandList();
+
+		RadianceCachePass::Get().PrepareCommandList();
 
 		SSAOPass::Get().PrepareCommandList();
 
@@ -342,6 +340,13 @@ namespace Inno
 			l_renderingServer->SignalOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
 		}
 
+		if (RadianceCachePass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_renderingServer->ExecuteCommandList(RadianceCachePass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(RadianceCachePass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		}
+
 		if (SSAOPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
@@ -365,6 +370,7 @@ namespace Inno
 
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
+			l_renderingServer->WaitOnGPU(RadianceCachePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
@@ -450,15 +456,6 @@ namespace Inno
 		// 	l_canvas = BSDFTestPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
 		// 	l_canvasOwner = BSDFTestPass::Get().GetRenderPassComp();
 		// }
-		// else if (m_showProbe)
-		// {
-		// 	SurfelGITestPass::Get().PrepareCommandList();
-		// 	l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
-		// 	l_renderingServer->WaitOnGPU(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		// 	l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-		// 	l_canvas = SurfelGITestPass::Get().GetRenderPassComp()->m_RenderTargets[0].m_Texture;
-		// 	l_canvasOwner = SurfelGITestPass::Get().GetRenderPassComp();
-		// }
 		// else if (m_showVolumetric)
 		// {
 		// 	VolumetricPass::ExecuteCommands(true);
@@ -466,8 +463,6 @@ namespace Inno
 		// }
 		// else
 		// {
-		// 	//GIResolvePass::PrepareCommandList();
-
 		// 	AnimationPass::Get().PrepareCommandList();
 
 		// 	l_renderingServer->ExecuteCommandList(AnimationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
@@ -536,7 +531,7 @@ namespace Inno
 		{
 			auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
 			auto l_textureData = l_renderingServer->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
-			g_Engine->Get<AssetSystem>()->SaveTexture("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
+			g_Engine->Get<AssetService>()->SaveTexture("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
 			m_saveScreenCapture = false;
 		}
 
@@ -580,6 +575,8 @@ namespace Inno
 		// AnimationPass::Get().Terminate();
 		SSAOPass::Get().Terminate();
 
+		RadianceCachePass::Get().Terminate();
+		
 		OpaquePass::Get().Terminate();
 		// VXGIRenderer::Get().Terminate();
 
@@ -590,9 +587,6 @@ namespace Inno
 
 		// SunShadowBlurEvenPass::Get().Terminate();
 		// SunShadowBlurOddPass::Get().Terminate();
-
-		// SurfelGITestPass::Get().Terminate();
-		// GIResolvePass::Terminate();
 
 		m_ObjectStatus = ObjectStatus::Terminated;
 

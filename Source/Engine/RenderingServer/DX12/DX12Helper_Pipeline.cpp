@@ -87,19 +87,16 @@ void DX12Helper::CreateInputLayout(DX12PipelineStateObject* PSO)
     PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
 }
 
-bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
+bool DX12Helper::LoadGraphicsShaders(RenderPassComponent* RenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
 	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
 	
 	if (!l_DX12SPC || !l_PSO)
 	{
-		Log(Verbose, "Skipping creating ShaderPrograms for ", RenderPassComp->m_InstanceName.c_str());
+		Log(Verbose, "Skipping creating graphics shaders for ", RenderPassComp->m_InstanceName.c_str());
 		return true;
 	}
-
-	if (RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-	{
 #ifdef USE_DXIL
 		if (l_DX12SPC->m_VSBuffer.size())
 		{
@@ -107,6 +104,8 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_VSBytecode.pShaderBytecode = &l_DX12SPC->m_VSBuffer[0];
 			l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer.size();
 			l_PSO->m_GraphicsPSODesc.VS = l_VSBytecode;
+
+			Log(Verbose, "Vertex Shader: ", l_DX12SPC->m_VSBuffer.size(), " bytes");
 		}
 		if (l_DX12SPC->m_HSBuffer.size())
 		{
@@ -114,6 +113,8 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_HSBytecode.pShaderBytecode = &l_DX12SPC->m_HSBuffer[0];
 			l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer.size();
 			l_PSO->m_GraphicsPSODesc.HS = l_HSBytecode;
+
+			Log(Verbose, "Hull Shader: ", l_DX12SPC->m_HSBuffer.size(), " bytes");
 		}
 		if (l_DX12SPC->m_DSBuffer.size())
 		{
@@ -121,6 +122,8 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_DSBytecode.pShaderBytecode = &l_DX12SPC->m_DSBuffer[0];
 			l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer.size();
 			l_PSO->m_GraphicsPSODesc.DS = l_DSBytecode;
+
+			Log(Verbose, "Domain Shader: ", l_DX12SPC->m_DSBuffer.size(), " bytes");
 		}
 		if (l_DX12SPC->m_GSBuffer.size())
 		{
@@ -128,6 +131,8 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_GSBytecode.pShaderBytecode = &l_DX12SPC->m_GSBuffer[0];
 			l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer.size();
 			l_PSO->m_GraphicsPSODesc.GS = l_GSBytecode;
+
+			Log(Verbose, "Geometry Shader: ", l_DX12SPC->m_GSBuffer.size(), " bytes");
 		}
 		if (l_DX12SPC->m_PSBuffer.size())
 		{
@@ -135,6 +140,8 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_PSBytecode.pShaderBytecode = &l_DX12SPC->m_PSBuffer[0];
 			l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer.size();
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
+
+			Log(Verbose, "Pixel Shader: ", l_DX12SPC->m_PSBuffer.size(), " bytes");
 		}
 #else
 		if (l_DX12SPC->m_VSBuffer)
@@ -173,9 +180,21 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
 		}
 #endif
-	}
-	else
+
+	return true;
+}
+
+bool DX12Helper::LoadComputeShaders(RenderPassComponent* RenderPassComp)
+{
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
+	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
+	
+	if (!l_DX12SPC || !l_PSO)
 	{
+		Log(Verbose, "Skipping creating ShaderPrograms for ", RenderPassComp->m_InstanceName.c_str());
+		return true;
+	}
+
 #ifdef USE_DXIL
 		if (l_DX12SPC->m_CSBuffer.size())
 		{
@@ -183,6 +202,8 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_CSBytecode.pShaderBytecode = &l_DX12SPC->m_CSBuffer[0];
 			l_CSBytecode.BytecodeLength = l_DX12SPC->m_CSBuffer.size();
 			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
+
+			Log(Verbose, "Compute Shader: ", l_DX12SPC->m_CSBuffer.size(), " bytes");
 		}
 #else
 		if (l_DX12SPC->m_CSBuffer)
@@ -193,11 +214,58 @@ bool DX12Helper::CreateShaderPrograms(RenderPassComponent* RenderPassComp)
 			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
 		}
 #endif
-	}
 
 	return true;
 }
 
+bool DX12Helper::LoadRaytracingShaders(RenderPassComponent* RenderPassComp)
+{
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
+	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
+	
+	if (!l_DX12SPC || !l_PSO)
+	{
+		Log(Verbose, "Skipping creating ShaderPrograms for ", RenderPassComp->m_InstanceName.c_str());
+		return true;
+	}
+
+#ifdef USE_DXIL
+	if (l_DX12SPC->m_RayGenBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_LibBytecode;
+		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_RayGenBuffer[0];
+		l_LibBytecode.BytecodeLength = l_DX12SPC->m_RayGenBuffer.size();
+
+		Log(Verbose, "RayGen Shader: ", l_DX12SPC->m_RayGenBuffer.size(), " bytes");
+	}
+	if (l_DX12SPC->m_ClosestHitBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_LibBytecode;
+		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_ClosestHitBuffer[0];
+		l_LibBytecode.BytecodeLength = l_DX12SPC->m_ClosestHitBuffer.size();
+
+		Log(Verbose, "ClosestHit Shader: ", l_DX12SPC->m_ClosestHitBuffer.size(), " bytes");
+	}
+	if (l_DX12SPC->m_MissBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_LibBytecode;
+		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_MissBuffer[0];
+		l_LibBytecode.BytecodeLength = l_DX12SPC->m_MissBuffer.size();
+
+		Log(Verbose, "Miss Shader: ", l_DX12SPC->m_MissBuffer.size(), " bytes");
+	}
+	if (l_DX12SPC->m_AnyHitBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_LibBytecode;
+		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_AnyHitBuffer[0];
+		l_LibBytecode.BytecodeLength = l_DX12SPC->m_AnyHitBuffer.size();
+
+		Log(Verbose, "AnyHit Shader: ", l_DX12SPC->m_AnyHitBuffer.size(), " bytes");
+	}
+#endif
+
+	return true;
+}
 
 D3D12_COMPARISON_FUNC DX12Helper::GetComparisionFunction(ComparisionFunction comparisionFunction)
 {
@@ -487,17 +555,25 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 
 	switch (shaderStage)
 	{
-	case ShaderStage::Vertex: l_shaderTypeName = "vs_6_0";
+	case ShaderStage::Vertex: l_shaderTypeName = "vs_6_3";
 		break;
-	case ShaderStage::Hull: l_shaderTypeName = "hs_6_0";
+	case ShaderStage::Hull: l_shaderTypeName = "hs_6_3";
 		break;
-	case ShaderStage::Domain: l_shaderTypeName = "ds_6_0";
+	case ShaderStage::Domain: l_shaderTypeName = "ds_6_3";
 		break;
-	case ShaderStage::Geometry: l_shaderTypeName = "gs_6_0";
+	case ShaderStage::Geometry: l_shaderTypeName = "gs_6_3";
 		break;
-	case ShaderStage::Pixel: l_shaderTypeName = "ps_6_0";
+	case ShaderStage::Pixel: l_shaderTypeName = "ps_6_3";
 		break;
-	case ShaderStage::Compute: l_shaderTypeName = "cs_6_0";
+	case ShaderStage::Compute: l_shaderTypeName = "cs_6_3";
+		break;
+	case ShaderStage::RayGen: l_shaderTypeName = "lib_6_3";
+		break;
+	case ShaderStage::AnyHit: l_shaderTypeName = "lib_6_3";
+		break;
+	case ShaderStage::ClosestHit: l_shaderTypeName = "lib_6_3";
+		break;
+	case ShaderStage::Miss: l_shaderTypeName = "lib_6_3";
 		break;
 	default:
 		break;

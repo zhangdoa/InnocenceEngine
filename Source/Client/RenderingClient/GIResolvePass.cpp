@@ -5,7 +5,7 @@
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Services/HIDService.h"
-#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Common/Array.h"
 #include "../../Engine/Services/ComponentManager.h"
 
@@ -333,8 +333,8 @@ bool GIResolvePass::Setup()
 	f_sceneLoadingStartedCallback = []() { DeleteGPUBuffers(); };
 	f_sceneLoadingFinishedCallback = []() { InitializeGPUBuffers(); };
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 0);
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	return true;
 }

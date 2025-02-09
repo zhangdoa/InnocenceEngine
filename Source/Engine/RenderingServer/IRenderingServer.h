@@ -10,6 +10,7 @@
 #include "../Component/ShaderProgramComponent.h"
 #include "../Component/SamplerComponent.h"
 #include "../Component/GPUBufferComponent.h"
+#include "../Component/CollisionComponent.h"
 
 namespace Inno
 {
@@ -115,9 +116,9 @@ namespace Inno
 		virtual bool EndCapture() { return false; }
 
 		// Raytracing-related APIs
-		virtual bool CreateAccelerationStructure() { return false; }
-		virtual bool BuildAccelerationStructure() { return false; }
-		virtual bool DispatchRays() { return false; }
+		virtual bool Register(CollisionComponent* rhs) { return false; }
+		virtual bool DispatchRays(RenderPassComponent* rhs) { return false; }
+		GPUResourceComponent* GetTLASBuffer() { return m_TLASBufferComponent; }
 
 	protected:
 		bool WriteMappedMemory(MeshComponent* rhs);
@@ -173,6 +174,7 @@ namespace Inno
 		virtual bool CreateFenceEvents(RenderPassComponent* rhs) { return false; }
 
 		virtual bool BeginFrame() { return false; }
+		virtual bool PrepareRayTracing(ICommandList* commandList) { return false; }
 		virtual bool PresentImpl() { return false; }
 		virtual bool WaitAllOnCPU() { return false; }
 		virtual bool ResizeImpl() { return false; }
@@ -213,6 +215,10 @@ namespace Inno
 		std::unordered_set<MaterialComponent*> m_initializedMaterials;
 		std::unordered_set<GPUBufferComponent*> m_initializedGPUBuffers;
 		std::vector<RenderPassComponent*> m_initializedRenderPasses;
+	
+        GPUBufferComponent* m_TLASBufferComponent = nullptr;
+        std::unordered_set<CollisionComponent*> m_RegisteredCollisionComponents;
+        std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
 
 	private:
 		bool InitializeComponents();

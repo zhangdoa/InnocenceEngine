@@ -9,7 +9,7 @@
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/GUISystem.h"
-#include "../../Services/SceneSystem.h"
+#include "../../Services/SceneService.h"
 
 #include "../../Engine.h"
 
@@ -130,7 +130,7 @@ bool IRenderingServer::Update()
 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 	m_CopyUploadToDefaultHeapSemaphoreValues[l_currentFrame] = GetSemaphoreValue(GPUEngineType::Graphics);
 
-	if (!g_Engine->Get<SceneSystem>()->isLoadingScene())
+	if (!g_Engine->Get<SceneService>()->IsLoading())
 	{
 		m_CommandPreparationCallback();
 
@@ -703,7 +703,7 @@ bool IRenderingServer::PrepareGlobalCommands()
 	{
 		if (i->m_MappedMemories.size() == 0)
 			continue;
-					
+
 		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
@@ -711,6 +711,8 @@ bool IRenderingServer::PrepareGlobalCommands()
 			l_mappedMemory->m_NeedUploadToGPU = false;
 		}
 	}
+
+	PrepareRayTracing(l_commandList);
 
 	Close(l_commandList, GPUEngineType::Graphics);
 

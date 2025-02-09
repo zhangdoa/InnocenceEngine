@@ -1,5 +1,5 @@
 #include "BVHService.h"
-#include "PhysicsSystem.h"
+#include "PhysicsSimulationService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -136,10 +136,10 @@ void BVHServiceImpl::Update()
 
     for (auto& i : m_Nodes)
     {
-        i.m_AABB = i.PDC->m_AABBWS;
+        i.m_AABB = i.CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB;
     }
 
-    m_RootNode.m_AABB = g_Engine->Get<PhysicsSystem>()->GetStaticSceneAABB();
+    m_RootNode.m_AABB = g_Engine->Get<PhysicsSimulationService>()->GetStaticSceneAABB();
 
     m_TempNodes.emplace_back(m_RootNode);
     m_TempNodes.insert(m_TempNodes.end(), m_Nodes.begin(), m_Nodes.end());
@@ -161,11 +161,11 @@ void BVHService::Update()
     m_Impl->Update();
 }
 
-void BVHService::AddNode(PhysicsComponent* PDC)
+void BVHService::AddNode(CollisionComponent* CollisionComponent)
 {
     BVHNode l_BVHNode;
-    l_BVHNode.PDC = PDC;
-    l_BVHNode.m_AABB = PDC->m_AABBWS;
+    l_BVHNode.CollisionComponent = CollisionComponent;
+    l_BVHNode.m_AABB = CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB;
 
     m_Impl->m_Nodes.emplace_back(l_BVHNode);
 

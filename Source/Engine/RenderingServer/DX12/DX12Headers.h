@@ -119,16 +119,20 @@ namespace Inno
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC m_GraphicsPSODesc = {};
 		D3D12_COMPUTE_PIPELINE_STATE_DESC m_ComputePSODesc = {};
 		ComPtr<ID3D12PipelineState> m_PSO = 0;
+		
+		ComPtr<ID3D12StateObject> m_RaytracingPSO = 0;
+        ComPtr<ID3D12Resource> m_RaytracingShaderIDBuffer = 0;
+        
 		ComPtr<ID3D12RootSignature> m_RootSignature = 0;
-        ComPtr<ID3D12CommandSignature> m_IndirectCommandSignature = 0;
+		ComPtr<ID3D12CommandSignature> m_IndirectCommandSignature = 0;
 	};
 
 	class DX12CommandList : public ICommandList
 	{
 	public:
-		ComPtr<ID3D12GraphicsCommandList> m_DirectCommandList = 0;
-		ComPtr<ID3D12GraphicsCommandList> m_ComputeCommandList = 0;
-		ComPtr<ID3D12GraphicsCommandList> m_CopyCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList7> m_DirectCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList7> m_ComputeCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList7> m_CopyCommandList = 0;
 	};
 
 	class DX12Semaphore : public ISemaphore
@@ -162,5 +166,11 @@ namespace Inno
 
 		DX12SRV m_SRV = {};
 		DX12UAV m_UAV = {};
+	};
+
+	class DX12RaytracingInstanceDescList : public IRaytracingInstanceDescList
+	{
+	public:		
+		std::vector<D3D12_RAYTRACING_INSTANCE_DESC> m_Descs;
 	};
 }

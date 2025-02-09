@@ -8,15 +8,15 @@
 #include "../Common/ThreadSafeQueue.h"
 
 #include "CullingResult.h"
-#include "SceneSystem.h"
-#include "AssetSystem.h"
+#include "SceneService.h"
+#include "AssetService.h"
 #include "GUISystem.h"
 #include "TemplateAssetService.h"
 #include "RenderingConfigurationService.h"
 
 #include "EntityManager.h"
 #include "ComponentManager.h"
-#include "PhysicsSystem.h"
+#include "PhysicsSimulationService.h"
 #include "TransformSystem.h"
 #include "LightSystem.h"
 #include "CameraSystem.h"
@@ -137,7 +137,7 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 			m_billboardPassDrawCallInfoVector[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
 		};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -365,15 +365,15 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 	m_animationCBVector.clear();
 
 	uint32_t l_drawCallIndex = 0;
-	auto& l_cullingResults = g_Engine->Get<PhysicsSystem>()->GetCullingResult();
+	auto& l_cullingResults = g_Engine->Get<PhysicsSimulationService>()->GetCullingResult();
 	auto l_cullingResultCount = l_cullingResults.size();
 	for (size_t i = 0; i < l_cullingResultCount; i++)
 	{
 		auto& l_cullingResult = l_cullingResults[i];
-		if (l_cullingResult.m_PhysicsComponent == nullptr)
+		if (l_cullingResult.m_CollisionComponent == nullptr)
 			continue;
 
-		auto l_modelComponent = l_cullingResult.m_PhysicsComponent->m_ModelComponent;
+		auto l_modelComponent = l_cullingResult.m_CollisionComponent->m_ModelComponent;
 		if (l_modelComponent == nullptr)
 			continue;
 
@@ -387,7 +387,7 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 		if (l_transformComponent->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
-		auto l_renderableSet = l_cullingResult.m_PhysicsComponent->m_RenderableSet;
+		auto l_renderableSet = l_cullingResult.m_CollisionComponent->m_RenderableSet;
 		if (l_renderableSet == nullptr)
 			continue;
 

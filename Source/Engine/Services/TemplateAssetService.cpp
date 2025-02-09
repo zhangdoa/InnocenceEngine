@@ -1,7 +1,7 @@
 #include "TemplateAssetService.h"
 
 #include "../Common/TaskScheduler.h"
-#include "AssetSystem.h"
+#include "AssetService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -57,23 +57,23 @@ namespace Inno
 
 bool TemplateAssetServiceImpl::LoadTemplateAssets()
 {
-	auto m_basicNormalTexture = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//basic_normal.png");
+	auto m_basicNormalTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_normal.png");
 	m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAlbedoTexture = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//basic_albedo.png");
+	auto m_basicAlbedoTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_albedo.png");
 	m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicMetallicTexture = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//basic_metallic.png");
+	auto m_basicMetallicTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_metallic.png");
 	m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicRoughnessTexture = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//basic_roughness.png");
+	auto m_basicRoughnessTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_roughness.png");
 	m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAOTexture = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//basic_ao.png");
+	auto m_basicAOTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_ao.png");
 	m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
@@ -88,15 +88,15 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
 	m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
 
-	m_iconTemplate_DirectionalLight = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//WorldEditorIcons_DirectionalLight.png");
+	m_iconTemplate_DirectionalLight = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//WorldEditorIcons_DirectionalLight.png");
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_PointLight = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//WorldEditorIcons_PointLight.png");
+	m_iconTemplate_PointLight = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//WorldEditorIcons_PointLight.png");
 	m_iconTemplate_PointLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_PointLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_SphereLight = g_Engine->Get<AssetSystem>()->LoadTexture("..//Res//Textures//WorldEditorIcons_SphereLight.png");
+	m_iconTemplate_SphereLight = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//WorldEditorIcons_SphereLight.png");
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 

@@ -1,12 +1,12 @@
 #pragma once
-#include "../Component/PhysicsComponent.h"
+#include "../Component/CollisionComponent.h"
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
 {
     struct CullingResult
     {
-        PhysicsComponent* m_PhysicsComponent = nullptr;
+        CollisionComponent* m_CollisionComponent = nullptr;
         VisibilityMask m_VisibilityMask = VisibilityMask::Invalid;
     };
 }

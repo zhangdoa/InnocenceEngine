@@ -228,7 +228,11 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 	}
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc((uint32_t)l_rootParameters.size(), l_rootParameters.data());
-	l_rootSigDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	if (RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics && RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
+	{
+		l_rootSigDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	}
 
 	ComPtr<ID3DBlob> l_signature = 0;
 	ComPtr<ID3DBlob> l_error = 0;
@@ -369,7 +373,7 @@ D3D12_DESCRIPTOR_RANGE1 DX12RenderingServer::GetDescriptorRange(RenderPassCompon
 
 bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, DX12CommandList* commandList)
 {
-	ComPtr<ID3D12GraphicsCommandList> l_commandList;
+	ComPtr<ID3D12GraphicsCommandList7> l_commandList;
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		l_commandList = commandList->m_DirectCommandList;
@@ -415,18 +419,17 @@ bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, DX12
 
 bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO)
 {
-	ComPtr<ID3D12GraphicsCommandList> l_commandList;
+	ComPtr<ID3D12GraphicsCommandList7> l_commandList;
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-	{
 		l_commandList = commandList->m_DirectCommandList;
-	}
 	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
 		l_commandList = commandList->m_ComputeCommandList;
-	}
 
 	if (PSO->m_PSO)
 		l_commandList->SetPipelineState(PSO->m_PSO.Get());
+
+	if (PSO->m_RaytracingPSO)
+		l_commandList->SetPipelineState1(PSO->m_RaytracingPSO.Get());
 
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{

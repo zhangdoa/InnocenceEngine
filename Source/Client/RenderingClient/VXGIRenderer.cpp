@@ -1,8 +1,8 @@
 #include "VXGIRenderer.h"
 
 #include "../../Engine/Services/RenderingContextService.h"
-#include "../../Engine/Services/SceneSystem.h"
-#include "../../Engine/Services/PhysicsSystem.h"
+#include "../../Engine/Services/SceneService.h"
+#include "../../Engine/Services/PhysicsSimulationService.h"
 
 #include "VXGIGeometryProcessPass.h"
 #include "VXGIConvertPass.h"
@@ -26,7 +26,7 @@ bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
 		m_isInitialLoadScene = true;
 	};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 	
 	m_VXGICBuffer = l_renderingServer->AddGPUBufferComponent("VXGIPassCBuffer/");
 	m_VXGICBuffer->m_ElementCount = 1;
@@ -156,7 +156,7 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 	else
 	{
 		auto l_cameraPos = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer().camera_posWS;
-		auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->GetStaticSceneAABB();
+		auto l_sceneAABB = g_Engine->Get<PhysicsSimulationService>()->GetStaticSceneAABB();
 		auto l_maxExtend = std::max(std::max(l_sceneAABB.m_extend.x, l_sceneAABB.m_extend.y), l_sceneAABB.m_extend.z);
 		auto l_adjustedBoundMax = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f);
 		auto l_adjustedCenter = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f) / 2.0f;

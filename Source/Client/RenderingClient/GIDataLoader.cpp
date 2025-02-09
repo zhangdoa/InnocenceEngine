@@ -4,7 +4,7 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
-#include "../../Engine/Services/SceneSystem.h"
+#include "../../Engine/Services/SceneService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -45,7 +45,7 @@ namespace GIDataLoader
 bool GIDataLoader::loadGIData()
 {
 	auto l_filePath = g_Engine->Get<IOService>()->getWorkingDirectory();
-	auto l_currentSceneName = g_Engine->Get<SceneSystem>()->getCurrentSceneName();
+	auto l_currentSceneName = g_Engine->Get<SceneService>()->GetCurrentSceneName();
 
 	std::ifstream l_surfelFile;
 	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".Surfel", std::ios::binary);
@@ -112,7 +112,7 @@ bool GIDataLoader::Setup()
 		loadGIData();
 	};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	////
 	m_testSampleCubemap = l_renderingServer->AddTextureComponent("TestSampleCubemap/");

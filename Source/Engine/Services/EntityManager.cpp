@@ -3,7 +3,7 @@
 #include "../Common/LogService.h"
 #include "../Common/Randomizer.h"
 #include "../Common/ThreadSafeVector.h"
-#include "SceneSystem.h"
+#include "SceneService.h"
 
 #include "../Engine.h"
 
@@ -44,7 +44,7 @@ bool EntityManager::Setup(ISystemConfig* systemConfig)
 		Log(Success, "All entities have been cleared.");
 	};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 0);
 
 	return true;
 }

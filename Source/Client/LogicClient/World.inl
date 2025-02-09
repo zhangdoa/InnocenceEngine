@@ -2,8 +2,8 @@
 #include "../../Engine/Services/ComponentManager.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
-#include "../../Engine/Services/SceneSystem.h"
-#include "../../Engine/Services/AssetSystem.h"
+#include "../../Engine/Services/SceneService.h"
+#include "../../Engine/Services/AssetService.h"
 #include "../../Engine/RayTracer/RayTracer.h"
 
 #include "../../Engine/Engine.h"
@@ -458,7 +458,7 @@ namespace Inno
 			m_ObjectStatus = ObjectStatus::Activated;
 			};
 
-		g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+		g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 		return true;
 	}
@@ -467,22 +467,22 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//default.InnoScene");
+		g_Engine->Get<SceneService>()->Load("..//Res//Scenes//default.InnoScene");
 
-		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza_PBR.InnoScene");
-		//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 		f_loadTestScene = []() {
-			g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza_PBR.InnoScene");
-			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-			//g_Engine->Get<SceneSystem>()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene");
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza.InnoScene");
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 			};
 
 		f_convertModel = []() {
-			g_Engine->Get<AssetSystem>()->ConvertModel("..//Res//Models//Sponza_PBR//NewSponza_Merged.fbx", "..//Res//ConvertedAssets//");
+			g_Engine->Get<AssetService>()->ConvertModel("..//Res//Models//Sponza_PBR//NewSponza_Merged.fbx", "..//Res//ConvertedAssets//");
 			};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
@@ -498,7 +498,7 @@ namespace Inno
 
 		for (uint64_t j = 0; j < model->renderableSets.m_count; j++)
 		{
-			auto l_pair = g_Engine->Get<AssetSystem>()->GetRenderableSet(model->renderableSets.m_startOffset + j);
+			auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(model->renderableSets.m_startOffset + j);
 			l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
 			l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
 			l_pair->material->m_materialAttributes.AlbedoB = albedo.z;

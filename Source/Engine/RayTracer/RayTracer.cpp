@@ -4,7 +4,7 @@
 #include "../Common/LogService.h"
 
 #include "../Services/ComponentManager.h"
-#include "../Services/AssetSystem.h"
+#include "../Services/AssetService.h"
 #include "../Services/RenderingConfigurationService.h"
 #include "../Services/RenderingContextService.h"
 
@@ -323,7 +323,7 @@ bool ExecuteRayTracing()
 			auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
 			for (uint64_t j = 0; j < l_modelComponent->m_Model->renderableSets.m_count; j++)
 			{
-				auto l_pair = g_Engine->Get<AssetSystem>()->GetRenderableSet(l_modelComponent->m_Model->renderableSets.m_startOffset + j);
+				auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(l_modelComponent->m_Model->renderableSets.m_startOffset + j);
 				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
 					auto l_hitable = new HitableSphere();
@@ -425,7 +425,7 @@ bool ExecuteRayTracing()
 	m_TextureComp->m_InitialData = &l_result[0];
 
 	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
-	g_Engine->Get<AssetSystem>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
+	g_Engine->Get<AssetService>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
 
 	Log(Success, "Ray tracing finished.");
 

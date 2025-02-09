@@ -90,7 +90,7 @@ namespace Inno
 
                     for (uint64_t j = 0; j < modelComponent->m_Model->renderableSets.m_count; j++)
                     {
-                        auto l_renderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(modelComponent->m_Model->renderableSets.m_startOffset + j);
+                        auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(modelComponent->m_Model->renderableSets.m_startOffset + j);
 
                         if (l_renderableSet->material->m_ShaderModel == ShaderModel::Opaque)
                         {
@@ -145,7 +145,7 @@ namespace Inno
 
             Log(Success, "Generate probe caches...");
 
-            auto l_sceneAABB = g_Engine->Get<PhysicsSystem>()->getStaticSceneAABB();
+            auto l_sceneAABB = g_Engine->Get<PhysicsSimulationService>()->getStaticSceneAABB();
 
             auto l_eyePos = l_sceneAABB.m_center;
             auto l_extendedAxisSize = l_sceneAABB.m_extend;
@@ -203,7 +203,7 @@ namespace Inno
             auto l_TextureComp = l_renderingServer->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_InitialData = l_probePosTextureResults.data();
-            g_Engine->Get<AssetSystem>()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
+            g_Engine->Get<AssetService>()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
             //#endif // DEBUG_
 
             auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, Config::Get().m_probeInterval);

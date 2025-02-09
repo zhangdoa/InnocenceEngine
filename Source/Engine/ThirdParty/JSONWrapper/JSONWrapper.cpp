@@ -7,7 +7,7 @@
 #include "../../Services/RenderingContextService.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/AnimationService.h"
-#include "../../Services/AssetSystem.h"
+#include "../../Services/AssetService.h"
 #include "../../Services/EntityManager.h"
 
 #include "../../Engine.h"
@@ -364,7 +364,7 @@ Model* JSONWrapper::ProcessModel(const json& j)
 
 	if (j.find("Meshes") != j.end())
 	{
-		l_result = g_Engine->Get<AssetSystem>()->AddModel();
+		l_result = g_Engine->Get<AssetService>()->AddModel();
 		l_result->renderableSets = ProcessMeshes(j["Meshes"]);
 	}
 
@@ -406,7 +406,7 @@ bool JSONWrapper::ProcessAnimations(const json& j)
 		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
 		g_Engine->Get<IOService>()->deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
-		g_Engine->Get<AssetSystem>()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
+		g_Engine->Get<AssetService>()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
 		g_Engine->Get<AnimationService>()->InitializeAnimationComponent(l_ADC);
 	}
 
@@ -415,13 +415,13 @@ bool JSONWrapper::ProcessAnimations(const json& j)
 
 ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 {
-	auto l_result = g_Engine->Get<AssetSystem>()->AddRenderableSets(j.size());
+	auto l_result = g_Engine->Get<AssetService>()->AddRenderableSets(j.size());
 
 	uint64_t l_currentIndex = 0;
 
 	for (auto& i : j)
 	{
-		auto l_currentRenderableSet = g_Engine->Get<AssetSystem>()->GetRenderableSet(l_result.m_startOffset + l_currentIndex);
+		auto l_currentRenderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(l_result.m_startOffset + l_currentIndex);
 
 		// Load material data
 		if (i.find("Material") != i.end())
@@ -447,7 +447,7 @@ ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 			RenderableSet* l_loadedRenderableSet;
 
 			// check if this file has already been loaded once
-			if (g_Engine->Get<AssetSystem>()->FindLoadedRenderableSet(l_meshFileName.c_str(), l_loadedRenderableSet))
+			if (g_Engine->Get<AssetService>()->FindLoadedRenderableSet(l_meshFileName.c_str(), l_loadedRenderableSet))
 			{
 				l_currentRenderableSet = l_loadedRenderableSet;
 			}
@@ -493,7 +493,7 @@ ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 
 				g_Engine->getRenderingServer()->Initialize(l_mesh);
 
-				g_Engine->Get<AssetSystem>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
+				g_Engine->Get<AssetService>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
 			}
 		}
 		else
@@ -514,7 +514,7 @@ SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
 	SkeletonComponent* l_SkeletonComp;
 
 	// check if this file has already been loaded once
-	if (g_Engine->Get<AssetSystem>()->FindLoadedSkeleton(name, l_SkeletonComp))
+	if (g_Engine->Get<AssetService>()->FindLoadedSkeleton(name, l_SkeletonComp))
 	{
 		return l_SkeletonComp;
 	}
@@ -534,7 +534,7 @@ SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
 			l_SkeletonComp->m_BoneList[i["ID"]] = l_boneData;
 		}
 
-		g_Engine->Get<AssetSystem>()->RecordLoadedSkeleton(name, l_SkeletonComp);
+		g_Engine->Get<AssetService>()->RecordLoadedSkeleton(name, l_SkeletonComp);
 		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SkeletonComp);
 
 		return l_SkeletonComp;
@@ -554,7 +554,7 @@ MaterialComponent* JSONWrapper::ProcessMaterial(const json& j, const char* name)
 			std::string l_textureFile = i["File"];
 			size_t l_textureSlotIndex = i["TextureSlotIndex"];
 
-			auto l_TextureComp = g_Engine->Get<AssetSystem>()->LoadTexture(l_textureFile.c_str());
+			auto l_TextureComp = g_Engine->Get<AssetService>()->LoadTexture(l_textureFile.c_str());
 			if (l_TextureComp)
 			{
 				l_TextureComp->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);

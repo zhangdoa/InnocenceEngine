@@ -226,7 +226,11 @@ namespace Inno
 			Domain = 0x00000004,
 			Geometry = 0x00000008,
 			Pixel = 0x00000010,
-			Compute = 0x00000020
+			Compute = 0x00000020,
+			RayGen = 0x00000040,
+			ClosestHit = 0x00000080,
+			AnyHit = 0x00000100,
+			Miss = 0x00000200,
 		};
 
 		INNO_ENUM_OPERATORS(ShaderStage);
@@ -241,6 +245,7 @@ namespace Inno
 			bool m_UseStencilBuffer = false;
 			bool m_UseOutputMerger = true;
 			bool m_IndirectDraw = false;
+			bool m_UseRaytracing = false;
 			TextureDesc m_RenderTargetDesc = {};
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 			std::function<bool()> m_RenderTargetsCreationFunc;
@@ -278,6 +283,10 @@ namespace Inno
 		};
 
 		struct IDeviceMemory
+		{
+		};
+
+		struct IRaytracingInstanceDescList
 		{
 		};
 

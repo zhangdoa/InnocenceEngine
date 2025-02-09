@@ -5,7 +5,7 @@
 #include "../Common/MathHelper.h"
 #include "ComponentManager.h"
 #include "CameraSystem.h"
-#include "PhysicsSystem.h"
+#include "PhysicsSimulationService.h"
 #include "RenderingConfigurationService.h"
 #include "RenderingContextService.h"
 #include "../Engine.h"
@@ -54,7 +54,7 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 		return;
 	}
 
-	auto l_totalSceneAABB = g_Engine->Get<PhysicsSystem>()->GetVisibleSceneAABB();
+	auto l_totalSceneAABB = g_Engine->Get<PhysicsSimulationService>()->GetVisibleSceneAABB();
 	if(l_totalSceneAABB.m_extend.x == 0.0f || l_totalSceneAABB.m_extend.y == 0.0f || l_totalSceneAABB.m_extend.z == 0.0f)
 		return;
 	
@@ -90,7 +90,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 		return;
 	}
 
-	auto l_totalSceneAABBWS = g_Engine->Get<PhysicsSystem>()->GetVisibleSceneAABB();
+	auto l_totalSceneAABBWS = g_Engine->Get<PhysicsSimulationService>()->GetVisibleSceneAABB();
 	if(l_totalSceneAABBWS.m_extend.x == 0.0f || l_totalSceneAABBWS.m_extend.y == 0.0f || l_totalSceneAABBWS.m_extend.z == 0.0f)
 		return;
 

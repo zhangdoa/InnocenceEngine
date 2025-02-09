@@ -30,6 +30,23 @@ bool DX12RenderingServer::CreateHardwareResources()
     l_result &= CreateMipmapGenerator();
     l_result &= CreateSwapChain();
 
+    m_TLASBufferComponent = AddGPUBufferComponent("TLASBuffer/");
+    m_TLASBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
+
+    // @TODO: The number of elements should be calculated based on the number of ray tracing instances.
+    m_TLASBufferComponent->m_ElementCount = 16384;
+    m_TLASBufferComponent->m_ElementSize = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+
+    InitializeImpl(m_TLASBufferComponent);
+
+    m_RaytracingInstanceDescs.resize(GetSwapChainImageCount());
+    for (size_t i = 0; i < m_RaytracingInstanceDescs.size(); i++)
+    {
+        auto l_descList = new DX12RaytracingInstanceDescList();
+        l_descList->m_Descs.reserve(m_TLASBufferComponent->m_ElementCount);
+        m_RaytracingInstanceDescs[i] = l_descList;
+    }
+
     return l_result;
 }
 
@@ -113,9 +130,9 @@ bool DX12RenderingServer::AssignSwapChainImages()
     {
         auto l_DX12DeviceMemory = new DX12DeviceMemory();
         l_DX12DeviceMemory->m_DefaultHeapBuffer = m_swapChainImages[i];
-        l_DX12TextureComp->m_DeviceMemories[i] = l_DX12DeviceMemory;   
+        l_DX12TextureComp->m_DeviceMemories[i] = l_DX12DeviceMemory;
     }
-    
+
     auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_DX12TextureComp->m_DeviceMemories[0]);
     l_DX12TextureComp->m_DX12TextureDesc = l_DX12DeviceMemory->m_DefaultHeapBuffer->GetDesc();
     l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -132,139 +149,267 @@ bool DX12RenderingServer::AssignSwapChainImages()
 }
 
 bool DX12RenderingServer::ReleaseSwapChainImages()
-{  
+{
     return true;
 }
 
 bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
-{	
-	bool l_result = true;
-	auto RenderPassComp = reinterpret_cast<RenderPassComponent*>(rhs);
-	l_result &= CreateRootSignature(RenderPassComp);
+{
+    bool l_result = true;
+    l_result &= CreateRootSignature(rhs);
 
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
-	if (RenderPassComp->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-	{
-		GenerateDepthStencilStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-		GenerateBlendStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-		GenerateRasterizerStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-		GenerateViewportStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+    auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
+    if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+    {
+        if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+        {
+            l_result &= CreateGraphicsPipelineStateObject(rhs, l_PSO);
+        }
+    }
+    else if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && !rhs->m_RenderPassDesc.m_UseRaytracing)
+    {
+        LoadComputeShaders(rhs);
 
-		if (RenderPassComp->m_RenderPassDesc.m_UseOutputMerger)
-		{
-			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)RenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
+        l_PSO->m_ComputePSODesc.pRootSignature = l_PSO->m_RootSignature.Get();
+        auto l_HResult = m_device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
 
-			auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTarget);
-			auto l_RTV = l_DX12OutputMergerTarget->m_RTVs[0];
-			for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
-			{
-				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = l_RTV.m_Desc.Format;
-			}
-		}
+        if (FAILED(l_HResult))
+        {
+            Log(Error, rhs->m_InstanceName, " Can't create Compute PSO.");
+            return false;
+        }
+    }
 
-		if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-		{
-			auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTarget);
-			auto l_DSV = l_DX12OutputMergerTarget->m_DSVs[0];
-			l_PSO->m_GraphicsPSODesc.DSVFormat = l_DSV.m_Desc.Format;
-			l_PSO->m_GraphicsPSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
-		}
+    if (l_PSO->m_PSO)
+    {
+#ifdef INNO_DEBUG
+        SetObjectName(rhs, l_PSO->m_PSO, "PSO");
+#endif // INNO_DEBUG
+        Log(Verbose, rhs->m_InstanceName, " PSO has been created.");
+    }
 
-		l_PSO->m_GraphicsPSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
-		l_PSO->m_GraphicsPSODesc.BlendState = l_PSO->m_BlendDesc;
-		l_PSO->m_GraphicsPSODesc.SampleMask = UINT_MAX;
-		l_PSO->m_GraphicsPSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
-		l_PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
-		if (!l_PSO->m_RootSignature.Get())
-		{
-			Log(Verbose, "Skipping creating DX12 PSO for ", RenderPassComp->m_InstanceName);
-			return true;
-		}
+    if (rhs->m_RenderPassDesc.m_UseRaytracing)
+    {
+        l_result &= CreateRaytracingPipelineStateObject(rhs, l_PSO);
+    }
 
-		l_PSO->m_GraphicsPSODesc.pRootSignature = l_PSO->m_RootSignature.Get();
+    return l_result;
+}
 
-		CreateInputLayout(l_PSO);
-		CreateShaderPrograms(RenderPassComp);
+bool DX12RenderingServer::CreateGraphicsPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
+{
+    GenerateDepthStencilStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, PSO);
+    GenerateBlendStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, PSO);
+    GenerateRasterizerStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, PSO);
+    GenerateViewportStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, PSO);
 
-		auto l_HResult = m_device->CreateGraphicsPipelineState(&l_PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
-		if (FAILED(l_HResult))
-		{
-			Log(Error, RenderPassComp->m_InstanceName, " Can't create Graphics PSO.");
-			return false;
-		}
-	}
-	else
-	{
-		CreateShaderPrograms(RenderPassComp);
+    PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)RenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
 
-		l_PSO->m_ComputePSODesc.pRootSignature = l_PSO->m_RootSignature.Get();
-		auto l_HResult = m_device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+    auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTarget);
+    auto l_RTV = l_DX12OutputMergerTarget->m_RTVs[0];
+    for (size_t i = 0; i < RenderPassComp->m_RenderPassDesc.m_RenderTargetCount; i++)
+    {
+        PSO->m_GraphicsPSODesc.RTVFormats[i] = l_RTV.m_Desc.Format;
+    }
 
-		if (FAILED(l_HResult))
-		{
-			Log(Error, RenderPassComp->m_InstanceName, " Can't create Compute PSO.");
-			return false;
-		}
-	}
+    if (RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+    {
+        auto l_DX12OutputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(RenderPassComp->m_OutputMergerTarget);
+        auto l_DSV = l_DX12OutputMergerTarget->m_DSVs[0];
+        PSO->m_GraphicsPSODesc.DSVFormat = l_DSV.m_Desc.Format;
+        PSO->m_GraphicsPSODesc.DepthStencilState = PSO->m_DepthStencilDesc;
+    }
+
+    PSO->m_GraphicsPSODesc.RasterizerState = PSO->m_RasterizerDesc;
+    PSO->m_GraphicsPSODesc.BlendState = PSO->m_BlendDesc;
+    PSO->m_GraphicsPSODesc.SampleMask = UINT_MAX;
+    PSO->m_GraphicsPSODesc.PrimitiveTopologyType = PSO->m_PrimitiveTopologyType;
+    PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
+    if (!PSO->m_RootSignature.Get())
+    {
+        Log(Verbose, "Skipping creating Graphics PSO for ", RenderPassComp->m_InstanceName);
+        return true;
+    }
+
+    PSO->m_GraphicsPSODesc.pRootSignature = PSO->m_RootSignature.Get();
+
+    CreateInputLayout(PSO);
+    LoadGraphicsShaders(RenderPassComp);
+
+    auto l_HResult = m_device->CreateGraphicsPipelineState(&PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&PSO->m_PSO));
+    if (FAILED(l_HResult))
+    {
+        Log(Error, RenderPassComp->m_InstanceName, " Can't create Graphics PSO.");
+        return false;
+    }
+
+    return true;
+}
+
+bool DX12RenderingServer::CreateRaytracingPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
+{
+    auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
+    
+    if (!PSO->m_RootSignature)
+    {
+        Log(Error, RenderPassComp->m_InstanceName, " Global root signature is null!");
+        return false;
+    }
+
+    LoadRaytracingShaders(RenderPassComp);
+
+    D3D12_DXIL_LIBRARY_DESC rayGenLib = {};
+    rayGenLib.DXILLibrary.pShaderBytecode = &l_DX12SPC->m_RayGenBuffer[0];
+    rayGenLib.DXILLibrary.BytecodeLength = l_DX12SPC->m_RayGenBuffer.size();
+
+    D3D12_DXIL_LIBRARY_DESC closestHitLib = {};
+    closestHitLib.DXILLibrary.pShaderBytecode = &l_DX12SPC->m_ClosestHitBuffer[0];
+    closestHitLib.DXILLibrary.BytecodeLength = l_DX12SPC->m_ClosestHitBuffer.size();
+
+    D3D12_DXIL_LIBRARY_DESC anyHitLib = {};
+    anyHitLib.DXILLibrary.pShaderBytecode = &l_DX12SPC->m_AnyHitBuffer[0];
+    anyHitLib.DXILLibrary.BytecodeLength = l_DX12SPC->m_AnyHitBuffer.size();
+
+    D3D12_DXIL_LIBRARY_DESC missLib = {};
+    missLib.DXILLibrary.pShaderBytecode = &l_DX12SPC->m_MissBuffer[0];
+    missLib.DXILLibrary.BytecodeLength = l_DX12SPC->m_MissBuffer.size();
+
+    D3D12_HIT_GROUP_DESC hitGroupDesc = {};
+    hitGroupDesc.HitGroupExport = L"HitGroup";  // Name for your hit group.
+    hitGroupDesc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+    hitGroupDesc.ClosestHitShaderImport = L"ClosestHitShader";
+    hitGroupDesc.AnyHitShaderImport = L"AnyHitShader";
+    hitGroupDesc.IntersectionShaderImport = nullptr; // For triangle geometry.
+
+    D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
+    shaderConfig.MaxPayloadSizeInBytes = 32;  // Adjust to your needs.
+    shaderConfig.MaxAttributeSizeInBytes = 8; // For example, 2 floats for barycentrics.
+
+    D3D12_GLOBAL_ROOT_SIGNATURE globalSig = { PSO->m_RootSignature.Get() };
+
+    D3D12_RAYTRACING_PIPELINE_CONFIG pipelineCfg = {};
+    pipelineCfg.MaxTraceRecursionDepth = 1; // Ray generation, no recursion.
+
+    D3D12_STATE_SUBOBJECT subobjects[8] = {};
+    subobjects[0].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[0].pDesc = &rayGenLib;
+
+    subobjects[1].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[1].pDesc = &closestHitLib;
+
+    subobjects[2].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[2].pDesc = &anyHitLib;
+
+    subobjects[3].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[3].pDesc = &missLib;
+
+    subobjects[4].Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+    subobjects[4].pDesc = &hitGroupDesc;
+
+    subobjects[5].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+    subobjects[5].pDesc = &shaderConfig;
+
+    subobjects[6].Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    subobjects[6].pDesc = &globalSig;
+
+    subobjects[7].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+    subobjects[7].pDesc = &pipelineCfg;
+
+    D3D12_STATE_OBJECT_DESC stateObjectDesc = {};
+    stateObjectDesc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+    stateObjectDesc.NumSubobjects = ARRAYSIZE(subobjects);
+    stateObjectDesc.pSubobjects = subobjects;
+
+    // Create the state object.
+    HRESULT l_HResult = m_device->CreateStateObject(&stateObjectDesc, IID_PPV_ARGS(&PSO->m_RaytracingPSO));
+    if (FAILED(l_HResult))
+    {
+        Log(Error, RenderPassComp->m_InstanceName, " Can't create Raytracing PSO.");
+        return false;
+    }
 
 #ifdef INNO_DEBUG
-	SetObjectName(RenderPassComp, l_PSO->m_PSO, "PSO");
+    SetObjectName(RenderPassComp, PSO->m_RaytracingPSO, "RaytracingPSO");
 #endif // INNO_DEBUG
 
-	Log(Verbose, RenderPassComp->m_InstanceName, " PSO has been created.");
+    Log(Verbose, RenderPassComp->m_InstanceName, " Raytracing PSO has been created.");
 
-	return true;
+    auto l_shaderIDBufferSize = 3 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+    auto l_shaderIDBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(l_shaderIDBufferSize);
+    PSO->m_RaytracingShaderIDBuffer = CreateUploadHeapBuffer(&l_shaderIDBufferDesc);
+
+    ID3D12StateObjectProperties* props;
+    PSO->m_RaytracingPSO->QueryInterface(&props);
+
+    void* data;
+    auto writeId = [&](const wchar_t* name) {
+        void* id = props->GetShaderIdentifier(name);
+        memcpy(data, id, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+        data = static_cast<char*>(data) +
+            D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+        };
+
+    PSO->m_RaytracingShaderIDBuffer->Map(0, nullptr, &data);
+    writeId(L"RayGenShader");
+    writeId(L"MissShader");
+    writeId(L"HitGroup");
+    PSO->m_RaytracingShaderIDBuffer->Unmap(0, nullptr);
+    props->Release();
+
+    Log(Verbose, RenderPassComp->m_InstanceName, " Raytracing shader IDs have been written.");
+
+    return true;
 }
 
 bool DX12RenderingServer::CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-	l_commandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_directCommandAllocators[swapChainImageIndex].Get(), (name + L"_DirectCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
-	l_commandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommandAllocators[swapChainImageIndex].Get(), (name + L"_ComputeCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
-	l_commandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommandAllocators[swapChainImageIndex].Get(), (name + L"_CopyCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
+    auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+    l_commandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_directCommandAllocators[swapChainImageIndex].Get(), (name + L"_DirectCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
+    l_commandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommandAllocators[swapChainImageIndex].Get(), (name + L"_ComputeCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
+    l_commandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommandAllocators[swapChainImageIndex].Get(), (name + L"_CopyCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
 
-	l_commandList->m_DirectCommandList->Close();
-	l_commandList->m_ComputeCommandList->Close();
-	l_commandList->m_CopyCommandList->Close();
+    l_commandList->m_DirectCommandList->Close();
+    l_commandList->m_ComputeCommandList->Close();
+    l_commandList->m_CopyCommandList->Close();
 
-	return true;
+    return true;
 }
 
 bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* rhs)
 {
-	bool result = true;
-	auto RenderPassComp = reinterpret_cast<RenderPassComponent*>(rhs);
-	for (size_t i = 0; i < RenderPassComp->m_Semaphores.size(); i++)
-	{
-		auto l_semaphore = reinterpret_cast<DX12Semaphore*>(RenderPassComp->m_Semaphores[i]);
-		l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
-		{
-			Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for direct CommandQueue.");
-			result = false;
-		}
+    bool result = true;
+    auto RenderPassComp = reinterpret_cast<RenderPassComponent*>(rhs);
+    for (size_t i = 0; i < RenderPassComp->m_Semaphores.size(); i++)
+    {
+        auto l_semaphore = reinterpret_cast<DX12Semaphore*>(RenderPassComp->m_Semaphores[i]);
+        l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+        if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
+        {
+            Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for direct CommandQueue.");
+            result = false;
+        }
 
-		l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
-		{
-			Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for compute CommandQueue.");
-			result = false;
-		}
+        l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+        if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
+        {
+            Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for compute CommandQueue.");
+            result = false;
+        }
 
-		l_semaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (l_semaphore->m_CopyCommandQueueFenceEvent == NULL)
-		{
-			Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for copy CommandQueue.");
-			result = false;
-		}
-	}
+        l_semaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+        if (l_semaphore->m_CopyCommandQueueFenceEvent == NULL)
+        {
+            Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for copy CommandQueue.");
+            result = false;
+        }
+    }
 
-	if (result)
-	{
-		Log(Verbose, RenderPassComp->m_InstanceName, " Fence events have been created.");
-	}
+    if (result)
+    {
+        Log(Verbose, RenderPassComp->m_InstanceName, " Fence events have been created.");
+    }
 
-	return result;
+    return result;
 }
 
 bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
@@ -335,9 +480,24 @@ bool DX12RenderingServer::BeginFrame()
     GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
     GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
     GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
-       
+
     return true;
 }
+
+bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
+{
+    auto l_currentFrame = GetCurrentFrame();
+    auto l_mappedMemory = m_TLASBufferComponent->m_MappedMemories[l_currentFrame];
+
+    auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
+    WriteMappedMemory(m_TLASBufferComponent, l_mappedMemory, &l_descList->m_Descs[0], 0, l_descList->m_Descs.size());
+    l_mappedMemory->m_NeedUploadToGPU = false;
+
+    UploadToGPU(commandList, m_TLASBufferComponent);
+
+    return true;
+}
+
 bool DX12RenderingServer::PresentImpl()
 {
     m_swapChain->Present(0, 0);
@@ -357,7 +517,7 @@ bool DX12RenderingServer::EndFrame()
 bool DX12RenderingServer::ResizeImpl()
 {
     Log(Verbose, "Resizing the swap chain.");
-   
+
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
     m_swapChainDesc.Width = (UINT)l_screenResolution.x;
@@ -381,22 +541,22 @@ bool DX12RenderingServer::ResizeImpl()
 
 bool DX12RenderingServer::BeginCapture()
 {
-	if (m_graphicsAnalysis != nullptr)
-	{
-		m_graphicsAnalysis->BeginCapture();
-		return true;
-	}
+    if (m_graphicsAnalysis != nullptr)
+    {
+        m_graphicsAnalysis->BeginCapture();
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 bool DX12RenderingServer::EndCapture()
 {
-	if (m_graphicsAnalysis != nullptr)
-	{
-		m_graphicsAnalysis->EndCapture();
-		return true;
-	}
+    if (m_graphicsAnalysis != nullptr)
+    {
+        m_graphicsAnalysis->EndCapture();
+        return true;
+    }
 
-	return false;
+    return false;
 }

@@ -1,4 +1,4 @@
-#include "../../Engine/Services/PhysicsSystem.h"
+#include "../../Engine/Services/PhysicsSimulationService.h"
 #include "../../Engine/Services/HIDService.h"
 
 #include "../../Engine/Engine.h"
@@ -213,7 +213,7 @@ namespace Inno
         f_addForce = [&]() {
             auto l_force = Math::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
             l_force = l_force * 10.0f;
-            g_Engine->Get<PhysicsSystem>()->AddForce(m_playerModelComponent, l_force);
+            g_Engine->Get<PhysicsSimulationService>()->AddForce(m_playerModelComponent, l_force);
         };
 
         f_switchCamera = [&]() {

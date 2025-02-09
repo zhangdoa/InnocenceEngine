@@ -1,5 +1,6 @@
 #include "DX12RenderingServer.h"
 #include "../../Engine.h"
+#include "../../Services/RenderingConfigurationService.h"
 
 using namespace Inno;
 
@@ -250,7 +251,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
-	if (shaderStage == ShaderStage::Compute)
+	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 		return BindComputeResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
 	else
 		return BindGraphicsResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
@@ -542,3 +543,77 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 
 	return true;
 }
+
+bool DX12RenderingServer::Register(CollisionComponent* rhs)
+{
+	if (m_RegisteredCollisionComponents.find(rhs) != m_RegisteredCollisionComponents.end())
+		return true;
+
+	auto l_transformMatrix = rhs->m_TransformComponent->m_globalTransformMatrix.m_transformationMat;
+
+	for (size_t i = 0; i < GetSwapChainImageCount(); i++)
+	{
+		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
+		instanceDesc.Transform[0][0] = l_transformMatrix.m00;
+		instanceDesc.Transform[0][1] = l_transformMatrix.m01;
+		instanceDesc.Transform[0][2] = l_transformMatrix.m02;
+		instanceDesc.Transform[1][0] = l_transformMatrix.m10;
+		instanceDesc.Transform[1][1] = l_transformMatrix.m11;
+		instanceDesc.Transform[1][2] = l_transformMatrix.m12;
+		instanceDesc.Transform[2][0] = l_transformMatrix.m20;
+		instanceDesc.Transform[2][1] = l_transformMatrix.m21;
+		instanceDesc.Transform[2][2] = l_transformMatrix.m22;
+		instanceDesc.Transform[3][0] = l_transformMatrix.m30;
+		instanceDesc.Transform[3][1] = l_transformMatrix.m31;
+		instanceDesc.Transform[3][2] = l_transformMatrix.m32;
+
+		instanceDesc.InstanceID = rhs->m_UUID;
+		instanceDesc.InstanceMask = 0xFF;
+		instanceDesc.InstanceContributionToHitGroupIndex = 0;
+		instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+		auto l_TLAS = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[i]);
+		instanceDesc.AccelerationStructure = l_TLAS->m_DefaultHeapBuffer->GetGPUVirtualAddress();
+		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[i]);
+		l_descList->m_Descs.emplace_back(instanceDesc);
+	}
+
+	m_RegisteredCollisionComponents.emplace(rhs);
+
+	return true;
+}
+
+ bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs)
+ {
+	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	l_PSO->m_RaytracingShaderIDBuffer;
+	auto l_shaderIDBufferVirtualAddress = l_PSO->m_RaytracingShaderIDBuffer->GetGPUVirtualAddress(); 
+	
+	D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
+	dispatchDesc.RayGenerationShaderRecord = {};
+	dispatchDesc.RayGenerationShaderRecord.StartAddress = l_shaderIDBufferVirtualAddress;
+	dispatchDesc.RayGenerationShaderRecord.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+
+	dispatchDesc.MissShaderTable = {};
+	dispatchDesc.MissShaderTable.StartAddress = l_shaderIDBufferVirtualAddress + D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	dispatchDesc.MissShaderTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+
+	dispatchDesc.HitGroupTable = {};
+	dispatchDesc.HitGroupTable.StartAddress = l_shaderIDBufferVirtualAddress + 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+
+	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+    // dispatchDesc.Width = static_cast<UINT>(l_screenResolution.x);
+    // dispatchDesc.Height = static_cast<UINT>(l_screenResolution.y);
+    dispatchDesc.Depth = 1;
+
+	dispatchDesc.Width = 1;
+	dispatchDesc.Height = 1;
+
+	l_commandList->m_ComputeCommandList->DispatchRays(&dispatchDesc);
+
+	return true;
+ }

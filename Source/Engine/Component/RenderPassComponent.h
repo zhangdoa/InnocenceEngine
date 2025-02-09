@@ -23,7 +23,6 @@ namespace Inno
 
 		IOutputMergerTarget* m_OutputMergerTarget = 0;
 		IPipelineStateObject* m_PipelineStateObject = 0;
-		IPipelineStateObject* m_RaytracingPipelineStateObject = 0;
 		std::vector<IShaderBindingTable*> m_ShaderBindingTables;
 		std::vector<ICommandList*> m_CommandLists;
 		std::vector<ISemaphore*> m_Semaphores;

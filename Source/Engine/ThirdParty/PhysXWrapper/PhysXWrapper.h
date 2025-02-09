@@ -1,6 +1,6 @@
 #pragma once
 #include "../../Common/MathHelper.h"
-#include "../../Component/PhysicsComponent.h"
+#include "../../Component/CollisionComponent.h"
 
 namespace Inno
 {
@@ -19,11 +19,11 @@ namespace Inno
 		bool Update();
 		bool Terminate();
 
-		bool createPxSphere(PhysicsComponent* rhs, float radius, bool isDynamic);
-		bool createPxBox(PhysicsComponent* rhs, bool isDynamic);
-		bool createPxMesh(PhysicsComponent* rhs, bool isDynamic, bool isConvex);
+		bool createPxSphere(CollisionComponent* rhs, float radius, bool isDynamic);
+		bool createPxBox(CollisionComponent* rhs, bool isDynamic);
+		bool createPxMesh(CollisionComponent* rhs, bool isDynamic, bool isConvex);
 
-		bool addForce(PhysicsComponent* rhs, Vec4 force);
+		bool addForce(CollisionComponent* rhs, Vec4 force);
 
 	private:
 		PhysXWrapper() {};

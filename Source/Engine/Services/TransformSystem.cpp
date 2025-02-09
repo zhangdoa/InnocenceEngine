@@ -3,7 +3,7 @@
 #include "../Common/Randomizer.h"
 #include "../Common/LogService.h"
 #include "ComponentManager.h"
-#include "SceneSystem.h"
+#include "SceneService.h"
 #include "EntityManager.h"
 
 #include "../Engine.h"
@@ -96,7 +96,7 @@ bool TransformSystem::Setup(ISystemConfig* systemConfig)
 		}
 		};
 
-	g_Engine->Get<SceneSystem>()->AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishCallback, 1);
+	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishCallback, 1);
 
 	m_RootTransformEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "RootTransform/");
 
@@ -116,7 +116,7 @@ bool TransformSystem::Initialize()
 
 bool TransformSystem::Update()
 {
-	if (g_Engine->Get<SceneSystem>()->isLoadingScene())
+	if (g_Engine->Get<SceneService>()->IsLoading())
 		return true;
 
 	auto l_component = g_Engine->Get<ComponentManager>()->GetAll<TransformComponent>();

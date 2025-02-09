@@ -41,7 +41,7 @@ ComPtr<ID3D12CommandQueue> DX12RenderingServer::GetGlobalCommandQueue(D3D12_COMM
 	}
 }
 
-ComPtr<ID3D12GraphicsCommandList> DX12RenderingServer::GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType)
+ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType)
 {
 	auto l_currentFrame = GetCurrentFrame();	
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[l_currentFrame]);

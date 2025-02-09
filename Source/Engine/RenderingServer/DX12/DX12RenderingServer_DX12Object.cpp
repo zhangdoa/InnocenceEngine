@@ -32,7 +32,7 @@ ComPtr<ID3D12Resource> DX12RenderingServer::CreateUploadHeapBuffer(D3D12_RESOURC
 	return l_uploadHeapBuffer;
 }
 
-ComPtr<ID3D12Resource> DX12RenderingServer::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_CLEAR_VALUE* clearValue, const char* name)
+ComPtr<ID3D12Resource> DX12RenderingServer::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue, const char* name)
 {
 	ComPtr<ID3D12Resource> l_defaultHeapBuffer;
 
@@ -40,7 +40,7 @@ ComPtr<ID3D12Resource> DX12RenderingServer::CreateDefaultHeapBuffer(D3D12_RESOUR
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		resourceDesc,
-		D3D12_RESOURCE_STATE_COMMON,
+		initialState,
 		clearValue,
 		IID_PPV_ARGS(&l_defaultHeapBuffer));
 
@@ -114,9 +114,9 @@ ComPtr<ID3D12CommandAllocator> DX12RenderingServer::CreateCommandAllocator(D3D12
 	return l_commandAllocator;
 }
 
-ComPtr<ID3D12GraphicsCommandList> DX12RenderingServer::CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t* name)
+ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t* name)
 {
-	ComPtr<ID3D12GraphicsCommandList> l_commandList;
+	ComPtr<ID3D12GraphicsCommandList7> l_commandList;
 
 	auto l_HResult = m_device->CreateCommandList(0, commandListType, commandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
@@ -134,14 +134,14 @@ ComPtr<ID3D12GraphicsCommandList> DX12RenderingServer::CreateCommandList(D3D12_C
 	return l_commandList;
 }
 
-ComPtr<ID3D12GraphicsCommandList> DX12RenderingServer::CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator)
+ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator)
 {
 	static uint64_t index = 0;
 
 	return CreateCommandList(commandListType, commandAllocator, (L"TemporaryCommandList_" + std::to_wstring(index++)).c_str());
 }
 
-bool DX12RenderingServer::ExecuteCommandListAndWait(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12CommandQueue> commandQueue)
+bool DX12RenderingServer::ExecuteCommandListAndWait(ComPtr<ID3D12GraphicsCommandList7> commandList, ComPtr<ID3D12CommandQueue> commandQueue)
 {
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
