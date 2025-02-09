@@ -49,7 +49,7 @@ bool RadianceCachePass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUBufferUsage = GPUBufferUsage::TLAS;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = m_ShaderStage;
@@ -134,7 +134,6 @@ bool RadianceCachePass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_renderingServer->GetTLASBuffer(), 1);
@@ -143,7 +142,7 @@ bool RadianceCachePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, m_Result, 5);
 
-	//l_renderingServer->DispatchRays(m_RenderPassComp);
+	l_renderingServer->DispatchRays(m_RenderPassComp);
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

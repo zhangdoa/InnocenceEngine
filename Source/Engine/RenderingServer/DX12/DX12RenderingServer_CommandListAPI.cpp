@@ -1,6 +1,7 @@
 #include "DX12RenderingServer.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
+#include "../../Common/LogServiceSpecialization.h"
 
 using namespace Inno;
 
@@ -120,8 +121,17 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			}
 			else if ((l_buffer->m_GPUAccessibility.CanWrite()))
 			{
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_SRV.Handle.GPUHandle);
-				return true;
+				if (l_buffer->m_Usage == GPUBufferUsage::TLAS)
+				{
+					auto l_GPUVirtualAddress = l_deviceMemory->m_DefaultHeapBuffer->GetGPUVirtualAddress();
+					commandList->m_ComputeCommandList->SetComputeRootShaderResourceView(rootParameterIndex, l_GPUVirtualAddress);
+					return true;
+				}
+				else
+				{
+					commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_SRV.Handle.GPUHandle);
+					return true;
+				}
 			}
 		}
 		else if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
@@ -148,7 +158,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			auto l_image = reinterpret_cast<DX12TextureComponent*>(resource);
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 				return false;
-			
+
 			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[GetCurrentFrame()]);
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
@@ -300,7 +310,7 @@ bool DX12RenderingServer::UpdateIndirectDrawCommand(GPUBufferComponent* indirect
 
 	auto l_mappedMemory = indirectDrawCommand->m_MappedMemories[GetCurrentFrame()];
 	WriteMappedMemory(indirectDrawCommand, l_mappedMemory, l_indirectDrawCommandList->m_CommandList.data(), 0, l_indirectDrawCommandList->m_CommandList.size());
-	
+
 	return true;
 }
 
@@ -308,7 +318,7 @@ bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* rhs, GPUBufferCom
 {
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);	
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
 	auto l_indirectDrawCommandList = reinterpret_cast<DX12IndirectDrawCommandList*>(indirectDrawCommand->m_IndirectDrawCommandList);
 	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(indirectDrawCommand->m_DeviceMemories[GetCurrentFrame()]);
 
@@ -394,7 +404,7 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
 			l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
-		
+
 		m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
 	}
 	else if (queueType == GPUEngineType::Copy)
@@ -485,7 +495,7 @@ uint64_t DX12RenderingServer::GetSemaphoreValue(GPUEngineType queueType)
 	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 
 	if (queueType == GPUEngineType::Graphics)
-		return l_semaphore->m_DirectCommandQueueSemaphore;	
+		return l_semaphore->m_DirectCommandQueueSemaphore;
 	else if (queueType == GPUEngineType::Compute)
 		return l_semaphore->m_ComputeCommandQueueSemaphore;
 	else if (queueType == GPUEngineType::Copy)
@@ -544,54 +554,15 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 	return true;
 }
 
-bool DX12RenderingServer::Register(CollisionComponent* rhs)
+bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs)
 {
-	if (m_RegisteredCollisionComponents.find(rhs) != m_RegisteredCollisionComponents.end())
-		return true;
-
-	auto l_transformMatrix = rhs->m_TransformComponent->m_globalTransformMatrix.m_transformationMat;
-
-	for (size_t i = 0; i < GetSwapChainImageCount(); i++)
-	{
-		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-		instanceDesc.Transform[0][0] = l_transformMatrix.m00;
-		instanceDesc.Transform[0][1] = l_transformMatrix.m01;
-		instanceDesc.Transform[0][2] = l_transformMatrix.m02;
-		instanceDesc.Transform[1][0] = l_transformMatrix.m10;
-		instanceDesc.Transform[1][1] = l_transformMatrix.m11;
-		instanceDesc.Transform[1][2] = l_transformMatrix.m12;
-		instanceDesc.Transform[2][0] = l_transformMatrix.m20;
-		instanceDesc.Transform[2][1] = l_transformMatrix.m21;
-		instanceDesc.Transform[2][2] = l_transformMatrix.m22;
-		instanceDesc.Transform[3][0] = l_transformMatrix.m30;
-		instanceDesc.Transform[3][1] = l_transformMatrix.m31;
-		instanceDesc.Transform[3][2] = l_transformMatrix.m32;
-
-		instanceDesc.InstanceID = rhs->m_UUID;
-		instanceDesc.InstanceMask = 0xFF;
-		instanceDesc.InstanceContributionToHitGroupIndex = 0;
-		instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-
-		auto l_TLAS = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[i]);
-		instanceDesc.AccelerationStructure = l_TLAS->m_DefaultHeapBuffer->GetGPUVirtualAddress();
-		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[i]);
-		l_descList->m_Descs.emplace_back(instanceDesc);
-	}
-
-	m_RegisteredCollisionComponents.emplace(rhs);
-
-	return true;
-}
-
- bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs)
- {
+	auto l_currentFrame = GetCurrentFrame();
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_currentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
-
-	l_PSO->m_RaytracingShaderIDBuffer;
-	auto l_shaderIDBufferVirtualAddress = l_PSO->m_RaytracingShaderIDBuffer->GetGPUVirtualAddress(); 
 	
+	auto l_shaderIDBufferVirtualAddress = l_PSO->m_RaytracingShaderIDBuffer->GetGPUVirtualAddress();
+
 	D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
 	dispatchDesc.RayGenerationShaderRecord = {};
 	dispatchDesc.RayGenerationShaderRecord.StartAddress = l_shaderIDBufferVirtualAddress;
@@ -606,14 +577,11 @@ bool DX12RenderingServer::Register(CollisionComponent* rhs)
 	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-    // dispatchDesc.Width = static_cast<UINT>(l_screenResolution.x);
-    // dispatchDesc.Height = static_cast<UINT>(l_screenResolution.y);
-    dispatchDesc.Depth = 1;
-
-	dispatchDesc.Width = 1;
-	dispatchDesc.Height = 1;
+	dispatchDesc.Width = static_cast<UINT>(l_screenResolution.x);
+	dispatchDesc.Height = static_cast<UINT>(l_screenResolution.y);
+	dispatchDesc.Depth = 1;
 
 	l_commandList->m_ComputeCommandList->DispatchRays(&dispatchDesc);
 
 	return true;
- }
+}

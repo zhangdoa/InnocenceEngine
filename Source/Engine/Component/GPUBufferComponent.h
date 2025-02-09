@@ -1,8 +1,6 @@
 #pragma once
 #include "GPUResourceComponent.h"
 
-INNO_ENUM(GPUBufferUsage, None, IndirectDraw, IndirectDispatch, AtomicCounter);
-
 namespace Inno
 {
 	class GPUBufferComponent : public GPUResourceComponent

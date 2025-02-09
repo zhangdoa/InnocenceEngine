@@ -129,7 +129,7 @@ bool SSAOPass::Setup(ISystemConfig* systemConfig)
 	m_NoiseTexture = l_renderingServer->AddTextureComponent("SSAO_Noise/");
 
 	m_NoiseTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-	m_NoiseTexture->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_NoiseTexture->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 	m_NoiseTexture->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 	m_NoiseTexture->m_TextureDesc.Width = l_textureSize;

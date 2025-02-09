@@ -59,6 +59,8 @@ namespace Inno
 		void Initialize(SamplerComponent* rhs);
 		void Initialize(GPUBufferComponent* rhs);
 
+		void Initialize(CollisionComponent* rhs);
+
 		// Rendering Stage APIs
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
 		void SetCommandPreparationCallback(std::function<bool()>&& callback);
@@ -116,7 +118,6 @@ namespace Inno
 		virtual bool EndCapture() { return false; }
 
 		// Raytracing-related APIs
-		virtual bool Register(CollisionComponent* rhs) { return false; }
 		virtual bool DispatchRays(RenderPassComponent* rhs) { return false; }
 		GPUResourceComponent* GetTLASBuffer() { return m_TLASBufferComponent; }
 
@@ -146,6 +147,9 @@ namespace Inno
 		virtual	bool InitializeImpl(ShaderProgramComponent* rhs) { return false; }
 		virtual bool InitializeImpl(SamplerComponent* rhs) { return false; }
 		virtual bool InitializeImpl(GPUBufferComponent* rhs) { return false; }
+
+		virtual bool InitializeImpl(CollisionComponent* rhs) { return false; }
+
         bool DeleteRenderTargets(RenderPassComponent* rhs);
 
 		virtual bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) { return false; }
@@ -217,6 +221,10 @@ namespace Inno
 		std::vector<RenderPassComponent*> m_initializedRenderPasses;
 	
         GPUBufferComponent* m_TLASBufferComponent = nullptr;
+		GPUBufferComponent* m_ScratchBufferComponent = nullptr;
+ 		GPUBufferComponent* m_RaytracingInstanceBufferComponent = nullptr;
+		std::shared_mutex m_CollisionComponentsMutex;
+		std::unordered_map<MeshComponent*, std::vector<CollisionComponent*>> m_UnregisteredCollisionComponents;
         std::unordered_set<CollisionComponent*> m_RegisteredCollisionComponents;
         std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
 

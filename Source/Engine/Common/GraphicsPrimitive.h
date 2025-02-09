@@ -15,6 +15,17 @@ INNO_ENUM
 	Copy
 );
 
+INNO_ENUM
+(
+	GPUBufferUsage,
+	None,
+	IndirectDraw,
+	IndirectDispatch,
+	AtomicCounter,
+	TLAS,
+	ScratchBuffer
+);
+
 namespace Inno
 {
 	class GPUResourceComponent;
@@ -301,6 +312,7 @@ namespace Inno
 			uint32_t m_SubresourceCount = 1;
 			bool m_IsRootConstant = false;
 			TextureUsage m_TextureUsage = TextureUsage::Invalid;
+			GPUBufferUsage m_GPUBufferUsage = GPUBufferUsage::None;
 
 			// Deprecated
 			bool m_IndirectBinding = false;

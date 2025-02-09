@@ -235,6 +235,19 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 	m_uninitializedRenderPasses.push(rhs);
 }
 
+void IRenderingServer::Initialize(CollisionComponent* rhs)
+{
+	std::lock_guard<std::shared_mutex> l_lock(m_CollisionComponentsMutex);
+	if (m_RegisteredCollisionComponents.find(rhs) != m_RegisteredCollisionComponents.end())
+		return;
+
+	auto l_pair = m_UnregisteredCollisionComponents.find(rhs->m_RenderableSet->mesh);
+	if (l_pair == m_UnregisteredCollisionComponents.end())
+		m_UnregisteredCollisionComponents.emplace(rhs->m_RenderableSet->mesh, std::vector<CollisionComponent*>{rhs});
+	else
+		l_pair->second.emplace_back(rhs);
+}
+
 bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 {
 	if (rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc)
@@ -667,6 +680,28 @@ bool IRenderingServer::InitializeComponents()
 			m_initializedRenderPasses.push_back(l_RenderPass);
 	}
 
+	{
+		std::lock_guard<std::shared_mutex> l_lock(m_CollisionComponentsMutex);
+		for (auto& i : m_UnregisteredCollisionComponents)
+		{
+			if (i.first->m_ObjectStatus != ObjectStatus::Activated)
+				continue;
+
+			for (auto j : i.second)
+			{
+				InitializeImpl(j);
+			}
+		}
+
+		for (auto it = m_UnregisteredCollisionComponents.begin(); it != m_UnregisteredCollisionComponents.end(); )
+		{
+			if (it->first->m_ObjectStatus == ObjectStatus::Activated)
+				it = m_UnregisteredCollisionComponents.erase(it);
+			else
+				++it;
+		}
+	}
+
 	return true;
 }
 
@@ -691,7 +726,7 @@ bool IRenderingServer::PrepareGlobalCommands()
 		if (i->m_MappedMemories.size() == 0)
 			continue;
 
-		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
+		auto l_mappedMemory = i->m_TextureDesc.Usage == TextureUsage::Sample ? i->m_MappedMemories[0] : i->m_MappedMemories[l_currentFrame];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
 			UploadToGPU(l_commandList, i);

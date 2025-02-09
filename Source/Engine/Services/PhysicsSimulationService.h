@@ -18,6 +18,7 @@ namespace Inno
 
 		ObjectStatus GetStatus();
 
+		bool CreateCollisionPrimitive(MeshComponent* meshComponent);
 		bool CreateCollisionComponents(ModelComponent* modelComponent);
 
 		void RunCulling();

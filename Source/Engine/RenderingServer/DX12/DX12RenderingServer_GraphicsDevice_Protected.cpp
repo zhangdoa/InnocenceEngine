@@ -32,12 +32,23 @@ bool DX12RenderingServer::CreateHardwareResources()
 
     m_TLASBufferComponent = AddGPUBufferComponent("TLASBuffer/");
     m_TLASBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
-
-    // @TODO: The number of elements should be calculated based on the number of ray tracing instances.
-    m_TLASBufferComponent->m_ElementCount = 16384;
-    m_TLASBufferComponent->m_ElementSize = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+    m_TLASBufferComponent->m_Usage = GPUBufferUsage::TLAS;
 
     InitializeImpl(m_TLASBufferComponent);
+
+    m_ScratchBufferComponent = AddGPUBufferComponent("ScratchBuffer/");
+    m_ScratchBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
+    m_ScratchBufferComponent->m_Usage = GPUBufferUsage::ScratchBuffer;
+
+    InitializeImpl(m_ScratchBufferComponent);
+
+    m_RaytracingInstanceBufferComponent = AddGPUBufferComponent("RaytracingInstanceBuffer/");
+    m_RaytracingInstanceBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
+    // @TODO: The number of elements should be calculated based on the number of ray tracing instances.
+    m_RaytracingInstanceBufferComponent->m_ElementCount = 256;
+    m_RaytracingInstanceBufferComponent->m_ElementSize = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+
+    InitializeImpl(m_RaytracingInstanceBufferComponent);
 
     m_RaytracingInstanceDescs.resize(GetSwapChainImageCount());
     for (size_t i = 0; i < m_RaytracingInstanceDescs.size(); i++)
@@ -487,16 +498,67 @@ bool DX12RenderingServer::BeginFrame()
 bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
 {
     auto l_currentFrame = GetCurrentFrame();
-    auto l_mappedMemory = m_TLASBufferComponent->m_MappedMemories[l_currentFrame];
+	auto l_instanceDescList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
+    if (l_instanceDescList->m_Descs.size() == 0)
+        return true;
 
-    auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
-    WriteMappedMemory(m_TLASBufferComponent, l_mappedMemory, &l_descList->m_Descs[0], 0, l_descList->m_Descs.size());
+    if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
+        return true;
+
+    if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
+        return true;
+
+    if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
+        return true;
+        
+    auto l_mappedMemory = m_RaytracingInstanceBufferComponent->m_MappedMemories[l_currentFrame];
+
+    WriteMappedMemory(m_RaytracingInstanceBufferComponent, l_mappedMemory, &l_instanceDescList->m_Descs[0], 0, l_instanceDescList->m_Descs.size());
     l_mappedMemory->m_NeedUploadToGPU = false;
 
-    UploadToGPU(commandList, m_TLASBufferComponent);
+    UploadToGPU(commandList, m_RaytracingInstanceBufferComponent);
+    SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+
+    auto l_TLASBuffer = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[l_currentFrame]);
+    auto l_scratchBuffer = reinterpret_cast<DX12DeviceMemory*>(m_ScratchBufferComponent->m_DeviceMemories[l_currentFrame]);
+    auto l_instanceBuffer = reinterpret_cast<DX12DeviceMemory*>(m_RaytracingInstanceBufferComponent->m_DeviceMemories[l_currentFrame]);
+
+    auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+
+    CD3DX12_RESOURCE_BARRIER instanceBufferBarrier_Read = CD3DX12_RESOURCE_BARRIER::Transition(
+        l_instanceBuffer->m_DefaultHeapBuffer.Get(),
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+    );
+    
+    l_commandList->m_DirectCommandList->ResourceBarrier(1, &instanceBufferBarrier_Read);
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC tlasDesc = {};
+    tlasDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    tlasDesc.Inputs.NumDescs = l_instanceDescList->m_Descs.size();
+    tlasDesc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    tlasDesc.Inputs.InstanceDescs = l_instanceBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
+    tlasDesc.Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+    tlasDesc.DestAccelerationStructureData = l_TLASBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
+    tlasDesc.ScratchAccelerationStructureData = l_scratchBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
+
+    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+    l_commandList->m_DirectCommandList->BuildRaytracingAccelerationStructure(&tlasDesc, 0, nullptr);
+    SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+
+    CD3DX12_RESOURCE_BARRIER instanceBufferBarrier_Write = CD3DX12_RESOURCE_BARRIER::Transition(
+        l_instanceBuffer->m_DefaultHeapBuffer.Get(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+    );
+
+    l_commandList->m_DirectCommandList->ResourceBarrier(1, &instanceBufferBarrier_Write);
 
     return true;
 }
+
 
 bool DX12RenderingServer::PresentImpl()
 {

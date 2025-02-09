@@ -87,7 +87,6 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
     l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 0);
 	l_renderingServer->Dispatch(m_RenderPassComp, 32, 32, 1);
 	l_renderingServer->CommandListEnd(m_RenderPassComp);

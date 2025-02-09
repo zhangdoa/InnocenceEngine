@@ -526,7 +526,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
 
         {
             m_RenderTarget_UAV_DescHeapAccessor_ShaderNonVisible = CreateDescriptorHeapAccessor(m_CSUDescHeap_ShaderNonVisible.Get(), l_Desc, l_maxRenderTargetTextures
-                , l_incrementSize, l_firstRenderTargetTextureBufferUAVHandle, false, L"3DTexture_UAV_DescHeapAccessor_ShaderNonVisible");
+                , l_incrementSize, l_firstRenderTargetTextureBufferUAVHandle, false, L"RenderTarget_UAV_DescHeapAccessor_ShaderNonVisible");
 
             auto l_currentHandle = l_firstRenderTargetTextureBufferUAVHandle;
             D3D12_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc = {};

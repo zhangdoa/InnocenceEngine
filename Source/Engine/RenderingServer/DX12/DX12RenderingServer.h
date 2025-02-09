@@ -61,8 +61,7 @@ namespace Inno
         uint64_t GetSemaphoreValue(GPUEngineType queueType) override;
         bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
         bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
-        
-        bool Register(CollisionComponent* rhs) override;
+
         bool DispatchRays(RenderPassComponent* rhs) override;
 
         // In DX12RenderingServer_EngineComponent_Public.cpp
@@ -93,6 +92,7 @@ namespace Inno
         bool InitializeImpl(ShaderProgramComponent* rhs) override;
         bool InitializeImpl(SamplerComponent* rhs) override;
         bool InitializeImpl(GPUBufferComponent* rhs) override;
+        bool InitializeImpl(CollisionComponent* rhs) override;
 
         bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) override;
         bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) override;

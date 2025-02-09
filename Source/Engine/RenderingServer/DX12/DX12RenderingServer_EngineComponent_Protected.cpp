@@ -11,6 +11,7 @@
 #include "DX12Helper_Pipeline.h"
 
 #include "../../Engine.h"
+#include "../../Services/PhysicsSimulationService.h"
 
 using namespace Inno;
 using namespace DX12Helper;
@@ -172,6 +173,8 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs)
 
 	Log(Verbose, l_rhs->m_InstanceName, " BLAS is initialized.");
 
+	g_Engine->Get<PhysicsSimulationService>()->CreateCollisionPrimitive(l_rhs);
+
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -189,8 +192,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 
 	l_rhs->m_CurrentState = l_rhs->m_ReadState;
 
-	// @TODO: For read-only images it's totally a waste of memory.
-	l_rhs->m_DeviceMemories.resize(GetSwapChainImageCount());
+	if (l_rhs->m_TextureDesc.Usage == TextureUsage::Sample)
+		l_rhs->m_DeviceMemories.resize(1);
+	else
+		l_rhs->m_DeviceMemories.resize(GetSwapChainImageCount());
 
 	D3D12_CLEAR_VALUE l_clearValue = {};
 	for (size_t i = 0; i < l_rhs->m_DeviceMemories.size(); i++)
@@ -240,7 +245,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 
 	if (l_rhs->m_InitialData)
 	{
-		l_rhs->m_MappedMemories.resize(GetSwapChainImageCount());
+		if (l_rhs->m_TextureDesc.Usage == TextureUsage::Sample)
+			l_rhs->m_MappedMemories.resize(1);
+		else
+			l_rhs->m_MappedMemories.resize(GetSwapChainImageCount());
 
 		uint32_t l_subresourcesCount = l_rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 6 : 1;
 		for (size_t i = 0; i < l_rhs->m_MappedMemories.size(); i++)
@@ -257,7 +265,7 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 #endif // INNO_DEBUG
 
 			UploadToGPU(&l_commandList, l_DX12MappedMemory, l_DX12DeviceMemory, l_rhs);
-			
+
 			l_rhs->m_MappedMemories[i] = l_DX12MappedMemory;
 		}
 	}
@@ -429,78 +437,136 @@ bool DX12RenderingServer::InitializeImpl(SamplerComponent* rhs)
 
 bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 {
+	// @TODO: Make it just like the texture's read/write state
+	auto l_initialState = D3D12_RESOURCE_STATE_COMMON;
+	auto l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;
 	if (rhs->m_Usage == GPUBufferUsage::IndirectDraw)
 	{
 		rhs->m_ElementSize = sizeof(DX12DrawIndirectCommand);
-
-		// @TODO: The maximum draw call allowed should not be this hard-coded.
-		rhs->m_ElementCount = 256;
+		rhs->m_ElementCount = 256;  // TODO: Don't hardcode
 		rhs->m_IndirectDrawCommandList = new DX12IndirectDrawCommandList();
 	}
+	else if (l_isRaytracingAS)
+	{
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS tlasInputs = {};
+		tlasInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+		tlasInputs.NumDescs = rhs->m_ElementCount;
+		tlasInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+		tlasInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo = {};
+		m_device->GetRaytracingAccelerationStructurePrebuildInfo(&tlasInputs, &prebuildInfo);
+
+		UINT64 TLAS_SIZE_IN_BYTES = prebuildInfo.ResultDataMaxSizeInBytes;
+		UINT64 SCRATCH_SIZE_IN_BYTES = prebuildInfo.ScratchDataSizeInBytes;
+
+		rhs->m_ElementSize = rhs->m_Usage == GPUBufferUsage::TLAS ? TLAS_SIZE_IN_BYTES : SCRATCH_SIZE_IN_BYTES;
+		if (rhs->m_Usage == GPUBufferUsage::TLAS)
+			l_initialState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE; // This has to be set when the heap is created.
+	}
+
+	auto l_actualElementCount = l_isRaytracingAS ? 1 : rhs->m_ElementCount;
 	auto l_swapChainImageCount = GetSwapChainImageCount();
-
 	rhs->m_GPUResourceType = GPUResourceType::Buffer;
-	rhs->m_TotalSize = rhs->m_ElementCount * rhs->m_ElementSize;
+	rhs->m_TotalSize = l_actualElementCount * rhs->m_ElementSize;
 	rhs->m_MappedMemories.resize(l_swapChainImageCount);
 	rhs->m_DeviceMemories.resize(l_swapChainImageCount);
 
-	auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(rhs->m_TotalSize);
+	auto l_uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(rhs->m_TotalSize);
 	bool l_needDefaultHeap = rhs->m_GPUAccessibility.CanRead() && !rhs->m_CPUAccessibility.CanRead();
+
 	for (uint32_t i = 0; i < l_swapChainImageCount; ++i)
 	{
 		auto l_mappedMemory = new DX12MappedMemory();
-		l_mappedMemory->m_UploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc);
+		l_mappedMemory->m_UploadHeapBuffer = CreateUploadHeapBuffer(&l_uploadBufferDesc);
 
 #ifdef INNO_DEBUG
 		SetObjectName(rhs, l_mappedMemory->m_UploadHeapBuffer, ("UploadHeap_" + std::to_string(i)).c_str());
-#endif // INNO_DEBUG
-
-		if (l_needDefaultHeap)
-		{
-			auto l_defaultHeapResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(rhs->m_TotalSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-
-			auto l_deviceMemory = new DX12DeviceMemory();
-			l_deviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc);
-
-#ifdef INNO_DEBUG
-			SetObjectName(rhs, l_deviceMemory->m_DefaultHeapBuffer, ("DefaultHeap_" + std::to_string(i)).c_str());
-#endif // INNO_DEBUG
-
-			rhs->m_DeviceMemories[i] = l_deviceMemory;
-		}
-
+#endif
 		CD3DX12_RANGE m_readRange(0, 0);
 		l_mappedMemory->m_UploadHeapBuffer->Map(0, &m_readRange, &l_mappedMemory->m_Address);
 		rhs->m_MappedMemories[i] = l_mappedMemory;
+
+		if (!l_needDefaultHeap)
+			continue;
+
+		auto l_defaultHeapResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(rhs->m_TotalSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+
+		auto l_deviceMemory = new DX12DeviceMemory();
+		l_deviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc, l_initialState);
+
+#ifdef INNO_DEBUG
+		SetObjectName(rhs, l_deviceMemory->m_DefaultHeapBuffer, ("DefaultHeap_" + std::to_string(i)).c_str());
+#endif
+		rhs->m_DeviceMemories[i] = l_deviceMemory;
 	}
 
 	if (rhs->m_InitialData)
 	{
 		DX12CommandList l_commandList = {};
 		l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
+
 		for (uint32_t i = 0; i < l_swapChainImageCount; ++i)
 		{
 			auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(rhs->m_MappedMemories[i]);
 			auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(rhs->m_DeviceMemories[i]);
 			WriteMappedMemory(rhs, l_mappedMemory, rhs->m_InitialData, 0, rhs->m_TotalSize);
 			l_mappedMemory->m_NeedUploadToGPU = false;
-
 			UploadToGPU(&l_commandList, l_mappedMemory, l_deviceMemory, rhs);
 		}
 
 		ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
 	}
 
-	if (rhs->m_Usage != GPUBufferUsage::IndirectDraw)
+	if (rhs->m_Usage != GPUBufferUsage::IndirectDraw
+		&& rhs->m_Usage != GPUBufferUsage::ScratchBuffer)
 	{
 		CreateSRV(rhs);
-
 		if (l_needDefaultHeap)
 			CreateUAV(rhs);
 	}
 
+	Log(Verbose, "GPU Buffer: ", rhs->m_InstanceName, " (", rhs->m_Usage, ") is initialized.");
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
+	return true;
+}
+
+bool DX12RenderingServer::InitializeImpl(CollisionComponent* rhs)
+{
+	auto l_transformMatrix = rhs->m_TransformComponent->m_globalTransformMatrix.m_transformationMat;
+
+	for (size_t i = 0; i < GetSwapChainImageCount(); i++)
+	{
+		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
+		instanceDesc.Transform[0][0] = l_transformMatrix.m00;
+		instanceDesc.Transform[0][1] = l_transformMatrix.m01;
+		instanceDesc.Transform[0][2] = l_transformMatrix.m02;
+		instanceDesc.Transform[0][3] = l_transformMatrix.m03; // Translation X
+
+		instanceDesc.Transform[1][0] = l_transformMatrix.m10;
+		instanceDesc.Transform[1][1] = l_transformMatrix.m11;
+		instanceDesc.Transform[1][2] = l_transformMatrix.m12;
+		instanceDesc.Transform[1][3] = l_transformMatrix.m13; // Translation Y
+
+		instanceDesc.Transform[2][0] = l_transformMatrix.m20;
+		instanceDesc.Transform[2][1] = l_transformMatrix.m21;
+		instanceDesc.Transform[2][2] = l_transformMatrix.m22;
+		instanceDesc.Transform[2][3] = l_transformMatrix.m23; // Translation Z
+
+		instanceDesc.InstanceID = static_cast<UINT>(rhs->m_RenderableSet->material->m_ShaderModel);
+		instanceDesc.InstanceMask = 0xFF;
+		instanceDesc.InstanceContributionToHitGroupIndex = 0;
+		instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
+		auto l_mesh = reinterpret_cast<DX12MeshComponent*>(rhs->m_RenderableSet->mesh);
+		instanceDesc.AccelerationStructure = l_mesh->m_BLAS->GetGPUVirtualAddress();
+		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[i]);
+		l_descList->m_Descs.emplace_back(instanceDesc);
+	}
+
+	Log(Verbose, rhs->m_InstanceName, " Raytracing instance is registered.");
+
+	m_RegisteredCollisionComponents.emplace(rhs);
 
 	return true;
 }
@@ -581,7 +647,12 @@ bool DX12RenderingServer::UploadToGPU(DX12CommandList* commandList, DX12MappedMe
 		return true;
 
 	auto l_DX12CommandList = commandList->m_DirectCommandList;
-	auto l_beforeState = GPUBufferComponent->m_Usage == GPUBufferUsage::IndirectDraw ? D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	auto l_beforeState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	if (GPUBufferComponent->m_Usage == GPUBufferUsage::IndirectDraw)
+		l_beforeState = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+	else if (GPUBufferComponent->m_Usage == GPUBufferUsage::TLAS)
+		l_beforeState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+
 	auto l_afterState = D3D12_RESOURCE_STATE_COPY_DEST;
 	if (GPUBufferComponent->m_ObjectStatus == ObjectStatus::Activated)
 	{

@@ -91,10 +91,11 @@ bool DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice
 
 bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 {
+	bool l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_desc = {};
 	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
 	l_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	l_desc.Buffer.NumElements = (uint32_t)rhs->m_ElementCount;
+	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)rhs->m_ElementCount;
 	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
 	l_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
@@ -113,10 +114,11 @@ bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 
 bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 {
+	bool l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;	
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
 	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
 	l_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	l_desc.Buffer.NumElements = (uint32_t)rhs->m_ElementCount;
+	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)rhs->m_ElementCount;
 	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? (uint32_t)rhs->m_ElementSize : 0;
 
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite);
@@ -202,26 +204,44 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 		else
 		{
 			const char* rangeTypeName = "";
+			auto& l_lastRange = l_descriptorRanges.emplace_back(l_descriptorRange);
 			switch (l_descriptorRange.RangeType)
 			{
-			case D3D12_DESCRIPTOR_RANGE_TYPE_CBV:
-				rangeTypeName = "CBV";
-				break;
-			case D3D12_DESCRIPTOR_RANGE_TYPE_SRV:
-				rangeTypeName = "SRV";
-				break;
-			case D3D12_DESCRIPTOR_RANGE_TYPE_UAV:
-				rangeTypeName = "UAV";
-				break;
-			case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
-				rangeTypeName = "Sampler";
-				break;
+				case D3D12_DESCRIPTOR_RANGE_TYPE_CBV:
+				{
+					l_rootParameter.InitAsDescriptorTable(1, &l_lastRange);
+					rangeTypeName = "Root Descriptor Table CBV";
+					break;
+				}
+				case D3D12_DESCRIPTOR_RANGE_TYPE_SRV:
+				{
+					if (l_resourceBinderLayoutDesc.m_GPUBufferUsage == GPUBufferUsage::TLAS)
+					{
+						l_rootParameter.InitAsShaderResourceView(l_resourceBinderLayoutDesc.m_DescriptorIndex);
+						rangeTypeName = "Root Shader Resource View";
+					}
+					else
+					{
+						l_rootParameter.InitAsDescriptorTable(1, &l_lastRange);
+						rangeTypeName = "Root Descriptor Table SRV";
+					}
+					break;
+				}
+				case D3D12_DESCRIPTOR_RANGE_TYPE_UAV:
+				{
+					l_rootParameter.InitAsDescriptorTable(1, &l_lastRange);
+					rangeTypeName = "Root Descriptor Table UAV";
+					break;
+				}
+				case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
+				{
+					l_rootParameter.InitAsDescriptorTable(1, &l_lastRange);
+					rangeTypeName = "Root Descriptor Table Sampler";
+					break;
+				}
 			}
-
-			auto& l_lastRange = l_descriptorRanges.emplace_back(l_descriptorRange);
-			Log(Verbose, RenderPassComp->m_InstanceName, " Root Descriptor Table: ", rangeTypeName, " at root parameter ", i,
+			Log(Verbose, RenderPassComp->m_InstanceName, ": ", rangeTypeName, " at root parameter ", i,
 				" BaseShaderRegister ", l_descriptorRange.BaseShaderRegister, " with ", l_descriptorRange.NumDescriptors, " descriptors.");
-			l_rootParameter.InitAsDescriptorTable(1, &l_lastRange);
 		}
 
 		l_rootParameters.emplace_back(l_rootParameter);

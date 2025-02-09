@@ -13,8 +13,8 @@ namespace Inno
 		static const char* GetTypeName() { return "MeshComponent"; };
 
 		MeshShape m_MeshShape = MeshShape::Customized;
-		void* m_MappedMemory_VB;
-		void* m_MappedMemory_IB;
+		void* m_MappedMemory_VB = nullptr;
+		void* m_MappedMemory_IB = nullptr;
 		size_t m_IndexCount = 0;
 		bool m_NeedUploadToGPU = false;
 
