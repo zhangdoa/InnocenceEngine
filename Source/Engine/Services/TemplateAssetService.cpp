@@ -495,8 +495,8 @@ void TemplateAssetServiceImpl::addIcosahedron(MeshComponent* meshComponent)
 void TemplateAssetServiceImpl::addSphere(MeshComponent* meshComponent)
 {
 	auto radius = 1.0f;
-	auto sectorCount = 64;
-	auto stackCount = 64;
+	auto sectorCount = 32;
+	auto stackCount = 32;
 
 	float x, y, z, xy;                              // vertex position
 	float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal

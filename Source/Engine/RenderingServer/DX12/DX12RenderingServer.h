@@ -123,6 +123,7 @@ namespace Inno
         bool EndFrame() override;
 
         bool ResizeImpl() override;
+        bool OnSceneLoadingStart() override;
 
     private:
         // Global initialization functions

@@ -280,7 +280,7 @@ namespace Inno
 		PostTAAPass::Get().PrepareCommandList(&l_PostTAAPassRenderingContext);
 
 		LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
-		l_LuminanceHistogramPassRenderingContext.m_input = LightPass::Get().GetLuminanceResult();
+		l_LuminanceHistogramPassRenderingContext.m_input = PostTAAPass::Get().GetResult();
 		LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
 
 		LuminanceAveragePass::Get().PrepareCommandList();

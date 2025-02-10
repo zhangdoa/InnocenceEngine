@@ -1,19 +1,33 @@
 // shadertype=hlsl
 #include "RayTracingCommon.hlsl"
 
-// In a triangle hit, built-in attributes (e.g., barycentrics) could be used to interpolate vertex data.
-// For simplicity we use a fixed normal here.
 [shader("closesthit")]
-void ClosestHitShader(inout RayPayload payload,
-    in BuiltInTriangleIntersectionAttributes attrib)
+void ClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attrib)
 {
-    uint2 index = DispatchRaysIndex().xy;
-    float3 position = in_opaquePassRT0.Load(int3(index, 0)).xyz;
-    float3 normal = in_opaquePassRT1.Load(int3(index, 0)).xyz;
-    float3 albedo = in_opaquePassRT2.Load(int3(index, 0)).rgb;
+    // Compute hit position in world space
+    float3 hitPosition = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
 
-    float3 lambertianRadiance = CalculateLambertianRadiance(position, normal, albedo);
+    // Compute screen space coordinate from hitPosition
+    float4 positionVS = mul(float4(hitPosition, 1.0), g_Frame.v);
+    float4 positionCS = mul(positionVS, g_Frame.p_original);
+    float w = max(abs(positionCS.w), 0.0001);
+    positionCS.xyz /= w;
+    float2 screenCoord = positionCS.xy * 0.5 + 0.5;
+    screenCoord.y = 1.0 - screenCoord.y; // Flip Y for screen-space
 
-    payload.radiance = lambertianRadiance;
+    // Fetch current frame lighting
+    float3 hitRadiance = float3(0, 0, 0);
+    if (all(screenCoord >= float2(0, 0)) && all(screenCoord <= float2(1, 1))) // Check if within screen bounds
+    {
+        int2 screenPos = int2(screenCoord * g_Frame.viewportSize.xy);
+        hitRadiance = in_lightPassRT0.Load(int3(screenPos, 0)).rgb;
+        if (isnan(hitRadiance.x) || isnan(hitRadiance.y) || isnan(hitRadiance.z))
+        {
+            hitRadiance = float3(0, 0, 0);
+        }
+    }
+
+    // Store in payload
+    payload.radiance = hitRadiance;
     payload.sampleCount = 1;
 }

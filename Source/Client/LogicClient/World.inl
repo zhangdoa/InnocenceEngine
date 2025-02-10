@@ -136,7 +136,7 @@ namespace Inno
 
 	bool WorldSystem::setupOcclusionCubes()
 	{
-		uint32_t matrixDim = 8;
+		uint32_t matrixDim = 4;
 		float l_breadthInterval = 42.0f;
 		auto l_containerSize = matrixDim * matrixDim;
 
@@ -448,12 +448,12 @@ namespace Inno
 
 			m_posOffset = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-			setupReferenceSpheres();
-			setupOcclusionCubes();
-			setupOpaqueSpheres();
+			//setupReferenceSpheres();
+			//setupOcclusionCubes();
+			//setupOpaqueSpheres();
 			setupTransparentCubes();
 			setupVolumetricCubes();
-			setupPointLights();
+			//setupPointLights();
 
 			m_ObjectStatus = ObjectStatus::Activated;
 			};
@@ -475,9 +475,9 @@ namespace Inno
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 		f_loadTestScene = []() {
-			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene");
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene");
 			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza.InnoScene");
+			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
 			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 			};
 

@@ -601,6 +601,21 @@ bool DX12RenderingServer::ResizeImpl()
     return true;
 }
 
+bool DX12RenderingServer::OnSceneLoadingStart()
+{
+    for (size_t i = 0; i < m_RaytracingInstanceDescs.size(); i++)
+    {
+        auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[i]);
+        l_descList->m_Descs.clear();
+    }
+
+    m_RegisteredCollisionComponents.clear();
+    
+    Log(Verbose, "Raytracing instance descriptions have been cleared.");
+
+    return true;
+}
+
 bool DX12RenderingServer::BeginCapture()
 {
     if (m_graphicsAnalysis != nullptr)

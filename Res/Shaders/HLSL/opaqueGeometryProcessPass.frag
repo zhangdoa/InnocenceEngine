@@ -102,7 +102,10 @@ PixelOutputType main(PixelInputType input)
 		out_AO = t2d_ao.Sample(g_Sampler, input.texCoord).r;
 	}
 
-	float4 motionVec = (input.posCS_orig / input.posCS_orig.w - input.posCS_prev / input.posCS_prev.w);
+	float w_orig = max(abs(input.posCS_orig.w), 0.0001);
+	float w_prev = max(abs(input.posCS_prev.w), 0.0001);
+
+	float2 motionVec = (input.posCS_prev.xy / w_prev) - (input.posCS_orig.xy / w_orig);
 
 	output.opaquePassRT0 = float4(input.posWS, 1.0);
 	output.opaquePassRT1 = float4(normalWS, out_metallic);

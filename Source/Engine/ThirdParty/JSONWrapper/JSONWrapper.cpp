@@ -437,71 +437,66 @@ ArrayRangeInfo JSONWrapper::ProcessMeshes(const json& j)
 			g_Engine->getRenderingServer()->Initialize(l_currentRenderableSet->material);
 		}
 
+		if (l_currentRenderableSet->material == nullptr)
+		{
+			Log(Error, "Material is missing!");
+		}
+
 		MeshShape l_meshShape = MeshShape(i["MeshShape"].get<int32_t>());
-
-		// Load custom mesh data
-		if (l_meshShape == MeshShape::Customized)
+		if (l_meshShape != MeshShape::Customized)
 		{
-			auto l_meshFileName = i["File"].get<std::string>();
-
-			RenderableSet* l_loadedRenderableSet;
-
-			// check if this file has already been loaded once
-			if (g_Engine->Get<AssetService>()->FindLoadedRenderableSet(l_meshFileName.c_str(), l_loadedRenderableSet))
-			{
-				l_currentRenderableSet = l_loadedRenderableSet;
-			}
-			else
-			{
-				std::ifstream l_meshFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_meshFileName, std::ios::binary);
-
-				if (!l_meshFile.is_open())
-				{
-					Log(Error, "Can't open file ", l_meshFileName.c_str(), "!");
-				}
-
-				auto l_mesh = g_Engine->getRenderingServer()->AddMeshComponent();
-				l_mesh->m_InstanceName = (l_meshFileName + "//").c_str();
-
-				size_t l_verticesNumber = i["VerticesNumber"];
-				size_t l_indicesNumber = i["IndicesNumber"];
-
-				l_mesh->m_Vertices.reserve(l_verticesNumber);
-				l_mesh->m_Vertices.fulfill();
-				l_mesh->m_Indices.reserve(l_indicesNumber);
-				l_mesh->m_Indices.fulfill();
-
-				g_Engine->Get<IOService>()->deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_Vertices);
-				g_Engine->Get<IOService>()->deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_Indices);
-
-				l_meshFile.close();
-
-				l_mesh->m_IndexCount = l_mesh->m_Indices.size();
-
-				l_currentRenderableSet->mesh = l_mesh;
-
-				// Load bones data
-				if (i.find("Bones") != i.end())
-				{
-					std::string l_skeletonName = i["Name"];
-					l_skeletonName += "_Skeleton";
-					l_currentRenderableSet->skeleton = ProcessSkeleton(i, l_skeletonName.c_str());
-				}
-
-				l_currentRenderableSet->mesh->m_MeshShape = MeshShape::Customized;
-				l_currentRenderableSet->mesh->m_ObjectStatus = ObjectStatus::Created;
-
-				g_Engine->getRenderingServer()->Initialize(l_mesh);
-
-				g_Engine->Get<AssetService>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
-			}
+			l_currentRenderableSet->mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_meshShape);
+			l_currentIndex++;
+			continue;
 		}
-		else
+
+		auto l_meshFileName = i["File"].get<std::string>();
+		RenderableSet* l_loadedRenderableSet;
+		if (g_Engine->Get<AssetService>()->FindLoadedRenderableSet(l_meshFileName.c_str(), l_loadedRenderableSet))
 		{
-			MeshShape l_MeshShape = MeshShape(i["MeshShape"].get<int32_t>());
-
-			l_currentRenderableSet->mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_MeshShape);
+			l_currentRenderableSet->mesh = l_loadedRenderableSet->mesh;
+			l_currentIndex++;
+			continue;
 		}
+
+		std::ifstream l_meshFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_meshFileName, std::ios::binary);
+
+		if (!l_meshFile.is_open())
+		{
+			Log(Error, "Can't open file ", l_meshFileName.c_str(), "!");
+		}
+
+		auto l_mesh = g_Engine->getRenderingServer()->AddMeshComponent();
+		l_mesh->m_InstanceName = (l_meshFileName + "//").c_str();
+
+		size_t l_verticesNumber = i["VerticesNumber"];
+		size_t l_indicesNumber = i["IndicesNumber"];
+
+		l_mesh->m_Vertices.reserve(l_verticesNumber);
+		l_mesh->m_Vertices.fulfill();
+		l_mesh->m_Indices.reserve(l_indicesNumber);
+		l_mesh->m_Indices.fulfill();
+
+		g_Engine->Get<IOService>()->deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_Vertices);
+		g_Engine->Get<IOService>()->deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_Indices);
+
+		l_meshFile.close();
+
+		l_mesh->m_IndexCount = l_mesh->m_Indices.size();
+		l_currentRenderableSet->mesh = l_mesh;
+		l_currentRenderableSet->mesh->m_MeshShape = MeshShape::Customized;
+		l_currentRenderableSet->mesh->m_ObjectStatus = ObjectStatus::Created;
+
+		if (i.find("Bones") != i.end())
+		{
+			std::string l_skeletonName = i["Name"];
+			l_skeletonName += "_Skeleton";
+			l_currentRenderableSet->skeleton = ProcessSkeleton(i, l_skeletonName.c_str());
+		}
+
+		g_Engine->getRenderingServer()->Initialize(l_mesh);
+
+		g_Engine->Get<AssetService>()->RecordLoadedRenderableSet(l_meshFileName.c_str(), l_currentRenderableSet);
 
 		l_currentIndex++;
 	}
@@ -543,9 +538,8 @@ SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
 
 MaterialComponent* JSONWrapper::ProcessMaterial(const json& j, const char* name)
 {
-	auto l_MeshComp = g_Engine->getRenderingServer()->AddMaterialComponent();
-	l_MeshComp->m_InstanceName = (std::string(name) + ("//")).c_str();
-	auto l_defaultMaterial = g_Engine->Get<TemplateAssetService>()->GetDefaultMaterialComponent();
+	auto l_MaterialComp = g_Engine->getRenderingServer()->AddMaterialComponent();
+	l_MaterialComp->m_InstanceName = (std::string(name) + ("//")).c_str();
 
 	if (j.find("Textures") != j.end())
 	{
@@ -555,32 +549,32 @@ MaterialComponent* JSONWrapper::ProcessMaterial(const json& j, const char* name)
 			size_t l_textureSlotIndex = i["TextureSlotIndex"];
 
 			auto l_TextureComp = g_Engine->Get<AssetService>()->LoadTexture(l_textureFile.c_str());
-			if (l_TextureComp)
-			{
-				l_TextureComp->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);
-				l_TextureComp->m_TextureDesc.Usage = TextureUsage(i["Usage"]);
-				l_TextureComp->m_TextureDesc.IsSRGB = i["IsSRGB"];
+			if (!l_TextureComp)
+				continue;
 
-				l_MeshComp->m_TextureSlots[l_textureSlotIndex].m_Texture = l_TextureComp;
-			}
+			l_TextureComp->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);
+			l_TextureComp->m_TextureDesc.Usage = TextureUsage(i["Usage"]);
+			l_TextureComp->m_TextureDesc.IsSRGB = i["IsSRGB"];
+
+			l_MaterialComp->m_TextureSlots[l_textureSlotIndex].m_Texture = l_TextureComp;
 		}
 	}
 
-	l_MeshComp->m_materialAttributes.AlbedoR = j["Albedo"]["R"];
-	l_MeshComp->m_materialAttributes.AlbedoG = j["Albedo"]["G"];
-	l_MeshComp->m_materialAttributes.AlbedoB = j["Albedo"]["B"];
-	l_MeshComp->m_materialAttributes.Alpha = j["Albedo"]["A"];
-	l_MeshComp->m_materialAttributes.Metallic = j["Metallic"];
-	l_MeshComp->m_materialAttributes.Roughness = j["Roughness"];
-	l_MeshComp->m_materialAttributes.AO = j["AO"];
-	l_MeshComp->m_materialAttributes.Thickness = j["Thickness"];
-	l_MeshComp->m_ShaderModel = ShaderModel(j["ShaderModel"]);
+	l_MaterialComp->m_materialAttributes.AlbedoR = j["Albedo"]["R"];
+	l_MaterialComp->m_materialAttributes.AlbedoG = j["Albedo"]["G"];
+	l_MaterialComp->m_materialAttributes.AlbedoB = j["Albedo"]["B"];
+	l_MaterialComp->m_materialAttributes.Alpha = j["Albedo"]["A"];
+	l_MaterialComp->m_materialAttributes.Metallic = j["Metallic"];
+	l_MaterialComp->m_materialAttributes.Roughness = j["Roughness"];
+	l_MaterialComp->m_materialAttributes.AO = j["AO"];
+	l_MaterialComp->m_materialAttributes.Thickness = j["Thickness"];
+	l_MaterialComp->m_ShaderModel = ShaderModel(j["ShaderModel"]);
 
-	l_MeshComp->m_ObjectStatus = ObjectStatus::Created;
+	l_MaterialComp->m_ObjectStatus = ObjectStatus::Created;
 
-	g_Engine->getRenderingServer()->Initialize(l_MeshComp);
+	g_Engine->getRenderingServer()->Initialize(l_MaterialComp);
 
-	return l_MeshComp;
+	return l_MaterialComp;
 }
 
 bool JSONWrapper::Save(const char* fileName)

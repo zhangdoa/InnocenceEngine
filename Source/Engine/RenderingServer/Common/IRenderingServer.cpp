@@ -45,6 +45,10 @@ bool IRenderingServer::Setup(ISystemConfig* systemConfig)
 
 	m_ObjectStatus = ObjectStatus::Created;
 
+	m_SceneLoadingStartedCallback = [this]() { OnSceneLoadingStart(); };
+
+	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&m_SceneLoadingStartedCallback, 0);
+
 	Log(Success, "RenderingServer Setup finished.");
 	return true;
 }

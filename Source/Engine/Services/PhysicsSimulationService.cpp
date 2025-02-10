@@ -91,7 +91,7 @@ bool PhysicsSimulationServiceImpl::Setup()
 
 	f_SceneLoadingStartedCallback = [&]()
 		{
-			Log(Verbose, "Clearing all physics system data...");
+			Log(Verbose, "Clearing all physics simulation data...");
 
 			auto l_componentsCount = m_Components.size();
 			for (size_t i = 0; i < l_componentsCount; i++)
@@ -99,6 +99,16 @@ bool PhysicsSimulationServiceImpl::Setup()
 				g_Engine->Get<ComponentManager>()->Destroy(m_Components[i]);
 			}
 			m_Components.clear();
+
+			Log(Verbose, "All collision components have been destroyed.");
+
+			for (auto l_topLevelPrimitive : m_TopLevelPrimitives)
+			{
+				m_CollisionPrimitivePool->Destroy(l_topLevelPrimitive);
+			}
+			m_TopLevelPrimitives.clear();
+
+			Log(Verbose, "All top-level collision primitives have been destroyed.");
 
 			g_Engine->Get<BVHService>()->ClearNodes();
 
@@ -108,7 +118,7 @@ bool PhysicsSimulationServiceImpl::Setup()
 			m_StaticSceneBoundary.Reset();
 			m_VisibleSceneBoundary.Reset();
 
-			Log(Success, "All physics system data has been cleared.");
+			Log(Success, "All physics simulation data has been cleared.");
 		};
 
 	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 1);
@@ -158,7 +168,7 @@ bool PhysicsSimulationServiceImpl::Update()
 void PhysicsSimulationServiceImpl::GenerateAABBInWorldSpace(CollisionComponent* CollisionComponent, const Mat4& localToWorldTransform)
 {
 	CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB = Math::TransformAABB(CollisionComponent->m_BottomLevelCollisionPrimitive->m_AABB, localToWorldTransform);
-	CollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere = Math::GenerateBoundingSphere(CollisionComponent->m_BottomLevelCollisionPrimitive->m_AABB);
+	CollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere = Math::GenerateBoundingSphere(CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB);
 }
 
 void Inno::PhysicsSimulationServiceImpl::UpdateCollisionComponent(Inno::CollisionComponent* CollisionComponent)
@@ -240,16 +250,18 @@ CollisionComponent* PhysicsSimulationServiceImpl::CreateCollisionComponent(Trans
 	if (l_BLCP != m_BottomLevelPrimitives.end())
 	{
 		l_collisionComponent->m_BottomLevelCollisionPrimitive = l_BLCP->second;
-
+		l_collisionComponent->m_ObjectStatus = ObjectStatus::Activated;
 		UpdateCollisionComponent(l_collisionComponent);
 
 		if (l_collisionComponent->m_ModelComponent->m_meshUsage == MeshUsage::Static)
 			UpdateStaticSceneBoundary(l_collisionComponent->m_TopLevelCollisionPrimitive->m_AABB);		
 	}
+	else
+	{
+		l_collisionComponent->m_ObjectStatus = ObjectStatus::Suspended;
+	}
 
-	l_collisionComponent->m_ObjectStatus = ObjectStatus::Suspended;
-
-	Log(Verbose, "CollisionComponent has been generated for MeshComponent:", l_meshComp->m_Owner->m_InstanceName.c_str(), ".");
+	Log(Verbose, "CollisionComponent has been generated for: ", transformComponent->m_Owner->m_InstanceName.c_str(), ".");
 
 	m_Components.emplace_back(l_collisionComponent);
 
@@ -267,9 +279,14 @@ ArrayRangeInfo PhysicsSimulationServiceImpl::CreateCollisionComponents(ModelComp
 
 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(modelComponent->m_Owner);
 
-	for (uint64_t j = 0; j < l_result.m_count; j++)
+	for (uint64_t j = 0; j < modelComponent->m_Model->renderableSets.m_count; j++)
 	{
-		auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(l_result.m_startOffset + j);
+		auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(modelComponent->m_Model->renderableSets.m_startOffset + j);
+		if (!l_renderableSet)
+		{
+			Log(Error, "RenderableSet is missing for ModelComponent: ", modelComponent->m_Owner->m_InstanceName.c_str(), "!");
+			continue;
+		}
 		auto l_collisionComponent = CreateCollisionComponent(l_transformComponent, modelComponent, l_renderableSet);
 		CreatePhysXActor(l_collisionComponent);
 	}

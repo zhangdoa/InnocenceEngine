@@ -11,7 +11,7 @@
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurEvenPass.h"
 #include "LightCullingPass.h"
-#include "GIResolvePass.h"
+#include "RadianceCachePass.h"
 #include "VolumetricPass.h"
 
 #include "../../Engine/Engine.h"
@@ -132,7 +132,7 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorIndex = 9;
 
-	// t10 - Irradiance Volume
+	// t10 - Illuminance from Radiance Cache
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility = Accessibility::ReadWrite;
@@ -254,7 +254,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 13);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 14);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 15);
-	// //l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, GIResolvePass::GetIrradianceVolume(), 16);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, RadianceCachePass::Get().GetResult(), 16);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 16);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 17);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_LuminanceResult, 18);

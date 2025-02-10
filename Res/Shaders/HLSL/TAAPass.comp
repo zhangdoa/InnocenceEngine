@@ -4,16 +4,16 @@
 
 struct ComputeInputType
 {
-	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
-	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
-	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
-	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+	uint3 groupID : SV_GroupID;
+	uint3 groupThreadID : SV_GroupThreadID;
+	uint3 dispatchThreadID : SV_DispatchThreadID;
+	uint groupIndex : SV_GroupIndex;
 };
 
 [[vk::binding(0, 0)]]
 cbuffer PerFrameConstantBuffer : register(b0)
 {
-	PerFrame_CB g_Frame; // Contains view, projection, and other per-frame matrices.
+	PerFrame_CB g_Frame;
 }
 
 [[vk::binding(0, 1)]]
@@ -25,26 +25,58 @@ Texture2D in_motionVector : register(t2);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> TAAPassRT0 : register(u0);
 
+// Adjustable TAA Parameters
+static const float MOTION_VECTOR_CLAMP = 0.5;     // Limits extreme motion vectors
+static const float MOTION_VECTOR_SCALE = 0.95;    // Dampens excessive motion
+static const float ADAPTIVE_CLAMP_MIN = 0.1;      // Min soft clamping factor
+static const float ADAPTIVE_CLAMP_MAX = 0.3;      // Max soft clamping factor
+static const float LUMA_DIFF_THRESHOLD_MIN = 0.05;// Min luminance difference rejection
+static const float LUMA_DIFF_THRESHOLD_MAX = 0.25;// Max luminance difference rejection
+static const float HISTORY_BLEND_MIN = 0.05;      // Minimum blending weight
+static const float HISTORY_BLEND_MAX = 0.15;      // Maximum blending weight
+static const float MOTION_REJECTION_SCALE = 3.0;  // History rejection scale for fast motion
+static const float HISTORY_SOFT_REJECT_THRESHOLD = 0.3; // Soft rejection factor for history blending
+
+// [[[TWEAKING GUIDE]]]
+// Scenario	| Parameter to Adjust | Recommended Change
+// Subtle shimmering on fine details (edges) | HISTORY_BLEND_MIN | Slightly increase (e.g., 0.05 → 0.07)
+// Overblending, making motion look smeary | HISTORY_BLEND_MAX | Reduce (e.g., 0.15 → 0.1)
+// Sudden fast motion causes visible ghosting | MOTION_REJECTION_SCALE| Increase to reject history faster
+// Flickering in high-frequency areas (thin wires, small text) | ADAPTIVE_CLAMP_MIN/MAX	| Increase slightly to make clamping stronger
+// Motion blur feels too strong / unnatural | MOTION_VECTOR_CLAMP | Reduce (e.g., 0.5 → 0.3)
+
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
+	// Read motion vector
 	float2 MotionVector = in_motionVector[input.dispatchThreadID.xy].xy;
-	int2 historyTexCoords = input.dispatchThreadID.xy - MotionVector * g_Frame.viewportSize.xy;
 
-	float3 historyColor = in_history[input.dispatchThreadID.xy].rgb;
+	// Motion Vector Clamping & Scaling
+	MotionVector = clamp(MotionVector, -MOTION_VECTOR_CLAMP, MOTION_VECTOR_CLAMP);
+	MotionVector *= MOTION_VECTOR_SCALE;
+
+	// Compute history sample position (motion-reprojected)
+	int2 historyTexCoords = input.dispatchThreadID.xy - round(MotionVector * g_Frame.viewportSize.xy);
+	historyTexCoords = clamp(historyTexCoords, int2(0, 0), int2(g_Frame.viewportSize.xy - 1));
+
+	// Load colors
+	float3 historyColor = in_history[historyTexCoords].rgb;
 	float3 currentColor = in_current[input.dispatchThreadID.xy].rgb;
-	bool3 hasNan = isnan(currentColor);
-	if(hasNan.x || hasNan.y || hasNan.z)
+
+	// Reject bad motion vectors
+	bool invalidMotionVec = any(abs(MotionVector) > MOTION_VECTOR_CLAMP) || isnan(MotionVector.x) || isnan(MotionVector.y);
+	if (invalidMotionVec)
 	{
-		currentColor = historyColor;
+		historyColor = currentColor; // Ignore history for unstable pixels
 	}
 
+	// Compute Luminance
 	float lumaCurrentColor = GetLuma(currentColor);
 	float lumaHistoryColor = GetLuma(historyColor);
 
+	// Compute Min/Max Neighborhood Color
 	float3 maxNeighbor = float3(FLT_MIN, FLT_MIN, FLT_MIN);
 	float3 minNeighbor = float3(FLT_MAX, FLT_MAX, FLT_MAX);
-
 	float3 neighborSum = float3(0.0, 0.0, 0.0);
 
 	for (int x = -1; x <= 1; x++)
@@ -52,48 +84,39 @@ void main(ComputeInputType input)
 		for (int y = -1; y <= 1; y++)
 		{
 			int2 neighborTexCoords = input.dispatchThreadID.xy + int2(x, y);
-
 			float3 neighborColor = in_current[neighborTexCoords].rgb;
 
 			maxNeighbor = max(maxNeighbor, neighborColor);
 			minNeighbor = min(minNeighbor, neighborColor);
-			neighborSum += neighborColor.rgb;
+			neighborSum += neighborColor;
 		}
 	}
 
 	float3 neighborAverage = neighborSum / 9.0;
 
-#if Use_YCoCg
-	// Clamp history color's chroma in YCoCg space
-	currentColor = RGB_YCoCg(currentColor);
-	historyColor = RGB_YCoCg(historyColor);
-	maxNeighbor = RGB_YCoCg(maxNeighbor);
-	minNeighbor = RGB_YCoCg(minNeighbor);
-	neighborAverage = RGB_YCoCg(neighborAverage);
+	// Adaptive Soft Clamping
+	float adaptiveClampFactor = saturate(1.0 - length(MotionVector) * ADAPTIVE_CLAMP_MAX);
+	float3 historyClamped = lerp(historyColor, clamp(historyColor, minNeighbor, maxNeighbor), adaptiveClampFactor);
 
-	float chroma_extent_element = 0.25 * 0.5 * (maxNeighbor.x - minNeighbor.x);
-	float2 chroma_extent = float2(chroma_extent_element, chroma_extent_element);
-	float2 chroma_center = currentColor.yz;
-	minNeighbor.yz = chroma_center - chroma_extent;
-	maxNeighbor.yz = chroma_center + chroma_extent;
-	neighborAverage.yz = chroma_center;
-
-	float lumaCurrentColor = currentColor.x;
-	float lumaHistoryColor = historyColor.x;
-#else
-#endif
-
-	historyColor = clamp(historyColor, minNeighbor, maxNeighbor);
-
-	// Mix by dynamic weight
+	// Compute Adaptive Blending Weight
 	float unbiased_diff = abs(lumaCurrentColor - lumaHistoryColor) / max(lumaCurrentColor, max(lumaHistoryColor, 0.2));
 	float unbiased_weight = 1.0 - unbiased_diff;
 	float unbiased_weight_sqr = unbiased_weight * unbiased_weight;
-	float weight = lerp(0.01, 0.05, unbiased_weight_sqr);
-	float3 finalColor = lerp(historyColor, currentColor, weight);
+
+	float adaptiveWeight = lerp(HISTORY_BLEND_MIN, HISTORY_BLEND_MAX, unbiased_weight_sqr);
+
+	// Motion intensity rejection
+	float motionIntensity = length(MotionVector);
+	float historyRejectFactor = saturate(motionIntensity * MOTION_REJECTION_SCALE);
+
+	// Luminance Difference Soft Rejection
+	float lumaDiff = abs(lumaCurrentColor - lumaHistoryColor);
+	float historyBlendFactor = saturate(1.0 - smoothstep(LUMA_DIFF_THRESHOLD_MIN, LUMA_DIFF_THRESHOLD_MAX, lumaDiff));
+
+	// Final Blending
+	float3 finalColor = lerp(historyClamped, currentColor, adaptiveWeight + historyRejectFactor * historyBlendFactor);
 
 #if Use_YCoCg
-	// Return to RGB space
 	finalColor = YCoCg_RGB(finalColor);
 #endif
 

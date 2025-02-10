@@ -184,6 +184,8 @@ namespace Inno
 		virtual bool ResizeImpl() { return false; }
 		virtual bool EndFrame() { return false; }
 
+		virtual bool OnSceneLoadingStart() { return false; }
+
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 		TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
@@ -207,6 +209,8 @@ namespace Inno
 		std::function<bool()> m_UploadHeapPreparationCallback;
 		std::function<bool()> m_CommandPreparationCallback;
 		std::function<bool()> m_CommandExecutionCallback;
+		
+		std::function<void()> m_SceneLoadingStartedCallback;
 
 		ThreadSafeQueue<MeshComponent*> m_uninitializedMeshes;
 		ThreadSafeQueue<TextureComponent*> m_uninitializedTextures;

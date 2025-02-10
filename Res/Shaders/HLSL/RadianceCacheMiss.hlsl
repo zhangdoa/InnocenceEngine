@@ -5,6 +5,6 @@
 void MissShader(inout RayPayload payload)
 {
     // Return a fallback environment radiance.
-    payload.radiance = float3(0.1, 0.1, 0.1);
-    payload.sampleCount = 1;
+    // payload.radiance = float3(0.1, 0.1, 0.1);
+    // payload.sampleCount = 1;
 }

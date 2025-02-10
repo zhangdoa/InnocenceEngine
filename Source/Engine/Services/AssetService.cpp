@@ -245,11 +245,14 @@ ArrayRangeInfo AssetService::AddRenderableSets(uint64_t count)
 		m_renderableSetList.emplace_back(m_renderableSetPool->Spawn());
 	}
 
+	Log(Verbose, "Added ", count, " renderable sets.");
 	return l_result;
 }
 
 RenderableSet* AssetService::GetRenderableSet(uint64_t index)
 {
+	std::unique_lock<std::shared_mutex> lock{ m_mutexRenderableSet };
+
 	return m_renderableSetList[index];
 }
 

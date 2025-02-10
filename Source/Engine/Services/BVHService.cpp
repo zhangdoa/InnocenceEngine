@@ -175,6 +175,8 @@ void BVHService::AddNode(CollisionComponent* CollisionComponent)
 void BVHService::ClearNodes()
 {
     m_Impl->m_Nodes.clear();
+
+    Log(Verbose, "All BVH nodes have been cleared.");
 }
 
 const std::vector<BVHNode>& BVHService::GetNodes()

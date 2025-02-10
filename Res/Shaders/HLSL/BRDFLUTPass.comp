@@ -94,7 +94,7 @@ float D_GGX(float NdotH, float roughness)
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float f = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
-	return a2 / (f * f);
+	return a2 / max((f * f), EPSILON);
 }
 
 // ----------------------------------------------------------------------------
@@ -107,7 +107,7 @@ float G_SchlickGGX(float NdotV, float roughness)
 {
 	float a = roughness;
 	float k = (a * a) / 2.0; // k is modified for IBL.
-	return NdotV / (NdotV * (1.0 - k) + k);
+	return NdotV / max((NdotV * (1.0 - k) + k), EPSILON);
 }
 
 // ----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 	float alphaG2 = alphaG * alphaG;
 	float Lambda_GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaG2) + alphaG2);
 	float Lambda_GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaG2) + alphaG2);
-	return 0.5 / max((Lambda_GGXV + Lambda_GGXL), 0.00001);
+	return 0.5 / max((Lambda_GGXV + Lambda_GGXL), EPSILON);
 }
 
 // ----------------------------------------------------------------------------

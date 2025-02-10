@@ -255,10 +255,10 @@ float3 ComputeSpecularBRDF(
 	float D = D_GGX(NdotH, roughness);
 	float3 specularSS = FresnelTerm * G * D;
 
-	// Multi-scattering component, using LUTs.
-	float3 specularMS = ComputeMultiScatteringFresnel(BRDFLUT, BRDFMSLUT, pointSampler, NdotL, NdotV, F0, roughness);
+	// Disable multi-scattering component to avoid flickering
+	// float3 specularMS = ComputeMultiScatteringFresnel(BRDFLUT, BRDFMSLUT, pointSampler, NdotL, NdotV, F0, roughness);
 
-	return specularSS + specularMS;
+	return specularSS; // + specularMS;
 }
 
 // ----------------------------------------------------------------------------

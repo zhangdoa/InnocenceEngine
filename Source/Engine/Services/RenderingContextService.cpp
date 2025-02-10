@@ -32,7 +32,7 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		PerFrameConstantBuffer m_perFrameCB;
+		std::vector<PerFrameConstantBuffer> m_perFrameCBs;
 
 		std::vector<CSMConstantBuffer> m_CSMCBVector;
 
@@ -69,8 +69,13 @@ namespace Inno
 
 		std::vector<DispatchParamsConstantBuffer> m_DispatchParamsConstantBuffer;
 
-		std::vector<Vec2> m_haltonSampler;
-		int32_t m_currentHaltonStep = 0;
+		struct HaltonSampler
+		{
+			std::vector<Vec2> m_Values;
+			int32_t m_CurrentStep = 0;
+		};
+
+		std::vector<HaltonSampler> m_HaltonSamplers;
 
 		std::function<void()> f_sceneLoadingFinishedCallback;
 
@@ -79,8 +84,8 @@ namespace Inno
 		bool Update();
 		bool Terminate();
 
-		float radicalInverse(uint32_t n, uint32_t base);
-		void initializeHaltonSampler();
+		float RadicalInverse(uint32_t n, uint32_t base);
+		void InitializeHaltonSampler();
 
 		bool UpdatePerFrameConstantBuffer();
 		bool UpdateLightData();
@@ -91,7 +96,7 @@ namespace Inno
 	};
 }
 
-float RenderingContextServiceImpl::radicalInverse(uint32_t n, uint32_t base)
+float RenderingContextServiceImpl::RadicalInverse(uint32_t n, uint32_t base)
 {
 	float val = 0.0f;
 	float invBase = 1.0f / base, invBi = invBase;
@@ -105,12 +110,18 @@ float RenderingContextServiceImpl::radicalInverse(uint32_t n, uint32_t base)
 	return val;
 };
 
-void RenderingContextServiceImpl::initializeHaltonSampler()
+void RenderingContextServiceImpl::InitializeHaltonSampler()
 {
 	// in NDC space
-	for (uint32_t i = 0; i < 16; i++)
+	auto l_swapChainImageCount = g_Engine->getRenderingServer()->GetSwapChainImageCount();
+	m_HaltonSamplers.resize(l_swapChainImageCount);
+	for (auto& m_haltonSampler : m_HaltonSamplers)
 	{
-		m_haltonSampler.emplace_back(Vec2(radicalInverse(i, 3) * 2.0f - 1.0f, radicalInverse(i, 4) * 2.0f - 1.0f));
+		m_haltonSampler.m_Values.reserve(16);
+		for (uint32_t i = 0; i < 16; i++)
+		{
+			m_haltonSampler.m_Values.emplace_back(Vec2(RadicalInverse(i, 3) * 2.0f - 1.0f, RadicalInverse(i, 4) * 2.0f - 1.0f));
+		}		
 	}
 }
 
@@ -147,7 +158,9 @@ bool RenderingContextServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		initializeHaltonSampler();
+		InitializeHaltonSampler();
+
+		m_perFrameCBs.resize(g_Engine->getRenderingServer()->GetSwapChainImageCount());
 
 		auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -232,22 +245,25 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 
 	auto l_p = l_camera->m_projectionMatrix;
 
-	m_perFrameCB.p_original = l_p;
-	m_perFrameCB.p_jittered = l_p;
+	PerFrameConstantBuffer l_perFrameCB = {};
+	l_perFrameCB.p_original = l_p;
+	l_perFrameCB.p_jittered = l_p;
 
 	auto l_renderingConfigurationService = g_Engine->Get<RenderingConfigurationService>();
 	auto l_renderingConfig = l_renderingConfigurationService->GetRenderingConfig();
 	auto l_screenResolution = l_renderingConfigurationService->GetScreenResolution();
 	if (l_renderingConfig.useTAA)
 	{
+		auto& l_HaltonSampler = m_HaltonSamplers[g_Engine->getRenderingServer()->GetCurrentFrame()];
+	
 		//TAA jitter for projection matrix
-		auto& l_currentHaltonStep = m_currentHaltonStep;
+		auto& l_currentHaltonStep = l_HaltonSampler.m_CurrentStep;
 		if (l_currentHaltonStep >= 16)
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_perFrameCB.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / l_screenResolution.x;
-		m_perFrameCB.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / l_screenResolution.y;
+		l_perFrameCB.p_jittered.m02 = l_HaltonSampler.m_Values[l_currentHaltonStep].x / l_screenResolution.x;
+		l_perFrameCB.p_jittered.m12 = l_HaltonSampler.m_Values[l_currentHaltonStep].y / l_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
@@ -255,27 +271,27 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 
 	auto t = Math::getInvertTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
-	m_perFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
+	l_perFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 
-	m_perFrameCB.v = r * t;
+	l_perFrameCB.v = r * t;
 
 	auto r_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
 	auto t_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	m_perFrameCB.v_prev = r_prev * t_prev;
+	l_perFrameCB.v_prev = r_prev * t_prev;
 
-	m_perFrameCB.zNear = l_camera->m_zNear;
-	m_perFrameCB.zFar = l_camera->m_zFar;
+	l_perFrameCB.zNear = l_camera->m_zNear;
+	l_perFrameCB.zFar = l_camera->m_zFar;
 
-	m_perFrameCB.p_inv = l_p.inverse();
-	m_perFrameCB.v_inv = m_perFrameCB.v.inverse();
-	m_perFrameCB.viewportSize.x = (float)l_screenResolution.x;
-	m_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
-	m_perFrameCB.minLogLuminance = -10.0f;
-	m_perFrameCB.maxLogLuminance = 16.0f;
-	m_perFrameCB.aperture = l_camera->m_aperture;
-	m_perFrameCB.shutterTime = l_camera->m_shutterTime;
-	m_perFrameCB.ISO = l_camera->m_ISO;
+	l_perFrameCB.p_inv = l_p.inverse();
+	l_perFrameCB.v_inv = l_perFrameCB.v.inverse();
+	l_perFrameCB.viewportSize.x = (float)l_screenResolution.x;
+	l_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
+	l_perFrameCB.minLogLuminance = -10.0f;
+	l_perFrameCB.maxLogLuminance = 16.0f;
+	l_perFrameCB.aperture = l_camera->m_aperture;
+	l_perFrameCB.shutterTime = l_camera->m_shutterTime;
+	l_perFrameCB.ISO = l_camera->m_ISO;
 
 	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
 	if (l_sun == nullptr)
@@ -285,13 +301,13 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	if (l_sunTransformComponent == nullptr)
 		return false;
 
-	m_perFrameCB.sun_direction = Math::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
-	m_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
+	l_perFrameCB.sun_direction = Math::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+	l_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;
 	auto l_renderingCapability = l_renderingConfigurationService->GetRenderingCapability();
 	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
-	m_perFrameCB.activeCascade = currentCascade;
+	l_perFrameCB.activeCascade = currentCascade;
 
 	auto& l_SplitAABB = l_sun->m_SplitAABBWS;
 	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
@@ -315,6 +331,8 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 		}
 	}
 
+	m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()] = l_perFrameCB;
+	
 	return true;
 }
 
@@ -544,7 +562,7 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Upload(m_PerFrameCBufferGPUBufferComp, &m_perFrameCB);
+	l_renderingServer->Upload(m_PerFrameCBufferGPUBufferComp, &m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()]);
 
 	if (m_perObjectCBVector.size() > 0)
 	{
@@ -689,7 +707,7 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 const PerFrameConstantBuffer& RenderingContextService::GetPerFrameConstantBuffer()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_perFrameCB;
+	return m_Impl->m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()];
 }
 
 const std::vector<DrawCallInfo>& RenderingContextService::GetDrawCallInfo()

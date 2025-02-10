@@ -17,6 +17,10 @@ Texture2D in_opaquePassRT0 : register(t1); // World Space Position (RGB)
 Texture2D in_opaquePassRT1 : register(t2); // World Space Normal (RGB) and Metallic (A)
 [[vk::binding(3, 1)]]
 Texture2D in_opaquePassRT2 : register(t3); // Albedo (RGB) and Roughness (A)
+[[vk::binding(4, 1)]]
+Texture2D in_opaquePassRT3 : register(t4); // Motion Vector (RG), AO (B), Transparency (A)
+[[vk::binding(5, 1)]]
+Texture2D in_lightPassRT0 : register(t5); // Direct Illumination (RGB)
 
 // RW texture to store computed radiance for each cache entry.
 RWTexture2D<float4> RadianceCacheResults : register(u0);
@@ -27,11 +31,3 @@ struct RayPayload
     float3 radiance;
     uint sampleCount;
 };
-
-// Function to calculate Lambertian radiance using opaque pass input.
-float3 CalculateLambertianRadiance(float3 position, float3 normal, float3 albedo)
-{
-    float3 lightDir = normalize(float3(0, 1, 0)); // Light coming from above
-    float NdotL = saturate(dot(normal, lightDir));
-    return albedo * NdotL;
-}
