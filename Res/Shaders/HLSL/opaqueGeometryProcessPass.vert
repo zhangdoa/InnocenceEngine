@@ -5,7 +5,6 @@ struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION_ORIG;
-	float4 posCS_prev : POSITION_PREV;
 	float3 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
 	float3 normalWS : NORMAL;
@@ -37,10 +36,6 @@ PixelInputType main(VertexInputType input)
 	float4 posWS = mul(posLS, perObjectCB.m);
 	float4 posVS = mul(posWS, g_Frame.v);
 	output.posCS_orig = mul(posVS, g_Frame.p_original);
-
-	float4 posWS_prev = mul(posLS, perObjectCB.m_prev);
-	float4 posVS_prev = mul(posWS_prev, g_Frame.v_prev);
-	output.posCS_prev = mul(posVS_prev, g_Frame.p_original);
 
 	output.posCS = mul(posVS, g_Frame.p_jittered);
 

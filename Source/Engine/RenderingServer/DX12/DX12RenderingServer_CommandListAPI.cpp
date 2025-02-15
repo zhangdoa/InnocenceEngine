@@ -554,7 +554,7 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 	return true;
 }
 
-bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs)
+bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ)
 {
 	auto l_currentFrame = GetCurrentFrame();
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
@@ -576,10 +576,9 @@ bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs)
 	dispatchDesc.HitGroupTable.StartAddress = l_shaderIDBufferVirtualAddress + 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
-	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	dispatchDesc.Width = static_cast<UINT>(l_screenResolution.x);
-	dispatchDesc.Height = static_cast<UINT>(l_screenResolution.y);
-	dispatchDesc.Depth = 1;
+	dispatchDesc.Width = dimensionX;
+	dispatchDesc.Height = dimensionY;
+	dispatchDesc.Depth = dimensionZ;
 
 	l_commandList->m_ComputeCommandList->DispatchRays(&dispatchDesc);
 

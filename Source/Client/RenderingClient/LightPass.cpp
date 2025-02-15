@@ -11,7 +11,7 @@
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurEvenPass.h"
 #include "LightCullingPass.h"
-#include "RadianceCachePass.h"
+#include "RadianceCacheIntegrationPass.h"
 #include "VolumetricPass.h"
 
 #include "../../Engine/Engine.h"
@@ -254,7 +254,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 13);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 14);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 15);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, RadianceCachePass::Get().GetResult(), 16);
+
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, RadianceCacheIntegrationPass::Get().GetResult(), 16);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 16);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 17);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_LuminanceResult, 18);

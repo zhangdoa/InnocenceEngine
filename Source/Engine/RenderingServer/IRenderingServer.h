@@ -71,6 +71,7 @@ namespace Inno
 		uint32_t GetPreviousFrame();
 		uint32_t GetCurrentFrame();
 		uint32_t GetNextFrame();
+		uint32_t GetFrameCountSinceLaunch();
 
 		// Command List APIs
 		virtual bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex);
@@ -105,9 +106,9 @@ namespace Inno
 		virtual bool Resize();
 
 		// Component APIs
-		virtual bool Clear(TextureComponent* rhs) { return false; }
-		virtual bool Copy(TextureComponent* lhs, TextureComponent* rhs) { return false; }
-		virtual bool Clear(GPUBufferComponent* rhs) { return false; }
+		virtual bool Clear(TextureComponent* rhs);
+		virtual bool Copy(TextureComponent* lhs, TextureComponent* rhs);
+		virtual bool Clear(GPUBufferComponent* rhs);
 		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
 		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
 		virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) { return std::vector<Vec4>(); }
@@ -118,7 +119,7 @@ namespace Inno
 		virtual bool EndCapture() { return false; }
 
 		// Raytracing-related APIs
-		virtual bool DispatchRays(RenderPassComponent* rhs) { return false; }
+		virtual bool DispatchRays(RenderPassComponent* rhs, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) { return false; }
 		GPUResourceComponent* GetTLASBuffer() { return m_TLASBufferComponent; }
 
 	protected:
@@ -155,7 +156,10 @@ namespace Inno
 		virtual bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) { return false; }
 		virtual bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) { return false; }
 		virtual bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
-		
+		virtual bool Clear(ICommandList* commandList, TextureComponent* rhs) { return false; }
+		virtual bool Copy(ICommandList* commandList, TextureComponent* lhs, TextureComponent* rhs) { return false; }
+		virtual bool Clear(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
+
 		virtual bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
 		virtual bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) { return false; }
 
@@ -195,7 +199,8 @@ namespace Inno
 		uint32_t m_swapChainImageCount = 2;
 		uint32_t m_PreviousFrame = 1;
 		uint32_t m_CurrentFrame = 0;
-
+		std::atomic<uint32_t> m_FrameCountSinceLaunch = 0;
+		
 		std::vector<uint64_t> m_CopyUploadToDefaultHeapSemaphoreValues;
 		std::vector<uint64_t> m_GraphicsSemaphoreValues;
 		std::vector<uint64_t> m_ComputeSemaphoreValues;
@@ -217,6 +222,16 @@ namespace Inno
 		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
 		ThreadSafeQueue<GPUBufferComponent*> m_uninitializedGPUBuffers;
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
+
+		struct CopyCommand
+		{
+			CopyCommand(TextureComponent* lhs, TextureComponent* rhs) : m_lhs(lhs), m_rhs(rhs) {}
+			TextureComponent* m_lhs;
+			TextureComponent* m_rhs;
+		};
+
+		ThreadSafeQueue<CopyCommand> m_unprocessedCopyCommands;
+		ThreadSafeQueue<GPUResourceComponent*> m_unclearedResources;
 
 		std::unordered_set<MeshComponent*> m_initializedMeshes;
 		std::unordered_set<TextureComponent*> m_initializedTextures;

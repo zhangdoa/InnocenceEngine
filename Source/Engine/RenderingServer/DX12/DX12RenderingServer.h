@@ -62,12 +62,9 @@ namespace Inno
         bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) override;
         bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
-        bool DispatchRays(RenderPassComponent* rhs) override;
+        bool DispatchRays(RenderPassComponent* rhs, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) override;
 
         // In DX12RenderingServer_EngineComponent_Public.cpp
-        bool Clear(TextureComponent* rhs) override;
-        bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
-        bool Clear(GPUBufferComponent* rhs) override; 
         uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
         Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
         std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
@@ -97,6 +94,9 @@ namespace Inno
         bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) override;
         bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) override;
         bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) override;
+		bool Clear(ICommandList* commandList, TextureComponent* rhs) override;
+		bool Copy(ICommandList* commandList, TextureComponent* lhs, TextureComponent* rhs) override;
+		bool Clear(ICommandList* commandList, GPUBufferComponent* rhs) override;
 
         bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject) override;
         bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) override;

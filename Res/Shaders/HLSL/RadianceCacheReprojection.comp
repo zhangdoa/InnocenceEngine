@@ -1,0 +1,133 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+#include "RayTracingTypes.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID : SV_GroupID;
+    uint3 groupThreadID : SV_GroupThreadID;
+    uint3 dispatchThreadID : SV_DispatchThreadID;
+    uint groupIndex : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
+[[vk::binding(0, 1)]]
+Texture2D in_opaquePassRT0 : register(t0); // World Space Position (RGB)
+[[vk::binding(1, 1)]]
+Texture2D in_opaquePassRT1 : register(t1); // World Space Normal (RGB)
+[[vk::binding(2, 1)]]
+Texture2D in_opaquePassRT3 : register(t2); // Motion Vector (RG)
+
+[[vk::binding(3, 1)]]
+Texture2D<float4> in_RadianceCacheResults_Prev : register(t3);
+
+[[vk::binding(4, 1)]]
+Texture2D<float4> in_ProbePosition : register(t4);
+
+[[vk::binding(5, 1)]]
+Texture2D<float4> in_ProbeNormal : register(t5);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> in_RadianceCacheResults : register(u0);
+
+[[vk::binding(1, 2)]]
+RWStructuredBuffer<WorldProbe> in_WorldProbeGrid : register(u1);
+
+// Adjustable Heuristics
+static const float CELL_SIZE = 0.5;
+static const float NORMAL_THRESHOLD = 0.95;
+static const float MAX_PLANE_DISTANCE = 1.0;
+
+uint EncodeReprojectionScore(float dist, uint lane)
+{
+    uint distPacked = (uint)(saturate(dist / (MAX_PLANE_DISTANCE * 65504.0))); // Normalize distance
+    return (distPacked << 16) | lane;
+}
+
+// Use groupshared memory for atomic operations
+groupshared uint sharedReprojectionScore;
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+    uint2 screenCoord = input.dispatchThreadID.xy;
+
+    bool isSky = in_opaquePassRT0.Load(int3(screenCoord, 0)).w == 0.0f;
+    if (isSky)
+    {
+        return;
+    }
+
+    float3 positionWS = in_opaquePassRT0.Load(int3(screenCoord, 0)).xyz;
+    float2 motionVector = in_opaquePassRT3.Load(int3(screenCoord, 0)).xy;
+    int2 prevScreenCoord = int2(screenCoord + motionVector);
+
+    bool withinBounds = all(prevScreenCoord >= int2(0, 0)) && all(prevScreenCoord < int2(g_Frame.viewportSize.xy));
+    if (!withinBounds)
+    {
+        return;
+    }
+
+    // Find the nearest probe index in the previous frame
+    uint2 prevScreenCoord_Probe = (prevScreenCoord / 8) * 8;
+    prevScreenCoord_Probe.x += (prevScreenCoord.x - prevScreenCoord_Probe.x) > 4 ? 8 : 0; // Right or left
+    prevScreenCoord_Probe.y += (prevScreenCoord.y - prevScreenCoord_Probe.y) > 4 ? 8 : 0; // Up or down
+    uint2 prevScreenCoord_ProbeSpace = prevScreenCoord_Probe / 8;
+
+    // Fetch previous frame’s probe world position & normal
+    float3 prevPositionWS_Probe = in_ProbePosition.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz;
+    float3 prevNormal_Probe = normalize(in_ProbeNormal.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz);
+    
+    // Initialize the shared reprojection score (farthest distance possible in FP16)
+    if (input.groupIndex == 0)
+    {
+        sharedReprojectionScore = EncodeReprojectionScore(65504, 0xFFFFu);
+    }
+
+    // Barrier to sync threads before competition starts
+    GroupMemoryBarrierWithGroupSync();
+
+    float3 normalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
+    // Plane distance test
+    float plane_dist = abs(dot(prevPositionWS_Probe - positionWS, normalWS));
+
+    // Normal similarity check
+    float normal_check = dot(prevNormal_Probe, normalWS);
+
+    // If valid, calculate distance-based score
+    if (plane_dist < CELL_SIZE && normal_check > NORMAL_THRESHOLD)
+    {
+        float dist = distance(prevPositionWS_Probe, positionWS);
+
+        // Encode the probe score and the group index
+        uint probeScore = EncodeReprojectionScore(dist, input.groupIndex);
+
+        // Atomic min operation in shared memory
+        InterlockedMin(sharedReprojectionScore, probeScore);
+    }
+
+    // Sync threads again before writing output
+    GroupMemoryBarrierWithGroupSync();
+
+    // Decode the best probe group index
+    uint bestProbeGroupIndex = sharedReprojectionScore & 0xFFFFu;
+
+    // Assign best probe if we won the competition
+    if (input.groupIndex == bestProbeGroupIndex)
+    {
+        uint2 screenCoord_Probe = (screenCoord / 8) * 8;
+        for (uint i = 0; i < 8; i++)
+        {
+            for (uint j = 0; j < 8; j++)
+            {
+                in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] =
+                    in_RadianceCacheResults_Prev[prevScreenCoord_Probe + uint2(i, j)];
+            }
+        }
+    }
+}

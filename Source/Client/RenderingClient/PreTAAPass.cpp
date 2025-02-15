@@ -112,10 +112,6 @@ bool PreTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetLuminanceResult(), 0);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SkyPass::Get().GetResult(), 1);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 2);
-
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;

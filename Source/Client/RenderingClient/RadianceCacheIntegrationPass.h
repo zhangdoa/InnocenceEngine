@@ -3,17 +3,10 @@
 
 namespace Inno
 {
-	class TAAPassRenderingContext : public IRenderingContext
+	class RadianceCacheIntegrationPass : IRenderPass
 	{
 	public:
-		GPUResourceComponent* m_input;
-		GPUResourceComponent* m_motionVector;
-	};
-
-	class TAAPass : IRenderPass
-	{
-	public:
-		INNO_CLASS_SINGLETON(TAAPass)
+		INNO_CLASS_SINGLETON(RadianceCacheIntegrationPass)
 
 		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
@@ -26,12 +19,15 @@ namespace Inno
 		GPUResourceComponent* GetResult();
 
 	private:
+		const uint32_t TILE_SIZE = 8;
+		const uint32_t SH_TILE_SIZE = 2;
+
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;
+		TextureComponent* m_Result;
 
-		TextureComponent* m_OddTextureComp;
-		TextureComponent* m_EvenTextureComp;
+		ShaderStage m_ShaderStage;
 
 		bool RenderTargetsCreationFunc();
 	};

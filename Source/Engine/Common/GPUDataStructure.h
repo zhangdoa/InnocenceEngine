@@ -35,7 +35,9 @@ namespace Inno
 		float shutterTime;
 		float ISO;
 		uint32_t activeCascade;
-		float padding[4];
+		Vec2 radianceCacheHaltonJitter;
+		uint32_t frameIndex;
+		float padding;
 	};
 
 	struct alignas(16) CSMConstantBuffer

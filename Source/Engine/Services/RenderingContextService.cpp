@@ -69,14 +69,6 @@ namespace Inno
 
 		std::vector<DispatchParamsConstantBuffer> m_DispatchParamsConstantBuffer;
 
-		struct HaltonSampler
-		{
-			std::vector<Vec2> m_Values;
-			int32_t m_CurrentStep = 0;
-		};
-
-		std::vector<HaltonSampler> m_HaltonSamplers;
-
 		std::function<void()> f_sceneLoadingFinishedCallback;
 
 		bool Setup(ISystemConfig* systemConfig);
@@ -85,7 +77,6 @@ namespace Inno
 		bool Terminate();
 
 		float RadicalInverse(uint32_t n, uint32_t base);
-		void InitializeHaltonSampler();
 
 		bool UpdatePerFrameConstantBuffer();
 		bool UpdateLightData();
@@ -98,31 +89,18 @@ namespace Inno
 
 float RenderingContextServiceImpl::RadicalInverse(uint32_t n, uint32_t base)
 {
-	float val = 0.0f;
-	float invBase = 1.0f / base, invBi = invBase;
-	while (n > 0)
-	{
-		auto d_i = (n % base);
-		val += d_i * invBi;
-		n *= (uint32_t)invBase;
-		invBi *= invBase;
-	}
-	return val;
-};
+    float val = 0.0f;
+    float invBase = 1.0f / base;
+    float invBi = invBase;
 
-void RenderingContextServiceImpl::InitializeHaltonSampler()
-{
-	// in NDC space
-	auto l_swapChainImageCount = g_Engine->getRenderingServer()->GetSwapChainImageCount();
-	m_HaltonSamplers.resize(l_swapChainImageCount);
-	for (auto& m_haltonSampler : m_HaltonSamplers)
-	{
-		m_haltonSampler.m_Values.reserve(16);
-		for (uint32_t i = 0; i < 16; i++)
-		{
-			m_haltonSampler.m_Values.emplace_back(Vec2(RadicalInverse(i, 3) * 2.0f - 1.0f, RadicalInverse(i, 4) * 2.0f - 1.0f));
-		}		
-	}
+    while (n > 0)
+    {
+        uint32_t d_i = (n % base);
+        val += d_i * invBi;
+        n /= base;
+        invBi *= invBase;
+    }
+    return val;
 }
 
 bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
@@ -158,8 +136,6 @@ bool RenderingContextServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		InitializeHaltonSampler();
-
 		m_perFrameCBs.resize(g_Engine->getRenderingServer()->GetSwapChainImageCount());
 
 		auto l_renderingServer = g_Engine->getRenderingServer();
@@ -246,6 +222,7 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	auto l_p = l_camera->m_projectionMatrix;
 
 	PerFrameConstantBuffer l_perFrameCB = {};
+	l_perFrameCB.frameIndex = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
 	l_perFrameCB.p_original = l_p;
 	l_perFrameCB.p_jittered = l_p;
 
@@ -254,18 +231,11 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	auto l_screenResolution = l_renderingConfigurationService->GetScreenResolution();
 	if (l_renderingConfig.useTAA)
 	{
-		auto& l_HaltonSampler = m_HaltonSamplers[g_Engine->getRenderingServer()->GetCurrentFrame()];
-	
-		//TAA jitter for projection matrix
-		auto& l_currentHaltonStep = l_HaltonSampler.m_CurrentStep;
-		if (l_currentHaltonStep >= 16)
-		{
-			l_currentHaltonStep = 0;
-		}
-		l_perFrameCB.p_jittered.m02 = l_HaltonSampler.m_Values[l_currentHaltonStep].x / l_screenResolution.x;
-		l_perFrameCB.p_jittered.m12 = l_HaltonSampler.m_Values[l_currentHaltonStep].y / l_screenResolution.y;
-		l_currentHaltonStep += 1;
+		l_perFrameCB.p_jittered.m02 = (RadicalInverse(l_perFrameCB.frameIndex, 3) * 2.0f - 1.0f) / l_screenResolution.x;
+		l_perFrameCB.p_jittered.m12 = (RadicalInverse(l_perFrameCB.frameIndex, 4) * 2.0f - 1.0f) / l_screenResolution.y;
 	}
+
+	l_perFrameCB.radianceCacheHaltonJitter = Vec2(RadicalInverse(l_perFrameCB.frameIndex, 3) * 8.0f, RadicalInverse(l_perFrameCB.frameIndex, 5) * 8.0f);
 
 	auto r = Math::getInvertRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 

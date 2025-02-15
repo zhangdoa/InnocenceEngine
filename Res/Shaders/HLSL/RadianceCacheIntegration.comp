@@ -1,0 +1,60 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+#include "RayTracingTypes.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID : SV_GroupID;               // Workgroup ID
+    uint3 groupThreadID : SV_GroupThreadID;   // Local thread ID in workgroup
+    uint3 dispatchThreadID : SV_DispatchThreadID; // Global thread ID
+    uint groupIndex : SV_GroupIndex;          // Flattened thread index
+};
+
+[[vk::binding(0, 0)]]
+Texture2D<float4> in_RadianceCacheResults_Input : register(t0);
+
+[[vk::binding(0, 1)]]
+RWTexture2D<float4> in_RadianceCacheResults_Output : register(u0);
+
+static const float SH_NORMALIZE_FACTOR = 4.0 * PI / float(TILE_SIZE * TILE_SIZE);
+
+// Only thread 0 accumulates and writes the result
+// @TODO: Optimize this by using shared memory to accumulate the SH coefficients
+[numthreads(TILE_SIZE, TILE_SIZE, 1)]
+void main(ComputeInputType input)
+{
+    if (input.groupIndex != 0)
+        return;
+
+    uint2 probeIndex = input.groupID.xy; // Probe index
+    float3 SH_L0 = float3(0, 0, 0);
+    float3 SH_L1_x = float3(0, 0, 0);
+    float3 SH_L1_y = float3(0, 0, 0);
+    float3 SH_L1_z = float3(0, 0, 0);
+
+    // Iterate over the entire 8×8 probe tile
+    for (uint y = 0; y < TILE_SIZE; y++)
+    {
+        for (uint x = 0; x < TILE_SIZE; x++)
+        {
+            uint2 readCoord = probeIndex * TILE_SIZE + uint2(x, y);
+            float3 radiance = in_RadianceCacheResults_Input.Load(int3(readCoord, 0)).xyz;
+
+            float2 uv = float2(x, y) / TILE_SIZE; // Normalize to [0,1]
+            float3 sampleDir = DecodeOctahedral(uv);
+
+            // Compute SH weights
+            SH_L0 += radiance * Y_00() * SH_NORMALIZE_FACTOR;
+            SH_L1_x += radiance * Y_11(sampleDir) * SH_NORMALIZE_FACTOR;
+            SH_L1_y += radiance * Y_1_1(sampleDir) * SH_NORMALIZE_FACTOR;
+            SH_L1_z += radiance * Y_10(sampleDir) * SH_NORMALIZE_FACTOR;
+        }
+    }
+
+    // Store SH coefficients into a 2×2 tile
+    uint2 writeCoord = probeIndex * SH_TILE_SIZE;
+    in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)] = float4(SH_L0, 1.0);
+    in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)] = float4(SH_L1_x, 1.0);
+    in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(SH_L1_y, 1.0);
+    in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(SH_L1_z, 1.0);
+}

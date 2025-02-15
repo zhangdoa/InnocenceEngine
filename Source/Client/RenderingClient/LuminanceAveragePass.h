@@ -22,6 +22,7 @@ namespace Inno
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
+		uint32_t m_MaxResultToKeep = 8;
 
 		GPUBufferComponent *m_luminanceAverage = 0;
 	};

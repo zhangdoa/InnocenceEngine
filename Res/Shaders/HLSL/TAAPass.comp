@@ -26,7 +26,7 @@ Texture2D in_motionVector : register(t2);
 RWTexture2D<float4> TAAPassRT0 : register(u0);
 
 // Adjustable TAA Parameters
-static const float MOTION_VECTOR_CLAMP = 0.5;     // Limits extreme motion vectors
+static const float MOTION_VECTOR_CLAMP = 20.0;     // Clamping motion to avoid extreme artifacts
 static const float MOTION_VECTOR_SCALE = 0.95;    // Dampens excessive motion
 static const float ADAPTIVE_CLAMP_MIN = 0.1;      // Min soft clamping factor
 static const float ADAPTIVE_CLAMP_MAX = 0.3;      // Max soft clamping factor
@@ -37,38 +37,32 @@ static const float HISTORY_BLEND_MAX = 0.15;      // Maximum blending weight
 static const float MOTION_REJECTION_SCALE = 3.0;  // History rejection scale for fast motion
 static const float HISTORY_SOFT_REJECT_THRESHOLD = 0.3; // Soft rejection factor for history blending
 
-// [[[TWEAKING GUIDE]]]
-// Scenario	| Parameter to Adjust | Recommended Change
-// Subtle shimmering on fine details (edges) | HISTORY_BLEND_MIN | Slightly increase (e.g., 0.05 → 0.07)
-// Overblending, making motion look smeary | HISTORY_BLEND_MAX | Reduce (e.g., 0.15 → 0.1)
-// Sudden fast motion causes visible ghosting | MOTION_REJECTION_SCALE| Increase to reject history faster
-// Flickering in high-frequency areas (thin wires, small text) | ADAPTIVE_CLAMP_MIN/MAX	| Increase slightly to make clamping stronger
-// Motion blur feels too strong / unnatural | MOTION_VECTOR_CLAMP | Reduce (e.g., 0.5 → 0.3)
-
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
-	// Read motion vector
-	float2 MotionVector = in_motionVector[input.dispatchThreadID.xy].xy;
+	int2 pixelPos = input.dispatchThreadID.xy;
 
-	// Motion Vector Clamping & Scaling
-	MotionVector = clamp(MotionVector, -MOTION_VECTOR_CLAMP, MOTION_VECTOR_CLAMP);
-	MotionVector *= MOTION_VECTOR_SCALE;
+	// Read motion vector (already in screen space)
+	float2 motionVector = in_motionVector[pixelPos].xy;
+
+	// Clamp extreme motion vectors
+	motionVector = clamp(motionVector, -MOTION_VECTOR_CLAMP, MOTION_VECTOR_CLAMP);
+	motionVector *= MOTION_VECTOR_SCALE;
+
+	// Load current color
+	float3 currentColor = in_current[pixelPos].rgb;
 
 	// Compute history sample position (motion-reprojected)
-	int2 historyTexCoords = input.dispatchThreadID.xy - round(MotionVector * g_Frame.viewportSize.xy);
-	historyTexCoords = clamp(historyTexCoords, int2(0, 0), int2(g_Frame.viewportSize.xy - 1));
-
-	// Load colors
-	float3 historyColor = in_history[historyTexCoords].rgb;
-	float3 currentColor = in_current[input.dispatchThreadID.xy].rgb;
-
-	// Reject bad motion vectors
-	bool invalidMotionVec = any(abs(MotionVector) > MOTION_VECTOR_CLAMP) || isnan(MotionVector.x) || isnan(MotionVector.y);
-	if (invalidMotionVec)
+	int2 historyTexCoords = pixelPos + round(motionVector);
+    bool withinBounds = all(historyTexCoords >= float2(0, 0)) && all(historyTexCoords <= g_Frame.viewportSize.xy);
+    if (!withinBounds)
 	{
-		historyColor = currentColor; // Ignore history for unstable pixels
+		TAAPassRT0[pixelPos] = float4(currentColor, 1.0);
+		return;
 	}
+
+	// Load history color
+	float3 historyColor = in_history[historyTexCoords].rgb;
 
 	// Compute Luminance
 	float lumaCurrentColor = GetLuma(currentColor);
@@ -83,7 +77,7 @@ void main(ComputeInputType input)
 	{
 		for (int y = -1; y <= 1; y++)
 		{
-			int2 neighborTexCoords = input.dispatchThreadID.xy + int2(x, y);
+			int2 neighborTexCoords = pixelPos + int2(x, y);
 			float3 neighborColor = in_current[neighborTexCoords].rgb;
 
 			maxNeighbor = max(maxNeighbor, neighborColor);
@@ -94,8 +88,12 @@ void main(ComputeInputType input)
 
 	float3 neighborAverage = neighborSum / 9.0;
 
+	// Motion intensity rejection
+	float motionIntensity = length(motionVector / g_Frame.viewportSize.xy);
+	float historyRejectFactor = saturate(motionIntensity * MOTION_REJECTION_SCALE);
+
 	// Adaptive Soft Clamping
-	float adaptiveClampFactor = saturate(1.0 - length(MotionVector) * ADAPTIVE_CLAMP_MAX);
+	float adaptiveClampFactor = saturate(1.0 - motionIntensity * ADAPTIVE_CLAMP_MAX);
 	float3 historyClamped = lerp(historyColor, clamp(historyColor, minNeighbor, maxNeighbor), adaptiveClampFactor);
 
 	// Compute Adaptive Blending Weight
@@ -104,10 +102,6 @@ void main(ComputeInputType input)
 	float unbiased_weight_sqr = unbiased_weight * unbiased_weight;
 
 	float adaptiveWeight = lerp(HISTORY_BLEND_MIN, HISTORY_BLEND_MAX, unbiased_weight_sqr);
-
-	// Motion intensity rejection
-	float motionIntensity = length(MotionVector);
-	float historyRejectFactor = saturate(motionIntensity * MOTION_REJECTION_SCALE);
 
 	// Luminance Difference Soft Rejection
 	float lumaDiff = abs(lumaCurrentColor - lumaHistoryColor);
@@ -120,5 +114,5 @@ void main(ComputeInputType input)
 	finalColor = YCoCg_RGB(finalColor);
 #endif
 
-	TAAPassRT0[input.dispatchThreadID.xy] = float4(finalColor, lumaCurrentColor);
+	TAAPassRT0[pixelPos] = float4(finalColor, lumaCurrentColor);
 }

@@ -6,101 +6,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-// @TODO: The command list should be passed as a parameter.
-bool DX12RenderingServer::Clear(GPUBufferComponent* rhs)
-{
-    const uint32_t zero = 0;
-    auto l_commandList = GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    l_commandList->Reset(GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT).Get(), nullptr);
-
-    ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
-    l_commandList->SetDescriptorHeaps(1, l_heaps);
-
-    auto l_currentFrame = GetCurrentFrame();
-    auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(rhs->m_DeviceMemories[l_currentFrame]);
-    l_commandList->ClearUnorderedAccessViewUint(
-        l_deviceMemory->m_UAV.Handle.GPUHandle,
-        l_deviceMemory->m_UAV.Handle.CPUHandle,
-        l_deviceMemory->m_DefaultHeapBuffer.Get(),
-        &zero,
-        0,
-        NULL);
-
-    ExecuteCommandListAndWait(l_commandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-    return true;
-}
-
-// @TODO: The command list should be passed as a parameter.
-bool DX12RenderingServer::Copy(TextureComponent* lhs, TextureComponent* rhs)
-{
-    auto l_commandList = GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    l_commandList->Reset(GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT).Get(), nullptr);
-
-    auto l_src = reinterpret_cast<DX12TextureComponent*>(lhs);
-    auto l_dest = reinterpret_cast<DX12TextureComponent*>(rhs);
-    auto l_srcDeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_src->m_DeviceMemories[GetCurrentFrame()]);
-    auto l_destDeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_dest->m_DeviceMemories[GetCurrentFrame()]);
-
-    l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_srcDeviceMemory->m_DefaultHeapBuffer.Get(), l_src->m_CurrentState, D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-    l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_destDeviceMemory->m_DefaultHeapBuffer.Get(), l_dest->m_CurrentState, D3D12_RESOURCE_STATE_COPY_DEST));
-
-    l_commandList->CopyResource(l_destDeviceMemory->m_DefaultHeapBuffer.Get(), l_srcDeviceMemory->m_DefaultHeapBuffer.Get());
-
-    l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_srcDeviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, l_src->m_CurrentState));
-
-    l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_destDeviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_dest->m_CurrentState));
-
-    ExecuteCommandListAndWait(l_commandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-    return true;
-}
-
-// @TODO: The command list should be passed as a parameter.
-bool DX12RenderingServer::Clear(TextureComponent* rhs)
-{
-    auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
-    auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
-
-    auto l_commandList = GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    l_commandList->Reset(GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT).Get(), nullptr);
-
-    ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
-    l_commandList->SetDescriptorHeaps(1, l_heaps);
-
-    if (l_rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-        l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), l_rhs->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-    if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
-    {
-        l_commandList->ClearUnorderedAccessViewUint(
-            l_DX12DeviceMemory->m_UAV.Handle.GPUHandle,
-            l_DX12DeviceMemory->m_UAV.Handle.CPUHandle,
-            l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(),
-            (UINT*)&l_rhs->m_TextureDesc.ClearColor[0],
-            0,
-            NULL);
-    }
-    else
-    {
-        l_commandList->ClearUnorderedAccessViewFloat(
-            l_DX12DeviceMemory->m_UAV.Handle.GPUHandle,
-            l_DX12DeviceMemory->m_UAV.Handle.CPUHandle,
-            l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(),
-            &l_rhs->m_TextureDesc.ClearColor[0],
-            0,
-            NULL);
-    }
-
-    if (l_rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-        l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, l_rhs->m_CurrentState));
-
-    ExecuteCommandListAndWait(l_commandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-    return true;
-}
-
 uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
 {
     auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
@@ -113,8 +18,6 @@ uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bind
 
     return 0;
 }
-
-
 
 Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
 {

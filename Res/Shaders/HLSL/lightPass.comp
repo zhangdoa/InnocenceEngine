@@ -66,11 +66,11 @@ Texture2D<uint2> in_LightGrid : register(t8);
 [[vk::binding(9, 1)]]
 StructuredBuffer<uint> in_LightIndexList : register(t9);
 [[vk::binding(10, 1)]]
-Texture2D<float4> in_Illuminance : register(t10);
+Texture2D<float4> in_RadianceCache : register(t10);
 [[vk::binding(11, 1)]]
 Texture3D<float4> in_VolumetricFog : register(t11);
 [[vk::binding(0, 2)]]
-SamplerState in_samplerTypePoint : register(s0);
+SamplerState in_samplerTypeLinear : register(s0);
 [[vk::binding(0, 3)]]
 RWTexture2D<float4> out_lightPassRT0 : register(u0);
 [[vk::binding(1, 3)]]
@@ -79,11 +79,20 @@ RWTexture2D<float4> out_lightPassRT1 : register(u1);
 #include "common/coneTrace.hlsl"
 #include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
+#include "RayTracingTypes.hlsl"
 
-//#define uni_drawCSMSplitArea
+#define DRAW_CSM_AREA false
+#define INDIRECT_LIGHT_FROM_CACHE_ONLY false
+
+struct MaterialAttributes
+{
+	float3 m_Albedo;
+	float m_Metallic;
+	float m_Roughness;
+};
 
 float4 GetFog(in Texture3D<float4> voxelTexture,
-	in SamplerState in_samplerTypePoint,
+	in SamplerState in_samplerTypeLinear,
 	in float3 P,
 	in float3 N,
 	in VoxelizationPass_CB g_VoxelizationPassCBuffer)
@@ -96,54 +105,93 @@ float4 GetFog(in Texture3D<float4> voxelTexture,
 
 	float3 tc = posCS.xyz;
 	tc.xy = tc.xy * 0.5f + 0.5f;
-	float4 result = voxelTexture.Sample(in_samplerTypePoint, tc);
+	float4 result = voxelTexture.Sample(in_samplerTypeLinear, tc);
 
 	return result;
+}
+
+float3 LoadIrradiance(uint2 shReadCoord, float3 normal)
+{
+    float3 SH_L0   = in_RadianceCache[shReadCoord + uint2(0, 0)].rgb;
+    float3 SH_L1_x = in_RadianceCache[shReadCoord + uint2(1, 0)].rgb;
+    float3 SH_L1_y = in_RadianceCache[shReadCoord + uint2(0, 1)].rgb;
+    float3 SH_L1_z = in_RadianceCache[shReadCoord + uint2(1, 1)].rgb;
+
+    return max( // Clamp to avoid negative irradiance
+        SH_L0 * Y_00() +
+        SH_L1_x * Y_11(normal) +
+        SH_L1_y * Y_1_1(normal) +
+        SH_L1_z * Y_10(normal), 
+        0.0);
+}
+
+float3 SampleRadianceCache(float2 screenCoord, float3 normal)
+{
+    uint2 probeIndex = screenCoord / TILE_SIZE;
+    uint2 shReadCoord = probeIndex * SH_TILE_SIZE;
+
+    float3 Irradiance_TL = LoadIrradiance(shReadCoord, normal);
+    float3 Irradiance_TR = LoadIrradiance(shReadCoord + uint2(SH_TILE_SIZE, 0), normal);
+    float3 Irradiance_BL = LoadIrradiance(shReadCoord + uint2(0, SH_TILE_SIZE), normal);
+    float3 Irradiance_BR = LoadIrradiance(shReadCoord + uint2(SH_TILE_SIZE, SH_TILE_SIZE), normal);
+
+    // Bilinear interpolation
+    float2 uv = frac(screenCoord / TILE_SIZE);
+    return lerp(lerp(Irradiance_TL, Irradiance_TR, uv.x),
+                lerp(Irradiance_BL, Irradiance_BR, uv.x), uv.y);
+}
+
+void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
+	float3 V, float3 N, float3 L,
+	float3 luminousFlux, float attenuationFactor, out float3 luminance_ForDirectLight, out float3 luminance_ForIndirectLight)
+{
+	float NdotV = max(dot(N, V), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
+	float3 HL = normalize(V + L);
+	float LdotHL = max(dot(L, HL), 0.0);
+	float NdotHL = max(dot(N, HL), 0.0);
+
+	// Compute Fresnel factor using Schlick's approximation.
+	// Here F90 is assumed to be 1.0 (typical for dielectrics).
+	float3 F0 = float3(0.04, 0.04, 0.04);
+	F0 = lerp(F0, l_MaterialAttributes.m_Albedo, l_MaterialAttributes.m_Metallic);
+	float F90 = 1.0;
+	float3 l_FresnelTerm = Fresnel_Schlick(F0, F90, LdotHL);
+
+	float3 l_DiffuseBSDF = ComputeDiffuseBRDF(NdotV, NdotL, LdotHL, l_MaterialAttributes.m_Roughness, l_MaterialAttributes.m_Metallic, l_FresnelTerm, l_MaterialAttributes.m_Albedo);
+	float3 l_SpecularBSDF = ComputeSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypeLinear, NdotV, NdotL, NdotHL, LdotHL, l_MaterialAttributes.m_Roughness, F0, l_FresnelTerm);
+
+	float3 l_Illuminance = luminousFlux * attenuationFactor * NdotL;
+
+	luminance_ForDirectLight = (l_DiffuseBSDF + l_SpecularBSDF) * l_Illuminance;
+	luminance_ForIndirectLight = l_MaterialAttributes.m_Albedo * l_Illuminance / PI; // Simple Lambertian diffuse
 }
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
-	out_lightPassRT0[input.dispatchThreadID.xy] = float4(0.0, 0.0, 0.0, 0.0);
-	out_lightPassRT1[input.dispatchThreadID.xy] = float4(0.0, 0.0, 0.0, 0.0);
+	uint2 l_ScreenCoord = input.dispatchThreadID.xy;
+	out_lightPassRT0[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+	out_lightPassRT1[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 
-	float4 GPassRT0 = in_opaquePassRT0[input.dispatchThreadID.xy];
+	float4 GPassRT0 = in_opaquePassRT0[l_ScreenCoord];
 
 	// No object is rendered in this pixel.
 	if (GPassRT0.a == 0.0)
 		return;
 
+	float4 GPassRT1 = in_opaquePassRT1[l_ScreenCoord];
+
 	float3 l_Position_WorldSpace = GPassRT0.xyz;
-	float l_SunShadowFactor = SunShadowResolver(l_Position_WorldSpace, in_SunShadow, in_samplerTypePoint);
-	if (l_SunShadowFactor == 1.0)
-	{
-		out_lightPassRT0[input.dispatchThreadID.xy] = float4(0.0, 0.0, 0.0, 1.0);
-		out_lightPassRT1[input.dispatchThreadID.xy] = float4(0.0, 0.0, 0.0, 1.0);
-		return;
-	}
-
-	float4 GPassRT1 = in_opaquePassRT1[input.dispatchThreadID.xy];
-	float4 GPassRT2 = in_opaquePassRT2[input.dispatchThreadID.xy];
-	float4 GPassRT3 = in_opaquePassRT3[input.dispatchThreadID.xy];
-
-	float l_SSAO = in_SSAO[input.dispatchThreadID.xy].x;
-
-	float l_Metallic = GPassRT1.w;
 	float3 l_Normal_WorldSpace = GPassRT1.xyz;
-	float l_Roughness = GPassRT2.w;
-	float3 l_Albedo = GPassRT2.xyz;
 
-	float l_AmbienceOcclusion = 1.0 - GPassRT3.z;
-	l_AmbienceOcclusion *= l_SSAO;
-
-	float3 l_Luminance = float3(0, 0, 0);
 	float3 N = normalize(l_Normal_WorldSpace);
 
-#ifdef uni_drawCSMSplitArea
+#if DRAW_CSM_AREA
 	float3 L = normalize(-g_Frame.sun_direction.xyz);
 	float NdotL = max(dot(N, L), 0.0);
 
-	l_Luminance = float3(NdotL, NdotL, NdotL);
+	float3 l_Luminance_ForDirectLight = float3(NdotL, NdotL, NdotL);
 
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
@@ -162,32 +210,58 @@ void main(ComputeInputType input)
 
 	if (splitIndex == 0)
 	{
-		l_Luminance.g = 0;
-		l_Luminance.b = 0;
+		l_Luminance_ForDirectLight.g = 0;
+		l_Luminance_ForDirectLight.b = 0;
 	}
 	else if (splitIndex == 1)
 	{
-		l_Luminance.b = 0;
+		l_Luminance_ForDirectLight.b = 0;
 	}
 	else if (splitIndex == 2)
 	{
-		l_Luminance.r = 0;
-		l_Luminance.b = 0;
+		l_Luminance_ForDirectLight.r = 0;
+		l_Luminance_ForDirectLight.b = 0;
 	}
 	else if (splitIndex == 3)
 	{
-		l_Luminance.r = 0;
-		l_Luminance.g = 0;
+		l_Luminance_ForDirectLight.r = 0;
+		l_Luminance_ForDirectLight.g = 0;
 	}
 
-	l_Luminance *= 1.0 - l_SunShadowFactor;
-#else
-	float3 F0 = float3(0.04, 0.04, 0.04);
-	F0 = lerp(F0, l_Albedo, l_Metallic);
+	l_Luminance_ForDirectLight *= 1.0 - l_SunShadowFactor;
+	out_lightPassRT0[l_ScreenCoord] = float4(l_Luminance_ForDirectLight, 1.0);
+	return;
+#endif
 
 	float3 V = normalize(g_Frame.camera_posWS.xyz - l_Position_WorldSpace);
-	float NdotV = max(dot(N, V), 0.0);
+	float3 l_Luminance_ForDirectLight = float3(0.0, 0.0, 0.0);
+	float3 l_Luminance_ForIndirectLight = float3(0.0, 0.0, 0.0);
 
+	/// Indirect light from radiance cache
+	float3 l_LuminanceIndirectLight_FromCache = SampleRadianceCache(l_ScreenCoord, N);
+
+	// @TODO: Fix the acutal issue that causes this to be negative
+	if (any(l_LuminanceIndirectLight_FromCache) < 0)
+	{
+		l_LuminanceIndirectLight_FromCache = float3(0.0, 0.0, 0.0);
+		return;
+	}
+	// Apply NdotV factor
+	float NdotV = max(dot(N, V), 0.0);
+	l_LuminanceIndirectLight_FromCache *= NdotV;
+
+	// Accumulate indirect light
+	l_Luminance_ForDirectLight += l_LuminanceIndirectLight_FromCache;
+	l_Luminance_ForIndirectLight += l_LuminanceIndirectLight_FromCache;
+
+	float4 GPassRT2 = in_opaquePassRT2[l_ScreenCoord];
+
+	MaterialAttributes l_MaterialAttributes;
+	l_MaterialAttributes.m_Metallic = GPassRT1.w;
+	l_MaterialAttributes.m_Roughness = GPassRT2.w;
+	l_MaterialAttributes.m_Albedo = GPassRT2.xyz;
+
+	/// Sun light
 	float3 D = normalize(-g_Frame.sun_direction.xyz);
 	float r = sin(SUN_ANGULAR_RADIUS);
 	float d = cos(SUN_ANGULAR_RADIUS);
@@ -195,53 +269,51 @@ void main(ComputeInputType input)
 	float3 S = V - DdotV * D;
 	float3 L = DdotV < d ? normalize(d * D + normalize(S) * r) : V;
 
-	float3 HD = normalize(V + D);
-	float3 HL = normalize(V + L);
+	float3 l_LuminousFlux_Sun = g_Frame.sun_illuminance.xyz;
+	float l_AttenuationFactor_Sun = 1.0;
+	float3 l_Luminance_DirectLight_Sun = float3(0.0, 0.0, 0.0);
+	float3 l_Luminance_IndirectLight_Sun = float3(0.0, 0.0, 0.0);
+	CalculateLuminance(l_MaterialAttributes, V, N, L, l_LuminousFlux_Sun, l_AttenuationFactor_Sun, l_Luminance_DirectLight_Sun, l_Luminance_IndirectLight_Sun);
 
-	float DdotHD = max(dot(D, HD), 0.0);
+	float l_SunShadowFactor = SunShadowResolver(l_Position_WorldSpace, in_SunShadow, in_samplerTypeLinear);
+	l_Luminance_ForDirectLight += l_Luminance_DirectLight_Sun * (1.0 - l_SunShadowFactor);
+	l_Luminance_ForIndirectLight += l_Luminance_IndirectLight_Sun * (1.0 - l_SunShadowFactor);
 
-	float LdotHL = max(dot(L, HL), 0.0);
-	float NdotHL = max(dot(N, HL), 0.0);
+	/// Point light
+	// Get the index of the current pixel in the l_PointLight grid.
+	uint2 l_TileIndex = uint2(floor((float2)l_ScreenCoord / LIGHT_CULLING_BLOCK_SIZE));
 
-	float NdotL = max(dot(N, L), 0.0);
-	float NdotD = max(dot(N, D), 0.0);
+	// Get the start position and offset of the l_PointLight in the l_PointLight index list.
+	uint l_StartOffset = in_LightGrid[l_TileIndex].x;
+	uint l_LightCount = in_LightGrid[l_TileIndex].y;
 
-	float3 l_LuminanceFromSun = CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, l_Roughness, l_Metallic, F0, l_Albedo, g_Frame.sun_illuminance.xyz);
-	l_Luminance += l_LuminanceFromSun * (1.0 - l_SunShadowFactor);
+	[loop]
+	for (uint i = 0; i < l_LightCount; ++i)
+	{
+		uint l_LightIndex = in_LightIndexList[l_StartOffset + i];
+		PointLight_CB l_PointLight = g_PointLights[l_LightIndex];
 
-	// // point punctual l_PointLight
-	// // Get the index of the current pixel in the l_PointLight grid.
-	// uint2 l_TileIndex = uint2(floor((float2)input.dispatchThreadID.xy / LIGHT_CULLING_BLOCK_SIZE));
+		float3 L_unnormalized = l_PointLight.position.xyz - l_Position_WorldSpace;
+		float l_LightAttenuationRadius = l_PointLight.luminousFlux.w;
 
-	// // Get the start position and offset of the l_PointLight in the l_PointLight index list.
-	// uint l_StartOffset = in_LightGrid[l_TileIndex].x;
-	// uint l_LightCount = in_LightGrid[l_TileIndex].y;
+		float3 L = normalize(L_unnormalized);
 
-	// [loop]
-	// for (uint i = 0; i < l_LightCount; ++i)
-	// {
-	// 	uint l_LightIndex = in_LightIndexList[l_StartOffset + i];
-	// 	PointLight_CB l_PointLight = g_PointLights[l_LightIndex];
+		float3 l_LuminousFlux_PointLight = l_PointLight.luminousFlux.xyz;
 
-	// 	float3 L_unnormalized = l_PointLight.position.xyz - l_Position_WorldSpace;
-	// 	float l_LightAttenuationRadius = l_PointLight.luminousFlux.w;
+		float l_AttenuationFactor_PointLight = 1.0;
+		float l_InvertedSquareAttenuationRadius = 1.0 / max(l_LightAttenuationRadius * l_LightAttenuationRadius, EPSILON);
+		l_AttenuationFactor_PointLight *= CalculateDistanceAttenuation(L_unnormalized, l_InvertedSquareAttenuationRadius);
 
-	// 	float3 L = normalize(L_unnormalized);
-	// 	float3 H = normalize(V + L);
+		float3 l_Luminance_DirectLight_PointLight = float3(0.0, 0.0, 0.0);
+		float3 l_Luminance_IndirectLight_PointLight = float3(0.0, 0.0, 0.0);
+		CalculateLuminance(l_MaterialAttributes, V, N, L, l_LuminousFlux_PointLight, l_AttenuationFactor_PointLight, l_Luminance_DirectLight_PointLight, l_Luminance_IndirectLight_PointLight);
 
-	// 	float LdotH = max(dot(L, H), 0.0);
-	// 	float NdotH = max(dot(N, H), 0.0);
-	// 	float NdotL = max(dot(N, L), 0.0);
+		float l_PointLightShadowFactor = 0.0; // @TODO: implement shadow mapping for point light
+		l_Luminance_ForDirectLight += l_Luminance_DirectLight_PointLight * (1.0 - l_PointLightShadowFactor);
+		l_Luminance_ForIndirectLight += l_Luminance_IndirectLight_PointLight * (1.0 - l_PointLightShadowFactor);
+	}
 
-	// 	float l_Attenuation = 1.0;
-	// 	float l_InvertedSquareAttenuationRadius = 1.0 / max(l_LightAttenuationRadius * l_LightAttenuationRadius, EPSILON);
-	// 	l_Attenuation *= CalculateDistanceAttenuation(L_unnormalized, l_InvertedSquareAttenuationRadius);
-
-	// 	float3 l_LuminousFlux = l_PointLight.luminousFlux.xyz * l_Attenuation;
-	// 	l_Luminance += CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotH, LdotH, l_Roughness, l_Metallic, F0, l_Albedo, l_LuminousFlux);
-	// }
-
-	// // sphere area l_PointLight
+	/// Sphere area light
 	// [loop]
 	// for (uint i = 0; i < NR_SPHERE_LIGHTS; ++i)
 	// {
@@ -263,35 +335,43 @@ void main(ComputeInputType input)
 	// 	float x = sqrt(max(h * h - 1, EPSILON));
 	// 	float y = -x * (1 / tan(Beta));
 	// 	//y = clamp(y, -1.0, 1.0);
-	// 	float l_Illuminance = 0;
+	// 	float l_OutgoingLuminance = 0;
 
 	// 	if (h * cos(Beta) > 1)
 	// 	{
-	// 		l_Illuminance = cos(Beta) / (h * h);
+	// 		l_OutgoingLuminance = cos(Beta) / (h * h);
 	// 	}
 	// 	else
 	// 	{
-	// 		l_Illuminance = (1 / max(PI * h * h, EPSILON))
+	// 		l_OutgoingLuminance = (1 / max(PI * h * h, EPSILON))
 	// 			* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, EPSILON)))
 	// 			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, EPSILON)) / x));
 	// 	}
-	// 	l_Illuminance *= PI;
+	// 	l_OutgoingLuminance *= PI;
 
-	// 	l_Luminance += CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotH, LdotH, l_Roughness, l_Metallic, F0, l_Albedo, l_Illuminance * g_SphereLights[i].l_LuminousFlux.xyz);
+	// 	l_Luminance_ForDirectLight += CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypeLinear, NdotV, NdotL, NdotH, LdotH, l_Roughness, l_Metallic, F0, l_Albedo, l_OutgoingLuminance * g_SphereLights[i].l_LuminousFlux.xyz);
 	// }
 
 	// // Volumetric Fog
-	// float4 l_Fog = GetFog(in_VolumetricFog, in_samplerTypePoint, l_Position_WorldSpace, l_Normal_WorldSpace, g_VoxelizationPassCBuffer);
+	// float4 l_Fog = GetFog(in_VolumetricFog, in_samplerTypeLinear, l_Position_WorldSpace, l_Normal_WorldSpace, g_VoxelizationPassCBuffer);
 
 	// if (l_Fog.a)
 	// {
-	// 	l_Luminance = l_Fog.a * l_Luminance + l_Fog.xyz;
+	// 	l_Luminance_ForDirectLight = l_Fog.a * l_Luminance_ForDirectLight + l_Fog.xyz;
 	// }
 
-	//l_Luminance *= l_AmbienceOcclusion;
-	float4 l_Illuminance = in_Illuminance[input.dispatchThreadID.xy];
-	l_Luminance += l_Illuminance.xyz;
+	// float l_SSAO = in_SSAO[l_ScreenCoord].x;
+	// float4 GPassRT3 = in_opaquePassRT3[l_ScreenCoord];
+	// float l_AmbienceOcclusion = 1.0 - GPassRT3.z;
+	// l_AmbienceOcclusion *= l_SSAO;
+	//l_Luminance_ForDirectLight *= l_AmbienceOcclusion;
+
+
+#if INDIRECT_LIGHT_FROM_CACHE_ONLY
+	out_lightPassRT0[l_ScreenCoord] = float4(l_LuminanceIndirectLight_FromCache, 1.0);
+#else
+	out_lightPassRT0[l_ScreenCoord] = float4(l_Luminance_ForDirectLight, 1.0);
 #endif
-	out_lightPassRT0[input.dispatchThreadID.xy] = float4(l_Luminance.xyz, 1.0);
-	//out_lightPassRT1[input.dispatchThreadID.xy] = float4(l_IndirectDiffuse + l_LuminanceFromSun *  l_SunShadowFactor, 1.0);
+
+	out_lightPassRT1[l_ScreenCoord] = float4(l_Luminance_ForIndirectLight, 1.0);
 }

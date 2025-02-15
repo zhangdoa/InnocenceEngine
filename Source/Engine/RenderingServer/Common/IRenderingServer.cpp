@@ -12,6 +12,7 @@
 #include "../../Services/SceneService.h"
 
 #include "../../Engine.h"
+#include "../IRenderingServer.h"
 
 using namespace Inno;
 
@@ -166,6 +167,8 @@ bool IRenderingServer::Update()
 
 	EndFrame();
 
+	m_FrameCountSinceLaunch++;
+	
 	return true;
 }
 
@@ -449,6 +452,24 @@ bool IRenderingServer::Resize()
 	return true;
 }
 
+bool IRenderingServer::Clear(TextureComponent* rhs)
+{
+	m_unclearedResources.push(rhs);
+    return true;
+}
+
+bool IRenderingServer::Copy(TextureComponent* lhs, TextureComponent* rhs)
+{
+	m_unprocessedCopyCommands.push(CopyCommand(lhs, rhs));
+	return true;
+}
+
+bool IRenderingServer::Clear(GPUBufferComponent* rhs)
+{
+	m_unclearedResources.push(rhs);
+	return true;
+}
+
 bool IRenderingServer::WriteMappedMemory(MeshComponent* rhs)
 {	
 	if (rhs->m_MappedMemory_VB == nullptr || rhs->m_MappedMemory_IB == nullptr)
@@ -609,6 +630,11 @@ uint32_t IRenderingServer::GetNextFrame()
 	return l_nextFrame;
 }
 
+uint32_t IRenderingServer::GetFrameCountSinceLaunch()
+{
+	return m_FrameCountSinceLaunch;
+}
+
 bool IRenderingServer::InitializeComponents()
 {
 	while (m_uninitializedMeshes.size() > 0)
@@ -715,6 +741,37 @@ bool IRenderingServer::PrepareGlobalCommands()
 
 	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
 	Open(l_commandList, GPUEngineType::Graphics);
+
+	while (m_unclearedResources.size() > 0)
+	{
+		GPUResourceComponent* l_GPUResource;
+		m_unclearedResources.tryPop(l_GPUResource);
+
+		if (!l_GPUResource)
+			continue;
+
+		if (l_GPUResource->m_GPUResourceType == GPUResourceType::Image)
+		{
+			auto l_texture = static_cast<TextureComponent*>(l_GPUResource);
+			Clear(l_commandList, l_texture);
+		}
+		else if (l_GPUResource->m_GPUResourceType == GPUResourceType::Buffer)
+		{
+			auto l_GPUBuffer = static_cast<GPUBufferComponent*>(l_GPUResource);	
+			Clear(l_commandList, l_GPUBuffer);
+		}
+	}
+
+	while (m_unprocessedCopyCommands.size() > 0)
+	{
+		CopyCommand l_copyCommand(nullptr, nullptr);
+		m_unprocessedCopyCommands.tryPop(l_copyCommand);
+
+		if (!l_copyCommand.m_lhs || !l_copyCommand.m_rhs)
+			continue;
+
+		Copy(l_commandList, l_copyCommand.m_lhs, l_copyCommand.m_rhs);
+	}
 
 	for (auto i : m_initializedMeshes)
 	{

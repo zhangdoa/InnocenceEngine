@@ -53,7 +53,7 @@ bool LuminanceAveragePass::Setup(ISystemConfig* systemConfig)
 	m_luminanceAverage = l_renderingServer->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceAverage->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_luminanceAverage->m_ElementCount = 1;
+	m_luminanceAverage->m_ElementCount = m_MaxResultToKeep;
 	m_luminanceAverage->m_ElementSize = sizeof(float);
 
 	m_ObjectStatus = ObjectStatus::Created;

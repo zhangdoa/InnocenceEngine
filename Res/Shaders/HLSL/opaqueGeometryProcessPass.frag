@@ -7,6 +7,12 @@ cbuffer RootConstants : register(b0)
 	uint m_ObjectIndex;
 };
 
+[[vk::binding(1, 0)]]
+cbuffer PerFrameConstantBuffer : register(b1)
+{
+    PerFrame_CB g_Frame;
+}
+
 [[vk::binding(0, 1)]]
 StructuredBuffer<PerObject_CB> g_Objects : register(t0);
 
@@ -23,7 +29,6 @@ struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION_ORIG;
-	float4 posCS_prev : POSITION_PREV;
 	float3 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
 	float3 normalWS : NORMAL;
@@ -102,15 +107,28 @@ PixelOutputType main(PixelInputType input)
 		out_AO = t2d_ao.Sample(g_Sampler, input.texCoord).r;
 	}
 
-	float w_orig = max(abs(input.posCS_orig.w), 0.0001);
-	float w_prev = max(abs(input.posCS_prev.w), 0.0001);
+	float4 posWS_prev = float4(input.posWS, 1.0);
+	float4 posVS_prev = mul(posWS_prev, g_Frame.v_prev);
+	float4 posCS_prev = mul(posVS_prev, g_Frame.p_original);
 
-	float2 motionVec = (input.posCS_prev.xy / w_prev) - (input.posCS_orig.xy / w_orig);
+	float w_orig = max(abs(input.posCS_orig.w), EPSILON);
+	float w_prev = max(abs(posCS_prev.w), EPSILON);
+
+	float2 screenPos_orig = (input.posCS_orig.xy / w_orig) * 0.5 + 0.5;
+	float2 screenPos_prev = (posCS_prev.xy / w_prev) * 0.5 + 0.5;
+
+	screenPos_orig.y = 1.0 - screenPos_orig.y; // Flip Y for screen-space
+	screenPos_prev.y = 1.0 - screenPos_prev.y;
+
+	screenPos_orig *= g_Frame.viewportSize.xy;
+	screenPos_prev *= g_Frame.viewportSize.xy;
+
+	float2 motionVec = screenPos_prev - screenPos_orig;
 
 	output.opaquePassRT0 = float4(input.posWS, 1.0);
 	output.opaquePassRT1 = float4(normalWS, out_metallic);
 	output.opaquePassRT2 = float4(out_albedo, out_roughness);
-	output.opaquePassRT3 = float4(motionVec.xy * 0.5, out_AO, transparency);
+	output.opaquePassRT3 = float4(motionVec.xy, out_AO, transparency);
 
 	return output;
 }

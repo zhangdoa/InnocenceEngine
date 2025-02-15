@@ -96,7 +96,18 @@ ObjectStatus TAAPass::GetStatus()
 
 bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (m_EvenTextureComp->m_ObjectStatus != ObjectStatus::Activated
+		|| m_OddTextureComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+			
 	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	auto l_readTexture = l_isOddFrame ? m_EvenTextureComp : m_OddTextureComp;
+	auto l_writeTexture = l_isOddFrame ? m_OddTextureComp : m_EvenTextureComp;
 
 	auto l_renderingContext = reinterpret_cast<TAAPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -104,13 +115,12 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, (size_t)(l_renderingContext->m_writeTexture == m_EvenTextureComp));
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_readTexture, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_readTexture, 2);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_motionVector, 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_writeTexture, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_writeTexture, 4);
 
 	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
@@ -124,14 +134,13 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 	return m_RenderPassComp;
 }
 
-GPUResourceComponent* TAAPass::GetOddResult()
+GPUResourceComponent* TAAPass::GetResult()
 {
-	return m_EvenTextureComp;
-}
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
 
-GPUResourceComponent* TAAPass::GetEvenResult()
-{
-	return m_OddTextureComp;
+	return l_isOddFrame ? m_OddTextureComp : m_EvenTextureComp;;
 }
 
 bool TAAPass::RenderTargetsCreationFunc()

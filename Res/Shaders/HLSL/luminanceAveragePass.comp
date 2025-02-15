@@ -3,17 +3,19 @@
 
 struct ComputeInputType
 {
-	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
-	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
-	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
-	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+	uint3 groupID : SV_GroupID;
+	uint3 groupThreadID : SV_GroupThreadID;
+	uint3 dispatchThreadID : SV_DispatchThreadID;
+	uint  groupIndex : SV_GroupIndex;
 };
 
 [[vk::binding(0, 0)]]
 cbuffer PerFrameConstantBuffer : register(b0)
 {
-    PerFrame_CB g_Frame;
+	PerFrame_CB g_Frame;
 }
+
+static const uint numHistoryFrames = 8;
 
 [[vk::binding(0, 1)]]
 RWStructuredBuffer<uint> in_histogram : register(u0);
@@ -30,6 +32,7 @@ void main(ComputeInputType input)
 
 	GroupMemoryBarrierWithGroupSync();
 
+	// Clear histogram entry for reuse
 	in_histogram[input.groupIndex] = 0;
 
 	[unroll]
@@ -39,18 +42,29 @@ void main(ComputeInputType input)
 		{
 			InterlockedAdd(histogramShared[input.groupIndex], histogramShared[input.groupIndex + histogramSampleIndex]);
 		}
-
 		GroupMemoryBarrierWithGroupSync();
 	}
 
+	// Compute Luminance & Moving Average
 	if (input.groupIndex == 0)
 	{
 		float weightedLogAverage = (histogramShared[0] / max(g_Frame.viewportSize.x * g_Frame.viewportSize.y - (float)countForThisBin, 1.0)) - 1.0;
 		float range = g_Frame.maxLogLuminance - g_Frame.minLogLuminance;
 		float weightedAverageLuminance = exp2(weightedLogAverage / 254.0 * range + g_Frame.minLogLuminance);
-		float luminanceLastFrame = out_average[0];
-		float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame) * 0.5;
 
+		// Store new luminance value in cyclic buffer
+		uint bufferIndex = g_Frame.frameIndex % numHistoryFrames;
+		out_average[bufferIndex] = weightedAverageLuminance;
+
+		// Compute moving average over last `numHistoryFrames`
+		float sumLuminance = 0.0;
+		for (uint i = 0; i < numHistoryFrames; i++)
+		{
+			sumLuminance += out_average[i];
+		}
+		float adaptedLuminance = sumLuminance / numHistoryFrames;
+
+		// Store result at index 0 for easy access
 		out_average[0] = adaptedLuminance;
 	}
 }

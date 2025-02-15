@@ -27,6 +27,23 @@ StructuredBuffer<float> in_luminanceAverage : register(t3);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> out_finalBlendPassRT0 : register(u0);
 
+#include "common/Tonemapping.hlsl"
+
+float ComputeEV100(float aperture, float shutterTime, float ISO)
+{
+	return log2(aperture * aperture / shutterTime * 100 / ISO);
+}
+
+float ComputeEV100FromAvgLuminance(float avgLuminance)
+{
+	return log2(avgLuminance * 100.0f / 12.5f);
+}
+float ConvertEV100ToExposure(float EV100)
+{
+	float maxLuminance = 1.2f * pow(2.0f, EV100);
+	return 1.0f / max(maxLuminance, EPSILON);
+}
+
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
@@ -36,11 +53,12 @@ void main(ComputeInputType input)
 
 	// HDR to LDR
 #ifdef AUTO_EXPOSURE
-	float EV100 = ComputeEV100FromAvgLuminance(in_luminanceAverage[0]);
+	float maxLuminance = in_luminanceAverage[0] * 9.6f; // precomputed EV100
+	float exposure = 1.0f / max(maxLuminance, EPSILON);
 #else
 	float EV100 = ComputeEV100(g_Frame.aperture, g_Frame.shutterTime, g_Frame.ISO);
-#endif
 	float exposure = ConvertEV100ToExposure(EV100);
+#endif
 
 	float3 bassPassxyY = RGB_XYY(basePass);
 	bassPassxyY.z *= exposure;

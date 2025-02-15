@@ -30,18 +30,13 @@ void main(ComputeInputType input)
 	float atmosphereHeight = 100e3;
 	float3 eye_position = g_Frame.camera_posWS.xyz + float3(0.0, planetRadius, 0.0);
 
-	color = atmosphere(
-		eyedir, // normalized ray direction
-		eye_position, // ray origin
-		lightdir, // position of the sun
-		g_Frame.sun_illuminance.xyz, // intensity of the sun
-		planetRadius, // radius of the planet in meters
-		planetRadius + atmosphereHeight, // radius of the atmosphere in meters
-		float3(5.8e-6, 13.5e-6, 33.1e-6), // Rayleigh scattering coefficient
-		21e-6, // Mie scattering coefficient
-		8e3, // Rayleigh scale height
-		1.3e3, // Mie scale height
-		0.758 // Mie preferred scattering direction
+	color = getSkyColor(
+		eyedir,
+		eye_position,
+		lightdir,
+		g_Frame.sun_illuminance.xyz,
+		planetRadius,
+		atmosphereHeight
 	);
 
 	int2 writeCoord = input.dispatchThreadID.xy;
