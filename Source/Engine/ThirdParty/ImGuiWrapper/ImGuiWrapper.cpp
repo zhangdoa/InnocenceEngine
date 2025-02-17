@@ -386,9 +386,6 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void* rhs)
 		l_rhs->m_localTransformVector_target.m_pos.z = pos[2];
 	}
 
-	static float rot_min = -180.0f;
-	static float rot_max = 180.0f;
-
 	static float rot[4];
 	Vec4 eulerAngles = Math::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
 	rot[0] = Math::radianToAngle(eulerAngles.x);
@@ -396,7 +393,7 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void* rhs)
 	rot[2] = Math::radianToAngle(eulerAngles.z);
 	rot[3] = 0.0f;
 
-	if (ImGui::DragFloat3("Rotation", rot, 1.0f, rot_min, rot_max))
+	if (ImGui::DragFloat3("Rotation", rot, 1.0f))
 	{
 		auto roll = Math::angleToRadian(rot[0]);
 		auto pitch = Math::angleToRadian(rot[1]);
