@@ -1,9 +1,9 @@
 {
-    "SceneName": "..//Res//Scenes//default.InnoScene",
+    "SceneName": "sdsds",
     "SceneEntities": [
         {
-            "UUID": 2981553706053512329,
-            "ObjectName": "landscape",
+            "UUID": 3161132831565031770,
+            "ObjectName": "Landscape Box",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
@@ -37,8 +37,8 @@
             ]
         },
         {
-            "UUID": 4426181633110689369,
-            "ObjectName": "playerCharacterCamera",
+            "UUID": 3668918424501022487,
+            "ObjectName": "Player Character Camera",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
@@ -46,14 +46,14 @@
                     "LocalTransformVector": {
                         "Position": {
                             "X": 0.0,
-                            "Y": 6.0,
-                            "Z": 8.0
+                            "Y": 15.0,
+                            "Z": 40.0
                         },
                         "Rotation": {
-                            "X": -0.2798290252685547,
-                            "Y": 0.0,
-                            "Z": 0.0,
-                            "W": 0.9600498676300049
+                            "X": -0.237685889005661,
+                            "Y": 3.3214198058573174e-10,
+                            "Z": -1.357352341635476e-09,
+                            "W": 0.9713420867919922
                         },
                         "Scale": {
                             "X": 1.0,
@@ -68,16 +68,16 @@
                     "WidthScale": 16.0,
                     "HeightScale": 9.0,
                     "zNear": 0.10000000149011612,
-                    "zFar": 800.0,
+                    "zFar": 1000.0,
                     "Aperture": 2.200000047683716,
-                    "ShutterTime": 0.0005000000237487257,
+                    "ShutterTime": 4.999999873689376e-05,
                     "ISO": 100.0
                 }
             ]
         },
         {
-            "UUID": 3649983372131115546,
-            "ObjectName": "sun",
+            "UUID": 2336949439204729478,
+            "ObjectName": "Sun",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
@@ -89,10 +89,10 @@
                             "Z": 0.0
                         },
                         "Rotation": {
-                            "X": -0.7070821523666382,
-                            "Y": 0.0,
-                            "Z": 0.0,
-                            "W": 0.7071315050125122
+                            "X": -0.2175566405057907,
+                            "Y": -0.3912048041820526,
+                            "Z": -0.09572722762823105,
+                            "W": 0.8890805840492249
                         },
                         "Scale": {
                             "X": 1.0,
@@ -123,8 +123,8 @@
             ]
         },
         {
-            "UUID": 3566488180422565552,
-            "ObjectName": "pointLight",
+            "UUID": 2691739971219814712,
+            "ObjectName": "Test Point Light",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
@@ -152,26 +152,26 @@
                     "ComponentType": 3,
                     "RGBColor": {
                         "X": 1.0,
-                        "Y": 1.0,
-                        "Z": 1.0,
+                        "Y": 0.9507150650024414,
+                        "Z": 0.9043404459953308,
                         "W": 1.0
                     },
                     "Shape": {
-                        "X": 11.516471862792969,
+                        "X": 62.85757064819336,
                         "Y": 0.0,
                         "Z": 0.0,
                         "W": 1.0
                     },
                     "LightType": 1,
                     "ColorTemperature": 5780.0,
-                    "LuminousFlux": 100.0,
-                    "UseColorTemperature": false
+                    "LuminousFlux": 3000.0,
+                    "UseColorTemperature": true
                 }
             ]
         },
         {
-            "UUID": 3791989877694532182,
-            "ObjectName": "sphereLight",
+            "UUID": 4582724008952467600,
+            "ObjectName": "Test Sphere Light",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
@@ -199,8 +199,8 @@
                     "ComponentType": 3,
                     "RGBColor": {
                         "X": 1.0,
-                        "Y": 1.0,
-                        "Z": 1.0,
+                        "Y": 0.9507150650024414,
+                        "Z": 0.9043404459953308,
                         "W": 1.0
                     },
                     "Shape": {
@@ -212,28 +212,28 @@
                     "LightType": 3,
                     "ColorTemperature": 5780.0,
                     "LuminousFlux": 40.0,
-                    "UseColorTemperature": false
+                    "UseColorTemperature": true
                 }
             ]
         },
         {
-            "UUID": 3051508579280418866,
-            "ObjectName": "playerCharacter",
+            "UUID": 3273485745194889751,
+            "ObjectName": "Player Character",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
                     "ParentTransformComponentEntityName": "RootTransform",
                     "LocalTransformVector": {
                         "Position": {
-                            "X": 0.0,
-                            "Y": 2.0,
-                            "Z": 0.0
+                            "X": 27.713184356689453,
+                            "Y": 1.2000001668930054,
+                            "Z": 80.52407836914063
                         },
                         "Rotation": {
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0,
-                            "W": 1.0
+                            "X": 2.0905398301351852e-08,
+                            "Y": -0.029716873541474342,
+                            "Z": -1.235039004399141e-08,
+                            "W": 0.9995583891868591
                         },
                         "Scale": {
                             "X": 1.0,

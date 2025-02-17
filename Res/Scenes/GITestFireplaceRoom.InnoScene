@@ -3,7 +3,7 @@
     "SceneEntities": [
         {
             "UUID": 2314762747234405309,
-            "ObjectName": "playerCharacterCamera",
+            "ObjectName": "Player Character Camera",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,
@@ -335,7 +335,7 @@
         },
         {
             "UUID": 3569972873505430336,
-            "ObjectName": "playerCharacter",
+            "ObjectName": "Player Character",
             "ChildrenComponents": [
                 {
                     "ComponentType": 1,

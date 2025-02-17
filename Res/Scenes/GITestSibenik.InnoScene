@@ -36,7 +36,7 @@
           "ISO": 100.0
         }
       ],
-      "ObjectName": "playerCharacterCamera",
+      "ObjectName": "Player Character Camera",
       "UUID": 3923182475004370441
     },
     {
@@ -367,7 +367,7 @@
           "SimulatePhysics": true
         }
       ],
-      "ObjectName": "playerCharacter",
+      "ObjectName": "Player Character",
       "UUID": 4589272266021438199
     }
   ],

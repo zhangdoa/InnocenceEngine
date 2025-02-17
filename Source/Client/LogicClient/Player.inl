@@ -86,7 +86,7 @@ namespace Inno
     bool Player::Setup()
     {
         auto l_rootTransformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
-        auto l_playerCharacterEntity = g_Engine->Get<EntityManager>()->Find("playerCharacter");
+        auto l_playerCharacterEntity = g_Engine->Get<EntityManager>()->Find("Player Character");
         if (l_playerCharacterEntity.has_value())
         {
             m_playerCharacterEntity = *l_playerCharacterEntity;
@@ -94,7 +94,7 @@ namespace Inno
             m_playerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(m_playerCharacterEntity);
         }
 
-        auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("playerCharacterCamera");
+        auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("Player Character Camera");
         if (l_playerCameraEntity.has_value())
         {
             m_playerCameraEntity = *l_playerCameraEntity;
@@ -103,7 +103,7 @@ namespace Inno
         }
         else
         {
-            m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "playerCharacterCamera/");
+            m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Player Character Camera/");
             m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
             m_playerCameraTransformComponent = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
             m_playerCameraTransformComponent->m_parentTransformComponent = l_rootTransformComponent;
@@ -111,7 +111,7 @@ namespace Inno
 
         if (!m_debugCameraEntity)
         {
-            m_debugCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "debugCamera/");
+            m_debugCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "Debug Camera/");
             m_debugCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
             m_debugCameraTransformComponent = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
             m_debugCameraTransformComponent->m_parentTransformComponent = l_rootTransformComponent;
