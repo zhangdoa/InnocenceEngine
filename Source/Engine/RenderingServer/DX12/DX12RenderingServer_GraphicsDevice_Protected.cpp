@@ -505,12 +505,6 @@ bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
     if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
         return true;
 
-    if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
-        return true;
-
-    if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
-        return true;
-        
     auto l_mappedMemory = m_RaytracingInstanceBufferComponent->m_MappedMemories[l_currentFrame];
 
     WriteMappedMemory(m_RaytracingInstanceBufferComponent, l_mappedMemory, &l_instanceDescList->m_Descs[0], 0, l_instanceDescList->m_Descs.size());
