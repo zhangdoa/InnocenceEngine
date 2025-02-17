@@ -167,6 +167,53 @@ void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
 	luminance_ForIndirectLight = l_MaterialAttributes.m_Albedo * l_Illuminance / PI; // Simple Lambertian diffuse
 }
 
+float4 ApplyCSMArea(in float3 positionWS, in float3 normal)
+{
+	float3 directLight = float3(0.0, 0.0, 0.0);
+	float3 L = normalize(g_Frame.sun_direction.xyz);
+	float NdotL = max(dot(normal, L), 0.0);
+	directLight = float3(NdotL, NdotL, NdotL);
+
+	int splitIndex = NR_CSM_SPLITS;
+	for (int i = 0; i < NR_CSM_SPLITS; i++)
+	{
+		if (positionWS.x >= CSMs[i].AABBMin.x &&
+			positionWS.y >= CSMs[i].AABBMin.y &&
+			positionWS.z >= CSMs[i].AABBMin.z &&
+			positionWS.x <= CSMs[i].AABBMax.x &&
+			positionWS.y <= CSMs[i].AABBMax.y &&
+			positionWS.z <= CSMs[i].AABBMax.z)
+		{
+			splitIndex = i;
+			break;
+		}
+	}
+
+	if (splitIndex == 0)
+	{
+		directLight.g = 0;
+		directLight.b = 0;
+	}
+	else if (splitIndex == 1)
+	{
+		directLight.b = 0;
+	}
+	else if (splitIndex == 2)
+	{
+		directLight.r = 0;
+		directLight.b = 0;
+	}
+	else if (splitIndex == 3)
+	{
+		directLight.r = 0;
+		directLight.g = 0;
+	}
+
+	float sunShadowFactor = SunShadowResolver(positionWS, normal, in_SunShadow, in_samplerTypeLinear, L);
+	directLight *= (1.0 - sunShadowFactor);
+	return float4(directLight, 1.0);
+}
+
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
@@ -188,48 +235,8 @@ void main(ComputeInputType input)
 	float3 N = normalize(l_Normal_WorldSpace);
 
 #if DRAW_CSM_AREA
-	float3 L = normalize(-g_Frame.sun_direction.xyz);
-	float NdotL = max(dot(N, L), 0.0);
-
-	float3 l_Luminance_ForDirectLight = float3(NdotL, NdotL, NdotL);
-
-	int splitIndex = NR_CSM_SPLITS;
-	for (int i = 0; i < NR_CSM_SPLITS; i++)
-	{
-		if (l_Position_WorldSpace.x >= CSMs[i].AABBMin.x &&
-			l_Position_WorldSpace.y >= CSMs[i].AABBMin.y &&
-			l_Position_WorldSpace.z >= CSMs[i].AABBMin.z &&
-			l_Position_WorldSpace.x <= CSMs[i].AABBMax.x &&
-			l_Position_WorldSpace.y <= CSMs[i].AABBMax.y &&
-			l_Position_WorldSpace.z <= CSMs[i].AABBMax.z)
-		{
-			splitIndex = i;
-			break;
-		}
-	}
-
-	if (splitIndex == 0)
-	{
-		l_Luminance_ForDirectLight.g = 0;
-		l_Luminance_ForDirectLight.b = 0;
-	}
-	else if (splitIndex == 1)
-	{
-		l_Luminance_ForDirectLight.b = 0;
-	}
-	else if (splitIndex == 2)
-	{
-		l_Luminance_ForDirectLight.r = 0;
-		l_Luminance_ForDirectLight.b = 0;
-	}
-	else if (splitIndex == 3)
-	{
-		l_Luminance_ForDirectLight.r = 0;
-		l_Luminance_ForDirectLight.g = 0;
-	}
-
-	l_Luminance_ForDirectLight *= 1.0 - l_SunShadowFactor;
-	out_lightPassRT0[l_ScreenCoord] = float4(l_Luminance_ForDirectLight, 1.0);
+	float4 l_CSMDebugResult = ApplyCSMArea(l_Position_WorldSpace, N);
+	out_lightPassRT0[l_ScreenCoord] = l_CSMDebugResult;
 	return;
 #endif
 
@@ -262,7 +269,7 @@ void main(ComputeInputType input)
 	l_MaterialAttributes.m_Albedo = GPassRT2.xyz;
 
 	/// Sun light
-	float3 D = normalize(-g_Frame.sun_direction.xyz);
+	float3 D = normalize(g_Frame.sun_direction.xyz);
 	float r = sin(SUN_ANGULAR_RADIUS);
 	float d = cos(SUN_ANGULAR_RADIUS);
 	float DdotV = dot(D, V);
@@ -275,7 +282,7 @@ void main(ComputeInputType input)
 	float3 l_Luminance_IndirectLight_Sun = float3(0.0, 0.0, 0.0);
 	CalculateLuminance(l_MaterialAttributes, V, N, L, l_LuminousFlux_Sun, l_AttenuationFactor_Sun, l_Luminance_DirectLight_Sun, l_Luminance_IndirectLight_Sun);
 
-	float l_SunShadowFactor = SunShadowResolver(l_Position_WorldSpace, in_SunShadow, in_samplerTypeLinear);
+	float l_SunShadowFactor = SunShadowResolver(l_Position_WorldSpace, l_Normal_WorldSpace, in_SunShadow, in_samplerTypeLinear, L);
 	l_Luminance_ForDirectLight += l_Luminance_DirectLight_Sun * (1.0 - l_SunShadowFactor);
 	l_Luminance_ForIndirectLight += l_Luminance_IndirectLight_Sun * (1.0 - l_SunShadowFactor);
 

@@ -10,7 +10,7 @@ void MissShader(inout RayPayload payload)
     float3 rayDirection = WorldRayDirection();
 
     // Light and atmosphere properties
-    float3 lightDir = -g_Frame.sun_direction.xyz;
+    float3 lightDir = g_Frame.sun_direction.xyz;
     float planetRadius = 6371e3;
     float atmosphereHeight = 100e3;
 

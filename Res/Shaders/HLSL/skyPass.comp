@@ -25,7 +25,7 @@ void main(ComputeInputType input)
 	float3 color = float3(0.0, 0.0, 0.0);
 
 	float3 eyedir = get_world_normal(input.dispatchThreadID.xy, g_Frame.viewportSize.xy, g_Frame.p_inv, g_Frame.v_inv);
-	float3 lightdir = -g_Frame.sun_direction.xyz;
+	float3 lightdir = g_Frame.sun_direction.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
 	float3 eye_position = g_Frame.camera_posWS.xyz + float3(0.0, planetRadius, 0.0);

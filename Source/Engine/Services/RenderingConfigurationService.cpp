@@ -5,7 +5,6 @@ using namespace Inno;
 
 RenderingConfigurationService::RenderingConfigurationService()
 {
-	m_renderingConfig.useCSM = true;
 	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
 	//m_renderingConfig.useBloom = true;

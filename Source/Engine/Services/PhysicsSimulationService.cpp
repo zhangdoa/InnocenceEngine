@@ -446,12 +446,16 @@ void PhysicsSimulationService::RunCulling()
 
 	auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
 	auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
-	auto l_sphereRadius = (m_Impl->m_VisibleSceneBoundary.m_Max - m_Impl->m_VisibleSceneBoundary.m_AABB.m_center).length();	
 
 	auto sunVisibilityCheck = [&](CollisionComponent* CollisionComponent) -> bool {
-		auto l_spherePosLS = l_sunRotationInv * Vec4(CollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere.m_center, 1.0f);
-		auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
-		return l_distance < CollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere.m_radius + l_sphereRadius;
+		auto l_AABB_lightSpace = Math::RotateAABBToNewSpace(CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB, l_sunRotationInv);
+		for (auto& l_AABB : l_sun->m_LitRegion_LightSpace)
+		{
+			if (Math::IsOverlap(l_AABB_lightSpace, l_AABB))
+				return true;
+		}
+
+		return false;
 		};
 
 	auto onSunPassed = [&](CollisionComponent* CollisionComponent) {

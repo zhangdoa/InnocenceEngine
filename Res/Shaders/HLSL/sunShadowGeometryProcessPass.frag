@@ -35,8 +35,7 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	float depth = input.posCS.z / input.posCS.w;
-	depth = depth * 0.5 + 0.5;
+	float depth = input.posCS.z;
 
 	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
 	Material_CB materialCBuffer = g_Materials[perObjectCB.m_MaterialIndex];

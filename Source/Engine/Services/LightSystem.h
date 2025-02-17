@@ -3,6 +3,7 @@
 
 namespace Inno
 {
+	struct LightSystemImpl;
 	class LightSystem : public ISystem
 	{
 	public:
@@ -14,5 +15,8 @@ namespace Inno
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
+
+	private:
+		LightSystemImpl* m_Impl;
 	};
 }

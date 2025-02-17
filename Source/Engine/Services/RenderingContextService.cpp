@@ -271,7 +271,7 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	if (l_sunTransformComponent == nullptr)
 		return false;
 
-	l_perFrameCB.sun_direction = Math::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+	l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sunTransformComponent->m_globalTransformVector.m_rot);
 	l_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;
@@ -279,23 +279,23 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
 	l_perFrameCB.activeCascade = currentCascade;
 
-	auto& l_SplitAABB = l_sun->m_SplitAABBWS;
+	auto& l_LitRegion_WorldSpace = l_sun->m_LitRegion_WorldSpace;
 	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
 	auto& l_ProjectionMatrices = l_sun->m_ProjectionMatrices;
 
 	m_CSMCBVector.clear();
 
-	if (l_SplitAABB.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
+	if (l_LitRegion_WorldSpace.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
 	{
-		for (size_t j = 0; j < l_SplitAABB.size(); j++)
+		for (size_t j = 0; j < l_LitRegion_WorldSpace.size(); j++)
 		{
 			CSMConstantBuffer l_CSMCB;
 
 			l_CSMCB.p = l_ProjectionMatrices[j];
 			l_CSMCB.v = l_ViewMatrices[j];
 
-			l_CSMCB.AABBMax = l_SplitAABB[j].m_boundMax;
-			l_CSMCB.AABBMin = l_SplitAABB[j].m_boundMin;
+			l_CSMCB.AABBMax = l_LitRegion_WorldSpace[j].m_boundMax;
+			l_CSMCB.AABBMin = l_LitRegion_WorldSpace[j].m_boundMin;
 
 			m_CSMCBVector.emplace_back(l_CSMCB);
 		}

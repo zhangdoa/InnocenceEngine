@@ -626,7 +626,7 @@ namespace Inno
 		| m03 <-> a03(       0.0       ) m13 <-> a13(              0.0            ) m23 <-> a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m33 <-> a33( 1.0) |
 		*/
 		template <class T>
-		auto generatePerspectiveMatrix(T FOVX, T WHRatio, T zNear, T zFar) -> TMat4<T>
+		auto GeneratePerspectiveMatrix(T FOVX, T WHRatio, T zNear, T zFar) -> TMat4<T>
 		{
 			TMat4<T> l_m;
 
@@ -640,7 +640,7 @@ namespace Inno
 		}
 
 		template <class T>
-		auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) -> TMat4<T>
+		auto GenerateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) -> TMat4<T>
 		{
 			TMat4<T> l_m;
 
@@ -652,8 +652,8 @@ namespace Inno
 			l_m.m03 = (-(right + left) / (right - left));
 			l_m.m11 = (two<T> / (up - bottom));
 			l_m.m13 = (-(up + bottom) / (up - bottom));
-			l_m.m22 = (-two<T> / (zFar - zNear));
-			l_m.m23 = (-(zFar + zNear) / (zFar - zNear));
+			l_m.m22 = (one<T> / (zFar - zNear));
+			l_m.m23 = (-zNear / (zFar - zNear));
 			l_m.m33 = one<T>;
 
 			return l_m;
@@ -1406,7 +1406,7 @@ namespace Inno
 		}
 
 		template <class T>
-		inline auto extendAABBToBoundingSphere(const TAABB<T>& rhs) -> TAABB<T>
+		inline auto ExtendAABBToBoundingSphere(const TAABB<T>& rhs) -> TAABB<T>
 		{
 			auto l_sphereRadius = (rhs.m_boundMax - rhs.m_center).length();
 			auto l_boundMax = rhs.m_center + l_sphereRadius;
@@ -1418,13 +1418,16 @@ namespace Inno
 		}
 
 		template <class T>
-		inline auto rotateAABBToNewSpace(const TAABB<T>& lhs, const TMat4<T>& rhs) -> TAABB<T>
+		inline auto RotateAABBToNewSpace(const TAABB<T>& lhs, const TMat4<T>& rhs) -> TAABB<T>
 		{
 			auto l_lhs = lhs;
 			l_lhs.m_center = rhs * l_lhs.m_center;
 
 			l_lhs.m_boundMin = l_lhs.m_center - l_lhs.m_extend * 0.5f;
 			l_lhs.m_boundMax = l_lhs.m_center + l_lhs.m_extend * 0.5f;
+
+			l_lhs.m_boundMin.w = one<T>;
+			l_lhs.m_boundMax.w = one<T>;
 
 			return l_lhs;
 		}
@@ -1592,7 +1595,7 @@ namespace Inno
 			return generateAABBVertices(boundMax, boundMin);
 		}
 
-		inline Vec4 colorTemperatureToRGB(float kelvin)
+		inline Vec4 ColorTemperatureToRGB(float kelvin)
 		{
 			float temp = kelvin / 100.0f;
 

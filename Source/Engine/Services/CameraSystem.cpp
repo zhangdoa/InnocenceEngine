@@ -16,6 +16,7 @@ namespace CameraSystemNS
 {
 	const size_t m_MaxComponentCount = 32;
 
+	void GenerateCSMSplitFactors(float lambda = 0.75f);
 	void GenerateProjectionMatrix(CameraComponent* cameraComponent);
 	void SplitVertices(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<Vertex> &splitVertices);
 	void GenerateFrustum(CameraComponent* cameraComponent);
@@ -24,14 +25,34 @@ namespace CameraSystemNS
 	CameraComponent* m_MainCamera;
 	CameraComponent* m_ActiveCamera;
 	
-	std::vector<float> m_CSMSplitFactors = { 0.02f, 0.08f, 0.15f, 1.0f };
+	const uint32_t m_MaxCSMCount = 4;
+	std::vector<float> m_CSMSplitFactors;
+}
+
+void CameraSystemNS::GenerateCSMSplitFactors(float lambda)
+{
+	if (!m_MainCamera)
+		return;
+
+	m_CSMSplitFactors.clear();
+    m_CSMSplitFactors.reserve(m_MaxCSMCount);
+
+	auto near = m_MainCamera->m_zNear;
+	auto far = m_MainCamera->m_zFar;
+    for (int i = 1; i <= m_MaxCSMCount; i++)
+    {
+        float logSplit = near * std::pow((far / near), (float)i / (float)m_MaxCSMCount);
+        float uniformSplit = near + (far - near) * ((float)i / (float)m_MaxCSMCount);
+        float split = logSplit * lambda + uniformSplit * (1.0f - lambda);
+        m_CSMSplitFactors.emplace_back(split);
+    }
 }
 
 void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 {
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
-	cameraComponent->m_projectionMatrix = Math::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+	cameraComponent->m_projectionMatrix = Math::GeneratePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
 void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, const std::vector<float> &splitFactors, std::vector<Vertex> &splitVertices)
@@ -51,6 +72,7 @@ void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, 
 		for (size_t j = 0; j < 4; j++)
 		{
 			auto l_direction = (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos);
+			l_direction = l_direction.normalize();
 			auto l_splitPlaneCornerPos = frustumsVertices[j].m_pos + l_direction * splitFactors[i];
 			l_frustumsCornerPos.emplace_back(l_splitPlaneCornerPos);
 		}
@@ -134,6 +156,8 @@ bool CameraSystem::Initialize()
 
 bool CameraSystem::Update()
 {
+	GenerateCSMSplitFactors();
+
 	auto l_components = g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>();
 
 	for (auto i : l_components)
