@@ -63,45 +63,78 @@ bool DX12RenderingServer::CreateHardwareResources()
 
 bool DX12RenderingServer::ReleaseHardwareResources()
 {
-    // @TODO: Release accessors first
+    Delete(m_RaytracingInstanceBufferComponent);
+    Delete(m_ScratchBufferComponent);
+    Delete(m_TLASBufferComponent);
 
-    m_SamplerDescHeap.ReleaseAndGetAddressOf();
-    m_DSVDescHeap.ReleaseAndGetAddressOf();
-    m_RTVDescHeap.ReleaseAndGetAddressOf();
-    m_CSUDescHeap_ShaderNonVisible.ReleaseAndGetAddressOf();
-    m_CSUDescHeap.ReleaseAndGetAddressOf();
+    m_3DMipmapPSO->Release();
+    m_2DMipmapPSO->Release();
+    m_3DMipmapRootSignature->Release();
+    m_2DMipmapRootSignature->Release();
 
-    m_directCommandQueueFence.ReleaseAndGetAddressOf();
-    m_computeCommandQueueFence.ReleaseAndGetAddressOf();
-    m_copyCommandQueueFence.ReleaseAndGetAddressOf();
+    m_SamplerDescHeapAccessor.m_Heap = nullptr;
+    m_SamplerDescHeap = nullptr;
+
+    m_DSVDescHeapAccessor.m_Heap = nullptr;
+    m_DSVDescHeap = nullptr;
+
+    m_RTVDescHeapAccessor.m_Heap = nullptr;
+    m_RTVDescHeap = nullptr;
+
+    m_RenderTarget_UAV_DescHeapAccessor_ShaderNonVisible.m_Heap = nullptr;
+    m_MaterialTexture_UAV_DescHeapAccessor_ShaderNonVisible.m_Heap = nullptr;
+    m_GPUBuffer_UAV_DescHeapAccessor_ShaderNonVisible.m_Heap = nullptr;
+    m_CSUDescHeap_ShaderNonVisible = nullptr;
+
+    m_RenderTarget_UAV_DescHeapAccessor.m_Heap = nullptr;
+    m_MaterialTexture_UAV_DescHeapAccessor.m_Heap = nullptr;
+    m_GPUBuffer_UAV_DescHeapAccessor.m_Heap = nullptr;
+    m_RenderTarget_SRV_DescHeapAccessor.m_Heap = nullptr;
+    m_MaterialTexture_SRV_DescHeapAccessor.m_Heap = nullptr;
+    m_GPUBuffer_SRV_DescHeapAccessor.m_Heap = nullptr;
+    m_GPUBuffer_CBV_DescHeapAccessor.m_Heap = nullptr;
+    m_CSUDescHeap = nullptr;
+
+    m_directCommandQueueFence = nullptr;
+    m_computeCommandQueueFence = nullptr;
+    m_copyCommandQueueFence = nullptr;
 
     for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
     {
         auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[i]);
-        l_commandList->m_DirectCommandList.ReleaseAndGetAddressOf();
-        l_commandList->m_ComputeCommandList.ReleaseAndGetAddressOf();
-        l_commandList->m_CopyCommandList.ReleaseAndGetAddressOf();
+        Delete(l_commandList);
     }
+
+    m_GlobalCommandLists.clear();
 
     for (size_t i = 0; i < m_swapChainImageCount; i++)
     {
-        m_directCommandAllocators[i].ReleaseAndGetAddressOf();
-        m_computeCommandAllocators[i].ReleaseAndGetAddressOf();
-        m_copyCommandAllocators[i].ReleaseAndGetAddressOf();
+        m_directCommandAllocators[i]->Release();
+        m_computeCommandAllocators[i]->Release();
+        m_copyCommandAllocators[i]->Release();
     }
+    m_directCommandAllocators.clear();
+    m_computeCommandAllocators.clear();
+    m_copyCommandAllocators.clear();
 
-    m_directCommandQueue.ReleaseAndGetAddressOf();
-    m_computeCommandQueue.ReleaseAndGetAddressOf();
-    m_copyCommandQueue.ReleaseAndGetAddressOf();
+    m_directCommandQueue = nullptr;
+    m_computeCommandQueue = nullptr;
+    m_copyCommandQueue = nullptr;
 
-    m_swapChain.ReleaseAndGetAddressOf();
-    m_device.ReleaseAndGetAddressOf();
-    m_adapterOutput.ReleaseAndGetAddressOf();
-    m_adapter.ReleaseAndGetAddressOf();
-    m_factory.ReleaseAndGetAddressOf();
-    m_graphicsAnalysis.ReleaseAndGetAddressOf();
-    m_debugInterface.ReleaseAndGetAddressOf();
+    m_swapChain = nullptr;
 
+    m_device = nullptr;
+
+    m_adapterOutput = nullptr;
+
+    m_adapter = nullptr;
+
+    m_factory = nullptr;
+    
+    m_graphicsAnalysis = nullptr;
+
+    m_debugInterface = nullptr;
+    
 #ifdef INNO_DEBUG
     IDXGIDebug1* pDebug = nullptr;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
@@ -572,7 +605,7 @@ bool DX12RenderingServer::EndFrame()
 
 bool DX12RenderingServer::ResizeImpl()
 {
-    Log(Verbose, "Resizing the swap chain.");
+    Log(Verbose, "Resizing the swap chain...");
 
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
@@ -588,7 +621,7 @@ bool DX12RenderingServer::ResizeImpl()
     m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
 
     m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-
+   
     if (!GetSwapChainImages())
         return false;
 

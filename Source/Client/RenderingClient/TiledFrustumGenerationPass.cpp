@@ -78,7 +78,9 @@ bool TiledFrustumGenerationPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_TiledFrustum);
 	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -105,7 +107,7 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_tiledFrustum, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TiledFrustum, 2);
 
 	l_renderingServer->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
@@ -122,7 +124,7 @@ RenderPassComponent* TiledFrustumGenerationPass::GetRenderPassComp()
 
 GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 {
-	return m_tiledFrustum;
+	return m_TiledFrustum;
 }
 
 bool Inno::TiledFrustumGenerationPass::CreateResources()
@@ -142,13 +144,13 @@ bool Inno::TiledFrustumGenerationPass::CreateResources()
 
 	auto l_elementCount = m_numThreads.x * m_numThreads.y;
 
-	if (m_tiledFrustum)
-		l_renderingServer->Delete(m_tiledFrustum);
+	if (m_TiledFrustum)
+		l_renderingServer->Delete(m_TiledFrustum);
 
-	m_tiledFrustum = l_renderingServer->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
-	m_tiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_tiledFrustum->m_ElementCount = l_elementCount;
-	m_tiledFrustum->m_ElementSize = 64; // 4 planes to make a frustum, float3 normal + float distance for each plane
+	m_TiledFrustum = l_renderingServer->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
+	m_TiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_TiledFrustum->m_ElementCount = l_elementCount;
+	m_TiledFrustum->m_ElementSize = 64; // 4 planes to make a frustum, float3 normal + float distance for each plane
 
 	return true;
 }
@@ -159,7 +161,7 @@ bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 
 	CreateResources();
 
-	l_renderingServer->Initialize(m_tiledFrustum);
+	l_renderingServer->Initialize(m_TiledFrustum);
 
 	return true;
 }

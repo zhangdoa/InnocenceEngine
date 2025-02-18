@@ -23,7 +23,7 @@ namespace Inno
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
-		GPUBufferComponent* m_tiledFrustum;
+		GPUBufferComponent* m_TiledFrustum;
 		const uint32_t m_tileSize = 16;
 		const uint32_t m_numThreadPerGroup = 16;
 		Math::TVec4<uint32_t> m_numThreads;

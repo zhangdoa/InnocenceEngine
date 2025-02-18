@@ -605,6 +605,7 @@ bool RenderingContextServiceImpl::Terminate()
 	l_renderingServer->Delete(m_CSMGPUBufferComp);
 	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Delete(m_GICBufferGPUBufferComp);
+	l_renderingServer->Delete(m_animationGPUBufferComp);
 	l_renderingServer->Delete(m_billboardGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;

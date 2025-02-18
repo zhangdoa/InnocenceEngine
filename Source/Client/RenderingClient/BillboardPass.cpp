@@ -80,7 +80,9 @@ bool BillboardPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_SamplerComp);
 	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

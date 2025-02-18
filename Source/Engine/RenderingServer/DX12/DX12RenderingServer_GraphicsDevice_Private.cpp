@@ -707,7 +707,8 @@ bool DX12RenderingServer::CreateSwapChain()
         &l_swapChain1);
 
     l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
-
+    l_swapChain1->Release();
+    
     if (FAILED(l_hResult))
     {
         Log(Error, "Can't create swap chain!");

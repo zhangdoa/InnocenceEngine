@@ -132,7 +132,16 @@ bool RadianceCacheReprojectionPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_WorldProbeGrid);
+	l_renderingServer->Delete(m_ProbePosition_Even);
+	l_renderingServer->Delete(m_ProbePosition_Odd);
+	l_renderingServer->Delete(m_ProbeNormal_Even);
+	l_renderingServer->Delete(m_ProbeNormal_Odd);
+	l_renderingServer->Delete(m_RadianceCache_Even);
+	l_renderingServer->Delete(m_RadianceCache_Odd);
+	
 	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

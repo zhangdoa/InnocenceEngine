@@ -163,6 +163,7 @@ bool SSAOPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_NoiseTexture);
 	l_renderingServer->Delete(m_KernelGPUBuffer);
 	l_renderingServer->Delete(m_SamplerComp_RandomRot);

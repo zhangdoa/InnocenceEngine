@@ -914,7 +914,6 @@ bool IRenderingServer::PostResize()
 	return true;
 }
 
-
 bool IRenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs)
 {
 	if (!rhs->m_RenderPassDesc.m_Resizable)

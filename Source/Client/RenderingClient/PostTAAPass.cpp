@@ -65,7 +65,9 @@ bool PostTAAPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_Result);	
 	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

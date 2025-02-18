@@ -15,14 +15,11 @@
 
 using namespace Inno;
 
-
-
-
 bool DebugPass::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	auto l_cameraFrustumMeshCount = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().useCSM ? 4 : 1;
+	auto l_cameraFrustumMeshCount = 4;
 	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
@@ -123,6 +120,11 @@ bool DebugPass::Initialize()
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
+}
+
+bool DebugPass::Update()
+{
+	return true;	
 }
 
 bool DebugPass::Terminate()
@@ -327,9 +329,9 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 // 					m_debugCubeConstantBuffer.emplace_back(l_meshData);
 
-// 					auto l_visibleSceneAABBLS = Math::rotateAABBToNewSpace(l_visibleSceneAABBWS_Extended, l_rInv);
+// 					auto l_visibleSceneAABBLS = Math::RotateAABBToNewSpace(l_visibleSceneAABBWS_Extended, l_rInv);
 
-// 					for (size_t j = 0; j < i->m_SplitAABBWS.size(); j++)
+// 					for (size_t j = 0; j < i->m_LitRegion_WorldSpace.size(); j++)
 // 					{
 // 						{
 // 							DebugPerObjectConstantBuffer l_meshData;
@@ -349,7 +351,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 							m_debugCubeConstantBuffer.emplace_back(l_meshData);
 // 						}
 // 						{
-// 							auto l_meshData = AddAABB(i->m_SplitAABBWS[j]);
+// 							auto l_meshData = AddAABB(i->m_LitRegion_WorldSpace[j]);
 // 							l_meshData.materialID = 4;
 
 // 							m_debugCubeConstantBuffer.emplace_back(l_meshData);

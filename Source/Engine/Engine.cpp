@@ -531,10 +531,19 @@ bool Engine::ExecuteDefaultTask()
 
 bool Engine::Terminate()
 {
+	m_pImpl->m_RenderingExecutionTask->Wait();
 	m_pImpl->m_RenderingExecutionTask->Deactivate();
+
+	if (!m_pImpl->m_LogicClient->Terminate())
+	{
+		Log(Error, "Logic client can't be terminated!");
+		return false;
+	}
 
 	ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
 	auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		SystemTerm(GUISystem);
+
 		if (!m_pImpl->m_RenderingClient->Terminate())
 		{
 			Log(Error, "Rendering client can't be terminated!");
@@ -545,29 +554,22 @@ bool Engine::Terminate()
 	l_DefaultRenderingClientTerminationTask->Activate();
 	l_DefaultRenderingClientTerminationTask->Wait();
 
-	Get<TaskScheduler>()->Freeze();
-	Get<TaskScheduler>()->Reset();
-
-	if (!m_pImpl->m_LogicClient->Terminate())
-	{
-		Log(Error, "Logic client can't be terminated!");
-		return false;
-	}
-
+	SystemTerm(AnimationService);
+	SystemTerm(RenderingContextService);
+	SystemTerm(TemplateAssetService);
+	
 	if (!m_pImpl->m_RenderingServer->Terminate())
 	{
 		Log(Error, "RenderingServer can't be terminated!");
 		return false;
 	}
 
-	SystemTerm(GUISystem);
-	SystemTerm(RenderingContextService);
+	SystemTerm(CameraSystem);
+	SystemTerm(LightSystem);
+	SystemTerm(TransformSystem);
 
 	SystemTerm(PhysicsSimulationService);
-
-	SystemTerm(TransformSystem);
-	SystemTerm(LightSystem);
-	SystemTerm(CameraSystem);
+	SystemTerm(SceneService);
 
 	if (!Get<EntityManager>()->Terminate())
 	{
@@ -582,7 +584,9 @@ bool Engine::Terminate()
 	}
 
 	SystemTerm(HIDService);
-	SystemTerm(SceneService);
+
+	Get<TaskScheduler>()->Freeze();
+	Get<TaskScheduler>()->Reset();
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "Engine has been terminated.");

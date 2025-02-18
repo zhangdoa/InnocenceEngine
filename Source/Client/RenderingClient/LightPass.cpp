@@ -195,12 +195,12 @@ bool LightPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_LuminanceResult);
+	l_renderingServer->Delete(m_IlluminanceResult);
+	
 	l_renderingServer->Delete(m_SamplerComp);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
-
-	l_renderingServer->Delete(m_LuminanceResult);
-	l_renderingServer->Delete(m_IlluminanceResult);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -219,6 +219,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (m_LuminanceResult->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
+
 	if (m_IlluminanceResult->m_ObjectStatus != ObjectStatus::Activated)
 		return false;	
 

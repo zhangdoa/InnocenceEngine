@@ -23,6 +23,7 @@ namespace Inno
 
 		bool Setup(ISystemConfig *systemConfig = nullptr) override;
         bool Initialize() override;
+		bool Update() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 

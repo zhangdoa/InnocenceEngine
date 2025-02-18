@@ -64,7 +64,6 @@ bool LuminanceHistogramPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
-
 	l_renderingServer->Initialize(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -76,9 +75,9 @@ bool LuminanceHistogramPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_luminanceHistogram);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
-	l_renderingServer->Delete(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

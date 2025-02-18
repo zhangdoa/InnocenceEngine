@@ -11,6 +11,7 @@ namespace Inno
     struct TemplateAssetServiceImpl
     {
         bool LoadTemplateAssets();
+		bool UnloadTemplateAssets();
 
         void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
         void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
@@ -33,6 +34,12 @@ namespace Inno
 		bool GenerateMesh(MeshShape shape, MeshComponent* meshComponent);
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+
+        TextureComponent* m_basicNormalTexture;
+        TextureComponent* m_basicAlbedoTexture;
+        TextureComponent* m_basicMetallicTexture;
+		TextureComponent* m_basicRoughnessTexture;
+		TextureComponent* m_basicAOTexture;
 
         TextureComponent* m_iconTemplate_DirectionalLight;
         TextureComponent* m_iconTemplate_PointLight;
@@ -57,27 +64,28 @@ namespace Inno
 
 bool TemplateAssetServiceImpl::LoadTemplateAssets()
 {
-	auto m_basicNormalTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_normal.png");
+	m_basicNormalTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_normal.png");
 	m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAlbedoTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_albedo.png");
+	m_basicAlbedoTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_albedo.png");
 	m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicMetallicTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_metallic.png");
+	m_basicMetallicTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_metallic.png");
 	m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicRoughnessTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_roughness.png");
+	m_basicRoughnessTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_roughness.png");
 	m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAOTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_ao.png");
+	m_basicAOTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_ao.png");
 	m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_defaultMaterial = g_Engine->getRenderingServer()->AddMaterialComponent("BasicMaterial/");
+	auto l_renderingServer = g_Engine->getRenderingServer();
+	m_defaultMaterial = l_renderingServer->AddMaterialComponent("BasicMaterial/");
 	m_defaultMaterial->m_TextureSlots[0].m_Texture = m_basicNormalTexture;
 	m_defaultMaterial->m_TextureSlots[1].m_Texture = m_basicAlbedoTexture;
 	m_defaultMaterial->m_TextureSlots[2].m_Texture = m_basicMetallicTexture;
@@ -100,52 +108,52 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_unitTriangleMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitTriangleMesh/");
+	m_unitTriangleMesh = l_renderingServer->AddMeshComponent("UnitTriangleMesh/");
 	GenerateMesh(MeshShape::Triangle, m_unitTriangleMesh);
 	m_unitTriangleMesh->m_MeshShape = MeshShape::Triangle;
 	m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitSquareMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitSquareMesh/");
+	m_unitSquareMesh = l_renderingServer->AddMeshComponent("UnitSquareMesh/");
 	GenerateMesh(MeshShape::Square, m_unitSquareMesh);
 	m_unitSquareMesh->m_MeshShape = MeshShape::Square;
 	m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitPentagonMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitPentagonMesh/");
+	m_unitPentagonMesh = l_renderingServer->AddMeshComponent("UnitPentagonMesh/");
 	GenerateMesh(MeshShape::Pentagon, m_unitPentagonMesh);
 	m_unitPentagonMesh->m_MeshShape = MeshShape::Pentagon;
 	m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitHexagonMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitHexagonMesh/");
+	m_unitHexagonMesh = l_renderingServer->AddMeshComponent("UnitHexagonMesh/");
 	GenerateMesh(MeshShape::Hexagon, m_unitHexagonMesh);
 	m_unitHexagonMesh->m_MeshShape = MeshShape::Hexagon;
 	m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitTetrahedronMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitTetrahedronMesh/");
+	m_unitTetrahedronMesh = l_renderingServer->AddMeshComponent("UnitTetrahedronMesh/");
 	GenerateMesh(MeshShape::Tetrahedron, m_unitTetrahedronMesh);
 	m_unitTetrahedronMesh->m_MeshShape = MeshShape::Tetrahedron;
 	m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitCubeMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitCubeMesh/");
+	m_unitCubeMesh = l_renderingServer->AddMeshComponent("UnitCubeMesh/");
 	GenerateMesh(MeshShape::Cube, m_unitCubeMesh);
 	m_unitCubeMesh->m_MeshShape = MeshShape::Cube;
 	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitOctahedronMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitOctahedronMesh/");
+	m_unitOctahedronMesh = l_renderingServer->AddMeshComponent("UnitOctahedronMesh/");
 	GenerateMesh(MeshShape::Octahedron, m_unitOctahedronMesh);
 	m_unitOctahedronMesh->m_MeshShape = MeshShape::Octahedron;
 	m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitDodecahedronMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitDodecahedronMesh/");
+	m_unitDodecahedronMesh = l_renderingServer->AddMeshComponent("UnitDodecahedronMesh/");
 	GenerateMesh(MeshShape::Dodecahedron, m_unitDodecahedronMesh);
 	m_unitDodecahedronMesh->m_MeshShape = MeshShape::Dodecahedron;
 	m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitIcosahedronMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitIcosahedronMesh/");
+	m_unitIcosahedronMesh = l_renderingServer->AddMeshComponent("UnitIcosahedronMesh/");
 	GenerateMesh(MeshShape::Icosahedron, m_unitIcosahedronMesh);
 	m_unitIcosahedronMesh->m_MeshShape = MeshShape::Icosahedron;
 	m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	m_unitSphereMesh = g_Engine->getRenderingServer()->AddMeshComponent("UnitSphereMesh/");
+	m_unitSphereMesh = l_renderingServer->AddMeshComponent("UnitSphereMesh/");
 	GenerateMesh(MeshShape::Sphere, m_unitSphereMesh);
 	m_unitSphereMesh->m_MeshShape = MeshShape::Sphere;
 	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
@@ -153,33 +161,71 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 	ITask::Desc taskDesc("Default Assets Initialization Task", ITask::Type::Once, 2);
 	auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
 		[&]() {
-			g_Engine->getRenderingServer()->Initialize(m_unitTriangleMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitSquareMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitPentagonMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitHexagonMesh);
+			auto l_renderingServer = g_Engine->getRenderingServer();
+			l_renderingServer->Initialize(m_unitTriangleMesh);
+			l_renderingServer->Initialize(m_unitSquareMesh);
+			l_renderingServer->Initialize(m_unitPentagonMesh);
+			l_renderingServer->Initialize(m_unitHexagonMesh);
 
-			g_Engine->getRenderingServer()->Initialize(m_unitTetrahedronMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitCubeMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitOctahedronMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitDodecahedronMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitIcosahedronMesh);
-			g_Engine->getRenderingServer()->Initialize(m_unitSphereMesh);
+			l_renderingServer->Initialize(m_unitTetrahedronMesh);
+			l_renderingServer->Initialize(m_unitCubeMesh);
+			l_renderingServer->Initialize(m_unitOctahedronMesh);
+			l_renderingServer->Initialize(m_unitDodecahedronMesh);
+			l_renderingServer->Initialize(m_unitIcosahedronMesh);
+			l_renderingServer->Initialize(m_unitSphereMesh);
 
-			g_Engine->getRenderingServer()->Initialize(m_basicNormalTexture);
-			g_Engine->getRenderingServer()->Initialize(m_basicAlbedoTexture);
-			g_Engine->getRenderingServer()->Initialize(m_basicMetallicTexture);
-			g_Engine->getRenderingServer()->Initialize(m_basicRoughnessTexture);
-			g_Engine->getRenderingServer()->Initialize(m_basicAOTexture);
+			l_renderingServer->Initialize(m_basicNormalTexture);
+			l_renderingServer->Initialize(m_basicAlbedoTexture);
+			l_renderingServer->Initialize(m_basicMetallicTexture);
+			l_renderingServer->Initialize(m_basicRoughnessTexture);
+			l_renderingServer->Initialize(m_basicAOTexture);
 
-			g_Engine->getRenderingServer()->Initialize(m_iconTemplate_DirectionalLight);
-			g_Engine->getRenderingServer()->Initialize(m_iconTemplate_PointLight);
-			g_Engine->getRenderingServer()->Initialize(m_iconTemplate_SphereLight);
+			l_renderingServer->Initialize(m_iconTemplate_DirectionalLight);
+			l_renderingServer->Initialize(m_iconTemplate_PointLight);
+			l_renderingServer->Initialize(m_iconTemplate_SphereLight);
 
-			g_Engine->getRenderingServer()->Initialize(m_defaultMaterial);
+			l_renderingServer->Initialize(m_defaultMaterial);
 		});
 
 	l_DefaultAssetInitializationTask->Activate();
 	l_DefaultAssetInitializationTask->Wait();
+
+	return true;
+}
+
+bool TemplateAssetServiceImpl::UnloadTemplateAssets()
+{
+	ITask::Desc taskDesc("Default Assets Termination Task", ITask::Type::Once, 2);
+	auto l_DefaultAssetTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
+		[&]() {
+			auto l_renderingServer = g_Engine->getRenderingServer();
+
+			l_renderingServer->Delete(m_basicNormalTexture);
+			l_renderingServer->Delete(m_basicAlbedoTexture);
+			l_renderingServer->Delete(m_basicMetallicTexture);
+			l_renderingServer->Delete(m_basicRoughnessTexture);
+			l_renderingServer->Delete(m_basicAOTexture);
+
+			l_renderingServer->Delete(m_defaultMaterial);
+
+			l_renderingServer->Delete(m_iconTemplate_DirectionalLight);
+			l_renderingServer->Delete(m_iconTemplate_PointLight);
+			l_renderingServer->Delete(m_iconTemplate_SphereLight);
+
+			l_renderingServer->Delete(m_unitTriangleMesh);
+			l_renderingServer->Delete(m_unitSquareMesh);
+			l_renderingServer->Delete(m_unitPentagonMesh);
+			l_renderingServer->Delete(m_unitHexagonMesh);
+			l_renderingServer->Delete(m_unitTetrahedronMesh);
+			l_renderingServer->Delete(m_unitCubeMesh);
+			l_renderingServer->Delete(m_unitOctahedronMesh);
+			l_renderingServer->Delete(m_unitDodecahedronMesh);
+			l_renderingServer->Delete(m_unitIcosahedronMesh);
+			l_renderingServer->Delete(m_unitSphereMesh);
+		});
+
+	l_DefaultAssetTerminationTask->Activate();
+	l_DefaultAssetTerminationTask->Wait();
 
 	return true;
 }
@@ -691,6 +737,7 @@ bool TemplateAssetService::Update()
 
 bool TemplateAssetService::Terminate()
 {
+	m_Impl->UnloadTemplateAssets();
 	delete m_Impl;
 	return true;
 }

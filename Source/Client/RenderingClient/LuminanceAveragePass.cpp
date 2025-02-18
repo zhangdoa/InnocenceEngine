@@ -79,9 +79,9 @@ bool LuminanceAveragePass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	l_renderingServer->Delete(m_luminanceAverage);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
-	l_renderingServer->Delete(m_luminanceAverage);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
