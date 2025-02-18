@@ -14,7 +14,8 @@ namespace Inno
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
-
-		bool swapBuffer() override;
+	
+	private:
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	};
 }

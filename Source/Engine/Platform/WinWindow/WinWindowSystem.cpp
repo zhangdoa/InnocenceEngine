@@ -39,12 +39,54 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 		break;
 	}
 
-	IWindowSurfaceConfig l_surfaceConfig;
-	l_surfaceConfig.hInstance = m_ApplicationInstance;
-	l_surfaceConfig.hwnd = m_WindowHandle;
-	l_surfaceConfig.WindowProc = WinWindowSystem::WindowProcedure;
+	if (m_InitConfig.engineMode == EngineMode::Host)
+	{
+		// Setup the windows class with default settings.
+		auto l_windowName = g_Engine->GetApplicationName();
 
-	m_WindowSurface->Setup(&l_surfaceConfig);
+		WNDCLASSEX wcex;
+		ZeroMemory(&wcex, sizeof(wcex));
+		wcex.cbSize = sizeof(wcex);
+		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		wcex.lpfnWndProc = (WNDPROC)WinWindowSystem::WindowProcedure;
+		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance();
+		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationName();
+
+		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
+
+		// Determine the resolution of the clients desktop screen.
+		auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+		auto l_screenWidth = (int32_t)l_screenResolution.x;
+		auto l_screenHeight = (int32_t)l_screenResolution.y;
+
+		RECT l_rect = {0, 0, l_screenWidth, l_screenHeight};
+
+		AdjustWindowRect(&l_rect, WS_OVERLAPPEDWINDOW, false);
+		int actualWindowWidth  = l_rect.right - l_rect.left;
+		int actualWindowHeight = l_rect.bottom - l_rect.top;
+
+		// Center the window on screen:
+		int screenW = GetSystemMetrics(SM_CXSCREEN);
+		int screenH = GetSystemMetrics(SM_CYSCREEN);
+		int posX = (screenW - actualWindowWidth) / 2;
+		int posY = (screenH - actualWindowHeight) / 2;
+		
+		// create a new window and context
+		auto l_hwnd = CreateWindow(
+			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationName(), // class name, window name
+			WS_OVERLAPPEDWINDOW, // styles
+			posX, posY, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
+			actualWindowWidth, actualWindowHeight, // width, height
+			NULL, NULL, // parent window, menu
+			m_ApplicationInstance, NULL); // instance, param
+
+		m_WindowHandle = l_hwnd;
+
+		Log(Success, "A new window handle has been created.");
+	}
+
+	m_WindowSurface->Setup();
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "WinWindowSystem Setup finished.");
@@ -55,6 +97,17 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 bool WinWindowSystem::Initialize()
 {
 	m_WindowSurface->Initialize();
+
+	if (m_InitConfig.engineMode == EngineMode::Host)
+	{
+		// Bring the window up on the screen and set it as main focus.
+		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
+		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
+
+		Log(Success, "The window has been brought to the foreground.");
+	}
+
 	Log(Success, "WinWindowSystem has been initialized.");
 	return true;
 }
