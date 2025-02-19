@@ -83,6 +83,7 @@ namespace Inno
 
 			TextureSampler Sampler = TextureSampler::Invalid;
 			TextureUsage Usage = TextureUsage::Invalid;
+			bool IsMultiBuffer = false;
 			bool IsSRGB = false;
 			TexturePixelDataFormat PixelDataFormat = TexturePixelDataFormat::Invalid;
 			TexturePixelDataType PixelDataType = TexturePixelDataType::Invalid;

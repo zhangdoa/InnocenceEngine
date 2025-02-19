@@ -192,10 +192,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 
 	l_rhs->m_CurrentState = l_rhs->m_ReadState;
 
-	if (l_rhs->m_TextureDesc.Usage == TextureUsage::Sample)
-		l_rhs->m_DeviceMemories.resize(1);
-	else
+	if (l_rhs->m_TextureDesc.IsMultiBuffer)
 		l_rhs->m_DeviceMemories.resize(GetSwapChainImageCount());
+	else
+		l_rhs->m_DeviceMemories.resize(1);
 
 	D3D12_CLEAR_VALUE l_clearValue = {};
 	for (size_t i = 0; i < l_rhs->m_DeviceMemories.size(); i++)
@@ -245,10 +245,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 
 	if (l_rhs->m_InitialData)
 	{
-		if (l_rhs->m_TextureDesc.Usage == TextureUsage::Sample)
-			l_rhs->m_MappedMemories.resize(1);
-		else
+		if (l_rhs->m_TextureDesc.IsMultiBuffer)
 			l_rhs->m_MappedMemories.resize(GetSwapChainImageCount());
+		else
+			l_rhs->m_MappedMemories.resize(1);
 
 		uint32_t l_subresourcesCount = l_rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 6 : 1;
 		for (size_t i = 0; i < l_rhs->m_MappedMemories.size(); i++)

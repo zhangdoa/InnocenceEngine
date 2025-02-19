@@ -787,7 +787,8 @@ bool IRenderingServer::PrepareGlobalCommands()
 		if (i->m_MappedMemories.size() == 0)
 			continue;
 
-		auto l_mappedMemory = i->m_TextureDesc.Usage == TextureUsage::Sample ? i->m_MappedMemories[0] : i->m_MappedMemories[l_currentFrame];
+		auto l_mappedMemoryIndex = i->m_TextureDesc.IsMultiBuffer ? l_currentFrame : 0;
+		auto l_mappedMemory = i->m_MappedMemories[l_mappedMemoryIndex];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
 			UploadToGPU(l_commandList, i);

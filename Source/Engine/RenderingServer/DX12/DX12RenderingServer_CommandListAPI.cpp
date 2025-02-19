@@ -159,7 +159,8 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 				return false;
 
-			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[GetCurrentFrame()]);
+			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
 			else
@@ -234,7 +235,8 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 				return false;
 
-			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[GetCurrentFrame()]);
+			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
 			else

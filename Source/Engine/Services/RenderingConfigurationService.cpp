@@ -26,6 +26,7 @@ RenderingConfigurationService::RenderingConfigurationService()
 	m_DefaultRenderPassDesc.m_UseMultiFrames = false;
 	m_DefaultRenderPassDesc.m_RenderTargetCount = 1;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.IsMultiBuffer = true;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::ColorAttachment;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Width = m_screenResolution.x;
