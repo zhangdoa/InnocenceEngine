@@ -1,2 +1,2 @@
 Set-Location ..\Bin
-Start-Process Release/InnoMain.exe -ArgumentList "-renderer 0 -mode 0"
+Start-Process RelWithDebInfo/Main.exe -ArgumentList "-renderer 0 -mode 0"
