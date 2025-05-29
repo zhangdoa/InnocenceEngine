@@ -73,3 +73,6 @@ xcuserdata/
 /Package/*
 
 *.dxil
+
+# AI Agent Team coordination files
+AI Agent Team/
