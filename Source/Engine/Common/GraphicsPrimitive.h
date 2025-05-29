@@ -300,6 +300,7 @@ namespace Inno
 
 		struct IRaytracingInstanceDescList
 		{
+			bool m_NeedFullUpdate = false;
 		};
 
 		struct ResourceBindingLayoutDesc

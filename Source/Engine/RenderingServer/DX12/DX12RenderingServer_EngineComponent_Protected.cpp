@@ -452,7 +452,7 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 		tlasInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 		tlasInputs.NumDescs = rhs->m_ElementCount;
 		tlasInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-		tlasInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+		tlasInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
 
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo = {};
 		m_device->GetRaytracingAccelerationStructurePrebuildInfo(&tlasInputs, &prebuildInfo);
@@ -562,6 +562,7 @@ bool DX12RenderingServer::InitializeImpl(CollisionComponent* rhs)
 		instanceDesc.AccelerationStructure = l_mesh->m_BLAS->GetGPUVirtualAddress();
 		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[i]);
 		l_descList->m_Descs.emplace_back(instanceDesc);
+		l_descList->m_NeedFullUpdate = true;
 	}
 
 	Log(Verbose, rhs->m_InstanceName, " Raytracing instance is registered.");

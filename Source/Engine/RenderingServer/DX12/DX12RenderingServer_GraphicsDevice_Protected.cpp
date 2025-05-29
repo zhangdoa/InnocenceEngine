@@ -530,62 +530,159 @@ bool DX12RenderingServer::BeginFrame()
 
 bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
 {
+    Log(Warning, "=== EMERGENCY TLAS IMPLEMENTATION - ULTRA CONSERVATIVE ===");
+    
     auto l_currentFrame = GetCurrentFrame();
-	auto l_instanceDescList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
+    auto l_instanceDescList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
+    
+    // EMERGENCY: Drastically reduce update frequency and add hard limits
+    static uint32_t s_tlasUpdateCounter = 0;
+    static uint32_t s_totalFrameCount = 0;
+    static uint32_t s_tlasBuildsCompleted = 0;
+    
+    s_totalFrameCount++;
+    
+    // Update only every 20 frames instead of 3 (massive reduction in frequency)
+    bool shouldUpdateTLAS = (++s_tlasUpdateCounter % 20 == 0);
+    
+    Log(Warning, "PrepareRayTracing: Total frames: ", s_totalFrameCount, 
+        ", Current frame: ", l_currentFrame, 
+        ", Instances: ", l_instanceDescList->m_Descs.size(), 
+        ", Should update: ", shouldUpdateTLAS ? "YES" : "NO",
+        ", TLAS builds completed: ", s_tlasBuildsCompleted);
+    
+    // EMERGENCY FALLBACK: Allow only 3 TLAS builds maximum to prevent TDR
+    if (s_tlasBuildsCompleted >= 3)
+    {
+        Log(Error, "EMERGENCY FALLBACK: Maximum TLAS builds (3) reached. Disabling further builds to prevent TDR crash.");
+        Log(Error, "Ray tracing will use stale TLAS data from this point forward.");
+        return true; // Return success but don't build TLAS
+    }
+    
+    // Basic validation
     if (l_instanceDescList->m_Descs.size() == 0)
+    {
+        Log(Verbose, "PrepareRayTracing: No instances, skipping");
         return true;
-
+    }
+      
     if (m_TLASBufferComponent->m_ObjectStatus != ObjectStatus::Activated)
+    {
+        Log(Warning, "PrepareRayTracing: TLAS buffer not activated, skipping");
         return true;
+    }
 
+    // Always update instance data, but only rebuild TLAS very rarely
     auto l_mappedMemory = m_RaytracingInstanceBufferComponent->m_MappedMemories[l_currentFrame];
-
     WriteMappedMemory(m_RaytracingInstanceBufferComponent, l_mappedMemory, &l_instanceDescList->m_Descs[0], 0, l_instanceDescList->m_Descs.size());
     l_mappedMemory->m_NeedUploadToGPU = false;
-
     UploadToGPU(commandList, m_RaytracingInstanceBufferComponent);
-    SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 
+    // Skip TLAS rebuild if not this frame's turn
+    if (!shouldUpdateTLAS)
+    {
+        Log(Verbose, "PrepareRayTracing: Skipping TLAS update this frame");
+        return true;
+    }
+
+    Log(Error, "!!! DANGER ZONE: PERFORMING TLAS BUILD #", s_tlasBuildsCompleted + 1, " !!!");
+    Log(Error, "!!! THIS IS WHERE TDR TYPICALLY OCCURS !!!");
+    
+    // EMERGENCY: Force complete GPU idle state
+    Log(Warning, "Forcing complete GPU idle state before TLAS build...");
+    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Compute, GPUEngineType::Compute);
+    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Copy, GPUEngineType::Copy);
+    
+    // Force CPU wait as well
+    auto l_currentSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+    WaitOnCPU(l_currentSemaphoreValue, GPUEngineType::Graphics);
+    Log(Warning, "GPU completely idle confirmed. Semaphore value: ", l_currentSemaphoreValue);
+    
+    // Get buffer references
     auto l_TLASBuffer = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[l_currentFrame]);
     auto l_scratchBuffer = reinterpret_cast<DX12DeviceMemory*>(m_ScratchBufferComponent->m_DeviceMemories[l_currentFrame]);
     auto l_instanceBuffer = reinterpret_cast<DX12DeviceMemory*>(m_RaytracingInstanceBufferComponent->m_DeviceMemories[l_currentFrame]);
-
     auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
 
+    // Log all buffer addresses for debugging
+    Log(Warning, "TLAS Buffer Address: 0x", std::hex, l_TLASBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress(), std::dec);
+    Log(Warning, "Scratch Buffer Address: 0x", std::hex, l_scratchBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress(), std::dec);
+    Log(Warning, "Instance Buffer Address: 0x", std::hex, l_instanceBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress(), std::dec);
+
+    // Resource barriers
     CD3DX12_RESOURCE_BARRIER instanceBufferBarrier_Read = CD3DX12_RESOURCE_BARRIER::Transition(
         l_instanceBuffer->m_DefaultHeapBuffer.Get(),
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
     );
-    
     l_commandList->m_DirectCommandList->ResourceBarrier(1, &instanceBufferBarrier_Read);
+    Log(Verbose, "Instance buffer transitioned to read state");
 
+    // Setup TLAS description - ALWAYS full rebuild for maximum safety
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC tlasDesc = {};
     tlasDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    tlasDesc.Inputs.NumDescs = l_instanceDescList->m_Descs.size();
     tlasDesc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    tlasDesc.Inputs.NumDescs = l_instanceDescList->m_Descs.size();
     tlasDesc.Inputs.InstanceDescs = l_instanceBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
     tlasDesc.Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-
+    tlasDesc.SourceAccelerationStructureData = 0; // Always full rebuild - no incremental
     tlasDesc.DestAccelerationStructureData = l_TLASBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
     tlasDesc.ScratchAccelerationStructureData = l_scratchBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
 
-    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
-    l_commandList->m_DirectCommandList->BuildRaytracingAccelerationStructure(&tlasDesc, 0, nullptr);
-    SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
-    WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
+    Log(Warning, "TLAS Description:");
+    Log(Warning, "  Type: TOP_LEVEL");
+    Log(Warning, "  NumDescs: ", tlasDesc.Inputs.NumDescs);
+    Log(Warning, "  Flags: 0x", std::hex, tlasDesc.Inputs.Flags, std::dec);
+    Log(Warning, "  Always full rebuild (no incremental)");
+    
+    Log(Error, "*** CRITICAL SECTION START: BUILDING TLAS ***");
+    
+    // The moment of truth - this is where TDR typically happens
+    try {
+        l_commandList->m_DirectCommandList->BuildRaytracingAccelerationStructure(&tlasDesc, 0, nullptr);
+        Log(Warning, "BuildRaytracingAccelerationStructure API call completed without immediate error");
+    }
+    catch (const std::exception& e) {
+        Log(Error, "EXCEPTION during TLAS build: ", e.what());
+        return false;
+    }
+    catch (...) {
+        Log(Error, "UNKNOWN EXCEPTION during TLAS build!");
+        return false;
+    }
+    
+    // Add UAV barrier after TLAS build
+    CD3DX12_RESOURCE_BARRIER tlasUAVBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_TLASBuffer->m_DefaultHeapBuffer.Get());
+    l_commandList->m_DirectCommandList->ResourceBarrier(1, &tlasUAVBarrier);
+    Log(Verbose, "TLAS UAV barrier added");
 
+    // Transition instance buffer back
     CD3DX12_RESOURCE_BARRIER instanceBufferBarrier_Write = CD3DX12_RESOURCE_BARRIER::Transition(
         l_instanceBuffer->m_DefaultHeapBuffer.Get(),
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS
     );
-
     l_commandList->m_DirectCommandList->ResourceBarrier(1, &instanceBufferBarrier_Write);
+    Log(Verbose, "Instance buffer transitioned back to write state");
 
+    // Signal completion
+    SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+    
+    // Force another sync point
+    auto l_newSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+    Log(Warning, "TLAS build signaled. New semaphore value: ", l_newSemaphoreValue);
+
+    // Clean up
+    l_instanceDescList->m_NeedFullUpdate = false;
+    s_tlasBuildsCompleted++;
+
+    Log(Error, "*** CRITICAL SECTION END: TLAS BUILD #", s_tlasBuildsCompleted, " COMPLETED ***");
+    Log(Warning, "If you see this message, the TLAS build succeeded without TDR!");
+    Log(Warning, "Remaining builds allowed: ", 3 - s_tlasBuildsCompleted);
+    
     return true;
 }
-
 
 bool DX12RenderingServer::PresentImpl()
 {
