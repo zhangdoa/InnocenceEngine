@@ -391,8 +391,7 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 
 	if (queueType == GPUEngineType::Graphics)
 	{
-		l_globalSemaphore->m_DirectCommandQueueSemaphore.fetch_add(1);
-		uint64_t l_directCommandFinishedSemaphore = l_globalSemaphore->m_DirectCommandQueueSemaphore.load();
+		uint64_t l_directCommandFinishedSemaphore = l_globalSemaphore->m_DirectCommandQueueSemaphore.fetch_add(1) + 1;
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
 			l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
@@ -401,8 +400,7 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 	}
 	else if (queueType == GPUEngineType::Compute)
 	{
-		l_globalSemaphore->m_ComputeCommandQueueSemaphore.fetch_add(1);
-		UINT64 l_computeCommandFinishedSemaphore = l_globalSemaphore->m_ComputeCommandQueueSemaphore.load();
+		UINT64 l_computeCommandFinishedSemaphore = l_globalSemaphore->m_ComputeCommandQueueSemaphore.fetch_add(1) + 1;
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
 			l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
@@ -411,8 +409,7 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 	}
 	else if (queueType == GPUEngineType::Copy)
 	{
-		l_globalSemaphore->m_CopyCommandQueueSemaphore.fetch_add(1);
-		UINT64 l_copyCommandFinishedSemaphore = l_globalSemaphore->m_CopyCommandQueueSemaphore.load();
+		UINT64 l_copyCommandFinishedSemaphore = l_globalSemaphore->m_CopyCommandQueueSemaphore.fetch_add(1) + 1;
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
 			l_semaphore->m_CopyCommandQueueSemaphore = l_copyCommandFinishedSemaphore;
