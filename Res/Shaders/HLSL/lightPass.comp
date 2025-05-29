@@ -71,6 +71,8 @@ Texture2D<float4> in_RadianceCache : register(t10);
 Texture3D<float4> in_VolumetricFog : register(t11);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerTypeLinear : register(s0);
+[[vk::binding(1, 2)]]
+SamplerState in_samplerTypePoint : register(s1);
 [[vk::binding(0, 3)]]
 RWTexture2D<float4> out_lightPassRT0 : register(u0);
 [[vk::binding(1, 3)]]
@@ -159,7 +161,7 @@ void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
 	float3 l_FresnelTerm = Fresnel_Schlick(F0, F90, LdotHL);
 
 	float3 l_DiffuseBSDF = ComputeDiffuseBRDF(NdotV, NdotL, LdotHL, l_MaterialAttributes.m_Roughness, l_MaterialAttributes.m_Metallic, l_FresnelTerm, l_MaterialAttributes.m_Albedo);
-	float3 l_SpecularBSDF = ComputeSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypeLinear, NdotV, NdotL, NdotHL, LdotHL, l_MaterialAttributes.m_Roughness, F0, l_FresnelTerm);
+	float3 l_SpecularBSDF = ComputeSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, l_MaterialAttributes.m_Roughness, F0, l_FresnelTerm);
 
 	float3 l_Illuminance = luminousFlux * attenuationFactor * NdotL;
 

@@ -37,7 +37,7 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(21);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(22);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -164,14 +164,22 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_TextureUsage = TextureUsage::ColorAttachment;
 
-	// s0 - Sampler
+	// s0 - Sampler linear
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_GPUResourceType = GPUResourceType::Sampler;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorIndex = 0;
 
+	// s1 - Sampler point
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorIndex = 1;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("LightPass/");
+	m_SamplerComp_Linear = l_renderingServer->AddSamplerComponent("LightPass/LinearSampler/");
+	m_SamplerComp_Point = l_renderingServer->AddSamplerComponent("LightPass/PointSampler/");
+	m_SamplerComp_Point->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
+	m_SamplerComp_Point->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 
 	m_ObjectStatus = ObjectStatus::Created;
 	
@@ -184,7 +192,8 @@ bool LightPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_SamplerComp);
+	l_renderingServer->Initialize(m_SamplerComp_Linear);
+	l_renderingServer->Initialize(m_SamplerComp_Point);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -198,7 +207,8 @@ bool LightPass::Terminate()
 	l_renderingServer->Delete(m_LuminanceResult);
 	l_renderingServer->Delete(m_IlluminanceResult);
 	
-	l_renderingServer->Delete(m_SamplerComp);
+	l_renderingServer->Delete(m_SamplerComp_Point);
+	l_renderingServer->Delete(m_SamplerComp_Linear);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
 
@@ -261,7 +271,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 17);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_LuminanceResult, 18);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_IlluminanceResult, 19);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 20);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_Linear, 20);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_Point, 21);
 
 	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 

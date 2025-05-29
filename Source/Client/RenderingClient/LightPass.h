@@ -23,7 +23,8 @@ namespace Inno
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;
-		SamplerComponent* m_SamplerComp;
+		SamplerComponent* m_SamplerComp_Linear;
+		SamplerComponent* m_SamplerComp_Point;
 
 		TextureComponent* m_LuminanceResult;
 		TextureComponent* m_IlluminanceResult;
