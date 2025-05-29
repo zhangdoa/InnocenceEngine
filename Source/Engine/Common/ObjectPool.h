@@ -35,7 +35,14 @@ namespace Inno
 			Log(Verbose, "Object pool has been allocated at ", this, ".");
 		}
 
-		~TObjectPool() = default;
+		~TObjectPool()
+		{
+			if (m_HeapAddress)
+			{
+				g_Engine->Get<Memory>()->Deallocate(m_HeapAddress);
+				m_HeapAddress = nullptr;
+			}
+		}
 
 		T* Spawn()
 		{
