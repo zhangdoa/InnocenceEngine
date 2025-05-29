@@ -1,5 +1,5 @@
 # INNOCENCEENGINE CODE STANDARDS
-**Version:** 1.0  
+**Version:** 1.1 - CRITICAL UPDATE: Inline Function Dependencies  
 **Owner:** Code Architect  
 **Status:** MANDATORY - All team members must follow
 
@@ -101,6 +101,36 @@ namespace Inno {
 ---
 
 ## 🔧 CODE STYLE
+
+### Inline Functions - CRITICAL RULE
+```cpp
+// NEVER inline functions that depend on engine APIs in headers
+class TestRunner
+{
+public:
+    static void StartTest(const char* testName);  // ✅ Declaration only
+    // Implementation goes in .cpp file
+};
+
+// ❌ WRONG - inline function using g_Engine in header
+inline void BadExample()
+{
+    Log(Success, "This creates compilation dependencies!");  // Uses g_Engine
+}
+
+// ✅ CORRECT - engine-dependent functions in .cpp files only
+// TestRunner.cpp:
+void TestRunner::StartTest(const char* testName)
+{
+    Log(Verbose, "Running test: ", testName);  // Safe in .cpp
+}
+```
+
+**Rationale:** 
+- Prevents circular include dependencies
+- Avoids g_Engine pointer compilation issues
+- Keeps headers lightweight and fast to compile
+- Engine APIs (Log, Memory, etc.) should only be called from .cpp files
 
 ### Braces & Indentation
 ```cpp
@@ -254,6 +284,13 @@ std::cout << "message";    // ❌
 
 // DON'T make containers thread-safe by default
 std::mutex m_InternalMutex; // ❌ (in containers)
+
+// DON'T inline functions that use engine APIs in headers
+inline void BadFunction()
+{
+    Log(Error, "This breaks compilation!");     // ❌ g_Engine dependency
+    g_Engine->Get<Memory>()->Allocate(100);    // ❌ Engine API in header
+}
 ```
 
 ---
