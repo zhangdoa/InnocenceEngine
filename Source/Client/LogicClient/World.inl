@@ -80,13 +80,13 @@ namespace Inno
 
 		float m_seed = 0.0f;
 		bool allowUpdate = true;
-		uint32_t matrixDim = 8;
+		uint32_t m_matrixDim = 8;
 	};
 
 	bool WorldSystem::setupReferenceSpheres()
 	{
 		float l_breadthInterval = 4.0f;
-		auto l_containerSize = matrixDim * matrixDim;
+		auto l_containerSize = m_matrixDim * m_matrixDim;
 
 		m_referenceSphereTransformComponents.clear();
 		m_referenceSphereModelComponents.clear();
@@ -117,16 +117,16 @@ namespace Inno
 			m_referenceSphereModelComponents[i]->m_simulatePhysics = true;
 		}
 
-		for (uint32_t i = 0; i < matrixDim; i++)
+		for (uint32_t i = 0; i < m_matrixDim; i++)
 		{
-			for (uint32_t j = 0; j < matrixDim; j++)
+			for (uint32_t j = 0; j < m_matrixDim; j++)
 			{
-				m_referenceSphereTransformComponents[i * matrixDim + j]->m_localTransformVector.m_pos =
+				m_referenceSphereTransformComponents[i * m_matrixDim + j]->m_localTransformVector.m_pos =
 					m_posOffset +
 					Vec4(
-						(-(matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
+						(-(m_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 						2.0f,
-						(j * l_breadthInterval) - 2.0f * (matrixDim - 1),
+						(j * l_breadthInterval) - 2.0f * (m_matrixDim - 1),
 						0.0f);
 			}
 		}
@@ -208,7 +208,7 @@ namespace Inno
 	bool WorldSystem::setupOpaqueSpheres()
 	{
 		float l_breadthInterval = 4.0f;
-		auto l_containerSize = matrixDim * matrixDim;
+		auto l_containerSize = m_matrixDim * m_matrixDim;
 
 		m_opaqueSphereTransformComponents.clear();
 		m_opaqueSphereModelComponents.clear();
@@ -242,17 +242,17 @@ namespace Inno
 		std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
 		std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
 
-		for (uint32_t i = 0; i < matrixDim; i++)
+		for (uint32_t i = 0; i < m_matrixDim; i++)
 		{
-			for (uint32_t j = 0; j < matrixDim; j++)
+			for (uint32_t j = 0; j < m_matrixDim; j++)
 			{
-				auto l_currentComponent = m_opaqueSphereTransformComponents[i * matrixDim + j];
+				auto l_currentComponent = m_opaqueSphereTransformComponents[i * m_matrixDim + j];
 				l_currentComponent->m_localTransformVector.m_pos =
 					m_posOffset +
 					Vec4(
-						(-(matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
+						(-(m_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 						l_randomPosDelta(m_generator) * 50.0f,
-						(j * l_breadthInterval) - 2.0f * (matrixDim - 1),
+						(j * l_breadthInterval) - 2.0f * (m_matrixDim - 1),
 						0.0f);
 
 				l_currentComponent->m_localTransformVector.m_rot =
@@ -448,12 +448,12 @@ namespace Inno
 
 			m_posOffset = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-			//setupReferenceSpheres();
+			setupReferenceSpheres();
 			//setupOcclusionCubes();
-			//setupOpaqueSpheres();
+			setupOpaqueSpheres();
 			setupTransparentCubes();
 			setupVolumetricCubes();
-			//setupPointLights();
+			setupPointLights();
 
 			m_ObjectStatus = ObjectStatus::Activated;
 			};
@@ -467,7 +467,7 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneService>()->Load("..//Res//Scenes//default.InnoScene");
+		g_Engine->Get<SceneService>()->Load("..//Res//Scenes//UnitTest.InnoScene");
 
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
@@ -640,12 +640,12 @@ namespace Inno
 		if (m_referenceSphereModelComponents.size() == 0)
 			return;
 
-		for (uint32_t i = 0; i < matrixDim; i++)
+		for (uint32_t i = 0; i < m_matrixDim; i++)
 		{
-			for (uint32_t j = 0; j < matrixDim; j++)
+			for (uint32_t j = 0; j < m_matrixDim; j++)
 			{
-				auto l_MRAT = Vec4((float)i / (float)(matrixDim - 1), (float)j / (float)(matrixDim - 1), 0.0f, 1.0f);
-				updateMaterial(m_referenceSphereModelComponents[i * matrixDim + j]->m_Model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
+				auto l_MRAT = Vec4((float)i / (float)(m_matrixDim - 1), (float)j / (float)(m_matrixDim - 1), 0.0f, 1.0f);
+				updateMaterial(m_referenceSphereModelComponents[i * m_matrixDim + j]->m_Model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 			}
 		}
 	}
