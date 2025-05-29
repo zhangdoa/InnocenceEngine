@@ -64,6 +64,8 @@ endif()
 unset(Python_EXECUTABLE)
 set(Python_EXECUTABLE ${PYTHON_VENV_PATH}/Scripts/python)
 
+option(FORCE_REBUILD_THIRD_PARTY "Force rebuild of all third-party libraries" OFF)
+
 option(PREPARE_ENV "Prepare the environment" ON)
 if (PREPARE_ENV)
     message(STATUS "Preparing the environment...")

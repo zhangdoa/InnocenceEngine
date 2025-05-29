@@ -4,7 +4,8 @@
     "cmake.configureSettings": {
         "PREPARE_ENV": true,
         "BUILD_THIRD_PARTY": true,
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "FORCE_REBUILD_THIRD_PARTY": false
     },
     "files.associations": {
         "\"*.list\"": "\".json\"",
