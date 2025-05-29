@@ -38,4 +38,5 @@
 
 #include <atomic>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
