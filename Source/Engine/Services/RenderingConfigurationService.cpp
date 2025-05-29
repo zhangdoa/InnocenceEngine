@@ -5,6 +5,8 @@ using namespace Inno;
 
 RenderingConfigurationService::RenderingConfigurationService()
 {
+	m_screenResolution = TVec2<uint32_t>(1280, 720);
+
 	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
 	//m_renderingConfig.useBloom = true;

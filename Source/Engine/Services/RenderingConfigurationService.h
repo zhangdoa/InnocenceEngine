@@ -47,7 +47,7 @@ namespace Inno
 		RenderPassDesc GetDefaultRenderPassDesc();
 
     private:
-        TVec2<uint32_t> m_screenResolution = TVec2<uint32_t>(1280, 720);
+        TVec2<uint32_t> m_screenResolution = TVec2<uint32_t>(1920, 1080);
 		std::string m_windowName;
 		bool m_fullScreen = false;
         
