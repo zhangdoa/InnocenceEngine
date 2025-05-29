@@ -14,6 +14,10 @@ target_link_libraries(Engine Services)
 target_link_libraries(Engine RayTracer)
 target_link_libraries(Engine RenderingServerCommon)
 
+# Always link headless systems (platform-agnostic)
+target_link_libraries(Engine HeadlessWindowSystem)
+target_link_libraries(Engine HeadlessRenderingServer)
+
 if (INNO_RENDERER_DIRECTX)
 target_link_libraries(Engine DX12RenderingServer)
 endif (INNO_RENDERER_DIRECTX)

@@ -21,29 +21,31 @@
 #include "Services/AnimationService.h"
 #include "Services/GUISystem.h"
 
+// Platform-specific systems
 #if defined INNO_PLATFORM_WIN
 #include "Platform/WinWindow/WinWindowSystem.h"
 #endif
-
 #if defined INNO_PLATFORM_MAC
 #include "Platform/MacWindow/MacWindowSystem.h"
 #endif
-
 #if defined INNO_PLATFORM_LINUX
 #include "Platform/LinuxWindow/LinuxWindowSystem.h"
 #endif
 
+// Rendering servers
 #if defined INNO_RENDERER_DIRECTX
 #include "RenderingServer/DX12/DX12RenderingServer.h"
 #endif
-
 #if defined INNO_RENDERER_VULKAN
 #include "RenderingServer/VK/VKRenderingServer.h"
 #endif
-
 #if defined INNO_RENDERER_METAL
 #include "RenderingServer/MT/MTRenderingServer.h"
 #endif
+
+// Headless stubs
+#include "Platform/HeadlessWindow/HeadlessWindowSystem.h"
+#include "RenderingServer/Headless/HeadlessRenderingServer.h"
 
 namespace Inno
 {
@@ -51,6 +53,65 @@ namespace Inno
 }
 
 using namespace Inno;
+
+IWindowSystem* Engine::CreateWindowSystem(bool isHeadless)
+{
+	if (isHeadless) {
+		return new HeadlessWindowSystem();
+	}
+	
+#if defined INNO_PLATFORM_WIN
+	return new WinWindowSystem();
+#elif defined INNO_PLATFORM_MAC
+	return new MacWindowSystem();
+#elif defined INNO_PLATFORM_LINUX
+	return new LinuxWindowSystem();
+#else
+	Log(Error, "No WindowSystem implementation available for this platform.");
+	return nullptr;
+#endif
+}
+
+IRenderingServer* Engine::CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType)
+{
+	if (isHeadless) {
+		return new HeadlessRenderingServer();
+	}
+	
+	switch (renderingServerType) {
+	case RenderingServer::DX12:
+#if defined INNO_RENDERER_DIRECTX
+		return new DX12RenderingServer();
+#else
+		Log(Error, "DirectX 12 renderer not available on this platform.");
+		return nullptr;
+#endif
+	case RenderingServer::VK:
+#if defined INNO_RENDERER_VULKAN
+		return new VKRenderingServer();
+#else
+		Log(Error, "Vulkan renderer not available on this platform.");
+		return nullptr;
+#endif
+	case RenderingServer::MT:
+#if defined INNO_RENDERER_METAL
+		return new MTRenderingServer();
+#else
+		Log(Error, "Metal renderer not available on this platform.");
+		return nullptr;
+#endif
+	default:
+		Log(Error, "Unknown rendering server type.");
+		return nullptr;
+	}
+}
+
+void Engine::ResolveDependencies(const std::vector<std::type_index>& dependencies)
+{
+	// For now, simple dependency resolution
+	// Dependencies are assumed to be resolved by the order of Get<T>() calls
+	// More sophisticated topological sorting can be added later if needed
+}
 
 #define SystemSetup( className ) \
 if (!Get<##className>()->Setup(nullptr)) \
@@ -231,90 +292,104 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	auto l_headlessArgPos = arg.find("headless");
+	if (l_headlessArgPos != std::string::npos)
+	{
+		l_result.isHeadless = true;
+		Log(Success, "Launch in headless mode, no windowing or rendering systems.");
+	}
+
 	return l_result;
 }
 
 bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 {
+	// Parse configuration first
+	std::string l_windowArguments = pScmdline;
+	m_pImpl->m_initConfig = ParseInitConfig(l_windowArguments);
+
+	// Essential Services (always created, low-level)
 	Get<Timer>();
 	Get<LogService>();
 	Get<Memory>();
 	Get<TaskScheduler>();
 	Get<IOService>();
-
 	Get<HIDService>();
 
-	std::string l_windowArguments = pScmdline;
-	m_pImpl->m_initConfig = ParseInitConfig(l_windowArguments);
-
+	// Create WindowSystem based on headless mode
+	if (m_pImpl->m_initConfig.isHeadless) {
+		m_pImpl->m_WindowSystem = std::make_unique<HeadlessWindowSystem>();
+	} else {
 #if defined INNO_PLATFORM_WIN
-	m_pImpl->m_WindowSystem = std::make_unique<WinWindowSystem>();
+		m_pImpl->m_WindowSystem = std::make_unique<WinWindowSystem>();
+#elif defined INNO_PLATFORM_MAC
+		m_pImpl->m_WindowSystem = std::make_unique<MacWindowSystem>();
+#elif defined INNO_PLATFORM_LINUX
+		m_pImpl->m_WindowSystem = std::make_unique<LinuxWindowSystem>();
 #endif
-#if defined INNO_PLATFORM_MAC
-	m_pImpl->m_WindowSystem = std::make_unique<MacWindowSystem>();
-#endif
-#if defined INNO_PLATFORM_LINUX
-	m_pImpl->m_WindowSystem = std::make_unique<LinuxWindowSystem>();
-#endif
-	if (!m_pImpl->m_WindowSystem.get())
-	{
+	}
+
+	if (!m_pImpl->m_WindowSystem.get()) {
 		Log(Error, "Failed to create Window System.");
 		return false;
 	}
 
-	Get<RenderingConfigurationService>();
-	Get<TemplateAssetService>();
-	Get<RenderingContextService>();
-	Get<AnimationService>();
-	Get<GUISystem>();
-
-	switch (m_pImpl->m_initConfig.renderingServer)
-	{
-	case RenderingServer::DX12:
-#if defined INNO_RENDERER_DIRECTX
-		m_pImpl->m_RenderingServer = std::make_unique<DX12RenderingServer>();
-#endif
-		break;
-	case RenderingServer::VK:
-#if defined INNO_RENDERER_VULKAN
-		m_pImpl->m_RenderingServer = std::make_unique<VKRenderingServer>();
-#endif
-		break;
-	case RenderingServer::MT:
-#if defined INNO_RENDERER_METAL
-		m_pImpl->m_RenderingServer = std::make_unique<MTRenderingServer>();
-#endif
-		break;
-	default:
-		break;
+	// Create other rendering-related services if not headless
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		Get<RenderingConfigurationService>();
+		Get<TemplateAssetService>();
+		Get<RenderingContextService>();
+		Get<AnimationService>();
+		Get<GUISystem>();
 	}
 
-	if (!m_pImpl->m_RenderingServer.get())
-	{
+	// Create RenderingServer based on headless mode
+	if (m_pImpl->m_initConfig.isHeadless) {
+		m_pImpl->m_RenderingServer = std::make_unique<HeadlessRenderingServer>();
+	} else {
+		switch (m_pImpl->m_initConfig.renderingServer) {
+		case RenderingServer::DX12:
+#if defined INNO_RENDERER_DIRECTX
+			m_pImpl->m_RenderingServer = std::make_unique<DX12RenderingServer>();
+#endif
+			break;
+		case RenderingServer::VK:
+#if defined INNO_RENDERER_VULKAN
+			m_pImpl->m_RenderingServer = std::make_unique<VKRenderingServer>();
+#endif
+			break;
+		case RenderingServer::MT:
+#if defined INNO_RENDERER_METAL
+			m_pImpl->m_RenderingServer = std::make_unique<MTRenderingServer>();
+#endif
+			break;
+		}
+	}
+
+	if (!m_pImpl->m_RenderingServer.get()) {
 		Log(Error, "Failed to create Rendering Server.");
 		return false;
 	}
 
-	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of Setup()
+	// Platform-specific bridge setup for Mac
 #if defined INNO_PLATFORM_MAC
-	auto l_windowSystem = reinterpret_cast<MacWindowSystem*>(m_WindowSystem.get());
-	auto l_windowSystemBridge = reinterpret_cast<MacWindowSystemBridge*>(appHook);
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		auto l_windowSystem = reinterpret_cast<MacWindowSystem*>(m_pImpl->m_WindowSystem.get());
+		auto l_windowSystemBridge = reinterpret_cast<MacWindowSystemBridge*>(appHook);
+		l_windowSystem->setBridge(l_windowSystemBridge);
 
-	l_windowSystem->setBridge(l_windowSystemBridge);
-
-	auto l_renderingServer = reinterpret_cast<MTRenderingServer*>(m_RenderingServer.get());
-	auto l_renderingServerBridge = reinterpret_cast<MTRenderingServerBridge*>(extraHook);
-
-	l_renderingServer->setBridge(l_renderingServerBridge);
+		auto l_renderingServer = reinterpret_cast<MTRenderingServer*>(m_pImpl->m_RenderingServer.get());
+		auto l_renderingServerBridge = reinterpret_cast<MTRenderingServerBridge*>(extraHook);
+		l_renderingServer->setBridge(l_renderingServerBridge);
+	}
 #endif
 
+	// Additional Systems (ISystem-based, with dependency resolution)
 	Get<EntityManager>();
 	Get<ComponentManager>();
-
 	Get<AssetService>();
 	Get<SceneService>();
 	Get<PhysicsSimulationService>();
-
 	Get<TransformSystem>();
 	Get<LightSystem>();
 	Get<CameraSystem>();
@@ -324,24 +399,34 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 
 bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 {
-	m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
-	if (!m_pImpl->m_RenderingClient.get())
-	{
-		Log(Error, "Failed to create Rendering Client.");
-		return false;
-	}
-
-	m_pImpl->m_LogicClient = std::make_unique<INNO_LOGIC_CLIENT>();
-	if (!m_pImpl->m_LogicClient.get())
-	{
-		Log(Error, "Failed to create Logic Client.");
-		return false;
-	}
-
-	m_pImpl->m_applicationName = m_pImpl->m_LogicClient->GetApplicationName();
-
+	// Create all services (Essential + Additional Systems)
 	if (!CreateServices(appHook, extraHook, pScmdline))
 		return false;
+
+	// Skip LogicClient and RenderingClient in headless mode
+	if (!m_pImpl->m_initConfig.isHeadless)
+	{
+		m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
+		if (!m_pImpl->m_RenderingClient.get())
+		{
+			Log(Error, "Failed to create Rendering Client.");
+			return false;
+		}
+
+		m_pImpl->m_LogicClient = std::make_unique<INNO_LOGIC_CLIENT>();
+		if (!m_pImpl->m_LogicClient.get())
+		{
+			Log(Error, "Failed to create Logic Client.");
+			return false;
+		}
+
+		m_pImpl->m_applicationName = m_pImpl->m_LogicClient->GetApplicationName();
+	}
+	else
+	{
+		m_pImpl->m_applicationName = "HeadlessEngine";
+		Log(Success, "Headless mode: Skipping LogicClient and RenderingClient.");
+	}
 
 	SystemSetup(HIDService);
 
@@ -380,8 +465,10 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			if (Get<SceneService>()->IsLoading())
 				return true;
 
-			// Simulation
-			m_pImpl->m_LogicClient->Update();
+			// Simulation - only if LogicClient exists
+			if (m_pImpl->m_LogicClient) {
+				m_pImpl->m_LogicClient->Update();
+			}
 
 			// Update components
 			Get<TransformSystem>()->Update();
@@ -395,9 +482,14 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			Get<BVHService>()->Update();
 			Get<PhysicsSimulationService>()->RunCulling();
 
-			Get<RenderingContextService>()->Update();
-			Get<AnimationService>()->Update();
-			m_pImpl->m_RenderingClient->Update();
+			// Only update rendering-related services if not headless
+			if (!m_pImpl->m_initConfig.isHeadless) {
+				Get<RenderingContextService>()->Update();
+				Get<AnimationService>()->Update();
+				if (m_pImpl->m_RenderingClient) {
+					m_pImpl->m_RenderingClient->Update();
+				}
+			}
 
 			return true;
 		});
@@ -407,7 +499,9 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			if (Get<SceneService>()->IsLoading())
 				return true;
 
-			m_pImpl->m_RenderingClient->PrepareCommands();
+			if (m_pImpl->m_RenderingClient) {
+				m_pImpl->m_RenderingClient->PrepareCommands();
+			}
 			return true;
 		});
 
@@ -416,33 +510,41 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			if (Get<SceneService>()->IsLoading())
 				return true;
 
-			m_pImpl->m_RenderingClient->ExecuteCommands();
+			if (m_pImpl->m_RenderingClient) {
+				m_pImpl->m_RenderingClient->ExecuteCommands();
+			}
 			return true;
 		});
 
-	SystemSetup(RenderingContextService);
-	SystemSetup(AnimationService);
+	// Only setup rendering-related services if not headless
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		SystemSetup(RenderingContextService);
+		SystemSetup(AnimationService);
 
-	ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
-	auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-		if (!m_pImpl->m_RenderingClient->Setup())
+		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
+		auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+			if (!m_pImpl->m_RenderingClient->Setup())
+			{
+				Log(Error, "Rendering Client can't be setup!");
+				return false;
+			}
+			
+			SystemSetup(GUISystem);
+
+			return true;
+			});
+
+		l_DefaultRenderingClientSetupTask->Activate();
+		l_DefaultRenderingClientSetupTask->Wait();
+	}
+
+	// Only setup LogicClient if it exists
+	if (m_pImpl->m_LogicClient) {
+		if (!m_pImpl->m_LogicClient->Setup())
 		{
-			Log(Error, "Rendering Client can't be setup!");
+			Log(Error, "Logic Client can't be setup!");
 			return false;
 		}
-		
-		SystemSetup(GUISystem);
-
-		return true;
-		});
-
-	l_DefaultRenderingClientSetupTask->Activate();
-	l_DefaultRenderingClientSetupTask->Wait();
-
-	if (!m_pImpl->m_LogicClient->Setup())
-	{
-		Log(Error, "Logic Client can't be setup!");
-		return false;
 	}
 
 	m_pImpl->m_RenderingExecutionTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Execution Task", ITask::Type::Recurrent, 2), [&]()
@@ -482,29 +584,35 @@ bool Engine::Initialize()
 	SystemInit(CameraSystem);
 	m_pImpl->m_RenderingServer->Initialize();
 
-	SystemInit(TemplateAssetService);
-	SystemInit(RenderingContextService);
-	SystemInit(AnimationService);
+	// Only initialize rendering-related services if not headless
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		SystemInit(TemplateAssetService);
+		SystemInit(RenderingContextService);
+		SystemInit(AnimationService);
 
-	ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
-	auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-		if (!m_pImpl->m_RenderingClient->Initialize())
-		{
-			Log(Error, "Rendering Client can't be setup!");
-			return false;
-		}
+		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
+		auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+			if (!m_pImpl->m_RenderingClient->Initialize())
+			{
+				Log(Error, "Rendering Client can't be initialized!");
+				return false;
+			}
 
-		SystemInit(GUISystem);
+			SystemInit(GUISystem);
 
-		return true;
-		});
+			return true;
+			});
 
-	l_DefaultRenderingClientInitializationTask->Activate();
-	l_DefaultRenderingClientInitializationTask->Wait();
+		l_DefaultRenderingClientInitializationTask->Activate();
+		l_DefaultRenderingClientInitializationTask->Wait();
 
-	m_pImpl->m_RenderingExecutionTask->Activate();
+		m_pImpl->m_RenderingExecutionTask->Activate();
+	}
 
-	m_pImpl->m_LogicClient->Initialize();
+	// Only initialize LogicClient if it exists
+	if (m_pImpl->m_LogicClient) {
+		m_pImpl->m_LogicClient->Initialize();
+	}
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "Engine has been initialized.");
@@ -531,32 +639,41 @@ bool Engine::ExecuteDefaultTask()
 
 bool Engine::Terminate()
 {
-	m_pImpl->m_RenderingExecutionTask->Wait();
-	m_pImpl->m_RenderingExecutionTask->Deactivate();
-
-	if (!m_pImpl->m_LogicClient->Terminate())
-	{
-		Log(Error, "Logic client can't be terminated!");
-		return false;
+	// Only wait for rendering task if it was created
+	if (m_pImpl->m_RenderingExecutionTask) {
+		m_pImpl->m_RenderingExecutionTask->Wait();
+		m_pImpl->m_RenderingExecutionTask->Deactivate();
 	}
 
-	ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
-	auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-		SystemTerm(GUISystem);
-
-		if (!m_pImpl->m_RenderingClient->Terminate())
+	// Only terminate LogicClient if it exists
+	if (m_pImpl->m_LogicClient) {
+		if (!m_pImpl->m_LogicClient->Terminate())
 		{
-			Log(Error, "Rendering client can't be terminated!");
+			Log(Error, "Logic client can't be terminated!");
 			return false;
 		}
-		return true;
-		});
-	l_DefaultRenderingClientTerminationTask->Activate();
-	l_DefaultRenderingClientTerminationTask->Wait();
+	}
 
-	SystemTerm(AnimationService);
-	SystemTerm(RenderingContextService);
-	SystemTerm(TemplateAssetService);
+	// Only terminate rendering-related services if not headless
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
+		auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+			SystemTerm(GUISystem);
+
+			if (m_pImpl->m_RenderingClient && !m_pImpl->m_RenderingClient->Terminate())
+			{
+				Log(Error, "Rendering client can't be terminated!");
+				return false;
+			}
+			return true;
+			});
+		l_DefaultRenderingClientTerminationTask->Activate();
+		l_DefaultRenderingClientTerminationTask->Wait();
+
+		SystemTerm(AnimationService);
+		SystemTerm(RenderingContextService);
+		SystemTerm(TemplateAssetService);
+	}
 	
 	if (!m_pImpl->m_RenderingServer->Terminate())
 	{

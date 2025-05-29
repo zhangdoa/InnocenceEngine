@@ -1,6 +1,8 @@
 #pragma once
 #include "../Common/ClassTemplate.h"
 #include "../Common/Object.h"
+#include <vector>
+#include <typeindex>
 
 namespace Inno
 {
@@ -18,5 +20,8 @@ namespace Inno
 		virtual bool Update() { return true; };
 		virtual bool Terminate() = 0;
 		virtual ObjectStatus GetStatus() = 0;
+		
+		// Dependency resolution support
+		virtual std::vector<std::type_index> GetDependencies() { return {}; }
 	};
 }

@@ -12,3 +12,6 @@ if (INNO_PLATFORM_LINUX)
 add_subdirectory("LinuxMain")
 add_subdirectory("LinuxWindow")
 endif (INNO_PLATFORM_LINUX)
+
+# Always include headless window system (platform-agnostic)
+add_subdirectory("HeadlessWindow")

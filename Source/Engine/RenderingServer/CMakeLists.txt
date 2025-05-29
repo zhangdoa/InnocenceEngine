@@ -1,5 +1,8 @@
 add_subdirectory("Common")
 
+# Always include headless rendering server (platform-agnostic)
+add_subdirectory("Headless")
+
 if (INNO_RENDERER_DIRECTX)
 add_subdirectory("DX12")
 endif (INNO_RENDERER_DIRECTX)
