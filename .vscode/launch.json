@@ -9,7 +9,8 @@
             "args": [
                 "-mode 0",
                 "-renderer 0",
-                "-loglevel 0"
+                "-loglevel 0",
+                "-headless"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
