@@ -61,6 +61,16 @@ bool EntityManager::Update()
 
 bool EntityManager::Terminate()
 {
+	// Clear all remaining entities before destroying the pool
+	m_Entities.clear();
+	
+	// Properly destroy the ObjectPool to prevent memory leak
+	if (m_EntityPool)
+	{
+		TObjectPool<Entity>::Destruct(m_EntityPool);
+		m_EntityPool = nullptr;
+	}
+	
 	return true;
 }
 
