@@ -16,6 +16,9 @@ set(TEST_SOURCES
     # Stress tests
     StressTests/ConcurrencyStress.cpp
     StressTests/MemoryStress.cpp
+    StressTests/TaskSystemStressTests.cpp
+    # Concurrency tests
+    ConcurrencyTests/TaskSystemTests.cpp
 )
 
 add_executable(Test ${TEST_SOURCES})
