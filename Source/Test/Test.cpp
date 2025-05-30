@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
 	std::unique_ptr<Engine> l_pEngine = std::make_unique<Engine>();
 	
 	// Setup engine for headless operation (no window handles needed)
-	if (!l_pEngine->Setup(nullptr, nullptr, ""))
+	if (!l_pEngine->Setup(nullptr, nullptr, "headless"))
 	{
 		Log(Error, "Failed to setup engine for testing");
 		return 1;
