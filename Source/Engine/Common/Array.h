@@ -16,7 +16,9 @@ namespace Inno
 	class Array
 	{
 	public:
-		Array() = default;
+		Array() : m_HeapAddress(nullptr), m_ElementSize(0), m_ElementCount(0), m_CurrentFreeIndex(0) 
+		{
+		}
 		Array(size_t elementCount)
 		{
 			reserve(elementCount);
@@ -45,11 +47,20 @@ namespace Inno
 
 		Array<T, ThreadSafe> &operator=(const Array<T, ThreadSafe> &rhs)
 		{
-			m_ElementSize = rhs.m_ElementSize;
-			m_ElementCount = rhs.m_ElementCount;
-			m_HeapAddress = reinterpret_cast<T *>(Memory::Allocate(m_ElementCount * m_ElementSize));
-			std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
-			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+			if (this != &rhs)
+			{
+				// Deallocate existing memory to prevent leak
+				if (m_HeapAddress)
+				{
+					Memory::Deallocate(m_HeapAddress);
+				}
+				
+				m_ElementSize = rhs.m_ElementSize;
+				m_ElementCount = rhs.m_ElementCount;
+				m_HeapAddress = reinterpret_cast<T *>(Memory::Allocate(m_ElementCount * m_ElementSize));
+				std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
+				m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+			}
 			return *this;
 		}
 
@@ -128,7 +139,7 @@ namespace Inno
 
 		auto end()
 		{
-			return m_HeapAddress + m_ElementCount;
+			return m_HeapAddress + m_CurrentFreeIndex;
 		}
 
 		const auto begin() const
@@ -138,7 +149,7 @@ namespace Inno
 
 		const auto end() const
 		{
-			return m_HeapAddress + m_ElementCount;
+			return m_HeapAddress + m_CurrentFreeIndex;
 		}
 
 		const auto capacity() const
