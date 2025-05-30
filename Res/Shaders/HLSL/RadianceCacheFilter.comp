@@ -1,0 +1,159 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+#include "RayTracingTypes.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID : SV_GroupID;
+    uint3 groupThreadID : SV_GroupThreadID;
+    uint3 dispatchThreadID : SV_DispatchThreadID;
+    uint groupIndex : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB g_Frame;
+}
+
+[[vk::binding(0, 1)]]
+Texture2D<float4> in_RadianceCacheResults : register(t0);
+
+[[vk::binding(1, 1)]]
+Texture2D<float4> in_ProbePosition : register(t1);
+
+[[vk::binding(2, 1)]]
+Texture2D<float4> in_ProbeNormal : register(t2);
+
+[[vk::binding(0, 2)]]
+RWTexture2D<float4> out_FilteredRadianceCache : register(u0);
+
+// AMD GI 1.0 Algorithm 4: Sparse directional search in probe space
+uint FindClosestProbe(int2 pixel, int2 offset, uint mipLevel)
+{
+    int2 probeSpace = pixel / 8; // Transform to probe space
+    
+    for (uint mip = mipLevel; mip < 4; mip++) // Max 4 mip levels
+    {
+        int2 pos = probeSpace + offset;
+        pos = pos >> mip; // Scale by mip level
+        
+        // Check bounds
+        uint2 probeGridSize = uint2(g_Frame.viewportSize.xy) / 8;
+        if (any(pos < int2(0, 0)) || any(pos >= int2(probeGridSize)))
+            continue;
+            
+        // Check if probe exists (not sentinel)
+        float4 probePos = in_ProbePosition.Load(int3(pos, 0));
+        if (probePos.w > 0.0) // Valid probe
+        {
+            return (pos.y << 16) | pos.x; // Pack coordinates
+        }
+    }
+    
+    return 0xFFFFFFFF; // Sentinel value
+}
+
+// AMD GI 1.0 Algorithm 5: Radiance filtering in probe space
+// 7x7 separable sparse blur with angle-based rejection
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+    uint2 screenCoord = input.dispatchThreadID.xy;
+    uint2 probeCoord = screenCoord / 8;
+    
+    // Get current probe information
+    float4 currentProbePos = in_ProbePosition.Load(int3(probeCoord, 0));
+    if (currentProbePos.w <= 0.0) // Invalid probe
+    {
+        out_FilteredRadianceCache[screenCoord] = float4(0, 0, 0, 0);
+        return;
+    }
+    
+    float3 currentPosWS = currentProbePos.xyz;
+    float3 currentNormal = normalize(in_ProbeNormal.Load(int3(probeCoord, 0)).xyz);
+    
+    // Calculate direction for this texel within the probe
+    uint2 localCoord = screenCoord % 8;
+    float2 octUV = (float2(localCoord) + 0.5) / 8.0;
+    float3 sampleDir = DecodeOctahedral(octUV);
+    
+    // Only process hemisphere above surface
+    if (dot(sampleDir, currentNormal) <= 0.0)
+    {
+        out_FilteredRadianceCache[screenCoord] = float4(0, 0, 0, 0);
+        return;
+    }
+    
+    float4 currentRadiance = in_RadianceCacheResults.Load(int3(screenCoord, 0));
+    float currentDepth = length(currentPosWS - g_Frame.camera_posWS.xyz);
+    
+    // AMD GI 1.0 adaptive cell size heuristic
+    float cellSize = currentDepth * tan(g_Frame.aperture * 8.0 / max(g_Frame.viewportSize.x, g_Frame.viewportSize.y));
+    cellSize = max(cellSize, 0.1); // Minimum cell size
+    
+    // 7x7 separable blur - first pass (horizontal)
+    float4 filteredRadiance = currentRadiance;
+    float totalWeight = 1.0;
+    
+    // Horizontal blur (7 taps: -3, -2, -1, 0, +1, +2, +3)
+    for (int i = -3; i <= 3; i++)
+    {
+        if (i == 0) continue; // Skip center (already included)
+        
+        int2 offset = int2(i, 0);
+        uint packedProbe = FindClosestProbe(int2(screenCoord), offset, 0);
+        
+        if (packedProbe == 0xFFFFFFFF) continue; // No probe found
+        
+        // Unpack probe coordinates
+        int2 neighborProbeCoord = int2(packedProbe & 0xFFFF, packedProbe >> 16);
+        
+        // Get neighbor probe information
+        float4 neighborProbePos = in_ProbePosition.Load(int3(neighborProbeCoord, 0));
+        float3 neighborNormal = normalize(in_ProbeNormal.Load(int3(neighborProbeCoord, 0)).xyz);
+        
+        // AMD GI 1.0 validation tests
+        float plane_dist = abs(dot(neighborProbePos.xyz - currentPosWS, currentNormal));
+        float normal_check = dot(neighborNormal, currentNormal);
+        
+        if (plane_dist > cellSize || normal_check < 0.9)
+            continue; // Reject based on geometry
+            
+        // Calculate neighbor texel coordinate
+        uint2 neighborScreenCoord = uint2(neighborProbeCoord * 8) + localCoord;
+        float4 neighborRadiance = in_RadianceCacheResults.Load(int3(neighborScreenCoord, 0));
+        
+        // AMD GI 1.0 angle-based rejection for preserving occlusion
+        float neighborDepth = length(neighborProbePos.xyz - g_Frame.camera_posWS.xyz);
+        float hitDistClamped = min(neighborRadiance.a, currentRadiance.a);
+        float3 hitPoint = currentPosWS + sampleDir * hitDistClamped;
+        float3 directionToHit = normalize(hitPoint - currentPosWS);
+        float angleError = dot(sampleDir, directionToHit);
+        
+        if (angleError < cos(PI / 50.0)) // 3.6 degree threshold
+            continue;
+            
+        // Depth-based weight
+        float depthWeight = 1.0 / (1.0 + abs(currentDepth - neighborDepth) / cellSize);
+        
+        // Gaussian-like weight for 7x7 kernel
+        float spatialWeight = exp(-float(i * i) / 2.0);
+        float weight = depthWeight * spatialWeight;
+        
+        filteredRadiance += neighborRadiance * weight;
+        totalWeight += weight;
+    }
+    
+    // Normalize
+    if (totalWeight > 0.0)
+    {
+        filteredRadiance /= totalWeight;
+    }
+    
+    // Clamp to prevent negative values and fireflies
+    filteredRadiance.rgb = max(filteredRadiance.rgb, float3(0.0, 0.0, 0.0));
+    filteredRadiance.rgb = min(filteredRadiance.rgb, currentRadiance.rgb * 3.0 + 1.0);
+    
+    out_FilteredRadianceCache[screenCoord] = filteredRadiance;
+}

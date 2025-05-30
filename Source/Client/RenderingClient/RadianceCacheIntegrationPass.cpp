@@ -5,6 +5,7 @@
 #include "../../Engine/Services/TemplateAssetService.h"
 
 #include "RadianceCacheReprojectionPass.h"
+#include "RadianceCacheFilterPass.h"
 
 #include "../../Engine/Engine.h"
 
@@ -96,8 +97,8 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	// @TODO: Add a resource owner class to own the radiance cache result, this is confusing to read since the raytracing pass is the final one which writes to the result
-	auto l_readTexture = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
+	// Use filtered radiance cache instead of raw raytracing result
+	auto l_readTexture = RadianceCacheFilterPass::Get().GetFilteredResult();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 

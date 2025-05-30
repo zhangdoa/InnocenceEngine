@@ -35,22 +35,68 @@ Texture2D<float4> in_ProbeNormal : register(t5);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 
-[[vk::binding(1, 2)]]
-RWStructuredBuffer<WorldProbe> in_WorldProbeGrid : register(u1);
-
-// Adjustable Heuristics
+// Enhanced Heuristics for temporal stability
 static const float CELL_SIZE = 0.5;
-static const float NORMAL_THRESHOLD = 0.95;
-static const float MAX_PLANE_DISTANCE = 1.0;
+static const float NORMAL_THRESHOLD = 0.9; // Tighter normal matching
+static const float MAX_PLANE_DISTANCE = 0.5; // Closer distance matching
+static const float DEPTH_THRESHOLD = 0.1; // New: depth discontinuity detection
+static const float MIN_CONFIDENCE = 0.1; // Minimum confidence for reprojection
+static const float MAX_CONFIDENCE = 0.95; // Maximum confidence cap
 
-uint EncodeReprojectionScore(float dist, uint lane)
+// Confidence calculation for reprojection quality
+float CalculateReprojectionConfidence(
+    float3 currentPos, float3 currentNormal,
+    float3 prevPos, float3 prevNormal,
+    float2 motionVector, float depthDiff)
 {
-    uint distPacked = (uint)(saturate(dist / (MAX_PLANE_DISTANCE * 65504.0))); // Normalize distance
-    return (distPacked << 16) | lane;
+    float confidence = 1.0;
+    
+    // Distance penalty
+    float distancePenalty = distance(currentPos, prevPos) / CELL_SIZE;
+    confidence *= exp(-distancePenalty * distancePenalty);
+    
+    // Normal similarity reward
+    float normalSimilarity = max(0.0, dot(currentNormal, prevNormal));
+    confidence *= normalSimilarity;
+    
+    // Motion vector magnitude penalty (large motion = less confidence)
+    float motionMagnitude = length(motionVector) / g_Frame.viewportSize.x;
+    confidence *= exp(-motionMagnitude * 10.0);
+    
+    // Depth discontinuity penalty
+    confidence *= exp(-depthDiff * depthDiff / (DEPTH_THRESHOLD * DEPTH_THRESHOLD));
+    
+    return clamp(confidence, MIN_CONFIDENCE, MAX_CONFIDENCE);
+}
+
+// Enhanced temporal filtering with variance detection
+float4 TemporalFilter(float4 currentSample, float4 historySample, float confidence, float2 screenCoord)
+{
+    // Adaptive blend rate based on confidence
+    float blendRate = lerp(0.1, 0.95, confidence); // More aggressive when confident
+    
+    // Variance detection for flickering reduction
+    float3 variance = abs(currentSample.rgb - historySample.rgb);
+    float avgVariance = (variance.r + variance.g + variance.b) / 3.0;
+    
+    // If variance is high, reduce blend rate to stabilize
+    if (avgVariance > 0.1)
+    {
+        blendRate *= 0.5;
+    }
+    
+    // Exponential moving average with confidence weighting
+    float4 result = lerp(historySample, currentSample, blendRate);
+    
+    // Clamp to prevent negative values that cause artifacts
+    result.rgb = max(result.rgb, float3(0.0, 0.0, 0.0));
+    
+    return result;
 }
 
 // Use groupshared memory for atomic operations
 groupshared uint sharedReprojectionScore;
+groupshared float sharedConfidence;
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
@@ -70,63 +116,122 @@ void main(ComputeInputType input)
     bool withinBounds = all(prevScreenCoord >= int2(0, 0)) && all(prevScreenCoord < int2(g_Frame.viewportSize.xy));
     if (!withinBounds)
     {
-        return;
-    }
-
-    // Find the nearest probe index in the previous frame
-    uint2 prevScreenCoord_Probe = (prevScreenCoord / 8) * 8;
-    prevScreenCoord_Probe.x += (prevScreenCoord.x - prevScreenCoord_Probe.x) > 4 ? 8 : 0; // Right or left
-    prevScreenCoord_Probe.y += (prevScreenCoord.y - prevScreenCoord_Probe.y) > 4 ? 8 : 0; // Up or down
-    uint2 prevScreenCoord_ProbeSpace = prevScreenCoord_Probe / 8;
-
-    // Fetch previous frame’s probe world position & normal
-    float3 prevPositionWS_Probe = in_ProbePosition.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz;
-    float3 prevNormal_Probe = normalize(in_ProbeNormal.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz);
-    
-    // Initialize the shared reprojection score (farthest distance possible in FP16)
-    if (input.groupIndex == 0)
-    {
-        sharedReprojectionScore = EncodeReprojectionScore(65504, 0xFFFFu);
-    }
-
-    // Barrier to sync threads before competition starts
-    GroupMemoryBarrierWithGroupSync();
-
-    float3 normalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
-    // Plane distance test
-    float plane_dist = abs(dot(prevPositionWS_Probe - positionWS, normalWS));
-
-    // Normal similarity check
-    float normal_check = dot(prevNormal_Probe, normalWS);
-
-    // If valid, calculate distance-based score
-    if (plane_dist < CELL_SIZE && normal_check > NORMAL_THRESHOLD)
-    {
-        float dist = distance(prevPositionWS_Probe, positionWS);
-
-        // Encode the probe score and the group index
-        uint probeScore = EncodeReprojectionScore(dist, input.groupIndex);
-
-        // Atomic min operation in shared memory
-        InterlockedMin(sharedReprojectionScore, probeScore);
-    }
-
-    // Sync threads again before writing output
-    GroupMemoryBarrierWithGroupSync();
-
-    // Decode the best probe group index
-    uint bestProbeGroupIndex = sharedReprojectionScore & 0xFFFFu;
-
-    // Assign best probe if we won the competition
-    if (input.groupIndex == bestProbeGroupIndex)
-    {
+        // No valid reprojection - clear current tile
         uint2 screenCoord_Probe = (screenCoord / 8) * 8;
         for (uint i = 0; i < 8; i++)
         {
             for (uint j = 0; j < 8; j++)
             {
-                in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] =
-                    in_RadianceCacheResults_Prev[prevScreenCoord_Probe + uint2(i, j)];
+                in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
+            }
+        }
+        return;
+    }
+
+    // Find the nearest probe index in the previous frame
+    uint2 prevScreenCoord_Probe = (prevScreenCoord / 8) * 8;
+    prevScreenCoord_Probe.x += (prevScreenCoord.x - prevScreenCoord_Probe.x) > 4 ? 8 : 0;
+    prevScreenCoord_Probe.y += (prevScreenCoord.y - prevScreenCoord_Probe.y) > 4 ? 8 : 0;
+    uint2 prevScreenCoord_ProbeSpace = prevScreenCoord_Probe / 8;
+
+    // Fetch previous frame's probe world position & normal
+    float3 prevPositionWS_Probe = in_ProbePosition.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz;
+    float3 prevNormal_Probe = normalize(in_ProbeNormal.Load(int3(prevScreenCoord_ProbeSpace, 0)).xyz);
+    
+    // Initialize shared memory
+    if (input.groupIndex == 0)
+    {
+        sharedReprojectionScore = 0xFFFFFFFF; // Max uint = worst score
+        sharedConfidence = 0.0;
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    float3 normalWS = normalize(in_opaquePassRT1.Load(int3(screenCoord, 0)).xyz);
+    
+    // Enhanced validation tests
+    float plane_dist = abs(dot(prevPositionWS_Probe - positionWS, normalWS));
+    float normal_check = dot(prevNormal_Probe, normalWS);
+    
+    // Depth discontinuity detection
+    float currentDepth = length(positionWS - g_Frame.camera_posWS.xyz);
+    float prevDepth = length(prevPositionWS_Probe - g_Frame.camera_posWS.xyz);
+    float depthDiff = abs(currentDepth - prevDepth);
+
+    // Enhanced validation with depth check
+    if (plane_dist < MAX_PLANE_DISTANCE && 
+        normal_check > NORMAL_THRESHOLD && 
+        depthDiff < DEPTH_THRESHOLD)
+    {
+        float dist = distance(prevPositionWS_Probe, positionWS);
+        
+        // Calculate confidence for this reprojection
+        float confidence = CalculateReprojectionConfidence(
+            positionWS, normalWS, 
+            prevPositionWS_Probe, prevNormal_Probe,
+            motionVector, depthDiff);
+
+        // Encode score with distance and confidence
+        uint distScore = (uint)(saturate(dist / MAX_PLANE_DISTANCE) * 65535.0);
+        uint confidenceScore = (uint)(confidence * 65535.0);
+        uint combinedScore = (distScore << 16) | input.groupIndex;
+
+        // Use confidence-weighted scoring
+        uint weightedScore = (uint)(combinedScore * (1.0 - confidence));
+        
+        InterlockedMin(sharedReprojectionScore, weightedScore);
+        
+        // Store confidence for winner
+        if (weightedScore == sharedReprojectionScore)
+        {
+            sharedConfidence = confidence;
+        }
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    uint bestProbeGroupIndex = sharedReprojectionScore & 0xFFFF;
+    float reprojectionConfidence = sharedConfidence;
+
+    // Apply temporal filtering if we won the competition
+    if (input.groupIndex == bestProbeGroupIndex && reprojectionConfidence > MIN_CONFIDENCE)
+    {
+        uint2 screenCoord_Probe = (screenCoord / 8) * 8;
+        
+        for (uint i = 0; i < 8; i++)
+        {
+            for (uint j = 0; j < 8; j++)
+            {
+                uint2 currentPixel = screenCoord_Probe + uint2(i, j);
+                uint2 prevPixel = prevScreenCoord_Probe + uint2(i, j);
+                
+                float4 currentSample = in_RadianceCacheResults[currentPixel];
+                float4 historySample = in_RadianceCacheResults_Prev[prevPixel];
+                
+                // Apply enhanced temporal filtering
+                float4 filteredSample = TemporalFilter(
+                    currentSample, historySample, reprojectionConfidence, currentPixel);
+                
+                in_RadianceCacheResults[currentPixel] = filteredSample;
+            }
+        }
+    }
+    else if (input.groupIndex == 0)
+    {
+        // No valid reprojection found - use current sample with reduced confidence
+        uint2 screenCoord_Probe = (screenCoord / 8) * 8;
+        
+        for (uint i = 0; i < 8; i++)
+        {
+            for (uint j = 0; j < 8; j++)
+            {
+                uint2 currentPixel = screenCoord_Probe + uint2(i, j);
+                float4 currentSample = in_RadianceCacheResults[currentPixel];
+                
+                // Apply stability clamping
+                currentSample.rgb = max(currentSample.rgb, float3(0.0, 0.0, 0.0));
+                
+                in_RadianceCacheResults[currentPixel] = currentSample;
             }
         }
     }

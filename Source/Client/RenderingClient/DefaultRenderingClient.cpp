@@ -10,6 +10,7 @@
 #include "SSAOPass.h"
 #include "RadianceCacheReprojectionPass.h"
 #include "RadianceCacheRaytracingPass.h"
+#include "RadianceCacheFilterPass.h"
 #include "RadianceCacheIntegrationPass.h"
 #include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
@@ -113,6 +114,7 @@ namespace Inno
 
 		RadianceCacheReprojectionPass::Get().Setup();
 		RadianceCacheRaytracingPass::Get().Setup();
+		RadianceCacheFilterPass::Get().Setup();
 		RadianceCacheIntegrationPass::Get().Setup();
 
 		SSAOPass::Get().Setup();
@@ -178,6 +180,7 @@ namespace Inno
 
 		RadianceCacheReprojectionPass::Get().Initialize();
 		RadianceCacheRaytracingPass::Get().Initialize();
+		RadianceCacheFilterPass::Get().Initialize();
 		RadianceCacheIntegrationPass::Get().Initialize();
 
 		SSAOPass::Get().Initialize();
@@ -251,6 +254,7 @@ namespace Inno
 
 		RadianceCacheReprojectionPass::Get().PrepareCommandList();
 		RadianceCacheRaytracingPass::Get().PrepareCommandList();
+		RadianceCacheFilterPass::Get().PrepareCommandList();
 		RadianceCacheIntegrationPass::Get().PrepareCommandList();
 
 		SSAOPass::Get().PrepareCommandList();
@@ -355,9 +359,16 @@ namespace Inno
 			l_renderingServer->SignalOnGPU(RadianceCacheRaytracingPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
 
-		if (RadianceCacheIntegrationPass::Get().GetStatus() == ObjectStatus::Activated)
+		if (RadianceCacheFilterPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->WaitOnGPU(RadianceCacheRaytracingPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->ExecuteCommandList(RadianceCacheFilterPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(RadianceCacheFilterPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		}
+
+		if (RadianceCacheIntegrationPass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			l_renderingServer->WaitOnGPU(RadianceCacheFilterPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 			l_renderingServer->SignalOnGPU(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
@@ -591,6 +602,7 @@ namespace Inno
 		SSAOPass::Get().Terminate();
 
 		RadianceCacheIntegrationPass::Get().Terminate();
+		RadianceCacheFilterPass::Get().Terminate();
 		RadianceCacheRaytracingPass::Get().Terminate();
 		RadianceCacheReprojectionPass::Get().Terminate();
 		

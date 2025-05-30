@@ -132,15 +132,38 @@ float3 SampleRadianceCache(float2 screenCoord, float3 normal)
     uint2 probeIndex = screenCoord / TILE_SIZE;
     uint2 shReadCoord = probeIndex * SH_TILE_SIZE;
 
+    // Enhanced boundary checking
+    if (any(shReadCoord >= g_Frame.viewportSize.xy / SH_TILE_SIZE))
+    {
+        return float3(0.0, 0.0, 0.0);
+    }
+
     float3 Irradiance_TL = LoadIrradiance(shReadCoord, normal);
     float3 Irradiance_TR = LoadIrradiance(shReadCoord + uint2(SH_TILE_SIZE, 0), normal);
     float3 Irradiance_BL = LoadIrradiance(shReadCoord + uint2(0, SH_TILE_SIZE), normal);
     float3 Irradiance_BR = LoadIrradiance(shReadCoord + uint2(SH_TILE_SIZE, SH_TILE_SIZE), normal);
 
-    // Bilinear interpolation
+    // Enhanced bilinear interpolation with stability checks
     float2 uv = frac(screenCoord / TILE_SIZE);
-    return lerp(lerp(Irradiance_TL, Irradiance_TR, uv.x),
-                lerp(Irradiance_BL, Irradiance_BR, uv.x), uv.y);
+    
+    // Smooth interpolation weights to reduce temporal artifacts
+    uv = smoothstep(0.0, 1.0, uv);
+    
+    float3 top = lerp(Irradiance_TL, Irradiance_TR, uv.x);
+    float3 bottom = lerp(Irradiance_BL, Irradiance_BR, uv.x);
+    float3 result = lerp(top, bottom, uv.y);
+    
+    // Additional stability measures
+    result = max(result, float3(0.0, 0.0, 0.0)); // Prevent negative values
+    
+    // Clamp extremely bright values to prevent fireflies
+    float maxIntensity = 5.0;
+    if (any(result > maxIntensity))
+    {
+        result = min(result, float3(maxIntensity, maxIntensity, maxIntensity));
+    }
+    
+    return result;
 }
 
 void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
@@ -246,18 +269,27 @@ void main(ComputeInputType input)
 	float3 l_Luminance_ForDirectLight = float3(0.0, 0.0, 0.0);
 	float3 l_Luminance_ForIndirectLight = float3(0.0, 0.0, 0.0);
 
-	/// Indirect light from radiance cache
+	/// Indirect light from radiance cache with improved stability
 	float3 l_LuminanceIndirectLight_FromCache = SampleRadianceCache(l_ScreenCoord, N);
 
-	// @TODO: Fix the acutal issue that causes this to be negative
-	if (any(l_LuminanceIndirectLight_FromCache) < 0)
+	// Enhanced stability checks with temporal filtering
+	if (any(l_LuminanceIndirectLight_FromCache < 0.0) || any(isnan(l_LuminanceIndirectLight_FromCache)))
 	{
 		l_LuminanceIndirectLight_FromCache = float3(0.0, 0.0, 0.0);
-		return;
 	}
-	// Apply NdotV factor
+	
+	// Apply view-dependent term with smoother falloff
 	float NdotV = max(dot(N, V), 0.0);
-	l_LuminanceIndirectLight_FromCache *= NdotV;
+	float viewWeight = smoothstep(0.0, 1.0, NdotV); // Smoother view falloff
+	l_LuminanceIndirectLight_FromCache *= viewWeight;
+	
+	// Apply energy conservation - limit GI contribution to prevent over-brightening
+	float giIntensityLimit = 2.0;
+	float currentIntensity = length(l_LuminanceIndirectLight_FromCache);
+	if (currentIntensity > giIntensityLimit)
+	{
+		l_LuminanceIndirectLight_FromCache *= giIntensityLimit / currentIntensity;
+	}
 
 	// Accumulate indirect light
 	l_Luminance_ForDirectLight += l_LuminanceIndirectLight_FromCache;

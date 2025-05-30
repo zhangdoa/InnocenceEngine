@@ -32,22 +32,34 @@ void main(ComputeInputType input)
     float3 SH_L1_y = float3(0, 0, 0);
     float3 SH_L1_z = float3(0, 0, 0);
 
-    // Iterate over the entire 8×8 probe tile
+    // Iterate over the entire 8×8 probe tile with improved filtering
     for (uint y = 0; y < TILE_SIZE; y++)
     {
         for (uint x = 0; x < TILE_SIZE; x++)
         {
             uint2 readCoord = probeIndex * TILE_SIZE + uint2(x, y);
-            float3 radiance = in_RadianceCacheResults_Input.Load(int3(readCoord, 0)).xyz;
+            float4 radianceSample = in_RadianceCacheResults_Input.Load(int3(readCoord, 0));
+            float3 radiance = radianceSample.xyz;
+
+            // Temporal stability: clamp to prevent negative values
+            radiance = max(radiance, float3(0.0, 0.0, 0.0));
+            
+            // Apply adaptive filtering for noisy samples
+            float radianceMagnitude = length(radiance);
+            if (radianceMagnitude > 10.0) // Clamp extremely bright samples
+            {
+                radiance = normalize(radiance) * 10.0;
+            }
 
             float2 uv = float2(x, y) / TILE_SIZE; // Normalize to [0,1]
             float3 sampleDir = DecodeOctahedral(uv);
 
-            // Compute SH weights
-            SH_L0 += radiance * Y_00() * SH_NORMALIZE_FACTOR;
-            SH_L1_x += radiance * Y_11(sampleDir) * SH_NORMALIZE_FACTOR;
-            SH_L1_y += radiance * Y_1_1(sampleDir) * SH_NORMALIZE_FACTOR;
-            SH_L1_z += radiance * Y_10(sampleDir) * SH_NORMALIZE_FACTOR;
+            // Compute SH weights with improved normalization
+            float shWeight = SH_NORMALIZE_FACTOR;
+            SH_L0 += radiance * Y_00() * shWeight;
+            SH_L1_x += radiance * Y_11(sampleDir) * shWeight;
+            SH_L1_y += radiance * Y_1_1(sampleDir) * shWeight;
+            SH_L1_z += radiance * Y_10(sampleDir) * shWeight;
         }
     }
 

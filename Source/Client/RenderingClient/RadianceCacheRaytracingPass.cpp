@@ -37,7 +37,7 @@ bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(11);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(12);
 
 	m_ShaderStage = ShaderStage::RayGen | ShaderStage::ClosestHit | ShaderStage::AnyHit | ShaderStage::Miss;
 
@@ -84,47 +84,54 @@ bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = m_ShaderStage;
 
-	// t5 - radiance cache from previous frame
+	// t5 - light pass illuminance result
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 5;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_ShaderStage = m_ShaderStage;
 
-	// u0 - radiance cache from current frame
+	// t6 - previous frame radiance cache
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 6;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_TextureUsage = TextureUsage::ColorAttachment;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_ShaderStage = m_ShaderStage;
 
-	// u1 - world probe grid
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Buffer;
+	// u0 - radiance cache from current frame
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = m_ShaderStage;
 
-	// u2 - probe position
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
+	// u1 - world probe grid
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_TextureUsage = TextureUsage::ColorAttachment;	
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ShaderStage = m_ShaderStage;
 
-	// u3 - probe normal
+	// u2 - probe position
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 3;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ColorAttachment;	
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage = m_ShaderStage;
+
+	// u3 - probe normal
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage = m_ShaderStage;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -187,10 +194,11 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 5);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, LightPass::Get().GetIlluminanceResult(), 6);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_result, 7);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 8);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 9);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 10);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), 7);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_result, 8);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 9);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 10);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
 
 	auto dispatch_x = (l_result->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;  // Round up
 	auto dispatch_y = (l_result->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;  // Round up
