@@ -809,8 +809,7 @@ bool IRenderingServer::PrepareGlobalCommands()
 		}
 	}
 
-	// Disabled until TDR caused by TLAS rebuild is fixed.
-	//PrepareRayTracing(l_commandList);
+	PrepareRayTracing(l_commandList);
 
 	Close(l_commandList, GPUEngineType::Graphics);
 
