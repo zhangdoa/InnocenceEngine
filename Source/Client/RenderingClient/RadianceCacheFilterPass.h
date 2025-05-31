@@ -16,6 +16,8 @@ namespace Inno
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
+		RenderPassComponent* GetHorizontalRenderPassComp();
+		RenderPassComponent* GetVerticalRenderPassComp();
 
 		TextureComponent* GetFilteredResult();
 
@@ -23,8 +25,15 @@ namespace Inno
 		const uint32_t TILE_SIZE = 8;
 
 		ObjectStatus m_ObjectStatus;
-		RenderPassComponent* m_RenderPassComp;
-		ShaderProgramComponent* m_ShaderProgramComp;
+		
+		// Horizontal pass components
+		RenderPassComponent* m_HorizontalRenderPassComp;
+		ShaderProgramComponent* m_HorizontalShaderProgramComp;
+		TextureComponent* m_HorizontalFilteredCache;
+		
+		// Vertical pass components
+		RenderPassComponent* m_VerticalRenderPassComp;
+		ShaderProgramComponent* m_VerticalShaderProgramComp;
 		TextureComponent* m_FilteredRadianceCache;
 
 		ShaderStage m_ShaderStage;

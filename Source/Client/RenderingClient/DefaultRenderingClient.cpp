@@ -362,13 +362,18 @@ namespace Inno
 		if (RadianceCacheFilterPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_renderingServer->WaitOnGPU(RadianceCacheRaytracingPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
-			l_renderingServer->ExecuteCommandList(RadianceCacheFilterPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(RadianceCacheFilterPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+			// Execute horizontal pass first
+			l_renderingServer->ExecuteCommandList(RadianceCacheFilterPass::Get().GetHorizontalRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(RadianceCacheFilterPass::Get().GetHorizontalRenderPassComp(), GPUEngineType::Compute);
+			// Wait for horizontal pass completion, then execute vertical pass
+			l_renderingServer->WaitOnGPU(RadianceCacheFilterPass::Get().GetHorizontalRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->ExecuteCommandList(RadianceCacheFilterPass::Get().GetVerticalRenderPassComp(), GPUEngineType::Compute);
+			l_renderingServer->SignalOnGPU(RadianceCacheFilterPass::Get().GetVerticalRenderPassComp(), GPUEngineType::Compute);
 		}
 
 		if (RadianceCacheIntegrationPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(RadianceCacheFilterPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_renderingServer->WaitOnGPU(RadianceCacheFilterPass::Get().GetVerticalRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 			l_renderingServer->SignalOnGPU(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
 		}
