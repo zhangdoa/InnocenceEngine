@@ -14,14 +14,24 @@ uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bind
     
     if (l_rhs->m_ObjectStatus != ObjectStatus::Activated)
     {
-        Log(Error, "TextureComponent ", l_rhs, " is not activated.");
+        Log(Error, l_rhs, " is not activated.");
         return 0;
     }
 
-    auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
+    // Use proper device memory index based on IsMultiBuffer flag
+    auto l_deviceMemoryIndex = l_rhs->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+    
+    // Bounds check
+    if (l_deviceMemoryIndex >= l_rhs->m_DeviceMemories.size())
+    {
+        Log(Error, l_rhs, " device memory index ", l_deviceMemoryIndex, " out of bounds (size: ", l_rhs->m_DeviceMemories.size(), ")");
+        return 0;
+    }
+    
+    auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[l_deviceMemoryIndex]);
     if (!l_DX12DeviceMemory)
     {
-        Log(Error, "TextureComponent ", l_rhs, " does not have a valid device memory.");
+        Log(Error, l_rhs, " does not have a valid device memory at index ", l_deviceMemoryIndex);
         return 0;
     }
 
@@ -42,7 +52,24 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
 {
     // @TODO: Support different pixel data type
     auto l_rhs = reinterpret_cast<DX12TextureComponent*>(TextureComp);
-    auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
+    
+    // Use proper device memory index based on IsMultiBuffer flag
+    auto l_deviceMemoryIndex = l_rhs->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+    
+    // Bounds check
+    if (l_deviceMemoryIndex >= l_rhs->m_DeviceMemories.size())
+    {
+        Log(Error, l_rhs, " device memory index ", l_deviceMemoryIndex, " out of bounds (size: ", l_rhs->m_DeviceMemories.size(), ")");
+        return {};
+    }
+    
+    auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[l_deviceMemoryIndex]);
+    if (!l_DeviceMemory)
+    {
+        Log(Error, l_rhs, " does not have a valid device memory at index ", l_deviceMemoryIndex);
+        return {};
+    }
+    
     auto l_srcDesc = l_DeviceMemory->m_DefaultHeapBuffer->GetDesc();
 
     std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> l_footprints;
