@@ -592,15 +592,10 @@ bool DX12RenderingServer::GenerateMipmapImpl(DX12TextureComponent* DX12TextureCo
 	}
 
 	auto l_computeCommandList = l_DX12CommandList->m_ComputeCommandList;
-	if (!l_computeCommandList)
+	auto l_directCommandList = l_DX12CommandList->m_DirectCommandList;
+	if (!l_computeCommandList || !l_directCommandList)
 	{
-		Log(Error, DX12TextureComp->m_InstanceName, " Invalid compute command list");
-		return false;
-	}
-
-	if (!TryToTransitState(DX12TextureComp, commandList, Accessibility::ReadWrite))
-	{
-		Log(Error, DX12TextureComp->m_InstanceName, " Failed to transition texture to UAV state");
+		Log(Error, DX12TextureComp->m_InstanceName, " Invalid command lists");
 		return false;
 	}
 
@@ -630,6 +625,14 @@ bool DX12RenderingServer::GenerateMipmapImpl(DX12TextureComponent* DX12TextureCo
 		{
 			Log(Error, DX12TextureComp->m_InstanceName, " Invalid device memory at index ", deviceMemoryIndex);
 			return false;
+		}
+
+		// Transition this device memory to UAV state for mipmap generation
+		auto l_writeState = DX12TextureComp->m_WriteState;
+		if (DX12TextureComp->m_CurrentState != l_writeState)
+		{
+			auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), DX12TextureComp->m_CurrentState, l_writeState);
+			l_directCommandList->ResourceBarrier(1, &l_transition);
 		}
 
 		for (uint32_t mipLevel = 0; mipLevel < l_mipLevels - 1; mipLevel++)
@@ -665,19 +668,26 @@ bool DX12RenderingServer::GenerateMipmapImpl(DX12TextureComponent* DX12TextureCo
 			l_computeCommandList->Dispatch(dispatchX, dispatchY, dispatchZ);
 
 			D3D12_RESOURCE_BARRIER l_uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get());
-			l_computeCommandList->ResourceBarrier(1, &l_uavBarrier);
+			l_directCommandList->ResourceBarrier(1, &l_uavBarrier);
+		}
+
+		// Transition static textures back to read state after mipmap generation
+		if (isStaticTexture)
+		{
+			auto l_readState = DX12TextureComp->m_ReadState;
+			auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), l_writeState, l_readState);
+			l_directCommandList->ResourceBarrier(1, &l_transition);
 		}
 	}
 
-	// Transition back to appropriate read state after mipmap generation
+	// Update the texture's current state
 	if (isStaticTexture)
 	{
-		// Material textures should return to shader resource state for sampling
-		if (!TryToTransitState(DX12TextureComp, commandList, Accessibility::ReadOnly))
-		{
-			Log(Error, DX12TextureComp->m_InstanceName, " Failed to transition texture back to read state");
-			return false;
-		}
+		DX12TextureComp->m_CurrentState = DX12TextureComp->m_ReadState;
+	}
+	else
+	{
+		DX12TextureComp->m_CurrentState = DX12TextureComp->m_WriteState;
 	}
 
 	Log(Verbose, DX12TextureComp->m_InstanceName, " Successfully generated ", l_mipLevels, " mip levels for ", (endIndex - startIndex), " device memory/memories with proper synchronization");
