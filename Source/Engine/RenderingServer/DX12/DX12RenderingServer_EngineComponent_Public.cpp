@@ -9,7 +9,21 @@ using namespace DX12Helper;
 uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
 {
     auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
+    if (!l_rhs)
+        return 0;
+    
+    if (l_rhs->m_ObjectStatus != ObjectStatus::Activated)
+    {
+        Log(Error, "TextureComponent ", l_rhs, " is not activated.");
+        return 0;
+    }
+
     auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
+    if (!l_DX12DeviceMemory)
+    {
+        Log(Error, "TextureComponent ", l_rhs, " does not have a valid device memory.");
+        return 0;
+    }
 
     if (bindingAccessibility == Accessibility::ReadOnly)
         return l_DX12DeviceMemory->m_SRV.Handle.m_Index;
@@ -215,44 +229,32 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
 }
 
 // @TODO: This is expensive, it should be running entirely on the GPU
-bool DX12RenderingServer::GenerateMipmap(TextureComponent* rhs)
+bool DX12RenderingServer::GenerateMipmap(TextureComponent* rhs, ICommandList* commandList)
 {
-    // auto l_rhs = reinterpret_cast<DX12TextureComponent *>(rhs);
-
-    // if(l_rhs->m_TextureDesc.IsSRGB)
-    // {
-    // 	auto l_copy = reinterpret_cast<DX12TextureComponent*>(AddTextureComponent((l_rhs->m_InstanceName.c_str() + std::string("_MipCopy/")).c_str()));
-    // 	l_copy->m_TextureDesc = l_rhs->m_TextureDesc;
-    // 	l_copy->m_InitialData = l_rhs->m_InitialData;
-    // 	l_copy->m_TextureDesc.IsSRGB = false;
-    // 	Initialize(l_copy);
-
-    // 	D3D12_RESOURCE_BARRIER barrier[2] = {};
-    // 	barrier[0].Type = barrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    // 	barrier[0].Transition.Subresource = barrier[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    // 	barrier[0].Transition.pResource = l_copy->m_DefaultHeapBuffer.Get();
-    // 	barrier[0].Transition.StateBefore = l_copy->m_CurrentState;
-    // 	barrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-
-    // 	barrier[1].Transition.pResource = l_rhs->m_DefaultHeapBuffer.Get();
-    // 	barrier[1].Transition.StateBefore = l_rhs->m_CurrentState;
-    // 	barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-
-    // 	auto l_commandList = GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    // 	l_commandList->Reset(GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT).Get(), nullptr);
-
-    // 	l_commandList->ResourceBarrier(2, barrier);
-
-    // 	// Copy the entire resource back
-    // 	l_commandList->CopyResource(l_rhs->m_DefaultHeapBuffer.Get(), l_copy->m_DefaultHeapBuffer.Get());
-    // 	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
-
-    // 	ExecuteCommandListAndWait(l_commandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-    // 	return true;
-    // }
-
-    // return GenerateMipmapImpl(l_rhs);
-
-    return true;
+    auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
+    
+    // Skip SRGB textures for now due to complexity - focus on core functionality
+    if(l_rhs->m_TextureDesc.IsSRGB)
+    {
+        Log(Warning, "SRGB mipmap generation not currently supported, skipping texture");
+        return true;
+    }
+    
+    // If no command list provided, create temporary ones (slow path for runtime)
+    if (!commandList)
+    {
+        DX12CommandList l_tempCommandList = {};
+        l_tempCommandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
+        l_tempCommandList.m_ComputeCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE));
+        
+        bool result = GenerateMipmapImpl(l_rhs, &l_tempCommandList);
+        
+        // Execute and wait for completion
+        ExecuteCommandListAndWait(l_tempCommandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
+        ExecuteCommandListAndWait(l_tempCommandList.m_ComputeCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_COMPUTE));
+        
+        return result;
+    }
+    
+    return GenerateMipmapImpl(l_rhs, commandList);
 }

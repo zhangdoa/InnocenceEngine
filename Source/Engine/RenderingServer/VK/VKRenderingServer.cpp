@@ -538,8 +538,10 @@ std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassComponent *c
 	return std::vector<Vec4>();
 }
 
-bool VKRenderingServer::GenerateMipmap(TextureComponent *rhs)
+bool VKRenderingServer::GenerateMipmap(TextureComponent *rhs, ICommandList* commandList)
 {
+	// Currently Vulkan GenerateMipmap is not implemented but accepts command list parameter
+	// for API compatibility with DX12 implementation
 	return true;
 }
 

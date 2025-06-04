@@ -8,14 +8,6 @@
 
 using namespace Inno;
 
-namespace Inno
-{
-	namespace DX12Helper
-	{
-		UINT GetMipLevels(TextureDesc textureDesc);
-	}
-}
-
 D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDesc(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_DESC l_result = {};
@@ -300,13 +292,32 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 
 uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 {
-	uint32_t textureMipLevels = 1;
-	if (textureDesc.UseMipMap)
+	if (!textureDesc.UseMipMap)
 	{
-		textureMipLevels = 0;
+		return 1;
 	}
 
-	return textureMipLevels;
+	// Calculate mip levels based on texture dimensions
+	uint32_t maxDimension = std::max(textureDesc.Width, textureDesc.Height);
+	if (textureDesc.Sampler == TextureSampler::Sampler3D)
+	{
+		maxDimension = std::max(maxDimension, textureDesc.DepthOrArraySize);
+	}
+
+	if (maxDimension == 0)
+	{
+		Log(Error, "Invalid texture dimensions (Width: ", textureDesc.Width, ", Height: ", textureDesc.Height, ", Depth: ", textureDesc.DepthOrArraySize, ")");
+		return 1;
+	}
+
+	// Standard mip level calculation: 1 + floor(log2(max_dimension))
+	uint32_t mipLevels = 1 + static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(maxDimension))));
+	
+	// Limit to maximum 5 mip levels - we don't need to go down to 1x1
+	const uint32_t MAX_MIP_LEVELS = 5;
+	mipLevels = std::min(mipLevels, MAX_MIP_LEVELS);
+
+	return mipLevels;
 }
 
 D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDesc textureDesc)
@@ -402,18 +413,6 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDesc textureDesc)
 	return l_result;
 }
 
-UINT DX12Helper::GetMipLevels(TextureDesc textureDesc)
-{
-	if (textureDesc.UseMipMap)
-	{
-		return 4;
-	}
-	else
-	{
-		return 1;
-	}
-}
-
 D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDesc textureDesc, D3D12_RESOURCE_DESC D3D12TextureDesc, uint32_t mostDetailedMip)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_result = {};
@@ -432,39 +431,43 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDesc textureDesc, 
 		l_result.Format = D3D12TextureDesc.Format;
 	}
 
+	// Calculate remaining mip levels from mostDetailedMip to end
+	uint32_t totalMipLevels = GetTextureMipLevels(textureDesc);
+	uint32_t remainingMipLevels = (mostDetailedMip < totalMipLevels) ? (totalMipLevels - mostDetailedMip) : 1;
+
 	switch (textureDesc.Sampler)
 	{
 	case TextureSampler::Sampler1D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = mostDetailedMip;
-		l_result.Texture1D.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture1D.MipLevels = remainingMipLevels;
 		break;
 	case TextureSampler::Sampler2D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = mostDetailedMip;
-		l_result.Texture2D.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture2D.MipLevels = remainingMipLevels;
 		break;
 	case TextureSampler::Sampler3D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = mostDetailedMip;
-		l_result.Texture3D.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture3D.MipLevels = remainingMipLevels;
 		break;
 	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MostDetailedMip = mostDetailedMip;
-		l_result.Texture1DArray.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture1DArray.MipLevels = remainingMipLevels;
 		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::Sampler2DArray:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MostDetailedMip = mostDetailedMip;
-		l_result.Texture2DArray.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture2DArray.MipLevels = remainingMipLevels;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::SamplerCubemap:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		l_result.TextureCube.MostDetailedMip = mostDetailedMip;
-		l_result.TextureCube.MipLevels = GetMipLevels(textureDesc);
+		l_result.TextureCube.MipLevels = remainingMipLevels;
 		break;
 	default:
 		break;

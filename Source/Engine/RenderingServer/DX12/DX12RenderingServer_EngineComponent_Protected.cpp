@@ -191,7 +191,8 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 	l_rhs->m_ReadState = GetTextureReadState(l_rhs->m_TextureDesc);
 
 	l_rhs->m_CurrentState = l_rhs->m_ReadState;
-
+	
+	// First allocate device memories before creating SRVs/UAVs
 	if (l_rhs->m_TextureDesc.IsMultiBuffer)
 		l_rhs->m_DeviceMemories.resize(GetSwapChainImageCount());
 	else
@@ -279,36 +280,44 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs)
 		}
 	}
 
-	ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-	CreateSRV(l_rhs, 0);
-	// if (l_rhs->m_TextureDesc.UseMipMap)
-	// {
-	// 	for (uint32_t TopMip = 1; TopMip < 4; TopMip++)
-	// 	{
-	// 		CreateSRV(l_rhs, TopMip);
-	// 	}
-	// }
-
+	// Initialize SRV/UAV arrays after device memories are created
+	uint32_t mipLevels = l_rhs->m_DX12TextureDesc.MipLevels;
+	
+	// Resize arrays in each device memory
+	for (size_t i = 0; i < l_rhs->m_DeviceMemories.size(); i++)
+	{
+		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[i]);
+		l_DX12DeviceMemory->m_MipLevels = mipLevels;
+		l_DX12DeviceMemory->m_SRVs.resize(mipLevels > 0 ? mipLevels : 1);  // At least one SRV
+		l_DX12DeviceMemory->m_UAVs.resize(mipLevels);                      // UAV for all mips
+	}
+	
+	// Create SRVs for all mip levels - other code may expect them
+	for (uint32_t mip = 0; mip < mipLevels; mip++)
+	{
+		CreateSRV(l_rhs, mip);
+	}
+	
+	// Create UAVs if texture supports them (UAVs are used for many purposes, not just mipmaps)
 	if (l_rhs->m_TextureDesc.Usage != TextureUsage::DepthAttachment
 		&& l_rhs->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment)
 	{
 		if (!l_rhs->m_TextureDesc.IsSRGB)
 		{
-			CreateUAV(l_rhs, 0);
-			// if (l_rhs->m_TextureDesc.UseMipMap)
-			// {
-			// 	for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
-			// 	{
-			// 		auto l_UAV = CreateUAV(l_rhs, TopMip + 1);
-			// 	}
-			// }
+			for (uint32_t mip = 0; mip < mipLevels; mip++)
+			{
+				CreateUAV(l_rhs, mip);
+			}
 		}
 	}
 
+	// Execute texture upload first before generating mipmaps
+	ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
+
 	if (l_rhs->m_TextureDesc.UseMipMap)
 	{
-		GenerateMipmap(l_rhs);
+		// GenerateMipmap will handle command list creation and execution when called with nullptr
+		GenerateMipmap(l_rhs, nullptr);
 	}
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;

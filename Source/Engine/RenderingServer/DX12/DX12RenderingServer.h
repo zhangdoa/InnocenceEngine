@@ -68,7 +68,7 @@ namespace Inno
         uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
         Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
         std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
-        bool GenerateMipmap(TextureComponent* rhs) override;
+        bool GenerateMipmap(TextureComponent* rhs, ICommandList* commandList = nullptr) override;
 
         // In DX12RenderingServer_GraphicsDevice_Protected.cpp
         bool BeginCapture() override;
@@ -183,7 +183,7 @@ namespace Inno
         bool PreparePipeline(RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
         bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
-        bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp);
+        bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp, ICommandList* commandList);
         bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, DX12TextureComponent* TextureComponent);
         bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent);
 

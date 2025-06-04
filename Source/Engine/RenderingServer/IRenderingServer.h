@@ -112,7 +112,7 @@ namespace Inno
 		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
 		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
 		virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) { return std::vector<Vec4>(); }
-		virtual bool GenerateMipmap(TextureComponent* rhs) { return false; }
+		virtual bool GenerateMipmap(TextureComponent* rhs, ICommandList* commandList = nullptr) { return false; }
 
 		// Debug use only
 		virtual bool BeginCapture() { return false; }
