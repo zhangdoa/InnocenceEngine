@@ -4,6 +4,9 @@
 
 namespace Inno
 {
+	// Texture indexing constants - shared between CPU and GPU
+	static constexpr uint32_t INVALID_TEXTURE_INDEX = 0xFFFFFFFF;
+
 	class MeshComponent;
 	class TextureComponent;
 
@@ -91,7 +94,7 @@ namespace Inno
 	struct alignas(16) MaterialConstantBuffer
 	{
 		MaterialAttributes m_MaterialAttributes;
-		int32_t m_TextureIndices[MaxTextureSlotCount] = { -1, -1, -1, -1, -1, -1, -1 };
+		uint32_t m_TextureIndices[MaxTextureSlotCount] = { INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX, INVALID_TEXTURE_INDEX };
 		uint32_t m_MaterialType = 0;
 	};
 

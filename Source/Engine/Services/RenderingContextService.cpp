@@ -417,7 +417,14 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 		{
 			auto l_texture = l_material->m_TextureSlots[i].m_Texture;
 			if (l_texture != nullptr)
-				l_materialCB.m_TextureIndices[i] = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
+			{
+				auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
+				l_materialCB.m_TextureIndices[i] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+			}
+			else
+			{
+				l_materialCB.m_TextureIndices[i] = INVALID_TEXTURE_INDEX;  // No texture assigned
+			}
 		}
 
 		m_materialCBVector.emplace_back(l_materialCB);

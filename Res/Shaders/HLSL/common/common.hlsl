@@ -4,6 +4,9 @@ static const float EPSILON = 0.00001;
 static const float PI = 3.14159265359;
 static const float SQRT2 = 1.41421356237;
 
+// Texture indexing constants - shared between CPU and GPU
+static const uint INVALID_TEXTURE_INDEX = 0xFFFFFFFF;
+
 static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
 static const int NR_CSM_SPLITS = 4;
@@ -92,13 +95,13 @@ struct Material_CB
 {
 	float4 albedo; // 0
 	float4 MRAT; // 1
-	int m_TextureIndices_0; // Tight packing 2
-	int m_TextureIndices_1; // Tight packing 2
-	int m_TextureIndices_2; // Tight packing 2
-	int m_TextureIndices_3; // Tight packing 2
-	int m_TextureIndices_4; // Tight packing 3
-	int m_TextureIndices_5; // Tight packing 3
-	int m_TextureIndices_6; // Tight packing 3
+	uint m_TextureIndices_0; // Tight packing 2
+	uint m_TextureIndices_1; // Tight packing 2
+	uint m_TextureIndices_2; // Tight packing 2
+	uint m_TextureIndices_3; // Tight packing 2
+	uint m_TextureIndices_4; // Tight packing 3
+	uint m_TextureIndices_5; // Tight packing 3
+	uint m_TextureIndices_6; // Tight packing 3
 	uint materialType; // Tight packing 3
 };
 

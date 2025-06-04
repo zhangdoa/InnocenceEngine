@@ -109,7 +109,7 @@ namespace Inno
 		virtual bool Clear(TextureComponent* rhs);
 		virtual bool Copy(TextureComponent* lhs, TextureComponent* rhs);
 		virtual bool Clear(GPUBufferComponent* rhs);
-		virtual uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return 0; }
+		virtual std::optional<uint32_t> GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return std::nullopt; }
 		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
 		virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) { return std::vector<Vec4>(); }
 		virtual bool GenerateMipmap(TextureComponent* rhs, ICommandList* commandList = nullptr) { return false; }

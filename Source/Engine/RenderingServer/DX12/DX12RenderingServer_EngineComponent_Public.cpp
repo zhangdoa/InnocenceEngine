@@ -6,17 +6,14 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
+std::optional<uint32_t> DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
 {
     auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
     if (!l_rhs)
-        return 0;
+        return std::nullopt;
     
     if (l_rhs->m_ObjectStatus != ObjectStatus::Activated)
-    {
-        Log(Error, l_rhs, " is not activated.");
-        return 0;
-    }
+        return std::nullopt;
 
     // Use proper device memory index based on IsMultiBuffer flag
     auto l_deviceMemoryIndex = l_rhs->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
@@ -25,14 +22,14 @@ uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bind
     if (l_deviceMemoryIndex >= l_rhs->m_DeviceMemories.size())
     {
         Log(Error, l_rhs, " device memory index ", l_deviceMemoryIndex, " out of bounds (size: ", l_rhs->m_DeviceMemories.size(), ")");
-        return 0;
+        return std::nullopt;
     }
     
     auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[l_deviceMemoryIndex]);
     if (!l_DX12DeviceMemory)
     {
         Log(Error, l_rhs, " does not have a valid device memory at index ", l_deviceMemoryIndex);
-        return 0;
+        return std::nullopt;
     }
 
     if (bindingAccessibility == Accessibility::ReadOnly)
@@ -40,7 +37,7 @@ uint32_t DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bind
     else if (bindingAccessibility.CanWrite())
         return l_DX12DeviceMemory->m_UAV.Handle.m_Index;
 
-    return 0;
+    return std::nullopt;
 }
 
 Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)

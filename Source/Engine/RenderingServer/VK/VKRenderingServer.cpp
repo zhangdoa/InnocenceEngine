@@ -60,9 +60,10 @@ bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueTy
 	return true;
 }
 
-uint32_t VKRenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
+std::optional<uint32_t> VKRenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
 {
-	return 0;
+	// Vulkan texture indexing not implemented yet
+	return std::nullopt;
 }
 
 bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameIndex)

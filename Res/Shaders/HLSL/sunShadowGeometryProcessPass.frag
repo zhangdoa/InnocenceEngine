@@ -42,7 +42,7 @@ PixelOutputType main(PixelInputType input)
 
 	float transparency;
 	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;
-	if (albedoTextureIndex != -1)
+	if (albedoTextureIndex != INVALID_TEXTURE_INDEX)
 	{
 		Texture2D t2d_albedo = g_2DTextures[albedoTextureIndex];
 		float4 l_albedo = t2d_albedo.Sample(g_Sampler, input.texCoord);

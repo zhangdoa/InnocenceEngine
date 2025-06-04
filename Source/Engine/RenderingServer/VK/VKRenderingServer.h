@@ -65,7 +65,7 @@ namespace Inno
 		bool Clear(TextureComponent* rhs) override;
 		bool Copy(TextureComponent* lhs, TextureComponent* rhs) override;
 		bool Clear(GPUBufferComponent* rhs) override;
-		uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
+		std::optional<uint32_t> GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
 		Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
 		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
 		bool GenerateMipmap(TextureComponent* rhs, ICommandList* commandList = nullptr) override;

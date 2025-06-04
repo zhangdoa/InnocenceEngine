@@ -65,7 +65,7 @@ namespace Inno
         bool DispatchRays(RenderPassComponent* rhs, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) override;
 
         // In DX12RenderingServer_EngineComponent_Public.cpp
-        uint32_t GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
+        std::optional<uint32_t> GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) override;
         Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
         std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
         bool GenerateMipmap(TextureComponent* rhs, ICommandList* commandList = nullptr) override;
