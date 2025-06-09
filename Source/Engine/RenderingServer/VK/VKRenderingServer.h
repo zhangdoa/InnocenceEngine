@@ -20,13 +20,6 @@ namespace Inno
 		INNO_CLASS_CONCRETE_NON_COPYABLE(VKRenderingServer);
 
 		// Inherited via IRenderingServer
-		MeshComponent* AddMeshComponent(const char* name = "") override;
-		TextureComponent* AddTextureComponent(const char* name = "") override;
-		MaterialComponent* AddMaterialComponent(const char* name = "") override;
-		RenderPassComponent* AddRenderPassComponent(const char* name = "") override;
-		ShaderProgramComponent* AddShaderProgramComponent(const char* name = "") override;
-		SamplerComponent* AddSamplerComponent(const char* name = "") override;
-		GPUBufferComponent* AddGPUBufferComponent(const char* name = "") override;
 		IPipelineStateObject* AddPipelineStateObject() override;
 		ICommandList* AddCommandList() override;
 		ISemaphore* AddSemaphore() override;
@@ -239,15 +232,8 @@ namespace Inno
 		VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
 		// Component pools
-		TObjectPool<VKMeshComponent>* m_MeshComponentPool = nullptr;
-		TObjectPool<VKMaterialComponent>* m_MaterialComponentPool = nullptr;
-		TObjectPool<VKTextureComponent>* m_TextureComponentPool = nullptr;
-		TObjectPool<VKRenderPassComponent>* m_RenderPassComponentPool = nullptr;
 		TObjectPool<VKPipelineStateObject>* m_PSOPool = nullptr;
 		TObjectPool<VKCommandList>* m_CommandListPool = nullptr;
 		TObjectPool<VKSemaphore>* m_SemaphorePool = nullptr;
-		TObjectPool<VKShaderProgramComponent>* m_ShaderProgramComponentPool = nullptr;
-		TObjectPool<VKSamplerComponent>* m_SamplerComponentPool = nullptr;
-		TObjectPool<VKGPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
 	};
 }

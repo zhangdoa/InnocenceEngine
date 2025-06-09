@@ -30,41 +30,6 @@ ObjectStatus MTRenderingServer::GetStatus()
 	return ObjectStatus();
 }
 
-MeshComponent* MTRenderingServer::AddMeshComponent(const char* name)
-{
-	return nullptr;
-}
-
-TextureComponent* MTRenderingServer::AddTextureComponent(const char* name)
-{
-	return nullptr;
-}
-
-MaterialComponent* MTRenderingServer::AddMaterialComponent(const char* name)
-{
-	return nullptr;
-}
-
-RenderPassComponent* MTRenderingServer::AddRenderPassComponent(const char* name)
-{
-	return nullptr;
-}
-
-ShaderProgramComponent* MTRenderingServer::AddShaderProgramComponent(const char* name)
-{
-	return nullptr;
-}
-
-SamplerComponent* MTRenderingServer::AddSamplerComponent(const char* name)
-{
-	return nullptr;
-}
-
-GPUBufferComponent* MTRenderingServer::AddGPUBufferComponent(const char* name)
-{
-	return nullptr;
-}
-
 bool MTRenderingServer::Initialize(MeshComponent* rhs)
 {
 	return true;

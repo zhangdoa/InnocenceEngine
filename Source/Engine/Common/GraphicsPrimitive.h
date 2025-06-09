@@ -64,6 +64,13 @@ namespace Inno
 			bool m_Write = false;
 		};
 
+		struct DescriptorHandle
+		{
+			uint64_t m_CPUHandle = 0;
+			uint64_t m_GPUHandle = 0;
+			uint32_t m_Index = 0;
+		};
+
 		using Index = uint32_t;
 
 		enum class MeshUsage { Invalid, Static, Dynamic, Skeletal };

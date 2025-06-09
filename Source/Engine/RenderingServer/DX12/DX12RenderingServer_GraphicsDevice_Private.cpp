@@ -333,13 +333,13 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
         auto l_MaterialTextureDescriptorSectionSize = l_maxMaterialTextures * l_incrementSize;
         auto l_RenderTargetTextureDescriptorSectionSize = l_maxRenderTargetTextures * l_incrementSize;
 
-        DX12DescriptorHandle l_firstGPUBufferCBVHandle = {};
-        DX12DescriptorHandle l_firstGPUBufferSRVHandle = {};
-        DX12DescriptorHandle l_firstGPUBufferUAVHandle = {};
+        DescriptorHandle l_firstGPUBufferCBVHandle = {};
+        DescriptorHandle l_firstGPUBufferSRVHandle = {};
+        DescriptorHandle l_firstGPUBufferUAVHandle = {};
 
         {
-            l_firstGPUBufferCBVHandle.CPUHandle = m_CSUDescHeap->GetCPUDescriptorHandleForHeapStart();
-            l_firstGPUBufferCBVHandle.GPUHandle = m_CSUDescHeap->GetGPUDescriptorHandleForHeapStart();
+            l_firstGPUBufferCBVHandle.m_CPUHandle = m_CSUDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+            l_firstGPUBufferCBVHandle.m_GPUHandle = m_CSUDescHeap->GetGPUDescriptorHandleForHeapStart().ptr;
 
             m_GPUBuffer_CBV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxGPUBuffers
                 , l_incrementSize, l_firstGPUBufferCBVHandle, true, L"GPUBuffer_CBV_DescHeapAccessor");
@@ -348,15 +348,15 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             D3D12_CONSTANT_BUFFER_VIEW_DESC l_CBVDesc = {};
             for (uint32_t i = 0; i < l_maxGPUBuffers; i++)
             {
-                m_device->CreateConstantBufferView(nullptr, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateConstantBufferView(nullptr, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }
         }
 
         {
-            l_firstGPUBufferSRVHandle.CPUHandle.ptr = l_firstGPUBufferCBVHandle.CPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
-            l_firstGPUBufferSRVHandle.GPUHandle.ptr = l_firstGPUBufferCBVHandle.GPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
+            l_firstGPUBufferSRVHandle.m_CPUHandle = l_firstGPUBufferCBVHandle.m_CPUHandle + l_GPUBufferDescriptorSectionSize;
+            l_firstGPUBufferSRVHandle.m_GPUHandle = l_firstGPUBufferCBVHandle.m_GPUHandle + l_GPUBufferDescriptorSectionSize;
 
             m_GPUBuffer_SRV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxGPUBuffers
                 , l_incrementSize, l_firstGPUBufferSRVHandle, true, L"GPUBuffer_SRV_DescHeapAccessor");
@@ -368,15 +368,15 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             for (uint32_t i = 0; i < l_maxGPUBuffers; i++)
             {
-                m_device->CreateShaderResourceView(nullptr, &l_SRVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateShaderResourceView(nullptr, &l_SRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }            
         }
 
         {
-            l_firstGPUBufferUAVHandle.CPUHandle.ptr = l_firstGPUBufferSRVHandle.CPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
-            l_firstGPUBufferUAVHandle.GPUHandle.ptr = l_firstGPUBufferSRVHandle.GPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
+            l_firstGPUBufferUAVHandle.m_CPUHandle = l_firstGPUBufferSRVHandle.m_CPUHandle + l_GPUBufferDescriptorSectionSize;
+            l_firstGPUBufferUAVHandle.m_GPUHandle = l_firstGPUBufferSRVHandle.m_GPUHandle + l_GPUBufferDescriptorSectionSize;
 
             m_GPUBuffer_UAV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxGPUBuffers
                 , l_incrementSize, l_firstGPUBufferUAVHandle, true, L"GPUBuffer_UAV_DescHeapAccessor");
@@ -387,17 +387,17 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_UAVDesc.Format = DXGI_FORMAT_R32_SINT;            
             for (uint32_t i = 0; i < l_maxGPUBuffers; i++)
             {
-                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }                
         }
 
-        DX12DescriptorHandle l_firstMaterialTextureSRVHandle = {};
-        DX12DescriptorHandle l_firstMaterialTextureUAVHandle = {};
+        DescriptorHandle l_firstMaterialTextureSRVHandle = {};
+        DescriptorHandle l_firstMaterialTextureUAVHandle = {};
         {
-            l_firstMaterialTextureSRVHandle.CPUHandle.ptr = l_firstGPUBufferUAVHandle.CPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
-            l_firstMaterialTextureSRVHandle.GPUHandle.ptr = l_firstGPUBufferUAVHandle.GPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
+            l_firstMaterialTextureSRVHandle.m_CPUHandle = l_firstGPUBufferUAVHandle.m_CPUHandle + l_GPUBufferDescriptorSectionSize;
+            l_firstMaterialTextureSRVHandle.m_GPUHandle = l_firstGPUBufferUAVHandle.m_GPUHandle + l_GPUBufferDescriptorSectionSize;
 
             m_MaterialTexture_SRV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxMaterialTextures, l_incrementSize
                 , l_firstMaterialTextureSRVHandle, true, L"MaterialTexture_SRV_DescHeapAccessor");
@@ -409,15 +409,15 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             for (uint32_t i = 0; i < l_maxMaterialTextures; i++)
             {
-                m_device->CreateShaderResourceView(nullptr, &l_SRVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateShaderResourceView(nullptr, &l_SRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }
         }
 
         {
-            l_firstMaterialTextureUAVHandle.CPUHandle.ptr = l_firstMaterialTextureSRVHandle.CPUHandle.ptr + l_MaterialTextureDescriptorSectionSize;
-            l_firstMaterialTextureUAVHandle.GPUHandle.ptr = l_firstMaterialTextureSRVHandle.GPUHandle.ptr + l_MaterialTextureDescriptorSectionSize;
+            l_firstMaterialTextureUAVHandle.m_CPUHandle = l_firstMaterialTextureSRVHandle.m_CPUHandle + l_MaterialTextureDescriptorSectionSize;
+            l_firstMaterialTextureUAVHandle.m_GPUHandle = l_firstMaterialTextureSRVHandle.m_GPUHandle + l_MaterialTextureDescriptorSectionSize;
 
             m_MaterialTexture_UAV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxMaterialTextures, l_incrementSize
                 , l_firstMaterialTextureUAVHandle, true, L"MaterialTexture_UAV_DescHeapAccessor");
@@ -428,17 +428,17 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_UAVDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
             for (uint32_t i = 0; i < l_maxMaterialTextures; i++)
             {
-                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }
         }
 
-        DX12DescriptorHandle l_firstRenderTargetTextureSRVHandle = {};
-        DX12DescriptorHandle l_firstRenderTargetTextureUAVHandle = {};
+        DescriptorHandle l_firstRenderTargetTextureSRVHandle = {};
+        DescriptorHandle l_firstRenderTargetTextureUAVHandle = {};
         {
-            l_firstRenderTargetTextureSRVHandle.CPUHandle.ptr = l_firstMaterialTextureUAVHandle.CPUHandle.ptr + l_MaterialTextureDescriptorSectionSize;
-            l_firstRenderTargetTextureSRVHandle.GPUHandle.ptr = l_firstMaterialTextureUAVHandle.GPUHandle.ptr + l_MaterialTextureDescriptorSectionSize;
+            l_firstRenderTargetTextureSRVHandle.m_CPUHandle = l_firstMaterialTextureUAVHandle.m_CPUHandle + l_MaterialTextureDescriptorSectionSize;
+            l_firstRenderTargetTextureSRVHandle.m_GPUHandle = l_firstMaterialTextureUAVHandle.m_GPUHandle + l_MaterialTextureDescriptorSectionSize;
 
             m_RenderTarget_SRV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxRenderTargetTextures, l_incrementSize
                 , l_firstRenderTargetTextureSRVHandle, true, L"RenderTarget_SRV_DescHeapAccessor");
@@ -450,15 +450,15 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;            
             for (uint32_t i = 0; i < l_maxRenderTargetTextures; i++)
             {
-                m_device->CreateShaderResourceView(nullptr, &l_SRVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateShaderResourceView(nullptr, &l_SRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }
         }
 
         {
-            l_firstRenderTargetTextureUAVHandle.CPUHandle.ptr = l_firstRenderTargetTextureSRVHandle.CPUHandle.ptr + l_RenderTargetTextureDescriptorSectionSize;
-            l_firstRenderTargetTextureUAVHandle.GPUHandle.ptr = l_firstRenderTargetTextureSRVHandle.GPUHandle.ptr + l_RenderTargetTextureDescriptorSectionSize;
+            l_firstRenderTargetTextureUAVHandle.m_CPUHandle = l_firstRenderTargetTextureSRVHandle.m_CPUHandle + l_RenderTargetTextureDescriptorSectionSize;
+            l_firstRenderTargetTextureUAVHandle.m_GPUHandle = l_firstRenderTargetTextureSRVHandle.m_GPUHandle + l_RenderTargetTextureDescriptorSectionSize;
 
             m_RenderTarget_UAV_DescHeapAccessor = CreateDescriptorHeapAccessor(m_CSUDescHeap.Get(), l_Desc, l_maxRenderTargetTextures, l_incrementSize
                 , l_firstRenderTargetTextureUAVHandle, true, L"RenderTarget_UAV_DescHeapAccessor");
@@ -469,9 +469,9 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_UAVDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;            
             for (uint32_t i = 0; i < l_maxRenderTargetTextures; i++)
             {
-                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
-                l_currentHandle.GPUHandle.ptr += l_incrementSize;
+                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
+                l_currentHandle.m_GPUHandle += l_incrementSize;
             }
         }
     }
@@ -486,13 +486,13 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
         auto l_GPUBufferDescriptorSectionSize = l_maxGPUBuffers * l_incrementSize;
         auto l_MaterialTextureDescriptorSectionSize = l_maxMaterialTextures * l_incrementSize;
 
-        DX12DescriptorHandle l_firstGPUBufferUAVHandle = {};
-        DX12DescriptorHandle l_firstMaterialTextureBufferUAVHandle = {};
-        DX12DescriptorHandle l_firstRenderTargetTextureBufferUAVHandle = {};
+        DescriptorHandle l_firstGPUBufferUAVHandle = {};
+        DescriptorHandle l_firstMaterialTextureBufferUAVHandle = {};
+        DescriptorHandle l_firstRenderTargetTextureBufferUAVHandle = {};
 
-        l_firstGPUBufferUAVHandle.CPUHandle = m_CSUDescHeap_ShaderNonVisible->GetCPUDescriptorHandleForHeapStart();
-        l_firstMaterialTextureBufferUAVHandle.CPUHandle.ptr = l_firstGPUBufferUAVHandle.CPUHandle.ptr + l_GPUBufferDescriptorSectionSize;
-        l_firstRenderTargetTextureBufferUAVHandle.CPUHandle.ptr = l_firstMaterialTextureBufferUAVHandle.CPUHandle.ptr + l_MaterialTextureDescriptorSectionSize;
+        l_firstGPUBufferUAVHandle.m_CPUHandle = m_CSUDescHeap_ShaderNonVisible->GetCPUDescriptorHandleForHeapStart().ptr;
+        l_firstMaterialTextureBufferUAVHandle.m_CPUHandle = l_firstGPUBufferUAVHandle.m_CPUHandle + l_GPUBufferDescriptorSectionSize;
+        l_firstRenderTargetTextureBufferUAVHandle.m_CPUHandle = l_firstMaterialTextureBufferUAVHandle.m_CPUHandle + l_MaterialTextureDescriptorSectionSize;
 
         {
             m_GPUBuffer_UAV_DescHeapAccessor_ShaderNonVisible = CreateDescriptorHeapAccessor(m_CSUDescHeap_ShaderNonVisible.Get(), l_Desc, l_maxGPUBuffers
@@ -504,8 +504,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_UAVDesc.Format = DXGI_FORMAT_R32_UINT;
             for (uint32_t i = 0; i < l_maxGPUBuffers; i++)
             {
-                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
+                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
             }
         }
 
@@ -519,8 +519,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_UAVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             for (uint32_t i = 0; i < l_maxMaterialTextures; i++)
             {
-                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
+                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
             }
         }
 
@@ -534,8 +534,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
             l_UAVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             for (uint32_t i = 0; i < l_maxRenderTargetTextures; i++)
             {
-                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, l_currentHandle.CPUHandle);
-                l_currentHandle.CPUHandle.ptr += l_incrementSize;
+                m_device->CreateUnorderedAccessView(nullptr, nullptr, &l_UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_currentHandle.m_CPUHandle });
+                l_currentHandle.m_CPUHandle += l_incrementSize;
             }
         }
     }
@@ -545,9 +545,9 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
         auto l_Desc = GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, l_maxSamplerCount, true);
         m_SamplerDescHeap = CreateDescriptorHeap(l_Desc, L"GlobalSamplerDescHeap");
 
-        DX12DescriptorHandle l_firstSamplerHandle = {};
-        l_firstSamplerHandle.CPUHandle = m_SamplerDescHeap->GetCPUDescriptorHandleForHeapStart();
-        l_firstSamplerHandle.GPUHandle = m_SamplerDescHeap->GetGPUDescriptorHandleForHeapStart();
+        DescriptorHandle l_firstSamplerHandle = {};
+        l_firstSamplerHandle.m_CPUHandle = m_SamplerDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+        l_firstSamplerHandle.m_GPUHandle = m_SamplerDescHeap->GetGPUDescriptorHandleForHeapStart().ptr;
 
         m_SamplerDescHeapAccessor = CreateDescriptorHeapAccessor(m_SamplerDescHeap.Get(), l_Desc, l_maxSamplerCount, m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER), l_firstSamplerHandle, true, L"SamplerDescHeapAccessor");
     }
@@ -557,8 +557,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
         auto l_Desc = GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, l_maxRTVCount, false);
         m_RTVDescHeap = CreateDescriptorHeap(l_Desc, L"GlobalRTVDescHeap");
 
-        DX12DescriptorHandle l_firstRTVHandle = {};
-        l_firstRTVHandle.CPUHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+        DescriptorHandle l_firstRTVHandle = {};
+        l_firstRTVHandle.m_CPUHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
 
         m_RTVDescHeapAccessor = CreateDescriptorHeapAccessor(m_RTVDescHeap.Get(), l_Desc, l_maxRTVCount, m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV), l_firstRTVHandle, false, L"RTVDescHeapAccessor");
     }
@@ -568,8 +568,8 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
         auto l_Desc = GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, l_maxDSVCount, false);
         m_DSVDescHeap = CreateDescriptorHeap(l_Desc, L"GlobalDSVDescHeap");
 
-        DX12DescriptorHandle l_firstDSVHandle = {};
-        l_firstDSVHandle.CPUHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
+        DescriptorHandle l_firstDSVHandle = {};
+        l_firstDSVHandle.m_CPUHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
 
         m_DSVDescHeapAccessor = CreateDescriptorHeapAccessor(m_DSVDescHeap.Get(), l_Desc, l_maxDSVCount, m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV), l_firstDSVHandle, false, L"DSVDescHeapAccessor");
     }

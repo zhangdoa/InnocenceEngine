@@ -18,7 +18,7 @@ using namespace Inno;
 using namespace DX12Helper;
 
 DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(ComPtr<ID3D12DescriptorHeap> descHeap, D3D12_DESCRIPTOR_HEAP_DESC desc
-	, uint32_t maxDescriptors, uint32_t descriptorSize, const DX12DescriptorHandle& firstHandle, bool shaderVisible, const wchar_t* name)
+	, uint32_t maxDescriptors, uint32_t descriptorSize, const DescriptorHandle& firstHandle, bool shaderVisible, const wchar_t* name)
 {
 	DX12DescriptorHeapAccessor l_descHeapAccessor = {};
 	l_descHeapAccessor.m_Desc.m_HeapDesc = desc;
@@ -26,7 +26,7 @@ DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(Com
 	l_descHeapAccessor.m_Desc.m_DescriptorSize = descriptorSize;
 	l_descHeapAccessor.m_Desc.m_ShaderVisible = shaderVisible;
 	l_descHeapAccessor.m_Desc.m_Name = name;
-	l_descHeapAccessor.m_OffsetFromHeapStart = firstHandle.CPUHandle.ptr - descHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+	l_descHeapAccessor.m_OffsetFromHeapStart = firstHandle.m_CPUHandle - descHeap->GetCPUDescriptorHandleForHeapStart().ptr;
 	l_descHeapAccessor.m_OffsetFromHeapStart /= descriptorSize;
 	l_descHeapAccessor.m_FirstHandle = firstHandle;
 	l_descHeapAccessor.m_CurrentHandle = firstHandle;
@@ -58,7 +58,7 @@ bool DX12RenderingServer::CreateSRV(DX12TextureComponent* rhs, uint32_t mipSlice
 	// 	l_srv.Handle = l_descHeapAccessor.GetNewHandle();
 	// 	m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(),
 	// 		&l_srv.SRVDesc,
-	// 		l_srv.Handle.CPUHandle);
+	// 		l_srv.Handle.m_CPUHandle);
 	// }
 
 	return true;
@@ -86,14 +86,14 @@ bool DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice
 
 	// 	auto& l_uav = l_DX12DeviceMemory->m_UAVs[mipSlice];
 	// 	l_uav.UAVDesc = l_desc;
-	// 	l_uav.Handle.CPUHandle = l_descHandle_ShaderNonVisible.CPUHandle;
-	// 	l_uav.Handle.GPUHandle = l_descHandle.GPUHandle;
+	// 	l_uav.Handle.m_CPUHandle = l_descHandle_ShaderNonVisible.m_CPUHandle;
+	// 	l_uav.Handle.m_GPUHandle = l_descHandle.m_GPUHandle;
 	// 	l_uav.Handle.m_Index = l_descHandle.m_Index;
 
 	// 	m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), 0,
-	// 		&l_uav.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
+	// 		&l_uav.UAVDesc, l_descHandle_ShaderNonVisible.m_CPUHandle);
 	// 	m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), 0,
-	// 		&l_uav.UAVDesc, l_descHandle.CPUHandle);
+	// 		&l_uav.UAVDesc, l_descHandle.m_CPUHandle);
 	// }
 
 	return true;
@@ -116,7 +116,7 @@ bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
 		l_DX12DeviceMemory->m_SRV.SRVDesc = l_desc;
 		l_DX12DeviceMemory->m_SRV.Handle = l_descHeapAccessor.GetNewHandle();
-		m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), &l_DX12DeviceMemory->m_SRV.SRVDesc, l_DX12DeviceMemory->m_SRV.Handle.CPUHandle);
+		m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), &l_DX12DeviceMemory->m_SRV.SRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_DX12DeviceMemory->m_SRV.Handle.m_CPUHandle });
 	}
 
 	return true;
@@ -143,12 +143,14 @@ bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 		auto l_descHandle = l_descHeapAccessor.GetNewHandle();
 		auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
 
-		l_result.Handle.CPUHandle = l_descHandle_ShaderNonVisible.CPUHandle;
-		l_result.Handle.GPUHandle = l_descHandle.GPUHandle;
+		l_result.Handle.m_CPUHandle = l_descHandle_ShaderNonVisible.m_CPUHandle;
+		l_result.Handle.m_GPUHandle = l_descHandle.m_GPUHandle;
 		l_result.Handle.m_Index = l_descHandle.m_Index;
 
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle_ShaderNonVisible.CPUHandle);
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, l_descHandle.CPUHandle);
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 
+		l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle_ShaderNonVisible.m_CPUHandle });
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 
+		l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle.m_CPUHandle });
 
 		l_DX12DeviceMemory->m_UAV = l_result;
 	}
@@ -169,7 +171,7 @@ bool DX12RenderingServer::CreateCBV(GPUBufferComponent* rhs)
 		l_result.CBVDesc.SizeInBytes = (uint32_t)rhs->m_ElementSize;
 		l_result.Handle = l_descHeapAccessor.GetNewHandle();
 
-		m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.Handle.CPUHandle);
+		m_device->CreateConstantBufferView(&l_result.CBVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_result.Handle.m_CPUHandle });
 
 		l_DX12MappedMemory->m_CBV = l_result;
 	}

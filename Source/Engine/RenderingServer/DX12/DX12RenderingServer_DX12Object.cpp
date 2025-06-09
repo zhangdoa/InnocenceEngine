@@ -192,7 +192,7 @@ ComPtr<ID3D12DescriptorHeap> DX12RenderingServer::CreateDescriptorHeap(D3D12_DES
 	return l_descriptorHeap;
 }
 
-DX12DescriptorHandle DX12DescriptorHeapAccessor::GetNewHandle()
+DescriptorHandle DX12DescriptorHeapAccessor::GetNewHandle()
 {
 	if (m_CurrentHandle.m_Index == m_Desc.m_MaxDescriptors)
 	{
@@ -202,9 +202,9 @@ DX12DescriptorHandle DX12DescriptorHeapAccessor::GetNewHandle()
 
 	auto l_handle = m_CurrentHandle;
 	if (m_Desc.m_ShaderVisible)
-		m_CurrentHandle.GPUHandle.ptr += m_Desc.m_DescriptorSize;
+		m_CurrentHandle.m_GPUHandle += m_Desc.m_DescriptorSize;
 
-	m_CurrentHandle.CPUHandle.ptr += m_Desc.m_DescriptorSize;
+	m_CurrentHandle.m_CPUHandle += m_Desc.m_DescriptorSize;
 	
 	Log(Verbose, "New handle on ", m_Desc.m_Name, " with index ", m_CurrentHandle.m_Index, " has been created.");
 	

@@ -2,13 +2,10 @@
 #include "../IRenderingServer.h"
 #include "DX12Headers.h"
 
-#include "../../Common/ObjectPool.h"
-
 #include "../../Component/DX12MeshComponent.h"
 #include "../../Component/DX12TextureComponent.h"
 #include "../../Component/DX12MaterialComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
-#include "../../Component/DX12SamplerComponent.h"
 
 namespace Inno
 {
@@ -19,13 +16,6 @@ namespace Inno
 
         // Inherited via IRenderingServer
         // In DX12RenderingServer_ComponentPool.cpp
-        MeshComponent* AddMeshComponent(const char* name = "") override;
-        TextureComponent* AddTextureComponent(const char* name = "") override;
-        MaterialComponent* AddMaterialComponent(const char* name = "") override;
-        RenderPassComponent* AddRenderPassComponent(const char* name = "") override;
-        ShaderProgramComponent* AddShaderProgramComponent(const char* name = "") override;
-        SamplerComponent* AddSamplerComponent(const char* name = "") override;
-        GPUBufferComponent* AddGPUBufferComponent(const char* name = "") override;
         IPipelineStateObject* AddPipelineStateObject() override;
         ICommandList* AddCommandList() override;
         ISemaphore* AddSemaphore() override;
@@ -158,7 +148,7 @@ namespace Inno
             D3D12_DESCRIPTOR_HEAP_DESC desc,
             uint32_t maxDescriptors,
             uint32_t descriptorSize,
-            const DX12DescriptorHandle& firstHandle,
+            const DescriptorHandle& firstHandle,
             bool shaderVisible,
             const wchar_t* name
         );
@@ -249,13 +239,6 @@ namespace Inno
         ID3D12PipelineState* m_3DMipmapPSO = nullptr;
 
         // Component pools
-        TObjectPool<DX12MeshComponent>* m_MeshComponentPool = nullptr;
-        TObjectPool<DX12MaterialComponent>* m_MaterialComponentPool = nullptr;
-        TObjectPool<DX12TextureComponent>* m_TextureComponentPool = nullptr;
-        TObjectPool<RenderPassComponent>* m_RenderPassComponentPool = nullptr;
-        TObjectPool<DX12ShaderProgramComponent>* m_ShaderProgramComponentPool = nullptr;
-        TObjectPool<DX12SamplerComponent>* m_SamplerComponentPool = nullptr;
-        TObjectPool<GPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
         TObjectPool<DX12PipelineStateObject>* m_PSOPool = nullptr;
         TObjectPool<DX12CommandList>* m_CommandListPool = nullptr;
         TObjectPool<DX12Semaphore>* m_SemaphorePool = nullptr;

@@ -14,14 +14,6 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		MeshComponent* AddMeshComponent(const char* name) override;
-		TextureComponent* AddTextureComponent(const char* name) override;
-		MaterialComponent* AddMaterialComponent(const char* name) override;
-		RenderPassComponent* AddRenderPassComponent(const char* name) override;
-		ShaderProgramComponent* AddShaderProgramComponent(const char* name) override;
-		SamplerComponent* AddSamplerComponent(const char* name = "") override;
-		GPUBufferComponent* AddGPUBufferComponent(const char* name) override;
-
 		bool Initialize(MeshComponent* rhs) override;
 		bool Initialize(TextureComponent* rhs) override;
 		bool Initialize(MaterialComponent* rhs) override;

@@ -16,13 +16,6 @@ namespace Inno
 		std::vector<std::type_index> GetDependencies() override;
 
 		// Component Pool APIs - return null/dummy components
-		MeshComponent* AddMeshComponent(const char* name = "") override;
-		TextureComponent* AddTextureComponent(const char* name = "") override;
-		MaterialComponent* AddMaterialComponent(const char* name = "") override;
-		RenderPassComponent* AddRenderPassComponent(const char* name = "") override;
-		ShaderProgramComponent* AddShaderProgramComponent(const char* name = "") override;
-		SamplerComponent* AddSamplerComponent(const char* name = "") override;
-		GPUBufferComponent* AddGPUBufferComponent(const char* name = "") override;
 		IPipelineStateObject* AddPipelineStateObject() override;
 		ICommandList* AddCommandList() override;
 		ISemaphore* AddSemaphore() override;

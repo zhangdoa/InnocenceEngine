@@ -37,13 +37,19 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 		{
 			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 			{
-				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(l_RT->m_UAV.Handle.GPUHandle, l_RT->m_UAV.Handle.CPUHandle,
-					l_RT->m_DefaultHeapBuffer.Get(), (UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
+				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
+					D3D12_GPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_GPUHandle }, 
+					D3D12_CPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_CPUHandle },
+					l_RT->m_DefaultHeapBuffer.Get(), 
+					(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
 			}
 			else
 			{
-				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(l_RT->m_UAV.Handle.GPUHandle, l_RT->m_UAV.Handle.CPUHandle,
-					l_RT->m_DefaultHeapBuffer.Get(), l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
+				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
+					D3D12_GPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_GPUHandle }, 
+					D3D12_CPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_CPUHandle },
+					l_RT->m_DefaultHeapBuffer.Get(), 
+					l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
 			}
 		};
 
@@ -129,7 +135,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 				}
 				else
 				{
-					commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_SRV.Handle.GPUHandle);
+					commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_SRV.Handle.m_GPUHandle });
 					return true;
 				}
 			}
@@ -138,7 +144,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		{
 			if (l_buffer->m_GPUAccessibility.CanWrite())
 			{
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_UAV.Handle.GPUHandle);
+				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
 				return true;
 			}
 		}
@@ -149,7 +155,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		{
 			auto& l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
 				, resourceBindingLayoutDesc.m_ResourceAccessibility, TextureUsage::Sample);
-			commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_textureDescHeapAccessor.GetFirstHandle().GPUHandle);
+			commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_textureDescHeapAccessor.GetFirstHandle().m_GPUHandle });
 		}
 		else if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
@@ -169,8 +175,8 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
-		auto l_handle = reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.Handle.GPUHandle;
-		commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_handle);
+		auto l_handle = reinterpret_cast<SamplerComponent*>(resource)->m_ReadHandles[GetCurrentFrame()].m_GPUHandle;
+		commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
 	}
 
 	assert(false);
@@ -206,7 +212,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			}
 			else if ((l_buffer->m_GPUAccessibility.CanWrite()))
 			{
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_SRV.Handle.GPUHandle);
+				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_SRV.Handle.m_GPUHandle });
 				return true;
 			}
 		}
@@ -214,7 +220,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		{
 			if (l_buffer->m_GPUAccessibility.CanWrite())
 			{
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_UAV.Handle.GPUHandle);
+				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
 				return true;
 			}
 		}
@@ -225,7 +231,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		{
 			auto& l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
 				, resourceBindingLayoutDesc.m_ResourceAccessibility, TextureUsage::Sample);
-			commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_textureDescHeapAccessor.GetFirstHandle().GPUHandle);
+			commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_textureDescHeapAccessor.GetFirstHandle().m_GPUHandle });
 		}
 		else if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
@@ -238,16 +244,16 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
 			// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
 			// if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
-			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
+			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.m_GPUHandle);
 			// else
-			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.GPUHandle);
+			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.m_GPUHandle);
 		}
 		return true;
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
-		auto l_handle = reinterpret_cast<DX12SamplerComponent*>(resource)->m_Sampler.Handle.GPUHandle;
-		commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_handle);
+		auto l_handle = reinterpret_cast<SamplerComponent*>(resource)->m_ReadHandles[GetCurrentFrame()].m_GPUHandle;
+		commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
 		return true;
 	}
 

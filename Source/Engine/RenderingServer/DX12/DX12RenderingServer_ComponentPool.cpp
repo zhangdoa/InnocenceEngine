@@ -1,7 +1,5 @@
 #include "DX12RenderingServer.h"
 
-#include "../CommonFunctionDefinationMacro.inl"
-
 #include "../../Common/Randomizer.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/EntityManager.h"
@@ -12,18 +10,11 @@ using namespace Inno;
 
 bool DX12RenderingServer::InitializePool()
 {
-	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
+	IRenderingServer::InitializePool();
 
-	m_MeshComponentPool = TObjectPool<DX12MeshComponent>::Create(l_renderingCapability.maxMeshes);
-	m_TextureComponentPool = TObjectPool<DX12TextureComponent>::Create(l_renderingCapability.maxTextures);
-	m_MaterialComponentPool = TObjectPool<DX12MaterialComponent>::Create(l_renderingCapability.maxMaterials);
-	m_RenderPassComponentPool = TObjectPool<RenderPassComponent>::Create(128);
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
 	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
 	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
-	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
-	m_SamplerComponentPool = TObjectPool<DX12SamplerComponent>::Create(256);
-	m_GPUBufferComponentPool = TObjectPool<GPUBufferComponent>::Create(l_renderingCapability.maxBuffers);
 	m_OutputMergerTargetPool = TObjectPool<DX12OutputMergerTarget>::Create(128);
 
 	return true;
@@ -31,27 +22,15 @@ bool DX12RenderingServer::InitializePool()
 
 bool DX12RenderingServer::TerminatePool()
 {
-	delete m_MeshComponentPool;
-	delete m_TextureComponentPool;
-	delete m_MaterialComponentPool;
-	delete m_RenderPassComponentPool;
-	delete m_ShaderProgramComponentPool;
-	delete m_SamplerComponentPool;
-	delete m_GPUBufferComponentPool;
+	IRenderingServer::TerminatePool();
+
 	delete m_PSOPool;
 	delete m_CommandListPool;
 	delete m_SemaphorePool;
+	delete m_OutputMergerTargetPool;
 
 	return true;
 }
-
-AddComponent(DX12, Mesh);
-AddComponent(DX12, Texture);
-AddComponent(DX12, Material);
-AddComponent(DX12, RenderPass);
-AddComponent(DX12, ShaderProgram);
-AddComponent(DX12, Sampler);
-AddComponent(DX12, GPUBuffer);
 
 IPipelineStateObject* DX12RenderingServer::AddPipelineStateObject()
 {
@@ -76,22 +55,22 @@ bool DX12RenderingServer::Add(IOutputMergerTarget*& rhs)
 
 bool DX12RenderingServer::Delete(MeshComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12MeshComponent*>(rhs);
-	if (l_rhs->m_DefaultHeapBuffer_VB)
-		l_rhs->m_DefaultHeapBuffer_VB.Reset();
+	// auto l_rhs = reinterpret_cast<DX12MeshComponent*>(rhs);
+	// if (l_rhs->m_DefaultHeapBuffer_VB)
+	// 	l_rhs->m_DefaultHeapBuffer_VB.Reset();
 
-	if (l_rhs->m_DefaultHeapBuffer_IB)
-		l_rhs->m_DefaultHeapBuffer_IB.Reset();
+	// if (l_rhs->m_DefaultHeapBuffer_IB)
+	// 	l_rhs->m_DefaultHeapBuffer_IB.Reset();
 
-	if (l_rhs->m_UploadHeapBuffer_VB)
-		l_rhs->m_UploadHeapBuffer_VB.Reset();
+	// if (l_rhs->m_UploadHeapBuffer_VB)
+	// 	l_rhs->m_UploadHeapBuffer_VB.Reset();
 
-	if (l_rhs->m_UploadHeapBuffer_IB)
-		l_rhs->m_UploadHeapBuffer_IB.Reset();
+	// if (l_rhs->m_UploadHeapBuffer_IB)
+	// 	l_rhs->m_UploadHeapBuffer_IB.Reset();
 
-	m_MeshComponentPool->Destroy(l_rhs);
+	// m_MeshComponentPool->Destroy(l_rhs);
 
-	m_initializedMeshes.erase(rhs);
+	// m_initializedMeshes.erase(rhs);
 
 	return true;
 }
@@ -121,7 +100,7 @@ bool DX12RenderingServer::Delete(TextureComponent* rhs)
 
 	// l_rhs->m_MappedMemories.clear();
 
-	m_TextureComponentPool->Destroy(l_rhs);
+	//m_TextureComponentPool->Destroy(l_rhs);
 
 	m_initializedTextures.erase(rhs);
 
@@ -132,7 +111,7 @@ bool DX12RenderingServer::Delete(MaterialComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialComponent*>(rhs);
 
-	m_MaterialComponentPool->Destroy(l_rhs);
+	//m_MaterialComponentPool->Destroy(l_rhs);
 
 	m_initializedMaterials.erase(rhs);
 
@@ -161,23 +140,23 @@ bool DX12RenderingServer::Delete(RenderPassComponent* rhs)
 
 	Delete(rhs->m_ShaderProgram);
 
-	m_RenderPassComponentPool->Destroy(rhs);
+	//m_RenderPassComponentPool->Destroy(rhs);
 
 	return true;
 }
 
 bool DX12RenderingServer::Delete(ShaderProgramComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
-	m_ShaderProgramComponentPool->Destroy(l_rhs);
+	//auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
+	//m_ShaderProgramComponentPool->Destroy(l_rhs);
 
 	return true;
 }
 
 bool DX12RenderingServer::Delete(SamplerComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(rhs);
-	m_SamplerComponentPool->Destroy(l_rhs);
+	//auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(rhs);
+	//m_SamplerComponentPool->Destroy(l_rhs);
 
 	return true;
 }
@@ -200,7 +179,7 @@ bool DX12RenderingServer::Delete(GPUBufferComponent* rhs)
 			l_DX12MappedMemory->m_UploadHeapBuffer.Reset();
 	}
 
-	m_GPUBufferComponentPool->Destroy(rhs);
+	//m_GPUBufferComponentPool->Destroy(rhs);
 
 	return true;
 }

@@ -2,6 +2,7 @@
 #include "../Interface/ISystem.h"
 
 #include "../Common/ThreadSafeQueue.h"
+#include "../Common/ObjectPool.h"
 
 #include "../Component/MeshComponent.h"
 #include "../Component/TextureComponent.h"
@@ -27,13 +28,13 @@ namespace Inno
 		ObjectStatus GetStatus() override { return m_ObjectStatus; }
 
 		// Component Pool APIs
-		virtual MeshComponent* AddMeshComponent(const char* name = "") = 0;
-		virtual TextureComponent* AddTextureComponent(const char* name = "") = 0;
-		virtual MaterialComponent* AddMaterialComponent(const char* name = "") = 0;
-		virtual RenderPassComponent* AddRenderPassComponent(const char* name = "") = 0;
-		virtual ShaderProgramComponent* AddShaderProgramComponent(const char* name = "") = 0;
-		virtual SamplerComponent* AddSamplerComponent(const char* name = "") = 0;
-		virtual GPUBufferComponent* AddGPUBufferComponent(const char* name = "") = 0;
+		virtual MeshComponent* AddMeshComponent(const char* name = "");
+		virtual TextureComponent* AddTextureComponent(const char* name = "");
+		virtual MaterialComponent* AddMaterialComponent(const char* name = "");
+		virtual RenderPassComponent* AddRenderPassComponent(const char* name = "");
+		virtual ShaderProgramComponent* AddShaderProgramComponent(const char* name = "");
+		virtual SamplerComponent* AddSamplerComponent(const char* name = "");
+		virtual GPUBufferComponent* AddGPUBufferComponent(const char* name = "");
 		virtual IPipelineStateObject* AddPipelineStateObject() = 0;
 		virtual ICommandList* AddCommandList() = 0;
 		virtual ISemaphore* AddSemaphore() = 0;
@@ -164,8 +165,8 @@ namespace Inno
 
 		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility);
 
-		virtual bool InitializePool() { return false; }
-		virtual bool TerminatePool() { return false; }
+		virtual bool InitializePool();
+		virtual bool TerminatePool();
 
 		virtual bool CreateHardwareResources() = 0;
 		virtual bool ReleaseHardwareResources() = 0;
@@ -260,5 +261,13 @@ namespace Inno
 		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs);
 
 		std::atomic_bool m_needResize = false;
+
+		TObjectPool<MeshComponent>* m_MeshComponentPool = nullptr;
+        TObjectPool<MaterialComponent>* m_MaterialComponentPool = nullptr;
+        TObjectPool<TextureComponent>* m_TextureComponentPool = nullptr;
+        TObjectPool<RenderPassComponent>* m_RenderPassComponentPool = nullptr;
+        TObjectPool<ShaderProgramComponent>* m_ShaderProgramComponentPool = nullptr;
+        TObjectPool<SamplerComponent>* m_SamplerComponentPool = nullptr;
+        TObjectPool<GPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
 	};
 }

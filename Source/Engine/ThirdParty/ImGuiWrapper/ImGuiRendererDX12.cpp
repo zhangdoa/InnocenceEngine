@@ -162,7 +162,7 @@ bool ImGuiRendererDX12::Initialize()
 
 	ImGui_ImplDX12_Init(l_device, l_swapChainCount,
 		DXGI_FORMAT_R8G8B8A8_UNORM, l_descHeapAccessor.GetHeap().Get(),
-		l_newHandle.CPUHandle, l_newHandle.GPUHandle);
+	 	D3D12_CPU_DESCRIPTOR_HANDLE{ l_newHandle.m_CPUHandle }, D3D12_GPU_DESCRIPTOR_HANDLE{ l_newHandle.m_GPUHandle });
 
 	m_RenderPass->Initialize();
 

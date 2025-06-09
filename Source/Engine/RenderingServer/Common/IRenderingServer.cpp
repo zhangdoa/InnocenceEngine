@@ -5,11 +5,13 @@
 #include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/TaskScheduler.h"
 #include "../../Common/ThreadSafeQueue.h"
+#include "../../Common/Randomizer.h"
 
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/GUISystem.h"
 #include "../../Services/SceneService.h"
+#include "../../Services/EntityManager.h"
 
 #include "../../Engine.h"
 #include "../IRenderingServer.h"
@@ -22,6 +24,34 @@ Accessibility Accessibility::Immutable = Accessibility(false, false);
 Accessibility Accessibility::ReadOnly = Accessibility(true, false);
 Accessibility Accessibility::WriteOnly = Accessibility(false, true);
 Accessibility Accessibility::ReadWrite = Accessibility(true, true);
+
+bool IRenderingServer::InitializePool()
+{
+	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
+
+	m_MeshComponentPool = TObjectPool<MeshComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureComponentPool = TObjectPool<TextureComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialComponentPool = TObjectPool<MaterialComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassComponentPool = TObjectPool<RenderPassComponent>::Create(128);
+	m_ShaderProgramComponentPool = TObjectPool<ShaderProgramComponent>::Create(256);
+	m_SamplerComponentPool = TObjectPool<SamplerComponent>::Create(256);
+	m_GPUBufferComponentPool = TObjectPool<GPUBufferComponent>::Create(l_renderingCapability.maxBuffers);
+
+	return true;
+}
+
+bool IRenderingServer::TerminatePool()
+{
+	delete m_MeshComponentPool;
+	delete m_TextureComponentPool;
+	delete m_MaterialComponentPool;
+	delete m_RenderPassComponentPool;
+	delete m_ShaderProgramComponentPool;
+	delete m_SamplerComponentPool;
+	delete m_GPUBufferComponentPool;
+
+	return true;
+}
 
 bool IRenderingServer::Setup(ISystemConfig* systemConfig)
 {
@@ -190,6 +220,87 @@ bool IRenderingServer::Terminate()
 		Log(Error, "Failed to terminate RenderingServer.");
 
 	return l_result;
+}
+
+template <typename T>
+T* AddComponent(const char* name, TObjectPool<T>* componentPool)
+{
+	if (!componentPool)
+	{
+		Log(Error, "Component pool is not initialized.");
+		return nullptr;
+	}
+
+	static std::atomic<uint32_t> l_count = 0;
+	l_count++;
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = (std::string(T::GetTypeName()) + "_" + std::to_string(l_count) + "/");
+	}
+
+	if (strcmp(name, "") == 0)
+	{
+		Log(Error, "Component name cannot be empty.");
+		return nullptr;
+	}
+
+	auto l_component = componentPool->Spawn();
+	if (!l_component)
+	{
+		Log(Error, "Failed to allocate component from the pool.");
+		return nullptr;
+	}
+
+	l_component->m_UUID = Randomizer::GenerateUUID();
+	l_component->m_ObjectStatus = ObjectStatus::Created;
+	l_component->m_Serializable = false;
+	l_component->m_ObjectLifespan = ObjectLifespan::Persistence;
+
+	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str());
+	l_component->m_Owner = l_parentEntity;
+	l_component->m_InstanceName = l_name.c_str();
+
+	return l_component;
+}
+
+MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
+{
+	return AddComponent<MeshComponent>(name, m_MeshComponentPool);
+}
+
+TextureComponent* IRenderingServer::AddTextureComponent(const char* name)
+{
+	return AddComponent<TextureComponent>(name, m_TextureComponentPool);
+}
+
+MaterialComponent* IRenderingServer::AddMaterialComponent(const char* name)
+{
+	return AddComponent<MaterialComponent>(name, m_MaterialComponentPool);
+}
+
+RenderPassComponent* IRenderingServer::AddRenderPassComponent(const char* name)
+{
+	return AddComponent<RenderPassComponent>(name, m_RenderPassComponentPool);
+}
+
+ShaderProgramComponent* IRenderingServer::AddShaderProgramComponent(const char* name)
+{
+	return AddComponent<ShaderProgramComponent>(name, m_ShaderProgramComponentPool);
+}
+
+SamplerComponent* IRenderingServer::AddSamplerComponent(const char* name)
+{
+	return AddComponent<SamplerComponent>(name, m_SamplerComponentPool);
+}
+
+GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
+{
+	return AddComponent<GPUBufferComponent>(name, m_GPUBufferComponentPool);
 }
 
 void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)

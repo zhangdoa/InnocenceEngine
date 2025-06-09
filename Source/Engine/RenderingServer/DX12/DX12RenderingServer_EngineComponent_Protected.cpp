@@ -417,26 +417,31 @@ bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent* rhs)
 
 bool DX12RenderingServer::InitializeImpl(SamplerComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(rhs);
-	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
+	rhs->m_GPUResourceType = GPUResourceType::Sampler;
 
-	l_rhs->m_Sampler.SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod, l_rhs->m_SamplerDesc.m_MagFilterMethod);
-	l_rhs->m_Sampler.SamplerDesc.AddressU = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
-	l_rhs->m_Sampler.SamplerDesc.AddressV = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
-	l_rhs->m_Sampler.SamplerDesc.AddressW = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
-	l_rhs->m_Sampler.SamplerDesc.MipLODBias = 0.0f;
-	l_rhs->m_Sampler.SamplerDesc.MaxAnisotropy = l_rhs->m_SamplerDesc.m_MaxAnisotropy;
-	l_rhs->m_Sampler.SamplerDesc.BorderColor[0] = l_rhs->m_SamplerDesc.m_BorderColor[0];
-	l_rhs->m_Sampler.SamplerDesc.BorderColor[1] = l_rhs->m_SamplerDesc.m_BorderColor[1];
-	l_rhs->m_Sampler.SamplerDesc.BorderColor[2] = l_rhs->m_SamplerDesc.m_BorderColor[2];
-	l_rhs->m_Sampler.SamplerDesc.BorderColor[3] = l_rhs->m_SamplerDesc.m_BorderColor[3];
-	l_rhs->m_Sampler.SamplerDesc.MinLOD = l_rhs->m_SamplerDesc.m_MinLOD;
-	l_rhs->m_Sampler.SamplerDesc.MaxLOD = l_rhs->m_SamplerDesc.m_MaxLOD;
+	D3D12_SAMPLER_DESC l_samplerDesc = {};
+	l_samplerDesc.Filter = GetFilterMode(rhs->m_SamplerDesc.m_MinFilterMethod, rhs->m_SamplerDesc.m_MagFilterMethod);
+	l_samplerDesc.AddressU = GetWrapMode(rhs->m_SamplerDesc.m_WrapMethodU);
+	l_samplerDesc.AddressV = GetWrapMode(rhs->m_SamplerDesc.m_WrapMethodV);
+	l_samplerDesc.AddressW = GetWrapMode(rhs->m_SamplerDesc.m_WrapMethodW);
+	l_samplerDesc.MipLODBias = 0.0f;
+	l_samplerDesc.MaxAnisotropy = rhs->m_SamplerDesc.m_MaxAnisotropy;
+	l_samplerDesc.BorderColor[0] = rhs->m_SamplerDesc.m_BorderColor[0];
+	l_samplerDesc.BorderColor[1] = rhs->m_SamplerDesc.m_BorderColor[1];
+	l_samplerDesc.BorderColor[2] = rhs->m_SamplerDesc.m_BorderColor[2];
+	l_samplerDesc.BorderColor[3] = rhs->m_SamplerDesc.m_BorderColor[3];
+	l_samplerDesc.MinLOD = rhs->m_SamplerDesc.m_MinLOD;
+	l_samplerDesc.MaxLOD = rhs->m_SamplerDesc.m_MaxLOD;
 
-	l_rhs->m_Sampler.Handle = m_SamplerDescHeapAccessor.GetNewHandle();
-	m_device->CreateSampler(&l_rhs->m_Sampler.SamplerDesc, l_rhs->m_Sampler.Handle.CPUHandle);
+	// @TODO: We don't really need multi-frame samplers
+	rhs->m_ReadHandles.resize(GetSwapChainImageCount());
+	for (auto& handle : rhs->m_ReadHandles)
+	{
+		handle = m_SamplerDescHeapAccessor.GetNewHandle();
+		m_device->CreateSampler(&l_samplerDesc, D3D12_CPU_DESCRIPTOR_HANDLE { handle.m_CPUHandle });
+	}
 
-	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -688,8 +693,8 @@ bool DX12RenderingServer::Clear(ICommandList* commandList, GPUBufferComponent* r
     const uint32_t zero = 0;
     auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(rhs->m_DeviceMemories[l_currentFrame]);
     l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-        l_deviceMemory->m_UAV.Handle.GPUHandle,
-        l_deviceMemory->m_UAV.Handle.CPUHandle,
+        D3D12_GPU_DESCRIPTOR_HANDLE { l_deviceMemory->m_UAV.Handle.m_GPUHandle },
+        D3D12_CPU_DESCRIPTOR_HANDLE { l_deviceMemory->m_UAV.Handle.m_CPUHandle },
         l_deviceMemory->m_DefaultHeapBuffer.Get(),
         &zero,
         0,
@@ -734,8 +739,8 @@ bool DX12RenderingServer::Clear(ICommandList* commandList, TextureComponent* rhs
     // if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
     // {
     //     l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-    //         l_DX12DeviceMemory->m_UAV.Handle.GPUHandle,
-    //         l_DX12DeviceMemory->m_UAV.Handle.CPUHandle,
+    //         l_DX12DeviceMemory->m_UAV.Handle.m_GPUHandle,
+    //         l_DX12DeviceMemory->m_UAV.Handle.m_CPUHandle,
     //         l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(),
     //         (UINT*)&l_rhs->m_TextureDesc.ClearColor[0],
     //         0,
@@ -744,8 +749,8 @@ bool DX12RenderingServer::Clear(ICommandList* commandList, TextureComponent* rhs
     // else
     // {
     //     l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-    //         l_DX12DeviceMemory->m_UAV.Handle.GPUHandle,
-    //         l_DX12DeviceMemory->m_UAV.Handle.CPUHandle,
+    //         l_DX12DeviceMemory->m_UAV.Handle.m_GPUHandle,
+    //         l_DX12DeviceMemory->m_UAV.Handle.m_CPUHandle,
     //         l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(),
     //         &l_rhs->m_TextureDesc.ClearColor[0],
     //         0,

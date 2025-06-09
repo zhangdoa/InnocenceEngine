@@ -475,7 +475,7 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
                 for (size_t j = 0; j < l_RTV.m_Handles.size(); j++)
                 {
                     auto l_handle = m_RTVDescHeapAccessor.GetNewHandle();
-                    l_RTV.m_Handles[j] = l_handle.CPUHandle;
+                    l_RTV.m_Handles[j] = D3D12_CPU_DESCRIPTOR_HANDLE{ l_handle.m_CPUHandle };
                 }
             }
         }
@@ -503,7 +503,7 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
             for (size_t i = 0; i < l_DSVs.size(); i++)
             {
                 l_DSVs[i].m_Desc = GetDSVDesc(rhs->m_RenderPassDesc.m_RenderTargetDesc, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
-                l_DSVs[i].m_Handle = m_DSVDescHeapAccessor.GetNewHandle().CPUHandle;
+                l_DSVs[i].m_Handle = D3D12_CPU_DESCRIPTOR_HANDLE{ m_DSVDescHeapAccessor.GetNewHandle().m_CPUHandle };
             }
         }
 

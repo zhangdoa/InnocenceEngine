@@ -14,13 +14,6 @@ using namespace Microsoft::WRL;
 namespace Inno
 {
 #define USE_DXIL
-	struct DX12DescriptorHandle
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle;
-		D3D12_GPU_DESCRIPTOR_HANDLE GPUHandle;
-		uint32_t m_Index = 0;
-	};
-	
  #pragma pack(push, 1)
 	struct DX12DrawIndirectCommand
 	{
@@ -40,13 +33,13 @@ namespace Inno
 	struct DX12CBV
 	{
 		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc = {};
-		DX12DescriptorHandle Handle;
+		DescriptorHandle Handle;
 	};
 
 	struct DX12SRV
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-		DX12DescriptorHandle Handle;
+		DescriptorHandle Handle;
 	};
 
 	struct DX12UAV
@@ -54,13 +47,7 @@ namespace Inno
 		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
 
 		// CPU handle is a shader-non-visible descriptor
-		DX12DescriptorHandle Handle;
-	};
-
-	struct DX12Sampler
-	{
-		D3D12_SAMPLER_DESC SamplerDesc = {};
-		DX12DescriptorHandle Handle;
+		DescriptorHandle Handle;
 	};
 
 	struct DX12RTV
@@ -93,15 +80,15 @@ namespace Inno
 		ComPtr<ID3D12DescriptorHeap> GetHeap() const { return m_Heap; }
 		uint32_t GetOffsetFromHeapStart() const { return m_OffsetFromHeapStart; }
 		const DX12DescriptorHeapAccessorDesc& GetDesc() const { return m_Desc; }
-		const DX12DescriptorHandle& GetFirstHandle() const { return m_FirstHandle; }
-		DX12DescriptorHandle GetNewHandle();
+		const DescriptorHandle& GetFirstHandle() const { return m_FirstHandle; }
+		DescriptorHandle GetNewHandle();
 
 	private:
 		ComPtr<ID3D12DescriptorHeap> m_Heap = 0;
 		uint32_t m_OffsetFromHeapStart = 0;
 		DX12DescriptorHeapAccessorDesc m_Desc = {};
-		DX12DescriptorHandle m_FirstHandle = {};
-		DX12DescriptorHandle m_CurrentHandle = {};
+		DescriptorHandle m_FirstHandle = {};
+		DescriptorHandle m_CurrentHandle = {};
 	};
 
 	class DX12PipelineStateObject : public IPipelineStateObject

@@ -42,13 +42,6 @@ std::vector<std::type_index> HeadlessRenderingServer::GetDependencies()
 }
 
 // Component Pool APIs - return nulls for headless mode
-MeshComponent* HeadlessRenderingServer::AddMeshComponent(const char* name) { return nullptr; }
-TextureComponent* HeadlessRenderingServer::AddTextureComponent(const char* name) { return nullptr; }
-MaterialComponent* HeadlessRenderingServer::AddMaterialComponent(const char* name) { return nullptr; }
-RenderPassComponent* HeadlessRenderingServer::AddRenderPassComponent(const char* name) { return nullptr; }
-ShaderProgramComponent* HeadlessRenderingServer::AddShaderProgramComponent(const char* name) { return nullptr; }
-SamplerComponent* HeadlessRenderingServer::AddSamplerComponent(const char* name) { return nullptr; }
-GPUBufferComponent* HeadlessRenderingServer::AddGPUBufferComponent(const char* name) { return nullptr; }
 IPipelineStateObject* HeadlessRenderingServer::AddPipelineStateObject() { return nullptr; }
 ICommandList* HeadlessRenderingServer::AddCommandList() { return nullptr; }
 ISemaphore* HeadlessRenderingServer::AddSemaphore() { return nullptr; }
