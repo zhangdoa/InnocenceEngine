@@ -158,6 +158,7 @@
         "*.vs": "hlsl",
         "*.ps": "hlsl",
         "*.fs": "hlsl",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "*.impl": "cpp"
     },
 }

@@ -77,10 +77,9 @@ namespace Inno
 			auto l_owner = const_cast<Entity*>(owner);
 			l_Component->m_Owner = l_owner;
 			auto l_componentIndex = m_CurrentComponentIndex;
-#ifdef INNO_DEBUG
 			auto l_instanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) + "." + std::string(T::GetTypeName()) + "_" + std::to_string(l_componentIndex) + "/").c_str());
 			l_Component->m_InstanceName = l_instanceName;
-#endif
+
 			m_ComponentPointers.emplace_back(l_Component);
 			m_ComponentLUT.emplace(l_owner, l_Component);
 			l_Component->m_ObjectStatus = ObjectStatus::Activated;
@@ -139,12 +138,12 @@ namespace Inno
 
 		uint64_t Load(const char* componentName, const Entity* entity)
 		{
-			auto fileName = componentName + std::string(".") + std::string(T::GetTypeName()) + ".inno";			
+			auto fileName = componentName + std::string(".") + std::string(T::GetTypeName()) + ".inno";
 			uint64_t l_result = 0;
 			if (!FindLoaded(fileName.c_str(), l_result))
 			{
 				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
-				
+
 				auto l_componentPtr = Spawn(entity, true, ObjectLifespan::Scene);
 				auto& component = *(l_componentPtr);
 				if (AssetService::Load(fileName.c_str(), component))
