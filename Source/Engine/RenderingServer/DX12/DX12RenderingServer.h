@@ -84,8 +84,8 @@ namespace Inno
 
     protected:
         // In DX12RenderingServer_ComponentPool.cpp
-        bool InitializeImpl(MeshComponent* rhs) override;
-        bool InitializeImpl(TextureComponent* rhs) override;
+        bool InitializeImpl(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+        bool InitializeImpl(TextureComponent* rhs, void* textureData) override;
         bool InitializeImpl(ShaderProgramComponent* rhs) override;
         bool InitializeImpl(SamplerComponent* rhs) override;
         bool InitializeImpl(GPUBufferComponent* rhs) override;

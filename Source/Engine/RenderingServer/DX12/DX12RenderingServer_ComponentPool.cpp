@@ -100,26 +100,26 @@ bool DX12RenderingServer::Delete(TextureComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
 
-	for (auto i : l_rhs->m_DeviceMemories)
-	{
-		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
-		if (l_DX12DeviceMemory->m_DefaultHeapBuffer)
-			l_DX12DeviceMemory->m_DefaultHeapBuffer.Reset();
+	// for (auto i : l_rhs->m_DeviceMemories)
+	// {
+	// 	auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+	// 	if (l_DX12DeviceMemory->m_DefaultHeapBuffer)
+	// 		l_DX12DeviceMemory->m_DefaultHeapBuffer.Reset();
 		
-		if (l_DX12DeviceMemory->m_ReadBackHeapBuffer)
-			l_DX12DeviceMemory->m_ReadBackHeapBuffer.Reset();
-	}
+	// 	if (l_DX12DeviceMemory->m_ReadBackHeapBuffer)
+	// 		l_DX12DeviceMemory->m_ReadBackHeapBuffer.Reset();
+	// }
 
-	l_rhs->m_DeviceMemories.clear();
+	// l_rhs->m_DeviceMemories.clear();
 
-	for (auto i : l_rhs->m_MappedMemories)
-	{
-		auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
-		if (l_DX12MappedMemory->m_UploadHeapBuffer)
-			l_DX12MappedMemory->m_UploadHeapBuffer.Reset();
-	}
+	// for (auto i : l_rhs->m_MappedMemories)
+	// {
+	// 	auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
+	// 	if (l_DX12MappedMemory->m_UploadHeapBuffer)
+	// 		l_DX12MappedMemory->m_UploadHeapBuffer.Reset();
+	// }
 
-	l_rhs->m_MappedMemories.clear();
+	// l_rhs->m_MappedMemories.clear();
 
 	m_TextureComponentPool->Destroy(l_rhs);
 

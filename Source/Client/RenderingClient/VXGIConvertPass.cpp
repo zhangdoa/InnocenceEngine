@@ -28,7 +28,7 @@ bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
 	m_AlbedoVolume->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_AlbedoVolume->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_AlbedoVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-	m_AlbedoVolume->m_TextureDesc.UseMipMap = true;
+	m_AlbedoVolume->m_TextureDesc.MipLevels = 4;
 
 	m_NormalVolume = l_renderingServer->AddTextureComponent("VoxelNormalVolume/");
 	m_NormalVolume->m_TextureDesc = m_AlbedoVolume->m_TextureDesc;

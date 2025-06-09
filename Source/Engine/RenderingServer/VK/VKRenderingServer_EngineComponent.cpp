@@ -44,20 +44,20 @@ bool VKRenderingServer::SetObjectName(U* owner, const T& rhs, VkObjectType objec
 	return true;
 }
 
-bool VKRenderingServer::InitializeImpl(MeshComponent *rhs)
+bool VKRenderingServer::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &vertices, std::vector<Index> &indices)
 {
 	auto l_rhs = reinterpret_cast<VKMeshComponent *>(rhs);
 
-	auto l_VBSize = sizeof(Vertex) * l_rhs->m_Vertices.size();
-	auto l_IBSize = sizeof(Index) * l_rhs->m_Indices.size();
+	auto l_VBSize = sizeof(Vertex) * vertices.size();
+	auto l_IBSize = sizeof(Index) * indices.size();
 
 	CreateDeviceLocalBuffer(l_VBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_VBO, l_rhs->m_VBMemory);
 	CreateDeviceLocalBuffer(l_IBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_IBO, l_rhs->m_IBMemory);
 
-	InitializeDeviceLocalBuffer(&l_rhs->m_Vertices[0], l_VBSize, l_rhs->m_VBO, l_rhs->m_VBMemory);
+	InitializeDeviceLocalBuffer(&vertices[0], l_VBSize, l_rhs->m_VBO, l_rhs->m_VBMemory);
 	Log(Verbose, "VBO ", l_rhs->m_VBO, " is initialized.");
 
-	InitializeDeviceLocalBuffer(&l_rhs->m_Indices[0], l_IBSize, l_rhs->m_IBO, l_rhs->m_IBMemory);
+	InitializeDeviceLocalBuffer(&indices[0], l_IBSize, l_rhs->m_IBO, l_rhs->m_IBMemory);
 	Log(Verbose, "IBO ", l_rhs->m_IBO, " is initialized.");
 
 #ifdef INNO_DEBUG
@@ -72,7 +72,7 @@ bool VKRenderingServer::InitializeImpl(MeshComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::InitializeImpl(TextureComponent *rhs)
+bool VKRenderingServer::InitializeImpl(TextureComponent *rhs, void *textureData)
 {
 	auto l_rhs = reinterpret_cast<VKTextureComponent *>(rhs);
 	l_rhs->m_VKTextureDesc = GetVKTextureDesc(rhs->m_TextureDesc);
@@ -96,19 +96,19 @@ bool VKRenderingServer::InitializeImpl(TextureComponent *rhs)
 
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
-	if (l_rhs->m_InitialData != nullptr)
+	if (textureData != nullptr)
 	{
 		CreateHostStagingBuffer(l_rhs->m_VKTextureDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, l_stagingBuffer, l_stagingBufferMemory);
 
 		void *l_mappedMemory;
 		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_mappedMemory);
-		std::memcpy(l_mappedMemory, l_rhs->m_InitialData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
+		std::memcpy(l_mappedMemory, textureData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
 	}
 
 	VkCommandBuffer l_commandBuffer = OpenTemporaryCommandBuffer(m_globalCommandPool);
 
-	if (l_rhs->m_InitialData != nullptr)
+	if (textureData != nullptr)
 	{
 		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		CopyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
@@ -121,7 +121,7 @@ bool VKRenderingServer::InitializeImpl(TextureComponent *rhs)
 
 	CloseTemporaryCommandBuffer(m_globalCommandPool, m_graphicsQueue, l_commandBuffer);
 
-	if (l_rhs->m_InitialData != nullptr)
+	if (textureData != nullptr)
 	{
 		vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 		vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);

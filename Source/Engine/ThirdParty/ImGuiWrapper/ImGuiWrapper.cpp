@@ -427,26 +427,26 @@ void ImGuiWrapperNS::showModelComponentPropertyEditor(void* rhs)
 
 	if (ImGui::Button("Save"))
 	{
-		l_rhs->m_modelFileName = modelFileName;
+		//l_rhs->m_modelFileName = modelFileName;
 	}
 
 	static MaterialComponent* selectedComponent = nullptr;
 
-	{
-		ImGui::BeginChild("Children MaterialComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
-		{
-			for (uint64_t j = 0; j < l_rhs->m_Model->renderableSets.m_count; j++)
-			{
-				auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(l_rhs->m_Model->renderableSets.m_startOffset + j);
+	// {
+	// 	ImGui::BeginChild("Children MaterialComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+	// 	{
+	// 		for (uint64_t j = 0; j < l_rhs->m_Model->renderableSets.m_count; j++)
+	// 		{
+	// 			auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(l_rhs->m_Model->renderableSets.m_startOffset + j);
 
-				if (ImGui::Selectable(l_renderableSet->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_renderableSet->material))
-				{
-					selectedComponent = l_renderableSet->material;
-				}
-			}
-		}
-		ImGui::EndChild();
-	}
+	// 			if (ImGui::Selectable(l_renderableSet->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_renderableSet->material))
+	// 			{
+	// 				selectedComponent = l_renderableSet->material;
+	// 			}
+	// 		}
+	// 	}
+	// 	ImGui::EndChild();
+	// }
 
 	ImGui::SameLine();
 

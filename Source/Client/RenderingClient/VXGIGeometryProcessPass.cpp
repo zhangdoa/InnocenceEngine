@@ -40,7 +40,7 @@ bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = l_VXGIRenderingConfig->m_voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.UseMipMap = true;
+	l_RenderPassDesc.m_RenderTargetDesc.MipLevels = 4;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_VXGIRenderingConfig->m_voxelizationResolution;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_VXGIRenderingConfig->m_voxelizationResolution;

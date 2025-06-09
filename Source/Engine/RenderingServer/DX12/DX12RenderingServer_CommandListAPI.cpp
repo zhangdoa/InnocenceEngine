@@ -68,13 +68,13 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 	{
 		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(l_outputMergerTarget->m_ColorOutputs[index]->m_DeviceMemories[l_currentFrame]));
+			//f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(l_outputMergerTarget->m_ColorOutputs[index]->m_DeviceMemories[l_currentFrame]));
 		}
 		else
 		{
 			for (auto i : l_outputMergerTarget->m_ColorOutputs)
 			{
-				f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(i->m_DeviceMemories[l_currentFrame]));
+				//f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(i->m_DeviceMemories[l_currentFrame]));
 			}
 		}
 	}
@@ -160,11 +160,11 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 				return false;
 
 			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
-			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
-			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
-			else
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.GPUHandle);
+			// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
+			// if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
+			// 	commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
+			// else
+			// 	commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.GPUHandle);
 		}
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
@@ -236,11 +236,11 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 				return false;
 
 			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
-			auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
-			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
-			else
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.GPUHandle);
+			// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
+			// if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
+			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
+			// else
+			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.GPUHandle);
 		}
 		return true;
 	}
@@ -279,9 +279,9 @@ bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList*
 		return false;
 
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-	auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
-	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DeviceMemory->m_DefaultHeapBuffer.Get(), l_rhs->m_CurrentState, l_newState);
-	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
+	// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
+	// auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DeviceMemory->m_DefaultHeapBuffer.Get(), l_rhs->m_CurrentState, l_newState);
+	// l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
 	l_rhs->m_CurrentState = l_newState;
 	return true;
 }
@@ -303,7 +303,7 @@ bool DX12RenderingServer::UpdateIndirectDrawCommand(GPUBufferComponent* indirect
 		l_command.VBV = l_mesh->m_VBV;
 		l_command.IBV = l_mesh->m_IBV;
 		l_command.DrawIndexedArgs.BaseVertexLocation = 0;
-		l_command.DrawIndexedArgs.IndexCountPerInstance = (uint32_t)l_mesh->m_IndexCount;
+		//l_command.DrawIndexedArgs.IndexCountPerInstance = (uint32_t)l_mesh->m_IndexCount;
 		l_command.DrawIndexedArgs.StartIndexLocation = 0;
 		l_command.DrawIndexedArgs.StartInstanceLocation = 0;
 		l_command.DrawIndexedArgs.InstanceCount = 1;
@@ -353,7 +353,7 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
 	l_commandList->m_DirectCommandList->IASetIndexBuffer(&l_mesh->m_IBV);
-	l_commandList->m_DirectCommandList->DrawIndexedInstanced((uint32_t)l_mesh->m_IndexCount, (uint32_t)instanceCount, 0, 0, 0);
+	//l_commandList->m_DirectCommandList->DrawIndexedInstanced((uint32_t)l_mesh->m_IndexCount, (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }

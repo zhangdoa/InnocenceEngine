@@ -136,7 +136,7 @@ bool SSAOPass::Setup(ISystemConfig* systemConfig)
 	m_NoiseTexture->m_TextureDesc.Height = l_textureSize;
 	m_NoiseTexture->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_NoiseTexture->m_InitialData = &m_Noise[0];
+	//m_NoiseTexture->m_InitialData = &m_Noise[0];
 
 	m_ObjectStatus = ObjectStatus::Created;
 

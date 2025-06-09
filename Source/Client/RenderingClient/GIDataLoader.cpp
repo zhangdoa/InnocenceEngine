@@ -144,7 +144,7 @@ bool GIDataLoader::Setup()
 	m_testSampleCubemap->m_TextureDesc.Width = m_testCubemapResolution;
 	m_testSampleCubemap->m_TextureDesc.Height = m_testCubemapResolution;
 	m_testSampleCubemap->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-	m_testSampleCubemap->m_InitialData = &m_cubemapTextureSamples[0];
+	//m_testSampleCubemap->m_InitialData = &m_cubemapTextureSamples[0];
 
 	////
 	size_t l_pixelIndex = 0;
@@ -170,7 +170,7 @@ bool GIDataLoader::Setup()
 	m_testSample3DTexture->m_TextureDesc.Height = m_testCubemapResolution;
 	m_testSample3DTexture->m_TextureDesc.DepthOrArraySize = m_testCubemapResolution;
 	m_testSample3DTexture->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-	m_testSample3DTexture->m_InitialData = &m_3DTextureSamples[0];
+	//m_testSample3DTexture->m_InitialData = &m_3DTextureSamples[0];
 
 	return true;
 }

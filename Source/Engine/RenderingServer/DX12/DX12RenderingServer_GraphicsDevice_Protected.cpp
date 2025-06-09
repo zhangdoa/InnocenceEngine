@@ -171,25 +171,25 @@ bool DX12RenderingServer::AssignSwapChainImages()
 {
     auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTarget;
     auto l_DX12TextureComp = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
-    l_DX12TextureComp->m_DeviceMemories.resize(GetSwapChainImageCount());
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        auto l_DX12DeviceMemory = new DX12DeviceMemory();
-        l_DX12DeviceMemory->m_DefaultHeapBuffer = m_swapChainImages[i];
-        l_DX12TextureComp->m_DeviceMemories[i] = l_DX12DeviceMemory;
-    }
+    // l_DX12TextureComp->m_DeviceMemories.resize(GetSwapChainImageCount());
+    // for (size_t i = 0; i < m_swapChainImageCount; i++)
+    // {
+    //     auto l_DX12DeviceMemory = new DX12DeviceMemory();
+    //     l_DX12DeviceMemory->m_DefaultHeapBuffer = m_swapChainImages[i];
+    //     l_DX12TextureComp->m_DeviceMemories[i] = l_DX12DeviceMemory;
+    // }
 
-    auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_DX12TextureComp->m_DeviceMemories[0]);
-    l_DX12TextureComp->m_DX12TextureDesc = l_DX12DeviceMemory->m_DefaultHeapBuffer->GetDesc();
-    l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
-    l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
-    l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
+    // auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_DX12TextureComp->m_DeviceMemories[0]);
+    // l_DX12TextureComp->m_DX12TextureDesc = l_DX12DeviceMemory->m_DefaultHeapBuffer->GetDesc();
+    // l_DX12TextureComp->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    // l_DX12TextureComp->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
+    // l_DX12TextureComp->m_CurrentState = l_DX12TextureComp->m_ReadState;
+    // l_DX12TextureComp->m_ObjectStatus = ObjectStatus::Activated;
 
-    m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-    m_PreviousFrame = GetPreviousFrame();
+    // m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+    // m_PreviousFrame = GetPreviousFrame();
 
-    m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
+    // m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
 
     return true;
 }
@@ -483,15 +483,14 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
         for (size_t i = 0; i < l_RTVs.size(); i++)
         {
             auto& l_RTV = l_RTVs[i];
-            for (size_t j = 0; j < l_outputMergerTarget->m_ColorOutputs.size(); j++)
-            {
-                auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[j]);
-                auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_renderTargetTexture->m_DeviceMemories[i]);
+            // for (size_t j = 0; j < l_outputMergerTarget->m_ColorOutputs.size(); j++)
+            // {
+            //     auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[j]);
+            //     auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_renderTargetTexture->m_DeviceMemories[i]);
 
-                auto l_ResourceHandle = l_DeviceMemory->m_DefaultHeapBuffer;
-                m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_RTV.m_Desc, l_RTV.m_Handles[j]);
-            }
-
+            //     auto l_ResourceHandle = l_DeviceMemory->m_DefaultHeapBuffer;
+            //     m_device->CreateRenderTargetView(l_ResourceHandle.Get(), &l_RTV.m_Desc, l_RTV.m_Handles[j]);
+            // }
         }
     }
 
@@ -511,10 +510,10 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
         auto l_renderTargetTexture = reinterpret_cast<DX12TextureComponent*>(l_outputMergerTarget->m_DepthStencilOutput);
         for (size_t i = 0; i < l_DSVs.size(); i++)
         {
-            auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_renderTargetTexture->m_DeviceMemories[i]);
-            auto l_ResourceHandle = l_DeviceMemory->m_DefaultHeapBuffer;
+            // auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_renderTargetTexture->m_DeviceMemories[i]);
+            // auto l_ResourceHandle = l_DeviceMemory->m_DefaultHeapBuffer;
 
-            m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_DSVs[i].m_Desc, l_DSVs[i].m_Handle);
+            // m_device->CreateDepthStencilView(l_ResourceHandle.Get(), &l_DSVs[i].m_Desc, l_DSVs[i].m_Handle);
         }
     }
 

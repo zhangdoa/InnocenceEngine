@@ -1,11 +1,12 @@
 #pragma once
+#include "../Common/IOService.h"
 #include "../Common/Object.h"
 #include "../Common/ObjectPool.h"
 #include "../Common/ThreadSafeVector.h"
 #include "../Common/ThreadSafeUnorderedMap.h"
 #include "../Common/Randomizer.h"
 #include "../Interface/ISystem.h"
-
+#include "../Services/AssetService.h"
 #include "../Engine.h"
 
 namespace Inno
@@ -40,13 +41,13 @@ namespace Inno
 
 			Log(Verbose, "Remove ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), "!");
 			m_ComponentPointers.for_each([this, objectLifespan](T*& component)
-			{
-				if (component->m_ObjectLifespan == objectLifespan)
 				{
-					DestroyComponent(component);
-					component = nullptr;
-				}
-			});
+					if (component->m_ObjectLifespan == objectLifespan)
+					{
+						DestroyComponent(component);
+						component = nullptr;
+					}
+				});
 
 			m_ComponentPointers.erase_if([](T* component) { return component == nullptr; });
 
@@ -127,13 +128,34 @@ namespace Inno
 				Log(Error, T::GetTypeName(), "ComponentFactory: Can't get ", T::GetTypeName(), " by index: ", std::to_string(index).c_str(), "!");
 				return nullptr;
 			}
-			
+
 			return m_ComponentPointers[index];
 		}
 
 		const std::vector<T*>& GetAll()
 		{
 			return m_ComponentPointers.getRawData();
+		}
+
+		uint64_t Load(const char* componentName, const Entity* entity)
+		{
+			auto fileName = componentName + std::string(".") + std::string(T::GetTypeName()) + ".inno";			
+			uint64_t l_result = 0;
+			if (!FindLoaded(fileName.c_str(), l_result))
+			{
+				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+				
+				auto l_componentPtr = Spawn<T>(entity, true, ObjectLifespan::Scene);
+				auto& component = *(l_componentPtr);
+				if (AssetService::Load(fileName.c_str(), component))
+				{
+					l_result = component.m_UUID;
+					RecordLoaded(fileName, l_result);
+					component.m_ObjectStatus = ObjectStatus::Activated;
+				}
+			}
+
+			return l_result;
 		}
 
 	private:
@@ -152,11 +174,38 @@ namespace Inno
 			return true;
 		}
 
+	private:
+		bool RecordLoaded(const char* fileName, uint64_t value)
+		{
+			m_LoadedComponents.emplace(fileName, value);
+			return true;
+		}
+
+		bool FindLoaded(const char* fileName, uint64_t& value)
+		{
+			auto l_loaded = m_LoadedComponents.find(fileName);
+			if (l_loaded != m_LoadedComponents.end())
+			{
+				value = l_loaded->second;
+
+				return true;
+			}
+			else
+			{
+				Log(Verbose, "", fileName, " is not loaded yet.");
+
+				return false;
+			}
+		}
+
+		std::shared_mutex m_Mutex;
 		uint32_t m_MaxComponentCount = 0;
 		uint32_t m_CurrentComponentIndex = 0;
-		IObjectPool* m_ComponentPool;
+
+		TObjectPool<T>* m_ComponentPool;
 		ThreadSafeVector<T*> m_ComponentPointers;
 		ThreadSafeUnorderedMap<Entity*, T*> m_ComponentLUT;
+		std::unordered_map<std::string, uint64_t> m_LoadedComponents;
 	};
 
 	class ComponentManager
@@ -253,6 +302,12 @@ namespace Inno
 			}
 			Log(Success, "ComponentManager has been cleaned up.");
 			return true;
+		}
+
+		template<typename T>
+		uint64_t Load(const char* componentName, const Entity* entity)
+		{
+			return GetComponentFactory<T>()->Load(componentName, entity);
 		}
 
 	private:

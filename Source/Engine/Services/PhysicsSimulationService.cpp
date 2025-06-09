@@ -24,20 +24,8 @@ namespace Inno
         bool Setup();
         void CreateRootComponent();
 		bool Update();
-		void UpdateCollisionComponent(Inno::CollisionComponent* CollisionComponent);
-		void RunCulling(std::function<bool(CollisionComponent*)>&& visiblityCheckCallback, std::function<void(CollisionComponent*)>&& onPassedCallback);
 
-		CollisionComponent* AddCollisionComponent(Entity* parentEntity);
-		
-		bool CreateCollisionPrimitive(MeshComponent* meshComponent);
 		void CreatePhysXActor(CollisionComponent* CollisionComponent);
-		void GenerateAABBInWorldSpace(CollisionComponent* CollisionComponent, const Mat4& localToWorldTransform);
-		CollisionComponent* CreateCollisionComponent(TransformComponent* transformComponent, ModelComponent* modelComponent, RenderableSet* renderableSet);
-		ArrayRangeInfo CreateCollisionComponents(ModelComponent* modelComponent);
-
-		void UpdateVisibleSceneBoundary(const AABB& rhs);
-		void UpdateTotalSceneBoundary(const AABB& rhs);
-		void UpdateStaticSceneBoundary(const AABB& rhs);
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -64,13 +52,6 @@ namespace Inno
 
 		Entity* m_RootCollisionComponentEntity = 0;
 		CollisionComponent* m_RootCollisionComponent = 0;
-		std::vector<CollisionComponent*> m_Components;
-		TObjectPool<CollisionPrimitive>* m_CollisionPrimitivePool;
-		std::unordered_map<MeshComponent*, CollisionPrimitive*> m_BottomLevelPrimitives;
-		std::unordered_set<CollisionPrimitive*> m_TopLevelPrimitives;
-
-		std::unordered_map<ModelComponent*, ArrayRangeInfo> m_ComponentsPerModelComponent;
-
 		std::vector<CullingResult> m_CullingResults;
 		mutable std::shared_mutex m_CullingResultsMutex;
 
@@ -81,7 +62,13 @@ namespace Inno
 bool PhysicsSimulationServiceImpl::Setup()
 {
 	// @TODO: Better not to hardcode the pool size.
-	m_CollisionPrimitivePool = TObjectPool<CollisionPrimitive>::Create(m_MaxComponentCount * 8);
+	g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_MaxComponentCount, this);
+
+	m_ObjectStatus = ObjectStatus::Created;
+
+	m_VisibleSceneBoundary.Reset();
+	m_TotalSceneBoundary.Reset();
+	m_StaticSceneBoundary.Reset();
 
     CreateRootComponent();
 	
@@ -93,20 +80,7 @@ bool PhysicsSimulationServiceImpl::Setup()
 		{
 			Log(Verbose, "Clearing all physics simulation data...");
 
-			auto l_componentsCount = m_Components.size();
-			for (size_t i = 0; i < l_componentsCount; i++)
-			{
-				g_Engine->Get<ComponentManager>()->Destroy(m_Components[i]);
-			}
-			m_Components.clear();
-
 			Log(Verbose, "All collision components have been destroyed.");
-
-			for (auto l_topLevelPrimitive : m_TopLevelPrimitives)
-			{
-				m_CollisionPrimitivePool->Destroy(l_topLevelPrimitive);
-			}
-			m_TopLevelPrimitives.clear();
 
 			Log(Verbose, "All top-level collision primitives have been destroyed.");
 
@@ -129,34 +103,12 @@ bool PhysicsSimulationServiceImpl::Setup()
 
 void Inno::PhysicsSimulationServiceImpl::CreateRootComponent()
 {
-	if (m_RootCollisionComponentEntity)
-	{
-		g_Engine->Get<EntityManager>()->Destroy(m_RootCollisionComponentEntity);
-	}
-
-	if (m_RootCollisionComponent)
-	{
-		m_CollisionPrimitivePool->Destroy(m_RootCollisionComponent->m_BottomLevelCollisionPrimitive);
-		m_CollisionPrimitivePool->Destroy(m_RootCollisionComponent->m_TopLevelCollisionPrimitive);
-		g_Engine->Get<ComponentManager>()->Destroy(m_RootCollisionComponent);
-	}
-
-    m_RootCollisionComponentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "RootCollisionComponentEntity/");
-    m_RootCollisionComponent = AddCollisionComponent(m_RootCollisionComponentEntity);
-    m_RootCollisionComponent->m_BottomLevelCollisionPrimitive = m_CollisionPrimitivePool->Spawn();
-    m_RootCollisionComponent->m_TopLevelCollisionPrimitive = m_CollisionPrimitivePool->Spawn();
-    m_RootCollisionComponent->m_ObjectStatus = ObjectStatus::Activated;
 }
 
 bool PhysicsSimulationServiceImpl::Update()
 {
     if (g_Engine->Get<SceneService>()->IsLoading())
         return true;
-			
-	for (auto CollisionComponent : m_Components)
-	{
-		UpdateCollisionComponent(CollisionComponent);
-	}
 
 #if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().Update();
@@ -165,211 +117,15 @@ bool PhysicsSimulationServiceImpl::Update()
 	return true;
 }
 
-void PhysicsSimulationServiceImpl::GenerateAABBInWorldSpace(CollisionComponent* CollisionComponent, const Mat4& localToWorldTransform)
-{
-	CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB = Math::TransformAABB(CollisionComponent->m_BottomLevelCollisionPrimitive->m_AABB, localToWorldTransform);
-	CollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere = Math::GenerateBoundingSphere(CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB);
-}
-
-void Inno::PhysicsSimulationServiceImpl::UpdateCollisionComponent(Inno::CollisionComponent* CollisionComponent)
-{
-	if (CollisionComponent->m_ObjectStatus != ObjectStatus::Activated)
-		return;
-
-	auto l_transformComponent = CollisionComponent->m_TransformComponent;
-	if (!l_transformComponent)
-	{
-		Log(Warning, "TransformComponent is missing for CollisionComponent: ", CollisionComponent->m_Owner->m_InstanceName.c_str(), "!");
-		return;
-	}
-
-	auto l_localToWorldTransform = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-	GenerateAABBInWorldSpace(CollisionComponent, l_localToWorldTransform);
-	UpdateTotalSceneBoundary(CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB);
-}
-
-void PhysicsSimulationServiceImpl::RunCulling(std::function<bool(CollisionComponent*)>&& visiblityCheckCallback, std::function<void(CollisionComponent*)>&& onPassedCallback)
-{
-	for (auto CollisionComponent : m_Components)
-	{
-		if (CollisionComponent->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
-
-		if (visiblityCheckCallback(CollisionComponent))
-		{
-			onPassedCallback(CollisionComponent);
-
-			UpdateVisibleSceneBoundary(CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB);
-		}
-	}
-}
-
-CollisionComponent* PhysicsSimulationServiceImpl::AddCollisionComponent(Entity* parentEntity)
-{
-	auto l_collisionComponent = g_Engine->Get<ComponentManager>()->Spawn<CollisionComponent>(parentEntity, false, ObjectLifespan::Persistence);
-
-	return l_collisionComponent;
-}
-
-bool PhysicsSimulationServiceImpl::CreateCollisionPrimitive(MeshComponent* meshComponent)
-{
-	auto l_BLCP = m_CollisionPrimitivePool->Spawn();
-	l_BLCP->m_AABB = Math::GenerateAABB(&meshComponent->m_Vertices[0], meshComponent->m_Vertices.size());
-	l_BLCP->m_Sphere = Math::GenerateBoundingSphere(l_BLCP->m_AABB);
-	m_BottomLevelPrimitives.emplace(meshComponent, l_BLCP);
-
-	for (auto l_collisionComponent : m_Components)
-	{
-		if (l_collisionComponent->m_RenderableSet->mesh != meshComponent)
-			continue;
-
-		l_collisionComponent->m_BottomLevelCollisionPrimitive = l_BLCP;
-		UpdateCollisionComponent(l_collisionComponent);
-
-		if (l_collisionComponent->m_ModelComponent->m_meshUsage == MeshUsage::Static)
-			UpdateStaticSceneBoundary(l_collisionComponent->m_TopLevelCollisionPrimitive->m_AABB);
-
-		l_collisionComponent->m_ObjectStatus = ObjectStatus::Activated;
-	}
-
-	return true;
-}
-
-CollisionComponent* PhysicsSimulationServiceImpl::CreateCollisionComponent(TransformComponent* transformComponent, ModelComponent* modelComponent, RenderableSet* renderableSet)
-{
-	auto l_meshComp = renderableSet->mesh;
-	auto l_collisionComponent = AddCollisionComponent(transformComponent->m_Owner);
-	l_collisionComponent->m_TopLevelCollisionPrimitive = m_CollisionPrimitivePool->Spawn();
-	m_TopLevelPrimitives.emplace(l_collisionComponent->m_TopLevelCollisionPrimitive);
-
-	l_collisionComponent->m_TransformComponent = transformComponent;
-	l_collisionComponent->m_ModelComponent = modelComponent;
-	l_collisionComponent->m_RenderableSet = renderableSet;
-	
-	auto l_BLCP = m_BottomLevelPrimitives.find(l_meshComp);
-	if (l_BLCP != m_BottomLevelPrimitives.end())
-	{
-		l_collisionComponent->m_BottomLevelCollisionPrimitive = l_BLCP->second;
-		l_collisionComponent->m_ObjectStatus = ObjectStatus::Activated;
-		UpdateCollisionComponent(l_collisionComponent);
-
-		if (l_collisionComponent->m_ModelComponent->m_meshUsage == MeshUsage::Static)
-			UpdateStaticSceneBoundary(l_collisionComponent->m_TopLevelCollisionPrimitive->m_AABB);		
-	}
-	else
-	{
-		l_collisionComponent->m_ObjectStatus = ObjectStatus::Suspended;
-	}
-
-	Log(Verbose, "CollisionComponent has been generated for: ", transformComponent->m_Owner->m_InstanceName.c_str(), ".");
-
-	m_Components.emplace_back(l_collisionComponent);
-
-	g_Engine->Get<BVHService>()->AddNode(l_collisionComponent);
-	g_Engine->getRenderingServer()->Initialize(l_collisionComponent);
-
-	return l_collisionComponent;
-}
-
-ArrayRangeInfo PhysicsSimulationServiceImpl::CreateCollisionComponents(ModelComponent* modelComponent)
-{
-	ArrayRangeInfo l_result;
-	l_result.m_startOffset = m_Components.size();
-	l_result.m_count = modelComponent->m_Model->renderableSets.m_count;
-
-	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(modelComponent->m_Owner);
-
-	for (uint64_t j = 0; j < modelComponent->m_Model->renderableSets.m_count; j++)
-	{
-		auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(modelComponent->m_Model->renderableSets.m_startOffset + j);
-		if (!l_renderableSet)
-		{
-			Log(Error, "RenderableSet is missing for ModelComponent: ", modelComponent->m_Owner->m_InstanceName.c_str(), "!");
-			continue;
-		}
-		auto l_collisionComponent = CreateCollisionComponent(l_transformComponent, modelComponent, l_renderableSet);
-		CreatePhysXActor(l_collisionComponent);
-	}
-
-	m_ComponentsPerModelComponent.emplace(modelComponent, l_result);
-
-	return l_result;
-}
-
 void PhysicsSimulationServiceImpl::CreatePhysXActor(CollisionComponent* CollisionComponent)
 {
 #if defined INNO_PLATFORM_WIN
-	auto l_modelComponent = CollisionComponent->m_ModelComponent;
-	if (!l_modelComponent->m_simulatePhysics)
-		return;
-
-	auto l_renderableSet = CollisionComponent->m_RenderableSet;
-	auto l_transformComponent = CollisionComponent->m_TransformComponent;
-
-	switch (l_renderableSet->mesh->m_MeshShape)
-	{
-	case Type::MeshShape::Customized:
-		PhysXWrapper::get().createPxMesh(CollisionComponent, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic), false);
-		break;
-	case Type::MeshShape::Triangle:
-		break;
-	case Type::MeshShape::Square:
-		break;
-	case Type::MeshShape::Pentagon:
-		break;
-	case Type::MeshShape::Hexagon:
-		break;
-	case Type::MeshShape::Tetrahedron:
-		PhysXWrapper::get().createPxMesh(CollisionComponent, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
-		break;
-	case Type::MeshShape::Cube:
-		PhysXWrapper::get().createPxBox(CollisionComponent, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic));
-		break;
-	case Type::MeshShape::Octahedron:
-		PhysXWrapper::get().createPxMesh(CollisionComponent, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
-		break;
-	case Type::MeshShape::Dodecahedron:
-		PhysXWrapper::get().createPxMesh(CollisionComponent, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
-		break;
-	case Type::MeshShape::Icosahedron:
-		PhysXWrapper::get().createPxMesh(CollisionComponent, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic), true);
-		break;
-	case Type::MeshShape::Sphere:
-		PhysXWrapper::get().createPxSphere(CollisionComponent, l_transformComponent->m_localTransformVector_target.m_scale.x, (l_modelComponent->m_meshUsage == MeshUsage::Dynamic));
-		break;
-	default:
-		Log(Error, "Invalid MeshShape!");
-		break;
-	}
 #endif
-}
-
-void PhysicsSimulationServiceImpl::UpdateVisibleSceneBoundary(const AABB& rhs)
-{
-	m_VisibleSceneBoundary.m_Max = Math::elementWiseMax(rhs.m_boundMax, m_VisibleSceneBoundary.m_Max);
-	m_VisibleSceneBoundary.m_Min = Math::elementWiseMin(rhs.m_boundMin, m_VisibleSceneBoundary.m_Min);
-}
-
-void PhysicsSimulationServiceImpl::UpdateTotalSceneBoundary(const AABB& rhs)
-{
-	m_TotalSceneBoundary.m_Max = Math::elementWiseMax(rhs.m_boundMax, m_TotalSceneBoundary.m_Max);
-	m_TotalSceneBoundary.m_Min = Math::elementWiseMin(rhs.m_boundMin, m_TotalSceneBoundary.m_Min);
-}
-
-void PhysicsSimulationServiceImpl::UpdateStaticSceneBoundary(const AABB& rhs)
-{
-	m_StaticSceneBoundary.m_Max = Math::elementWiseMax(rhs.m_boundMax, m_StaticSceneBoundary.m_Max);
-	m_StaticSceneBoundary.m_Min = Math::elementWiseMin(rhs.m_boundMin, m_StaticSceneBoundary.m_Min);
-
-	m_RootCollisionComponent->m_TopLevelCollisionPrimitive->m_AABB = Math::GenerateAABB(m_StaticSceneBoundary.m_Max, m_StaticSceneBoundary.m_Min);
-	m_RootCollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere = Math::GenerateBoundingSphere(m_RootCollisionComponent->m_TopLevelCollisionPrimitive->m_AABB);
 }
 
 bool PhysicsSimulationService::Setup(ISystemConfig* systemConfig)
 {
 	m_Impl = new PhysicsSimulationServiceImpl();
-
-	g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_Impl->m_MaxComponentCount, this);
 
 	return m_Impl->Setup();
 }
@@ -410,67 +166,6 @@ ObjectStatus PhysicsSimulationService::GetStatus()
 
 void PhysicsSimulationService::RunCulling()
 {
-	auto l_mainCamera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
-	if (l_mainCamera == nullptr)
-	{
-		Log(Warning, "Can't find the main camera.");
-		return;
-	}
-
-	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
-	if (l_sun == nullptr)
-	{
-		Log(Warning, "Can't find the main light source.");
-		return;
-	}
-
-	m_Impl->m_VisibleSceneBoundary.Reset();
-
-	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_CullingResultsMutex);
-
-	m_Impl->m_CullingResults.clear();
-	m_Impl->m_CullingResults.reserve(m_Impl->m_Components.size());
-
-	auto visibilityCheck = [&](CollisionComponent* CollisionComponent) -> bool {
-		return Math::IsOverlap(l_mainCamera->m_frustum, CollisionComponent->m_TopLevelCollisionPrimitive->m_Sphere);
-		};
-
-	auto onPassed = [&](CollisionComponent* CollisionComponent) {
-		CullingResult l_cullingResult = {};
-		l_cullingResult.m_CollisionComponent = CollisionComponent;
-		l_cullingResult.m_VisibilityMask |= VisibilityMask::MainCamera;
-		m_Impl->m_CullingResults.emplace_back(l_cullingResult);
-		};
-
-	m_Impl->RunCulling(std::move(visibilityCheck), std::move(onPassed));
-
-	auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
-	auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
-
-	auto sunVisibilityCheck = [&](CollisionComponent* CollisionComponent) -> bool {
-		auto l_AABB_lightSpace = Math::RotateAABBToNewSpace(CollisionComponent->m_TopLevelCollisionPrimitive->m_AABB, l_sunRotationInv);
-		for (auto& l_AABB : l_sun->m_LitRegion_LightSpace)
-		{
-			if (Math::IsOverlap(l_AABB_lightSpace, l_AABB))
-				return true;
-		}
-
-		return false;
-		};
-
-	auto onSunPassed = [&](CollisionComponent* CollisionComponent) {
-		CullingResult l_cullingResult;
-		l_cullingResult.m_CollisionComponent = CollisionComponent;
-		l_cullingResult.m_VisibilityMask |= VisibilityMask::Sun;
-		m_Impl->m_CullingResults.emplace_back(l_cullingResult);
-		};
-
-	m_Impl->RunCulling(std::move(sunVisibilityCheck), std::move(onSunPassed));
-
-	auto l_BVHService = g_Engine->Get<BVHService>();
-
-	m_Impl->m_VisibleSceneBoundary.m_AABB = Math::GenerateAABB(m_Impl->m_VisibleSceneBoundary.m_Max, m_Impl->m_VisibleSceneBoundary.m_Min);
-	m_Impl->m_TotalSceneBoundary.m_AABB = Math::GenerateAABB(m_Impl->m_TotalSceneBoundary.m_Max, m_Impl->m_TotalSceneBoundary.m_Min);
 }
 
 const std::vector<CullingResult>& PhysicsSimulationService::GetCullingResult()
@@ -486,7 +181,7 @@ AABB PhysicsSimulationService::GetVisibleSceneAABB()
 
 AABB PhysicsSimulationService::GetStaticSceneAABB()
 {
-	return m_Impl->m_RootCollisionComponent->m_TopLevelCollisionPrimitive->m_AABB;
+	return m_Impl->m_RootCollisionComponent->m_AABB;
 }
 
 AABB PhysicsSimulationService::GetTotalSceneAABB()
@@ -497,29 +192,16 @@ AABB PhysicsSimulationService::GetTotalSceneAABB()
 bool PhysicsSimulationService::AddForce(ModelComponent* modelComponent, Vec4 force)
 {
 #if defined INNO_PLATFORM_WIN
-	auto l_result = m_Impl->m_ComponentsPerModelComponent.find(modelComponent);
-	if (l_result != m_Impl->m_ComponentsPerModelComponent.end())
-	{
-		auto l_rangeInfo = l_result->second;
-
-		for (size_t i = 0; i < l_rangeInfo.m_count; i++)
-		{
-			auto l_collisionComponent = m_Impl->m_Components[l_rangeInfo.m_startOffset + i];
-			PhysXWrapper::get().addForce(l_collisionComponent, force);
-		}
-	}
 #endif
 	return true;
 }
 
-bool PhysicsSimulationService::CreateCollisionPrimitive(MeshComponent* meshComponent)
+bool PhysicsSimulationService::CreateCollisionComponent(const MeshComponent& component)
 {
-	return m_Impl->CreateCollisionPrimitive(meshComponent);
+	return true;
 }
 
-bool PhysicsSimulationService::CreateCollisionComponents(ModelComponent* modelComponent)
+bool PhysicsSimulationService::CreateCollisionComponent(const ModelComponent& component)
 {
-	auto l_result = m_Impl->CreateCollisionComponents(modelComponent);
-
 	return true;
 }

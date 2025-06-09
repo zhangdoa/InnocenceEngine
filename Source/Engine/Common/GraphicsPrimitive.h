@@ -87,10 +87,10 @@ namespace Inno
 			bool IsSRGB = false;
 			TexturePixelDataFormat PixelDataFormat = TexturePixelDataFormat::Invalid;
 			TexturePixelDataType PixelDataType = TexturePixelDataType::Invalid;
-			bool UseMipMap = false;
 			uint32_t Width = 0;
 			uint32_t Height = 0;
 			uint32_t DepthOrArraySize = 0;
+			uint32_t MipLevels = 1;
 			float BorderColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		};

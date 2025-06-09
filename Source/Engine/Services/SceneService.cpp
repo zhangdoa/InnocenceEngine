@@ -45,7 +45,7 @@ bool SceneService::LoadSync(const char* fileName)
 		(*i.first)();
 	}
 
-	JSONWrapper::Load(fileName);
+	JSONWrapper::LoadScene(fileName);
 
 	Log(Verbose, "Scene ", fileName, " has been loaded.");
 
@@ -54,8 +54,6 @@ bool SceneService::LoadSync(const char* fileName)
 		Log(Verbose, "Scene loading finish callback (priority: ", i.second, ") is called.");
 		(*i.first)();
 	}
-
-	g_Engine->Get<AssetService>()->LoadAssetsForComponents(false);
 
 	m_IsLoading = false;
 
@@ -170,11 +168,11 @@ bool SceneService::Save(const char* fileName)
 {
 	if (!strcmp(fileName, ""))
 	{
-		return JSONWrapper::Save(m_currentScene.c_str());
+		return JSONWrapper::SaveScene(m_currentScene.c_str());
 	}
 	else
 	{
-		return JSONWrapper::Save(fileName);
+		return JSONWrapper::SaveScene(fileName);
 	}
 }
 

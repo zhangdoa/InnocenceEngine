@@ -18,8 +18,8 @@ namespace Inno
 
 		ObjectStatus GetStatus();
 
-		bool CreateCollisionPrimitive(MeshComponent* meshComponent);
-		bool CreateCollisionComponents(ModelComponent* modelComponent);
+		bool CreateCollisionComponent(const MeshComponent& component);
+		bool CreateCollisionComponent(const ModelComponent& component);
 
 		void RunCulling();
 		const std::vector<CullingResult>& GetCullingResult();

@@ -51,8 +51,8 @@ namespace Inno
 		virtual	bool Delete(ISemaphore* rhs) = 0;
 		virtual	bool Delete(IOutputMergerTarget* rhs) = 0;
 
-		void Initialize(MeshComponent* rhs);
-		void Initialize(TextureComponent* rhs);
+		void Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices);
+		void Initialize(TextureComponent* rhs, void* textureData = nullptr);
 		void Initialize(MaterialComponent* rhs);
 		void Initialize(RenderPassComponent* rhs);
 		void Initialize(ShaderProgramComponent* rhs);
@@ -123,8 +123,7 @@ namespace Inno
 		GPUResourceComponent* GetTLASBuffer() { return m_TLASBufferComponent; }
 
 	protected:
-		bool WriteMappedMemory(MeshComponent* rhs);
-		bool WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* GPUBufferValue, size_t startOffset, size_t range);
+		bool WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range);
 
 	public:
 		template<typename T>
@@ -141,8 +140,8 @@ namespace Inno
 		}
 
 	protected:
-		virtual bool InitializeImpl(MeshComponent* rhs) { return false; }
-		virtual bool InitializeImpl(TextureComponent* rhs) { return false; }
+		virtual bool InitializeImpl(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
+		virtual bool InitializeImpl(TextureComponent* rhs, void* textureData) { return false; }
 		virtual bool InitializeImpl(MaterialComponent* rhs);
 		virtual bool InitializeImpl(RenderPassComponent* rhs);
 		virtual	bool InitializeImpl(ShaderProgramComponent* rhs) { return false; }

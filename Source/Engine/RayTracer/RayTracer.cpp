@@ -316,33 +316,32 @@ bool ExecuteRayTracing()
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_modelComponents.size());
 
-	for (auto l_modelComponent : l_modelComponents)
-	{
-		if (l_modelComponent->m_MeshShape == MeshShape::Sphere)
-		{
-			auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
-			for (uint64_t j = 0; j < l_modelComponent->m_Model->renderableSets.m_count; j++)
-			{
-				auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(l_modelComponent->m_Model->renderableSets.m_startOffset + j);
-				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
-				{
-					auto l_hitable = new HitableSphere();
-					l_hitable->m_Material = new Lambertian();
-					l_hitable->m_Material->Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
-					l_hitable->m_Material->Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
-					l_hitable->m_Material->Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
-					l_hitable->m_Material->MRAT.x = l_pair->material->m_materialAttributes.Metallic;
-					l_hitable->m_Material->MRAT.y = l_pair->material->m_materialAttributes.Roughness;
+	// for (auto l_modelComponent : l_modelComponents)
+	// {
+	// 	if (!l_modelComponent->m_MeshShape == MeshShape::Sphere)
+	// 		continue;
+	// 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
+	// 	for (uint64_t j = 0; j < l_modelComponent->m_Model->renderableSets.m_count; j++)
+	// 	{
+	// 		auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(l_modelComponent->m_Model->renderableSets.m_startOffset + j);
+	// 		if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
+	// 		{
+	// 			auto l_hitable = new HitableSphere();
+	// 			l_hitable->m_Material = new Lambertian();
+	// 			l_hitable->m_Material->Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
+	// 			l_hitable->m_Material->Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
+	// 			l_hitable->m_Material->Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
+	// 			l_hitable->m_Material->MRAT.x = l_pair->material->m_materialAttributes.Metallic;
+	// 			l_hitable->m_Material->MRAT.y = l_pair->material->m_materialAttributes.Roughness;
 
-					l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos.xyz();
-					l_hitable->m_Sphere.m_radius = 1.0f;
+	// 			l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos.xyz();
+	// 			l_hitable->m_Sphere.m_radius = 1.0f;
 
-					l_hitableListVector.emplace_back(l_hitable);
-					break;
-				}
-			}
-		}
-	}
+	// 			l_hitableListVector.emplace_back(l_hitable);
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
 	auto l_hitable = new HitableSphere();
 	l_hitable->m_Material = new Lambertian();
@@ -422,10 +421,10 @@ bool ExecuteRayTracing()
 		}
 	}
 
-	m_TextureComp->m_InitialData = &l_result[0];
+	//m_TextureComp->m_InitialData = &l_result[0];
 
-	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
-	g_Engine->Get<AssetService>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp);
+	// auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
+	// g_Engine->Get<AssetService>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp->m_TextureDesc, &l_result[0]);
 
 	Log(Success, "Ray tracing finished.");
 

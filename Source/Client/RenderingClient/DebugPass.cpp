@@ -25,7 +25,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 	{
 		m_debugCameraFrustumMeshComps[i] = l_renderingServer->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
 		g_Engine->Get<TemplateAssetService>()->GenerateMesh(MeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
-		m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
+		//m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
 		m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
 	}
 	
@@ -106,7 +106,7 @@ bool DebugPass::Initialize()
 
 	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 	{
-		l_renderingServer->Initialize(m_debugCameraFrustumMeshComps[i]);
+		//l_renderingServer->Initialize(m_debugCameraFrustumMeshComps[i]);
 	}
 
 	l_renderingServer->Initialize(m_debugSphereMeshGPUBufferComp);

@@ -482,7 +482,7 @@ namespace Inno
 			};
 
 		f_convertModel = []() {
-			g_Engine->Get<AssetService>()->ConvertModel("..//Res//Models//Sponza_PBR//NewSponza_Merged.fbx", "..//Res//ConvertedAssets//");
+			g_Engine->Get<AssetService>()->Import("..//Res//Models//Sponza_PBR//NewSponza_Merged.fbx", "..//Res//ConvertedAssets//");
 			};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });

@@ -6,30 +6,24 @@
 
 namespace Inno
 {
-	struct RenderableSet
+	class DrawCallComponent : public Component
 	{
-		MeshComponent* mesh;
-		SkeletonComponent* skeleton;
-		MaterialComponent* material;
-	};
+	public:
+		static uint32_t GetTypeID() { return 200; }
+		static const char* GetTypeName() { return "DrawCallComponent"; }
 
-	struct Model
-	{
-		ArrayRangeInfo renderableSets;
+		uint64_t m_MeshComponent = 0;
+		uint64_t m_MaterialComponent = 0;
+		uint64_t m_SkeletonComponent = 0;
 	};
 
 	class ModelComponent : public Component
 	{
 	public:
-		static uint32_t GetTypeID() { return 2; };
-		static const char* GetTypeName() { return "ModelComponent"; };
+		static uint32_t GetTypeID() { return 2; }
+		static const char* GetTypeName() { return "ModelComponent"; }
 
-		MeshUsage m_meshUsage = MeshUsage::Static;
-		MeshShape m_MeshShape = MeshShape::Customized;
-
-		std::string m_modelFileName;
-		bool m_simulatePhysics = false;
-
-		Model* m_Model;
+		uint64_t m_CollisionComponent = 0;
+		Array<uint64_t> m_DrawCallComponents;
 	};
 }

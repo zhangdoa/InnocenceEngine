@@ -28,7 +28,7 @@ bool VXGILightPass::Setup(ISystemConfig *systemConfig)
 	m_IlluminanceVolume->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_IlluminanceVolume->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_IlluminanceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-	m_IlluminanceVolume->m_TextureDesc.UseMipMap = true;
+	m_IlluminanceVolume->m_TextureDesc.MipLevels = 4;
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VXGILightPass/");
 

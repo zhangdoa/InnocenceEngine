@@ -6,12 +6,11 @@
 
 #include "../../Engine.h"
 using namespace Inno;
-;
 
 #include "stb_image.h"
 #include "stb_image_write.h"
 
-TextureComponent* STBWrapper::LoadTexture(const char* fileName)
+void* STBWrapper::Load(const char* fileName, TextureComponent& component)
 {
 	int32_t width, height, nrChannels;
 
@@ -30,36 +29,27 @@ TextureComponent* STBWrapper::LoadTexture(const char* fileName)
 	{
 		l_rawData = stbi_load(l_fullPath.c_str(), &width, &height, &nrChannels, 4);
 	}
-	if (l_rawData)
+
+	if (!l_rawData)
 	{
-		auto l_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent();
-#ifdef INNO_DEBUG
-        auto l_fileName = std::string(fileName);
-        l_fileName += "/";
-		l_TextureComp->m_InstanceName = l_fileName.c_str();
-#endif
-		// @TODO: Forcing RGBA is wasting memory
-		l_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(4);
-		l_TextureComp->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;
-		l_TextureComp->m_TextureDesc.UseMipMap = true;
-		l_TextureComp->m_TextureDesc.Width = width;
-		l_TextureComp->m_TextureDesc.Height = height;
-		l_TextureComp->m_InitialData = l_rawData;
-		l_TextureComp->m_ObjectStatus = ObjectStatus::Created;
-
-		Log(Verbose, "STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
-
-		return l_TextureComp;
-	}
-	else
-	{
-		Log(Error, "STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
-
+		Log(Error, "Failed to load texture: ", l_fullPath.c_str());
 		return nullptr;
 	}
+
+	// @TODO: Forcing RGBA is wasting memory
+	component.m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(4);
+	component.m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;
+	component.m_TextureDesc.MipLevels = 4;
+	component.m_TextureDesc.Width = width;
+	component.m_TextureDesc.Height = height;
+	component.m_ObjectStatus = ObjectStatus::Created;
+
+	Log(Verbose, "STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
+
+	return l_rawData;
 }
 
-bool STBWrapper::SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
+bool STBWrapper::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
 	int result = 1;
 	int32_t comp = (int32_t)textureDesc.PixelDataFormat;

@@ -4,6 +4,6 @@ namespace Inno
 {
 	namespace AssimpWrapper
 	{
-		bool ConvertModel(const char* fileName, const char* exportPath);
+		bool Import(const char* fileName, const char* exportPath);
 	};
 }

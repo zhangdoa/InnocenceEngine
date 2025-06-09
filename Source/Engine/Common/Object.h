@@ -49,8 +49,6 @@ namespace Inno
 
 		static uint32_t GetTypeID() { return 0; }
         static const char* GetTypeName() { return "Entity"; }
-
-		std::bitset<MaxComponentType> m_ComponentsMask;
 	};
 
 	class Component : public Object

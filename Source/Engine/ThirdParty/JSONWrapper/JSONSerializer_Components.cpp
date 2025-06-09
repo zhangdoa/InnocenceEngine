@@ -1,0 +1,309 @@
+#include "JSONWrapper.h"
+#include "../../Services/EntityManager.h"
+#include "../../Services/ComponentManager.h"
+#include "../../Services/TemplateAssetService.h"
+#include "../../Services/PhysicsSimulationService.h"
+#include "../STBWrapper/STBWrapper.h"
+
+#include "../../Engine.h"
+using namespace Inno;
+
+void JSONWrapper::to_json(json& j, const TransformComponent& p)
+{
+    json localTransformVector;
+
+    to_json(localTransformVector, p.m_localTransformVector);
+
+    j = json
+    {
+        {"ComponentType", p.GetTypeID()},
+        {"ParentTransformComponent", p.m_parentTransformComponent->m_UUID},
+        {"LocalTransformVector", localTransformVector },
+    };
+}
+
+void JSONWrapper::to_json(json& j, const ModelComponent& p)
+{
+    j = json
+    {
+        {"ComponentType", p.GetTypeID()},
+        // @TODO: Finish all the writings of the child components
+    };
+}
+
+void JSONWrapper::to_json(json& j, const LightComponent& p)
+{
+    json color;
+    to_json(color, p.m_RGBColor);
+
+    json shape;
+    to_json(shape, p.m_Shape);
+
+    j = json
+    {
+        {"ComponentType", p.GetTypeID()},
+        {"RGBColor", color},
+        {"Shape", shape},
+        {"LightType", p.m_LightType},
+        {"ColorTemperature", p.m_ColorTemperature},
+        {"LuminousFlux", p.m_LuminousFlux},
+        {"UseColorTemperature", p.m_UseColorTemperature},
+    };
+}
+
+void JSONWrapper::to_json(json& j, const CameraComponent& p)
+{
+    j = json
+    {
+        {"ComponentType", p.GetTypeID()},
+        {"FOVX", p.m_FOVX},
+        {"WidthScale", p.m_widthScale},
+        {"HeightScale", p.m_heightScale},
+        {"zNear", p.m_zNear},
+        {"zFar", p.m_zFar},
+        {"Aperture", p.m_aperture},
+        {"ShutterTime", p.m_shutterTime},
+        {"ISO", p.m_ISO},
+    };
+}
+
+void JSONWrapper::Load(const char* fileName, TransformComponent& p)
+{
+    json j;
+    Load(fileName, j);
+
+    from_json(j["LocalTransformVector"], p.m_localTransformVector);
+    auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
+    if (l_parentTransformComponentEntityName == "RootTransform")
+    {
+        auto l_rootTransformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
+        p.m_parentTransformComponent = l_rootTransformComponent;
+    }
+}
+void JSONWrapper::Load(const char* fileName, ModelComponent& component)
+{
+    json j;
+    Load(fileName, j);
+    if (j.find("DrawCallComponents") != j.end())
+    {
+        auto l_j = j["DrawCallComponents"];
+        component.m_DrawCallComponents.reserve(l_j.size());
+        for (auto& i : l_j)
+        {
+            auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Load<DrawCallComponent>(i["Name"].get<std::string>().c_str(), component.m_Owner);
+            component.m_DrawCallComponents.emplace_back(l_drawCallComponent);
+        }
+    }
+
+    if (j.find("AnimationComponents") != j.end())
+    {
+        auto l_j = j["AnimationComponents"];
+        // @TODO: Implement AnimationComponent loading
+    }
+}
+
+void JSONWrapper::Load(const char* fileName, DrawCallComponent& component)
+{
+    json j;
+    Load(fileName, j);
+
+    if (j.find("MeshComponent") != j.end())
+    {
+        auto l_j = j["MeshComponent"];
+        component.m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>(l_j["Name"].get<std::string>().c_str(), component.m_Owner);
+    }
+
+    if (j.find("MaterialComponent") != j.end())
+    {
+        auto l_j = j["MaterialComponent"];
+        component.m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>(l_j["Name"].get<std::string>().c_str(), component.m_Owner);
+    }
+}
+
+void JSONWrapper::Load(const char* fileName, MeshComponent& component)
+{
+    json j;
+    Load(fileName, j);
+
+    MeshShape l_meshShape = MeshShape(j["MeshShape"].get<int32_t>());
+    if (l_meshShape != MeshShape::Customized)
+    {
+        component = *g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_meshShape);
+        return;
+    }
+
+    auto l_meshFileName = j["File"].get<std::string>();
+    std::ifstream l_meshFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_meshFileName, std::ios::binary);
+    if (!l_meshFile.is_open())
+    {
+        Log(Error, "Can't open file ", l_meshFileName.c_str(), "!");
+        return;
+    }
+
+    size_t l_verticesNumber = j["VerticesNumber"];
+    size_t l_indicesNumber = j["IndicesNumber"];
+
+    std::vector<Vertex> l_vertices;
+    l_vertices.reserve(l_verticesNumber);
+
+    std::vector<Index> l_indices;
+    l_indices.reserve(l_indicesNumber);
+
+    g_Engine->Get<IOService>()->deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_vertices);
+    g_Engine->Get<IOService>()->deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_indices);
+
+    l_meshFile.close();
+
+    if (j.find("Bones") != j.end())
+    {
+        auto l_bones = j["Bones"];
+        std::string l_skeletonName = l_bones["Name"];
+        // @TODO: Implement SkeletonComponent loading
+    }
+
+    component.m_ObjectStatus = ObjectStatus::Created;
+    g_Engine->getRenderingServer()->Initialize(&component, l_vertices, l_indices);
+
+    //g_Engine->Get<PhysicsSimulationService>()->CreateCollisionComponent(&component);
+}
+
+void JSONWrapper::Load(const char* fileName, MaterialComponent& component)
+{
+    json j;
+    Load(fileName, j);
+    if (j.find("TextureComponents") != j.end())
+    {
+        auto l_j = j["TextureComponents"];
+        component.m_TextureComponents.reserve(l_j.size());
+        for (auto& i : l_j)
+        {
+            auto l_textureComponent = g_Engine->Get<ComponentManager>()->Load<TextureComponent>(i["Name"].get<std::string>().c_str(), component.m_Owner);
+            component.m_TextureComponents.emplace_back(l_textureComponent);
+        }
+    }
+
+    component.m_materialAttributes.AlbedoR = j["Albedo"]["R"];
+    component.m_materialAttributes.AlbedoG = j["Albedo"]["G"];
+    component.m_materialAttributes.AlbedoB = j["Albedo"]["B"];
+    component.m_materialAttributes.Alpha = j["Albedo"]["A"];
+    component.m_materialAttributes.Metallic = j["Metallic"];
+    component.m_materialAttributes.Roughness = j["Roughness"];
+    component.m_materialAttributes.AO = j["AO"];
+    component.m_materialAttributes.Thickness = j["Thickness"];
+    component.m_ShaderModel = ShaderModel(j["ShaderModel"]);
+
+    component.m_ObjectStatus = ObjectStatus::Created;
+    g_Engine->getRenderingServer()->Initialize(&component);
+}
+
+void JSONWrapper::Load(const char* fileName, TextureComponent& component)
+{
+    json j;
+    Load(fileName, j);
+
+    component.m_TextureDesc.Sampler = TextureSampler(j["Sampler"]);
+    component.m_TextureDesc.Usage = TextureUsage(j["Usage"]);
+    component.m_TextureDesc.IsSRGB = j["IsSRGB"];
+
+    void* textureData = STBWrapper::Load(j["File"].get<std::string>().c_str(), component);
+    component.m_ObjectStatus = ObjectStatus::Created;
+    
+    g_Engine->getRenderingServer()->Initialize(&component, textureData);
+}
+
+// SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
+// {
+// 	SkeletonComponent* l_SkeletonComp;
+
+// 	// check if this file has already been loaded once
+// 	if (g_Engine->Get<AssetService>()->FindLoadedSkeleton(name, l_SkeletonComp))
+// 	{
+// 		return l_SkeletonComp;
+// 	}
+// 	else
+// 	{
+// 		l_SkeletonComp = g_Engine->Get<AnimationService>()->AddSkeletonComponent();
+// 		l_SkeletonComp->m_InstanceName = (std::string(name) + ("//")).c_str();
+
+// 		auto l_size = j["Bones"].size();
+// 		l_SkeletonComp->m_BoneList.reserve(l_size);
+// 		l_SkeletonComp->m_BoneList.fulfill();
+
+// 		for (auto i : j["Bones"])
+// 		{
+// 			Bone l_boneData;
+// 			from_json(i["Transformation"], l_boneData.m_LocalToBoneSpace);
+// 			l_SkeletonComp->m_BoneList[i["ID"]] = l_boneData;
+// 		}
+
+// 		g_Engine->Get<AssetService>()->RecordLoadedSkeleton(name, l_SkeletonComp);
+// 		g_Engine->Get<AnimationService>()->InitializeSkeletonComponent(l_SkeletonComp);
+
+// 		return l_SkeletonComp;
+// 	}
+// }
+
+// bool JSONWrapper::ProcessAnimations(const json& j)
+// {
+// 	for (auto i : j)
+// 	{
+// 		std::string l_animationFileName = i["File"];
+
+// 		std::ifstream l_animationFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_animationFileName, std::ios::binary);
+
+// 		if (!l_animationFile.is_open())
+// 		{
+// 			Log(Error, "std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
+// 			return false;
+// 		}
+
+// 		auto l_ADC = g_Engine->Get<AnimationService>()->AddAnimationComponent();
+// 		l_ADC->m_InstanceName = (l_animationFileName + "//").c_str();
+
+// 		std::streamoff l_offset = 0;
+
+// 		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_Duration);
+// 		l_offset += sizeof(l_ADC->m_Duration);
+// 		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
+// 		l_offset += sizeof(l_ADC->m_NumChannels);
+// 		g_Engine->Get<IOService>()->deserialize(l_animationFile, l_offset, &l_ADC->m_NumTicks);
+// 		l_offset += sizeof(l_ADC->m_NumTicks);
+
+// 		auto l_keyDataSize = g_Engine->Get<IOService>()->getFileSize(l_animationFile) - l_offset;
+// 		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
+// 		g_Engine->Get<IOService>()->deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
+
+// 		g_Engine->Get<AssetService>()->RecordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
+// 		g_Engine->Get<AnimationService>()->InitializeAnimationComponent(l_ADC);
+// 	}
+
+// 	return true;
+// }
+
+void JSONWrapper::Load(const char* fileName, LightComponent& p)
+{
+    json j;
+    Load(fileName, j);
+
+    from_json(j["RGBColor"], p.m_RGBColor);
+    from_json(j["Shape"], p.m_Shape);
+    p.m_LightType = j["LightType"];
+    p.m_ColorTemperature = j["ColorTemperature"];
+    p.m_LuminousFlux = j["LuminousFlux"];
+    p.m_UseColorTemperature = j["UseColorTemperature"];
+}
+
+void JSONWrapper::Load(const char* fileName, CameraComponent& p)
+{
+    json j;
+    Load(fileName, j);
+
+    p.m_FOVX = j["FOVX"];
+    p.m_widthScale = j["WidthScale"];
+    p.m_heightScale = j["HeightScale"];
+    p.m_zNear = j["zNear"];
+    p.m_zFar = j["zFar"];
+    p.m_aperture = j["Aperture"];
+    p.m_shutterTime = j["ShutterTime"];
+    p.m_ISO = j["ISO"];
+}

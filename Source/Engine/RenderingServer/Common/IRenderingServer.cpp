@@ -192,28 +192,19 @@ bool IRenderingServer::Terminate()
 	return l_result;
 }
 
-void IRenderingServer::Initialize(MeshComponent* rhs)
+void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
-		return;
-
-	m_uninitializedMeshes.push(rhs);
+	InitializeImpl(rhs, vertices, indices);
 }
 
-void IRenderingServer::Initialize(TextureComponent* rhs)
+void IRenderingServer::Initialize(TextureComponent* rhs, void* textureData)
 {
-	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
-		return;
-
-	m_uninitializedTextures.push(rhs);
+	InitializeImpl(rhs, textureData);
 }
 
 void IRenderingServer::Initialize(MaterialComponent* rhs)
 {
-	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
-		return;
-
-	m_uninitializedMaterials.push(rhs);
+	InitializeImpl(rhs);
 }
 
 void IRenderingServer::Initialize(ShaderProgramComponent* rhs)
@@ -228,10 +219,7 @@ void IRenderingServer::Initialize(SamplerComponent* rhs)
 
 void IRenderingServer::Initialize(GPUBufferComponent* rhs)
 {
-	if (m_initializedGPUBuffers.find(rhs) != m_initializedGPUBuffers.end())
-		return;
-
-	m_uninitializedGPUBuffers.push(rhs);
+	InitializeImpl(rhs);
 }
 
 void IRenderingServer::Initialize(RenderPassComponent* rhs)
@@ -244,15 +232,15 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 
 void IRenderingServer::Initialize(CollisionComponent* rhs)
 {
-	std::lock_guard<std::shared_mutex> l_lock(m_CollisionComponentsMutex);
-	if (m_RegisteredCollisionComponents.find(rhs) != m_RegisteredCollisionComponents.end())
-		return;
+	// std::lock_guard<std::shared_mutex> l_lock(m_CollisionComponentsMutex);
+	// if (m_RegisteredCollisionComponents.find(rhs) != m_RegisteredCollisionComponents.end())
+	// 	return;
 
-	auto l_pair = m_UnregisteredCollisionComponents.find(rhs->m_RenderableSet->mesh);
-	if (l_pair == m_UnregisteredCollisionComponents.end())
-		m_UnregisteredCollisionComponents.emplace(rhs->m_RenderableSet->mesh, std::vector<CollisionComponent*>{rhs});
-	else
-		l_pair->second.emplace_back(rhs);
+	// auto l_pair = m_UnregisteredCollisionComponents.find(rhs->m_RenderableSet->mesh);
+	// if (l_pair == m_UnregisteredCollisionComponents.end())
+	// 	m_UnregisteredCollisionComponents.emplace(rhs->m_RenderableSet->mesh, std::vector<CollisionComponent*>{rhs});
+	// else
+	// 	l_pair->second.emplace_back(rhs);
 }
 
 bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
@@ -308,9 +296,8 @@ bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
 		{
 			auto l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
 			l_renderTarget->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
-			l_renderTarget->m_InitialData = nullptr;
 
-			InitializeImpl(l_renderTarget);
+			InitializeImpl(l_renderTarget, nullptr);
 		}
 
 		Log(Verbose, "Render target: ", rhs->m_InstanceName, " have been created.");
@@ -340,9 +327,7 @@ bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
 			l_depthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
-		l_depthStencilRenderTarget->m_InitialData = nullptr;
-
-		InitializeImpl(l_depthStencilRenderTarget);
+		InitializeImpl(l_depthStencilRenderTarget, nullptr);
 
 		Log(Verbose, rhs->m_InstanceName, " depth stencil target has been created.");
 	}
@@ -470,26 +455,7 @@ bool IRenderingServer::Clear(GPUBufferComponent* rhs)
 	return true;
 }
 
-bool IRenderingServer::WriteMappedMemory(MeshComponent* rhs)
-{	
-	if (rhs->m_MappedMemory_VB == nullptr || rhs->m_MappedMemory_IB == nullptr)
-	{
-		if (rhs->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			Log(Error, "Can't upload data to mesh: ", rhs->m_InstanceName, " because it's not mapped.");
-		}
-		return false;
-	}
-
-	std::memcpy((char*)rhs->m_MappedMemory_VB, &rhs->m_Vertices[0], rhs->m_Vertices.size() * sizeof(Vertex));
-	std::memcpy((char*)rhs->m_MappedMemory_IB, &rhs->m_Indices[0], rhs->m_Indices.size() * sizeof(Index));
-
-	rhs->m_NeedUploadToGPU = true;
-
-	return true;
-}
-
-bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* GPUBufferValue, size_t startOffset, size_t range)
+bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
 {
 	if (rhs->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
@@ -508,7 +474,7 @@ bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory*
 		return false;
 	}
 
-	std::memcpy((char*)mappedMemory->m_Address + startOffset * rhs->m_ElementSize, GPUBufferValue, l_size);
+	std::memcpy((char*)mappedMemory->m_Address + startOffset * rhs->m_ElementSize, sourceMemory, l_size);
 
 	mappedMemory->m_NeedUploadToGPU = true;
 
@@ -517,15 +483,6 @@ bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory*
 
 bool IRenderingServer::InitializeImpl(MaterialComponent* rhs)
 {
-	auto l_defaultMaterial = g_Engine->Get<TemplateAssetService>()->GetDefaultMaterialComponent();
-
-	for (size_t i = 0; i < MaxTextureSlotCount; i++)
-	{
-		auto l_texture = rhs->m_TextureSlots[i].m_Texture;
-		if (l_texture)
-			Initialize(l_texture);
-	}
-
 	rhs->m_GPUResourceType = GPUResourceType::Material;
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -637,101 +594,6 @@ uint32_t IRenderingServer::GetFrameCountSinceLaunch()
 
 bool IRenderingServer::InitializeComponents()
 {
-	while (m_uninitializedMeshes.size() > 0)
-	{
-		MeshComponent* l_Mesh;
-		m_uninitializedMeshes.tryPop(l_Mesh);
-
-		if (!l_Mesh)
-			continue;
-
-		InitializeImpl(l_Mesh);
-		if (l_Mesh->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedMeshes.emplace(l_Mesh);
-	}
-
-	while (m_uninitializedTextures.size() > 0)
-	{
-		TextureComponent* l_Texture;
-		m_uninitializedTextures.tryPop(l_Texture);
-
-		if (!l_Texture)
-			continue;
-
-		InitializeImpl(l_Texture);
-		if (l_Texture->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedTextures.emplace(l_Texture);
-	}
-
-	while (m_uninitializedMaterials.size() > 0)
-	{
-		MaterialComponent* l_Material;
-		m_uninitializedMaterials.tryPop(l_Material);
-
-		if (!l_Material)
-			continue;
-
-		InitializeImpl(l_Material);
-		if (l_Material->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			for (size_t i = 0; i < MaxTextureSlotCount; i++)
-			{
-				auto l_texture = l_Material->m_TextureSlots[i].m_Texture;
-				if (l_texture && m_initializedTextures.find(l_texture) == m_initializedTextures.end())
-					m_initializedTextures.emplace(l_texture);
-			}
-			m_initializedMaterials.emplace(l_Material);
-		}
-	}
-
-	while (m_uninitializedGPUBuffers.size() > 0)
-	{
-		GPUBufferComponent* l_GPUBuffer;
-		m_uninitializedGPUBuffers.tryPop(l_GPUBuffer);
-
-		if (!l_GPUBuffer)
-			continue;
-
-		InitializeImpl(l_GPUBuffer);
-		if (l_GPUBuffer->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedGPUBuffers.emplace(l_GPUBuffer);
-	}
-
-	while (m_uninitializedRenderPasses.size() > 0)
-	{
-		RenderPassComponent* l_RenderPass;
-		m_uninitializedRenderPasses.tryPop(l_RenderPass);
-
-		if (!l_RenderPass)
-			continue;
-
-		InitializeImpl(l_RenderPass);
-		if (l_RenderPass->m_ObjectStatus == ObjectStatus::Activated)
-			m_initializedRenderPasses.push_back(l_RenderPass);
-	}
-
-	{
-		std::lock_guard<std::shared_mutex> l_lock(m_CollisionComponentsMutex);
-		for (auto& i : m_UnregisteredCollisionComponents)
-		{
-			if (i.first->m_ObjectStatus != ObjectStatus::Activated)
-				continue;
-
-			for (auto j : i.second)
-			{
-				InitializeImpl(j);
-			}
-		}
-
-		for (auto it = m_UnregisteredCollisionComponents.begin(); it != m_UnregisteredCollisionComponents.end(); )
-		{
-			if (it->first->m_ObjectStatus == ObjectStatus::Activated)
-				it = m_UnregisteredCollisionComponents.erase(it);
-			else
-				++it;
-		}
-	}
-
 	return true;
 }
 
@@ -773,28 +635,28 @@ bool IRenderingServer::PrepareGlobalCommands()
 		Copy(l_commandList, l_copyCommand.m_lhs, l_copyCommand.m_rhs);
 	}
 
-	for (auto i : m_initializedMeshes)
-	{
-		if (i->m_NeedUploadToGPU)
-		{
-			UploadToGPU(l_commandList, i);
-			i->m_NeedUploadToGPU = false;
-		}
-	}
+	// for (auto i : m_initializedMeshes)
+	// {
+	// 	if (i->m_NeedUploadToGPU)
+	// 	{
+	// 		UploadToGPU(l_commandList, i);
+	// 		i->m_NeedUploadToGPU = false;
+	// 	}
+	// }
 
-	for (auto i : m_initializedTextures)
-	{
-		if (i->m_MappedMemories.size() == 0)
-			continue;
+	// for (auto i : m_initializedTextures)
+	// {
+	// 	if (i->m_MappedMemories.size() == 0)
+	// 		continue;
 
-		auto l_mappedMemoryIndex = i->m_TextureDesc.IsMultiBuffer ? l_currentFrame : 0;
-		auto l_mappedMemory = i->m_MappedMemories[l_mappedMemoryIndex];
-		if (l_mappedMemory->m_NeedUploadToGPU)
-		{
-			UploadToGPU(l_commandList, i);
-			l_mappedMemory->m_NeedUploadToGPU = false;
-		}
-	}
+	// 	auto l_mappedMemoryIndex = i->m_TextureDesc.IsMultiBuffer ? l_currentFrame : 0;
+	// 	auto l_mappedMemory = i->m_MappedMemories[l_mappedMemoryIndex];
+	// 	if (l_mappedMemory->m_NeedUploadToGPU)
+	// 	{
+	// 		UploadToGPU(l_commandList, i);
+	// 		l_mappedMemory->m_NeedUploadToGPU = false;
+	// 	}
+	// }
 
 	for (auto i : m_initializedGPUBuffers)
 	{

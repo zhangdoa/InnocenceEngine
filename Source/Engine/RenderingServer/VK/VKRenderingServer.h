@@ -77,8 +77,8 @@ namespace Inno
 		void* GetVkSurface();
 
 	protected:
-		bool InitializeImpl(MeshComponent* rhs) override;
-		bool InitializeImpl(TextureComponent* rhs) override;
+		bool InitializeImpl(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+		bool InitializeImpl(TextureComponent* rhs, void* textureData) override;
 		bool InitializeImpl(RenderPassComponent* rhs) override;
 		bool InitializeImpl(ShaderProgramComponent* rhs) override;
 		bool InitializeImpl(SamplerComponent* rhs) override;

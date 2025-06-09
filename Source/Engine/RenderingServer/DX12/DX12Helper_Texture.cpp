@@ -292,7 +292,7 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 
 uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 {
-	if (!textureDesc.UseMipMap)
+	if (textureDesc.MipLevels == 1)
 	{
 		return 1;
 	}
@@ -390,11 +390,12 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 	else
 	{
 		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	}
 
-		if (textureDesc.UseMipMap)
-		{
-			l_result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		}
+
+	if (textureDesc.MipLevels > 1)
+	{
+		l_result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	}
 
 	return l_result;

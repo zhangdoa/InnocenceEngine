@@ -6,12 +6,6 @@
 namespace Inno
 {
 	enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
-
-	struct TextureSlot
-	{
-		TextureComponent* m_Texture = 0;
-		bool m_Activated = false;
-	};
 	
 	class MaterialComponent : public GPUResourceComponent
 	{
@@ -20,7 +14,7 @@ namespace Inno
 		static const char* GetTypeName() { return "MaterialComponent"; };
 
 		MaterialAttributes m_materialAttributes = {};
-		TextureSlot m_TextureSlots[MaxTextureSlotCount];
+		Array<uint64_t> m_TextureComponents;
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;
 	};
 }

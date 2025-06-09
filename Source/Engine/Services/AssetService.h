@@ -1,11 +1,6 @@
 #pragma once
 #include "../Interface/ISystem.h"
-#include "../Component/MeshComponent.h"
-#include "../Component/MaterialComponent.h"
-#include "../Component/TextureComponent.h"
-#include "../Component/SkeletonComponent.h"
-#include "../Component/AnimationComponent.h"
-#include "../Component/ModelComponent.h"
+#include "../Common/ComponentHeaders.h"
 
 namespace Inno
 {
@@ -21,34 +16,19 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		bool ConvertModel(const char* fileName, const char* exportPath);
-		Model* LoadModel(const char* fileName);
-		TextureComponent* LoadTexture(const char* fileName);
+		bool Import(const char* fileName, const char* exportPath);
+
+
+		bool Load(const char* fileName, TransformComponent& component);
+		bool Load(const char* fileName, ModelComponent& component);
+		bool Load(const char* fileName, MeshComponent& component);
+		bool Load(const char* fileName, MaterialComponent& component);
+		bool Load(const char* fileName, TextureComponent& component);
+		// bool Load(const char* fileName, SkeletonComponent& component);
+		// bool Load(const char* fileName, AnimationComponent& component);
+		bool Load(const char* fileName, CameraComponent& component);
+		bool Load(const char* fileName, LightComponent& component);
+
 		bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
-		bool SaveTexture(const char* fileName, TextureComponent* TextureComp);
-
-		bool LoadAssetsForComponents(bool AsyncLoad);
-
-		bool RecordLoadedRenderableSet(const char* fileName, RenderableSet* pair);
-		bool FindLoadedRenderableSet(const char* fileName, RenderableSet*& pair);
-
-		bool RecordLoadedModel(const char* fileName, Model* model);
-		bool FindLoadedModel(const char* fileName, Model*& model);
-
-		bool RecordLoadedTexture(const char* fileName, TextureComponent* texture);
-		bool FindLoadedTexture(const char* fileName, TextureComponent*& texture);
-
-		bool RecordLoadedSkeleton(const char* fileName, SkeletonComponent* skeleton);
-		bool FindLoadedSkeleton(const char* fileName, SkeletonComponent*& skeleton);
-
-		bool RecordLoadedAnimation(const char* fileName, AnimationComponent* animation);
-		bool FindLoadedAnimation(const char* fileName, AnimationComponent*& animation);
-
-		ArrayRangeInfo AddRenderableSets(uint64_t count);
-		RenderableSet* GetRenderableSet(uint64_t index);
-
-		Model* AddModel();
-
-		Model* AddModel(MeshShape shape, ShaderModel shaderModel);
 	};
 }

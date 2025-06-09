@@ -77,7 +77,7 @@ void AssimpWrapper::from_json(const json& j, aiMatrix4x4& m)
 	m.d4 = j["33"];
 }
 
-bool AssimpWrapper::ConvertModel(const char* fileName, const char* exportPath)
+bool AssimpWrapper::Import(const char* fileName, const char* exportPath)
 {
 	auto l_exportFileName = g_Engine->Get<IOService>()->getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";

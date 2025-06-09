@@ -28,7 +28,7 @@ bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
 	m_TextureComp->m_TextureDesc.DepthOrArraySize = l_VXGIRenderingConfig->m_voxelizationResolution;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-	m_TextureComp->m_TextureDesc.UseMipMap = true;
+	m_TextureComp->m_TextureDesc.MipLevels = 4;
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelRayTracingPass/");
 
