@@ -45,7 +45,7 @@ AI agents use temp file workflow:
 
 1. Create message in `AI Agent Team/commit-message.txt`
 2. User reviews code changes and commit message
-3. User approves and executes commit
+3. User approves and then AI agents execute commit with `git commit -c AI Agent Team/commit-message.txt`
 4. Reuse temp file for next commit
 
 ## Example
