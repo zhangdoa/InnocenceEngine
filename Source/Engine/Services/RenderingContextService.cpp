@@ -355,105 +355,105 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 	uint32_t l_drawCallIndex = 0;
 	auto& l_cullingResults = g_Engine->Get<PhysicsSimulationService>()->GetCullingResult();
 	auto l_cullingResultCount = l_cullingResults.size();
-	for (size_t i = 0; i < l_cullingResultCount; i++)
-	{
-		auto& l_cullingResult = l_cullingResults[i];
-		if (l_cullingResult.m_CollisionComponent == nullptr)
-			continue;
+	// for (size_t i = 0; i < l_cullingResultCount; i++)
+	// {
+	// 	auto& l_cullingResult = l_cullingResults[i];
+	// 	if (l_cullingResult.m_CollisionComponent == nullptr)
+	// 		continue;
 
-		auto l_modelComponent = l_cullingResult.m_CollisionComponent->m_ModelComponent;
-		if (l_modelComponent == nullptr)
-			continue;
+	// 	auto l_modelComponent = l_cullingResult.m_CollisionComponent->m_ModelComponent;
+	// 	if (l_modelComponent == nullptr)
+	// 		continue;
 
-		if (l_modelComponent->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
+	// 	if (l_modelComponent->m_ObjectStatus != ObjectStatus::Activated)
+	// 		continue;
 
-		auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_modelComponent->m_Owner);
-		if (l_transformComponent == nullptr)
-			continue;
+	// 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_modelComponent->m_Owner);
+	// 	if (l_transformComponent == nullptr)
+	// 		continue;
 
-		if (l_transformComponent->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
+	// 	if (l_transformComponent->m_ObjectStatus != ObjectStatus::Activated)
+	// 		continue;
 
-		auto l_renderableSet = l_cullingResult.m_CollisionComponent->m_RenderableSet;
-		if (l_renderableSet == nullptr)
-			continue;
+	// 	auto l_renderableSet = l_cullingResult.m_CollisionComponent->m_RenderableSet;
+	// 	if (l_renderableSet == nullptr)
+	// 		continue;
 
-		auto l_mesh = l_renderableSet->mesh;
-		if (l_mesh == nullptr)
-			continue;
+	// 	auto l_mesh = l_renderableSet->mesh;
+	// 	if (l_mesh == nullptr)
+	// 		continue;
 
-		if (l_mesh->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
+	// 	if (l_mesh->m_ObjectStatus != ObjectStatus::Activated)
+	// 		continue;
 
-		auto l_material = l_renderableSet->material;
-		if (l_material == nullptr)
-			continue;
+	// 	auto l_material = l_renderableSet->material;
+	// 	if (l_material == nullptr)
+	// 		continue;
 
-		if (l_material->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
+	// 	if (l_material->m_ObjectStatus != ObjectStatus::Activated)
+	// 		continue;
 
-		DrawCallInfo l_drawCallInfo = {};
+	// 	DrawCallInfo l_drawCallInfo = {};
 
-		l_drawCallInfo.mesh = l_mesh;
-		l_drawCallInfo.m_PerObjectConstantBufferIndex = l_drawCallIndex;
-		l_drawCallInfo.meshUsage = l_modelComponent->m_meshUsage;
-		l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
+	// 	l_drawCallInfo.mesh = l_mesh;
+	// 	l_drawCallInfo.m_PerObjectConstantBufferIndex = l_drawCallIndex;
+	// 	l_drawCallInfo.meshUsage = l_modelComponent->m_meshUsage;
+	// 	l_drawCallInfo.m_VisibilityMask = l_cullingResult.m_VisibilityMask;
 
-		PerObjectConstantBuffer l_perObjectCB = {};
-		l_perObjectCB.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-		l_perObjectCB.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-		l_perObjectCB.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-		l_perObjectCB.UUID = (float)l_transformComponent->m_UUID;
-		l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
+	// 	PerObjectConstantBuffer l_perObjectCB = {};
+	// 	l_perObjectCB.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+	// 	l_perObjectCB.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+	// 	l_perObjectCB.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+	// 	l_perObjectCB.UUID = (float)l_transformComponent->m_UUID;
+	// 	l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
 
-		m_perObjectCBVector.emplace_back(l_perObjectCB);
+	// 	m_perObjectCBVector.emplace_back(l_perObjectCB);
 
-		MaterialConstantBuffer l_materialCB = {};
-		l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
+	// 	MaterialConstantBuffer l_materialCB = {};
+	// 	l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
-		for (size_t i = 0; i < MaxTextureSlotCount; i++)
-		{
-			auto l_texture = l_material->m_TextureSlots[i].m_Texture;
-			if (l_texture != nullptr)
-			{
-				auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
-				l_materialCB.m_TextureIndices[i] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
-			}
-			else
-			{
-				l_materialCB.m_TextureIndices[i] = INVALID_TEXTURE_INDEX;  // No texture assigned
-			}
-		}
+	// 	auto l_renderingServer = g_Engine->getRenderingServer();
+	// 	for (size_t i = 0; i < MaxTextureSlotCount; i++)
+	// 	{
+	// 		auto l_texture = l_material->m_TextureSlots[i].m_Texture;
+	// 		if (l_texture != nullptr)
+	// 		{
+	// 			auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
+	// 			l_materialCB.m_TextureIndices[i] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+	// 		}
+	// 		else
+	// 		{
+	// 			l_materialCB.m_TextureIndices[i] = INVALID_TEXTURE_INDEX;  // No texture assigned
+	// 		}
+	// 	}
 
-		m_materialCBVector.emplace_back(l_materialCB);
-		m_drawCallInfoVector.emplace_back(l_drawCallInfo);
-		l_drawCallIndex++;
+	// 	m_materialCBVector.emplace_back(l_materialCB);
+	// 	m_drawCallInfoVector.emplace_back(l_drawCallInfo);
+	// 	l_drawCallIndex++;
 
-		if (l_modelComponent->m_meshUsage == MeshUsage::Skeletal)
-		{
-			auto l_result = g_Engine->Get<AnimationService>()->GetAnimationInstance(l_modelComponent->m_UUID);
-			if (l_result.animationData.ADC == nullptr)
-				continue;
+	// 	if (l_modelComponent->m_meshUsage == MeshUsage::Skeletal)
+	// 	{
+	// 		auto l_result = g_Engine->Get<AnimationService>()->GetAnimationInstance(l_modelComponent->m_UUID);
+	// 		if (l_result.animationData.ADC == nullptr)
+	// 			continue;
 
-			AnimationDrawCallInfo animationDrawCallInfo;
-			animationDrawCallInfo.animationInstance = l_result;
-			animationDrawCallInfo.drawCallInfo = l_drawCallInfo;
+	// 		AnimationDrawCallInfo animationDrawCallInfo;
+	// 		animationDrawCallInfo.animationInstance = l_result;
+	// 		animationDrawCallInfo.drawCallInfo = l_drawCallInfo;
 
-			AnimationConstantBuffer l_animationCB;
-			l_animationCB.duration = animationDrawCallInfo.animationInstance.animationData.ADC->m_Duration;
-			l_animationCB.numChannels = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumChannels;
-			l_animationCB.numTicks = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumTicks;
-			l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
-			l_animationCB.rootOffsetMatrix = Math::generateIdentityMatrix<float>();
+	// 		AnimationConstantBuffer l_animationCB;
+	// 		l_animationCB.duration = animationDrawCallInfo.animationInstance.animationData.ADC->m_Duration;
+	// 		l_animationCB.numChannels = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumChannels;
+	// 		l_animationCB.numTicks = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumTicks;
+	// 		l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
+	// 		l_animationCB.rootOffsetMatrix = Math::generateIdentityMatrix<float>();
 
-			m_animationCBVector.emplace_back(l_animationCB);
+	// 		m_animationCBVector.emplace_back(l_animationCB);
 
-			animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)m_animationCBVector.size();
-			m_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
-		}
-	}
+	// 		animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)m_animationCBVector.size();
+	// 		m_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
+	// 	}
+	// }
 
 	// @TODO: use GPU to do OIT
 

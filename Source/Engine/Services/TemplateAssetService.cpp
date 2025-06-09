@@ -1,66 +1,66 @@
-// #include "TemplateAssetService.h"
+#include "TemplateAssetService.h"
 
-// #include "../Common/TaskScheduler.h"
-// #include "AssetService.h"
+#include "../Common/TaskScheduler.h"
+#include "AssetService.h"
 
-// #include "../Engine.h"
-// using namespace Inno;
+#include "../Engine.h"
+using namespace Inno;
 
-// namespace Inno
-// {
-//     struct TemplateAssetServiceImpl
-//     {
-//         bool LoadTemplateAssets();
-// 		bool UnloadTemplateAssets();
+namespace Inno
+{
+    struct TemplateAssetServiceImpl
+    {
+        //         bool LoadTemplateAssets();
+        // 		bool UnloadTemplateAssets();
 
-//         void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
-//         void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
-//         void generateVertexBasedNormal(MeshComponent* meshComponent);
-//         void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
+        //         void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
+        //         void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
+        //         void generateVertexBasedNormal(MeshComponent* meshComponent);
+        //         void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
 
-//         void addTriangle(MeshComponent* meshComponent);
-//         void addSquare(MeshComponent* meshComponent);
-//         void addPentagon(MeshComponent* meshComponent);
-//         void addHexagon(MeshComponent* meshComponent);
-//         void addTetrahedron(MeshComponent* meshComponent);
-//         void addCube(MeshComponent* meshComponent);
-//         void addOctahedron(MeshComponent* meshComponent);
-//         void addDodecahedron(MeshComponent* meshComponent);
-//         void addIcosahedron(MeshComponent* meshComponent);
-//         void addSphere(MeshComponent* meshComponent);
-//         void addTerrain(MeshComponent* meshComponent);
+        //         void addTriangle(MeshComponent* meshComponent);
+        //         void addSquare(MeshComponent* meshComponent);
+        //         void addPentagon(MeshComponent* meshComponent);
+        //         void addHexagon(MeshComponent* meshComponent);
+        //         void addTetrahedron(MeshComponent* meshComponent);
+        //         void addCube(MeshComponent* meshComponent);
+        //         void addOctahedron(MeshComponent* meshComponent);
+        //         void addDodecahedron(MeshComponent* meshComponent);
+        //         void addIcosahedron(MeshComponent* meshComponent);
+        //         void addSphere(MeshComponent* meshComponent);
+        //         void addTerrain(MeshComponent* meshComponent);
 
-//         void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace = 0);
-// 		bool GenerateMesh(MeshShape shape, MeshComponent* meshComponent);
+        void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace = 0);
+        bool GenerateMesh(MeshShape shape, MeshComponent* meshComponent);
 
-// 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+        ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
-//         TextureComponent* m_basicNormalTexture;
-//         TextureComponent* m_basicAlbedoTexture;
-//         TextureComponent* m_basicMetallicTexture;
-// 		TextureComponent* m_basicRoughnessTexture;
-// 		TextureComponent* m_basicAOTexture;
+        TextureComponent* m_basicNormalTexture;
+        TextureComponent* m_basicAlbedoTexture;
+        TextureComponent* m_basicMetallicTexture;
+        TextureComponent* m_basicRoughnessTexture;
+        TextureComponent* m_basicAOTexture;
 
-//         TextureComponent* m_iconTemplate_DirectionalLight;
-//         TextureComponent* m_iconTemplate_PointLight;
-//         TextureComponent* m_iconTemplate_SphereLight;
+        TextureComponent* m_iconTemplate_DirectionalLight;
+        TextureComponent* m_iconTemplate_PointLight;
+        TextureComponent* m_iconTemplate_SphereLight;
 
-//         MeshComponent* m_unitTriangleMesh;
-//         MeshComponent* m_unitSquareMesh;
-//         MeshComponent* m_unitPentagonMesh;
-//         MeshComponent* m_unitHexagonMesh;
+        MeshComponent* m_unitTriangleMesh;
+        MeshComponent* m_unitSquareMesh;
+        MeshComponent* m_unitPentagonMesh;
+        MeshComponent* m_unitHexagonMesh;
 
-//         MeshComponent* m_unitTetrahedronMesh;
-//         MeshComponent* m_unitCubeMesh;
-//         MeshComponent* m_unitOctahedronMesh;
-//         MeshComponent* m_unitDodecahedronMesh;
-//         MeshComponent* m_unitIcosahedronMesh;
-//         MeshComponent* m_unitSphereMesh;
-//         MeshComponent* m_terrainMesh;
+        MeshComponent* m_unitTetrahedronMesh;
+        MeshComponent* m_unitCubeMesh;
+        MeshComponent* m_unitOctahedronMesh;
+        MeshComponent* m_unitDodecahedronMesh;
+        MeshComponent* m_unitIcosahedronMesh;
+        MeshComponent* m_unitSphereMesh;
+        MeshComponent* m_terrainMesh;
 
-//         MaterialComponent* m_defaultMaterial;
-//     };
-// }
+        MaterialComponent* m_defaultMaterial;
+    };
+}
 
 // bool TemplateAssetServiceImpl::LoadTemplateAssets()
 // {
@@ -357,8 +357,8 @@
 // 	}
 // }
 
-// void TemplateAssetServiceImpl::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
-// {
+void TemplateAssetServiceImpl::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
+{
 // 	meshComponent->m_Vertices.reserve(indices.size());
 // 	meshComponent->m_Vertices.fulfill();
 
@@ -385,7 +385,7 @@
 // 	{
 // 		generateVertexBasedNormal(meshComponent);
 // 	}
-// }
+}
 
 // void TemplateAssetServiceImpl::addTetrahedron(MeshComponent* meshComponent)
 // {
@@ -673,8 +673,8 @@
 // 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
 // }
 
-// bool TemplateAssetServiceImpl::GenerateMesh(MeshShape shape, MeshComponent* meshComponent)
-// {
+bool TemplateAssetServiceImpl::GenerateMesh(MeshShape shape, MeshComponent* meshComponent)
+{
 // 	switch (shape)
 // 	{
 // 	case Type::MeshShape::Triangle:
@@ -710,110 +710,110 @@
 // 	default:
 // 		break;
 // 	}
-// 	return true;
-// }
+ 	return true;
+}
 
-// bool TemplateAssetService::Setup(ISystemConfig* systemConfig)
-// {	
-// 	m_Impl = new TemplateAssetServiceImpl();
+bool TemplateAssetService::Setup(ISystemConfig* systemConfig)
+{
+    // 	m_Impl = new TemplateAssetServiceImpl();
 
-// 	m_Impl->m_ObjectStatus = ObjectStatus::Created;
+    // 	m_Impl->m_ObjectStatus = ObjectStatus::Created;
 
-// 	return true;
-// }
+    return true;
+}
 
-// bool TemplateAssetService::Initialize()
-// {
-// 	m_Impl->LoadTemplateAssets();
-// 	m_Impl->m_ObjectStatus = ObjectStatus::Activated;
+bool TemplateAssetService::Initialize()
+{
+    // 	m_Impl->LoadTemplateAssets();
+    // 	m_Impl->m_ObjectStatus = ObjectStatus::Activated;
 
-// 	return true;
-// }
+    return true;
+}
 
-// bool TemplateAssetService::Update()
-// {
-// 	return true;
-// }
+bool TemplateAssetService::Update()
+{
+    return true;
+}
 
-// bool TemplateAssetService::Terminate()
-// {
-// 	m_Impl->UnloadTemplateAssets();
-// 	delete m_Impl;
-// 	return true;
-// }
+bool TemplateAssetService::Terminate()
+{
+    // 	m_Impl->UnloadTemplateAssets();
+    // 	delete m_Impl;
+    return true;
+}
 
-// ObjectStatus TemplateAssetService::GetStatus()
-// {
-// 	return 	m_Impl->m_ObjectStatus;
-// }
+ObjectStatus TemplateAssetService::GetStatus()
+{
+    return 	m_Impl->m_ObjectStatus;
+}
 
-// MeshComponent* TemplateAssetService::GetMeshComponent(MeshShape shape)
-// {
-// 	switch (shape)
-// 	{
-// 	case MeshShape::Triangle:
-// 		return m_Impl->m_unitTriangleMesh;
-// 		break;
-// 	case MeshShape::Square:
-// 		return m_Impl->m_unitSquareMesh;
-// 		break;
-// 	case MeshShape::Pentagon:
-// 		return m_Impl->m_unitPentagonMesh;
-// 		break;
-// 	case MeshShape::Hexagon:
-// 		return m_Impl->m_unitHexagonMesh;
-// 		break;
-// 	case MeshShape::Tetrahedron:
-// 		return m_Impl->m_unitTetrahedronMesh;
-// 		break;
-// 	case MeshShape::Cube:
-// 		return m_Impl->m_unitCubeMesh;
-// 		break;
-// 	case MeshShape::Octahedron:
-// 		return m_Impl->m_unitOctahedronMesh;
-// 		break;
-// 	case MeshShape::Dodecahedron:
-// 		return m_Impl->m_unitDodecahedronMesh;
-// 		break;
-// 	case MeshShape::Icosahedron:
-// 		return m_Impl->m_unitIcosahedronMesh;
-// 		break;
-// 	case MeshShape::Sphere:
-// 		return m_Impl->m_unitSphereMesh;
-// 		break;
-// 	default:
-// 		Log(Error, "Invalid MeshShape!");
-// 		return nullptr;
-// 		break;
-// 	}
-// }
+MeshComponent* TemplateAssetService::GetMeshComponent(MeshShape shape)
+{
+    switch (shape)
+    {
+    case MeshShape::Triangle:
+        return m_Impl->m_unitTriangleMesh;
+        break;
+    case MeshShape::Square:
+        return m_Impl->m_unitSquareMesh;
+        break;
+    case MeshShape::Pentagon:
+        return m_Impl->m_unitPentagonMesh;
+        break;
+    case MeshShape::Hexagon:
+        return m_Impl->m_unitHexagonMesh;
+        break;
+    case MeshShape::Tetrahedron:
+        return m_Impl->m_unitTetrahedronMesh;
+        break;
+    case MeshShape::Cube:
+        return m_Impl->m_unitCubeMesh;
+        break;
+    case MeshShape::Octahedron:
+        return m_Impl->m_unitOctahedronMesh;
+        break;
+    case MeshShape::Dodecahedron:
+        return m_Impl->m_unitDodecahedronMesh;
+        break;
+    case MeshShape::Icosahedron:
+        return m_Impl->m_unitIcosahedronMesh;
+        break;
+    case MeshShape::Sphere:
+        return m_Impl->m_unitSphereMesh;
+        break;
+    default:
+        Log(Error, "Invalid MeshShape!");
+        return nullptr;
+        break;
+    }
+}
 
-// TextureComponent* TemplateAssetService::GetTextureComponent(WorldEditorIconType iconType)
-// {
-// 	switch (iconType)
-// 	{
-// 	case WorldEditorIconType::DIRECTIONAL_LIGHT:
-// 		return m_Impl->m_iconTemplate_DirectionalLight; break;
-// 	case WorldEditorIconType::POINT_LIGHT:
-// 		return m_Impl->m_iconTemplate_PointLight; break;
-// 	case WorldEditorIconType::SPHERE_LIGHT:
-// 		return m_Impl->m_iconTemplate_SphereLight; break;
-// 	default:
-// 		return nullptr; break;
-// 	}
-// }
+TextureComponent* TemplateAssetService::GetTextureComponent(WorldEditorIconType iconType)
+{
+    switch (iconType)
+    {
+    case WorldEditorIconType::DIRECTIONAL_LIGHT:
+        return m_Impl->m_iconTemplate_DirectionalLight; break;
+    case WorldEditorIconType::POINT_LIGHT:
+        return m_Impl->m_iconTemplate_PointLight; break;
+    case WorldEditorIconType::SPHERE_LIGHT:
+        return m_Impl->m_iconTemplate_SphereLight; break;
+    default:
+        return nullptr; break;
+    }
+}
 
-// MaterialComponent* TemplateAssetService::GetDefaultMaterialComponent()
-// {
-// 	return m_Impl->m_defaultMaterial;
-// }
+MaterialComponent* TemplateAssetService::GetDefaultMaterialComponent()
+{
+    return m_Impl->m_defaultMaterial;
+}
 
-// bool TemplateAssetService::GenerateMesh(MeshShape shape, MeshComponent* meshComponent)
-// {
-// 	return m_Impl->GenerateMesh(shape, meshComponent);
-// }
+bool TemplateAssetService::GenerateMesh(MeshShape shape, MeshComponent* meshComponent)
+{
+    return m_Impl->GenerateMesh(shape, meshComponent);
+}
 
-// void TemplateAssetService::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
-// {
-// 	return m_Impl->FulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
-// }
+void TemplateAssetService::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
+{
+    return m_Impl->FulfillVerticesAndIndices(meshComponent, indices, vertices, verticesPerFace);
+}

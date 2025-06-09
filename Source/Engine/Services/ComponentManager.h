@@ -145,12 +145,12 @@ namespace Inno
 			{
 				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 				
-				auto l_componentPtr = Spawn<T>(entity, true, ObjectLifespan::Scene);
+				auto l_componentPtr = Spawn(entity, true, ObjectLifespan::Scene);
 				auto& component = *(l_componentPtr);
 				if (AssetService::Load(fileName.c_str(), component))
 				{
 					l_result = component.m_UUID;
-					RecordLoaded(fileName, l_result);
+					RecordLoaded(fileName.c_str(), l_result);
 					component.m_ObjectStatus = ObjectStatus::Activated;
 				}
 			}

@@ -34,9 +34,7 @@ namespace Inno
 		ObjectLifespan m_ObjectLifespan = ObjectLifespan::Invalid;
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
-#ifdef INNO_DEBUG
 		ObjectName m_InstanceName;
-#endif
 	};
 
 	const uint32_t MaxComponentType = 512;

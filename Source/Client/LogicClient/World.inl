@@ -33,7 +33,7 @@ namespace Inno
 		bool setupVolumetricCubes();
 		bool setupPointLights();
 
-		bool updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel = ShaderModel::Opaque);
+		//bool updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel = ShaderModel::Opaque);
 		void updateSpheres();
 
 		void runTest(uint32_t testTime, std::function<bool()> testCase);
@@ -112,9 +112,9 @@ namespace Inno
 			m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTransformComponent;
 			m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_referenceSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_referenceSphereEntities[i], false, ObjectLifespan::Scene);
-			m_referenceSphereModelComponents[i]->m_MeshShape = MeshShape::Sphere;
-			m_referenceSphereModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_referenceSphereModelComponents[i]->m_simulatePhysics = true;
+			// m_referenceSphereModelComponents[i]->m_MeshShape = MeshShape::Sphere;
+			// m_referenceSphereModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			// m_referenceSphereModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		for (uint32_t i = 0; i < m_matrixDim; i++)
@@ -163,9 +163,9 @@ namespace Inno
 			m_occlusionCubeTransformComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_occlusionCubeEntities[i], false, ObjectLifespan::Scene);
 			m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTransformComponent;
 			m_occlusionCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_occlusionCubeEntities[i], false, ObjectLifespan::Scene);
-			m_occlusionCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
-			m_occlusionCubeModelComponents[i]->m_meshUsage = MeshUsage::Static;
-			m_occlusionCubeModelComponents[i]->m_simulatePhysics = true;
+			// m_occlusionCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
+			// m_occlusionCubeModelComponents[i]->m_meshUsage = MeshUsage::Static;
+			// m_occlusionCubeModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
@@ -234,9 +234,9 @@ namespace Inno
 			m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTransformComponent;
 			m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_opaqueSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_opaqueSphereEntities[i], false, ObjectLifespan::Scene);
-			m_opaqueSphereModelComponents[i]->m_MeshShape = MeshShape(i % 6 + 5);
-			m_opaqueSphereModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_opaqueSphereModelComponents[i]->m_simulatePhysics = true;
+			// m_opaqueSphereModelComponents[i]->m_MeshShape = MeshShape(i % 6 + 5);
+			// m_opaqueSphereModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			// m_opaqueSphereModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
@@ -294,9 +294,9 @@ namespace Inno
 			m_transparentCubeTransformComponents[i]->m_parentTransformComponent = l_rootTransformComponent;
 			m_transparentCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
 			m_transparentCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_transparentCubeEntities[i], false, ObjectLifespan::Scene);
-			m_transparentCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
-			m_transparentCubeModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_transparentCubeModelComponents[i]->m_simulatePhysics = true;
+			// m_transparentCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
+			// m_transparentCubeModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			// m_transparentCubeModelComponents[i]->m_simulatePhysics = true;
 		}
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
@@ -336,9 +336,9 @@ namespace Inno
 			m_volumetricCubeTransformComponents[i]->m_parentTransformComponent = l_rootTransformComponent;
 			m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
 			m_volumetricCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_volumetricCubeEntities[i], false, ObjectLifespan::Scene);
-			m_volumetricCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
-			m_volumetricCubeModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-			m_volumetricCubeModelComponents[i]->m_simulatePhysics = false;
+			// m_volumetricCubeModelComponents[i]->m_MeshShape = MeshShape::Cube;
+			// m_volumetricCubeModelComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+			// m_volumetricCubeModelComponents[i]->m_simulatePhysics = false;
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(-40.0f, 40.0f);
@@ -491,26 +491,26 @@ namespace Inno
 		return true;
 	}
 
-	bool WorldSystem::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel)
-	{
-		if (!model)
-			return false;
+	// bool WorldSystem::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel)
+	// {
+	// 	if (!model)
+	// 		return false;
 
-		for (uint64_t j = 0; j < model->renderableSets.m_count; j++)
-		{
-			auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(model->renderableSets.m_startOffset + j);
-			l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
-			l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
-			l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
-			l_pair->material->m_materialAttributes.Metallic = MRAT.x;
-			l_pair->material->m_materialAttributes.Roughness = MRAT.y;
-			l_pair->material->m_materialAttributes.AO = MRAT.z;
-			l_pair->material->m_materialAttributes.Alpha = albedo.w;
-			l_pair->material->m_materialAttributes.Thickness = MRAT.w;
-			l_pair->material->m_ShaderModel = shaderModel;
-		}
-		return true;
-	}
+	// 	for (uint64_t j = 0; j < model->renderableSets.m_count; j++)
+	// 	{
+	// 		// auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(model->renderableSets.m_startOffset + j);
+	// 		// l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
+	// 		// l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
+	// 		// l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
+	// 		// l_pair->material->m_materialAttributes.Metallic = MRAT.x;
+	// 		// l_pair->material->m_materialAttributes.Roughness = MRAT.y;
+	// 		// l_pair->material->m_materialAttributes.AO = MRAT.z;
+	// 		// l_pair->material->m_materialAttributes.Alpha = albedo.w;
+	// 		// l_pair->material->m_materialAttributes.Thickness = MRAT.w;
+	// 		// l_pair->material->m_ShaderModel = shaderModel;
+	// 	}
+	// 	return true;
+	// }
 
 	bool WorldSystem::Update()
 	{
@@ -615,10 +615,10 @@ namespace Inno
 			auto l_MRATFactor2 = ((sin(m_seed / 5.0f + i) + 1.0f) / 2.001f);
 			auto l_MRATFactor3 = ((sin(m_seed / 6.0f + i) + 1.0f) / 2.001f);
 
-			updateMaterial(m_opaqueSphereModelComponents[i]->m_Model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
-			updateMaterial(m_opaqueSphereModelComponents[i + 1]->m_Model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
-			updateMaterial(m_opaqueSphereModelComponents[i + 2]->m_Model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 0.0f, 0.0f));
-			updateMaterial(m_opaqueSphereModelComponents[i + 3]->m_Model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
+			// updateMaterial(m_opaqueSphereModelComponents[i]->m_Model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
+			// updateMaterial(m_opaqueSphereModelComponents[i + 1]->m_Model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
+			// updateMaterial(m_opaqueSphereModelComponents[i + 2]->m_Model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 0.0f, 0.0f));
+			// updateMaterial(m_opaqueSphereModelComponents[i + 3]->m_Model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
 		}
 
 		for (uint32_t i = 0; i < m_transparentCubeModelComponents.size(); i++)
@@ -626,7 +626,7 @@ namespace Inno
 			auto l_albedo = Math::HSVtoRGB(Vec4((sin(m_seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 			l_albedo.w = sin(m_seed / 6.0f + i) * 0.5f + 0.5f;
 			auto l_MRAT = Vec4(0.0f, sin(m_seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(m_seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-			updateMaterial(m_transparentCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Transparent);
+			//updateMaterial(m_transparentCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Transparent);
 		}
 
 		for (uint32_t i = 0; i < m_volumetricCubeModelComponents.size(); i++)
@@ -634,7 +634,7 @@ namespace Inno
 			auto l_albedo = Math::HSVtoRGB(Vec4((sin(m_seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 			l_albedo.w = clamp((float)sin(m_seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
 			auto l_MRAT = Vec4(clamp((float)sin(m_seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
-			updateMaterial(m_volumetricCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Volumetric);
+			//updateMaterial(m_volumetricCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Volumetric);
 		}
 
 		if (m_referenceSphereModelComponents.size() == 0)
@@ -645,7 +645,7 @@ namespace Inno
 			for (uint32_t j = 0; j < m_matrixDim; j++)
 			{
 				auto l_MRAT = Vec4((float)i / (float)(m_matrixDim - 1), (float)j / (float)(m_matrixDim - 1), 0.0f, 1.0f);
-				updateMaterial(m_referenceSphereModelComponents[i * m_matrixDim + j]->m_Model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
+				//updateMaterial(m_referenceSphereModelComponents[i * m_matrixDim + j]->m_Model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 			}
 		}
 	}

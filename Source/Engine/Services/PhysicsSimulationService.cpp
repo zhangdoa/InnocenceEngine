@@ -29,7 +29,7 @@ namespace Inno
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		const size_t m_MaxComponentCount = 16384;
+		const uint32_t m_MaxComponentCount = 16384;
 
 		struct SceneBoundary
 		{
@@ -61,9 +61,6 @@ namespace Inno
 
 bool PhysicsSimulationServiceImpl::Setup()
 {
-	// @TODO: Better not to hardcode the pool size.
-	g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_MaxComponentCount, this);
-
 	m_ObjectStatus = ObjectStatus::Created;
 
 	m_VisibleSceneBoundary.Reset();
@@ -126,6 +123,9 @@ void PhysicsSimulationServiceImpl::CreatePhysXActor(CollisionComponent* Collisio
 bool PhysicsSimulationService::Setup(ISystemConfig* systemConfig)
 {
 	m_Impl = new PhysicsSimulationServiceImpl();
+	
+	// @TODO: Better not to hardcode the pool size.
+	g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_Impl->m_MaxComponentCount, this);
 
 	return m_Impl->Setup();
 }

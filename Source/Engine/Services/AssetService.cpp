@@ -91,6 +91,13 @@ bool AssetService::Load(const char* fileName, ModelComponent& component)
 	return component.m_UUID != 0;
 }
 
+bool AssetService::Load(const char* fileName, DrawCallComponent& component)
+{
+	JSONWrapper::Load(fileName, component);
+
+	return component.m_UUID != 0;
+}
+
 bool AssetService::Load(const char* fileName, MeshComponent& component)
 {
 	JSONWrapper::Load(fileName, component);

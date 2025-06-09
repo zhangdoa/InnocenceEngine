@@ -117,19 +117,15 @@ inline bool Thread::ExecuteTask(Handle<ITask> task)
 		return false;
 	}
 
-#if defined INNO_DEBUG
 	TaskReport l_TaskReport;
 	l_TaskReport.m_ThreadID = m_ID.first;
 	l_TaskReport.m_StartTime = Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 	l_TaskReport.m_TaskName = task->GetName();
-#endif
 
 	bool l_result = task->TryToExecute();
 
-#if defined INNO_DEBUG
 	l_TaskReport.m_FinishTime = Timer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 	m_TaskReport.emplace_back(l_TaskReport);
-#endif
 
 	auto timeSpent = l_TaskReport.m_FinishTime - l_TaskReport.m_StartTime;
 	const int threshold = 100000;

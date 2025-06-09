@@ -16,19 +16,19 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		bool Import(const char* fileName, const char* exportPath);
+		static bool Import(const char* fileName, const char* exportPath);
 
+		static bool Load(const char* fileName, TransformComponent& component);
+		static bool Load(const char* fileName, ModelComponent& component);
+		static bool Load(const char* fileName, DrawCallComponent& component);
+		static bool Load(const char* fileName, MeshComponent& component);
+		static bool Load(const char* fileName, MaterialComponent& component);
+		static bool Load(const char* fileName, TextureComponent& component);
+		// static bool Load(const char* fileName, SkeletonComponent& component);
+		// static bool Load(const char* fileName, AnimationComponent& component);
+		static bool Load(const char* fileName, CameraComponent& component);
+		static bool Load(const char* fileName, LightComponent& component);
 
-		bool Load(const char* fileName, TransformComponent& component);
-		bool Load(const char* fileName, ModelComponent& component);
-		bool Load(const char* fileName, MeshComponent& component);
-		bool Load(const char* fileName, MaterialComponent& component);
-		bool Load(const char* fileName, TextureComponent& component);
-		// bool Load(const char* fileName, SkeletonComponent& component);
-		// bool Load(const char* fileName, AnimationComponent& component);
-		bool Load(const char* fileName, CameraComponent& component);
-		bool Load(const char* fileName, LightComponent& component);
-
-		bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
+		static bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
 	};
 }
