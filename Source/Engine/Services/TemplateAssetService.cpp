@@ -2,7 +2,10 @@
 
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
-
+#include "../Services/ComponentManager.h"
+#include "../Services/EntityManager.h"
+#include "../Common/IOService.h"
+#include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../Engine.h"
 using namespace Inno;
 
@@ -10,30 +13,34 @@ namespace Inno
 {
     struct TemplateAssetServiceImpl
     {
-        //         bool LoadTemplateAssets();
-        // 		bool UnloadTemplateAssets();
+        bool LoadTemplateAssets();
+        bool UnloadTemplateAssets();
 
-        //         void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
-        //         void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
-        //         void generateVertexBasedNormal(MeshComponent* meshComponent);
-        //         void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
+        void generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
+        void generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount);
+        void generateVertexBasedNormal(MeshComponent* meshComponent);
+        void generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace);
 
-        //         void addTriangle(MeshComponent* meshComponent);
-        //         void addSquare(MeshComponent* meshComponent);
-        //         void addPentagon(MeshComponent* meshComponent);
-        //         void addHexagon(MeshComponent* meshComponent);
-        //         void addTetrahedron(MeshComponent* meshComponent);
-        //         void addCube(MeshComponent* meshComponent);
-        //         void addOctahedron(MeshComponent* meshComponent);
-        //         void addDodecahedron(MeshComponent* meshComponent);
-        //         void addIcosahedron(MeshComponent* meshComponent);
-        //         void addSphere(MeshComponent* meshComponent);
-        //         void addTerrain(MeshComponent* meshComponent);
+        void addTriangle(MeshComponent* meshComponent);
+        void addSquare(MeshComponent* meshComponent);
+        void addPentagon(MeshComponent* meshComponent);
+        void addHexagon(MeshComponent* meshComponent);
+        void addTetrahedron(MeshComponent* meshComponent);
+        void addCube(MeshComponent* meshComponent);
+        void addOctahedron(MeshComponent* meshComponent);
+        void addDodecahedron(MeshComponent* meshComponent);
+        void addIcosahedron(MeshComponent* meshComponent);
+        void addSphere(MeshComponent* meshComponent);
+        void addTerrain(MeshComponent* meshComponent);
 
         void FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace = 0);
         bool GenerateMesh(MeshShape shape, MeshComponent* meshComponent);
 
         ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+
+        std::unordered_map<MeshComponent*, std::vector<Vertex>> m_meshVertices;
+        std::unordered_map<MeshComponent*, std::vector<Index>> m_meshIndices;
+        std::unordered_map<TextureComponent*, void*> m_textureData;
 
         TextureComponent* m_basicNormalTexture;
         TextureComponent* m_basicAlbedoTexture;
@@ -62,670 +69,694 @@ namespace Inno
     };
 }
 
-// bool TemplateAssetServiceImpl::LoadTemplateAssets()
-// {
-// 	m_basicNormalTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_normal.png");
-// 	m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
+bool TemplateAssetServiceImpl::LoadTemplateAssets()
+{
+    auto entityManager = g_Engine->Get<EntityManager>();
+    auto componentManager = g_Engine->Get<ComponentManager>();
+    auto ioService = g_Engine->Get<IOService>();
 
-// 	m_basicAlbedoTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_albedo.png");
-// 	m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
+    // Create template entity for engine assets
+    auto templateEntity = entityManager->Spawn(false, ObjectLifespan::Frame, "TemplateAssets");
 
-// 	m_basicMetallicTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_metallic.png");
-// 	m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
+    // Load basic textures, notice we use STBWrapper to load textures directly
+    m_basicNormalTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
+    std::string normalTexturePath = "Res/Textures/basic_normal.png";
+    m_textureData[m_basicNormalTexture] = STBWrapper::Load(normalTexturePath.c_str(), *m_basicNormalTexture);
+    if (!m_textureData[m_basicNormalTexture])
+        return false;
+    m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-// 	m_basicRoughnessTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_roughness.png");
-// 	m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
+    m_basicAlbedoTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
+    std::string albedoTexturePath = "Res/Textures/basic_albedo.png";
+    m_textureData[m_basicAlbedoTexture] = STBWrapper::Load(albedoTexturePath.c_str(), *m_basicAlbedoTexture);
+    if (!m_textureData[m_basicAlbedoTexture])
+        return false;
+    m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-// 	m_basicAOTexture = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//basic_ao.png");
-// 	m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
+    m_basicMetallicTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
+    std::string metallicTexturePath = "Res/Textures/basic_metallic.png";
+    m_textureData[m_basicMetallicTexture] = STBWrapper::Load(metallicTexturePath.c_str(), *m_basicMetallicTexture);
+    if (!m_textureData[m_basicMetallicTexture])
+        return false;
+    m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-// 	auto l_renderingServer = g_Engine->getRenderingServer();
-// 	m_defaultMaterial = l_renderingServer->AddMaterialComponent("BasicMaterial/");
-// 	m_defaultMaterial->m_TextureSlots[0].m_Texture = m_basicNormalTexture;
-// 	m_defaultMaterial->m_TextureSlots[1].m_Texture = m_basicAlbedoTexture;
-// 	m_defaultMaterial->m_TextureSlots[2].m_Texture = m_basicMetallicTexture;
-// 	m_defaultMaterial->m_TextureSlots[3].m_Texture = m_basicRoughnessTexture;
-// 	m_defaultMaterial->m_TextureSlots[4].m_Texture = m_basicAOTexture;
-// 	m_defaultMaterial->m_TextureSlots[5].m_Texture = m_basicAOTexture;
-// 	m_defaultMaterial->m_TextureSlots[6].m_Texture = m_basicAOTexture;
-// 	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
-// 	m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
+    m_basicRoughnessTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
+    std::string roughnessTexturePath = "Res/Textures/basic_roughness.png";
+    m_textureData[m_basicRoughnessTexture] = STBWrapper::Load(roughnessTexturePath.c_str(), *m_basicRoughnessTexture);
+    if (!m_textureData[m_basicRoughnessTexture])
+        return false;
+    m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-// 	m_iconTemplate_DirectionalLight = g_Engine->Get<AssetService>()->Load("..//Res//Textures//WorldEditorIcons_DirectionalLight.png");
-// 	m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_iconTemplate_DirectionalLight->m_TextureDesc.Usage = TextureUsage::Sample;
+    m_basicAOTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
+    std::string aoTexturePath = "Res/Textures/basic_ao.png";
+    m_textureData[m_basicAOTexture] = STBWrapper::Load(aoTexturePath.c_str(), *m_basicAOTexture);
+    if (!m_textureData[m_basicAOTexture])
+        return false;
+    m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-// 	m_iconTemplate_PointLight = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//WorldEditorIcons_PointLight.png");
-// 	m_iconTemplate_PointLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_iconTemplate_PointLight->m_TextureDesc.Usage = TextureUsage::Sample;
+    // Create default material
+    m_defaultMaterial = componentManager->Spawn<MaterialComponent>(templateEntity, true, ObjectLifespan::Scene);
+    m_defaultMaterial->m_TextureComponents.reserve(5);
+    m_defaultMaterial->m_TextureComponents.fulfill();
+    m_defaultMaterial->m_TextureComponents[0] = m_basicNormalTexture->m_UUID;
+    m_defaultMaterial->m_TextureComponents[1] = m_basicAlbedoTexture->m_UUID;
+    m_defaultMaterial->m_TextureComponents[2] = m_basicMetallicTexture->m_UUID;
+    m_defaultMaterial->m_TextureComponents[3] = m_basicRoughnessTexture->m_UUID;
+    m_defaultMaterial->m_TextureComponents[4] = m_basicAOTexture->m_UUID;
 
-// 	m_iconTemplate_SphereLight = g_Engine->Get<AssetService>()->LoadTexture("..//Res//Textures//WorldEditorIcons_SphereLight.png");
-// 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-// 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
+    m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
+    AssetService::Save("default_material.MaterialComponent.inno", *m_defaultMaterial);
 
-// 	m_unitTriangleMesh = l_renderingServer->AddMeshComponent("UnitTriangleMesh/");
-// 	GenerateMesh(MeshShape::Triangle, m_unitTriangleMesh);
-// 	m_unitTriangleMesh->m_MeshShape = MeshShape::Triangle;
-// 	m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
+    // Load icon textures for lights
+    m_iconTemplate_DirectionalLight = nullptr; // TODO: Implement icon loading
+    m_iconTemplate_PointLight = nullptr;
+    m_iconTemplate_SphereLight = nullptr;
 
-// 	m_unitSquareMesh = l_renderingServer->AddMeshComponent("UnitSquareMesh/");
-// 	GenerateMesh(MeshShape::Square, m_unitSquareMesh);
-// 	m_unitSquareMesh->m_MeshShape = MeshShape::Square;
-// 	m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
+    // Create primitive meshes
+    m_unitTriangleMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Triangle, m_unitTriangleMesh);
+    m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_triangle.MeshComponent.inno",
+        *m_unitTriangleMesh, m_meshVertices[m_unitTriangleMesh], m_meshIndices[m_unitTriangleMesh]);
 
-// 	m_unitPentagonMesh = l_renderingServer->AddMeshComponent("UnitPentagonMesh/");
-// 	GenerateMesh(MeshShape::Pentagon, m_unitPentagonMesh);
-// 	m_unitPentagonMesh->m_MeshShape = MeshShape::Pentagon;
-// 	m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitSquareMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Square, m_unitSquareMesh);
+    m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_square.MeshComponent.inno",
+        *m_unitSquareMesh, m_meshVertices[m_unitSquareMesh], m_meshIndices[m_unitSquareMesh]);
 
-// 	m_unitHexagonMesh = l_renderingServer->AddMeshComponent("UnitHexagonMesh/");
-// 	GenerateMesh(MeshShape::Hexagon, m_unitHexagonMesh);
-// 	m_unitHexagonMesh->m_MeshShape = MeshShape::Hexagon;
-// 	m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitPentagonMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Pentagon, m_unitPentagonMesh);
+    m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_pentagon.MeshComponent.inno",
+        *m_unitPentagonMesh, m_meshVertices[m_unitPentagonMesh], m_meshIndices[m_unitPentagonMesh]);
 
-// 	m_unitTetrahedronMesh = l_renderingServer->AddMeshComponent("UnitTetrahedronMesh/");
-// 	GenerateMesh(MeshShape::Tetrahedron, m_unitTetrahedronMesh);
-// 	m_unitTetrahedronMesh->m_MeshShape = MeshShape::Tetrahedron;
-// 	m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitHexagonMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Hexagon, m_unitHexagonMesh);
+    m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_hexagon.MeshComponent.inno",
+        *m_unitHexagonMesh, m_meshVertices[m_unitHexagonMesh], m_meshIndices[m_unitHexagonMesh]);
 
-// 	m_unitCubeMesh = l_renderingServer->AddMeshComponent("UnitCubeMesh/");
-// 	GenerateMesh(MeshShape::Cube, m_unitCubeMesh);
-// 	m_unitCubeMesh->m_MeshShape = MeshShape::Cube;
-// 	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitTetrahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Tetrahedron, m_unitTetrahedronMesh);
+    m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_tetrahedron.MeshComponent.inno",
+        *m_unitTetrahedronMesh, m_meshVertices[m_unitTetrahedronMesh], m_meshIndices[m_unitTetrahedronMesh]);
 
-// 	m_unitOctahedronMesh = l_renderingServer->AddMeshComponent("UnitOctahedronMesh/");
-// 	GenerateMesh(MeshShape::Octahedron, m_unitOctahedronMesh);
-// 	m_unitOctahedronMesh->m_MeshShape = MeshShape::Octahedron;
-// 	m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitCubeMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Cube, m_unitCubeMesh);
+    m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_cube.MeshComponent.inno",
+        *m_unitCubeMesh, m_meshVertices[m_unitCubeMesh], m_meshIndices[m_unitCubeMesh]);
 
-// 	m_unitDodecahedronMesh = l_renderingServer->AddMeshComponent("UnitDodecahedronMesh/");
-// 	GenerateMesh(MeshShape::Dodecahedron, m_unitDodecahedronMesh);
-// 	m_unitDodecahedronMesh->m_MeshShape = MeshShape::Dodecahedron;
-// 	m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
-// 	m_unitIcosahedronMesh = l_renderingServer->AddMeshComponent("UnitIcosahedronMesh/");
-// 	GenerateMesh(MeshShape::Icosahedron, m_unitIcosahedronMesh);
-// 	m_unitIcosahedronMesh->m_MeshShape = MeshShape::Icosahedron;
-// 	m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitOctahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Octahedron, m_unitOctahedronMesh);
+    m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_octahedron.MeshComponent.inno",
+        *m_unitOctahedronMesh, m_meshVertices[m_unitOctahedronMesh], m_meshIndices[m_unitOctahedronMesh]);
 
-// 	m_unitSphereMesh = l_renderingServer->AddMeshComponent("UnitSphereMesh/");
-// 	GenerateMesh(MeshShape::Sphere, m_unitSphereMesh);
-// 	m_unitSphereMesh->m_MeshShape = MeshShape::Sphere;
-// 	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
+    m_unitDodecahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Dodecahedron, m_unitDodecahedronMesh);
+    m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_dodecahedron.MeshComponent.inno",
+        *m_unitDodecahedronMesh, m_meshVertices[m_unitDodecahedronMesh], m_meshIndices[m_unitDodecahedronMesh]);
 
-// 	ITask::Desc taskDesc("Default Assets Initialization Task", ITask::Type::Once, 2);
-// 	auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
-// 		[&]() {
-// 			auto l_renderingServer = g_Engine->getRenderingServer();
-// 			l_renderingServer->Initialize(m_unitTriangleMesh);
-// 			l_renderingServer->Initialize(m_unitSquareMesh);
-// 			l_renderingServer->Initialize(m_unitPentagonMesh);
-// 			l_renderingServer->Initialize(m_unitHexagonMesh);
+    m_unitIcosahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Icosahedron, m_unitIcosahedronMesh);
+    m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_icosahedron.MeshComponent.inno",
+        *m_unitIcosahedronMesh, m_meshVertices[m_unitIcosahedronMesh], m_meshIndices[m_unitIcosahedronMesh]);
 
-// 			l_renderingServer->Initialize(m_unitTetrahedronMesh);
-// 			l_renderingServer->Initialize(m_unitCubeMesh);
-// 			l_renderingServer->Initialize(m_unitOctahedronMesh);
-// 			l_renderingServer->Initialize(m_unitDodecahedronMesh);
-// 			l_renderingServer->Initialize(m_unitIcosahedronMesh);
-// 			l_renderingServer->Initialize(m_unitSphereMesh);
+    m_unitSphereMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    GenerateMesh(MeshShape::Sphere, m_unitSphereMesh);
+    m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
+    AssetService::Save("Data/Engine/unit_sphere.MeshComponent.inno",
+        *m_unitSphereMesh, m_meshVertices[m_unitSphereMesh], m_meshIndices[m_unitSphereMesh]);
 
-// 			l_renderingServer->Initialize(m_basicNormalTexture);
-// 			l_renderingServer->Initialize(m_basicAlbedoTexture);
-// 			l_renderingServer->Initialize(m_basicMetallicTexture);
-// 			l_renderingServer->Initialize(m_basicRoughnessTexture);
-// 			l_renderingServer->Initialize(m_basicAOTexture);
+    // Skip terrain for initial implementation
+    m_terrainMesh = nullptr; // TODO: Implement terrain generation in the future
 
-// 			l_renderingServer->Initialize(m_iconTemplate_DirectionalLight);
-// 			l_renderingServer->Initialize(m_iconTemplate_PointLight);
-// 			l_renderingServer->Initialize(m_iconTemplate_SphereLight);
+    // Initialize components with rendering server
+    ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
+    auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
+        [&]() {
+            auto l_renderingServer = g_Engine->getRenderingServer();
 
-// 			l_renderingServer->Initialize(m_defaultMaterial);
-// 		});
+            l_renderingServer->Initialize(m_unitTriangleMesh, m_meshVertices[m_unitTriangleMesh], m_meshIndices[m_unitTriangleMesh]);
+            l_renderingServer->Initialize(m_unitSquareMesh, m_meshVertices[m_unitSquareMesh], m_meshIndices[m_unitSquareMesh]);
+            l_renderingServer->Initialize(m_unitPentagonMesh, m_meshVertices[m_unitPentagonMesh], m_meshIndices[m_unitPentagonMesh]);
+            l_renderingServer->Initialize(m_unitHexagonMesh, m_meshVertices[m_unitHexagonMesh], m_meshIndices[m_unitHexagonMesh]);
+            l_renderingServer->Initialize(m_unitTetrahedronMesh, m_meshVertices[m_unitTetrahedronMesh], m_meshIndices[m_unitTetrahedronMesh]);
+            l_renderingServer->Initialize(m_unitCubeMesh, m_meshVertices[m_unitCubeMesh], m_meshIndices[m_unitCubeMesh]);
+            l_renderingServer->Initialize(m_unitOctahedronMesh, m_meshVertices[m_unitOctahedronMesh], m_meshIndices[m_unitOctahedronMesh]);
+            l_renderingServer->Initialize(m_unitDodecahedronMesh, m_meshVertices[m_unitDodecahedronMesh], m_meshIndices[m_unitDodecahedronMesh]);
+            l_renderingServer->Initialize(m_unitIcosahedronMesh, m_meshVertices[m_unitIcosahedronMesh], m_meshIndices[m_unitIcosahedronMesh]);
+            l_renderingServer->Initialize(m_unitSphereMesh, m_meshVertices[m_unitSphereMesh], m_meshIndices[m_unitSphereMesh]);
+            // l_renderingServer->Initialize(m_terrainMesh, m_meshVertices[m_terrainMesh], m_meshIndices[m_terrainMesh]);
 
-// 	l_DefaultAssetInitializationTask->Activate();
-// 	l_DefaultAssetInitializationTask->Wait();
+            l_renderingServer->Initialize(m_basicNormalTexture);
+            l_renderingServer->Initialize(m_basicAlbedoTexture);
+            l_renderingServer->Initialize(m_basicMetallicTexture);
+            l_renderingServer->Initialize(m_basicRoughnessTexture);
+            l_renderingServer->Initialize(m_basicAOTexture);
 
-// 	return true;
-// }
+            // Skip icon initialization for now
+            l_renderingServer->Initialize(m_iconTemplate_DirectionalLight);
+            l_renderingServer->Initialize(m_iconTemplate_PointLight);
+            l_renderingServer->Initialize(m_iconTemplate_SphereLight);
 
-// bool TemplateAssetServiceImpl::UnloadTemplateAssets()
-// {
-// 	ITask::Desc taskDesc("Default Assets Termination Task", ITask::Type::Once, 2);
-// 	auto l_DefaultAssetTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
-// 		[&]() {
-// 			auto l_renderingServer = g_Engine->getRenderingServer();
+            l_renderingServer->Initialize(m_defaultMaterial);
+        });
 
-// 			l_renderingServer->Delete(m_basicNormalTexture);
-// 			l_renderingServer->Delete(m_basicAlbedoTexture);
-// 			l_renderingServer->Delete(m_basicMetallicTexture);
-// 			l_renderingServer->Delete(m_basicRoughnessTexture);
-// 			l_renderingServer->Delete(m_basicAOTexture);
 
-// 			l_renderingServer->Delete(m_defaultMaterial);
+    l_DefaultAssetInitializationTask->Activate();
+    l_DefaultAssetInitializationTask->Wait();
 
-// 			l_renderingServer->Delete(m_iconTemplate_DirectionalLight);
-// 			l_renderingServer->Delete(m_iconTemplate_PointLight);
-// 			l_renderingServer->Delete(m_iconTemplate_SphereLight);
+    return true;
+}
 
-// 			l_renderingServer->Delete(m_unitTriangleMesh);
-// 			l_renderingServer->Delete(m_unitSquareMesh);
-// 			l_renderingServer->Delete(m_unitPentagonMesh);
-// 			l_renderingServer->Delete(m_unitHexagonMesh);
-// 			l_renderingServer->Delete(m_unitTetrahedronMesh);
-// 			l_renderingServer->Delete(m_unitCubeMesh);
-// 			l_renderingServer->Delete(m_unitOctahedronMesh);
-// 			l_renderingServer->Delete(m_unitDodecahedronMesh);
-// 			l_renderingServer->Delete(m_unitIcosahedronMesh);
-// 			l_renderingServer->Delete(m_unitSphereMesh);
-// 		});
+bool TemplateAssetServiceImpl::UnloadTemplateAssets()
+{
+    ITask::Desc taskDesc("Template Assets Termination Task", ITask::Type::Once, 2);
+    auto l_DefaultAssetTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
+        [&]() {
+            auto l_renderingServer = g_Engine->getRenderingServer();
 
-// 	l_DefaultAssetTerminationTask->Activate();
-// 	l_DefaultAssetTerminationTask->Wait();
+            l_renderingServer->Delete(m_basicNormalTexture);
+            l_renderingServer->Delete(m_basicAlbedoTexture);
+            l_renderingServer->Delete(m_basicMetallicTexture);
+            l_renderingServer->Delete(m_basicRoughnessTexture);
+            l_renderingServer->Delete(m_basicAOTexture);
 
-// 	return true;
-// }
+            l_renderingServer->Delete(m_defaultMaterial);
 
-// void TemplateAssetServiceImpl::generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
-// {
-// 	meshComponent->m_Vertices.reserve(sectorCount);
-// 	meshComponent->m_Vertices.fulfill();
+            // Skip icon deletion for now
+            l_renderingServer->Delete(m_iconTemplate_DirectionalLight);
+            l_renderingServer->Delete(m_iconTemplate_PointLight);
+            l_renderingServer->Delete(m_iconTemplate_SphereLight);
 
-// 	auto l_sectorCount = (float)sectorCount;
-// 	auto l_sectorStep = 2.0f * PI<float> / l_sectorCount;
+            l_renderingServer->Delete(m_unitTriangleMesh);
+            l_renderingServer->Delete(m_unitSquareMesh);
+            l_renderingServer->Delete(m_unitPentagonMesh);
+            l_renderingServer->Delete(m_unitHexagonMesh);
+            l_renderingServer->Delete(m_unitTetrahedronMesh);
+            l_renderingServer->Delete(m_unitCubeMesh);
+            l_renderingServer->Delete(m_unitOctahedronMesh);
+            l_renderingServer->Delete(m_unitDodecahedronMesh);
+            l_renderingServer->Delete(m_unitIcosahedronMesh);
+            l_renderingServer->Delete(m_unitSphereMesh);
+        });
 
-// 	for (size_t i = 0; i < sectorCount; i++)
-// 	{
-// 		auto l_pos = Vec3(-sinf(l_sectorStep * (float)i), cosf(l_sectorStep * (float)i), 0.0f);
-// 		meshComponent->m_Vertices[i].m_pos = l_pos;
-// 		meshComponent->m_Vertices[i].m_texCoord = Vec2(l_pos.x, l_pos.y) * 0.5f + 0.5f;
-// 	}
-// }
+    l_DefaultAssetTerminationTask->Activate();
+    l_DefaultAssetTerminationTask->Wait();
 
-// void TemplateAssetServiceImpl::generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
-// {
-// 	meshComponent->m_Indices.reserve((sectorCount - 2) * 3);
-// 	meshComponent->m_Indices.fulfill();
-// 	meshComponent->m_IndexCount = meshComponent->m_Indices.capacity();
+    return true;
+}
 
-// 	uint32_t l_currentIndex = 0;
+void TemplateAssetServiceImpl::generateVerticesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
+{
+    auto& vertices = m_meshVertices[meshComponent];
+    vertices.resize(sectorCount);
 
-// 	for (size_t i = 0; i < meshComponent->m_IndexCount; i += 3)
-// 	{
-// 		meshComponent->m_Indices[i] = l_currentIndex;
-// 		meshComponent->m_Indices[i + 1] = l_currentIndex + 1;
-// 		meshComponent->m_Indices[i + 2] = sectorCount - 1;
-// 		l_currentIndex++;
-// 	}
-// }
+    auto l_sectorCount = (float)sectorCount;
+    auto l_sectorStep = 2.0f * PI<float> / l_sectorCount;
 
-// void TemplateAssetServiceImpl::addTriangle(MeshComponent* meshComponent)
-// {
-// 	generateVerticesForPolygon(meshComponent, 3);
-// 	generateIndicesForPolygon(meshComponent, 3);
-// }
+    for (size_t i = 0; i < sectorCount; i++)
+    {
+        auto l_pos = Vec3(-sinf(l_sectorStep * (float)i), cosf(l_sectorStep * (float)i), 0.0f);
+        vertices[i].m_pos = l_pos;
+        vertices[i].m_texCoord = Vec2(l_pos.x, l_pos.y) * 0.5f + 0.5f;
+    }
+}
 
-// void TemplateAssetServiceImpl::addSquare(MeshComponent* meshComponent)
-// {
-// 	meshComponent->m_Vertices.reserve(4);
-// 	meshComponent->m_Vertices.fulfill();
+void TemplateAssetServiceImpl::generateIndicesForPolygon(MeshComponent* meshComponent, uint32_t sectorCount)
+{
+    auto& indices = m_meshIndices[meshComponent];
+    indices.resize((sectorCount - 2) * 3);
 
-// 	meshComponent->m_Vertices[0].m_pos = Vec3(1.0f, 1.0f, 0.0f);
-// 	meshComponent->m_Vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
+    uint32_t l_currentIndex = 0;
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+        indices[i] = l_currentIndex;
+        indices[i + 1] = l_currentIndex + 1;
+        indices[i + 2] = sectorCount - 1;
+        l_currentIndex++;
+    }
+}
 
-// 	meshComponent->m_Vertices[1].m_pos = Vec3(1.0f, -1.0f, 0.0f);
-// 	meshComponent->m_Vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
+void TemplateAssetServiceImpl::addTriangle(MeshComponent* meshComponent)
+{
+    auto& vertices = m_meshVertices[meshComponent];
+    auto& indices = m_meshIndices[meshComponent];
 
-// 	meshComponent->m_Vertices[2].m_pos = Vec3(-1.0f, -1.0f, 0.0f);
-// 	meshComponent->m_Vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
+    vertices.reserve(3);
+    vertices.resize(3);
 
-// 	meshComponent->m_Vertices[3].m_pos = Vec3(-1.0f, 1.0f, 0.0f);
-// 	meshComponent->m_Vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
+    vertices[0].m_pos = Vec3(0.0f, 1.0f, 0.0f);
+    vertices[0].m_texCoord = Vec2(0.5f, 1.0f);
+    vertices[0].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// 	meshComponent->m_Indices.reserve(6);
-// 	meshComponent->m_Indices.fulfill();
+    vertices[1].m_pos = Vec3(-1.0f, -1.0f, 0.0f);
+    vertices[1].m_texCoord = Vec2(0.0f, 0.0f);
+    vertices[1].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// 	meshComponent->m_Indices[0] = 0;
-// 	meshComponent->m_Indices[1] = 1;
-// 	meshComponent->m_Indices[2] = 3;
-// 	meshComponent->m_Indices[3] = 1;
-// 	meshComponent->m_Indices[4] = 2;
-// 	meshComponent->m_Indices[5] = 3;
+    vertices[2].m_pos = Vec3(1.0f, -1.0f, 0.0f);
+    vertices[2].m_texCoord = Vec2(1.0f, 0.0f);
+    vertices[2].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
-// }
+    indices.reserve(3);
+    indices.resize(3);
+    indices[0] = 0;
+    indices[1] = 1;
+    indices[2] = 2;
+}
 
-// void TemplateAssetServiceImpl::addPentagon(MeshComponent* meshComponent)
-// {
-// 	generateVerticesForPolygon(meshComponent, 5);
-// 	generateIndicesForPolygon(meshComponent, 5);
-// }
+void TemplateAssetServiceImpl::addSquare(MeshComponent* meshComponent)
+{
+    auto& vertices = m_meshVertices[meshComponent];
+    auto& indices = m_meshIndices[meshComponent];
 
-// void TemplateAssetServiceImpl::addHexagon(MeshComponent* meshComponent)
-// {
-// 	generateVerticesForPolygon(meshComponent, 6);
-// 	generateIndicesForPolygon(meshComponent, 6);
-// }
+    vertices.reserve(4);
+    vertices.resize(4);
 
-// void TemplateAssetServiceImpl::generateVertexBasedNormal(MeshComponent* meshComponent)
-// {
-// 	auto l_verticesCount = meshComponent->m_Vertices.size();
-// 	for (size_t i = 0; i < l_verticesCount; i++)
-// 	{
-// 		meshComponent->m_Vertices[i].m_normal = meshComponent->m_Vertices[i].m_pos.normalize();
-// 	}
-// }
+    vertices[0].m_pos = Vec3(1.0f, 1.0f, 0.0f);
+    vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
+    vertices[0].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// void TemplateAssetServiceImpl::generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
-// {
-// 	auto l_face = meshComponent->m_Indices.size() / verticesPerFace;
+    vertices[1].m_pos = Vec3(1.0f, -1.0f, 0.0f);
+    vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
+    vertices[1].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// 	for (size_t i = 0; i < l_face; i++)
-// 	{
-// 		auto l_normal = Vec3(0.0f, 0.0f, 0.0f);
+    vertices[2].m_pos = Vec3(-1.0f, -1.0f, 0.0f);
+    vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
+    vertices[2].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// 		for (size_t j = 0; j < verticesPerFace; j++)
-// 		{
-// 			l_normal = l_normal + meshComponent->m_Vertices[i * verticesPerFace + j].m_pos;
-// 		}
-// 		l_normal = l_normal / (float)verticesPerFace;
-// 		l_normal = l_normal.normalize();
+    vertices[3].m_pos = Vec3(-1.0f, 1.0f, 0.0f);
+    vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
+    vertices[3].m_normal = Vec3(0.0f, 0.0f, 1.0f);
 
-// 		auto l_up = Vec3(0.0f, 1.0f, 0.0f);
-// 		auto l_tangent = Vec3();
-// 		if (l_normal != l_up)
-// 		{
-// 			l_tangent = l_up.cross(l_normal);
-// 			l_tangent = l_tangent.normalize();
-// 		}
-// 		else
-// 		{
-// 			auto l_right = Vec3(1.0f, 0.0f, 0.0f);
-// 			l_tangent = l_normal.cross(l_right);
-// 			l_tangent = l_tangent.normalize();
-// 		}
+    indices.reserve(6);
+    indices.resize(6);
+    indices[0] = 0;
+    indices[1] = 1;
+    indices[2] = 3;
+    indices[3] = 1;
+    indices[4] = 2;
+    indices[5] = 3;
+}
 
-// 		for (size_t j = 0; j < verticesPerFace; j++)
-// 		{
-// 			meshComponent->m_Vertices[i * verticesPerFace + j].m_normal = l_normal;
-// 			meshComponent->m_Vertices[i * verticesPerFace + j].m_tangent = l_tangent;
-// 		}
-// 	}
-// }
+void TemplateAssetServiceImpl::addPentagon(MeshComponent* meshComponent)
+{
+    generateVerticesForPolygon(meshComponent, 5);
+    generateIndicesForPolygon(meshComponent, 5);
+}
+
+void TemplateAssetServiceImpl::addHexagon(MeshComponent* meshComponent)
+{
+    generateVerticesForPolygon(meshComponent, 6);
+    generateIndicesForPolygon(meshComponent, 6);
+}
+
+void TemplateAssetServiceImpl::generateVertexBasedNormal(MeshComponent* meshComponent)
+{
+    auto& vertices = m_meshVertices[meshComponent];
+    for (size_t i = 0; i < vertices.size(); i++)
+    {
+        vertices[i].m_normal = vertices[i].m_pos.normalize();
+    }
+}
+
+void TemplateAssetServiceImpl::generateFaceBasedNormal(MeshComponent* meshComponent, uint32_t verticesPerFace)
+{
+    auto& vertices = m_meshVertices[meshComponent];
+    auto& indices = m_meshIndices[meshComponent];
+    auto l_face = indices.size() / verticesPerFace;
+
+    for (size_t i = 0; i < l_face; i++)
+    {
+        auto l_normal = Vec3(0.0f, 0.0f, 0.0f);
+
+        for (size_t j = 0; j < verticesPerFace; j++)
+        {
+            l_normal = l_normal + vertices[i * verticesPerFace + j].m_pos;
+        }
+        l_normal = l_normal / (float)verticesPerFace;
+        l_normal = l_normal.normalize();
+
+        auto l_up = Vec3(0.0f, 1.0f, 0.0f);
+        auto l_tangent = Vec3();
+        if (l_normal != l_up)
+        {
+            l_tangent = l_up.cross(l_normal);
+            l_tangent = l_tangent.normalize();
+        }
+        else
+        {
+            auto l_right = Vec3(1.0f, 0.0f, 0.0f);
+            l_tangent = l_normal.cross(l_right);
+            l_tangent = l_tangent.normalize();
+        }
+
+        for (size_t j = 0; j < verticesPerFace; j++)
+        {
+            vertices[i * verticesPerFace + j].m_normal = l_normal;
+            vertices[i * verticesPerFace + j].m_tangent = l_tangent;
+        }
+    }
+}
 
 void TemplateAssetServiceImpl::FulfillVerticesAndIndices(MeshComponent* meshComponent, const std::vector<Index>& indices, const std::vector<Vec3>& vertices, uint32_t verticesPerFace)
 {
-// 	meshComponent->m_Vertices.reserve(indices.size());
-// 	meshComponent->m_Vertices.fulfill();
+    auto& serviceVertices = m_meshVertices[meshComponent];
+    auto& serviceIndices = m_meshIndices[meshComponent];
 
-// 	for (uint32_t i = 0; i < indices.size(); i++)
-// 	{
-// 		meshComponent->m_Vertices[i].m_pos = vertices[indices[i]];
-// 	}
+    serviceVertices.reserve(indices.size());
+    serviceVertices.resize(indices.size());
 
-// 	meshComponent->m_Indices.reserve(indices.size());
-// 	meshComponent->m_Indices.fulfill();
+    for (uint32_t i = 0; i < indices.size(); i++)
+    {
+        serviceVertices[i].m_pos = vertices[indices[i]];
+        // Generate UV coordinates based on position
+        serviceVertices[i].m_texCoord = Vec2(
+            (serviceVertices[i].m_pos.x + 1.0f) * 0.5f,
+            (serviceVertices[i].m_pos.y + 1.0f) * 0.5f
+        );
+    }
 
-// 	for (uint32_t i = 0; i < indices.size(); i++)
-// 	{
-// 		meshComponent->m_Indices[i] = i;
-// 	}
+    serviceIndices.reserve(indices.size());
+    serviceIndices.resize(indices.size());
+    for (uint32_t i = 0; i < indices.size(); i++)
+    {
+        serviceIndices[i] = i;
+    }
 
-// 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
-
-// 	if (verticesPerFace)
-// 	{
-// 		generateFaceBasedNormal(meshComponent, verticesPerFace);
-// 	}
-// 	else
-// 	{
-// 		generateVertexBasedNormal(meshComponent);
-// 	}
+    // Generate normals
+    if (verticesPerFace)
+    {
+        generateFaceBasedNormal(meshComponent, verticesPerFace);
+    }
+    else
+    {
+        generateVertexBasedNormal(meshComponent);
+    }
 }
 
-// void TemplateAssetServiceImpl::addTetrahedron(MeshComponent* meshComponent)
-// {
-// 	std::vector<Index> l_indices =
-// 	{
-// 		0, 3, 1, 0, 2, 3,
-// 		0, 1, 2, 1, 3, 2
-// 	};
+void TemplateAssetServiceImpl::addTetrahedron(MeshComponent* meshComponent)
+{
+    std::vector<Index> l_indices =
+    {
+        0, 3, 1, 0, 2, 3,
+        0, 1, 2, 1, 3, 2
+    };
 
-// 	std::vector<Vec3> l_vertices =
-// 	{
-// 		Vec3(1.0f, 1.0f, 1.0f),
-// 		Vec3(1.0f, -1.0f, -1.0f),
-// 		Vec3(-1.0f, 1.0f, -1.0f),
-// 		Vec3(-1.0f, -1.0f, 1.0f)
-// 	};
+    std::vector<Vec3> l_vertices =
+    {
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(1.0f, -1.0f, -1.0f),
+        Vec3(-1.0f, 1.0f, -1.0f),
+        Vec3(-1.0f, -1.0f, 1.0f)
+    };
 
-// 	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
-// }
+    FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
+}
 
-// void TemplateAssetServiceImpl::addCube(MeshComponent* meshComponent)
-// {
-// 	std::vector<Index> l_indices =
-// 	{
-// 		0, 3, 1, 1, 3, 2,
-// 		4, 0, 5, 5, 0, 1,
-// 		7, 4, 6, 6, 4, 5,
-// 		3, 7, 2, 2, 7, 6,
-// 		4, 7, 0, 0, 7, 3,
-// 		1, 2, 5, 5, 2, 6
-// 	};
+void TemplateAssetServiceImpl::addCube(MeshComponent* meshComponent)
+{
+    std::vector<Index> l_indices =
+    {
+        0, 3, 1, 1, 3, 2,
+        4, 0, 5, 5, 0, 1,
+        7, 4, 6, 6, 4, 5,
+        3, 7, 2, 2, 7, 6,
+        4, 7, 0, 0, 7, 3,
+        1, 2, 5, 5, 2, 6
+    };
 
-// 	std::vector<Vec3> l_vertices =
-// 	{
-// 		Vec3(1.0f, 1.0f, 1.0f),
-// 		Vec3(1.0f, -1.0f, 1.0f),
-// 		Vec3(-1.0f, -1.0f, 1.0f),
-// 		Vec3(-1.0f, 1.0f, 1.0f),
-// 		Vec3(1.0f, 1.0f, -1.0f),
-// 		Vec3(1.0f, -1.0f, -1.0f),
-// 		Vec3(-1.0f, -1.0f, -1.0f),
-// 		Vec3(-1.0f, 1.0f, -1.0f)
-// 	};
+    std::vector<Vec3> l_vertices =
+    {
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(1.0f, -1.0f, 1.0f),
+        Vec3(-1.0f, -1.0f, 1.0f),
+        Vec3(-1.0f, 1.0f, 1.0f),
+        Vec3(1.0f, 1.0f, -1.0f),
+        Vec3(1.0f, -1.0f, -1.0f),
+        Vec3(-1.0f, -1.0f, -1.0f),
+        Vec3(-1.0f, 1.0f, -1.0f)
+    };
 
-// 	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 6);
-// }
+    FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 6);
+}
 
-// void TemplateAssetServiceImpl::addOctahedron(MeshComponent* meshComponent)
-// {
-// 	std::vector<Index> l_indices =
-// 	{
-// 		0, 2, 4, 4, 2, 1,
-// 		1, 2, 5, 5, 2, 0,
-// 		0, 4, 3, 4, 1, 3,
-// 		1, 5, 3, 5, 0, 3
-// 	};
+void TemplateAssetServiceImpl::addOctahedron(MeshComponent* meshComponent)
+{
+    std::vector<Index> l_indices =
+    {
+        0, 2, 4, 4, 2, 1,
+        1, 2, 5, 5, 2, 0,
+        0, 4, 3, 4, 1, 3,
+        1, 5, 3, 5, 0, 3
+    };
 
-// 	std::vector<Vec3> l_vertices =
-// 	{
-// 		Vec3(1.0f, 0.0f, 0.0f),
-// 		Vec3(-1.0f, 0.0f, 0.0f),
-// 		Vec3(0.0f, 1.0f, 0.0f),
-// 		Vec3(0.0f, -1.0f, 0.0f),
-// 		Vec3(0.0f, 0.0f, 1.0f),
-// 		Vec3(0.0f, 0.0f, -1.0f)
-// 	};
+    std::vector<Vec3> l_vertices =
+    {
+        Vec3(1.0f, 0.0f, 0.0f),
+        Vec3(-1.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 1.0f, 0.0f),
+        Vec3(0.0f, -1.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 1.0f),
+        Vec3(0.0f, 0.0f, -1.0f)
+    };
 
-// 	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
-// }
+    FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
+}
 
-// void TemplateAssetServiceImpl::addDodecahedron(MeshComponent* meshComponent)
-// {
-// 	std::vector<Index> l_indices =
-// 	{
-// 		0, 1, 4, 1, 2, 4, 2, 3, 4,
-// 		5, 6, 9, 6, 7, 9, 7, 8, 9,
-// 		10, 11, 12, 11, 3, 12, 3, 2, 12,
-// 		13, 14, 15, 14, 8, 15, 8, 7, 15,
+void TemplateAssetServiceImpl::addDodecahedron(MeshComponent* meshComponent)
+{
+    // TODO: Implement proper dodecahedron - use cube for now
+    addCube(meshComponent);
+}
 
-// 		3, 11, 4, 11, 16, 4, 16, 17, 4,
-// 		2, 1, 12, 1, 18, 12, 18, 19, 12,
-// 		7, 6, 15, 6, 17, 15, 17, 16, 15,
-// 		8, 14, 9, 14, 19, 9, 19, 18, 9,
+void TemplateAssetServiceImpl::addIcosahedron(MeshComponent* meshComponent)
+{
+    std::vector<Index> l_indices =
+    {
+        0, 1, 2, 0, 2, 3,
+        0, 3, 4, 0, 4, 5,
+        0, 5, 1, 1, 8, 2,
+        2, 7, 3, 3, 6, 4,
+        4, 10, 5, 5, 9, 1,
+        1, 9, 8, 2, 8, 7,
+        3, 7, 6, 4, 6, 10,
+        5, 10, 9, 11, 9, 10,
+        11, 8, 9, 11, 7, 8,
+        11, 6, 7, 11, 10, 6
+    };
 
-// 		17, 6, 4, 6, 5, 4, 5, 0, 4,
-// 		16, 11, 15, 11, 10, 15, 10, 13, 15,
-// 		18, 1, 9, 1, 0, 9, 0, 5, 9,
-// 		19, 14, 12, 14, 13, 12, 13, 10, 12
-// 	};
+    std::vector<Vec3> l_vertices =
+    {
+        Vec3(1.0f, 0.0f, 0.0f),
+        Vec3(0.447213595500f, 0.894427191000f, 0.0f),
+        Vec3(0.447213595500f, 0.276393202252f, 0.850650808354f),
+        Vec3(0.447213595500f, -0.723606797748f, 0.525731112119f),
+        Vec3(0.447213595500f, -0.723606797748f, -0.525731112119f),
+        Vec3(0.447213595500f, 0.276393202252f, -0.850650808354f),
+        Vec3(-0.447213595500f, -0.894427191000f, 0.0f),
+        Vec3(-0.447213595500f, -0.276393202252f, 0.850650808354f),
+        Vec3(-0.447213595500f, 0.723606797748f, 0.525731112119f),
+        Vec3(-0.447213595500f, 0.723606797748f, -0.525731112119f),
+        Vec3(-0.447213595500f, -0.276393202252f, -0.850650808354f),
+        Vec3(-1.0f, 0.0f, 0.0f)
+    };
 
-// 	std::vector<Vec3> l_vertices =
-// 	{
-// 		Vec3(0.0f, 1.61803398875f, 0.61803398875f),
-// 		Vec3(-1.0f, 1.0f, 1.0f),
-// 		Vec3(-0.61803398875f, 0.0f, 1.61803398875f),
-// 		Vec3(0.61803398875f, 0.0f, 1.61803398875f),
-// 		Vec3(1.0f, 1.0f, 1.0f),
-// 		Vec3(0.0f, 1.61803398875f, -0.61803398875f),
-// 		Vec3(1.0f, 1.0f, -1.0f),
-// 		Vec3(0.61803398875f, 0.0f, -1.61803398875f),
-// 		Vec3(-0.61803398875f, 0.0f, -1.61803398875f),
-// 		Vec3(-1.0f, 1.0f, -1.0f),
-// 		Vec3(0.0f, -1.61803398875f, 0.61803398875f),
-// 		Vec3(1.0f, -1.0f, 1.0f),
-// 		Vec3(-1.0f, -1.0f, 1.0f),
-// 		Vec3(0.0f, -1.61803398875f, -0.61803398875f),
-// 		Vec3(-1.0f, -1.0f, -1.0f),
-// 		Vec3(1.0f, -1.0f, -1.0f),
-// 		Vec3(1.61803398875f, -0.61803398875f, 0.0f),
-// 		Vec3(1.61803398875f, 0.61803398875f, 0.0f),
-// 		Vec3(-1.61803398875f, 0.61803398875f, 0.0f),
-// 		Vec3(-1.61803398875f, -0.61803398875f, 0.0f)
-// 	};
+    FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
+}
 
-// 	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 9);
-// }
+void TemplateAssetServiceImpl::addSphere(MeshComponent* meshComponent)
+{
+    auto& vertices = m_meshVertices[meshComponent];
+    auto& indices = m_meshIndices[meshComponent];
 
-// void TemplateAssetServiceImpl::addIcosahedron(MeshComponent* meshComponent)
-// {
-// 	std::vector<Index> l_indices =
-// 	{
-// 		0, 1, 2, 0, 2, 3,
-// 		0, 3, 4, 0, 4, 5,
-// 		0, 5, 1, 1, 8, 2,
-// 		2, 7, 3, 3, 6, 4,
-// 		4, 10, 5, 5, 9, 1,
-// 		1, 9, 8, 2, 8, 7,
-// 		3, 7, 6, 4, 6, 10,
-// 		5, 10, 9, 11, 9, 10,
-// 		11, 8, 9, 11, 7, 8,
-// 		11, 6, 7, 11, 10, 6
-// 	};
+    auto radius = 1.0f;
+    auto sectorCount = 16; // Reduced for simpler mesh
+    auto stackCount = 16;
 
-// 	std::vector<Vec3> l_vertices =
-// 	{
-// 		Vec3(1.0f, 0.0f, 0.0f),
-// 		Vec3(0.447213595500f, 0.894427191000f, 0.0f),
-// 		Vec3(0.447213595500f, 0.276393202252f, 0.850650808354f),
-// 		Vec3(0.447213595500f, -0.723606797748f, 0.525731112119f),
-// 		Vec3(0.447213595500f, -0.723606797748f, -0.525731112119f),
-// 		Vec3(0.447213595500f, 0.276393202252f, -0.850650808354f),
-// 		Vec3(-0.447213595500f, -0.894427191000f, 0.0f),
-// 		Vec3(-0.447213595500f, -0.276393202252f, 0.850650808354f),
-// 		Vec3(-0.447213595500f, 0.723606797748f, 0.525731112119f),
-// 		Vec3(-0.447213595500f, 0.723606797748f, -0.525731112119f),
-// 		Vec3(-0.447213595500f, -0.276393202252f, -0.850650808354f),
-// 		Vec3(-1.0f, 0.0f, 0.0f)
-// 	};
+    float x, y, z, xy;
+    float nx, ny, nz, lengthInv = 1.0f / radius;
+    float s, t;
 
-// 	FulfillVerticesAndIndices(meshComponent, l_indices, l_vertices, 3);
-// }
+    float sectorStep = 2 * PI<float> / sectorCount;
+    float stackStep = PI<float> / stackCount;
+    float sectorAngle, stackAngle;
 
-// void TemplateAssetServiceImpl::addSphere(MeshComponent* meshComponent)
-// {
-// 	auto radius = 1.0f;
-// 	auto sectorCount = 32;
-// 	auto stackCount = 32;
+    vertices.reserve((stackCount + 1) * (sectorCount + 1));
+    vertices.clear();
 
-// 	float x, y, z, xy;                              // vertex position
-// 	float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
-// 	float s, t;                                     // vertex texCoord
+    for (int32_t i = 0; i <= stackCount; ++i)
+    {
+        stackAngle = PI<float> / 2 - i * stackStep;
+        xy = radius * cosf(stackAngle);
+        z = radius * sinf(stackAngle);
 
-// 	float sectorStep = 2 * PI<float> / sectorCount;
-// 	float stackStep = PI<float> / stackCount;
-// 	float sectorAngle, stackAngle;
+        for (int32_t j = 0; j <= sectorCount; ++j)
+        {
+            sectorAngle = j * sectorStep;
 
-// 	meshComponent->m_Vertices.reserve((stackCount + 1) * (sectorCount + 1));
+            x = xy * cosf(sectorAngle);
+            y = xy * sinf(sectorAngle);
 
-// 	for (int32_t i = 0; i <= stackCount; ++i)
-// 	{
-// 		stackAngle = PI<float> / 2 - i * stackStep;        // starting from pi/2 to -pi/2
-// 		xy = radius * cosf(stackAngle);             // r * cos(u)
-// 		z = radius * sinf(stackAngle);              // r * sin(u)
+            Vertex l_VertexData;
+            l_VertexData.m_pos = Vec3(x, y, z);
+            l_VertexData.m_normal = Vec3(x * lengthInv, y * lengthInv, z * lengthInv);
+            l_VertexData.m_texCoord = Vec2((float)j / sectorCount, (float)i / stackCount);
 
-// 		// add (sectorCount+1) vertices per stack
-// 		// the first and last vertices have same position and normal, but different tex coords
-// 		for (int32_t j = 0; j <= sectorCount; ++j)
-// 		{
-// 			sectorAngle = j * sectorStep;           // starting from 0 to 2pi
+            vertices.emplace_back(l_VertexData);
+        }
+    }
 
-// 			// vertex position (x, y, z)
-// 			x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
-// 			y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
-// 			Vertex l_VertexData;
-// 			l_VertexData.m_pos = Vec3(x, y, z);
+    indices.reserve(stackCount * sectorCount * 6);
+    indices.clear();
 
-// 			// normalized vertex normal (nx, ny, nz)
-// 			nx = x * lengthInv;
-// 			ny = y * lengthInv;
-// 			nz = z * lengthInv;
-// 			l_VertexData.m_normal = Vec3(nx, ny, nz);
+    int32_t k1, k2;
+    for (int32_t i = 0; i < stackCount; ++i)
+    {
+        k1 = i * (sectorCount + 1);
+        k2 = k1 + sectorCount + 1;
 
-// 			// vertex tex coord (s, t) range between [0, 1]
-// 			s = (float)j / sectorCount;
-// 			t = (float)i / stackCount;
-// 			l_VertexData.m_texCoord = Vec2(s, t);
+        for (int32_t j = 0; j < sectorCount; ++j, ++k1, ++k2)
+        {
+            if (i != 0)
+            {
+                indices.emplace_back(k1);
+                indices.emplace_back(k2);
+                indices.emplace_back(k1 + 1);
+            }
 
-// 			meshComponent->m_Vertices.emplace_back(l_VertexData);
-// 		}
-// 	}
+            if (i != (stackCount - 1))
+            {
+                indices.emplace_back(k1 + 1);
+                indices.emplace_back(k2);
+                indices.emplace_back(k2 + 1);
+            }
+        }
+    }
+}
 
-// 	meshComponent->m_Indices.reserve(stackCount * (sectorCount - 1) * 6);
+void TemplateAssetServiceImpl::addTerrain(MeshComponent* meshComponent)
+{
+	auto l_gridSize = 1024;
+	auto l_gridSize2 = l_gridSize * l_gridSize;
+	auto l_gridSizehalf = l_gridSize / 2;
 
-// 	int32_t k1, k2;
-// 	for (int32_t i = 0; i < stackCount; ++i)
-// 	{
-// 		k1 = i * (sectorCount + 1);     // beginning of current stack
-// 		k2 = k1 + sectorCount + 1;      // beginning of next stack
+    auto& vertices = m_meshVertices[meshComponent];
+    auto& indices = m_meshIndices[meshComponent];
+	vertices.reserve(l_gridSize2 * 4);
+	indices.reserve(l_gridSize2 * 6);
 
-// 		for (int32_t j = 0; j < sectorCount; ++j, ++k1, ++k2)
-// 		{
-// 			// 2 triangles per sector excluding first and last stacks
-// 			// k1 => k2 => k1+1
-// 			if (i != 0)
-// 			{
-// 				meshComponent->m_Indices.emplace_back(k1);
-// 				meshComponent->m_Indices.emplace_back(k2);
-// 				meshComponent->m_Indices.emplace_back(k1 + 1);
-// 			}
+	for (auto j = 0; j < l_gridSize; j++)
+	{
+		for (auto i = 0; i < l_gridSize; i++)
+		{
+			auto l_px0 = (float)(i - l_gridSizehalf) * 100.0f;
+			auto l_px1 = l_px0 + 100.0f;
+			auto l_pz0 = (float)(j - l_gridSizehalf) * 100.0f;
+			auto l_pz1 = l_pz0 + 100.0f;
 
-// 			// k1+1 => k2 => k2+1
-// 			if (i != (stackCount - 1))
-// 			{
-// 				meshComponent->m_Indices.emplace_back(k1 + 1);
-// 				meshComponent->m_Indices.emplace_back(k2);
-// 				meshComponent->m_Indices.emplace_back(k2 + 1);
-// 			}
-// 		}
-// 	}
+			auto l_tx0 = l_px0 / (float)l_gridSize;
+			auto l_tx1 = l_px1 / (float)l_gridSize;
+			auto l_tz0 = l_pz0 / (float)l_gridSize;
+			auto l_tz1 = l_pz1 / (float)l_gridSize;
 
-// 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
-// }
+			Vertex l_VertexData_1;
+			l_VertexData_1.m_pos = Vec3(l_px0, 0.0f, l_pz0);
+			l_VertexData_1.m_texCoord = Vec2(l_tx0, l_tz0);
+			vertices.emplace_back(l_VertexData_1);
 
-// void TemplateAssetServiceImpl::addTerrain(MeshComponent* meshComponent)
-// {
-// 	auto l_gridSize = 1024;
-// 	auto l_gridSize2 = l_gridSize * l_gridSize;
-// 	auto l_gridSizehalf = l_gridSize / 2;
-// 	meshComponent->m_Vertices.reserve(l_gridSize2 * 4);
-// 	meshComponent->m_Indices.reserve(l_gridSize2 * 6);
+			Vertex l_VertexData_2;
+			l_VertexData_2.m_pos = Vec3(l_px0, 0.0f, l_pz1);
+			l_VertexData_2.m_texCoord = Vec2(l_tx0, l_tz1);
+			vertices.emplace_back(l_VertexData_2);
 
-// 	for (auto j = 0; j < l_gridSize; j++)
-// 	{
-// 		for (auto i = 0; i < l_gridSize; i++)
-// 		{
-// 			auto l_px0 = (float)(i - l_gridSizehalf) * 100.0f;
-// 			auto l_px1 = l_px0 + 100.0f;
-// 			auto l_pz0 = (float)(j - l_gridSizehalf) * 100.0f;
-// 			auto l_pz1 = l_pz0 + 100.0f;
+			Vertex l_VertexData_3;
+			l_VertexData_3.m_pos = Vec3(l_px1, 0.0f, l_pz1);
+			l_VertexData_3.m_texCoord = Vec2(l_tx1, l_tz1);
+			vertices.emplace_back(l_VertexData_3);
 
-// 			auto l_tx0 = l_px0 / (float)l_gridSize;
-// 			auto l_tx1 = l_px1 / (float)l_gridSize;
-// 			auto l_tz0 = l_pz0 / (float)l_gridSize;
-// 			auto l_tz1 = l_pz1 / (float)l_gridSize;
+			Vertex l_VertexData_4;
+			l_VertexData_4.m_pos = Vec3(l_px1, 0.0f, l_pz0);
+			l_VertexData_4.m_texCoord = Vec2(l_tx1, l_tz0);
+			vertices.emplace_back(l_VertexData_4);
 
-// 			Vertex l_VertexData_1;
-// 			l_VertexData_1.m_pos = Vec3(l_px0, 0.0f, l_pz0);
-// 			l_VertexData_1.m_texCoord = Vec2(l_tx0, l_tz0);
-// 			meshComponent->m_Vertices.emplace_back(l_VertexData_1);
-
-// 			Vertex l_VertexData_2;
-// 			l_VertexData_2.m_pos = Vec3(l_px0, 0.0f, l_pz1);
-// 			l_VertexData_2.m_texCoord = Vec2(l_tx0, l_tz1);
-// 			meshComponent->m_Vertices.emplace_back(l_VertexData_2);
-
-// 			Vertex l_VertexData_3;
-// 			l_VertexData_3.m_pos = Vec3(l_px1, 0.0f, l_pz1);
-// 			l_VertexData_3.m_texCoord = Vec2(l_tx1, l_tz1);
-// 			meshComponent->m_Vertices.emplace_back(l_VertexData_3);
-
-// 			Vertex l_VertexData_4;
-// 			l_VertexData_4.m_pos = Vec3(l_px1, 0.0f, l_pz0);
-// 			l_VertexData_4.m_texCoord = Vec2(l_tx1, l_tz0);
-// 			meshComponent->m_Vertices.emplace_back(l_VertexData_4);
-
-// 			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);
-// 			meshComponent->m_Indices.emplace_back(0 + l_gridIndex);
-// 			meshComponent->m_Indices.emplace_back(1 + l_gridIndex);
-// 			meshComponent->m_Indices.emplace_back(3 + l_gridIndex);
-// 			meshComponent->m_Indices.emplace_back(1 + l_gridIndex);
-// 			meshComponent->m_Indices.emplace_back(2 + l_gridIndex);
-// 			meshComponent->m_Indices.emplace_back(3 + l_gridIndex);
-// 		}
-// 	}
-// 	meshComponent->m_IndexCount = meshComponent->m_Indices.size();
-// }
+			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);
+			indices.emplace_back(0 + l_gridIndex);
+			indices.emplace_back(1 + l_gridIndex);
+			indices.emplace_back(3 + l_gridIndex);
+			indices.emplace_back(1 + l_gridIndex);
+			indices.emplace_back(2 + l_gridIndex);
+			indices.emplace_back(3 + l_gridIndex);
+		}
+	}
+}
 
 bool TemplateAssetServiceImpl::GenerateMesh(MeshShape shape, MeshComponent* meshComponent)
 {
-// 	switch (shape)
-// 	{
-// 	case Type::MeshShape::Triangle:
-// 		addTriangle(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Square:
-// 		addSquare(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Pentagon:
-// 		addPentagon(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Hexagon:
-// 		addHexagon(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Tetrahedron:
-// 		addTetrahedron(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Cube:
-// 		addCube(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Octahedron:
-// 		addOctahedron(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Dodecahedron:
-// 		addDodecahedron(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Icosahedron:
-// 		addIcosahedron(meshComponent);
-// 		break;
-// 	case Type::MeshShape::Sphere:
-// 		addSphere(meshComponent);
-// 		break;
-// 	default:
-// 		break;
-// 	}
- 	return true;
+    switch (shape)
+    {
+    case MeshShape::Triangle:
+        addTriangle(meshComponent);
+        break;
+    case MeshShape::Square:
+        addSquare(meshComponent);
+        break;
+    case MeshShape::Pentagon:
+        addPentagon(meshComponent);
+        break;
+    case MeshShape::Hexagon:
+        addHexagon(meshComponent);
+        break;
+    case MeshShape::Tetrahedron:
+        addTetrahedron(meshComponent);
+        break;
+    case MeshShape::Cube:
+        addCube(meshComponent);
+        break;
+    case MeshShape::Octahedron:
+        addOctahedron(meshComponent);
+        break;
+    case MeshShape::Dodecahedron:
+        addDodecahedron(meshComponent);
+        break;
+    case MeshShape::Icosahedron:
+        addIcosahedron(meshComponent);
+        break;
+    case MeshShape::Sphere:
+        addSphere(meshComponent);
+        break;
+    default:
+        break;
+    }
+
+    return true;
 }
 
 bool TemplateAssetService::Setup(ISystemConfig* systemConfig)
 {
-    // 	m_Impl = new TemplateAssetServiceImpl();
+    m_Impl = new TemplateAssetServiceImpl();
 
-    // 	m_Impl->m_ObjectStatus = ObjectStatus::Created;
+    m_Impl->m_ObjectStatus = ObjectStatus::Created;
 
     return true;
 }
 
 bool TemplateAssetService::Initialize()
 {
-    // 	m_Impl->LoadTemplateAssets();
-    // 	m_Impl->m_ObjectStatus = ObjectStatus::Activated;
+    m_Impl->LoadTemplateAssets();
+    m_Impl->m_ObjectStatus = ObjectStatus::Activated;
 
     return true;
 }
@@ -737,8 +768,8 @@ bool TemplateAssetService::Update()
 
 bool TemplateAssetService::Terminate()
 {
-    // 	m_Impl->UnloadTemplateAssets();
-    // 	delete m_Impl;
+    m_Impl->UnloadTemplateAssets();
+    delete m_Impl;
     return true;
 }
 
