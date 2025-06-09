@@ -76,6 +76,16 @@ bool AssetService::Import(const char* fileName, const char* exportPath)
 	}
 }
 
+bool AssetService::SaveScene(const char* fileName)
+{
+	return JSONWrapper::SaveScene(fileName);
+}
+
+bool AssetService::LoadScene(const char* fileName)
+{
+	return JSONWrapper::LoadScene(fileName);
+}
+
 bool AssetService::Load(const char* fileName, TransformComponent& component)
 {
 	JSONWrapper::Load(fileName, component);
@@ -147,7 +157,7 @@ bool AssetService::Load(const char* fileName, LightComponent& component)
 	return component.m_UUID != 0;
 }
 
-bool AssetService::SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData)
+bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
     return STBWrapper::Save(fileName, textureDesc, textureData);
 }

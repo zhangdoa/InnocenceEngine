@@ -18,6 +18,9 @@ namespace Inno
 
 		static bool Import(const char* fileName, const char* exportPath);
 
+		static bool SaveScene(const char* fileName);
+		static bool LoadScene(const char* fileName);
+
 		static bool Load(const char* fileName, TransformComponent& component);
 		static bool Load(const char* fileName, ModelComponent& component);
 		static bool Load(const char* fileName, DrawCallComponent& component);
@@ -29,6 +32,17 @@ namespace Inno
 		static bool Load(const char* fileName, CameraComponent& component);
 		static bool Load(const char* fileName, LightComponent& component);
 
-		static bool SaveTexture(const char* fileName, const TextureDesc& textureDesc, void* textureData);
+		static bool Save(const char* fileName, const TransformComponent& component);
+		static bool Save(const char* fileName, const ModelComponent& component);
+		static bool Save(const char* fileName, const DrawCallComponent& component);
+		static bool Save(const char* fileName, const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices);	
+		static bool Save(const char* fileName, const MaterialComponent& component);
+		static bool Save(const char* fileName, const TextureComponent& component, void* textureData);
+		// static bool Save(const char* fileName, const SkeletonComponent& component);
+		// static bool Save(const char* fileName, const AnimationComponent& component);
+		static bool Save(const char* fileName, const CameraComponent& component);
+		static bool Save(const char* fileName, const LightComponent& component);
+
+		static bool Save(const char* fileName, const TextureDesc& textureDesc, void* textureData);
 	};
 }

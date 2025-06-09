@@ -424,7 +424,7 @@ bool ExecuteRayTracing()
 	//m_TextureComp->m_InitialData = &l_result[0];
 
 	// auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
-	// g_Engine->Get<AssetService>()->SaveTexture(l_textureFileName.c_str(), m_TextureComp->m_TextureDesc, &l_result[0]);
+	// g_Engine->Get<AssetService>()->Save(l_textureFileName.c_str(), m_TextureComp->m_TextureDesc, &l_result[0]);
 
 	Log(Success, "Ray tracing finished.");
 

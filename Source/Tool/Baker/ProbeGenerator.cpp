@@ -203,7 +203,7 @@ namespace Inno
             auto l_TextureComp = l_renderingServer->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_InitialData = l_probePosTextureResults.data();
-            g_Engine->Get<AssetService>()->SaveTexture("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
+            g_Engine->Get<AssetService>()->Save("..//Res//Intermediate//ProbePosTexture", l_TextureComp);
             //#endif // DEBUG_
 
             auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, Config::Get().m_probeInterval);

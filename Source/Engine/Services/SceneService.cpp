@@ -7,9 +7,6 @@
 #include "../Engine.h"
 using namespace Inno;
 
-#include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
-#include "../ThirdParty/JSONWrapper/JSONWrapper.h"
-
 bool SceneService::LoadAsync(const char* fileName)
 {
 	if (!m_IsLoading)
@@ -45,7 +42,7 @@ bool SceneService::LoadSync(const char* fileName)
 		(*i.first)();
 	}
 
-	JSONWrapper::LoadScene(fileName);
+	AssetService::LoadScene(fileName);
 
 	Log(Verbose, "Scene ", fileName, " has been loaded.");
 
@@ -168,11 +165,11 @@ bool SceneService::Save(const char* fileName)
 {
 	if (!strcmp(fileName, ""))
 	{
-		return JSONWrapper::SaveScene(m_currentScene.c_str());
+		return AssetService::SaveScene(m_currentScene.c_str());
 	}
 	else
 	{
-		return JSONWrapper::SaveScene(fileName);
+		return AssetService::SaveScene(fileName);
 	}
 }
 

@@ -305,7 +305,7 @@ namespace Inno
             auto l_TextureComp = l_renderingServer->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_InitialData = l_brickIDResults.data();
-            g_Engine->Get<AssetService>()->SaveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
+            g_Engine->Get<AssetService>()->Save(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
             l_index++;
 
             auto l_brickIDResultSize = l_brickIDResults.size();

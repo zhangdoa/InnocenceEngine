@@ -11,7 +11,6 @@
 
 #include "../../Engine.h"
 using namespace Inno;
-;
 
 #include "../../Common/Timer.h"
 #include "../../Common/IOService.h"
