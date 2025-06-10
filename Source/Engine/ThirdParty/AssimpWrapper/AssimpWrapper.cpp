@@ -3,7 +3,7 @@
 
 using namespace Inno;
 
-bool AssimpWrapper::Import(const char* fileName, const char* exportPath)
+bool AssimpWrapper::Import(const char* fileName)
 {
-	return AssimpImporter::Import(fileName, exportPath);
+	return AssimpImporter::Import(fileName);
 }

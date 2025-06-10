@@ -10,7 +10,7 @@ namespace Inno
 {
 	namespace AssimpImporter
 	{
-		bool Import(const char* fileName, const char* exportPath);
+		bool Import(const char* fileName);
 		void ProcessAssimpScene(nlohmann::json& j, const aiScene* scene, const char* exportName);
 		void ProcessAssimpNode(const aiNode* node, const aiScene* scene, const char* exportName, ModelComponent* modelComponent);
 	}

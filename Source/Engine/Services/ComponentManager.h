@@ -30,6 +30,7 @@ namespace Inno
 			m_ComponentPool = TObjectPool<T>::Create(m_MaxComponentCount);
 			m_ComponentPointers.reserve(m_MaxComponentCount);
 			m_ComponentLUT.reserve(m_MaxComponentCount);
+			m_ComponentLUTByUUID.reserve(m_MaxComponentCount);
 		}
 
 		~TComponentFactory() = default;
@@ -39,7 +40,7 @@ namespace Inno
 			if (m_ComponentPointers.empty())
 				return true;
 
-			Log(Verbose, "Remove ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), "!");
+			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str());
 			m_ComponentPointers.for_each([this, objectLifespan](T*& component)
 				{
 					if (component->m_ObjectLifespan == objectLifespan)
@@ -50,23 +51,25 @@ namespace Inno
 				});
 
 			m_ComponentPointers.erase_if([](T* component) { return component == nullptr; });
+			m_ComponentLUT.clear();
+			m_ComponentLUTByUUID.clear();
 
-			Log(Verbose, "Remove ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done!");
+			Log(Verbose, "Removing all", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
 			return true;
 		}
 
-		T* Spawn(const Entity* owner, bool serializable, ObjectLifespan objectLifespan)
+		T* Spawn(Entity* owner, bool serializable, ObjectLifespan objectLifespan)
 		{
 			if (!owner)
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't spawn ", T::GetTypeName(), " by Entity: nullptr!");
+				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), " by Entity: nullptr!");
 				return nullptr;
 			}
 
 			auto l_Component = static_cast<TObjectPool<T>*>(m_ComponentPool)->Spawn();
 			if (!l_Component)
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't spawn ", T::GetTypeName(), "!");
+				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), "!");
 				return nullptr;
 			}
 
@@ -74,48 +77,58 @@ namespace Inno
 			l_Component->m_ObjectStatus = ObjectStatus::Created;
 			l_Component->m_Serializable = serializable;
 			l_Component->m_ObjectLifespan = objectLifespan;
-			auto l_owner = const_cast<Entity*>(owner);
-			l_Component->m_Owner = l_owner;
-			auto l_componentIndex = m_CurrentComponentIndex;
-			auto l_instanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) + "." + std::string(T::GetTypeName()) + "_" + std::to_string(l_componentIndex) + "/").c_str());
-			l_Component->m_InstanceName = l_instanceName;
+			l_Component->m_Owner = owner;
+
+			l_Component->m_InstanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) 
+			+ "." + std::string(T::GetTypeName()) + "/").c_str());
 
 			m_ComponentPointers.emplace_back(l_Component);
-			m_ComponentLUT.emplace(l_owner, l_Component);
-			l_Component->m_ObjectStatus = ObjectStatus::Activated;
-			m_CurrentComponentIndex++;
-
+			m_ComponentLUT.emplace(owner, l_Component);
+			m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
+			
 			return l_Component;
 		}
 
 		void Destroy(T* component)
 		{
 			if (!DestroyComponent(component))
-			{
 				return;
-			}
 
 			m_ComponentPointers.eraseByValue(component);
+			m_ComponentLUT.erase(component->m_Owner);
+			m_ComponentLUTByUUID.erase(component->m_UUID);
 		}
 
-		T* Find(const Entity* owner)
+		T* Find(Entity* owner)
 		{
 			if (!owner)
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: nullptr!");
+				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by Entity: nullptr!");
 				return nullptr;
 			}
 
-			auto l_owner = const_cast<Entity*>(owner);
-
-			auto l_result = m_ComponentLUT.find(l_owner);
+			auto l_result = m_ComponentLUT.find(owner);
 			if (l_result != m_ComponentLUT.end())
 			{
 				return l_result->second;
 			}
 			else
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't find ", T::GetTypeName(), " by Entity: ", l_owner->m_InstanceName.c_str(), "!");
+				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by Entity: ", owner->m_InstanceName.c_str(), "!");
+				return nullptr;
+			}
+		}
+
+		T* FindByUUID(uint64_t uuid)
+		{
+			auto l_result = m_ComponentLUTByUUID.find(uuid);
+			if (l_result != m_ComponentLUTByUUID.end())
+			{
+				return l_result->second;
+			}
+			else
+			{
+				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by UUID: ", std::to_string(uuid).c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -124,7 +137,7 @@ namespace Inno
 		{
 			if (index >= m_ComponentPointers.size())
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't get ", T::GetTypeName(), " by index: ", std::to_string(index).c_str(), "!");
+				Log(Error, T::GetTypeName(), " Can't get ", T::GetTypeName(), " by index: ", std::to_string(index).c_str(), "!");
 				return nullptr;
 			}
 
@@ -136,20 +149,20 @@ namespace Inno
 			return m_ComponentPointers.getRawData();
 		}
 
-		uint64_t Load(const char* componentName, const Entity* entity)
+		uint64_t Load(const char* componentName, Entity* entity)
 		{
-			auto fileName = componentName + std::string(".") + std::string(T::GetTypeName()) + ".inno";
 			uint64_t l_result = 0;
-			if (!FindLoaded(fileName.c_str(), l_result))
+			std::string l_filePath = AssetService::GetAssetFilePath(componentName);
+			if (!FindLoaded(l_filePath.c_str(), l_result))
 			{
 				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
 				auto l_componentPtr = Spawn(entity, true, ObjectLifespan::Scene);
 				auto& component = *(l_componentPtr);
-				if (AssetService::Load(fileName.c_str(), component))
+				if (AssetService::Load(l_filePath.c_str(), component))
 				{
 					l_result = component.m_UUID;
-					RecordLoaded(fileName.c_str(), l_result);
+					RecordLoaded(l_filePath.c_str(), l_result);
 					component.m_ObjectStatus = ObjectStatus::Activated;
 				}
 			}
@@ -191,19 +204,17 @@ namespace Inno
 			}
 			else
 			{
-				Log(Verbose, "", fileName, " is not loaded yet.");
-
 				return false;
 			}
 		}
 
 		std::shared_mutex m_Mutex;
 		uint32_t m_MaxComponentCount = 0;
-		uint32_t m_CurrentComponentIndex = 0;
 
 		TObjectPool<T>* m_ComponentPool;
 		ThreadSafeVector<T*> m_ComponentPointers;
 		ThreadSafeUnorderedMap<Entity*, T*> m_ComponentLUT;
+		std::unordered_map<uint64_t, T*> m_ComponentLUTByUUID;
 		std::unordered_map<std::string, uint64_t> m_LoadedComponents;
 	};
 
@@ -263,7 +274,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		T* Spawn(const Entity* owner, bool serializable, ObjectLifespan objectLifespan)
+		T* Spawn(Entity* owner, bool serializable, ObjectLifespan objectLifespan)
 		{
 			return GetComponentFactory<T>()->Spawn(owner, serializable, objectLifespan);
 		}
@@ -278,6 +289,12 @@ namespace Inno
 		T* Find(Entity* entity)
 		{
 			return GetComponentFactory<T>()->Find(entity);
+		}
+
+		template<typename T>
+		T* FindByUUID(uint64_t uuid)
+		{
+			return GetComponentFactory<T>()->FindByUUID(uuid);
 		}
 
 		template<typename T>
@@ -304,7 +321,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		uint64_t Load(const char* componentName, const Entity* entity)
+		uint64_t Load(const char* componentName, Entity* entity)
 		{
 			return GetComponentFactory<T>()->Load(componentName, entity);
 		}

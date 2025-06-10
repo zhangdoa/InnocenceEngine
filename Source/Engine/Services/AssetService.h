@@ -16,10 +16,15 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		static bool Import(const char* fileName, const char* exportPath);
+		static bool Import(const char* fileName);
 
 		static bool SaveScene(const char* fileName);
 		static bool LoadScene(const char* fileName);
+
+		static std::string GetAssetFilePath(const char* componentName)
+		{
+			return "../Data/Components/" + std::string(componentName) + ".json";
+		}
 
 		static bool Load(const char* fileName, TransformComponent& component);
 		static bool Load(const char* fileName, ModelComponent& component);
@@ -32,16 +37,16 @@ namespace Inno
 		static bool Load(const char* fileName, CameraComponent& component);
 		static bool Load(const char* fileName, LightComponent& component);
 
-		static bool Save(const char* fileName, const TransformComponent& component);
-		static bool Save(const char* fileName, const ModelComponent& component);
-		static bool Save(const char* fileName, const DrawCallComponent& component);
-		static bool Save(const char* fileName, const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices);	
-		static bool Save(const char* fileName, const MaterialComponent& component);
-		static bool Save(const char* fileName, const TextureComponent& component, void* textureData);
-		// static bool Save(const char* fileName, const SkeletonComponent& component);
-		// static bool Save(const char* fileName, const AnimationComponent& component);
-		static bool Save(const char* fileName, const CameraComponent& component);
-		static bool Save(const char* fileName, const LightComponent& component);
+		static bool Save(const TransformComponent& component);
+		static bool Save(const ModelComponent& component);
+		static bool Save(const DrawCallComponent& component);
+		static bool Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices);	
+		static bool Save(const MaterialComponent& component);
+		static bool Save(const TextureComponent& component, void* textureData);
+		// static bool Save(const SkeletonComponent& component);
+		// static bool Save(const AnimationComponent& component);
+		static bool Save(const CameraComponent& component);
+		static bool Save(const LightComponent& component);
 
 		static bool Save(const char* fileName, const TextureDesc& textureDesc, void* textureData);
 	};

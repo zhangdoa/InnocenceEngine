@@ -18,21 +18,20 @@ void* STBWrapper::Load(const char* fileName, TextureComponent& component)
 	stbi_set_flip_vertically_on_load(true);
 
 	void* l_rawData;
-	auto l_fullPath = g_Engine->Get<IOService>()->getWorkingDirectory() + fileName;
-	auto l_isHDR = stbi_is_hdr(l_fullPath.c_str());
+	auto l_isHDR = stbi_is_hdr(fileName);
 
 	if (l_isHDR)
 	{
-		l_rawData = stbi_loadf(l_fullPath.c_str(), &width, &height, &nrChannels, 4);
+		l_rawData = stbi_loadf(fileName, &width, &height, &nrChannels, 4);
 	}
 	else
 	{
-		l_rawData = stbi_load(l_fullPath.c_str(), &width, &height, &nrChannels, 4);
+		l_rawData = stbi_load(fileName, &width, &height, &nrChannels, 4);
 	}
 
 	if (!l_rawData)
 	{
-		Log(Error, "Failed to load texture: ", l_fullPath.c_str());
+		Log(Error, "Failed to load texture: ", fileName);
 		return nullptr;
 	}
 
@@ -44,7 +43,7 @@ void* STBWrapper::Load(const char* fileName, TextureComponent& component)
 	component.m_TextureDesc.Height = height;
 	component.m_ObjectStatus = ObjectStatus::Created;
 
-	Log(Verbose, "STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
+	Log(Verbose, "STBWrapper: STB_Image: ", fileName, " has been loaded.");
 
 	return l_rawData;
 }

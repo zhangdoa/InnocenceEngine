@@ -75,52 +75,55 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     auto componentManager = g_Engine->Get<ComponentManager>();
     auto ioService = g_Engine->Get<IOService>();
 
-    // Create template entity for engine assets
-    auto templateEntity = entityManager->Spawn(false, ObjectLifespan::Frame, "TemplateAssets");
-
-    // Load basic textures, notice we use STBWrapper to load textures directly
-    m_basicNormalTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
-    std::string normalTexturePath = "Res/Textures/basic_normal.png";
+    // Create separate entities for each texture asset
+    auto normalTextureEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "BasicNormalTexture/");
+    m_basicNormalTexture = componentManager->Spawn<TextureComponent>(normalTextureEntity, true, ObjectLifespan::Persistence);
+    std::string normalTexturePath = "../Res/Textures/basic_normal.png";
     m_textureData[m_basicNormalTexture] = STBWrapper::Load(normalTexturePath.c_str(), *m_basicNormalTexture);
     if (!m_textureData[m_basicNormalTexture])
         return false;
     m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
     m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-    m_basicAlbedoTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
-    std::string albedoTexturePath = "Res/Textures/basic_albedo.png";
+    auto albedoTextureEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "BasicAlbedoTexture/");
+    m_basicAlbedoTexture = componentManager->Spawn<TextureComponent>(albedoTextureEntity, true, ObjectLifespan::Persistence);
+    std::string albedoTexturePath = "../Res/Textures/basic_albedo.png";
     m_textureData[m_basicAlbedoTexture] = STBWrapper::Load(albedoTexturePath.c_str(), *m_basicAlbedoTexture);
     if (!m_textureData[m_basicAlbedoTexture])
         return false;
     m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
     m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-    m_basicMetallicTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
-    std::string metallicTexturePath = "Res/Textures/basic_metallic.png";
+    auto metallicTextureEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "BasicMetallicTexture/");
+    m_basicMetallicTexture = componentManager->Spawn<TextureComponent>(metallicTextureEntity, true, ObjectLifespan::Persistence);
+    std::string metallicTexturePath = "../Res/Textures/basic_metallic.png";
     m_textureData[m_basicMetallicTexture] = STBWrapper::Load(metallicTexturePath.c_str(), *m_basicMetallicTexture);
     if (!m_textureData[m_basicMetallicTexture])
         return false;
     m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
     m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-    m_basicRoughnessTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
-    std::string roughnessTexturePath = "Res/Textures/basic_roughness.png";
+    auto roughnessTextureEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "BasicRoughnessTexture/");
+    m_basicRoughnessTexture = componentManager->Spawn<TextureComponent>(roughnessTextureEntity, true, ObjectLifespan::Persistence);
+    std::string roughnessTexturePath = "../Res/Textures/basic_roughness.png";
     m_textureData[m_basicRoughnessTexture] = STBWrapper::Load(roughnessTexturePath.c_str(), *m_basicRoughnessTexture);
     if (!m_textureData[m_basicRoughnessTexture])
         return false;
     m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
     m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-    m_basicAOTexture = componentManager->Spawn<TextureComponent>(templateEntity, true, ObjectLifespan::Scene);
-    std::string aoTexturePath = "Res/Textures/basic_ao.png";
+    auto aoTextureEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "BasicAOTexture/");
+    m_basicAOTexture = componentManager->Spawn<TextureComponent>(aoTextureEntity, true, ObjectLifespan::Persistence);
+    std::string aoTexturePath = "../Res/Textures/basic_ao.png";
     m_textureData[m_basicAOTexture] = STBWrapper::Load(aoTexturePath.c_str(), *m_basicAOTexture);
     if (!m_textureData[m_basicAOTexture])
         return false;
     m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
     m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-    // Create default material
-    m_defaultMaterial = componentManager->Spawn<MaterialComponent>(templateEntity, true, ObjectLifespan::Scene);
+    // Create default material entity
+    auto defaultMaterialEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "DefaultMaterial/");
+    m_defaultMaterial = componentManager->Spawn<MaterialComponent>(defaultMaterialEntity, true, ObjectLifespan::Persistence);
     m_defaultMaterial->m_TextureComponents.reserve(5);
     m_defaultMaterial->m_TextureComponents.fulfill();
     m_defaultMaterial->m_TextureComponents[0] = m_basicNormalTexture->m_UUID;
@@ -130,74 +133,96 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     m_defaultMaterial->m_TextureComponents[4] = m_basicAOTexture->m_UUID;
 
     m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
-    AssetService::Save("default_material.MaterialComponent.inno", *m_defaultMaterial);
+    AssetService::Save(*m_defaultMaterial);
 
     // Load icon textures for lights
-    m_iconTemplate_DirectionalLight = nullptr; // TODO: Implement icon loading
-    m_iconTemplate_PointLight = nullptr;
-    m_iconTemplate_SphereLight = nullptr;
+    auto directionalLightIconEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "DirectionalLightIcon/");
+    m_iconTemplate_DirectionalLight = componentManager->Spawn<TextureComponent>(directionalLightIconEntity, true, ObjectLifespan::Persistence);
+    std::string directionalLightIconPath = "../Res/Textures/WorldEditorIcons_DirectionalLight.png";
+    m_textureData[m_iconTemplate_DirectionalLight] = STBWrapper::Load(directionalLightIconPath.c_str(), *m_iconTemplate_DirectionalLight);
+    if (!m_textureData[m_iconTemplate_DirectionalLight])
+        return false;
+    m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_iconTemplate_DirectionalLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-    // Create primitive meshes
-    m_unitTriangleMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto pointLightIconEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "PointLightIcon/");
+    m_iconTemplate_PointLight = componentManager->Spawn<TextureComponent>(pointLightIconEntity, true, ObjectLifespan::Persistence);
+    std::string pointLightIconPath = "../Res/Textures/WorldEditorIcons_PointLight.png";
+    m_textureData[m_iconTemplate_PointLight] = STBWrapper::Load(pointLightIconPath.c_str(), *m_iconTemplate_PointLight);
+    if (!m_textureData[m_iconTemplate_PointLight])
+        return false;
+    m_iconTemplate_PointLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_iconTemplate_PointLight->m_TextureDesc.Usage = TextureUsage::Sample;
+
+    auto sphereLightIconEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "SphereLightIcon/");
+    m_iconTemplate_SphereLight = componentManager->Spawn<TextureComponent>(sphereLightIconEntity, true, ObjectLifespan::Persistence);
+    std::string sphereLightIconPath = "../Res/Textures/WorldEditorIcons_SphereLight.png";
+    m_textureData[m_iconTemplate_SphereLight] = STBWrapper::Load(sphereLightIconPath.c_str(), *m_iconTemplate_SphereLight);
+    if (!m_textureData[m_iconTemplate_SphereLight])
+        return false;
+    m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+    m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
+
+    // Create primitive meshes with separate entities
+    auto triangleMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitTriangleMesh/");
+    m_unitTriangleMesh = componentManager->Spawn<MeshComponent>(triangleMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Triangle, m_unitTriangleMesh);
     m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_triangle.MeshComponent.inno",
-        *m_unitTriangleMesh, m_meshVertices[m_unitTriangleMesh], m_meshIndices[m_unitTriangleMesh]);
+    AssetService::Save(*m_unitTriangleMesh, m_meshVertices[m_unitTriangleMesh], m_meshIndices[m_unitTriangleMesh]);
 
-    m_unitSquareMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto squareMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitSquareMesh/");
+    m_unitSquareMesh = componentManager->Spawn<MeshComponent>(squareMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Square, m_unitSquareMesh);
     m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_square.MeshComponent.inno",
-        *m_unitSquareMesh, m_meshVertices[m_unitSquareMesh], m_meshIndices[m_unitSquareMesh]);
+    AssetService::Save(*m_unitSquareMesh, m_meshVertices[m_unitSquareMesh], m_meshIndices[m_unitSquareMesh]);
 
-    m_unitPentagonMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto pentagonMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitPentagonMesh/");
+    m_unitPentagonMesh = componentManager->Spawn<MeshComponent>(pentagonMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Pentagon, m_unitPentagonMesh);
     m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_pentagon.MeshComponent.inno",
-        *m_unitPentagonMesh, m_meshVertices[m_unitPentagonMesh], m_meshIndices[m_unitPentagonMesh]);
+    AssetService::Save(*m_unitPentagonMesh, m_meshVertices[m_unitPentagonMesh], m_meshIndices[m_unitPentagonMesh]);
 
-    m_unitHexagonMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto hexagonMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitHexagonMesh/");
+    m_unitHexagonMesh = componentManager->Spawn<MeshComponent>(hexagonMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Hexagon, m_unitHexagonMesh);
     m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_hexagon.MeshComponent.inno",
-        *m_unitHexagonMesh, m_meshVertices[m_unitHexagonMesh], m_meshIndices[m_unitHexagonMesh]);
+    AssetService::Save(*m_unitHexagonMesh, m_meshVertices[m_unitHexagonMesh], m_meshIndices[m_unitHexagonMesh]);
 
-    m_unitTetrahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto tetrahedronMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitTetrahedronMesh/");
+    m_unitTetrahedronMesh = componentManager->Spawn<MeshComponent>(tetrahedronMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Tetrahedron, m_unitTetrahedronMesh);
     m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_tetrahedron.MeshComponent.inno",
-        *m_unitTetrahedronMesh, m_meshVertices[m_unitTetrahedronMesh], m_meshIndices[m_unitTetrahedronMesh]);
+    AssetService::Save(*m_unitTetrahedronMesh, m_meshVertices[m_unitTetrahedronMesh], m_meshIndices[m_unitTetrahedronMesh]);
 
-    m_unitCubeMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto cubeMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitCubeMesh/");
+    m_unitCubeMesh = componentManager->Spawn<MeshComponent>(cubeMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Cube, m_unitCubeMesh);
     m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_cube.MeshComponent.inno",
-        *m_unitCubeMesh, m_meshVertices[m_unitCubeMesh], m_meshIndices[m_unitCubeMesh]);
+    AssetService::Save(*m_unitCubeMesh, m_meshVertices[m_unitCubeMesh], m_meshIndices[m_unitCubeMesh]);
 
-
-    m_unitOctahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto octahedronMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitOctahedronMesh/");
+    m_unitOctahedronMesh = componentManager->Spawn<MeshComponent>(octahedronMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Octahedron, m_unitOctahedronMesh);
     m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_octahedron.MeshComponent.inno",
-        *m_unitOctahedronMesh, m_meshVertices[m_unitOctahedronMesh], m_meshIndices[m_unitOctahedronMesh]);
+    AssetService::Save(*m_unitOctahedronMesh, m_meshVertices[m_unitOctahedronMesh], m_meshIndices[m_unitOctahedronMesh]);
 
-    m_unitDodecahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto dodecahedronMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitDodecahedronMesh/");
+    m_unitDodecahedronMesh = componentManager->Spawn<MeshComponent>(dodecahedronMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Dodecahedron, m_unitDodecahedronMesh);
     m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_dodecahedron.MeshComponent.inno",
-        *m_unitDodecahedronMesh, m_meshVertices[m_unitDodecahedronMesh], m_meshIndices[m_unitDodecahedronMesh]);
+    AssetService::Save(*m_unitDodecahedronMesh, m_meshVertices[m_unitDodecahedronMesh], m_meshIndices[m_unitDodecahedronMesh]);
 
-    m_unitIcosahedronMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto icosahedronMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitIcosahedronMesh/");
+    m_unitIcosahedronMesh = componentManager->Spawn<MeshComponent>(icosahedronMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Icosahedron, m_unitIcosahedronMesh);
     m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_icosahedron.MeshComponent.inno",
-        *m_unitIcosahedronMesh, m_meshVertices[m_unitIcosahedronMesh], m_meshIndices[m_unitIcosahedronMesh]);
+    AssetService::Save(*m_unitIcosahedronMesh, m_meshVertices[m_unitIcosahedronMesh], m_meshIndices[m_unitIcosahedronMesh]);
 
-    m_unitSphereMesh = componentManager->Spawn<MeshComponent>(templateEntity, true, ObjectLifespan::Scene);
+    auto sphereMeshEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "UnitSphereMesh/");
+    m_unitSphereMesh = componentManager->Spawn<MeshComponent>(sphereMeshEntity, true, ObjectLifespan::Persistence);
     GenerateMesh(MeshShape::Sphere, m_unitSphereMesh);
     m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
-    AssetService::Save("Data/Engine/unit_sphere.MeshComponent.inno",
-        *m_unitSphereMesh, m_meshVertices[m_unitSphereMesh], m_meshIndices[m_unitSphereMesh]);
+    AssetService::Save(*m_unitSphereMesh, m_meshVertices[m_unitSphereMesh], m_meshIndices[m_unitSphereMesh]);
 
     // Skip terrain for initial implementation
     m_terrainMesh = nullptr; // TODO: Implement terrain generation in the future
@@ -226,14 +251,12 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             l_renderingServer->Initialize(m_basicRoughnessTexture);
             l_renderingServer->Initialize(m_basicAOTexture);
 
-            // Skip icon initialization for now
             l_renderingServer->Initialize(m_iconTemplate_DirectionalLight);
             l_renderingServer->Initialize(m_iconTemplate_PointLight);
             l_renderingServer->Initialize(m_iconTemplate_SphereLight);
 
             l_renderingServer->Initialize(m_defaultMaterial);
         });
-
 
     l_DefaultAssetInitializationTask->Activate();
     l_DefaultAssetInitializationTask->Wait();
@@ -256,7 +279,6 @@ bool TemplateAssetServiceImpl::UnloadTemplateAssets()
 
             l_renderingServer->Delete(m_defaultMaterial);
 
-            // Skip icon deletion for now
             l_renderingServer->Delete(m_iconTemplate_DirectionalLight);
             l_renderingServer->Delete(m_iconTemplate_PointLight);
             l_renderingServer->Delete(m_iconTemplate_SphereLight);

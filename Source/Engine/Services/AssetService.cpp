@@ -54,7 +54,7 @@ ObjectStatus AssetService::GetStatus()
 	return ObjectStatus();
 }
 
-bool AssetService::Import(const char* fileName, const char* exportPath)
+bool AssetService::Import(const char* fileName)
 {
 	auto l_extension = g_Engine->Get<IOService>()->getFileExtension(fileName);
 	std::string l_fileName = fileName;
@@ -63,7 +63,7 @@ bool AssetService::Import(const char* fileName, const char* exportPath)
 	{
 		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Import Model Task", ITask::Type::Once), [=]()
 			{
-				AssimpWrapper::Import(l_fileName.c_str(), exportPath);
+				AssimpWrapper::Import(l_fileName.c_str());
 			});
 		tempTask->Activate();
 		return true;
@@ -159,89 +159,84 @@ bool AssetService::Load(const char* fileName, LightComponent& component)
 
 bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
-    return STBWrapper::Save(fileName, textureDesc, textureData);
+	return STBWrapper::Save(fileName, textureDesc, textureData);
 }
 
-bool AssetService::Save(const char* fileName, const TransformComponent& component)
+bool AssetService::Save(const TransformComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	return JSONWrapper::Save(fileName, j);
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const ModelComponent& component)
+bool AssetService::Save(const ModelComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	return JSONWrapper::Save(fileName, j);
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const DrawCallComponent& component)
+bool AssetService::Save(const DrawCallComponent& component)
 {
 	json j;
 	j["ComponentType"] = component.GetTypeID();
-	
-	// Add mesh component reference (UUID stored as uint64_t)
+
 	if (component.m_MeshComponent != 0)
 	{
-		j["MeshComponent"]["Name"] = "mesh_" + std::to_string(component.m_MeshComponent);
+		auto l_meshComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(component.m_MeshComponent);
+		j["MeshComponent"]["Name"] = l_meshComponent->m_InstanceName.c_str();
 	}
-	
-	// Add material component reference (UUID stored as uint64_t)
+
 	if (component.m_MaterialComponent != 0)
 	{
-		j["MaterialComponent"]["Name"] = "material_" + std::to_string(component.m_MaterialComponent);
+		auto l_materialComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(component.m_MaterialComponent);
+		j["MaterialComponent"]["Name"] = std::to_string(component.m_MaterialComponent);
 	}
-	
-	return JSONWrapper::Save(fileName, j);
+
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	// Create metadata JSON
 	json j;
 	j["ComponentType"] = component.GetTypeID();
 	j["MeshShape"] = MeshShape::Customized;
 	j["VerticesNumber"] = vertices.size();
 	j["IndicesNumber"] = indices.size();
-	
-	// Generate binary file path alongside JSON metadata
-	auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
-	auto l_baseName = g_Engine->Get<IOService>()->getFileName(fileName);
-	auto l_binaryFileName = l_baseName + ".InnoMesh";
+
+	auto l_workingDir = "../Data/Components/";
+	std::filesystem::create_directories(l_workingDir);
+
+	std::string l_baseName = component.m_InstanceName.c_str();
+	auto l_binaryFileName = l_baseName + ".innobin";
 	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
-	
+
 	j["File"] = l_binaryFileName;
-	
-	// Save binary data (vertices + indices)
+
 	std::ofstream l_binaryFile(l_binaryFilePath, std::ios::out | std::ios::trunc | std::ios::binary);
 	if (!l_binaryFile.is_open())
 	{
 		Log(Error, "Failed to open binary mesh file: ", l_binaryFilePath.c_str());
 		return false;
 	}
-	
+
 	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, vertices);
 	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, indices);
 	l_binaryFile.close();
 	
-	// Save JSON metadata
-	bool result = JSONWrapper::Save(fileName, j);
-	if (result)
-	{
-		Log(Success, "Saved MeshComponent: ", fileName, " with binary data: ", l_binaryFileName.c_str());
-	}
-	return result;
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const MaterialComponent& component)
+bool AssetService::Save(const MaterialComponent& component)
 {
 	json j;
-	// Build material JSON with texture references
 	j["ComponentType"] = component.GetTypeID();
 	j["ShaderModel"] = component.m_ShaderModel;
-	
-	// Material attributes
+
 	j["Albedo"]["R"] = component.m_materialAttributes.AlbedoR;
 	j["Albedo"]["G"] = component.m_materialAttributes.AlbedoG;
 	j["Albedo"]["B"] = component.m_materialAttributes.AlbedoB;
@@ -250,66 +245,57 @@ bool AssetService::Save(const char* fileName, const MaterialComponent& component
 	j["Roughness"] = component.m_materialAttributes.Roughness;
 	j["AO"] = component.m_materialAttributes.AO;
 	j["Thickness"] = component.m_materialAttributes.Thickness;
-	
-	// Texture component references
-	if (component.m_TextureComponents.size() > 0)
+
+	for (size_t i = 0; i < component.m_TextureComponents.size(); i++)
 	{
-		for (size_t i = 0; i < component.m_TextureComponents.size(); i++)
-		{
-			json textureRef;
-			// TODO: Get proper texture component name/path
-			textureRef["Name"] = "texture_" + std::to_string(component.m_TextureComponents[i]);
-			j["TextureComponents"].push_back(textureRef);
-		}
+		auto l_textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(component.m_TextureComponents[i]);
+		json textureRef;
+		textureRef["Name"] = l_textureComponent->m_InstanceName.c_str();
+		j["TextureComponents"].push_back(textureRef);
 	}
-	
-	return JSONWrapper::Save(fileName, j);
+
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const TextureComponent& component, void* textureData)
+bool AssetService::Save(const TextureComponent& component, void* textureData)
 {
-	// Create metadata JSON
 	json j;
 	j["ComponentType"] = component.GetTypeID();
 	j["Sampler"] = component.m_TextureDesc.Sampler;
 	j["Usage"] = component.m_TextureDesc.Usage;
 	j["IsSRGB"] = component.m_TextureDesc.IsSRGB;
-	
-	// Generate image file path alongside JSON metadata
-	auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
-	auto l_baseName = g_Engine->Get<IOService>()->getFileName(fileName);
-	auto l_imageFileName = l_baseName + ".png";  // Default to PNG for simplicity
-	auto l_imageFilePath = l_workingDir + l_imageFileName;
-	
-	j["File"] = l_imageFileName;
-	
-	// Save binary image data using STBWrapper
-	bool binaryResult = STBWrapper::Save(l_imageFilePath.c_str(), component.m_TextureDesc, textureData);
+
+	auto l_workingDir = "../Data/Components/";
+	std::string l_baseName = component.m_InstanceName.c_str();
+	auto l_binaryFileName = l_baseName + ".innobin";
+	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
+
+	j["File"] = l_binaryFileName;
+
+	bool binaryResult = STBWrapper::Save(l_binaryFilePath.c_str(), component.m_TextureDesc, textureData);
 	if (!binaryResult)
 	{
-		Log(Error, "Failed to save texture binary data: ", l_imageFilePath.c_str());
+		Log(Error, "Failed to save texture binary data: ", l_binaryFilePath.c_str());
 		return false;
 	}
-	
-	// Save JSON metadata  
-	bool result = JSONWrapper::Save(fileName, j);
-	if (result)
-	{
-		Log(Success, "Saved TextureComponent: ", fileName, " with binary data: ", l_imageFileName.c_str());
-	}
-	return result;
+
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const CameraComponent& component)
+bool AssetService::Save(const CameraComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	return JSONWrapper::Save(fileName, j);
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
-bool AssetService::Save(const char* fileName, const LightComponent& component)
+bool AssetService::Save(const LightComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	return JSONWrapper::Save(fileName, j);
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	return JSONWrapper::Save(filePath.c_str(), j);
 }
