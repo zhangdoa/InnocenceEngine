@@ -50,11 +50,16 @@ xcuserdata/
 *.refl
 
 *.spv
+*.dxil
+
 *.InnoBrick
 *.InnoBrickFactor
 *.InnoProbe
 *.InnoProbeInfo
 *.InnoSurfel
+
+# Data folders
+/Data/*
 
 # Large binary assets
 /Res/Fonts/*
@@ -71,8 +76,6 @@ xcuserdata/
 
 #Packaged files
 /Package/*
-
-*.dxil
 
 # AI Agent Team coordination files
 AI Agent Team/
