@@ -612,6 +612,7 @@ bool DX12RenderingServer::EndFrame()
 
 bool DX12RenderingServer::ResizeImpl()
 {
+    // @TODO: reset m_RenderTarget_SRV_DescHeapAccessor and other render target desc heaps
     Log(Verbose, "Resizing the swap chain...");
 
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -619,18 +620,16 @@ bool DX12RenderingServer::ResizeImpl()
     m_swapChainDesc.Width = (UINT)l_screenResolution.x;
     m_swapChainDesc.Height = (UINT)l_screenResolution.y;
 
-    m_swapChainImages.clear();
-
+    // Wait for GPU to finish using current swap chain images
     auto l_semaphoreValue = m_directCommandQueueFence->GetCompletedValue();
     auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
+   
+    m_swapChainImages.clear();
 
     Log(Verbose, "The current frame is ", m_CurrentFrame, " and the previous frame is ", m_PreviousFrame);
     m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
 
-    m_SwapChainRenderPassComp->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
-   
-    if (!GetSwapChainImages())
-        return false;
+    InitializeSwapChainRenderPassComponent();
 
     return true;
 }

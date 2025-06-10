@@ -4,7 +4,6 @@
 #include "../Engine/Engine.h"
 
 using namespace Inno;
-Engine *g_Engine;
 
 DirectoryTreeViewer::DirectoryTreeViewer(QWidget *parent) : QTreeView(parent)
 {

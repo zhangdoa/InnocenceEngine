@@ -124,8 +124,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     // Create default material entity
     auto defaultMaterialEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "DefaultMaterial/");
     m_defaultMaterial = componentManager->Spawn<MaterialComponent>(defaultMaterialEntity, true, ObjectLifespan::Persistence);
-    m_defaultMaterial->m_TextureComponents.reserve(5);
-    m_defaultMaterial->m_TextureComponents.fulfill();
+    m_defaultMaterial->m_TextureComponents.resize(5);
     m_defaultMaterial->m_TextureComponents[0] = m_basicNormalTexture->m_UUID;
     m_defaultMaterial->m_TextureComponents[1] = m_basicAlbedoTexture->m_UUID;
     m_defaultMaterial->m_TextureComponents[2] = m_basicMetallicTexture->m_UUID;

@@ -1,9 +1,10 @@
 #include "directoryviewer.h"
 
 #include "../Engine/Engine.h"
+#include "../Engine/Common/IOService.h"
+#include "../Engine/Common/LogService.h"
 
 using namespace Inno;
-Engine *g_Engine;
 
 DirectoryViewer::DirectoryViewer(QWidget *parent) : QSplitter(parent)
 {

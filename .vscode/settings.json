@@ -5,7 +5,8 @@
         "PREPARE_ENV": true,
         "BUILD_THIRD_PARTY": true,
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "FORCE_REBUILD_THIRD_PARTY": false
+        "FORCE_REBUILD_THIRD_PARTY": false,
+        "INNO_BUILD_EDITOR": true
     },
     "files.associations": {
         "\"*.list\"": "\".json\"",
@@ -159,6 +160,9 @@
         "*.ps": "hlsl",
         "*.fs": "hlsl",
         "cassert": "cpp",
-        "*.impl": "cpp"
+        "*.impl": "cpp",
+        "stacktrace": "cpp",
+        "stdfloat": "cpp",
+        "*.rh": "cpp"
     },
 }

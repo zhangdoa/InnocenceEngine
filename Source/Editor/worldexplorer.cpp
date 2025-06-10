@@ -2,9 +2,11 @@
 
 #include "../Engine/Engine.h"
 #include "../Engine/Common/ComponentHeaders.h"
+#include "../Engine/Services/SceneService.h"
+#include "../Engine/Services/EntityManager.h"
+#include "../Engine/Services/ComponentManager.h"
 
 using namespace Inno;
-Engine *g_Engine;
 
 WorldExplorer::WorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
@@ -20,7 +22,7 @@ void WorldExplorer::buildTree()
     m_rootItem->setText(0, "Entities");
     this->addTopLevelItem(m_rootItem);
 
-    auto l_sceneHierarchyMap = g_Engine->Get<SceneSystem>()->getSceneHierarchyMap();
+    auto l_sceneHierarchyMap = g_Engine->Get<SceneService>()->getSceneHierarchyMap();
 
     for (auto& i : l_sceneHierarchyMap)
     {
@@ -60,7 +62,7 @@ void WorldExplorer::initialize(PropertyEditor* propertyEditor)
         buildTree();
     };
 
-    g_Engine->Get<SceneSystem>()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+    g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishCallback, 2);
 }
 
 void WorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -130,7 +132,7 @@ void WorldExplorer::endRename()
 
 void WorldExplorer::addEntity()
 {
-    auto l_entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, "newEntity/");
+    auto l_entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, "NewEntity/");
 
     QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
@@ -201,9 +203,9 @@ void WorldExplorer::addTransformComponent()
     l_componentPtr->m_parentTransformComponent = const_cast<TransformComponent*>(l_rootTranformComponent);
 }
 
-void WorldExplorer::addVisibleComponent()
+void WorldExplorer::addModelComponent()
 {
-    addComponent<VisibleComponent>();
+    addComponent<ModelComponent>();
 }
 
 void WorldExplorer::addLightComponent()
@@ -218,7 +220,9 @@ void WorldExplorer::addCameraComponent()
 
 void WorldExplorer::destroyComponent(Component *component)
 {
-    g_Engine->Get<ComponentManager>()->Destroy(component);
+    // @TODO: Make this working again
+    // if (dynamic_cast<TransformComponent*>(component))
+    //     g_Engine->Get<ComponentManager>()->Destroy<TransformComponent>(component);
 }
 
 void WorldExplorer::deleteComponent()
@@ -271,7 +275,7 @@ void WorldExplorer::showContextMenu(QTreeWidgetItem* item, const QPoint& globalP
 
             auto addCompoentMenu = menu.addMenu("Add Component");
             addCompoentMenu->addAction("Add TransformComponent", this, SLOT(addTransformComponent()));
-            addCompoentMenu->addAction("Add VisibleComponent", this, SLOT(addVisibleComponent()));
+            addCompoentMenu->addAction("Add ModelComponent", this, SLOT(addModelComponent()));
             addCompoentMenu->addAction("Add LightComponent", this, SLOT(addLightComponent()));
             addCompoentMenu->addAction("Add CameraComponent", this, SLOT(addCameraComponent()));
 

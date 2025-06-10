@@ -741,8 +741,8 @@ namespace Inno
 		template <class T>
 		T SignedDistance(const TVec4<T>& point, const TSphere<T>& plane)
 		{
-			auto l_dir = lhs - rhs.m_center;
-			return std::abs(l_dir.length() - rhs.m_radius);
+			auto l_dir = point - plane.m_center;
+			return std::abs(l_dir.length() - plane.m_radius);
 		}
 
 		template <class T>

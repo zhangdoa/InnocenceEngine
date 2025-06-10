@@ -3,9 +3,9 @@
 #include "../Engine/Engine.h"
 
 using namespace Inno;
-Engine *g_Engine;
 
-PropertyEditor::PropertyEditor(QWidget *parent) : QWidget(parent)
+
+PropertyEditor::PropertyEditor(QWidget* parent) : QWidget(parent)
 {
 }
 
@@ -14,8 +14,8 @@ void PropertyEditor::initialize()
     m_transformComponentPropertyEditor = new TransformComponentPropertyEditor();
     m_transformComponentPropertyEditor->initialize();
 
-    m_visibleComponentPropertyEditor = new VisibleComponentPropertyEditor();
-    m_visibleComponentPropertyEditor->initialize();
+    m_modelComponentPropertyEditor = new ModelComponentPropertyEditor();
+    m_modelComponentPropertyEditor->initialize();
 
     m_lightComponentPropertyEditor = new LightComponentPropertyEditor();
     m_lightComponentPropertyEditor->initialize();
@@ -26,7 +26,7 @@ void PropertyEditor::initialize()
     this->layout()->setAlignment(Qt::AlignTop);
 
     this->layout()->addWidget(m_transformComponentPropertyEditor);
-    this->layout()->addWidget(m_visibleComponentPropertyEditor);
+    this->layout()->addWidget(m_modelComponentPropertyEditor);
     this->layout()->addWidget(m_lightComponentPropertyEditor);
     this->layout()->addWidget(m_cameraComponentPropertyEditor);
 
@@ -36,7 +36,7 @@ void PropertyEditor::clear()
 {
 }
 
-void PropertyEditor::editComponent(int componentType, void *componentPtr)
+void PropertyEditor::editComponent(int componentType, void* componentPtr)
 {
     remove();
 
@@ -46,7 +46,7 @@ void PropertyEditor::editComponent(int componentType, void *componentPtr)
     }
     else if (componentType == 2)
     {
-        m_visibleComponentPropertyEditor->edit(componentPtr);
+        m_modelComponentPropertyEditor->edit(componentPtr);
     }
     else if (componentType == 3)
     {
@@ -61,7 +61,7 @@ void PropertyEditor::editComponent(int componentType, void *componentPtr)
 void PropertyEditor::remove()
 {
     m_transformComponentPropertyEditor->remove();
-    m_visibleComponentPropertyEditor->remove();
+    m_modelComponentPropertyEditor->remove();
     m_lightComponentPropertyEditor->remove();
     m_cameraComponentPropertyEditor->remove();
 }

@@ -3,7 +3,7 @@
 #include "../Engine/Engine.h"
 
 using namespace Inno;
-Engine *g_Engine;
+
 
 CameraComponentPropertyEditor::CameraComponentPropertyEditor()
 {

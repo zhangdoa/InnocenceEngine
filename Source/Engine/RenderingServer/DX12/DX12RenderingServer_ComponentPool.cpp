@@ -118,22 +118,6 @@ bool DX12RenderingServer::Delete(MeshComponent* rhs)
 
 bool DX12RenderingServer::Delete(TextureComponent* rhs)
 {
-	// Release all GPU resources stored in the component
-	std::set<ID3D12Resource*> uniqueResources;
-	for (auto* resource : rhs->m_GPUResources)
-	{
-		if (resource)
-		{
-			uniqueResources.insert(static_cast<ID3D12Resource*>(resource));
-		}
-	}
-	
-	// Release unique resources (avoid double-release for shared resources)
-	for (auto* resource : uniqueResources)
-	{
-		resource->Release();
-	}
-	
 	rhs->m_GPUResources.clear();
 	rhs->m_ReadHandles.clear();
 	rhs->m_WriteHandles.clear();

@@ -5,7 +5,7 @@
 #include "../Engine/Engine.h"
 
 using namespace Inno;
-Engine *g_Engine;
+
 
 MaterialComponentPropertyEditor::MaterialComponentPropertyEditor()
 {

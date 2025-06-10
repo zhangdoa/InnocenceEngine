@@ -1,15 +1,15 @@
-#include "visiblecomponentpropertyeditor.h"
+#include "modelcomponentpropertyeditor.h"
 
 #include "../Engine/Engine.h"
 
 using namespace Inno;
 Engine *g_Engine;
 
-VisibleComponentPropertyEditor::VisibleComponentPropertyEditor()
+ModelComponentPropertyEditor::ModelComponentPropertyEditor()
 {
 }
 
-void VisibleComponentPropertyEditor::initialize()
+void ModelComponentPropertyEditor::initialize()
 {
     m_MaterialCompEditor = new MaterialComponentPropertyEditor();
     m_MaterialCompEditor->initialize();
@@ -21,7 +21,7 @@ void VisibleComponentPropertyEditor::initialize()
     m_gridLayout = new QGridLayout();
     m_gridLayout->setContentsMargins(4, 4, 4, 4);
 
-    m_title = new QLabel("VisibleComponent");
+    m_title = new QLabel("ModelComponent");
     m_title->setStyleSheet(
                 "background-repeat: no-repeat;"
                 "background-position: left;"
@@ -122,11 +122,11 @@ void VisibleComponentPropertyEditor::initialize()
     this->hide();
 }
 
-void VisibleComponentPropertyEditor::edit(void *component)
+void ModelComponentPropertyEditor::edit(void *component)
 {
-    m_component = reinterpret_cast<VisibleComponent*>(component);
+    m_component = reinterpret_cast<ModelComponent*>(component);
 
-    m_modelNameLabel->setText(m_component->m_modelFileName.c_str());
+    m_modelNameLabel->setText(m_component->m_InstanceName.c_str());
 
     GetMeshPrimitiveTopology();
     GetTextureWrapMethod();
@@ -138,32 +138,32 @@ void VisibleComponentPropertyEditor::edit(void *component)
     this->show();
 }
 
-void VisibleComponentPropertyEditor::GetMeshPrimitiveTopology()
+void ModelComponentPropertyEditor::GetMeshPrimitiveTopology()
 {
-    m_meshPrimitiveTopology->SetFromInt((int)m_component->m_meshPrimitiveTopology);
+    m_meshPrimitiveTopology->SetFromInt(0);
 }
 
-void VisibleComponentPropertyEditor::GetTextureWrapMethod()
+void ModelComponentPropertyEditor::GetTextureWrapMethod()
 {
-    m_textureWrapMethod->SetFromInt((int)m_component->m_textureWrapMethod);
+    m_textureWrapMethod->SetFromInt(0);
 }
 
-void VisibleComponentPropertyEditor::GetMeshUsage()
+void ModelComponentPropertyEditor::GetMeshUsage()
 {
-    m_meshUsage->SetFromInt((int)m_component->m_meshUsage);
+    m_meshUsage->SetFromInt(0);
 }
 
-void VisibleComponentPropertyEditor::GetMeshSource()
+void ModelComponentPropertyEditor::GetMeshSource()
 {
-    m_meshSource->SetFromInt((int)m_component->m_meshSource);
+    m_meshSource->SetFromInt(0);
 }
 
-void VisibleComponentPropertyEditor::GetProceduralMeshShape()
+void ModelComponentPropertyEditor::GetProceduralMeshShape()
 {
-    m_proceduralMeshShape->SetFromInt((int)m_component->m_proceduralMeshShape);
+    m_proceduralMeshShape->SetFromInt(0);
 }
 
-void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
+void ModelComponentPropertyEditor::tableItemClicked(int row, int column)
 {
     auto item = m_modelList->item(row,column);
     if(column == 0)
@@ -177,79 +177,80 @@ void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
     }
 }
 
-void VisibleComponentPropertyEditor::ChooseModel()
+void ModelComponentPropertyEditor::ChooseModel()
 {
     m_dirViewer->show();
 }
 
-void VisibleComponentPropertyEditor::GetModelMap()
+void ModelComponentPropertyEditor::GetModelMap()
 {
     if (!m_component)
         return;
-    if (!m_component->m_model)
+
+    auto l_drawCallComponentCount = m_component->m_DrawCallComponents.size();
+    if (!l_drawCallComponentCount)
         return;
 
-    m_modelList->setRowCount((int)m_component->m_model->meshMaterialPairs.m_count);
+    m_modelList->setRowCount((int)l_drawCallComponentCount);
 
     int index = 0;
-
-    for (uint64_t j = 0; j < m_component->m_model->meshMaterialPairs.m_count; j++)
+    for (uint64_t j = 0; j < l_drawCallComponentCount; j++)
     {
-        auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
-        auto l_meshItem = new QTableWidgetItem();
-        l_meshItem->setText(l_pair->mesh->m_InstanceName.c_str());
-        l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->mesh)));
-        l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
-        m_modelList->setItem(index, 0, l_meshItem);
+        // auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
+        // auto l_meshItem = new QTableWidgetItem();
+        // l_meshItem->setText(l_pair->mesh->m_InstanceName.c_str());
+        // l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->mesh)));
+        // l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
+        // m_modelList->setItem(index, 0, l_meshItem);
 
-        auto l_materialItem = new QTableWidgetItem();
-        l_materialItem->setText(l_pair->material->m_InstanceName.c_str());
-        l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->material)));
-        l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
-        m_modelList->setItem(index, 1, l_materialItem);
+        // auto l_materialItem = new QTableWidgetItem();
+        // l_materialItem->setText(l_pair->material->m_InstanceName.c_str());
+        // l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->material)));
+        // l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
+        // m_modelList->setItem(index, 1, l_materialItem);
 
         index++;
     }
 }
 
-void VisibleComponentPropertyEditor::SetMeshPrimitiveTopology()
+void ModelComponentPropertyEditor::SetMeshPrimitiveTopology()
 {
-    m_component->m_meshPrimitiveTopology = MeshPrimitiveTopology(m_meshPrimitiveTopology->GetAsInt());
+    //m_component->m_meshPrimitiveTopology = MeshPrimitiveTopology(m_meshPrimitiveTopology->GetAsInt());
 }
 
-void VisibleComponentPropertyEditor::SetTextureWrapMethod()
+void ModelComponentPropertyEditor::SetTextureWrapMethod()
 {
-    m_component->m_textureWrapMethod = TextureWrapMethod(m_textureWrapMethod->GetAsInt());
+    //m_component->m_textureWrapMethod = TextureWrapMethod(m_textureWrapMethod->GetAsInt());
 }
 
-void VisibleComponentPropertyEditor::SetMeshUsage()
+void ModelComponentPropertyEditor::SetMeshUsage()
 {
-    m_component->m_meshUsage = MeshUsage(m_meshUsage->GetAsInt());
+    //m_component->m_meshUsage = MeshUsage(m_meshUsage->GetAsInt());
 }
 
-void VisibleComponentPropertyEditor::SetMeshSource()
+void ModelComponentPropertyEditor::SetMeshSource()
 {
-    m_component->m_meshSource = MeshSource(m_meshSource->GetAsInt());
+    //m_component->m_meshSource = MeshSource(m_meshSource->GetAsInt());
 }
 
-void VisibleComponentPropertyEditor::SetProceduralMeshShape()
+void ModelComponentPropertyEditor::SetProceduralMeshShape()
 {
-    m_component->m_proceduralMeshShape = ProceduralMeshShape(m_proceduralMeshShape->GetAsInt());
+    //m_component->m_proceduralMeshShape = ProceduralMeshShape(m_proceduralMeshShape->GetAsInt());
 }
 
-void VisibleComponentPropertyEditor::remove()
+void ModelComponentPropertyEditor::remove()
 {
     m_modelList->clear();
     m_component = nullptr;
     this->hide();
 }
 
-void VisibleComponentPropertyEditor::onCustomContextMenuRequested(const QPoint &pos)
+void ModelComponentPropertyEditor::onCustomContextMenuRequested(const QPoint &pos)
 {
     showContextMenu(m_modelList->viewport()->mapToGlobal(pos));
 }
 
-void VisibleComponentPropertyEditor::showContextMenu(const QPoint &globalPos)
+void ModelComponentPropertyEditor::showContextMenu(const QPoint &globalPos)
 {
     QMenu menu;
 

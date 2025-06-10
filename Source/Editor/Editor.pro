@@ -41,7 +41,7 @@ SOURCES += \
     transformcomponentpropertyeditor.cpp \
     adjustlabel.cpp \
     combolabeltext.cpp \
-    visiblecomponentpropertyeditor.cpp
+    modelcomponentpropertyeditor.cpp
 
 
 HEADERS += \
@@ -62,7 +62,7 @@ HEADERS += \
     transformcomponentpropertyeditor.h \
     adjustlabel.h \
     combolabeltext.h \
-    visiblecomponentpropertyeditor.h
+    modelcomponentpropertyeditor.h
 
 FORMS += \
         mainwindow.ui

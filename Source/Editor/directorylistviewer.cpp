@@ -2,9 +2,13 @@
 #include <QMessageBox>
 
 #include "../Engine/Engine.h"
+#include "../Engine/Common/IOService.h"
+#include "../Engine/Common/LogService.h"
+#include "../Engine/Services/AssetService.h"
+#include "../Engine/Services/SceneService.h"
 
 using namespace Inno;
-Engine *g_Engine;
+
 
 DirectoryListViewer::DirectoryListViewer(QWidget* parent) : QListView(parent)
 {
@@ -79,11 +83,10 @@ QString DirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_Engine->Get<AssetSystem>()->ConvertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
+            g_Engine->Get<AssetService>()->Import(l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::No:
-            g_Engine->Get<Logger>()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());
-
+            Log(Success, l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::Cancel:
             break;
@@ -108,7 +111,7 @@ QString DirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_Engine->Get<SceneSystem>()->loadScene(l_relativePath.toStdString().c_str());
+            g_Engine->Get<SceneService>()->Load(l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::No:
             break;
@@ -126,5 +129,5 @@ void DirectoryListViewer::OpenFileMenu(QModelIndex index)
 
 void DirectoryListViewer::SaveScene()
 {
-    g_Engine->Get<SceneSystem>()->saveScene();
+    g_Engine->Get<SceneService>()->Save("");
 }

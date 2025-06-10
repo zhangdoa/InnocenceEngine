@@ -14,7 +14,7 @@ namespace Inno
 		static const char* GetTypeName() { return "MaterialComponent"; };
 
 		MaterialAttributes m_materialAttributes = {};
-		Array<uint64_t> m_TextureComponents;
+		std::vector<uint64_t> m_TextureComponents;
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;
 	};
 }

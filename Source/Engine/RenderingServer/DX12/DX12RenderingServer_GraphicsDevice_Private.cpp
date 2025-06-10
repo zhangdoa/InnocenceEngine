@@ -321,7 +321,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
 
     uint32_t l_maxGPUBuffers = l_renderingCapacity.maxBuffers;
     uint32_t l_maxMaterialTextures = l_renderingCapacity.maxTextures;
-    uint32_t l_maxRenderTargetTextures = 512;
+    uint32_t l_maxRenderTargetTextures = 2048;
 
     {
         auto l_MaxDescriptorCount = l_maxGPUBuffers * 3 + l_maxMaterialTextures * 2 + l_maxRenderTargetTextures * 2;

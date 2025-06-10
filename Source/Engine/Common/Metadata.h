@@ -73,7 +73,7 @@ namespace Inno
 		template<typename T>
 		TypeInfo Get()
 		{
-			using orig_type = std::remove_const_t<std::remove_reference_t<decltype(T)>>;
+			using orig_type = std::remove_const_t<std::remove_reference_t<T>>;
 			return Get<orig_type>();
 		};
 	}

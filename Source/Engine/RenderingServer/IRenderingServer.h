@@ -21,7 +21,7 @@ namespace Inno
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingServer);
 
 		bool Setup(ISystemConfig* systemConfig) override;
-		bool Initialize() override;
+        bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;
 
@@ -173,7 +173,8 @@ namespace Inno
 		virtual bool GetSwapChainImages() = 0;
 		virtual bool AssignSwapChainImages() = 0;
 		virtual bool ReleaseSwapChainImages() = 0;
-
+        bool InitializeSwapChainRenderPassComponent();
+		
 		bool CreateOutputMergerTargets(RenderPassComponent* rhs);
 		bool InitializeOutputMergerTargets(RenderPassComponent* rhs);
         virtual bool OnOutputMergerTargetsCreated(RenderPassComponent* rhs) { return false; }

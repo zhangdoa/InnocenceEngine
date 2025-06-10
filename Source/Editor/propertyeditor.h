@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include "transformcomponentpropertyeditor.h"
-#include "visiblecomponentpropertyeditor.h"
+#include "modelcomponentpropertyeditor.h"
 #include "lightcomponentpropertyeditor.h"
 #include "cameracomponentpropertyeditor.h"
 
@@ -20,7 +20,7 @@ public:
 
 private:
 	TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
-    VisibleComponentPropertyEditor* m_visibleComponentPropertyEditor;
+    ModelComponentPropertyEditor* m_modelComponentPropertyEditor;
 	LightComponentPropertyEditor* m_lightComponentPropertyEditor;
     CameraComponentPropertyEditor* m_cameraComponentPropertyEditor;
 signals:

@@ -53,6 +53,16 @@
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
             "externalConsole": false
+        },
+        {
+            "name": "(Windows) Launch Editor",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Editor.exe",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
         }
     ]
 }

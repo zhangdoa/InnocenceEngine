@@ -99,38 +99,7 @@ bool IRenderingServer::Initialize()
 	Initialize(m_SwapChainShaderProgramComp);
 	Initialize(m_SwapChainSamplerComp);
 
-	if (!GetSwapChainImages())
-	{
-		Log(Error, "Failed to get swap chain images.");
-		return false;
-	}
-
-	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
-
-	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
-	l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
-
-	m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
-	m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
-	m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
-
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
-
-	// t0 - 2D texture (single image from the user pipeline)
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;
-
-	// s0 - sampler
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-
-	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainShaderProgramComp;
-
-	Initialize(m_SwapChainRenderPassComp);
+	InitializeSwapChainRenderPassComponent();
 
 	m_CopyUploadToDefaultHeapSemaphoreValues.resize(m_swapChainImageCount, 0);
 	m_GraphicsSemaphoreValues.resize(m_swapChainImageCount, 0);
@@ -141,6 +110,44 @@ bool IRenderingServer::Initialize()
 	Log(Success, "RenderingServer has been initialized.");
 
 	return true;
+}
+
+bool IRenderingServer::InitializeSwapChainRenderPassComponent()
+{
+    if (!GetSwapChainImages())
+    {
+        Log(Error, "Failed to get swap chain images.");
+        return false;
+    }
+
+    auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
+
+    l_RenderPassDesc.m_RenderTargetCount = 1;
+    l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
+    l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
+
+    m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
+    m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
+    m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
+
+    // t0 - 2D texture (single image from the user pipeline)
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;
+
+    // s0 - sampler
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+
+    m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainShaderProgramComp;
+
+    Initialize(m_SwapChainRenderPassComp);
+
+    return true;
 }
 
 bool IRenderingServer::Update()
@@ -326,6 +333,8 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 		return;
 
 	InitializeImpl(rhs);
+
+	m_initializedRenderPasses.emplace_back(rhs);
 }
 
 void IRenderingServer::Initialize(CollisionComponent* rhs)

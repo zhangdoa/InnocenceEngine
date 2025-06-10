@@ -8,15 +8,15 @@
 #include <QTableWidget>
 #include <QMenu>
 #include "icomponentpropertyeditor.h"
-#include "../Engine/Component/VisibleComponent.h"
+#include "../Engine/Component/ModelComponent.h"
 #include "materialComponentpropertyeditor.h"
 #include "directoryviewer.h"
 
-class VisibleComponentPropertyEditor : public IComponentPropertyEditor
+class ModelComponentPropertyEditor : public IComponentPropertyEditor
 {
 	Q_OBJECT
 public:
-	VisibleComponentPropertyEditor();
+	ModelComponentPropertyEditor();
 
 	void initialize() override;
 	void edit(void* component) override;
@@ -43,7 +43,7 @@ private:
 	MaterialComponentPropertyEditor* m_MaterialCompEditor;
 	DirectoryViewer* m_dirViewer;
 
-    Inno::VisibleComponent* m_component;
+    Inno::ModelComponent* m_component;
 
 public slots:
 	void SetMeshPrimitiveTopology();
