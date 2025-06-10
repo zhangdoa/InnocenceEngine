@@ -186,7 +186,9 @@ bool DX12RenderingServer::AssignSwapChainImages()
     auto l_textureDesc = m_swapChainImages[0]->GetDesc();
     l_textureComp->m_TextureDesc.Width = l_textureDesc.Width;
     l_textureComp->m_TextureDesc.Height = l_textureDesc.Height;
-    l_textureComp->m_TextureDesc.IsMultiBuffer = true; // Swap chain is multi-buffered
+    l_textureComp->m_TextureDesc.IsMultiBuffer = true;
+    l_textureComp->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_PRESENT);
+    l_textureComp->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET);
     l_textureComp->m_CurrentState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_PRESENT);
     l_textureComp->m_ObjectStatus = ObjectStatus::Activated;
 

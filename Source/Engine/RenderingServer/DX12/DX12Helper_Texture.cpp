@@ -392,7 +392,6 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	}
 
-
 	if (textureDesc.MipLevels > 1)
 	{
 		l_result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;

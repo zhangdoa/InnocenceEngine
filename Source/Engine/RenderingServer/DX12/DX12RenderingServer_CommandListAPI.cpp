@@ -282,23 +282,21 @@ bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList*
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
 	uint32_t frameIndex = GetCurrentFrame();
-	
+
 	auto* resource = static_cast<ID3D12Resource*>(rhs->GetGPUResource(frameIndex));
 	if (!resource)
 		return false;
 
 	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
-	auto l_readState = GetTextureReadState(rhs->m_TextureDesc);
-	auto l_writeState = GetTextureWriteState(rhs->m_TextureDesc);
-	auto l_newState = accessibility == Accessibility::ReadOnly ? l_readState : l_writeState;
+	auto l_newState = accessibility == Accessibility::ReadOnly ? rhs->m_ReadState : rhs->m_WriteState;
 	
-	if (rhs->m_CurrentState == static_cast<uint32_t>(l_newState))
+	if (rhs->m_CurrentState == l_newState)
 		return false;
 
 	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
 		resource, 
 		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState), 
-		l_newState);
+		static_cast<D3D12_RESOURCE_STATES>(l_newState));
 	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
 
 	rhs->m_CurrentState = static_cast<uint32_t>(l_newState);
@@ -357,6 +355,9 @@ bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* rhs, GPUBufferCom
 	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
 	UINT drawCommandCount = l_indirectDrawCommandList->m_CommandList.size();
+	if (drawCommandCount == 0)
+		return false;
+
 	l_commandList->m_DirectCommandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), drawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
 
 	return true;

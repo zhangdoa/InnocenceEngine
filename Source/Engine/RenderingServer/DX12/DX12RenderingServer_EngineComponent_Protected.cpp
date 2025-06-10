@@ -190,9 +190,9 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 {
 	rhs->m_GPUResourceType = GPUResourceType::Image;
 	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
-	auto l_writeState = GetTextureWriteState(rhs->m_TextureDesc);
-	auto l_readState = GetTextureReadState(rhs->m_TextureDesc);
-	rhs->m_CurrentState = static_cast<uint32_t>(l_readState);
+	rhs->m_WriteState = GetTextureWriteState(rhs->m_TextureDesc);
+	rhs->m_ReadState = GetTextureReadState(rhs->m_TextureDesc);
+	rhs->m_CurrentState = static_cast<uint32_t>(rhs->m_ReadState);
 
 	D3D12_CLEAR_VALUE l_clearValue = {};
 	bool useClearValue = false;
@@ -753,8 +753,8 @@ bool DX12RenderingServer::Copy(ICommandList* commandList, TextureComponent* lhs,
 	}
 
 	// Get current states
-	auto l_srcReadState = GetTextureReadState(lhs->m_TextureDesc);
-	auto l_destReadState = GetTextureReadState(rhs->m_TextureDesc);
+	auto l_srcReadState = lhs->m_ReadState;
+	auto l_destReadState = rhs->m_ReadState;
 
 	// Transition source to copy source state
 	l_commandList->m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -801,50 +801,41 @@ bool DX12RenderingServer::Clear(ICommandList* commandList, TextureComponent* rhs
 	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
 	l_commandList->m_DirectCommandList->SetDescriptorHeaps(1, l_heaps);
 
-	// Get write state for the texture
-	auto l_writeState = GetTextureWriteState(rhs->m_TextureDesc);
-
-	// Transition to UAV state if needed
-	if (rhs->m_CurrentState != static_cast<uint32_t>(l_writeState))
+	if (rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	{
 		l_commandList->m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			resource,
 			static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState),
-			l_writeState));
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	}
 
-	// Clear using the UAV handle for current frame, mip 0
 	uint32_t handleIndex = rhs->GetHandleIndex(frameIndex, 0);
-	if (handleIndex < rhs->m_WriteHandles.size())
+	if (rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
 	{
-		if (rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
-		{
-			l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-				D3D12_GPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_GPUHandle },
-				D3D12_CPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_CPUHandle },
-				resource,
-				(UINT*)&rhs->m_TextureDesc.ClearColor[0],
-				0,
-				NULL);
-		}
-		else
-		{
-			l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-				D3D12_GPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_GPUHandle },
-				D3D12_CPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_CPUHandle },
-				resource,
-				&rhs->m_TextureDesc.ClearColor[0],
-				0,
-				NULL);
-		}
+		l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
+			D3D12_GPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_GPUHandle },
+			D3D12_CPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_CPUHandle },
+			resource,
+			(UINT*)&rhs->m_TextureDesc.ClearColor[0],
+			0,
+			NULL);
+	}
+	else
+	{
+		l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
+			D3D12_GPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_GPUHandle },
+			D3D12_CPU_DESCRIPTOR_HANDLE{ rhs->m_WriteHandles[handleIndex].m_CPUHandle },
+			resource,
+			&rhs->m_TextureDesc.ClearColor[0],
+			0,
+			NULL);
 	}
 
-	// Transition back if needed
-	if (rhs->m_CurrentState != static_cast<uint32_t>(l_writeState))
+	if (rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	{
 		l_commandList->m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			resource,
-			l_writeState,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
 	}
 

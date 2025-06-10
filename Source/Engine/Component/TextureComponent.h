@@ -9,6 +9,8 @@ namespace Inno
 		static uint32_t GetTypeID() { return 8; };
 		static const char* GetTypeName() { return "TextureComponent"; };
 		TextureDesc m_TextureDesc = {};
+		uint32_t m_ReadState = 0;
+		uint32_t m_WriteState = 0;
 		uint32_t m_CurrentState = 0;
 
 		std::vector<void*> m_GPUResources;
