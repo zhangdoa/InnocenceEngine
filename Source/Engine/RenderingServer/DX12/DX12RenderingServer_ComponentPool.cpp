@@ -24,6 +24,26 @@ bool DX12RenderingServer::TerminatePool()
 {
 	IRenderingServer::TerminatePool();
 
+	for (auto& pair : m_MeshVertexBuffers_Upload)
+		if (pair.second) pair.second.Reset();
+	for (auto& pair : m_MeshVertexBuffers_Default)
+		if (pair.second) pair.second.Reset();
+	for (auto& pair : m_MeshIndexBuffers_Upload)
+		if (pair.second) pair.second.Reset();
+	for (auto& pair : m_MeshIndexBuffers_Default)
+		if (pair.second) pair.second.Reset();
+	for (auto& pair : m_MeshBLAS)
+		if (pair.second) pair.second.Reset();
+	for (auto& pair : m_MeshScratchBuffers)
+		if (pair.second) pair.second.Reset();
+
+	m_MeshVertexBuffers_Upload.clear();
+	m_MeshVertexBuffers_Default.clear();
+	m_MeshIndexBuffers_Upload.clear();
+	m_MeshIndexBuffers_Default.clear();
+	m_MeshBLAS.clear();
+	m_MeshScratchBuffers.clear();
+
 	delete m_PSOPool;
 	delete m_CommandListPool;
 	delete m_SemaphorePool;
@@ -55,52 +75,68 @@ bool DX12RenderingServer::Add(IOutputMergerTarget*& rhs)
 
 bool DX12RenderingServer::Delete(MeshComponent* rhs)
 {
-	// auto l_rhs = reinterpret_cast<DX12MeshComponent*>(rhs);
-	// if (l_rhs->m_DefaultHeapBuffer_VB)
-	// 	l_rhs->m_DefaultHeapBuffer_VB.Reset();
+	auto componentUUID = rhs->m_UUID;
 
-	// if (l_rhs->m_DefaultHeapBuffer_IB)
-	// 	l_rhs->m_DefaultHeapBuffer_IB.Reset();
+	auto vertexUploadIt = m_MeshVertexBuffers_Upload.find(componentUUID);
+	if (vertexUploadIt != m_MeshVertexBuffers_Upload.end()) {
+		if (vertexUploadIt->second) vertexUploadIt->second.Reset();
+		m_MeshVertexBuffers_Upload.erase(vertexUploadIt);
+	}
 
-	// if (l_rhs->m_UploadHeapBuffer_VB)
-	// 	l_rhs->m_UploadHeapBuffer_VB.Reset();
+	auto vertexDefaultIt = m_MeshVertexBuffers_Default.find(componentUUID);
+	if (vertexDefaultIt != m_MeshVertexBuffers_Default.end()) {
+		if (vertexDefaultIt->second) vertexDefaultIt->second.Reset();
+		m_MeshVertexBuffers_Default.erase(vertexDefaultIt);
+	}
 
-	// if (l_rhs->m_UploadHeapBuffer_IB)
-	// 	l_rhs->m_UploadHeapBuffer_IB.Reset();
+	auto indexUploadIt = m_MeshIndexBuffers_Upload.find(componentUUID);
+	if (indexUploadIt != m_MeshIndexBuffers_Upload.end()) {
+		if (indexUploadIt->second) indexUploadIt->second.Reset();
+		m_MeshIndexBuffers_Upload.erase(indexUploadIt);
+	}
 
-	// m_MeshComponentPool->Destroy(l_rhs);
+	auto indexDefaultIt = m_MeshIndexBuffers_Default.find(componentUUID);
+	if (indexDefaultIt != m_MeshIndexBuffers_Default.end()) {
+		if (indexDefaultIt->second) indexDefaultIt->second.Reset();
+		m_MeshIndexBuffers_Default.erase(indexDefaultIt);
+	}
 
-	// m_initializedMeshes.erase(rhs);
+	auto blasIt = m_MeshBLAS.find(componentUUID);
+	if (blasIt != m_MeshBLAS.end()) {
+		if (blasIt->second) blasIt->second.Reset();
+		m_MeshBLAS.erase(blasIt);
+	}
+
+	auto scratchIt = m_MeshScratchBuffers.find(componentUUID);
+	if (scratchIt != m_MeshScratchBuffers.end()) {
+		if (scratchIt->second) scratchIt->second.Reset();
+		m_MeshScratchBuffers.erase(scratchIt);
+	}
 
 	return true;
 }
 
 bool DX12RenderingServer::Delete(TextureComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
-
-	// for (auto i : l_rhs->m_DeviceMemories)
-	// {
-	// 	auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
-	// 	if (l_DX12DeviceMemory->m_DefaultHeapBuffer)
-	// 		l_DX12DeviceMemory->m_DefaultHeapBuffer.Reset();
-		
-	// 	if (l_DX12DeviceMemory->m_ReadBackHeapBuffer)
-	// 		l_DX12DeviceMemory->m_ReadBackHeapBuffer.Reset();
-	// }
-
-	// l_rhs->m_DeviceMemories.clear();
-
-	// for (auto i : l_rhs->m_MappedMemories)
-	// {
-	// 	auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
-	// 	if (l_DX12MappedMemory->m_UploadHeapBuffer)
-	// 		l_DX12MappedMemory->m_UploadHeapBuffer.Reset();
-	// }
-
-	// l_rhs->m_MappedMemories.clear();
-
-	//m_TextureComponentPool->Destroy(l_rhs);
+	// Release all GPU resources stored in the component
+	std::set<ID3D12Resource*> uniqueResources;
+	for (auto* resource : rhs->m_GPUResources)
+	{
+		if (resource)
+		{
+			uniqueResources.insert(static_cast<ID3D12Resource*>(resource));
+		}
+	}
+	
+	// Release unique resources (avoid double-release for shared resources)
+	for (auto* resource : uniqueResources)
+	{
+		resource->Release();
+	}
+	
+	rhs->m_GPUResources.clear();
+	rhs->m_ReadHandles.clear();
+	rhs->m_WriteHandles.clear();
 
 	m_initializedTextures.erase(rhs);
 
@@ -109,10 +145,6 @@ bool DX12RenderingServer::Delete(TextureComponent* rhs)
 
 bool DX12RenderingServer::Delete(MaterialComponent* rhs)
 {
-	auto l_rhs = reinterpret_cast<DX12MaterialComponent*>(rhs);
-
-	//m_MaterialComponentPool->Destroy(l_rhs);
-
 	m_initializedMaterials.erase(rhs);
 
 	return true;

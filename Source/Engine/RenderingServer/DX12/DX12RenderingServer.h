@@ -2,11 +2,6 @@
 #include "../IRenderingServer.h"
 #include "DX12Headers.h"
 
-#include "../../Component/DX12MeshComponent.h"
-#include "../../Component/DX12TextureComponent.h"
-#include "../../Component/DX12MaterialComponent.h"
-#include "../../Component/DX12ShaderProgramComponent.h"
-
 namespace Inno
 {
     class DX12RenderingServer : public IRenderingServer
@@ -153,8 +148,8 @@ namespace Inno
             const wchar_t* name
         );
 
-        bool CreateSRV(DX12TextureComponent* rhs, uint32_t mostDetailedMip);
-        bool CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice);
+        bool CreateSRV(TextureComponent* rhs, uint32_t mostDetailedMip);
+        bool CreateUAV(TextureComponent* rhs, uint32_t mipSlice);
 
         bool CreateSRV(GPUBufferComponent* rhs);
         bool CreateUAV(GPUBufferComponent* rhs);
@@ -171,10 +166,8 @@ namespace Inno
         bool SetDescriptorHeaps(RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool SetRenderTargets(RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool PreparePipeline(RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
-        bool TryToTransitState(DX12TextureComponent* rhs, DX12CommandList* commandList, const D3D12_RESOURCE_STATES& newState);
 
-        bool GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp, ICommandList* commandList);
-        bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, DX12TextureComponent* TextureComponent);
+        bool GenerateMipmapImpl(TextureComponent* TextureComp, ICommandList* commandList);
         bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent);
 
         // DX12 objects
@@ -237,6 +230,14 @@ namespace Inno
         ID3D12RootSignature* m_3DMipmapRootSignature = nullptr;
         ID3D12PipelineState* m_2DMipmapPSO = nullptr;
         ID3D12PipelineState* m_3DMipmapPSO = nullptr;
+
+        // Key: Component m_UUID, Value: DX12 GPU resources
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshVertexBuffers_Upload;
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshVertexBuffers_Default;
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshIndexBuffers_Upload;
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshIndexBuffers_Default;
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshBLAS;
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshScratchBuffers;
 
         // Component pools
         TObjectPool<DX12PipelineStateObject>* m_PSOPool = nullptr;

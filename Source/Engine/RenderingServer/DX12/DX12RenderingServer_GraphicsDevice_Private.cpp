@@ -321,7 +321,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
 
     uint32_t l_maxGPUBuffers = l_renderingCapacity.maxBuffers;
     uint32_t l_maxMaterialTextures = l_renderingCapacity.maxTextures;
-    uint32_t l_maxRenderTargetTextures = 128;
+    uint32_t l_maxRenderTargetTextures = 512;
 
     {
         auto l_MaxDescriptorCount = l_maxGPUBuffers * 3 + l_maxMaterialTextures * 2 + l_maxRenderTargetTextures * 2;
@@ -616,9 +616,9 @@ bool DX12RenderingServer::CreateMipmapGenerator()
         l_3DPSODesc.pRootSignature = m_3DMipmapRootSignature;
 
 #ifdef USE_DXIL
-        std::vector<char> l_3DmipmapComputeShader;
+        std::vector<uint8_t> l_3DmipmapComputeShader;
         LoadShaderFile(l_3DmipmapComputeShader, l_3DPath);
-        l_3DPSODesc.CS = { &l_3DmipmapComputeShader[0], l_3DmipmapComputeShader.size() };
+        l_3DPSODesc.CS = { l_3DmipmapComputeShader.data(), l_3DmipmapComputeShader.size() };
 #else
         ID3DBlob* l_3DmipmapComputeShader;
         LoadShaderFile(&l_3DmipmapComputeShader, ShaderStage::Compute, l_3DPath);
@@ -649,9 +649,9 @@ bool DX12RenderingServer::CreateMipmapGenerator()
         l_2DPSODesc.pRootSignature = m_2DMipmapRootSignature;
 
 #ifdef USE_DXIL
-        std::vector<char> l_2DmipmapComputeShader;
+        std::vector<uint8_t> l_2DmipmapComputeShader;
         LoadShaderFile(l_2DmipmapComputeShader, l_2DPath);
-        l_2DPSODesc.CS = { &l_2DmipmapComputeShader[0], l_2DmipmapComputeShader.size() };
+        l_2DPSODesc.CS = { l_2DmipmapComputeShader.data(), l_2DmipmapComputeShader.size() };
 #else
         ID3DBlob* l_2DmipmapComputeShader;
         LoadShaderFile(&l_2DmipmapComputeShader, ShaderStage::Compute, l_2DPath);

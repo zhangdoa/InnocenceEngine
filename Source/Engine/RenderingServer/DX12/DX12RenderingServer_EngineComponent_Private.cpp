@@ -38,63 +38,64 @@ DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(Com
 	return l_descHeapAccessor;
 }
 
-bool DX12RenderingServer::CreateSRV(DX12TextureComponent* rhs, uint32_t mipSlice)
+bool DX12RenderingServer::CreateSRV(TextureComponent* rhs, uint32_t mipSlice)
 {
-	auto l_desc = GetSRVDesc(rhs->m_TextureDesc, rhs->m_DX12TextureDesc, mipSlice);
+	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
+	auto l_desc = GetSRVDesc(rhs->m_TextureDesc, l_textureDesc, mipSlice);
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage);
 
-	// for (auto i : rhs->m_DeviceMemories)
-	// {
-	// 	auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+	uint32_t frameCount = rhs->m_GPUResources.size();
+	for (uint32_t frame = 0; frame < frameCount; frame++)
+	{
+		auto* resource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
+		if (!resource)
+		{
+			Log(Error, rhs->m_InstanceName, " No GPU resource found for frame ", frame);
+			return false;
+		}
 
-	// 	if (mipSlice >= l_DX12DeviceMemory->m_SRVs.size())
-	// 	{
-	// 		Log(Error, rhs->m_InstanceName, " Invalid mip level ", mipSlice, " for SRV array of size ", l_DX12DeviceMemory->m_SRVs.size());
-	// 		return false;
-	// 	}
-
-	// 	auto& l_srv = l_DX12DeviceMemory->m_SRVs[mipSlice];
-	// 	l_srv.SRVDesc = l_desc;
-	// 	l_srv.Handle = l_descHeapAccessor.GetNewHandle();
-	// 	m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(),
-	// 		&l_srv.SRVDesc,
-	// 		l_srv.Handle.m_CPUHandle);
-	// }
+		uint32_t handleIndex = rhs->GetHandleIndex(frame, mipSlice);
+		rhs->m_ReadHandles[handleIndex] = l_descHeapAccessor.GetNewHandle();
+		m_device->CreateShaderResourceView(resource,
+			&l_desc,
+			D3D12_CPU_DESCRIPTOR_HANDLE { rhs->m_ReadHandles[handleIndex].m_CPUHandle });
+	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateUAV(DX12TextureComponent* rhs, uint32_t mipSlice)
+bool DX12RenderingServer::CreateUAV(TextureComponent* rhs, uint32_t mipSlice)
 {
-	auto l_desc = GetUAVDesc(rhs->m_TextureDesc, rhs->m_DX12TextureDesc, mipSlice);
+	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
+	auto l_desc = GetUAVDesc(rhs->m_TextureDesc, l_textureDesc, mipSlice);
 
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage);
 	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage, false);
 
-	// for (auto i : rhs->m_DeviceMemories)
-	// {
-	// 	auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
+	uint32_t frameCount = rhs->m_GPUResources.size();
+	for (uint32_t frame = 0; frame < frameCount; frame++)
+	{
+		auto* resource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
+		if (!resource)
+		{
+			Log(Error, rhs->m_InstanceName, " No GPU resource found for frame ", frame);
+			return false;
+		}
 
-	// 	if (mipSlice >= l_DX12DeviceMemory->m_UAVs.size())
-	// 	{
-	// 		Log(Error, rhs->m_InstanceName, " Invalid mip level ", mipSlice, " for UAV array of size ", l_DX12DeviceMemory->m_UAVs.size());
-	// 		return false;
-	// 	}
+		uint32_t handleIndex = rhs->GetHandleIndex(frame, mipSlice);
 
-	// 	auto l_descHandle = l_descHeapAccessor.GetNewHandle();
-	// 	auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
+		auto l_descHandle = l_descHeapAccessor.GetNewHandle();
+		auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
 
-	// 	auto& l_uav = l_DX12DeviceMemory->m_UAVs[mipSlice];
-	// 	l_uav.UAVDesc = l_desc;
-	// 	l_uav.Handle.m_CPUHandle = l_descHandle_ShaderNonVisible.m_CPUHandle;
-	// 	l_uav.Handle.m_GPUHandle = l_descHandle.m_GPUHandle;
-	// 	l_uav.Handle.m_Index = l_descHandle.m_Index;
+		rhs->m_WriteHandles[handleIndex].m_CPUHandle = l_descHandle_ShaderNonVisible.m_CPUHandle;
+		rhs->m_WriteHandles[handleIndex].m_GPUHandle = l_descHandle.m_GPUHandle;
+		rhs->m_WriteHandles[handleIndex].m_Index = l_descHandle.m_Index;
 
-	// 	m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), 0,
-	// 		&l_uav.UAVDesc, l_descHandle_ShaderNonVisible.m_CPUHandle);
-	// 	m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), 0,
-	// 		&l_uav.UAVDesc, l_descHandle.m_CPUHandle);
-	// }
+		m_device->CreateUnorderedAccessView(resource, 0,
+			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE { l_descHandle_ShaderNonVisible.m_CPUHandle });
+		m_device->CreateUnorderedAccessView(resource, 0,
+			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE { l_descHandle.m_CPUHandle });
+	}
 
 	return true;
 }
@@ -534,7 +535,7 @@ bool DX12RenderingServer::Close(ICommandList* commandList, GPUEngineType GPUEngi
 	return true;
 }
 
-bool DX12RenderingServer::GenerateMipmapImpl(DX12TextureComponent* DX12TextureComp, ICommandList* commandList)
+bool DX12RenderingServer::GenerateMipmapImpl(TextureComponent* TextureComp, ICommandList* commandList)
 {
 	// struct DWParam
 	// {

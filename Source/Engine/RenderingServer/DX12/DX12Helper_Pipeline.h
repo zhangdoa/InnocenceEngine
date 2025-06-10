@@ -30,7 +30,7 @@ namespace Inno
 		bool GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12PipelineStateObject* PSO);
 
 #ifdef USE_DXIL
-		bool LoadShaderFile(std::vector<char>& rhs, const ShaderFilePath& shaderFilePath);
+		bool LoadShaderFile(std::vector<uint8_t>& rhs, const ShaderFilePath& shaderFilePath);
 #else
 		bool LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const ShaderFilePath& shaderFilePath);
 #endif

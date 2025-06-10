@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/Object.h"
+#include <vector>
 
 namespace Inno
 {
@@ -26,5 +27,18 @@ namespace Inno
 		static const char* GetTypeName() { return "ShaderProgramComponent"; };
 
 		ShaderFilePaths m_ShaderFilePaths = {};
+
+		// Shader bytecode storage - API-agnostic design
+		// Supports DXIL, SPIRV, Metal bytecode formats
+		std::vector<uint8_t> m_VSBuffer;
+		std::vector<uint8_t> m_HSBuffer;
+		std::vector<uint8_t> m_DSBuffer;
+		std::vector<uint8_t> m_GSBuffer;
+		std::vector<uint8_t> m_PSBuffer;
+		std::vector<uint8_t> m_CSBuffer;
+		std::vector<uint8_t> m_RayGenBuffer;
+		std::vector<uint8_t> m_AnyHitBuffer;
+		std::vector<uint8_t> m_ClosestHitBuffer;
+		std::vector<uint8_t> m_MissBuffer;
 	};
 }

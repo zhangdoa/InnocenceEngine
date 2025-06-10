@@ -11,14 +11,13 @@ namespace Inno
 	// and VkBuffer with offsets in Vulkan
 	struct GPUBufferView
 	{
-		uint64_t bufferHandle = 0;        // GPU buffer resource handle
-		uint64_t bufferLocation = 0;      // GPU virtual address (for DX12) or offset (for VK)
-		uint32_t sizeInBytes = 0;         // Size of the view in bytes
-		uint32_t strideInBytes = 0;       // Stride for vertex buffer, unused for index buffer
+		uint64_t m_BufferLocation = 0; // GPU virtual address (for DX12) or offset (for VK)
+		uint32_t m_SizeInBytes = 0; // Size of the entire buffer in bytes
+		uint32_t m_StrideInBytes = 0; // Size of each element in bytes
 
 		bool IsValid() const
 		{
-			return bufferHandle != 0 && sizeInBytes > 0 && strideInBytes > 0;
+			return m_BufferLocation !=0 && m_SizeInBytes > 0 && m_StrideInBytes > 0;
 		}
 	};
 
@@ -33,5 +32,10 @@ namespace Inno
 		void* m_MappedMemory_IB = nullptr;
 		GPUBufferView m_VertexBufferView;
 		GPUBufferView m_IndexBufferView;
+
+		uint32_t GetIndexCount() const
+		{
+			return m_IndexBufferView.m_SizeInBytes / m_IndexBufferView.m_StrideInBytes;
+		}
 	};
 }

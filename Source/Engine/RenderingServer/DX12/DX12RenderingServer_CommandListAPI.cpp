@@ -2,8 +2,10 @@
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Common/LogServiceSpecialization.h"
+#include "DX12Helper_Texture.h"
 
 using namespace Inno;
+using namespace DX12Helper;
 
 bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
 {
@@ -161,16 +163,15 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
 		{
-			auto l_image = reinterpret_cast<DX12TextureComponent*>(resource);
+			auto l_image = reinterpret_cast<TextureComponent*>(resource);
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 				return false;
 
-			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
-			// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
-			// if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
-			// 	commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.GPUHandle);
-			// else
-			// 	commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.GPUHandle);
+			auto l_handleIndex = l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
+				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
+			else
+				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
 		}
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
@@ -237,16 +238,16 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
 		{
-			auto l_image = reinterpret_cast<DX12TextureComponent*>(resource);
+			auto l_image = reinterpret_cast<TextureComponent*>(resource);
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
 				return false;
 
-			auto l_deviceMemoryIndex= l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
-			// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_image->m_DeviceMemories[l_deviceMemoryIndex]);
-			// if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
-			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_UAV.Handle.m_GPUHandle);
-			// else
-			// 	commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, l_DeviceMemory->m_SRV.Handle.m_GPUHandle);
+			auto l_handleIndex = l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+
+			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
+				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
+			else
+				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
 		}
 		return true;
 	}
@@ -279,16 +280,28 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Shade
 
 bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
-	auto l_newState = accessibility == Accessibility::ReadOnly ? l_rhs->m_ReadState : l_rhs->m_WriteState;
-	if (l_rhs->m_CurrentState == l_newState)
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	uint32_t frameIndex = GetCurrentFrame();
+	
+	auto* resource = static_cast<ID3D12Resource*>(rhs->GetGPUResource(frameIndex));
+	if (!resource)
 		return false;
 
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-	// auto l_DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[GetCurrentFrame()]);
-	// auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DeviceMemory->m_DefaultHeapBuffer.Get(), l_rhs->m_CurrentState, l_newState);
-	// l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
-	l_rhs->m_CurrentState = l_newState;
+	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
+	auto l_readState = GetTextureReadState(rhs->m_TextureDesc);
+	auto l_writeState = GetTextureWriteState(rhs->m_TextureDesc);
+	auto l_newState = accessibility == Accessibility::ReadOnly ? l_readState : l_writeState;
+	
+	if (rhs->m_CurrentState == static_cast<uint32_t>(l_newState))
+		return false;
+
+	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
+		resource, 
+		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState), 
+		l_newState);
+	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
+
+	rhs->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
 
@@ -303,13 +316,24 @@ bool DX12RenderingServer::UpdateIndirectDrawCommand(GPUBufferComponent* indirect
 		if (!isDrawCallValid(l_drawCall))
 			continue;
 
-		auto l_mesh = reinterpret_cast<DX12MeshComponent*>(l_drawCall.mesh);
+		auto l_mesh = l_drawCall.mesh;
+		
+		D3D12_VERTEX_BUFFER_VIEW vbv = {};
+		vbv.BufferLocation = l_mesh->m_VertexBufferView.m_BufferLocation;
+		vbv.StrideInBytes = l_mesh->m_VertexBufferView.m_StrideInBytes;
+		vbv.SizeInBytes = l_mesh->m_VertexBufferView.m_SizeInBytes;
+
+		D3D12_INDEX_BUFFER_VIEW ibv = {};
+		ibv.BufferLocation = l_mesh->m_IndexBufferView.m_BufferLocation;
+		ibv.Format = DXGI_FORMAT_R32_UINT; // Index format
+		ibv.SizeInBytes = l_mesh->m_IndexBufferView.m_SizeInBytes;
+
 		DX12DrawIndirectCommand l_command;
 		l_command.RootConstant = l_drawCall.m_PerObjectConstantBufferIndex;
-		l_command.VBV = l_mesh->m_VBV;
-		l_command.IBV = l_mesh->m_IBV;
+		l_command.VBV = vbv;
+		l_command.IBV = ibv;
 		l_command.DrawIndexedArgs.BaseVertexLocation = 0;
-		//l_command.DrawIndexedArgs.IndexCountPerInstance = (uint32_t)l_mesh->m_IndexCount;
+		l_command.DrawIndexedArgs.IndexCountPerInstance = l_mesh->GetIndexCount();
 		l_command.DrawIndexedArgs.StartIndexLocation = 0;
 		l_command.DrawIndexedArgs.StartInstanceLocation = 0;
 		l_command.DrawIndexedArgs.InstanceCount = 1;
@@ -354,12 +378,21 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
-	auto l_mesh = reinterpret_cast<DX12MeshComponent*>(mesh);
+
+	D3D12_VERTEX_BUFFER_VIEW vbv = {};
+	vbv.BufferLocation = mesh->m_VertexBufferView.m_BufferLocation;
+	vbv.StrideInBytes = mesh->m_VertexBufferView.m_StrideInBytes;
+	vbv.SizeInBytes = mesh->m_VertexBufferView.m_SizeInBytes;
+
+	D3D12_INDEX_BUFFER_VIEW ibv = {};
+	ibv.BufferLocation = mesh->m_IndexBufferView.m_BufferLocation;
+	ibv.Format = DXGI_FORMAT_R32_UINT; // Index format
+	ibv.SizeInBytes = mesh->m_IndexBufferView.m_SizeInBytes;
 
 	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
-	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
-	l_commandList->m_DirectCommandList->IASetIndexBuffer(&l_mesh->m_IBV);
-	//l_commandList->m_DirectCommandList->DrawIndexedInstanced((uint32_t)l_mesh->m_IndexCount, (uint32_t)instanceCount, 0, 0, 0);
+	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, &vbv);
+	l_commandList->m_DirectCommandList->IASetIndexBuffer(&ibv);
+	l_commandList->m_DirectCommandList->DrawIndexedInstanced(mesh->GetIndexCount(), (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }

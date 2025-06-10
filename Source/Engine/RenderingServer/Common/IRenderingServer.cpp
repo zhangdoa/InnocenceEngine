@@ -12,6 +12,7 @@
 #include "../../Services/GUISystem.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/EntityManager.h"
+#include "../../Services/ComponentManager.h"
 
 #include "../../Engine.h"
 #include "../IRenderingServer.h"
@@ -29,13 +30,13 @@ bool IRenderingServer::InitializePool()
 {
 	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
-	m_MeshComponentPool = TObjectPool<MeshComponent>::Create(l_renderingCapability.maxMeshes);
-	m_TextureComponentPool = TObjectPool<TextureComponent>::Create(l_renderingCapability.maxTextures);
-	m_MaterialComponentPool = TObjectPool<MaterialComponent>::Create(l_renderingCapability.maxMaterials);
-	m_RenderPassComponentPool = TObjectPool<RenderPassComponent>::Create(128);
-	m_ShaderProgramComponentPool = TObjectPool<ShaderProgramComponent>::Create(256);
-	m_SamplerComponentPool = TObjectPool<SamplerComponent>::Create(256);
-	m_GPUBufferComponentPool = TObjectPool<GPUBufferComponent>::Create(l_renderingCapability.maxBuffers);
+	g_Engine->Get<ComponentManager>()->RegisterType<MeshComponent>(l_renderingCapability.maxMeshes, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<TextureComponent>(l_renderingCapability.maxTextures, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<MaterialComponent>(l_renderingCapability.maxMaterials, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<RenderPassComponent>(128, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<ShaderProgramComponent>(256, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<SamplerComponent>(256, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<GPUBufferComponent>(l_renderingCapability.maxBuffers, this);
 
 	return true;
 }
@@ -223,14 +224,8 @@ bool IRenderingServer::Terminate()
 }
 
 template <typename T>
-T* AddComponent(const char* name, TObjectPool<T>* componentPool)
+T* AddComponent(const char* name)
 {
-	if (!componentPool)
-	{
-		Log(Error, "Component pool is not initialized.");
-		return nullptr;
-	}
-
 	static std::atomic<uint32_t> l_count = 0;
 	l_count++;
 	std::string l_name;
@@ -249,58 +244,50 @@ T* AddComponent(const char* name, TObjectPool<T>* componentPool)
 		return nullptr;
 	}
 
-	auto l_component = componentPool->Spawn();
+	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str());
+	auto l_component = g_Engine->Get<ComponentManager>()->Spawn<T>(l_parentEntity, false, ObjectLifespan::Persistence);
 	if (!l_component)
 	{
 		Log(Error, "Failed to allocate component from the pool.");
 		return nullptr;
 	}
 
-	l_component->m_UUID = Randomizer::GenerateUUID();
-	l_component->m_ObjectStatus = ObjectStatus::Created;
-	l_component->m_Serializable = false;
-	l_component->m_ObjectLifespan = ObjectLifespan::Persistence;
-
-	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str());
-	l_component->m_Owner = l_parentEntity;
-	l_component->m_InstanceName = l_name.c_str();
-
 	return l_component;
 }
 
 MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
 {
-	return AddComponent<MeshComponent>(name, m_MeshComponentPool);
+	return AddComponent<MeshComponent>(name);
 }
 
 TextureComponent* IRenderingServer::AddTextureComponent(const char* name)
 {
-	return AddComponent<TextureComponent>(name, m_TextureComponentPool);
+	return AddComponent<TextureComponent>(name);
 }
 
 MaterialComponent* IRenderingServer::AddMaterialComponent(const char* name)
 {
-	return AddComponent<MaterialComponent>(name, m_MaterialComponentPool);
+	return AddComponent<MaterialComponent>(name);
 }
 
 RenderPassComponent* IRenderingServer::AddRenderPassComponent(const char* name)
 {
-	return AddComponent<RenderPassComponent>(name, m_RenderPassComponentPool);
+	return AddComponent<RenderPassComponent>(name);
 }
 
 ShaderProgramComponent* IRenderingServer::AddShaderProgramComponent(const char* name)
 {
-	return AddComponent<ShaderProgramComponent>(name, m_ShaderProgramComponentPool);
+	return AddComponent<ShaderProgramComponent>(name);
 }
 
 SamplerComponent* IRenderingServer::AddSamplerComponent(const char* name)
 {
-	return AddComponent<SamplerComponent>(name, m_SamplerComponentPool);
+	return AddComponent<SamplerComponent>(name);
 }
 
 GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
 {
-	return AddComponent<GPUBufferComponent>(name, m_GPUBufferComponentPool);
+	return AddComponent<GPUBufferComponent>(name);
 }
 
 void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)
@@ -338,7 +325,7 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), rhs) != m_initializedRenderPasses.end())
 		return;
 
-	m_uninitializedRenderPasses.push(rhs);
+	InitializeImpl(rhs);
 }
 
 void IRenderingServer::Initialize(CollisionComponent* rhs)

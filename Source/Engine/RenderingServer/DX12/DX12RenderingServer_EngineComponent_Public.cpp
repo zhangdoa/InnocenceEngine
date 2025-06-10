@@ -8,34 +8,25 @@ using namespace DX12Helper;
 
 std::optional<uint32_t> DX12RenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
 {
-    // auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
-    // if (!l_rhs)
-    //     return std::nullopt;
+    if (!rhs)
+        return std::nullopt;
     
-    // if (l_rhs->m_ObjectStatus != ObjectStatus::Activated)
-    //     return std::nullopt;
+    if (rhs->m_ObjectStatus != ObjectStatus::Activated)
+        return std::nullopt;
 
-    // // Use proper device memory index based on IsMultiBuffer flag
-    // auto l_deviceMemoryIndex = l_rhs->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+    // Use proper handle index based on IsMultiBuffer flag
+    auto l_handleIndex = rhs->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
     
-    // // Bounds check
-    // if (l_deviceMemoryIndex >= l_rhs->m_DeviceMemories.size())
-    // {
-    //     Log(Error, l_rhs, " device memory index ", l_deviceMemoryIndex, " out of bounds (size: ", l_rhs->m_DeviceMemories.size(), ")");
-    //     return std::nullopt;
-    // }
-    
-    // auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(l_rhs->m_DeviceMemories[l_deviceMemoryIndex]);
-    // if (!l_DX12DeviceMemory)
-    // {
-    //     Log(Error, l_rhs, " does not have a valid device memory at index ", l_deviceMemoryIndex);
-    //     return std::nullopt;
-    // }
-
-    // if (bindingAccessibility == Accessibility::ReadOnly)
-    //     return l_DX12DeviceMemory->m_SRV.Handle.m_Index;
-    // else if (bindingAccessibility.CanWrite())
-    //     return l_DX12DeviceMemory->m_UAV.Handle.m_Index;
+    if (bindingAccessibility == Accessibility::ReadOnly)
+    {
+        if (l_handleIndex < rhs->m_ReadHandles.size())
+            return rhs->m_ReadHandles[l_handleIndex].m_Index;
+    }
+    else if (bindingAccessibility.CanWrite())
+    {
+        if (l_handleIndex < rhs->m_WriteHandles.size())
+            return rhs->m_WriteHandles[l_handleIndex].m_Index;
+    }
 
     return std::nullopt;
 }
@@ -255,10 +246,8 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
 // @TODO: This is expensive, it should be running entirely on the GPU
 bool DX12RenderingServer::GenerateMipmap(TextureComponent* rhs, ICommandList* commandList)
 {
-    auto l_rhs = reinterpret_cast<DX12TextureComponent*>(rhs);
-    
     // Skip SRGB textures for now due to complexity - focus on core functionality
-    if(l_rhs->m_TextureDesc.IsSRGB)
+    if(rhs->m_TextureDesc.IsSRGB)
     {
         Log(Warning, "SRGB mipmap generation not currently supported, skipping texture");
         return true;
@@ -271,7 +260,7 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent* rhs, ICommandList* co
         l_tempCommandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
         l_tempCommandList.m_ComputeCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE));
         
-        bool result = GenerateMipmapImpl(l_rhs, &l_tempCommandList);
+        bool result = GenerateMipmapImpl(rhs, &l_tempCommandList);
         
         // Execute and wait for completion
         ExecuteCommandListAndWait(l_tempCommandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
@@ -280,5 +269,5 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent* rhs, ICommandList* co
         return result;
     }
     
-    return GenerateMipmapImpl(l_rhs, commandList);
+    return GenerateMipmapImpl(rhs, commandList);
 }

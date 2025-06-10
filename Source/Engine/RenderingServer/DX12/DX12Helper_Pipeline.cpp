@@ -90,96 +90,59 @@ void DX12Helper::CreateInputLayout(DX12PipelineStateObject* PSO)
 bool DX12Helper::LoadGraphicsShaders(RenderPassComponent* RenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
-	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
+	auto l_SPC = RenderPassComp->m_ShaderProgram;
 	
-	if (!l_DX12SPC || !l_PSO)
+	if (!l_SPC || !l_PSO)
 	{
 		Log(Verbose, "Skipping creating graphics shaders for ", RenderPassComp->m_InstanceName.c_str());
 		return true;
 	}
-#ifdef USE_DXIL
-		if (l_DX12SPC->m_VSBuffer.size())
-		{
-			D3D12_SHADER_BYTECODE l_VSBytecode;
-			l_VSBytecode.pShaderBytecode = &l_DX12SPC->m_VSBuffer[0];
-			l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer.size();
-			l_PSO->m_GraphicsPSODesc.VS = l_VSBytecode;
 
-			Log(Verbose, "Vertex Shader: ", l_DX12SPC->m_VSBuffer.size(), " bytes");
-		}
-		if (l_DX12SPC->m_HSBuffer.size())
-		{
-			D3D12_SHADER_BYTECODE l_HSBytecode;
-			l_HSBytecode.pShaderBytecode = &l_DX12SPC->m_HSBuffer[0];
-			l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer.size();
-			l_PSO->m_GraphicsPSODesc.HS = l_HSBytecode;
+	if (l_SPC->m_VSBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_VSBytecode;
+		l_VSBytecode.pShaderBytecode = l_SPC->m_VSBuffer.data();
+		l_VSBytecode.BytecodeLength = l_SPC->m_VSBuffer.size();
+		l_PSO->m_GraphicsPSODesc.VS = l_VSBytecode;
 
-			Log(Verbose, "Hull Shader: ", l_DX12SPC->m_HSBuffer.size(), " bytes");
-		}
-		if (l_DX12SPC->m_DSBuffer.size())
-		{
-			D3D12_SHADER_BYTECODE l_DSBytecode;
-			l_DSBytecode.pShaderBytecode = &l_DX12SPC->m_DSBuffer[0];
-			l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer.size();
-			l_PSO->m_GraphicsPSODesc.DS = l_DSBytecode;
+		Log(Verbose, "Vertex Shader: ", l_SPC->m_VSBuffer.size(), " bytes");
+	}
+	if (l_SPC->m_HSBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_HSBytecode;
+		l_HSBytecode.pShaderBytecode = l_SPC->m_HSBuffer.data();
+		l_HSBytecode.BytecodeLength = l_SPC->m_HSBuffer.size();
+		l_PSO->m_GraphicsPSODesc.HS = l_HSBytecode;
 
-			Log(Verbose, "Domain Shader: ", l_DX12SPC->m_DSBuffer.size(), " bytes");
-		}
-		if (l_DX12SPC->m_GSBuffer.size())
-		{
-			D3D12_SHADER_BYTECODE l_GSBytecode;
-			l_GSBytecode.pShaderBytecode = &l_DX12SPC->m_GSBuffer[0];
-			l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer.size();
-			l_PSO->m_GraphicsPSODesc.GS = l_GSBytecode;
+		Log(Verbose, "Hull Shader: ", l_SPC->m_HSBuffer.size(), " bytes");
+	}
+	if (l_SPC->m_DSBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_DSBytecode;
+		l_DSBytecode.pShaderBytecode = l_SPC->m_DSBuffer.data();
+		l_DSBytecode.BytecodeLength = l_SPC->m_DSBuffer.size();
+		l_PSO->m_GraphicsPSODesc.DS = l_DSBytecode;
 
-			Log(Verbose, "Geometry Shader: ", l_DX12SPC->m_GSBuffer.size(), " bytes");
-		}
-		if (l_DX12SPC->m_PSBuffer.size())
-		{
-			D3D12_SHADER_BYTECODE l_PSBytecode;
-			l_PSBytecode.pShaderBytecode = &l_DX12SPC->m_PSBuffer[0];
-			l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer.size();
-			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
+		Log(Verbose, "Domain Shader: ", l_SPC->m_DSBuffer.size(), " bytes");
+	}
+	if (l_SPC->m_GSBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_GSBytecode;
+		l_GSBytecode.pShaderBytecode = l_SPC->m_GSBuffer.data();
+		l_GSBytecode.BytecodeLength = l_SPC->m_GSBuffer.size();
+		l_PSO->m_GraphicsPSODesc.GS = l_GSBytecode;
 
-			Log(Verbose, "Pixel Shader: ", l_DX12SPC->m_PSBuffer.size(), " bytes");
-		}
-#else
-		if (l_DX12SPC->m_VSBuffer)
-		{
-			D3D12_SHADER_BYTECODE l_VSBytecode;
-			l_VSBytecode.pShaderBytecode = l_DX12SPC->m_VSBuffer->GetBufferPointer();
-			l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer->GetBufferSize();
-			l_PSO->m_GraphicsPSODesc.VS = l_VSBytecode;
-		}
-		if (l_DX12SPC->m_HSBuffer)
-		{
-			D3D12_SHADER_BYTECODE l_HSBytecode;
-			l_HSBytecode.pShaderBytecode = l_DX12SPC->m_HSBuffer->GetBufferPointer();
-			l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer->GetBufferSize();
-			l_PSO->m_GraphicsPSODesc.HS = l_HSBytecode;
-		}
-		if (l_DX12SPC->m_DSBuffer)
-		{
-			D3D12_SHADER_BYTECODE l_DSBytecode;
-			l_DSBytecode.pShaderBytecode = l_DX12SPC->m_DSBuffer->GetBufferPointer();
-			l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer->GetBufferSize();
-			l_PSO->m_GraphicsPSODesc.DS = l_DSBytecode;
-		}
-		if (l_DX12SPC->m_GSBuffer)
-		{
-			D3D12_SHADER_BYTECODE l_GSBytecode;
-			l_GSBytecode.pShaderBytecode = l_DX12SPC->m_GSBuffer->GetBufferPointer();
-			l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer->GetBufferSize();
-			l_PSO->m_GraphicsPSODesc.GS = l_GSBytecode;
-		}
-		if (l_DX12SPC->m_PSBuffer)
-		{
-			D3D12_SHADER_BYTECODE l_PSBytecode;
-			l_PSBytecode.pShaderBytecode = l_DX12SPC->m_PSBuffer->GetBufferPointer();
-			l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer->GetBufferSize();
-			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
-		}
-#endif
+		Log(Verbose, "Geometry Shader: ", l_SPC->m_GSBuffer.size(), " bytes");
+	}
+	if (l_SPC->m_PSBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_PSBytecode;
+		l_PSBytecode.pShaderBytecode = l_SPC->m_PSBuffer.data();
+		l_PSBytecode.BytecodeLength = l_SPC->m_PSBuffer.size();
+		l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
+
+		Log(Verbose, "Pixel Shader: ", l_SPC->m_PSBuffer.size(), " bytes");
+	}
 
 	return true;
 }
@@ -187,33 +150,23 @@ bool DX12Helper::LoadGraphicsShaders(RenderPassComponent* RenderPassComp)
 bool DX12Helper::LoadComputeShaders(RenderPassComponent* RenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
-	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
+	auto l_SPC = RenderPassComp->m_ShaderProgram;
 	
-	if (!l_DX12SPC || !l_PSO)
+	if (!l_SPC || !l_PSO)
 	{
 		Log(Verbose, "Skipping creating ShaderPrograms for ", RenderPassComp->m_InstanceName.c_str());
 		return true;
 	}
 
-#ifdef USE_DXIL
-		if (l_DX12SPC->m_CSBuffer.size())
-		{
-			D3D12_SHADER_BYTECODE l_CSBytecode;
-			l_CSBytecode.pShaderBytecode = &l_DX12SPC->m_CSBuffer[0];
-			l_CSBytecode.BytecodeLength = l_DX12SPC->m_CSBuffer.size();
-			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
+	if (l_SPC->m_CSBuffer.size())
+	{
+		D3D12_SHADER_BYTECODE l_CSBytecode;
+		l_CSBytecode.pShaderBytecode = l_SPC->m_CSBuffer.data();
+		l_CSBytecode.BytecodeLength = l_SPC->m_CSBuffer.size();
+		l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
 
-			Log(Verbose, "Compute Shader: ", l_DX12SPC->m_CSBuffer.size(), " bytes");
-		}
-#else
-		if (l_DX12SPC->m_CSBuffer)
-		{
-			D3D12_SHADER_BYTECODE l_CSBytecode;
-			l_CSBytecode.pShaderBytecode = l_DX12SPC->m_CSBuffer->GetBufferPointer();
-			l_CSBytecode.BytecodeLength = l_DX12SPC->m_CSBuffer->GetBufferSize();
-			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
-		}
-#endif
+		Log(Verbose, "Compute Shader: ", l_SPC->m_CSBuffer.size(), " bytes");
+	}
 
 	return true;
 }
@@ -221,46 +174,46 @@ bool DX12Helper::LoadComputeShaders(RenderPassComponent* RenderPassComp)
 bool DX12Helper::LoadRaytracingShaders(RenderPassComponent* RenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(RenderPassComp->m_PipelineStateObject);
-	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(RenderPassComp->m_ShaderProgram);
+	auto l_SPC = RenderPassComp->m_ShaderProgram;
 	
-	if (!l_DX12SPC || !l_PSO)
+	if (!l_SPC || !l_PSO)
 	{
 		Log(Verbose, "Skipping creating ShaderPrograms for ", RenderPassComp->m_InstanceName.c_str());
 		return true;
 	}
 
 #ifdef USE_DXIL
-	if (l_DX12SPC->m_RayGenBuffer.size())
+	if (l_SPC->m_RayGenBuffer.size())
 	{
 		D3D12_SHADER_BYTECODE l_LibBytecode;
-		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_RayGenBuffer[0];
-		l_LibBytecode.BytecodeLength = l_DX12SPC->m_RayGenBuffer.size();
+		l_LibBytecode.pShaderBytecode = l_SPC->m_RayGenBuffer.data();
+		l_LibBytecode.BytecodeLength = l_SPC->m_RayGenBuffer.size();
 
-		Log(Verbose, "RayGen Shader: ", l_DX12SPC->m_RayGenBuffer.size(), " bytes");
+		Log(Verbose, "RayGen Shader: ", l_SPC->m_RayGenBuffer.size(), " bytes");
 	}
-	if (l_DX12SPC->m_ClosestHitBuffer.size())
+	if (l_SPC->m_ClosestHitBuffer.size())
 	{
 		D3D12_SHADER_BYTECODE l_LibBytecode;
-		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_ClosestHitBuffer[0];
-		l_LibBytecode.BytecodeLength = l_DX12SPC->m_ClosestHitBuffer.size();
+		l_LibBytecode.pShaderBytecode = l_SPC->m_ClosestHitBuffer.data();
+		l_LibBytecode.BytecodeLength = l_SPC->m_ClosestHitBuffer.size();
 
-		Log(Verbose, "ClosestHit Shader: ", l_DX12SPC->m_ClosestHitBuffer.size(), " bytes");
+		Log(Verbose, "ClosestHit Shader: ", l_SPC->m_ClosestHitBuffer.size(), " bytes");
 	}
-	if (l_DX12SPC->m_MissBuffer.size())
+	if (l_SPC->m_MissBuffer.size())
 	{
 		D3D12_SHADER_BYTECODE l_LibBytecode;
-		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_MissBuffer[0];
-		l_LibBytecode.BytecodeLength = l_DX12SPC->m_MissBuffer.size();
+		l_LibBytecode.pShaderBytecode = l_SPC->m_MissBuffer.data();
+		l_LibBytecode.BytecodeLength = l_SPC->m_MissBuffer.size();
 
-		Log(Verbose, "Miss Shader: ", l_DX12SPC->m_MissBuffer.size(), " bytes");
+		Log(Verbose, "Miss Shader: ", l_SPC->m_MissBuffer.size(), " bytes");
 	}
-	if (l_DX12SPC->m_AnyHitBuffer.size())
+	if (l_SPC->m_AnyHitBuffer.size())
 	{
 		D3D12_SHADER_BYTECODE l_LibBytecode;
-		l_LibBytecode.pShaderBytecode = &l_DX12SPC->m_AnyHitBuffer[0];
-		l_LibBytecode.BytecodeLength = l_DX12SPC->m_AnyHitBuffer.size();
+		l_LibBytecode.pShaderBytecode = l_SPC->m_AnyHitBuffer.data();
+		l_LibBytecode.BytecodeLength = l_SPC->m_AnyHitBuffer.size();
 
-		Log(Verbose, "AnyHit Shader: ", l_DX12SPC->m_AnyHitBuffer.size(), " bytes");
+		Log(Verbose, "AnyHit Shader: ", l_SPC->m_AnyHitBuffer.size(), " bytes");
 	}
 #endif
 
@@ -542,10 +495,12 @@ bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12Pipeli
 	return true;
 }
 #ifdef USE_DXIL
-bool DX12Helper::LoadShaderFile(std::vector<char> &rhs, const ShaderFilePath &shaderFilePath)
+bool DX12Helper::LoadShaderFile(std::vector<uint8_t> &rhs, const ShaderFilePath &shaderFilePath)
 {
 	auto l_path = std::string(m_shaderRelativePath) + shaderFilePath.c_str() + ".dxil";
-	rhs = g_Engine->Get<IOService>()->loadFile(l_path.c_str(), IOMode::Binary);
+	auto l_rawData = g_Engine->Get<IOService>()->loadFile(l_path.c_str(), IOMode::Binary);
+	rhs.resize(l_rawData.size());
+	std::memcpy(rhs.data(), l_rawData.data(), l_rawData.size());
 	return true;
 }
 #else
