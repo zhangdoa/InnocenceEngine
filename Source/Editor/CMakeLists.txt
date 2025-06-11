@@ -39,16 +39,16 @@ if(Qt6_FOUND)
     file(GLOB EDITOR_UI_FILES "*.ui")
     file(GLOB EDITOR_QRC_FILES "*.qrc")
     
-    # Optionally collect sources from subdirectories
-    file(GLOB_RECURSE EDITOR_QDARKSTYLE_QRC "qdarkstyle/*.qrc")
+    # Include theme resources
+    file(GLOB THEME_QRC_FILES "themes/*.qrc")
     
     # Combine all sources
     set(ALL_EDITOR_FILES 
         ${EDITOR_SOURCES}
         ${EDITOR_HEADERS}
         ${EDITOR_UI_FILES}
-        # ${EDITOR_QRC_FILES}  # Uncomment when we add resource files
-        # ${EDITOR_QDARKSTYLE_QRC}  # Temporarily disabled until modernization
+        ${EDITOR_QRC_FILES}
+        ${THEME_QRC_FILES}
     )
     
     add_executable(Editor ${ALL_EDITOR_FILES})

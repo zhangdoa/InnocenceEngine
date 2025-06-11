@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/themes">
+        <file>materialyou.qss</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <!-- Placeholder for future icons -->
+        <!-- <file>icons/arrow_down.png</file> -->
+        <!-- <file>icons/arrow_right.png</file> -->
+        <!-- <file>icons/close.png</file> -->
+        <!-- <file>icons/float.png</file> -->
+    </qresource>
+</RCC>

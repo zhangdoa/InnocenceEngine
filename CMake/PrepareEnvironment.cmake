@@ -47,18 +47,6 @@ else()
     message(FATAL_ERROR "Unsupported platform detected!")
 endif()
 
-# Copy QDarkStyleSheet files
-message(STATUS "Copying QDarkStyleSheet files...")
-file(COPY
-    ${INNO_GITSUBMODULE_DIRECTORIES}/QDarkStyleSheet/qdarkstyle/dark/rc
-    DESTINATION ${CMAKE_SOURCE_DIR}/Source/Editor/qdarkstyle/rc
-)
-
-file(COPY
-    ${INNO_GITSUBMODULE_DIRECTORIES}/QDarkStyleSheet/qdarkstyle/dark/darkstyle.qss
-    DESTINATION ${CMAKE_SOURCE_DIR}/Source/Editor/qdarkstyle/
-)
-
 # Include the module for downloading DXC binaries
 if (WIN32)
     message(STATUS "Downloading DXC binaries...")
