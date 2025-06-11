@@ -6,6 +6,7 @@
 #include <QGridLayout>
 #include "icomponentpropertyeditor.h"
 #include "combolabeltext.h"
+#include "transformwidget.h"
 #include "../Engine/Component/CameraComponent.h"
 
 class CameraComponentPropertyEditor : public IComponentPropertyEditor
@@ -27,6 +28,7 @@ public:
     void GetISO();
 
 private:
+    TransformWidget* m_transformWidget;
     ComboLabelText* m_FOV;
     ComboLabelText* m_widthScale;
     ComboLabelText* m_heightScale;
@@ -39,6 +41,7 @@ private:
     Inno::CameraComponent* m_component;
 
 public slots:
+    void SetTransform();
     void SetFOV();
     void SetWidthScale();
     void SetHeightScale();

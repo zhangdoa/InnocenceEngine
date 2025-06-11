@@ -12,6 +12,7 @@
 
 #include "../../Engine.h"
 #include "../../Services/PhysicsSimulationService.h"
+#include "../../Services/ComponentManager.h"
 
 using namespace Inno;
 using namespace DX12Helper;
@@ -601,47 +602,65 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(CollisionComponent* rhs)
+bool DX12RenderingServer::InitializeImpl(ModelComponent* rhs)
 {
-	// auto l_transformMatrix = rhs->m_TransformComponent->m_globalTransformMatrix.m_transformationMat;
+	// Generate raytracing instance descriptors for each mesh in each draw call
+	auto transformMatrix = rhs->m_Transform.GetMatrix();
 
-	// for (size_t i = 0; i < GetSwapChainImageCount(); i++)
-	// {
-	// 	D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-	// 	instanceDesc.Transform[0][0] = l_transformMatrix.m00;
-	// 	instanceDesc.Transform[0][1] = l_transformMatrix.m01;
-	// 	instanceDesc.Transform[0][2] = l_transformMatrix.m02;
-	// 	instanceDesc.Transform[0][3] = l_transformMatrix.m03; // Translation X
+	for (size_t frameIndex = 0; frameIndex < GetSwapChainImageCount(); frameIndex++)
+	{
+		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[frameIndex]);
+		
+		// Create instance descriptor for each mesh in each draw call component
+		for (const auto& drawCallUUID : rhs->m_DrawCallComponents)
+		{
+			auto drawCallComp = g_Engine->Get<ComponentManager>()->Get<DrawCallComponent>(drawCallUUID);
+			if (!drawCallComp || !drawCallComp->m_MeshComponent)
+				continue;
 
-	// 	instanceDesc.Transform[1][0] = l_transformMatrix.m10;
-	// 	instanceDesc.Transform[1][1] = l_transformMatrix.m11;
-	// 	instanceDesc.Transform[1][2] = l_transformMatrix.m12;
-	// 	instanceDesc.Transform[1][3] = l_transformMatrix.m13; // Translation Y
+			auto meshComp = g_Engine->Get<ComponentManager>()->Get<MeshComponent>(drawCallComp->m_MeshComponent);
+			if (!meshComp)
+				continue;
 
-	// 	instanceDesc.Transform[2][0] = l_transformMatrix.m20;
-	// 	instanceDesc.Transform[2][1] = l_transformMatrix.m21;
-	// 	instanceDesc.Transform[2][2] = l_transformMatrix.m22;
-	// 	instanceDesc.Transform[2][3] = l_transformMatrix.m23; // Translation Z
+			auto blasIt = m_MeshBLAS.find(meshComp->m_UUID);
+			if (blasIt == m_MeshBLAS.end())
+			{
+				Log(Warning, "BLAS not found for mesh ", meshComp->m_InstanceName, " in model ", rhs->m_InstanceName);
+				continue;
+			}
 
-	// 	instanceDesc.InstanceID = static_cast<UINT>(rhs->m_RenderableSet->material->m_ShaderModel);
-	// 	instanceDesc.InstanceMask = 0xFF;
-	// 	instanceDesc.InstanceContributionToHitGroupIndex = 0;
-	// 	instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+			D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
 
-	// 	auto l_mesh = rhs->m_RenderableSet->mesh;
-	// 	auto blasIt = m_MeshBLAS.find(l_mesh->m_UUID);
-	// 	if (blasIt != m_MeshBLAS.end())
-	// 	{
-	// 		instanceDesc.AccelerationStructure = blasIt->second->GetGPUVirtualAddress();
-	// 		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[i]);
-	// 		l_descList->m_Descs.emplace_back(instanceDesc);
-	// 		l_descList->m_NeedFullUpdate = true;
-	// 	}
-	// }
+			// Apply model transform matrix
+			instanceDesc.Transform[0][0] = transformMatrix.m00;
+			instanceDesc.Transform[0][1] = transformMatrix.m01;
+			instanceDesc.Transform[0][2] = transformMatrix.m02;
+			instanceDesc.Transform[0][3] = transformMatrix.m03; // Translation X
 
-	Log(Verbose, rhs->m_InstanceName, " Raytracing instance is registered.");
+			instanceDesc.Transform[1][0] = transformMatrix.m10;
+			instanceDesc.Transform[1][1] = transformMatrix.m11;
+			instanceDesc.Transform[1][2] = transformMatrix.m12;
+			instanceDesc.Transform[1][3] = transformMatrix.m13; // Translation Y
 
-	m_RegisteredCollisionComponents.emplace(rhs);
+			instanceDesc.Transform[2][0] = transformMatrix.m20;
+			instanceDesc.Transform[2][1] = transformMatrix.m21;
+			instanceDesc.Transform[2][2] = transformMatrix.m22;
+			instanceDesc.Transform[2][3] = transformMatrix.m23; // Translation Z
+
+			// Use MeshComponent UUID for unique instance identification
+			instanceDesc.InstanceID = static_cast<UINT>(meshComp->m_UUID);
+			instanceDesc.InstanceMask = 0xFF;
+			instanceDesc.InstanceContributionToHitGroupIndex = 0;
+			instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+			instanceDesc.AccelerationStructure = blasIt->second->GetGPUVirtualAddress();
+
+			l_descList->m_Descs.emplace_back(instanceDesc);
+			l_descList->m_NeedFullUpdate = true;
+		}
+	}
+
+	Log(Verbose, rhs->m_InstanceName, " Raytracing instances registered for ", rhs->m_DrawCallComponents.size(), " draw calls.");
+	m_initializedModels.emplace(rhs);
 
 	return true;
 }

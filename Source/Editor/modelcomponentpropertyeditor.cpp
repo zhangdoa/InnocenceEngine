@@ -3,7 +3,6 @@
 #include "../Engine/Engine.h"
 
 using namespace Inno;
-Engine *g_Engine;
 
 ModelComponentPropertyEditor::ModelComponentPropertyEditor()
 {
@@ -26,6 +25,9 @@ void ModelComponentPropertyEditor::initialize()
                 "background-repeat: no-repeat;"
                 "background-position: left;"
                 );
+
+    m_transformWidget = new TransformWidget();
+    m_transformWidget->initialize();
 
     m_meshPrimitiveTopology = new ComboLabelText();
     m_meshPrimitiveTopology->Initialize("MeshPrimitiveTopology");
@@ -74,6 +76,9 @@ void ModelComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_title, row, 0, 1, 7);
     row++;
 
+    m_gridLayout->addWidget(m_transformWidget, row, 0, 1, 7);
+    row++;
+
     m_gridLayout->addWidget(m_meshPrimitiveTopology->GetLabelWidget(), row, 0, 1, 1);
     m_gridLayout->addWidget(m_meshPrimitiveTopology->GetTextWidget(), row, 1, 1, 1);
     row++;
@@ -108,6 +113,9 @@ void ModelComponentPropertyEditor::initialize()
 
     m_gridLayout->addWidget(m_line, row, 0, 1, 7);
 
+    connect(m_transformWidget, SIGNAL(positionChanged()), this, SLOT(SetTransform()));
+    connect(m_transformWidget, SIGNAL(rotationChanged()), this, SLOT(SetTransform()));
+    connect(m_transformWidget, SIGNAL(scaleChanged()), this, SLOT(SetTransform()));
     connect(m_meshPrimitiveTopology, SIGNAL(ValueChanged()), this, SLOT(SetMeshPrimitiveTopology()));
     connect(m_textureWrapMethod, SIGNAL(ValueChanged()), this, SLOT(SetTextureWrapMethod()));
     connect(m_meshUsage, SIGNAL(ValueChanged()), this, SLOT(SetMeshUsage()));
@@ -127,6 +135,14 @@ void ModelComponentPropertyEditor::edit(void *component)
     m_component = reinterpret_cast<ModelComponent*>(component);
 
     m_modelNameLabel->setText(m_component->m_InstanceName.c_str());
+
+    // Update transform widget
+    m_transformWidget->setPosition(m_component->m_Transform.m_pos.x, m_component->m_Transform.m_pos.y, m_component->m_Transform.m_pos.z);
+    
+    auto eulerAngles = Math::quatToEulerAngle(m_component->m_Transform.m_rot);
+    m_transformWidget->setRotation(Math::radianToAngle(eulerAngles.x), Math::radianToAngle(eulerAngles.y), Math::radianToAngle(eulerAngles.z));
+    
+    m_transformWidget->setScale(m_component->m_Transform.m_scale.x, m_component->m_Transform.m_scale.y, m_component->m_Transform.m_scale.z);
 
     GetMeshPrimitiveTopology();
     GetTextureWrapMethod();
@@ -236,6 +252,25 @@ void ModelComponentPropertyEditor::SetMeshSource()
 void ModelComponentPropertyEditor::SetProceduralMeshShape()
 {
     //m_component->m_proceduralMeshShape = ProceduralMeshShape(m_proceduralMeshShape->GetAsInt());
+}
+
+void ModelComponentPropertyEditor::SetTransform()
+{
+    if (!m_component)
+        return;
+
+    float x, y, z;
+    m_transformWidget->getPosition(x, y, z);
+    m_component->m_Transform.m_pos = Vec4(x, y, z, 1.0f);
+
+    m_transformWidget->getRotation(x, y, z);
+    auto roll = Math::angleToRadian(x);
+    auto pitch = Math::angleToRadian(y);
+    auto yaw = Math::angleToRadian(z);
+    m_component->m_Transform.m_rot = Math::eulerAngleToQuat(roll, pitch, yaw);
+
+    m_transformWidget->getScale(x, y, z);
+    m_component->m_Transform.m_scale = Vec4(x, y, z, 1.0f);
 }
 
 void ModelComponentPropertyEditor::remove()

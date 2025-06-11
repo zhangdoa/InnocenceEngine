@@ -86,12 +86,7 @@ bool AssetService::LoadScene(const char* fileName)
 	return JSONWrapper::LoadScene(fileName);
 }
 
-bool AssetService::Load(const char* fileName, TransformComponent& component)
-{
-	JSONWrapper::Load(fileName, component);
 
-	return component.m_UUID != 0;
-}
 
 
 bool AssetService::Load(const char* fileName, ModelComponent& component)
@@ -160,14 +155,6 @@ bool AssetService::Load(const char* fileName, LightComponent& component)
 bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
 	return STBWrapper::Save(fileName, textureDesc, textureData);
-}
-
-bool AssetService::Save(const TransformComponent& component)
-{
-	json j;
-	JSONWrapper::to_json(j, component);
-	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
-	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
 bool AssetService::Save(const ModelComponent& component)

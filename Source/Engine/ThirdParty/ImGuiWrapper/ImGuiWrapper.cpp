@@ -49,7 +49,6 @@ namespace ImGuiWrapperNS
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
 
 	void showWorldExplorer();
-	void showTransformComponentPropertyEditor(void* rhs);
 	void showModelComponentPropertyEditor(void* rhs);
 	void showLightComponentPropertyEditor(void* rhs);
 	void showConcurrencyProfiler();
@@ -347,7 +346,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 		{
 			if (selectedComponentType == 1)
 			{
-				showTransformComponentPropertyEditor(selectedComponent);
+			// Transform editing no longer available
 			}
 			else if (selectedComponentType == 2)
 			{
@@ -360,62 +359,6 @@ void ImGuiWrapperNS::showWorldExplorer()
 		}
 	}
 	ImGui::End();
-}
-
-void ImGuiWrapperNS::showTransformComponentPropertyEditor(void* rhs)
-{
-	auto l_rhs = reinterpret_cast<TransformComponent*>(rhs);
-
-	ImGui::Text("Transform Hierarchy Level: %.i", l_rhs->m_transformHierarchyLevel);
-
-	ImGui::Text("Local Transform Vector");
-
-	static float float_min = std::numeric_limits<float>::min();
-	static float float_max = std::numeric_limits<float>::max();
-
-	static float pos[4];
-	pos[0] = l_rhs->m_localTransformVector.m_pos.x;
-	pos[1] = l_rhs->m_localTransformVector.m_pos.y;
-	pos[2] = l_rhs->m_localTransformVector.m_pos.z;
-	pos[3] = 0.0f;
-
-	if (ImGui::DragFloat3("Position", pos, 0.0001f, float_min, float_max))
-	{
-		l_rhs->m_localTransformVector_target.m_pos.x = pos[0];
-		l_rhs->m_localTransformVector_target.m_pos.y = pos[1];
-		l_rhs->m_localTransformVector_target.m_pos.z = pos[2];
-	}
-
-	static float rot[4];
-	Vec4 eulerAngles = Math::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
-	rot[0] = Math::radianToAngle(eulerAngles.x);
-	rot[1] = Math::radianToAngle(eulerAngles.y);
-	rot[2] = Math::radianToAngle(eulerAngles.z);
-	rot[3] = 0.0f;
-
-	if (ImGui::DragFloat3("Rotation", rot, 1.0f))
-	{
-		auto roll = Math::angleToRadian(rot[0]);
-		auto pitch = Math::angleToRadian(rot[1]);
-		auto yaw = Math::angleToRadian(rot[2]);
-
-		l_rhs->m_localTransformVector_target.m_rot = Math::eulerAngleToQuat(roll, pitch, yaw);
-	}
-
-	static float scale[4];
-	scale[0] = l_rhs->m_localTransformVector.m_scale.x;
-	scale[1] = l_rhs->m_localTransformVector.m_scale.y;
-	scale[2] = l_rhs->m_localTransformVector.m_scale.z;
-	scale[3] = 0.0f;
-
-	if (ImGui::DragFloat3("Scale", scale, 0.0001f, float_min, float_max))
-	{
-		l_rhs->m_localTransformVector_target.m_scale.x = scale[0];
-		l_rhs->m_localTransformVector_target.m_scale.y = scale[1];
-		l_rhs->m_localTransformVector_target.m_scale.z = scale[2];
-	}
-
-	l_rhs->m_localTransformVector = l_rhs->m_localTransformVector_target;
 }
 
 void ImGuiWrapperNS::showModelComponentPropertyEditor(void* rhs)

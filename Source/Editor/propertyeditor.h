@@ -2,7 +2,6 @@
 #define INNOPROPERTYEDITOR_H
 
 #include <QWidget>
-#include "transformcomponentpropertyeditor.h"
 #include "modelcomponentpropertyeditor.h"
 #include "lightcomponentpropertyeditor.h"
 #include "cameracomponentpropertyeditor.h"
@@ -19,7 +18,6 @@ public:
 	void remove();
 
 private:
-	TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
     ModelComponentPropertyEditor* m_modelComponentPropertyEditor;
 	LightComponentPropertyEditor* m_lightComponentPropertyEditor;
     CameraComponentPropertyEditor* m_cameraComponentPropertyEditor;

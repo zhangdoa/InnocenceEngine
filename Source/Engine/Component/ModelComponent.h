@@ -1,5 +1,7 @@
 #pragma once
 #include "../Common/Object.h"
+#include "../Common/MathHelper.h"
+#include "../Common/GPUDataStructure.h"
 #include "MeshComponent.h"
 #include "SkeletonComponent.h"
 #include "MaterialComponent.h"
@@ -23,7 +25,15 @@ namespace Inno
 		static uint32_t GetTypeID() { return 2; }
 		static const char* GetTypeName() { return "ModelComponent"; }
 
-		uint64_t m_CollisionComponent = 0;
+		Transform m_Transform;
+		
+		// Embedded collision data (replaces separate CollisionComponent)
+		CollisionPrimitives m_CollisionPrimitives = {};
+		void* m_SimulationProxy = 0;  // PhysX actor pointer
+		
+		// AABB accessor for BVH compatibility
+		AABB& m_AABB = m_CollisionPrimitives.m_AABB;
+		
 		Array<uint64_t> m_DrawCallComponents;
 	};
 }

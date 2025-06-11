@@ -77,7 +77,15 @@ void JSONWrapper::from_json(const json& j, Mat4& p)
 	p.m33 = j["33"];
 }
 
-void JSONWrapper::to_json(json& j, const TransformVector& p)
+void JSONWrapper::from_json(const json& j, Vec4& p)
+{
+	p.x = j["X"];
+	p.y = j["Y"];
+	p.z = j["Z"];
+	p.w = j["W"];
+}
+
+void JSONWrapper::to_json(json& j, const Transform& p)
 {
 	j = json
 	{
@@ -123,26 +131,17 @@ void JSONWrapper::to_json(json& j, const TransformVector& p)
 				},
 				{
 					"Z", p.m_scale.z
-				},
+				}
 			}
 		}
 	};
 }
 
-void JSONWrapper::from_json(const json& j, Vec4& p)
-{
-	p.x = j["X"];
-	p.y = j["Y"];
-	p.z = j["Z"];
-	p.w = j["W"];
-}
-
-void JSONWrapper::from_json(const json& j, TransformVector& p)
+void JSONWrapper::from_json(const json& j, Transform& p)
 {
 	p.m_pos.x = j["Position"]["X"];
 	p.m_pos.y = j["Position"]["Y"];
 	p.m_pos.z = j["Position"]["Z"];
-	p.m_pos.w = 1.0f;
 
 	p.m_rot.x = j["Rotation"]["X"];
 	p.m_rot.y = j["Rotation"]["Y"];
@@ -152,5 +151,5 @@ void JSONWrapper::from_json(const json& j, TransformVector& p)
 	p.m_scale.x = j["Scale"]["X"];
 	p.m_scale.y = j["Scale"]["Y"];
 	p.m_scale.z = j["Scale"]["Z"];
-	p.m_scale.w = 1.0f;
 }
+

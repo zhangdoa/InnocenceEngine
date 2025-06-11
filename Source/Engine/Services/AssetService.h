@@ -26,7 +26,7 @@ namespace Inno
 			return "../Data/Components/" + std::string(componentName) + ".json";
 		}
 
-		static bool Load(const char* fileName, TransformComponent& component);
+
 		static bool Load(const char* fileName, ModelComponent& component);
 		static bool Load(const char* fileName, DrawCallComponent& component);
 		static bool Load(const char* fileName, MeshComponent& component);
@@ -37,7 +37,7 @@ namespace Inno
 		static bool Load(const char* fileName, CameraComponent& component);
 		static bool Load(const char* fileName, LightComponent& component);
 
-		static bool Save(const TransformComponent& component);
+
 		static bool Save(const ModelComponent& component);
 		static bool Save(const DrawCallComponent& component);
 		static bool Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices);	

@@ -7,7 +7,6 @@
 #include "Common/Task.h"
 #include "Services/EntityManager.h"
 #include "Services/ComponentManager.h"
-#include "Services/TransformSystem.h"
 #include "Services/LightSystem.h"
 #include "Services/CameraSystem.h"
 #include "Services/SceneService.h"
@@ -390,7 +389,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<AssetService>();
 	Get<SceneService>();
 	Get<PhysicsSimulationService>();
-	Get<TransformSystem>();
 	Get<LightSystem>();
 	Get<CameraSystem>();
 
@@ -446,7 +444,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	SystemSetup(SceneService);
 	SystemSetup(PhysicsSimulationService);
 
-	SystemSetup(TransformSystem);
 	SystemSetup(LightSystem);
 	SystemSetup(CameraSystem);
 
@@ -471,16 +468,15 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			}
 
 			// Update components
-			Get<TransformSystem>()->Update();
 			Get<CameraSystem>()->Update();
 			Get<LightSystem>()->Update();
 
 			SystemUpdate(EntityManager);
 
 			// Culling
-			Get<PhysicsSimulationService>()->Update();
-			Get<BVHService>()->Update();
-			Get<PhysicsSimulationService>()->RunCulling();
+			// Get<PhysicsSimulationService>()->Update();
+			// Get<BVHService>()->Update();
+			// Get<PhysicsSimulationService>()->RunCulling();
 
 			// Only update rendering-related services if not headless
 			if (!m_pImpl->m_initConfig.isHeadless) {
@@ -579,7 +575,6 @@ bool Engine::Initialize()
 	SystemInit(SceneService);
 	SystemInit(PhysicsSimulationService);
 
-	SystemInit(TransformSystem);
 	SystemInit(LightSystem);
 	SystemInit(CameraSystem);
 	m_pImpl->m_RenderingServer->Initialize();
@@ -683,7 +678,6 @@ bool Engine::Terminate()
 
 	SystemTerm(CameraSystem);
 	SystemTerm(LightSystem);
-	SystemTerm(TransformSystem);
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);

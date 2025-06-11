@@ -8,82 +8,72 @@
 #include "../../Engine.h"
 using namespace Inno;
 
-void JSONWrapper::to_json(json& j, const TransformComponent& p)
-{
-    json localTransformVector;
 
-    to_json(localTransformVector, p.m_localTransformVector);
+
+void JSONWrapper::to_json(json& j, const ModelComponent& component)
+{
+    json transform;
+    to_json(transform, component.m_Transform);
 
     j = json
     {
-        {"ComponentType", p.GetTypeID()},
-        {"ParentTransformComponent", p.m_parentTransformComponent->m_UUID},
-        {"LocalTransformVector", localTransformVector },
-    };
-}
-
-void JSONWrapper::to_json(json& j, const ModelComponent& p)
-{
-    j = json
-    {
-        {"ComponentType", p.GetTypeID()},
+        {"ComponentType", component.GetTypeID()},
+        {"Transform", transform},
         // @TODO: Finish all the writings of the child components
     };
 }
 
-void JSONWrapper::to_json(json& j, const LightComponent& p)
+void JSONWrapper::to_json(json& j, const LightComponent& component)
 {
     json color;
-    to_json(color, p.m_RGBColor);
+    to_json(color, component.m_RGBColor);
 
     json shape;
-    to_json(shape, p.m_Shape);
+    to_json(shape, component.m_Shape);
+
+    json transform;
+    to_json(transform, component.m_Transform);
 
     j = json
     {
-        {"ComponentType", p.GetTypeID()},
+        {"ComponentType", component.GetTypeID()},
         {"RGBColor", color},
         {"Shape", shape},
-        {"LightType", p.m_LightType},
-        {"ColorTemperature", p.m_ColorTemperature},
-        {"LuminousFlux", p.m_LuminousFlux},
-        {"UseColorTemperature", p.m_UseColorTemperature},
+        {"LightType", component.m_LightType},
+        {"ColorTemperature", component.m_ColorTemperature},
+        {"LuminousFlux", component.m_LuminousFlux},
+        {"UseColorTemperature", component.m_UseColorTemperature},
+        {"Transform", transform},
     };
 }
 
-void JSONWrapper::to_json(json& j, const CameraComponent& p)
+void JSONWrapper::to_json(json& j, const CameraComponent& component)
 {
+    json transform;
+    to_json(transform, component.m_Transform);
+
     j = json
     {
-        {"ComponentType", p.GetTypeID()},
-        {"FOVX", p.m_FOVX},
-        {"WidthScale", p.m_widthScale},
-        {"HeightScale", p.m_heightScale},
-        {"zNear", p.m_zNear},
-        {"zFar", p.m_zFar},
-        {"Aperture", p.m_aperture},
-        {"ShutterTime", p.m_shutterTime},
-        {"ISO", p.m_ISO},
+        {"ComponentType", component.GetTypeID()},
+        {"FOVX", component.m_FOVX},
+        {"WidthScale", component.m_widthScale},
+        {"HeightScale", component.m_heightScale},
+        {"zNear", component.m_zNear},
+        {"zFar", component.m_zFar},
+        {"Aperture", component.m_aperture},
+        {"ShutterTime", component.m_shutterTime},
+        {"ISO", component.m_ISO},
+        {"Transform", transform},
     };
 }
 
-void JSONWrapper::Load(const char* fileName, TransformComponent& p)
-{
-    json j;
-    Load(fileName, j);
 
-    from_json(j["LocalTransformVector"], p.m_localTransformVector);
-    auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
-    if (l_parentTransformComponentEntityName == "RootTransform")
-    {
-        auto l_rootTransformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
-        p.m_parentTransformComponent = l_rootTransformComponent;
-    }
-}
 void JSONWrapper::Load(const char* fileName, ModelComponent& component)
 {
     json j;
     Load(fileName, j);
+
+    from_json(j["Transform"], component.m_Transform);
     if (j.find("DrawCallComponents") != j.end())
     {
         auto l_j = j["DrawCallComponents"];
@@ -207,7 +197,7 @@ void JSONWrapper::Load(const char* fileName, TextureComponent& component)
 
     void* textureData = STBWrapper::Load(j["File"].get<std::string>().c_str(), component);
     component.m_ObjectStatus = ObjectStatus::Created;
-    
+
     g_Engine->getRenderingServer()->Initialize(&component, textureData);
 }
 
@@ -280,30 +270,32 @@ void JSONWrapper::Load(const char* fileName, TextureComponent& component)
 // 	return true;
 // }
 
-void JSONWrapper::Load(const char* fileName, LightComponent& p)
+void JSONWrapper::Load(const char* fileName, LightComponent& component)
 {
     json j;
     Load(fileName, j);
 
-    from_json(j["RGBColor"], p.m_RGBColor);
-    from_json(j["Shape"], p.m_Shape);
-    p.m_LightType = j["LightType"];
-    p.m_ColorTemperature = j["ColorTemperature"];
-    p.m_LuminousFlux = j["LuminousFlux"];
-    p.m_UseColorTemperature = j["UseColorTemperature"];
+    from_json(j["Transform"], component.m_Transform);
+    from_json(j["RGBColor"], component.m_RGBColor);
+    from_json(j["Shape"], component.m_Shape);
+    component.m_LightType = j["LightType"];
+    component.m_ColorTemperature = j["ColorTemperature"];
+    component.m_LuminousFlux = j["LuminousFlux"];
+    component.m_UseColorTemperature = j["UseColorTemperature"];
 }
 
-void JSONWrapper::Load(const char* fileName, CameraComponent& p)
+void JSONWrapper::Load(const char* fileName, CameraComponent& component)
 {
     json j;
     Load(fileName, j);
 
-    p.m_FOVX = j["FOVX"];
-    p.m_widthScale = j["WidthScale"];
-    p.m_heightScale = j["HeightScale"];
-    p.m_zNear = j["zNear"];
-    p.m_zFar = j["zFar"];
-    p.m_aperture = j["Aperture"];
-    p.m_shutterTime = j["ShutterTime"];
-    p.m_ISO = j["ISO"];
+    from_json(j["Transform"], component.m_Transform);
+    component.m_FOVX = j["FOVX"];
+    component.m_widthScale = j["WidthScale"];
+    component.m_heightScale = j["HeightScale"];
+    component.m_zNear = j["zNear"];
+    component.m_zFar = j["zFar"];
+    component.m_aperture = j["Aperture"];
+    component.m_shutterTime = j["ShutterTime"];
+    component.m_ISO = j["ISO"];
 }

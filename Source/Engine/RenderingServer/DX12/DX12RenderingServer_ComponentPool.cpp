@@ -24,19 +24,6 @@ bool DX12RenderingServer::TerminatePool()
 {
 	IRenderingServer::TerminatePool();
 
-	for (auto& pair : m_MeshVertexBuffers_Upload)
-		if (pair.second) pair.second.Reset();
-	for (auto& pair : m_MeshVertexBuffers_Default)
-		if (pair.second) pair.second.Reset();
-	for (auto& pair : m_MeshIndexBuffers_Upload)
-		if (pair.second) pair.second.Reset();
-	for (auto& pair : m_MeshIndexBuffers_Default)
-		if (pair.second) pair.second.Reset();
-	for (auto& pair : m_MeshBLAS)
-		if (pair.second) pair.second.Reset();
-	for (auto& pair : m_MeshScratchBuffers)
-		if (pair.second) pair.second.Reset();
-
 	m_MeshVertexBuffers_Upload.clear();
 	m_MeshVertexBuffers_Default.clear();
 	m_MeshIndexBuffers_Upload.clear();

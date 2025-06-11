@@ -85,8 +85,7 @@ namespace Inno
             {
                 if (modelComponent->m_ObjectStatus == ObjectStatus::Activated && modelComponent->m_meshUsage == MeshUsage::Static)
                 {
-                    auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(modelComponent->m_Owner);
-                    auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+                    auto l_globalTm = Math::toTransformationMatrix(modelComponent->m_Transform);
 
                     for (uint64_t j = 0; j < modelComponent->m_Model->renderableSets.m_count; j++)
                     {
@@ -101,9 +100,9 @@ namespace Inno
 
                             PerObjectConstantBuffer l_meshConstantBuffer;
 
-                            l_meshConstantBuffer.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-                            l_meshConstantBuffer.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-                            l_meshConstantBuffer.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+                            l_meshConstantBuffer.m = Math::toTransformationMatrix(modelComponent->m_Transform);
+                            l_meshConstantBuffer.m_prev = l_meshConstantBuffer.m; // @TODO: Need previous frame transform
+                            l_meshConstantBuffer.normalMat = Math::toRotationMatrix(modelComponent->m_Transform.m_rot);
                             l_meshConstantBuffer.UUID = (float)modelComponent->m_UUID;
 
                             MaterialConstantBuffer l_materialConstantBuffer;

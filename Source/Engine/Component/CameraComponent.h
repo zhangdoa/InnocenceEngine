@@ -10,6 +10,8 @@ namespace Inno
 	public:		
 		static uint32_t GetTypeID() { return 4; };
 		static const char* GetTypeName() { return "CameraComponent"; };
+
+		Transform m_Transform;
 		
 		Mat4 m_projectionMatrix;
 		Frustum m_frustum;

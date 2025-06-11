@@ -1,5 +1,6 @@
 #pragma once
-#include "../Component/CollisionComponent.h"
+#include "../Interface/ISystem.h"
+#include "../Component/ModelComponent.h"
 #include "../Common/GPUDataStructure.h"
 #include "CullingResult.h"
 

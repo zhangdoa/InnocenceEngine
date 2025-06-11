@@ -74,7 +74,7 @@ namespace Inno
         bool InitializeImpl(ShaderProgramComponent* rhs) override;
         bool InitializeImpl(SamplerComponent* rhs) override;
         bool InitializeImpl(GPUBufferComponent* rhs) override;
-        bool InitializeImpl(CollisionComponent* rhs) override;
+        bool InitializeImpl(ModelComponent* rhs) override;
 
         bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) override;
         bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) override;

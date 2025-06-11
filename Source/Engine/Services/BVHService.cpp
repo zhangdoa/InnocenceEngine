@@ -136,7 +136,8 @@ void BVHServiceImpl::Update()
 
     for (auto& i : m_Nodes)
     {
-        i.m_AABB = i.CollisionComponent->m_AABB;
+        // AABB now stored directly in ModelComponent
+        i.m_AABB = i.ModelComponent->m_AABB;
     }
 
     m_RootNode.m_AABB = g_Engine->Get<PhysicsSimulationService>()->GetStaticSceneAABB();
@@ -161,11 +162,11 @@ void BVHService::Update()
     m_Impl->Update();
 }
 
-void BVHService::AddNode(CollisionComponent* CollisionComponent)
+void BVHService::AddNode(ModelComponent* ModelComponent)
 {
     BVHNode l_BVHNode;
-    l_BVHNode.CollisionComponent = CollisionComponent;
-    l_BVHNode.m_AABB = CollisionComponent->m_AABB;
+    l_BVHNode.ModelComponent = ModelComponent;
+    l_BVHNode.m_AABB = ModelComponent->m_AABB;
 
     m_Impl->m_Nodes.emplace_back(l_BVHNode);
 

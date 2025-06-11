@@ -8,6 +8,7 @@
 #include <QTableWidget>
 #include <QMenu>
 #include "icomponentpropertyeditor.h"
+#include "transformwidget.h"
 #include "../Engine/Component/ModelComponent.h"
 #include "materialComponentpropertyeditor.h"
 #include "directoryviewer.h"
@@ -29,6 +30,7 @@ public:
 	void GetModelMap();
 
 private:
+	TransformWidget* m_transformWidget;
 	ComboLabelText* m_meshPrimitiveTopology;
 	ComboLabelText* m_textureWrapMethod;
 	ComboLabelText* m_meshUsage;
@@ -46,6 +48,7 @@ private:
     Inno::ModelComponent* m_component;
 
 public slots:
+	void SetTransform();
 	void SetMeshPrimitiveTopology();
 	void SetTextureWrapMethod();
 	void SetMeshUsage();

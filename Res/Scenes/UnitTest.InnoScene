@@ -1,253 +1,63 @@
 {
-    "SceneName": "sdsds",
-    "SceneEntities": [
+    "Name": "UnitTest",
+    "Entities": [
         {
             "UUID": 3161132831565031770,
-            "ObjectName": "Landscape Box",
-            "ChildrenComponents": [
+            "Name": "Landscape Box",
+            "Components": [
                 {
-                    "ComponentType": 1,
-                    "ParentTransformComponentEntityName": "RootTransform",
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 0.0,
-                            "Y": 0.10000000149011612,
-                            "Z": 0.0
-                        },
-                        "Rotation": {
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0,
-                            "W": 1.0
-                        },
-                        "Scale": {
-                            "X": 200.0,
-                            "Y": 0.10000000149011612,
-                            "Z": 200.0
-                        }
-                    }
-                },
-                {
-                    "ComponentType": 2,
-                    "MeshUsage": 1,
-                    "MeshShape": 7,
-                    "ModelFileName": "",
-                    "SimulatePhysics": true
+                    "Type": 2,
+                    "Name": "LandscapeBox.ModelComponent"
                 }
             ]
         },
         {
             "UUID": 3668918424501022487,
-            "ObjectName": "Player Character Camera",
-            "ChildrenComponents": [
+            "Name": "Player Character Camera",
+            "Components": [
                 {
-                    "ComponentType": 1,
-                    "ParentTransformComponentEntityName": "RootTransform",
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 0.0,
-                            "Y": 15.0,
-                            "Z": 40.0
-                        },
-                        "Rotation": {
-                            "X": -0.237685889005661,
-                            "Y": 3.3214198058573174e-10,
-                            "Z": -1.357352341635476e-09,
-                            "W": 0.9713420867919922
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    }
-                },
-                {
-                    "ComponentType": 4,
-                    "FOVX": 90.0,
-                    "WidthScale": 16.0,
-                    "HeightScale": 9.0,
-                    "zNear": 0.10000000149011612,
-                    "zFar": 1000.0,
-                    "Aperture": 2.200000047683716,
-                    "ShutterTime": 4.999999873689376e-05,
-                    "ISO": 100.0
+                    "Type": 4,
+                    "Name": "PlayerCharacterCamera.CameraComponent"
                 }
             ]
         },
         {
             "UUID": 2336949439204729478,
-            "ObjectName": "Sun",
-            "ChildrenComponents": [
+            "Name": "Sun",
+            "Components": [
                 {
-                    "ComponentType": 1,
-                    "ParentTransformComponentEntityName": "RootTransform",
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 0.0,
-                            "Y": 4.0,
-                            "Z": 0.0
-                        },
-                        "Rotation": {
-                            "X": -0.2175566405057907,
-                            "Y": -0.3912048041820526,
-                            "Z": -0.09572722762823105,
-                            "W": 0.8890805840492249
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    }
-                },
-                {
-                    "ComponentType": 3,
-                    "RGBColor": {
-                        "X": 1.0,
-                        "Y": 0.9507150650024414,
-                        "Z": 0.9043404459953308,
-                        "W": 1.0
-                    },
-                    "Shape": {
-                        "X": 0.0,
-                        "Y": 0.0,
-                        "Z": 0.0,
-                        "W": 1.0
-                    },
-                    "LightType": 0,
-                    "ColorTemperature": 5780.0,
-                    "LuminousFlux": 100000.0,
-                    "UseColorTemperature": true
+                    "Type": 3,
+                    "Name": "Sun.LightComponent"
                 }
             ]
         },
         {
             "UUID": 2691739971219814712,
-            "ObjectName": "Test Point Light",
-            "ChildrenComponents": [
+            "Name": "Test Point Light",
+            "Components": [
                 {
-                    "ComponentType": 1,
-                    "ParentTransformComponentEntityName": "RootTransform",
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -4.0,
-                            "Y": 3.0,
-                            "Z": -7.0
-                        },
-                        "Rotation": {
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0,
-                            "W": 1.0
-                        },
-                        "Scale": {
-                            "X": 0.10000000149011612,
-                            "Y": 0.10000000149011612,
-                            "Z": 0.10000000149011612
-                        }
-                    }
-                },
-                {
-                    "ComponentType": 3,
-                    "RGBColor": {
-                        "X": 1.0,
-                        "Y": 0.9507150650024414,
-                        "Z": 0.9043404459953308,
-                        "W": 1.0
-                    },
-                    "Shape": {
-                        "X": 62.85757064819336,
-                        "Y": 0.0,
-                        "Z": 0.0,
-                        "W": 1.0
-                    },
-                    "LightType": 1,
-                    "ColorTemperature": 5780.0,
-                    "LuminousFlux": 3000.0,
-                    "UseColorTemperature": true
+                    "Type": 3,
+                    "Name": "TestPointLight.LightComponent"
                 }
             ]
         },
         {
             "UUID": 4582724008952467600,
-            "ObjectName": "Test Sphere Light",
-            "ChildrenComponents": [
+            "Name": "Test Sphere Light",
+            "Components": [
                 {
-                    "ComponentType": 1,
-                    "ParentTransformComponentEntityName": "RootTransform",
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 6.0,
-                            "Y": 12.0,
-                            "Z": 2.0
-                        },
-                        "Rotation": {
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0,
-                            "W": 1.0
-                        },
-                        "Scale": {
-                            "X": 4.0,
-                            "Y": 4.0,
-                            "Z": 4.0
-                        }
-                    }
-                },
-                {
-                    "ComponentType": 3,
-                    "RGBColor": {
-                        "X": 1.0,
-                        "Y": 0.9507150650024414,
-                        "Z": 0.9043404459953308,
-                        "W": 1.0
-                    },
-                    "Shape": {
-                        "X": 4.0,
-                        "Y": 0.0,
-                        "Z": 0.0,
-                        "W": 1.0
-                    },
-                    "LightType": 3,
-                    "ColorTemperature": 5780.0,
-                    "LuminousFlux": 40.0,
-                    "UseColorTemperature": true
+                    "Type": 3,
+                    "Name": "TestSphereLight.LightComponent"
                 }
             ]
         },
         {
             "UUID": 3273485745194889751,
-            "ObjectName": "Player Character",
-            "ChildrenComponents": [
+            "Name": "Player Character",
+            "Components": [
                 {
-                    "ComponentType": 1,
-                    "ParentTransformComponentEntityName": "RootTransform",
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 27.713184356689453,
-                            "Y": 1.2000001668930054,
-                            "Z": 80.52407836914063
-                        },
-                        "Rotation": {
-                            "X": 2.0905398301351852e-08,
-                            "Y": -0.029716873541474342,
-                            "Z": -1.235039004399141e-08,
-                            "W": 0.9995583891868591
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    }
-                },
-                {
-                    "ComponentType": 2,
-                    "MeshUsage": 2,
-                    "MeshShape": 7,
-                    "ModelFileName": "",
-                    "SimulatePhysics": true
+                    "Type": 2,
+                    "Name": "PlayerCharacter.ModelComponent"
                 }
             ]
         }

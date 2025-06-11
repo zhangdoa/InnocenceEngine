@@ -8,6 +8,7 @@
 #include <QDoubleValidator>
 #include "icomponentpropertyeditor.h"
 #include "combolabeltext.h"
+#include "transformwidget.h"
 #include "../Engine/Component/LightComponent.h"
 
 class LightComponentPropertyEditor : public IComponentPropertyEditor
@@ -26,6 +27,7 @@ public:
 	void GetUseColorTemperature();
 
 private:
+	TransformWidget* m_transformWidget;
 	QLabel* m_colorLabel;
     ComboLabelText* m_colorR;
     ComboLabelText* m_colorG;
@@ -49,6 +51,7 @@ private:
     Inno::LightComponent* m_component;
 
 public slots:
+	void SetTransform();
 	void SetColor();
     void SetShape();
 	void SetLuminousFlux();

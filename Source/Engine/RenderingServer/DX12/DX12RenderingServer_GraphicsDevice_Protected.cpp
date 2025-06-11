@@ -642,7 +642,7 @@ bool DX12RenderingServer::OnSceneLoadingStart()
         l_descList->m_Descs.clear();
     }
 
-    m_RegisteredCollisionComponents.clear();
+    m_initializedModels.clear();
     
     Log(Verbose, "Raytracing instance descriptions have been cleared.");
 

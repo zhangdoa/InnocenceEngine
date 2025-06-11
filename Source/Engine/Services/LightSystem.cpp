@@ -64,8 +64,7 @@ void LightSystemImpl::UpdateCSMData(LightComponent* rhs)
 	if (l_cameraComponent == nullptr)
 		return;
 
-	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(rhs->m_Owner);
-	auto l_rotationMatrix = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+	auto l_rotationMatrix = Math::toRotationMatrix(rhs->m_Transform.m_rot);
 	auto l_rotationMatrix_inverse = l_rotationMatrix.inverse();
 
 	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;

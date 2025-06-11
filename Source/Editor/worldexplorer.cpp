@@ -196,13 +196,6 @@ T* WorldExplorer::addComponent()
     return nullptr;
 }
 
-void WorldExplorer::addTransformComponent()
-{
-    auto l_componentPtr = addComponent<TransformComponent>();
-    auto l_rootTranformComponent = static_cast<ITransformSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<TransformComponent>())->GetRootTransformComponent();
-    l_componentPtr->m_parentTransformComponent = const_cast<TransformComponent*>(l_rootTranformComponent);
-}
-
 void WorldExplorer::addModelComponent()
 {
     addComponent<ModelComponent>();
@@ -221,8 +214,6 @@ void WorldExplorer::addCameraComponent()
 void WorldExplorer::destroyComponent(Component *component)
 {
     // @TODO: Make this working again
-    // if (dynamic_cast<TransformComponent*>(component))
-    //     g_Engine->Get<ComponentManager>()->Destroy<TransformComponent>(component);
 }
 
 void WorldExplorer::deleteComponent()
@@ -274,7 +265,6 @@ void WorldExplorer::showContextMenu(QTreeWidgetItem* item, const QPoint& globalP
             menu.addAction("Rename", this, SLOT(startRename()));
 
             auto addCompoentMenu = menu.addMenu("Add Component");
-            addCompoentMenu->addAction("Add TransformComponent", this, SLOT(addTransformComponent()));
             addCompoentMenu->addAction("Add ModelComponent", this, SLOT(addModelComponent()));
             addCompoentMenu->addAction("Add LightComponent", this, SLOT(addLightComponent()));
             addCompoentMenu->addAction("Add CameraComponent", this, SLOT(addCameraComponent()));

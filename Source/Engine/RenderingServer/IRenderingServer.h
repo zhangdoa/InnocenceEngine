@@ -11,7 +11,7 @@
 #include "../Component/ShaderProgramComponent.h"
 #include "../Component/SamplerComponent.h"
 #include "../Component/GPUBufferComponent.h"
-#include "../Component/CollisionComponent.h"
+#include "../Component/ModelComponent.h"
 
 namespace Inno
 {
@@ -59,8 +59,6 @@ namespace Inno
 		void Initialize(ShaderProgramComponent* rhs);
 		void Initialize(SamplerComponent* rhs);
 		void Initialize(GPUBufferComponent* rhs);
-
-		void Initialize(CollisionComponent* rhs);
 
 		// Rendering Stage APIs
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
@@ -148,8 +146,7 @@ namespace Inno
 		virtual	bool InitializeImpl(ShaderProgramComponent* rhs) { return false; }
 		virtual bool InitializeImpl(SamplerComponent* rhs) { return false; }
 		virtual bool InitializeImpl(GPUBufferComponent* rhs) { return false; }
-
-		virtual bool InitializeImpl(CollisionComponent* rhs) { return false; }
+		virtual bool InitializeImpl(ModelComponent* rhs) { return false; }
 
         bool DeleteRenderTargets(RenderPassComponent* rhs);
 
@@ -239,13 +236,12 @@ namespace Inno
 		std::unordered_set<MaterialComponent*> m_initializedMaterials;
 		std::unordered_set<GPUBufferComponent*> m_initializedGPUBuffers;
 		std::vector<RenderPassComponent*> m_initializedRenderPasses;
+		std::unordered_set<ModelComponent*> m_initializedModels;
 	
         GPUBufferComponent* m_TLASBufferComponent = nullptr;
 		GPUBufferComponent* m_ScratchBufferComponent = nullptr;
  		GPUBufferComponent* m_RaytracingInstanceBufferComponent = nullptr;
-		std::shared_mutex m_CollisionComponentsMutex;
-		std::unordered_map<MeshComponent*, std::vector<CollisionComponent*>> m_UnregisteredCollisionComponents;
-        std::unordered_set<CollisionComponent*> m_RegisteredCollisionComponents;
+
         std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
 
 	private:

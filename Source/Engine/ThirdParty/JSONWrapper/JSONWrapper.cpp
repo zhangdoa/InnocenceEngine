@@ -89,13 +89,6 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		}
 	}
 
-	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<TransformComponent>())
-	{
-		if (i->m_Serializable)
-		{
-			Save(topLevel, i);
-		}
-	}
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>())
 	{
 		if (i->m_Serializable)
@@ -146,11 +139,7 @@ bool JSONWrapper::LoadScene(const char* fileName)
 			uint32_t componentTypeID = k["Type"];
 			std::string l_componentName = k["Name"];
 
-			if (componentTypeID == TransformComponent::GetTypeID())
-			{
-				g_Engine->Get<ComponentManager>()->Load<TransformComponent>(l_componentName.c_str(), l_entity);
-			}
-			else if (componentTypeID == ModelComponent::GetTypeID())
+			if (componentTypeID == ModelComponent::GetTypeID())
 			{
 				g_Engine->Get<ComponentManager>()->Load<ModelComponent>(l_componentName.c_str(), l_entity);
 			}

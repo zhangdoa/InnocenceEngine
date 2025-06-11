@@ -16,9 +16,12 @@ void CameraComponentPropertyEditor::initialize()
 
     m_title = new QLabel("CameraComponent");
     m_title->setStyleSheet(
-                "background-repeat: no-repeat;"
-                "background-position: left;"
-                );
+        "background-repeat: no-repeat;"
+        "background-position: left;"
+    );
+
+    m_transformWidget = new TransformWidget();
+    m_transformWidget->initialize();
 
     m_FOV = new ComboLabelText();
     m_FOV->Initialize("FOV");
@@ -51,6 +54,9 @@ void CameraComponentPropertyEditor::initialize()
 
     int row = 0;
     m_gridLayout->addWidget(m_title, row, 0, 1, 7);
+    row++;
+
+    m_gridLayout->addWidget(m_transformWidget, row, 0, 1, 7);
     row++;
 
     m_gridLayout->addWidget(m_FOV->GetLabelWidget(), row, 0, 1, 1);
@@ -87,6 +93,9 @@ void CameraComponentPropertyEditor::initialize()
 
     m_gridLayout->addWidget(m_line, row, 0, 1, 7);
 
+    connect(m_transformWidget, SIGNAL(positionChanged()), this, SLOT(SetTransform()));
+    connect(m_transformWidget, SIGNAL(rotationChanged()), this, SLOT(SetTransform()));
+    connect(m_transformWidget, SIGNAL(scaleChanged()), this, SLOT(SetTransform()));
     connect(m_FOV, SIGNAL(ValueChanged()), this, SLOT(SetFOV()));
     connect(m_widthScale, SIGNAL(ValueChanged()), this, SLOT(SetWidthScale()));
     connect(m_heightScale, SIGNAL(ValueChanged()), this, SLOT(SetHeightScale()));
@@ -104,9 +113,17 @@ void CameraComponentPropertyEditor::initialize()
     this->hide();
 }
 
-void CameraComponentPropertyEditor::edit(void *component)
+void CameraComponentPropertyEditor::edit(void* component)
 {
     m_component = reinterpret_cast<CameraComponent*>(component);
+
+    // Update transform widget
+    m_transformWidget->setPosition(m_component->m_Transform.m_pos.x, m_component->m_Transform.m_pos.y, m_component->m_Transform.m_pos.z);
+
+    auto eulerAngles = Math::quatToEulerAngle(m_component->m_Transform.m_rot);
+    m_transformWidget->setRotation(Math::radianToAngle(eulerAngles.x), Math::radianToAngle(eulerAngles.y), Math::radianToAngle(eulerAngles.z));
+
+    m_transformWidget->setScale(m_component->m_Transform.m_scale.x, m_component->m_Transform.m_scale.y, m_component->m_Transform.m_scale.z);
 
     GetFOV();
     GetWidthScale();
@@ -198,6 +215,25 @@ void CameraComponentPropertyEditor::SetShutterTime()
 void CameraComponentPropertyEditor::SetISO()
 {
     m_component->m_ISO = m_ISO->GetAsFloat();
+}
+
+void CameraComponentPropertyEditor::SetTransform()
+{
+    if (!m_component)
+        return;
+
+    float x, y, z;
+    m_transformWidget->getPosition(x, y, z);
+    m_component->m_Transform.m_pos = Vec4(x, y, z, 1.0f);
+
+    m_transformWidget->getRotation(x, y, z);
+    auto roll = Math::angleToRadian(x);
+    auto pitch = Math::angleToRadian(y);
+    auto yaw = Math::angleToRadian(z);
+    m_component->m_Transform.m_rot = Math::eulerAngleToQuat(roll, pitch, yaw);
+
+    m_transformWidget->getScale(x, y, z);
+    m_component->m_Transform.m_scale = Vec4(x, y, z, 1.0f);
 }
 
 void CameraComponentPropertyEditor::remove()

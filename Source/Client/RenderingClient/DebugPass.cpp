@@ -259,8 +259,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 			auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 // 			if(l_cameraComponent)
 // 			{			
-// 				auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_cameraComponent->m_Owner);
-// 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_translationMat;
+// 				auto l_m = l_cameraComponent->m_Transform.m_pos;
 // 				for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 // 				{
 // 					std::vector<Vec3> l_vertices;
@@ -289,8 +288,8 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 				}
 				
 // 				auto l_pCamera = l_cameraComponent->m_projectionMatrix;
-// 				auto l_rCamera = Math::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
-// 				auto l_tCamera = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
+// 				auto l_rCamera = Math::toRotationMatrix(l_cameraComponent->m_Transform.m_rot);
+// 				auto l_tCamera = Math::toTranslationMatrix(l_cameraComponent->m_Transform.m_pos);
 
 // 				auto l_vertices = Math::GenerateFrustumInWorldSpace(l_pCamera, l_rCamera, l_tCamera);
 
@@ -310,8 +309,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 			{
 // 				if(i->m_LightType == LightType::Directional)
 // 				{
-// 					auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(i->m_Owner);
-// 					auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+// 					auto l_r = i->m_Transform.m_rot;
 // 					auto l_rInv = l_r.inverse();
 
 // 					DebugPerObjectConstantBuffer l_meshData;
@@ -370,8 +368,7 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 // 			{
 // 				if (i->m_Model)
 // 				{
-// 					auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(i->m_Owner);
-// 					auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+// 					auto l_m = i->m_Transform;
 
 // 					for (size_t j = 0; j < i->m_Model->renderableSets.m_count; j++)
 // 					{
@@ -479,11 +476,11 @@ bool DebugPass::AddBVHNode(const BVHNode& node)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	static bool drawIntermediateBB = false;
-	if(node.CollisionComponent == nullptr && !drawIntermediateBB)
+	if(node.ModelComponent == nullptr && !drawIntermediateBB)
 		return true;
 
 	auto l_cubeMeshData = AddAABB(node.m_AABB);
-	l_cubeMeshData.materialID = node.CollisionComponent == nullptr ? 3 : 5;
+	l_cubeMeshData.materialID = node.ModelComponent == nullptr ? 3 : 5;
 
 	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
 

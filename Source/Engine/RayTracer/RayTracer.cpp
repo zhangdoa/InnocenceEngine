@@ -303,10 +303,9 @@ bool ExecuteRayTracing()
 	Log(Verbose, "Start ray tracing...");
 
 	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
-	auto l_cameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
-	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
-	auto l_lookat = l_lookfrom + Math::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
-	auto l_up = Math::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_lookfrom = Vec4(l_camera->m_Transform.m_pos, 1.0f);
+	auto l_lookat = l_lookfrom + Math::getDirection(Direction::Backward, l_camera->m_Transform.m_rot);
+	auto l_up = Math::getDirection(Direction::Up, l_camera->m_Transform.m_rot);
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
@@ -316,32 +315,9 @@ bool ExecuteRayTracing()
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_modelComponents.size());
 
-	// for (auto l_modelComponent : l_modelComponents)
-	// {
-	// 	if (!l_modelComponent->m_MeshShape == MeshShape::Sphere)
-	// 		continue;
-	// 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
-	// 	for (uint64_t j = 0; j < l_modelComponent->m_Model->renderableSets.m_count; j++)
-	// 	{
-	// 		auto l_pair = g_Engine->Get<AssetService>()->GetRenderableSet(l_modelComponent->m_Model->renderableSets.m_startOffset + j);
-	// 		if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
-	// 		{
-	// 			auto l_hitable = new HitableSphere();
-	// 			l_hitable->m_Material = new Lambertian();
-	// 			l_hitable->m_Material->Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
-	// 			l_hitable->m_Material->Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
-	// 			l_hitable->m_Material->Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
-	// 			l_hitable->m_Material->MRAT.x = l_pair->material->m_materialAttributes.Metallic;
-	// 			l_hitable->m_Material->MRAT.y = l_pair->material->m_materialAttributes.Roughness;
-
-	// 			l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos.xyz();
-	// 			l_hitable->m_Sphere.m_radius = 1.0f;
-
-	// 			l_hitableListVector.emplace_back(l_hitable);
-	// 			break;
-	// 		}
-	// 	}
-	// }
+	for (auto l_modelComponent : l_modelComponents)
+	{
+	}
 
 	auto l_hitable = new HitableSphere();
 	l_hitable->m_Material = new Lambertian();

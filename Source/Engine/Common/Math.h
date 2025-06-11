@@ -199,6 +199,15 @@ namespace Inno
 				return *this;
 			}
 
+			auto operator=(const TVec4<T>& rhs) -> TVec3<T>&
+			{
+				x = rhs.x;
+				y = rhs.y;
+				z = rhs.z;
+
+				return *this;
+			}
+
 			auto operator[](size_t i) -> T&
 			{
 				return (&x)[i];
@@ -209,6 +218,11 @@ namespace Inno
 			}
 
 			auto operator+(const TVec3<T>& rhs) const -> TVec3<T>
+			{
+				return TVec3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
+			}
+
+			auto operator+(const TVec4<T>& rhs) const -> TVec3<T>
 			{
 				return TVec3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
 			}
@@ -991,33 +1005,156 @@ namespace Inno
 		};
 
 		template <class T>
-		class TTransformVector
+		class TTransform
 		{
 		public:
-			TTransformVector() noexcept: m_pos(TVec4<T>(T(), T(), T(), one<T>)),
-				m_rot(TVec4<T>(T(), T(), T(), one<T>)),
-				m_scale(TVec4<T>(one<T>, one<T>, one<T>, one<T>)),
-				m_pad1(T(), T(), T(), T()) {}
+			TTransform() noexcept 
+				: m_pos(T(), T(), T())
+				, m_rot(T(), T(), T(), one<T>)  // identity quaternion (w,x,y,z)
+				, m_scale(one<T>, one<T>, one<T>)
+				, m_pad1(T(), T()) {}
 
-			~TTransformVector() {};
+			~TTransform() {};
 
-			TVec4<T> m_pos;	  // 4 * sizeof(T)
-			TVec4<T> m_rot;	  // 4 * sizeof(T)
-			TVec4<T> m_scale; // 4 * sizeof(T)
-			TVec4<T> m_pad1;  // 4 * sizeof(T)
-		};
+			// Core data - 48 bytes total, 16-byte aligned
+			TVec3<T> m_pos;     // 3 * sizeof(T) = 12 bytes
+			TVec4<T> m_rot;     // 4 * sizeof(T) = 16 bytes (quaternion w,x,y,z)
+			TVec3<T> m_scale;   // 3 * sizeof(T) = 12 bytes  
+			TVec2<T> m_pad1;    // 2 * sizeof(T) = 8 bytes padding
 
-		template <class T>
-		class TTransformMatrix
-		{
-		public:
-			TTransformMatrix() noexcept {}
-			~TTransformMatrix() {};
+			// Computed getters - inline implementations to avoid linker issues
+			auto GetMatrix() const -> TMat4<T>
+			{
+				// Create transformation matrix: T * R * S
+				auto scaleMat = TMat4<T>();
+				scaleMat.m00 = m_scale.x;
+				scaleMat.m11 = m_scale.y;
+				scaleMat.m22 = m_scale.z;
+				scaleMat.m33 = one<T>;
 
-			TMat4<T> m_translationMat;	  // 16 * sizeof(T)
-			TMat4<T> m_rotationMat;		  // 16 * sizeof(T)
-			TMat4<T> m_scaleMat;		  // 16 * sizeof(T)
-			TMat4<T> m_transformationMat; // 16 * sizeof(T)
+				// Rotation matrix from quaternion
+				auto rotMat = TMat4<T>();
+				rotMat.m00 = (one<T> - two<T> * m_rot.y * m_rot.y - two<T> * m_rot.z * m_rot.z);
+				rotMat.m01 = (two<T> * m_rot.x * m_rot.y - two<T> * m_rot.z * m_rot.w);
+				rotMat.m02 = (two<T> * m_rot.x * m_rot.z + two<T> * m_rot.y * m_rot.w);
+				rotMat.m10 = (two<T> * m_rot.x * m_rot.y + two<T> * m_rot.z * m_rot.w);
+				rotMat.m11 = (one<T> - two<T> * m_rot.x * m_rot.x - two<T> * m_rot.z * m_rot.z);
+				rotMat.m12 = (two<T> * m_rot.y * m_rot.z - two<T> * m_rot.x * m_rot.w);
+				rotMat.m20 = (two<T> * m_rot.x * m_rot.z - two<T> * m_rot.y * m_rot.w);
+				rotMat.m21 = (two<T> * m_rot.y * m_rot.z + two<T> * m_rot.x * m_rot.w);
+				rotMat.m22 = (one<T> - two<T> * m_rot.x * m_rot.x - two<T> * m_rot.y * m_rot.y);
+				rotMat.m33 = one<T>;
+
+				// Translation matrix
+				auto transMat = TMat4<T>();
+				transMat.m00 = one<T>;
+				transMat.m03 = m_pos.x;
+				transMat.m11 = one<T>;
+				transMat.m13 = m_pos.y;
+				transMat.m22 = one<T>;
+				transMat.m23 = m_pos.z;
+				transMat.m33 = one<T>;
+
+				return transMat * rotMat * scaleMat;
+			}
+
+			auto GetInverseMatrix() const -> TMat4<T>
+			{
+				return GetMatrix().inverse();
+			}
+
+			auto GetForward() const -> TVec3<T>
+			{
+				TVec4<T> forward(T(), T(), one<T>, T());
+				return forward.rotateDirectionByQuat(m_rot).xyz();
+			}
+
+			auto GetRight() const -> TVec3<T>
+			{
+				TVec4<T> right(one<T>, T(), T(), T());
+				return right.rotateDirectionByQuat(m_rot).xyz();
+			}
+
+			auto GetUp() const -> TVec3<T>
+			{
+				TVec4<T> up(T(), one<T>, T(), T());
+				return up.rotateDirectionByQuat(m_rot).xyz();
+			}
+
+			// Helper setters
+			void SetEulerAngles(const TVec3<T>& euler)
+			{
+				// Convert Euler angles to quaternion
+				T cy = std::cos(euler.z * half<T>);
+				T sy = std::sin(euler.z * half<T>);
+				T cp = std::cos(euler.y * half<T>);
+				T sp = std::sin(euler.y * half<T>);
+				T cr = std::cos(euler.x * half<T>);
+				T sr = std::sin(euler.x * half<T>);
+
+				m_rot.w = cy * cp * cr + sy * sp * sr;
+				m_rot.x = cy * cp * sr - sy * sp * cr;
+				m_rot.y = sy * cp * sr + cy * sp * cr;
+				m_rot.z = sy * cp * cr - cy * sp * sr;
+			}
+
+			void SetLookAt(const TVec3<T>& target, const TVec3<T>& up = TVec3<T>(T(), one<T>, T()))
+			{
+				TVec3<T> forward = (target - m_pos).normalize();
+				TVec3<T> right = forward.cross(up).normalize();
+				TVec3<T> newUp = right.cross(forward);
+
+				// Convert to quaternion from rotation matrix
+				TMat4<T> rotMat;
+				rotMat.m00 = right.x; rotMat.m01 = right.y; rotMat.m02 = right.z;
+				rotMat.m10 = newUp.x; rotMat.m11 = newUp.y; rotMat.m12 = newUp.z;
+				rotMat.m20 = -forward.x; rotMat.m21 = -forward.y; rotMat.m22 = -forward.z;
+				rotMat.m33 = one<T>;
+
+				T trace = rotMat.m00 + rotMat.m11 + rotMat.m22;
+				if (trace > T())
+				{
+					T s = half<T> / std::sqrt(trace + one<T>);
+					m_rot.w = half<T> * half<T> / s;
+					m_rot.x = (rotMat.m21 - rotMat.m12) * s;
+					m_rot.y = (rotMat.m02 - rotMat.m20) * s;
+					m_rot.z = (rotMat.m10 - rotMat.m01) * s;
+				}
+				else if (rotMat.m00 > rotMat.m11 && rotMat.m00 > rotMat.m22)
+				{
+					T s = two<T> * std::sqrt(one<T> + rotMat.m00 - rotMat.m11 - rotMat.m22);
+					m_rot.w = (rotMat.m21 - rotMat.m12) / s;
+					m_rot.x = half<T> * half<T> * s;
+					m_rot.y = (rotMat.m01 + rotMat.m10) / s;
+					m_rot.z = (rotMat.m02 + rotMat.m20) / s;
+				}
+				else if (rotMat.m11 > rotMat.m22)
+				{
+					T s = two<T> * std::sqrt(one<T> + rotMat.m11 - rotMat.m00 - rotMat.m22);
+					m_rot.w = (rotMat.m02 - rotMat.m20) / s;
+					m_rot.x = (rotMat.m01 + rotMat.m10) / s;
+					m_rot.y = half<T> * half<T> * s;
+					m_rot.z = (rotMat.m12 + rotMat.m21) / s;
+				}
+				else
+				{
+					T s = two<T> * std::sqrt(one<T> + rotMat.m22 - rotMat.m00 - rotMat.m11);
+					m_rot.w = (rotMat.m10 - rotMat.m01) / s;
+					m_rot.x = (rotMat.m02 + rotMat.m20) / s;
+					m_rot.y = (rotMat.m12 + rotMat.m21) / s;
+					m_rot.z = half<T> * half<T> * s;
+				}
+			}
+
+			void Translate(const TVec3<T>& delta)
+			{
+				m_pos = m_pos + delta;
+			}
+
+			void Rotate(const TVec4<T>& quat)
+			{
+				m_rot = m_rot.quatMul(quat);
+			}
 		};
 
 		template <class T>
@@ -1089,8 +1226,7 @@ namespace Inno
 		using Sphere = TSphere<float>;
 		using Plane = TPlane<float>;
 		using Frustum = TFrustum<float>;
-		using TransformVector = TTransformVector<float>;
-		using TransformMatrix = TTransformMatrix<float>;
+		using Transform = TTransform<float>;
 		using SH9 = TSH9<float>;
 	}
 }

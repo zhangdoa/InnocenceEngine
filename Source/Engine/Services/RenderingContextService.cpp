@@ -17,7 +17,6 @@
 #include "EntityManager.h"
 #include "ComponentManager.h"
 #include "PhysicsSimulationService.h"
-#include "TransformSystem.h"
 #include "LightSystem.h"
 #include "CameraSystem.h"
 
@@ -215,10 +214,6 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	if (l_camera == nullptr)
 		return false;
 
-	auto l_cameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_camera->m_Owner);
-	if (l_cameraTransformComponent == nullptr)
-		return false;
-
 	auto l_p = l_camera->m_projectionMatrix;
 
 	PerFrameConstantBuffer l_perFrameCB = {};
@@ -237,18 +232,14 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 
 	l_perFrameCB.radianceCacheHaltonJitter = Vec2(RadicalInverse(l_perFrameCB.frameIndex, 3) * 8.0f, RadicalInverse(l_perFrameCB.frameIndex, 5) * 8.0f);
 
-	auto r = Math::getInvertRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto r = Math::getInvertRotationMatrix(l_camera->m_Transform.m_rot);
+	auto t = Math::getInvertTranslationMatrix(Vec4(l_camera->m_Transform.m_pos, 1.0f));
 
-	auto t = Math::getInvertTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
-
-	l_perFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
-
+	l_perFrameCB.camera_posWS = l_camera->m_Transform.m_pos;
 	l_perFrameCB.v = r * t;
 
-	auto r_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	auto t_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
-
-	l_perFrameCB.v_prev = r_prev * t_prev;
+	// @TODO: Need to implement previous frame transform for camera component
+	l_perFrameCB.v_prev = l_perFrameCB.v; // Temporary - use current for prev
 
 	l_perFrameCB.zNear = l_camera->m_zNear;
 	l_perFrameCB.zFar = l_camera->m_zFar;
@@ -267,11 +258,7 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 	if (l_sun == nullptr)
 		return false;
 
-	auto l_sunTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_sun->m_Owner);
-	if (l_sunTransformComponent == nullptr)
-		return false;
-
-	l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+	l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun->m_Transform.m_rot);
 	l_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;
@@ -319,14 +306,14 @@ bool RenderingContextServiceImpl::UpdateLightData()
 
 	for (size_t i = 0; i < l_lightComponentCount; i++)
 	{
-		auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_lightComponents[i]->m_Owner);
-		if (l_transformComponent == nullptr)
+		auto l_lightComponent = l_lightComponents[i];
+		if (l_lightComponent == nullptr)
 			continue;
 
-		if (l_lightComponents[i]->m_LightType == LightType::Point)
+		if (l_lightComponent->m_LightType == LightType::Point)
 		{
 			PointLightConstantBuffer l_data;
-			l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
+			l_data.pos = l_lightComponent->m_Transform.m_pos;
 			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
 			m_pointLightCBVector.emplace_back(l_data);
@@ -334,7 +321,7 @@ bool RenderingContextServiceImpl::UpdateLightData()
 		else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
 		{
 			SphereLightConstantBuffer l_data;
-			l_data.pos = l_transformComponent->m_globalTransformVector.m_pos;
+			l_data.pos = l_lightComponent->m_Transform.m_pos;
 			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
 			m_sphereLightCBVector.emplace_back(l_data);
@@ -366,13 +353,6 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 	// 		continue;
 
 	// 	if (l_modelComponent->m_ObjectStatus != ObjectStatus::Activated)
-	// 		continue;
-
-	// 	auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(l_modelComponent->m_Owner);
-	// 	if (l_transformComponent == nullptr)
-	// 		continue;
-
-	// 	if (l_transformComponent->m_ObjectStatus != ObjectStatus::Activated)
 	// 		continue;
 
 	// 	auto l_renderableSet = l_cullingResult.m_CollisionComponent->m_RenderableSet;
@@ -482,13 +462,11 @@ bool RenderingContextServiceImpl::UpdateBillboardPassData()
 
 	for (auto i : l_lightComponents)
 	{
+		if (i == nullptr)
+			continue;
+		
 		PerObjectConstantBuffer l_meshCB;
-
-		auto l_transformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(i->m_Owner);
-		if (l_transformComponent != nullptr)
-		{
-			l_meshCB.m = Math::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
-		}
+		l_meshCB.m = Math::toTranslationMatrix(Vec4(i->m_Transform.m_pos, 1.0f));
 
 		switch (i->m_LightType)
 		{

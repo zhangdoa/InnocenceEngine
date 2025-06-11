@@ -25,7 +25,8 @@ namespace Inno
         void CreateRootComponent();
 		bool Update();
 
-		void CreatePhysXActor(CollisionComponent* CollisionComponent);
+		// CollisionComponent removed - using ModelComponent collision data now
+		void CreatePhysXActor(ModelComponent* ModelComponent);
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -50,8 +51,8 @@ namespace Inno
 		SceneBoundary m_TotalSceneBoundary;
 		SceneBoundary m_StaticSceneBoundary;
 
-		Entity* m_RootCollisionComponentEntity = 0;
-		CollisionComponent* m_RootCollisionComponent = 0;
+		Entity* m_RootModelComponentEntity = 0;
+		ModelComponent* m_RootModelComponent = 0;
 		std::vector<CullingResult> m_CullingResults;
 		mutable std::shared_mutex m_CullingResultsMutex;
 
@@ -114,7 +115,7 @@ bool PhysicsSimulationServiceImpl::Update()
 	return true;
 }
 
-void PhysicsSimulationServiceImpl::CreatePhysXActor(CollisionComponent* CollisionComponent)
+void PhysicsSimulationServiceImpl::CreatePhysXActor(ModelComponent* ModelComponent)
 {
 #if defined INNO_PLATFORM_WIN
 #endif
@@ -125,7 +126,8 @@ bool PhysicsSimulationService::Setup(ISystemConfig* systemConfig)
 	m_Impl = new PhysicsSimulationServiceImpl();
 	
 	// @TODO: Better not to hardcode the pool size.
-	g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_Impl->m_MaxComponentCount, this);
+	// CollisionComponent removed - using ModelComponent collision data now
+	// g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_Impl->m_MaxComponentCount, this);
 
 	return m_Impl->Setup();
 }
@@ -181,7 +183,7 @@ AABB PhysicsSimulationService::GetVisibleSceneAABB()
 
 AABB PhysicsSimulationService::GetStaticSceneAABB()
 {
-	return m_Impl->m_RootCollisionComponent->m_AABB;
+	return m_Impl->m_StaticSceneBoundary.m_AABB;
 }
 
 AABB PhysicsSimulationService::GetTotalSceneAABB()

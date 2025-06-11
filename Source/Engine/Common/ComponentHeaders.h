@@ -1,9 +1,7 @@
 #pragma once
-#include "../Component/TransformComponent.h"
 #include "../Component/ModelComponent.h"
 #include "../Component/LightComponent.h"
 #include "../Component/CameraComponent.h"
-#include "../Component/CollisionComponent.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/TextureComponent.h"

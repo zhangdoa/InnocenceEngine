@@ -1,5 +1,5 @@
 #pragma once
-#include "../Component/CollisionComponent.h"
+#include "../Component/ModelComponent.h"
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
@@ -13,7 +13,7 @@ namespace Inno
         std::vector<BVHNode>::iterator m_RightChild;
         size_t m_Depth = 0;
 
-        CollisionComponent* CollisionComponent = 0;
+        ModelComponent* ModelComponent = 0;
 
         bool operator==(const BVHNode& other) const
         {
@@ -32,7 +32,7 @@ namespace Inno
         BVHService();
 
         void Update();
-        void AddNode(CollisionComponent* CollisionComponent);
+        void AddNode(ModelComponent* ModelComponent);
         void ClearNodes();
         const std::vector<BVHNode>& GetNodes();
 

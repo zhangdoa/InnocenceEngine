@@ -143,6 +143,12 @@ namespace Inno
 		float padding[44];
 	};
 
+	struct alignas(16) CollisionPrimitives
+	{
+		AABB m_AABB = {};
+		Sphere m_Sphere = {};
+	};
+
 	struct DrawCallInfo
 	{
 		MeshComponent* mesh = 0;

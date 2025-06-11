@@ -1039,6 +1039,18 @@ namespace Inno
 		}
 
 		template <class T>
+		auto moveTo(const TVec3<T>& pos, const TVec3<T>& direction, T length) -> TVec3<T>
+		{
+			return pos + direction * length;
+		}
+
+		template <class T>
+		auto getInvertTranslationMatrix(const TVec3<T>& pos) -> TMat4<T>
+		{
+			return Math::toTranslationMatrix(TVec4<T>(pos, one<T>) * -one<T>);
+		}
+
+		template <class T>
 		auto getQuatRotator(const TVec4<T>& axis, T angle) -> TVec4<T>
 		{
 			TVec4<T> normalizedAxis = axis;
@@ -1094,31 +1106,12 @@ namespace Inno
 		}
 
 		template <class T>
-		auto LocalTransformVectorToGlobal(const TTransformVector<T>& localTransformVector, const TTransformVector<T>& parentTransformVector, const TTransformMatrix<T>& parentTransformMatrix) -> TTransformVector<T>
+		auto calcTransformationMatrix(const TTransform<T>& transform) -> TMat4<T>
 		{
-			TTransformVector<T> m;
-			m.m_pos = Math::calcGlobalPos(parentTransformMatrix.m_transformationMat, localTransformVector.m_pos);
-			m.m_rot = Math::calcGlobalRot(parentTransformVector.m_rot, localTransformVector.m_rot);
-			m.m_scale = Math::calcGlobalScale(parentTransformVector.m_scale, localTransformVector.m_scale);
-			return m;
-		}
-
-		template <class T>
-		auto calcTransformationMatrix(const TTransformMatrix<T>& transform) -> TMat4<T>
-		{
-			// @TODO: calculate by hand
-			return transform.m_translationMat * transform.m_rotationMat * transform.m_scaleMat;
-		}
-
-		template <class T>
-		auto TransformVectorToTransformMatrix(const TTransformVector<T>& transformVector) -> TTransformMatrix<T>
-		{
-			TTransformMatrix<T> m;
-			m.m_translationMat = Math::toTranslationMatrix(transformVector.m_pos);
-			m.m_rotationMat = Math::toRotationMatrix(transformVector.m_rot);
-			m.m_scaleMat = Math::toScaleMatrix(transformVector.m_scale);
-			m.m_transformationMat = calcTransformationMatrix(m);
-			return m;
+			auto translationMat = Math::toTranslationMatrix(TVec4<T>(transform.m_pos, one<T>));
+			auto rotationMat = Math::toRotationMatrix(transform.m_rot);
+			auto scaleMat = Math::toScaleMatrix(TVec4<T>(transform.m_scale, one<T>));
+			return translationMat * rotationMat * scaleMat;
 		}
 
 		template <class T>

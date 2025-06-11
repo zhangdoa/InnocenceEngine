@@ -337,18 +337,7 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 	m_initializedRenderPasses.emplace_back(rhs);
 }
 
-void IRenderingServer::Initialize(CollisionComponent* rhs)
-{
-	// std::lock_guard<std::shared_mutex> l_lock(m_CollisionComponentsMutex);
-	// if (m_RegisteredCollisionComponents.find(rhs) != m_RegisteredCollisionComponents.end())
-	// 	return;
 
-	// auto l_pair = m_UnregisteredCollisionComponents.find(rhs->m_RenderableSet->mesh);
-	// if (l_pair == m_UnregisteredCollisionComponents.end())
-	// 	m_UnregisteredCollisionComponents.emplace(rhs->m_RenderableSet->mesh, std::vector<CollisionComponent*>{rhs});
-	// else
-	// 	l_pair->second.emplace_back(rhs);
-}
 
 bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 {

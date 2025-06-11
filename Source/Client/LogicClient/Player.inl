@@ -23,18 +23,14 @@ namespace Inno
         ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
         Entity* m_playerCharacterEntity = nullptr;
-        TransformComponent* m_playerTransformComponent = nullptr;
         ModelComponent* m_playerModelComponent = nullptr;
 
         Entity* m_playerCameraEntity = nullptr;
-        TransformComponent* m_playerCameraTransformComponent = nullptr;
         CameraComponent* m_playerCameraComponent = nullptr;
 
         Entity* m_debugCameraEntity = nullptr;
-        TransformComponent* m_debugCameraTransformComponent = nullptr;
         CameraComponent* m_debugCameraComponent = nullptr;
 
-        TransformComponent* m_activeCameraTransformComponent = nullptr;
         CameraComponent* m_activeCameraComponent = nullptr;
 
         AnimationController* m_animationController = nullptr;
@@ -74,7 +70,8 @@ namespace Inno
 #endif
 
         bool m_isEventsRegistered = false;
-        void Move(TransformComponent* transformComponent, Direction direction, float length);
+        void Move(CameraComponent* cameraComponent, Direction direction, float length);
+        void Move(ModelComponent* modelComponent, Direction direction, float length);
         void RotateAroundPositiveYAxis(float offset);
         void RotateAroundRightAxis(float offset);
 
@@ -85,12 +82,10 @@ namespace Inno
 
     bool Player::Setup()
     {
-        auto l_rootTransformComponent = g_Engine->Get<ComponentManager>()->Get<TransformComponent>(0);
         auto l_playerCharacterEntity = g_Engine->Get<EntityManager>()->Find("Player Character");
         if (l_playerCharacterEntity.has_value())
         {
             m_playerCharacterEntity = *l_playerCharacterEntity;
-            m_playerTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(m_playerCharacterEntity);
             m_playerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(m_playerCharacterEntity);
         }
 
@@ -99,22 +94,17 @@ namespace Inno
         {
             m_playerCameraEntity = *l_playerCameraEntity;
             m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Find<CameraComponent>(m_playerCameraEntity);
-            m_playerCameraTransformComponent = g_Engine->Get<ComponentManager>()->Find<TransformComponent>(m_playerCameraEntity);
         }
         else
         {
             m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Player Character Camera/");
             m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
-            m_playerCameraTransformComponent = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
-            m_playerCameraTransformComponent->m_parentTransformComponent = l_rootTransformComponent;
         }
 
         if (!m_debugCameraEntity)
         {
             m_debugCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "Debug Camera/");
             m_debugCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
-            m_debugCameraTransformComponent = g_Engine->Get<ComponentManager>()->Spawn<TransformComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
-            m_debugCameraTransformComponent->m_parentTransformComponent = l_rootTransformComponent;
 
             m_debugCameraComponent->m_FOVX = m_playerCameraComponent->m_FOVX;
             m_debugCameraComponent->m_zNear = m_playerCameraComponent->m_zNear;
@@ -123,14 +113,13 @@ namespace Inno
             m_debugCameraComponent->m_heightScale = m_playerCameraComponent->m_heightScale;
         }
 
-        m_activeCameraTransformComponent = m_playerCameraTransformComponent;
         m_activeCameraComponent = m_playerCameraComponent;
         static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(m_playerCameraComponent);
         static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
 
         m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
         m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        m_cameraPlayerDistance = m_playerCameraTransformComponent->m_localTransformVector.m_pos - m_playerTransformComponent->m_localTransformVector.m_pos;
+        m_cameraPlayerDistance = m_playerCameraComponent->m_Transform.m_pos - m_playerModelComponent->m_Transform.m_pos;
         m_initialMoveSpeed = 0.05f;
         m_moveSpeed = m_initialMoveSpeed;
         m_rotateSpeed = 10.0f;
@@ -145,56 +134,52 @@ namespace Inno
         // -z actually so Direction::Backward
         f_moveForward = [&]() {
             auto l_tickTime = g_Engine->getTickTime();
-            l_tickTime;
             auto l_moveSpeed = m_moveSpeed * l_tickTime;
 
-            if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
+            if (m_activeCameraComponent == m_playerCameraComponent)
             {
-                Move(m_playerTransformComponent, Direction::Backward, l_moveSpeed);
+                Move(m_playerModelComponent, Direction::Backward, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Backward, l_moveSpeed);
+                Move(m_activeCameraComponent, Direction::Backward, l_moveSpeed);
             }
         };
         // +z actually so Direction::Backward
         f_moveBackward = [&]() {
             auto l_tickTime = g_Engine->getTickTime();
-            l_tickTime;
             auto l_moveSpeed = m_moveSpeed * l_tickTime;            
-            if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
+            if (m_activeCameraComponent == m_playerCameraComponent)
             {
-                Move(m_playerTransformComponent, Direction::Forward, l_moveSpeed);
+                Move(m_playerModelComponent, Direction::Forward, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Forward, l_moveSpeed);
+                Move(m_activeCameraComponent, Direction::Forward, l_moveSpeed);
             }
         };
         f_moveLeft = [&]() {
             auto l_tickTime = g_Engine->getTickTime();
-            l_tickTime;
             auto l_moveSpeed = m_moveSpeed * l_tickTime;             
-            if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
+            if (m_activeCameraComponent == m_playerCameraComponent)
             {
-                Move(m_playerTransformComponent, Direction::Left, l_moveSpeed);
+                Move(m_playerModelComponent, Direction::Left, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Left, l_moveSpeed);
+                Move(m_activeCameraComponent, Direction::Left, l_moveSpeed);
             }
         };
         f_moveRight = [&]() {
             auto l_tickTime = g_Engine->getTickTime();
-            l_tickTime;
             auto l_moveSpeed = m_moveSpeed * l_tickTime;   
-            if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
+            if (m_activeCameraComponent == m_playerCameraComponent)
             {
-                Move(m_playerTransformComponent, Direction::Right, l_moveSpeed);
+                Move(m_playerModelComponent, Direction::Right, l_moveSpeed);
             }
             if (!m_isTP)
             {
-                Move(m_activeCameraTransformComponent, Direction::Right, l_moveSpeed);
+                Move(m_activeCameraComponent, Direction::Right, l_moveSpeed);
             }
         };
 
@@ -211,21 +196,19 @@ namespace Inno
         f_rotateAroundRightAxis = std::bind(&Player::RotateAroundRightAxis, this, std::placeholders::_1);
 
         f_addForce = [&]() {
-            auto l_force = Math::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
+            auto l_force = Math::getDirection(Direction::Backward, m_playerCameraComponent->m_Transform.m_rot);
             l_force = l_force * 10.0f;
             g_Engine->Get<PhysicsSimulationService>()->AddForce(m_playerModelComponent, l_force);
         };
 
         f_switchCamera = [&]() {
-            if (m_activeCameraTransformComponent == m_playerCameraTransformComponent)
+            if (m_activeCameraComponent == m_playerCameraComponent)
             {
                 m_activeCameraComponent = m_debugCameraComponent;
-                m_activeCameraTransformComponent = m_debugCameraTransformComponent;
             }
             else
             {
                 m_activeCameraComponent = m_playerCameraComponent;
-                m_activeCameraTransformComponent = m_playerCameraTransformComponent;
             }
 
             static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
@@ -268,17 +251,23 @@ namespace Inno
         return true;
     }
 
-    void Player::Move(TransformComponent* transformComponent, Direction direction, float length)
+    void Player::Move(CameraComponent* cameraComponent, Direction direction, float length)
     {
         if (m_canMove)
         {
-            auto l_dir = Math::getDirection(direction, transformComponent->m_localTransformVector.m_rot);
-            auto l_currentPos = transformComponent->m_localTransformVector.m_pos;
-            transformComponent->m_localTransformVector_target.m_pos = Math::moveTo(l_currentPos, l_dir, length);
-            if (!m_smoothInterp)
-            {
-                transformComponent->m_localTransformVector.m_pos = transformComponent->m_localTransformVector_target.m_pos;
-            }
+            auto l_dir = Math::getDirection(direction, cameraComponent->m_Transform.m_rot);
+            auto l_currentPos = cameraComponent->m_Transform.m_pos;
+            cameraComponent->m_Transform.m_pos = Math::moveTo<float>(l_currentPos, l_dir, length);
+        }
+    }
+
+    void Player::Move(ModelComponent* modelComponent, Direction direction, float length)
+    {
+        if (m_canMove)
+        {
+            auto l_dir = Math::getDirection(direction, modelComponent->m_Transform.m_rot);
+            auto l_currentPos = modelComponent->m_Transform.m_pos;
+            modelComponent->m_Transform.m_pos = Math::moveTo<float>(l_currentPos, l_dir, length);
         }
     }
 
@@ -292,14 +281,9 @@ namespace Inno
 
             m_canSlerp = false;
 
-            m_playerTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_playerTransformComponent->m_localTransformVector_target.m_rot);
-            m_activeCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_activeCameraTransformComponent->m_localTransformVector_target.m_rot);
+            m_playerModelComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_playerModelComponent->m_Transform.m_rot);
+            m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_activeCameraComponent->m_Transform.m_rot);
 
-            if (!m_smoothInterp)
-            {
-                m_playerTransformComponent->m_localTransformVector.m_rot = m_playerTransformComponent->m_localTransformVector_target.m_rot;
-                m_activeCameraTransformComponent->m_localTransformVector.m_rot = m_activeCameraTransformComponent->m_localTransformVector_target.m_rot;
-            }
             m_canSlerp = true;
         }
     }
@@ -310,16 +294,11 @@ namespace Inno
         {
             m_canSlerp = false;
 
-            auto l_right = Math::getDirection(Direction::Right, m_activeCameraTransformComponent->m_localTransformVector_target.m_rot);
+            auto l_right = Math::getDirection(Direction::Right, m_activeCameraComponent->m_Transform.m_rot);
             m_targetCameraRotX = Math::getQuatRotator(
                 l_right,
                 ((offset * m_rotateSpeed) / 180.0f) * PI<float>);
-            m_activeCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotX.quatMul(m_activeCameraTransformComponent->m_localTransformVector_target.m_rot);
-
-            if (!m_smoothInterp)
-            {
-                m_activeCameraTransformComponent->m_localTransformVector.m_rot = m_activeCameraTransformComponent->m_localTransformVector_target.m_rot;
-            }
+            m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotX.quatMul(m_activeCameraComponent->m_Transform.m_rot);
 
             m_canSlerp = true;
         }
@@ -334,23 +313,15 @@ namespace Inno
 
         if (m_isTP)
         {
-            auto l_t = m_playerTransformComponent->m_globalTransformMatrix.m_translationMat;
-            auto l_r = m_playerTransformComponent->m_globalTransformMatrix.m_rotationMat;
-            auto l_m = l_t * l_r;
-
+            auto l_t = m_playerModelComponent->m_Transform.m_pos;
+            auto l_r = m_playerModelComponent->m_Transform.m_rot;
+            
             auto l_lp = m_cameraPlayerDistance;
             m_cameraPlayerDistance.w = 1.0f;
-            auto l_gp = l_m * m_cameraPlayerDistance;
+            auto l_gp = l_t + (Math::toRotationMatrix(l_r) * m_cameraPlayerDistance).xyz();
 
-            m_playerCameraTransformComponent->m_localTransformVector_target.m_pos = l_gp;
-            m_playerCameraTransformComponent->m_localTransformVector.m_pos = l_gp;
+            m_playerCameraComponent->m_Transform.m_pos = Vec4(l_gp.x, l_gp.y, l_gp.z, 1.0f);
         }
-
-        // auto l_targetCameraRotY = Math::getQuatRotator(
-        //     Vec4(1.0f, 0.0f, 0.0f, 0.0f),
-        //     ((-30.0f) / 180.0f) * PI<float>);
-
-        // m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = l_targetCameraRotY.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
 
         return true;
     }

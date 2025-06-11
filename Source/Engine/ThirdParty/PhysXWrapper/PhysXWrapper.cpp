@@ -10,7 +10,7 @@
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
 #include "../../Component/MeshComponent.h"
-#include "../../Component/CollisionComponent.h"
+#include "../../Component/ModelComponent.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/HIDService.h"
 
@@ -154,10 +154,9 @@ bool PhysXWrapperNS::Setup()
 
 				// @TODO: Add back the transform component update logic
 				// auto l_collisionComponent = reinterpret_cast<CollisionComponent*>(l_rigidBody->userData);
-				// auto l_transformComponent = l_collisionComponent->m_TransformComponent;
-				// l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
-				// l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
-				// l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
+				// auto l_transform = &l_collisionComponent->m_Transform;
+				// l_transform->m_pos = Vec4(p.x, p.y, p.z, 1.0f);
+				// l_transform->m_rot = Vec4(q.x, q.y, q.z, q.w);
 			}
 		});
 
@@ -633,22 +632,22 @@ bool PhysXWrapper::Terminate()
 	return PhysXWrapperNS::Terminate();
 }
 
-bool PhysXWrapper::createPxSphere(uint64_t index, const TransformVector& transformVector, float radius, bool isDynamic)
+bool PhysXWrapper::createPxSphere(uint64_t index, Vec4 position, float radius, bool isDynamic)
 {
-	return PhysXWrapperNS::createPxSphere(index, transformVector.m_pos, radius, isDynamic);
+	return PhysXWrapperNS::createPxSphere(index, position, radius, isDynamic);
 }
 
-bool PhysXWrapper::createPxBox(uint64_t index, const TransformVector& transformVector, bool isDynamic)
+bool PhysXWrapper::createPxBox(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic)
 {
-	return PhysXWrapperNS::createPxBox(index, transformVector.m_pos, transformVector.m_rot, transformVector.m_scale, isDynamic);
+	return PhysXWrapperNS::createPxBox(index, position, rotation, scale, isDynamic);
 }
 
-bool PhysXWrapper::createPxMesh(uint64_t index, const TransformVector& transformVector, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool PhysXWrapper::createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	return PhysXWrapperNS::createPxMesh(index, transformVector.m_pos, transformVector.m_rot, transformVector.m_scale, isDynamic, isConvex, vertices, indices);
+	return PhysXWrapperNS::createPxMesh(index, position, rotation, scale, isDynamic, isConvex, vertices, indices);
 }
 
-bool PhysXWrapper::addForce(CollisionComponent* rhs, Vec4 force)
+bool PhysXWrapper::addForce(ModelComponent* rhs, Vec4 force)
 {
 	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(rhs->m_SimulationProxy);
 	l_rigidBody->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
