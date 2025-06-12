@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDoubleValidator>
 #include "icomponentpropertyeditor.h"
 #include "combolabeltext.h"
@@ -20,6 +21,7 @@ public:
 	void initialize() override;
 	void edit(void* component) override;
 
+	void GetLightType();
 	void GetColor();
     void GetShape();
 	void GetLuminousFlux();
@@ -28,6 +30,10 @@ public:
 
 private:
 	TransformWidget* m_transformWidget;
+	
+	QLabel* m_lightTypeLabel;
+	QComboBox* m_lightTypeComboBox;
+	
 	QLabel* m_colorLabel;
     ComboLabelText* m_colorR;
     ComboLabelText* m_colorG;
@@ -52,6 +58,7 @@ private:
 
 public slots:
 	void SetTransform();
+	void SetLightType();
 	void SetColor();
     void SetShape();
 	void SetLuminousFlux();

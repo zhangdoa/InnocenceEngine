@@ -27,7 +27,6 @@ namespace Inno
 		static uint32_t GetTypeID() { return 6; };
 		static const char* GetTypeName() { return "MeshComponent"; };
 
-		uint64_t m_CollisionComponent = 0;
 		void* m_MappedMemory_VB = nullptr;
 		void* m_MappedMemory_IB = nullptr;
 		GPUBufferView m_VertexBufferView;

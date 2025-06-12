@@ -60,40 +60,40 @@ bool STBWrapper::Save(const char* fileName, const TextureDesc& textureDesc, void
 	{
 		if (textureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{
-			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, 1, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, 1, comp, (float*)textureData);
 		}
 		else if (textureDesc.Sampler == TextureSampler::Sampler2DArray
 			|| textureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, (float*)textureData);
 		}
 		else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, (float*)textureData);
 		}
 		else
 		{
-			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, (float*)textureData);
+			result = stbi_write_hdr((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, (float*)textureData);
 		}
 	}
 	else
 	{
 		if (textureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{
-			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, 1, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, 1, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else if (textureDesc.Sampler == TextureSampler::Sampler2DArray
 			|| textureDesc.Sampler == TextureSampler::Sampler3D)
 		{
-			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * textureDesc.DepthOrArraySize, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height * 6, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 		else
 		{
-			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
+			result = stbi_write_png((g_Engine->Get<IOService>()->getWorkingDirectory() + fileName).c_str(), (int32_t)textureDesc.Width, (int32_t)textureDesc.Height, comp, textureData, (int32_t)textureDesc.Width * sizeof(int32_t));
 		}
 	}
 

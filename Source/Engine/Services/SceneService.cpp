@@ -132,9 +132,42 @@ ObjectStatus SceneService::GetStatus()
 
 std::string SceneService::GetCurrentSceneName()
 {
-	auto l_currentSceneName = m_currentScene.substr(0, m_currentScene.find(".InnoScene"));
-	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
-	return l_currentSceneName;
+	if (m_currentScene.empty())
+	{
+		return "Untitled";
+	}
+	
+	std::string l_currentSceneName = m_currentScene;
+	
+	// Remove .InnoScene extension if present
+	size_t extensionPos = l_currentSceneName.find(".InnoScene");
+	if (extensionPos != std::string::npos)
+	{
+		l_currentSceneName = l_currentSceneName.substr(0, extensionPos);
+	}
+	
+	// Extract filename from path (look for last // or /)
+	size_t lastSlashPos = l_currentSceneName.rfind("//");
+	if (lastSlashPos == std::string::npos)
+	{
+		lastSlashPos = l_currentSceneName.rfind("/");
+	}
+	if (lastSlashPos == std::string::npos)
+	{
+		lastSlashPos = l_currentSceneName.rfind("\\");
+	}
+	
+	if (lastSlashPos != std::string::npos && lastSlashPos + 1 < l_currentSceneName.length())
+	{
+		l_currentSceneName = l_currentSceneName.substr(lastSlashPos + 1);
+	}
+	else if (lastSlashPos != std::string::npos && lastSlashPos + 2 < l_currentSceneName.length())
+	{
+		// Handle double slash case
+		l_currentSceneName = l_currentSceneName.substr(lastSlashPos + 2);
+	}
+	
+	return l_currentSceneName.empty() ? "Untitled" : l_currentSceneName;
 }
 
 bool SceneService::Load(const char* fileName, bool AsyncLoad)

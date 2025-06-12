@@ -2,27 +2,7 @@
     "Name": "UnitTest",
     "Entities": [
         {
-            "UUID": 3161132831565031770,
-            "Name": "Landscape Box",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "LandscapeBox.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 3668918424501022487,
-            "Name": "Player Character Camera",
-            "Components": [
-                {
-                    "Type": 4,
-                    "Name": "PlayerCharacterCamera.CameraComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 2336949439204729478,
+            "UUID": 2887582696398583175,
             "Name": "Sun",
             "Components": [
                 {
@@ -32,32 +12,52 @@
             ]
         },
         {
-            "UUID": 2691739971219814712,
+            "UUID": 4516936720660070852,
+            "Name": "Main Camera",
+            "Components": [
+                {
+                    "Type": 4,
+                    "Name": "Main Camera.CameraComponent"
+                }
+            ]
+        },
+        {
+            "UUID": 4565143759694083001,
             "Name": "Test Point Light",
             "Components": [
                 {
                     "Type": 3,
-                    "Name": "TestPointLight.LightComponent"
+                    "Name": "Test Point Light.LightComponent"
                 }
             ]
         },
         {
-            "UUID": 4582724008952467600,
+            "UUID": 2515977160818263378,
             "Name": "Test Sphere Light",
             "Components": [
                 {
                     "Type": 3,
-                    "Name": "TestSphereLight.LightComponent"
+                    "Name": "Test Sphere Light.LightComponent"
                 }
             ]
         },
         {
-            "UUID": 3273485745194889751,
+            "UUID": 2655835598380720967,
             "Name": "Player Character",
             "Components": [
                 {
                     "Type": 2,
-                    "Name": "PlayerCharacter.ModelComponent"
+                    "Name": "Player Character.ModelComponent"
+                }
+            ]
+        },
+        {
+            "UUID": 4223712849007900498,
+            "Name": "Landscape Box",
+            "Components": [
+                {
+                    "Type": 2,
+                    "Name": "Landscape Box.ModelComponent"
                 }
             ]
         }

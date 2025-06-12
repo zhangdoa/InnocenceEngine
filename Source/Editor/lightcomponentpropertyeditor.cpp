@@ -22,6 +22,17 @@ void LightComponentPropertyEditor::initialize()
 	m_transformWidget = new TransformWidget();
 	m_transformWidget->initialize();
 
+	m_lightTypeLabel = new QLabel("Light Type");
+	
+	m_lightTypeComboBox = new QComboBox();
+	m_lightTypeComboBox->addItem("Directional");
+	m_lightTypeComboBox->addItem("Point");
+	m_lightTypeComboBox->addItem("Spot");
+	m_lightTypeComboBox->addItem("Sphere");
+	m_lightTypeComboBox->addItem("Disk");
+	m_lightTypeComboBox->addItem("Tube");
+	m_lightTypeComboBox->addItem("Rectangle");
+
 	m_colorLabel = new QLabel("Color");
 
 	m_colorR = new ComboLabelText();
@@ -71,6 +82,12 @@ void LightComponentPropertyEditor::initialize()
 	row++;
 
 	m_gridLayout->addWidget(m_transformWidget, row, 0, 1, 7);
+	row++;
+
+	m_gridLayout->addWidget(m_lightTypeLabel, row, 0, 1, 7);
+	row++;
+
+	m_gridLayout->addWidget(m_lightTypeComboBox, row, 1, 1, 6);
 	row++;
 
 	m_gridLayout->addWidget(m_colorLabel, row, 0, 1, 7);
@@ -123,6 +140,7 @@ void LightComponentPropertyEditor::initialize()
 	connect(m_transformWidget, SIGNAL(positionChanged()), this, SLOT(SetTransform()));
 	connect(m_transformWidget, SIGNAL(rotationChanged()), this, SLOT(SetTransform()));
 	connect(m_transformWidget, SIGNAL(scaleChanged()), this, SLOT(SetTransform()));
+	connect(m_lightTypeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(SetLightType()));
 	connect(m_colorR, SIGNAL(ValueChanged()), this, SLOT(SetColor()));
 	connect(m_colorG, SIGNAL(ValueChanged()), this, SLOT(SetColor()));
 	connect(m_colorB, SIGNAL(ValueChanged()), this, SLOT(SetColor()));
@@ -150,6 +168,7 @@ void LightComponentPropertyEditor::edit(void* component)
 
 	m_transformWidget->setScale(m_component->m_Transform.m_scale.x, m_component->m_Transform.m_scale.y, m_component->m_Transform.m_scale.z);
 
+	GetLightType();
 	GetColor();
 	GetShape();
 	GetLuminousFlux();
@@ -157,6 +176,15 @@ void LightComponentPropertyEditor::edit(void* component)
 	GetUseColorTemperature();
 
 	this->show();
+}
+
+void LightComponentPropertyEditor::GetLightType()
+{
+	if (!m_component)
+		return;
+
+	int lightTypeIndex = static_cast<int>(m_component->m_LightType);
+	m_lightTypeComboBox->setCurrentIndex(lightTypeIndex);
 }
 
 void LightComponentPropertyEditor::GetColor()
@@ -212,6 +240,15 @@ void LightComponentPropertyEditor::GetUseColorTemperature()
 	bool useColorTemperature = m_component->m_UseColorTemperature;
 
 	m_useColorTemperature->setChecked(useColorTemperature);
+}
+
+void LightComponentPropertyEditor::SetLightType()
+{
+	if (!m_component)
+		return;
+
+	int selectedIndex = m_lightTypeComboBox->currentIndex();
+	m_component->m_LightType = static_cast<Inno::LightType>(selectedIndex);
 }
 
 void LightComponentPropertyEditor::SetColor()

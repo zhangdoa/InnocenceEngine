@@ -238,6 +238,9 @@ namespace Inno
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshIndexBuffers_Default;
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshBLAS;
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshScratchBuffers;
+        
+        // Texture upload buffers to keep them alive during GPU command execution
+        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_TextureUploadBuffers;
 
         // Component pools
         TObjectPool<DX12PipelineStateObject>* m_PSOPool = nullptr;

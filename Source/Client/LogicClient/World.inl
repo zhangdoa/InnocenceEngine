@@ -402,7 +402,7 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneService>()->Load("..//Res//Scenes//UnitTest.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//UnitTest.InnoScene");
 
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");

@@ -30,13 +30,31 @@ DirectoryViewer::DirectoryViewer(QWidget *parent) : QSplitter(parent)
 void DirectoryViewer::Initialize()
 {
     auto l_workingDir = g_Engine->Get<IOService>()->getWorkingDirectory();
-    l_workingDir += "..//Res//";
+    l_workingDir += "..//";
 
     m_listViewer->SetRootPath(l_workingDir.c_str());
     m_treeViewer->SetRootPath(l_workingDir.c_str());
 
     connect(m_listViewer, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(UpdateDirectoryTree(QModelIndex)));
+    connect(m_listViewer, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(onFileDoubleClicked(QModelIndex)));
     connect(m_treeViewer, SIGNAL(clicked(QModelIndex)), this, SLOT(UpdateDirectoryList(QModelIndex)));
+}
+
+void DirectoryViewer::SetFilter(const QString& filter)
+{
+    // Apply filter to list viewer if it supports it
+    // For now just store it - real implementation would set QFileSystemModel nameFilters
+}
+
+void DirectoryViewer::onFileDoubleClicked(QModelIndex index)
+{
+    QString path = m_listViewer->GetFilePath(index);
+    QFileInfo fileInfo(path);
+    
+    if (fileInfo.isFile())
+    {
+        emit fileSelected(path);
+    }
 }
 
 void DirectoryViewer::UpdateDirectoryList(QModelIndex index)

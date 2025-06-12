@@ -10,11 +10,7 @@ void JSONWrapper::to_json(json& j, const Entity& p)
 	j = json
 	{
 		{"UUID", p.m_UUID},
-#ifdef INNO_DEBUG
-		{"ObjectName", p.m_InstanceName.c_str()},
-#else
-		{"ObjectName", "Entity"},
-#endif
+		{"Name", p.m_InstanceName.c_str()},
 	};
 }
 

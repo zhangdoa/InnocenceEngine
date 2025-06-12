@@ -7,6 +7,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+	
+	// Set window to maximize on startup and center it properly
+	this->setWindowState(Qt::WindowMaximized);
+	
+	// Alternative: if you prefer setting to available screen geometry
+	// QRect screenGeometry = QApplication::desktop()->availableGeometry();
+	// this->setGeometry(screenGeometry);
 }
 
 MainWindow::~MainWindow()

@@ -86,70 +86,49 @@ bool AssetService::LoadScene(const char* fileName)
 	return JSONWrapper::LoadScene(fileName);
 }
 
-
-
-
 bool AssetService::Load(const char* fileName, ModelComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 bool AssetService::Load(const char* fileName, DrawCallComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 bool AssetService::Load(const char* fileName, MeshComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 bool AssetService::Load(const char* fileName, MaterialComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 bool AssetService::Load(const char* fileName, TextureComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 // bool AssetService::Load(const char* fileName, SkeletonComponent& component)
 // {
-// 	JSONWrapper::Load(fileName, component);
-
-// 	return component.m_UUID != 0;
+//		return JSONWrapper::Load(fileName, component);
 // }
 
 // bool AssetService::Load(const char* fileName, AnimationComponent& component)
 // {
-// 	JSONWrapper::Load(fileName, component);
-
-// 	return component.m_UUID != 0;
+//		return JSONWrapper::Load(fileName, component);
 // }
 
 bool AssetService::Load(const char* fileName, CameraComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 bool AssetService::Load(const char* fileName, LightComponent& component)
 {
-	JSONWrapper::Load(fileName, component);
-
-	return component.m_UUID != 0;
+	return JSONWrapper::Load(fileName, component);
 }
 
 bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)

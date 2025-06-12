@@ -5,6 +5,7 @@
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/EntityManager.h"
 #include "../Engine/Services/ComponentManager.h"
+#include <QHeaderView>
 
 using namespace Inno;
 
@@ -14,6 +15,29 @@ WorldExplorer::WorldExplorer(QWidget* parent) : QTreeWidget(parent)
     connect(this,
             SIGNAL(customContextMenuRequested(const QPoint&)),
             SLOT(onCustomContextMenuRequested(const QPoint&)));
+    
+    // Set better row height for readability
+    this->setUniformRowHeights(true);
+    this->setItemsExpandable(true);
+    this->setRootIsDecorated(true);
+    
+    // Set larger row height and proper styling for input fields
+    this->setStyleSheet(
+        "QTreeWidget::item { "
+        "    height: 32px; "
+        "    padding: 4px; "
+        "} "
+        "QTreeWidget::item:edit { "
+        "    height: 32px; "
+        "    padding: 4px; "
+        "    font-size: 12px; "
+        "}"
+    );
+    
+    // Set column width to make input field wider
+    this->setColumnCount(1);
+    this->header()->setStretchLastSection(true);
+    this->setColumnWidth(0, 300); // Set wider column width for better text input
 }
 
 void WorldExplorer::buildTree()
@@ -117,13 +141,47 @@ void WorldExplorer::endRename()
 
     if (l_componentType != -1)
     {
+        // Renaming a component
         auto l_componentPtr = reinterpret_cast<Component*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
         l_componentPtr->m_InstanceName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
     }
     else
     {
+        // Renaming an entity - also update all child components
         auto l_entityPtr = reinterpret_cast<Entity*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
-        l_entityPtr->m_InstanceName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
+        std::string newEntityName = m_currentEditingItem->text(0).toStdString();
+        l_entityPtr->m_InstanceName = (newEntityName + "/").c_str();
+        
+        // Update all child components with the new entity name
+        for (int i = 0; i < m_currentEditingItem->childCount(); i++)
+        {
+            auto l_childItem = m_currentEditingItem->child(i);
+            auto l_componentPtr = reinterpret_cast<Component*>(l_childItem->data(1, Qt::UserRole).value<void*>());
+            
+            // Extract component type name from the current component name
+            std::string currentComponentName = l_componentPtr->m_InstanceName.c_str();
+            
+            // Find the first dot to separate entity name from component type
+            size_t firstDotPos = currentComponentName.find('.');
+            
+            if (firstDotPos != std::string::npos)
+            {
+                // Get the component type part (everything from the dot onwards: ".ComponentType/")
+                std::string componentTypePart = currentComponentName.substr(firstDotPos);
+                
+                // Create new component name: EntityName + .ComponentType/
+                std::string newComponentName = newEntityName + componentTypePart;
+                l_componentPtr->m_InstanceName = (newComponentName + "/").c_str();
+                
+                // Update the tree widget display text (remove trailing slash for display)
+                std::string displayName = newComponentName;
+                if (!displayName.empty() && displayName.back() == '/')
+                {
+                    displayName.pop_back();
+                }
+                l_childItem->setText(0, displayName.c_str());
+            }
+        }
     }
 
     m_currentEditingItem->setFlags(m_currentEditingItem->flags() & ~Qt::ItemIsEditable);
@@ -190,6 +248,7 @@ T* WorldExplorer::addComponent()
         setCurrentItem(l_componentItem);
         startRename();
 
+        l_componentPtr->m_ObjectStatus = ObjectStatus::Activated;
         return l_componentPtr;
     }
 
@@ -208,12 +267,66 @@ void WorldExplorer::addLightComponent()
 
 void WorldExplorer::addCameraComponent()
 {
-    addComponent<CameraComponent>();
+    auto l_camera = addComponent<CameraComponent>();
+    static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_camera);
+    static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_camera);
 }
 
 void WorldExplorer::destroyComponent(Component *component)
 {
-    // @TODO: Make this working again
+    if (!component)
+    {
+        return;
+    }
+
+    // Get the component type from the tree widget item data
+    auto l_items = this->selectedItems();
+    if (l_items.count() == 0)
+        return;
+        
+    auto item = l_items[0];
+    auto componentType = item->data(0, Qt::UserRole).toInt();
+    
+    if (componentType == ModelComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<ModelComponent*>(component));
+    }
+    else if (componentType == LightComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<LightComponent*>(component));
+    }
+    else if (componentType == CameraComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<CameraComponent*>(component));
+    }
+    else if (componentType == MeshComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MeshComponent*>(component));
+    }
+    else if (componentType == MaterialComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component));
+    }
+    else if (componentType == TextureComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
+    }
+    else if (componentType == SkeletonComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component));
+    }
+    else if (componentType == AnimationComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<AnimationComponent*>(component));
+    }
+    else if (componentType == DrawCallComponent::GetTypeID())
+    {
+        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<DrawCallComponent*>(component));
+    }
+    else
+    {
+        // Unknown component type - log warning or handle gracefully
+    }
 }
 
 void WorldExplorer::deleteComponent()

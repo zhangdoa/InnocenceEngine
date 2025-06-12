@@ -41,20 +41,30 @@ namespace Inno
 				return true;
 
 			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str());
+
+			// Mark matching components for destruction and set their pointers to nullptr
 			m_ComponentPointers.for_each([this, objectLifespan](T*& component)
 				{
-					if (component->m_ObjectLifespan == objectLifespan)
+					if (component && component->m_ObjectLifespan == objectLifespan)
 					{
+						// Remove from lookup tables first
+						m_ComponentLUT.erase(component->m_Owner);
+						m_ComponentLUTByUUID.erase(component->m_UUID);
+
+						// Destroy the component
 						DestroyComponent(component);
+
+						// Set pointer to nullptr so it gets removed from vector
 						component = nullptr;
 					}
 				});
 
-			m_ComponentPointers.erase_if([](T* component) { return component == nullptr; });
-			m_ComponentLUT.clear();
-			m_ComponentLUTByUUID.clear();
+			// Remove all null pointers from component vector
+			m_ComponentPointers.erase_if([](T* component) {
+				return component == nullptr;
+				});
 
-			Log(Verbose, "Removing all", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
+			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
 			return true;
 		}
 
@@ -79,13 +89,13 @@ namespace Inno
 			l_Component->m_ObjectLifespan = objectLifespan;
 			l_Component->m_Owner = owner;
 
-			l_Component->m_InstanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) 
-			+ "." + std::string(T::GetTypeName()) + "/").c_str());
+			l_Component->m_InstanceName = ObjectName((std::string(owner->m_InstanceName.c_str())
+				+ "." + std::string(T::GetTypeName()) + "/").c_str());
 
 			m_ComponentPointers.emplace_back(l_Component);
 			m_ComponentLUT.emplace(owner, l_Component);
 			m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
-			
+
 			return l_Component;
 		}
 
@@ -153,20 +163,26 @@ namespace Inno
 		{
 			uint64_t l_result = 0;
 			std::string l_filePath = AssetService::GetAssetFilePath(componentName);
-			if (!FindLoaded(l_filePath.c_str(), l_result))
-			{
-				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+			if (FindLoaded(l_filePath.c_str(), l_result))
+				return l_result;
 
-				auto l_componentPtr = Spawn(entity, true, ObjectLifespan::Scene);
-				auto& component = *(l_componentPtr);
-				if (AssetService::Load(l_filePath.c_str(), component))
-				{
-					l_result = component.m_UUID;
-					RecordLoaded(l_filePath.c_str(), l_result);
-					component.m_ObjectStatus = ObjectStatus::Activated;
-				}
+			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+
+			auto l_componentPtr = Spawn(entity, true, entity->m_ObjectLifespan);
+			auto& component = *(l_componentPtr);
+			if (!AssetService::Load(l_filePath.c_str(), component))
+			{
+				DestroyComponent(l_componentPtr);
+				return 0;
 			}
 
+			l_result = component.m_UUID;
+
+			m_ComponentLUT.emplace(entity, l_componentPtr);
+			m_ComponentLUTByUUID.emplace(l_result, l_componentPtr);
+			m_LoadedComponents.emplace(l_filePath, l_result);
+
+			component.m_ObjectStatus = ObjectStatus::Activated;
 			return l_result;
 		}
 
@@ -180,19 +196,12 @@ namespace Inno
 			}
 
 			component->m_ObjectStatus = ObjectStatus::Terminated;
-			m_ComponentLUT.erase(component->m_Owner);
 			static_cast<TObjectPool<T>*>(m_ComponentPool)->Destroy(component);
 
 			return true;
 		}
 
 	private:
-		bool RecordLoaded(const char* fileName, uint64_t value)
-		{
-			m_LoadedComponents.emplace(fileName, value);
-			return true;
-		}
-
 		bool FindLoaded(const char* fileName, uint64_t& value)
 		{
 			auto l_loaded = m_LoadedComponents.find(fileName);

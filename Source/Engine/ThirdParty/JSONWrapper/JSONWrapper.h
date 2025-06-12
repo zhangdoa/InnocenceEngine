@@ -15,7 +15,7 @@ namespace Inno
 		void to_json(json& j, const Vec4& p);
 		void to_json(json& j, const Mat4& p);
 		void to_json(json& j, const Transform& p);
-		
+
 		void to_json(json& j, const Entity& p);
 
 
@@ -33,14 +33,13 @@ namespace Inno
 
 		bool SaveScene(const char* fileName);
 		bool LoadScene(const char* fileName);
-		
 
-		void Load(const char* fileName, ModelComponent& component);
-		void Load(const char* fileName, DrawCallComponent& component);
-		void Load(const char* fileName, MeshComponent& component);
-		void Load(const char* fileName, MaterialComponent& component);
-		void Load(const char* fileName, TextureComponent& component);
-		void Load(const char* fileName, CameraComponent& component);
-		void Load(const char* fileName, LightComponent& component);
+		bool Load(const char* fileName, ModelComponent& component);
+		bool Load(const char* fileName, DrawCallComponent& component);
+		bool Load(const char* fileName, MeshComponent& component);
+		bool Load(const char* fileName, MaterialComponent& component);
+		bool Load(const char* fileName, TextureComponent& component);
+		bool Load(const char* fileName, CameraComponent& component);
+		bool Load(const char* fileName, LightComponent& component);
 	}
 }

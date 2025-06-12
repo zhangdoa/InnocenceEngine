@@ -5,13 +5,25 @@
 #include <QPushButton>
 #include <QWidget>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QTableWidget>
 #include <QMenu>
+#include <QAction>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMessageBox>
 #include "icomponentpropertyeditor.h"
 #include "transformwidget.h"
 #include "../Engine/Component/ModelComponent.h"
 #include "materialComponentpropertyeditor.h"
 #include "directoryviewer.h"
+
+enum class AssetType
+{
+    Mesh,
+    Material
+};
 
 class ModelComponentPropertyEditor : public IComponentPropertyEditor
 {
@@ -22,46 +34,39 @@ public:
 	void initialize() override;
 	void edit(void* component) override;
 
-    void GetMeshPrimitiveTopology();
-	void GetTextureWrapMethod();
-	void GetMeshUsage();
-	void GetMeshSource();
-	void GetProceduralMeshShape();
-	void GetModelMap();
+	void RefreshDrawCallList();
 
 private:
 	TransformWidget* m_transformWidget;
-	ComboLabelText* m_meshPrimitiveTopology;
-	ComboLabelText* m_textureWrapMethod;
-	ComboLabelText* m_meshUsage;
-	ComboLabelText* m_meshSource;
-	ComboLabelText* m_proceduralMeshShape;
 
 	QLabel* m_modelNameLabel;
-	QPushButton* m_chooseModelButton;
-	QLabel* m_modelListLabel;
-	QTableWidget* m_modelList;
+	QPushButton* m_addMeshButton;
+	QPushButton* m_addMaterialButton;
+	QPushButton* m_removeSelectedButton;
+	QLabel* m_drawCallListLabel;
+	QTableWidget* m_drawCallList;
 
 	MaterialComponentPropertyEditor* m_MaterialCompEditor;
 	DirectoryViewer* m_dirViewer;
+	AssetType m_currentAssetType;
 
     Inno::ModelComponent* m_component;
+    
+    void CreateDrawCall(const QString& assetPath, bool isMesh);
+    void RemoveDrawCall(int row);
 
 public slots:
 	void SetTransform();
-	void SetMeshPrimitiveTopology();
-	void SetTextureWrapMethod();
-	void SetMeshUsage();
-	void SetMeshSource();
-	void SetProceduralMeshShape();
-
 	void remove() override;
+	void AddMesh();
+	void AddMaterial();
+	void RemoveSelected();
+	void onFileSelected(const QString& filePath);
 
 private slots:
 	void onCustomContextMenuRequested(const QPoint& pos);
 	void showContextMenu(const QPoint& globalPos);
 	void tableItemClicked(int row, int column);
-	void ChooseModel();
 };
 
 #endif // VISIBLECOMPONENTPROPERTYEDITOR_H

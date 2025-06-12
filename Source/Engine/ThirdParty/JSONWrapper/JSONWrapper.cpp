@@ -18,26 +18,29 @@ namespace Inno
 	namespace JSONWrapper
 	{
 		template<typename T>
-		inline bool Save(json& topLevel, T* rhs)
+		inline bool SaveComponentAndAddReference(json& topLevel, T* component)
 		{
-			json j;
-			to_json(j, *rhs);
-
+			std::string componentFileName = std::string(component->m_InstanceName.c_str());			
+			AssetService::Save(*component);
+			
 			auto l_result = std::find_if(
 				topLevel["Entities"].begin(),
 				topLevel["Entities"].end(),
 				[&](auto val) -> bool {
-					return val["UUID"] == rhs->m_Owner->m_UUID;
+					return val["UUID"] == component->m_Owner->m_UUID;
 				});
 
 			if (l_result != topLevel["Entities"].end())
 			{
-				l_result.value()["Components"].emplace_back(j);
+				json componentRef;
+				componentRef["Type"] = T::GetTypeID();
+				componentRef["Name"] = componentFileName;
+				l_result.value()["Components"].emplace_back(componentRef);
 				return true;
 			}
 			else
 			{
-				Log(Warning, "Entity UUID ", rhs->m_Owner->m_UUID, " is invalid.");
+				Log(Warning, "Entity UUID ", component->m_Owner->m_UUID, " is invalid.");
 				return false;
 			}
 		}
@@ -77,15 +80,20 @@ bool JSONWrapper::Save(const char* fileName, const json& data)
 bool JSONWrapper::SaveScene(const char* fileName)
 {
 	json topLevel;
-	topLevel["Name"] = fileName;
+	
+	// Use IOService to extract just the filename without path and extension
+	std::string sceneName = g_Engine->Get<IOService>()->getFileName(fileName);
+	
+	topLevel["Name"] = sceneName;
 
 	for (auto i : g_Engine->Get<EntityManager>()->GetEntities())
 	{
 		if (i->m_Serializable)
 		{
-			json j;
-			to_json(j, *i);
-			topLevel["Entities"].emplace_back(j);
+			json entityJson;
+			to_json(entityJson, *i);
+			entityJson["Components"] = json::array();
+			topLevel["Entities"].emplace_back(entityJson);
 		}
 	}
 
@@ -93,28 +101,28 @@ bool JSONWrapper::SaveScene(const char* fileName)
 	{
 		if (i->m_Serializable)
 		{
-			Save(topLevel, i);
+			SaveComponentAndAddReference(topLevel, i);
 		}
 	}
+	
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<LightComponent>())
 	{
 		if (i->m_Serializable)
 		{
-			Save(topLevel, i);
+			SaveComponentAndAddReference(topLevel, i);
 		}
 	}
+	
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>())
 	{
 		if (i->m_Serializable)
 		{
-			Save(topLevel, i);
+			SaveComponentAndAddReference(topLevel, i);
 		}
 	}
 
 	Save(fileName, topLevel);
-
 	Log(Success, "Scene ", fileName, " has been saved.");
-
 	return true;
 }
 
@@ -122,9 +130,7 @@ bool JSONWrapper::LoadScene(const char* fileName)
 {
 	json j;
 	if (!Load(fileName, j))
-	{
 		return false;
-	}
 
 	auto l_name = j["Name"];
 

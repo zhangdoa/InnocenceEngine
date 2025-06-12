@@ -88,8 +88,13 @@ namespace Inno
             m_playerCharacterEntity = *l_playerCharacterEntity;
             m_playerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(m_playerCharacterEntity);
         }
+        else
+        {
+            m_playerCharacterEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Player Character/");
+            m_playerModelComponent = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_playerCharacterEntity, false, ObjectLifespan::Scene); 
+        }
 
-        auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("Player Character Camera");
+        auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("Main Camera");
         if (l_playerCameraEntity.has_value())
         {
             m_playerCameraEntity = *l_playerCameraEntity;
@@ -97,7 +102,7 @@ namespace Inno
         }
         else
         {
-            m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Player Character Camera/");
+            m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Main Camera/");
             m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
         }
 

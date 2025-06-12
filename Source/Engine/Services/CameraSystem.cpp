@@ -31,9 +31,6 @@ namespace CameraSystemNS
 
 void CameraSystemNS::GenerateCSMSplitFactors(float lambda)
 {
-	if (!m_MainCamera)
-		return;
-
 	m_CSMSplitFactors.clear();
     m_CSMSplitFactors.reserve(m_MaxCSMCount);
 
@@ -147,6 +144,9 @@ bool CameraSystem::Initialize()
 
 bool CameraSystem::Update()
 {
+	if (!m_MainCamera)
+		return true;
+
 	GenerateCSMSplitFactors();
 
 	auto l_components = g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>();

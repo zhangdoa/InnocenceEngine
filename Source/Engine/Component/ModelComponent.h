@@ -27,13 +27,11 @@ namespace Inno
 
 		Transform m_Transform;
 		
-		// Embedded collision data (replaces separate CollisionComponent)
 		CollisionPrimitives m_CollisionPrimitives = {};
-		void* m_SimulationProxy = 0;  // PhysX actor pointer
-		
-		// AABB accessor for BVH compatibility
+		void* m_SimulationProxy = 0;
+
 		AABB& m_AABB = m_CollisionPrimitives.m_AABB;
-		
-		Array<uint64_t> m_DrawCallComponents;
+
+		std::vector<uint64_t> m_DrawCallComponents;
 	};
 }

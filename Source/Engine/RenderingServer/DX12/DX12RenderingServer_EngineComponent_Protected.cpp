@@ -180,8 +180,6 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 
 	Log(Verbose, rhs->m_InstanceName, " BLAS is initialized.");
 
-	//g_Engine->Get<PhysicsSimulationService>()->CreateCollisionPrimitive(rhs);
-
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -266,6 +264,9 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 #ifdef INNO_DEBUG
 		SetObjectName(rhs, l_uploadHeapBuffer, "UploadHeap_Texture");
 #endif
+
+		// Store the upload buffer to keep it alive during GPU command execution
+		m_TextureUploadBuffers[rhs->m_UUID] = l_uploadHeapBuffer;
 
 		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 		l_textureSubResourceData.RowPitch = rhs->m_TextureDesc.Width * GetTexturePixelDataSize(rhs->m_TextureDesc);

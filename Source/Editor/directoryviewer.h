@@ -13,6 +13,7 @@ public:
     explicit DirectoryViewer(QWidget *parent = nullptr);
 
     void Initialize();
+    void SetFilter(const QString& filter);
 
 private:
     QSplitter* m_splitter;
@@ -20,10 +21,12 @@ private:
     DirectoryListViewer* m_listViewer;
 
 signals:
+    void fileSelected(const QString& filePath);
 
 public slots:
     void UpdateDirectoryList(QModelIndex index);
     void UpdateDirectoryTree(QModelIndex index);
+    void onFileDoubleClicked(QModelIndex index);
 };
 
 #endif // INNODIRECTORYVIEWER_H

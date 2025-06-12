@@ -5,14 +5,6 @@
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>1920</width>
-    <height>1080</height>
-   </rect>
-  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>1</horstretch>
@@ -23,12 +15,6 @@
    <size>
     <width>800</width>
     <height>600</height>
-   </size>
-  </property>
-  <property name="baseSize">
-   <size>
-    <width>1920</width>
-    <height>1080</height>
    </size>
   </property>
   <property name="font">

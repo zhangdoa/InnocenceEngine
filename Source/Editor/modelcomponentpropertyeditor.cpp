@@ -1,6 +1,11 @@
 #include "modelcomponentpropertyeditor.h"
-
 #include "../Engine/Engine.h"
+#include "../Engine/Services/ComponentManager.h"
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QFileInfo>
 
 using namespace Inno;
 
@@ -29,43 +34,42 @@ void ModelComponentPropertyEditor::initialize()
     m_transformWidget = new TransformWidget();
     m_transformWidget->initialize();
 
-    m_meshPrimitiveTopology = new ComboLabelText();
-    m_meshPrimitiveTopology->Initialize("MeshPrimitiveTopology");
-
-    m_textureWrapMethod = new ComboLabelText();
-    m_textureWrapMethod->Initialize("TextureWrapMethod");
-
-    m_meshUsage = new ComboLabelText();
-    m_meshUsage->Initialize("MeshUsage");
-
-    m_meshSource = new ComboLabelText();
-    m_meshSource->Initialize("MeshSource");
-
-    m_proceduralMeshShape = new ComboLabelText();
-    m_proceduralMeshShape->Initialize("ProceduralMeshShape");
-
     m_modelNameLabel = new QLabel("ModelName");
 
-    m_chooseModelButton = new QPushButton();
-    m_chooseModelButton->setText("Choose model");
-    connect(m_chooseModelButton, SIGNAL(clicked(bool)), this, SLOT(ChooseModel()));
+    m_addMeshButton = new QPushButton();
+    m_addMeshButton->setText("Add Mesh");
+    connect(m_addMeshButton, SIGNAL(clicked(bool)), this, SLOT(AddMesh()));
 
-    m_modelListLabel = new QLabel("ModelList");
+    m_addMaterialButton = new QPushButton();
+    m_addMaterialButton->setText("Add Material");
+    connect(m_addMaterialButton, SIGNAL(clicked(bool)), this, SLOT(AddMaterial()));
 
-    m_modelList = new QTableWidget();
-    m_modelList->setStyleSheet(
+    m_removeSelectedButton = new QPushButton();
+    m_removeSelectedButton->setText("Remove Selected");
+    connect(m_removeSelectedButton, SIGNAL(clicked(bool)), this, SLOT(RemoveSelected()));
+
+    m_drawCallListLabel = new QLabel("Draw Calls (Mesh + Material pairs)");
+
+    m_drawCallList = new QTableWidget();
+    m_drawCallList->setStyleSheet(
                 "border-style: none;"
                 "border-bottom: 1px solid #fffff8;"
                 "border-right: 1px solid #fffff8;"
                 );
-    m_modelList->setColumnCount(2);
-    m_modelList->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_modelList,
+    m_drawCallList->setColumnCount(3);
+    QStringList headers;
+    headers << "Mesh" << "Material" << "Actions";
+    m_drawCallList->setHorizontalHeaderLabels(headers);
+    m_drawCallList->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_drawCallList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_drawCallList,
             SIGNAL(customContextMenuRequested(const QPoint&)),
             this,
             SLOT(onCustomContextMenuRequested(const QPoint&)));
 
-    connect(m_modelList, SIGNAL(cellDoubleClicked(int,int)), this, SLOT(tableItemClicked(int,int)));
+    connect(m_drawCallList, SIGNAL(cellDoubleClicked(int,int)), this, SLOT(tableItemClicked(int,int)));
+
+    connect(m_dirViewer, SIGNAL(fileSelected(QString)), this, SLOT(onFileSelected(QString)));
 
     m_line = new QWidget();
     m_line->setFixedHeight(1);
@@ -79,36 +83,23 @@ void ModelComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_transformWidget, row, 0, 1, 7);
     row++;
 
-    m_gridLayout->addWidget(m_meshPrimitiveTopology->GetLabelWidget(), row, 0, 1, 1);
-    m_gridLayout->addWidget(m_meshPrimitiveTopology->GetTextWidget(), row, 1, 1, 1);
-    row++;
-
-    m_gridLayout->addWidget(m_textureWrapMethod->GetLabelWidget(), row, 0, 1, 1);
-    m_gridLayout->addWidget(m_textureWrapMethod->GetTextWidget(), row, 1, 1, 1);
-    row++;
-
-    m_gridLayout->addWidget(m_meshUsage->GetLabelWidget(), row, 0, 1, 1);
-    m_gridLayout->addWidget(m_meshUsage->GetTextWidget(), row, 1, 1, 1);
-    row++;
-
-    m_gridLayout->addWidget(m_meshSource->GetLabelWidget(), row, 0, 1, 1);
-    m_gridLayout->addWidget(m_meshSource->GetTextWidget(), row, 1, 1, 1);
-    row++;
-
-    m_gridLayout->addWidget(m_proceduralMeshShape->GetLabelWidget(), row, 0, 1, 1);
-    m_gridLayout->addWidget(m_proceduralMeshShape->GetTextWidget(), row, 1, 1, 1);
-    row++;
-
     m_gridLayout->addWidget(m_modelNameLabel, row, 0, 1, 7);
     row++;
 
-    m_gridLayout->addWidget(m_chooseModelButton, row, 0, 1, 7);
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->addWidget(m_addMeshButton);
+    buttonLayout->addWidget(m_addMaterialButton);
+    buttonLayout->addWidget(m_removeSelectedButton);
+    
+    QWidget* buttonWidget = new QWidget();
+    buttonWidget->setLayout(buttonLayout);
+    m_gridLayout->addWidget(buttonWidget, row, 0, 1, 7);
     row++;
 
-    m_gridLayout->addWidget(m_modelListLabel, row, 0, 1, 7);
+    m_gridLayout->addWidget(m_drawCallListLabel, row, 0, 1, 7);
     row++;
 
-    m_gridLayout->addWidget(m_modelList, row, 1, 1, 7);
+    m_gridLayout->addWidget(m_drawCallList, row, 0, 1, 7);
     row++;
 
     m_gridLayout->addWidget(m_line, row, 0, 1, 7);
@@ -116,11 +107,6 @@ void ModelComponentPropertyEditor::initialize()
     connect(m_transformWidget, SIGNAL(positionChanged()), this, SLOT(SetTransform()));
     connect(m_transformWidget, SIGNAL(rotationChanged()), this, SLOT(SetTransform()));
     connect(m_transformWidget, SIGNAL(scaleChanged()), this, SLOT(SetTransform()));
-    connect(m_meshPrimitiveTopology, SIGNAL(ValueChanged()), this, SLOT(SetMeshPrimitiveTopology()));
-    connect(m_textureWrapMethod, SIGNAL(ValueChanged()), this, SLOT(SetTextureWrapMethod()));
-    connect(m_meshUsage, SIGNAL(ValueChanged()), this, SLOT(SetMeshUsage()));
-    connect(m_meshSource, SIGNAL(ValueChanged()), this, SLOT(SetMeshSource()));
-    connect(m_proceduralMeshShape, SIGNAL(ValueChanged()), this, SLOT(SetProceduralMeshShape()));
 
     m_gridLayout->setHorizontalSpacing(m_horizontalSpacing);
     m_gridLayout->setVerticalSpacing(m_verticalSpacing);
@@ -144,114 +130,261 @@ void ModelComponentPropertyEditor::edit(void *component)
     
     m_transformWidget->setScale(m_component->m_Transform.m_scale.x, m_component->m_Transform.m_scale.y, m_component->m_Transform.m_scale.z);
 
-    GetMeshPrimitiveTopology();
-    GetTextureWrapMethod();
-    GetMeshUsage();
-    GetMeshSource();
-    GetProceduralMeshShape();
-    GetModelMap();
+    RefreshDrawCallList();
 
     this->show();
 }
 
-void ModelComponentPropertyEditor::GetMeshPrimitiveTopology()
-{
-    m_meshPrimitiveTopology->SetFromInt(0);
-}
-
-void ModelComponentPropertyEditor::GetTextureWrapMethod()
-{
-    m_textureWrapMethod->SetFromInt(0);
-}
-
-void ModelComponentPropertyEditor::GetMeshUsage()
-{
-    m_meshUsage->SetFromInt(0);
-}
-
-void ModelComponentPropertyEditor::GetMeshSource()
-{
-    m_meshSource->SetFromInt(0);
-}
-
-void ModelComponentPropertyEditor::GetProceduralMeshShape()
-{
-    m_proceduralMeshShape->SetFromInt(0);
-}
-
-void ModelComponentPropertyEditor::tableItemClicked(int row, int column)
-{
-    auto item = m_modelList->item(row,column);
-    if(column == 0)
-    {
-        auto l_mesh = static_cast<MeshComponent*>(item->data(Qt::UserRole).value<void*>());
-    }
-    else
-    {
-        auto l_material = static_cast<MaterialComponent*>(item->data(Qt::UserRole).value<void*>());
-        m_MaterialCompEditor->edit(l_material);
-    }
-}
-
-void ModelComponentPropertyEditor::ChooseModel()
-{
-    m_dirViewer->show();
-}
-
-void ModelComponentPropertyEditor::GetModelMap()
+void ModelComponentPropertyEditor::RefreshDrawCallList()
 {
     if (!m_component)
         return;
 
-    auto l_drawCallComponentCount = m_component->m_DrawCallComponents.size();
-    if (!l_drawCallComponentCount)
-        return;
+    auto drawCallCount = m_component->m_DrawCallComponents.size();
+    m_drawCallList->setRowCount((int)drawCallCount);
 
-    m_modelList->setRowCount((int)l_drawCallComponentCount);
-
-    int index = 0;
-    for (uint64_t j = 0; j < l_drawCallComponentCount; j++)
+    for (size_t i = 0; i < drawCallCount; i++)
     {
-        // auto l_pair = g_Engine->Get<AssetSystem>()->GetMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
-        // auto l_meshItem = new QTableWidgetItem();
-        // l_meshItem->setText(l_pair->mesh->m_InstanceName.c_str());
-        // l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->mesh)));
-        // l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
-        // m_modelList->setItem(index, 0, l_meshItem);
+        auto drawCallId = m_component->m_DrawCallComponents[i];
+        auto componentManager = g_Engine->Get<ComponentManager>();
+        auto drawCall = componentManager->FindByUUID<DrawCallComponent>(drawCallId);
+        
+        if (drawCall)
+        {
+            auto meshItem = new QTableWidgetItem();
+            auto materialItem = new QTableWidgetItem();
+            
+            if (drawCall->m_MeshComponent != 0)
+            {
+                auto mesh = componentManager->FindByUUID<MeshComponent>(drawCall->m_MeshComponent);
+                meshItem->setText(mesh ? mesh->m_InstanceName.c_str() : "Unknown Mesh");
+            }
+            else
+            {
+                meshItem->setText("No Mesh");
+            }
+            
+            if (drawCall->m_MaterialComponent != 0)
+            {
+                auto material = componentManager->FindByUUID<MaterialComponent>(drawCall->m_MaterialComponent);
+                materialItem->setText(material ? material->m_InstanceName.c_str() : "Unknown Material");
+            }
+            else
+            {
+                materialItem->setText("No Material");
+            }
+            
+            meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<qulonglong>(drawCallId)));
+            meshItem->setFlags(meshItem->flags() & ~Qt::ItemIsEditable);
+            m_drawCallList->setItem((int)i, 0, meshItem);
 
-        // auto l_materialItem = new QTableWidgetItem();
-        // l_materialItem->setText(l_pair->material->m_InstanceName.c_str());
-        // l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->material)));
-        // l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
-        // m_modelList->setItem(index, 1, l_materialItem);
+            materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<qulonglong>(drawCallId)));
+            materialItem->setFlags(materialItem->flags() & ~Qt::ItemIsEditable);
+            m_drawCallList->setItem((int)i, 1, materialItem);
+        }
+        else
+        {
+            auto meshItem = new QTableWidgetItem("Invalid DrawCall");
+            auto materialItem = new QTableWidgetItem("Invalid DrawCall");
+            m_drawCallList->setItem((int)i, 0, meshItem);
+            m_drawCallList->setItem((int)i, 1, materialItem);
+        }
 
-        index++;
+        auto removeButton = new QPushButton("Remove");
+        connect(removeButton, &QPushButton::clicked, [this, i]() { RemoveDrawCall((int)i); });
+        m_drawCallList->setCellWidget((int)i, 2, removeButton);
     }
 }
 
-void ModelComponentPropertyEditor::SetMeshPrimitiveTopology()
+void ModelComponentPropertyEditor::AddMesh()
 {
-    //m_component->m_meshPrimitiveTopology = MeshPrimitiveTopology(m_meshPrimitiveTopology->GetAsInt());
+    m_currentAssetType = AssetType::Mesh;
+    m_dirViewer->SetFilter("*.MeshComponent.json");
+    m_dirViewer->show();
 }
 
-void ModelComponentPropertyEditor::SetTextureWrapMethod()
+void ModelComponentPropertyEditor::AddMaterial()
 {
-    //m_component->m_textureWrapMethod = TextureWrapMethod(m_textureWrapMethod->GetAsInt());
+    m_currentAssetType = AssetType::Material;
+    m_dirViewer->SetFilter("*.MaterialComponent.json");
+    m_dirViewer->show();
 }
 
-void ModelComponentPropertyEditor::SetMeshUsage()
+void ModelComponentPropertyEditor::RemoveSelected()
 {
-    //m_component->m_meshUsage = MeshUsage(m_meshUsage->GetAsInt());
+    int currentRow = m_drawCallList->currentRow();
+    if (currentRow >= 0)
+    {
+        RemoveDrawCall(currentRow);
+    }
 }
 
-void ModelComponentPropertyEditor::SetMeshSource()
+void ModelComponentPropertyEditor::RemoveDrawCall(int row)
 {
-    //m_component->m_meshSource = MeshSource(m_meshSource->GetAsInt());
+    if (!m_component || row < 0 || row >= (int)m_component->m_DrawCallComponents.size())
+        return;
+
+    // Remove from array using iterators
+    auto it = m_component->m_DrawCallComponents.begin() + row;
+    auto heapAddr = m_component->m_DrawCallComponents.begin();
+    auto currentSize = m_component->m_DrawCallComponents.size();
+    
+    // Move elements to fill the gap
+    for (size_t i = row; i < currentSize - 1; i++)
+    {
+        heapAddr[i] = heapAddr[i + 1];
+    }
+    
+    // Decrease the current free index manually
+    auto& drawCallArray = m_component->m_DrawCallComponents;
+    auto currentFreeIdx = drawCallArray.size() - 1;
+    drawCallArray.clear();
+    for (size_t i = 0; i < currentFreeIdx; i++)
+    {
+        drawCallArray.emplace_back(heapAddr[i]);
+    }
+    
+    RefreshDrawCallList();
 }
 
-void ModelComponentPropertyEditor::SetProceduralMeshShape()
+void ModelComponentPropertyEditor::onFileSelected(const QString& filePath)
 {
-    //m_component->m_proceduralMeshShape = ProceduralMeshShape(m_proceduralMeshShape->GetAsInt());
+    m_dirViewer->hide();
+
+    if (!m_component)
+        return;
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        QMessageBox::warning(this, "Error", "Cannot open file: " + filePath);
+        return;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    QJsonObject obj = doc.object();
+
+    if (m_currentAssetType == AssetType::Mesh)
+    {
+        if (obj["ComponentType"].toInt() != 6) // MeshComponent type ID
+        {
+            QMessageBox::warning(this, "Error", "Selected file is not a MeshComponent");
+            return;
+        }
+        CreateDrawCall(filePath, true);
+    }
+    else if (m_currentAssetType == AssetType::Material)
+    {
+        if (obj["ComponentType"].toInt() != 7) // MaterialComponent type ID
+        {
+            QMessageBox::warning(this, "Error", "Selected file is not a MaterialComponent");
+            return;
+        }
+        CreateDrawCall(filePath, false);
+    }
+}
+
+void ModelComponentPropertyEditor::CreateDrawCall(const QString& assetPath, bool isMesh)
+{
+    auto componentManager = g_Engine->Get<ComponentManager>();
+    QFileInfo fileInfo(assetPath);
+    QString componentName = fileInfo.completeBaseName();
+    
+    DrawCallComponent* targetDrawCall = nullptr;
+    if (isMesh)
+    {
+        // Find existing DrawCall without a mesh or create new one
+        for (size_t i = 0; i < m_component->m_DrawCallComponents.size(); i++)
+        {
+            auto drawCallId = m_component->m_DrawCallComponents[i];
+            auto drawCall = componentManager->FindByUUID<DrawCallComponent>(drawCallId);
+            if (drawCall && drawCall->m_MeshComponent == 0)
+            {
+                targetDrawCall = drawCall;
+                break;
+            }
+        }
+        
+        if (!targetDrawCall)
+        {
+            targetDrawCall = componentManager->Spawn<DrawCallComponent>(m_component->m_Owner, true, ObjectLifespan::Scene);
+            if (targetDrawCall)
+            {
+                m_component->m_DrawCallComponents.emplace_back(targetDrawCall->m_UUID);
+            }
+        }
+        
+        if (targetDrawCall)
+        {
+            uint64_t meshId = componentManager->Load<MeshComponent>(componentName.toStdString().c_str(), m_component->m_Owner);
+            targetDrawCall->m_MeshComponent = meshId;
+        }
+    }
+    else // Material
+    {
+        for (size_t i = 0; i < m_component->m_DrawCallComponents.size(); i++)
+        {
+            auto drawCallId = m_component->m_DrawCallComponents[i];
+            auto drawCall = componentManager->FindByUUID<DrawCallComponent>(drawCallId);
+            if (drawCall && drawCall->m_MaterialComponent == 0)
+            {
+                targetDrawCall = drawCall;
+                break;
+            }
+        }
+        
+        if (!targetDrawCall)
+        {
+            targetDrawCall = componentManager->Spawn<DrawCallComponent>(m_component->m_Owner, true, ObjectLifespan::Scene);
+            if (targetDrawCall)
+            {
+                m_component->m_DrawCallComponents.emplace_back(targetDrawCall->m_UUID);
+            }
+        }
+        
+        if (targetDrawCall)
+        {
+            uint64_t materialId = componentManager->Load<MaterialComponent>(componentName.toStdString().c_str(), m_component->m_Owner);
+            targetDrawCall->m_MaterialComponent = materialId;
+        }
+    }
+    
+    if (targetDrawCall->m_MeshComponent && targetDrawCall->m_MaterialComponent)
+        targetDrawCall->m_ObjectStatus = ObjectStatus::Activated;
+      
+    RefreshDrawCallList();
+}
+
+void ModelComponentPropertyEditor::tableItemClicked(int row, int column)
+{
+    auto item = m_drawCallList->item(row, column);
+    if (!item)
+        return;
+
+    auto componentManager = g_Engine->Get<ComponentManager>();
+    auto drawCallId = item->data(Qt::UserRole).value<qulonglong>();
+    auto drawCall = componentManager->FindByUUID<DrawCallComponent>(drawCallId);
+    
+    if (!drawCall)
+        return;
+
+    if (column == 0 && drawCall->m_MeshComponent != 0) // Mesh column
+    {
+        auto mesh = componentManager->FindByUUID<MeshComponent>(drawCall->m_MeshComponent);
+        if (mesh)
+        {
+            // Open mesh editor or show properties
+            QMessageBox::information(this, "Mesh Info", QString("Mesh: %1").arg(mesh->m_InstanceName.c_str()));
+        }
+    }
+    else if (column == 1 && drawCall->m_MaterialComponent != 0) // Material column
+    {
+        auto material = componentManager->FindByUUID<MaterialComponent>(drawCall->m_MaterialComponent);
+        if (material)
+        {
+            m_MaterialCompEditor->edit(material);
+        }
+    }
 }
 
 void ModelComponentPropertyEditor::SetTransform()
@@ -275,20 +408,28 @@ void ModelComponentPropertyEditor::SetTransform()
 
 void ModelComponentPropertyEditor::remove()
 {
-    m_modelList->clear();
+    m_drawCallList->clear();
     m_component = nullptr;
     this->hide();
 }
 
 void ModelComponentPropertyEditor::onCustomContextMenuRequested(const QPoint &pos)
 {
-    showContextMenu(m_modelList->viewport()->mapToGlobal(pos));
+    showContextMenu(m_drawCallList->viewport()->mapToGlobal(pos));
 }
 
 void ModelComponentPropertyEditor::showContextMenu(const QPoint &globalPos)
 {
     QMenu menu;
 
-    menu.addAction("Model list context menu");
+    QAction* addMeshAction = menu.addAction("Add Mesh");
+    QAction* addMaterialAction = menu.addAction("Add Material");
+    menu.addSeparator();
+    QAction* removeAction = menu.addAction("Remove Selected");
+    
+    connect(addMeshAction, &QAction::triggered, this, &ModelComponentPropertyEditor::AddMesh);
+    connect(addMaterialAction, &QAction::triggered, this, &ModelComponentPropertyEditor::AddMaterial);
+    connect(removeAction, &QAction::triggered, this, &ModelComponentPropertyEditor::RemoveSelected);
+
     menu.exec(globalPos);
 }

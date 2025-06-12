@@ -8,8 +8,6 @@
 #include "../../Engine.h"
 using namespace Inno;
 
-
-
 void JSONWrapper::to_json(json& j, const ModelComponent& component)
 {
     json transform;
@@ -67,11 +65,11 @@ void JSONWrapper::to_json(json& j, const CameraComponent& component)
     };
 }
 
-
-void JSONWrapper::Load(const char* fileName, ModelComponent& component)
+bool JSONWrapper::Load(const char* fileName, ModelComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
 
     from_json(j["Transform"], component.m_Transform);
     if (j.find("DrawCallComponents") != j.end())
@@ -90,12 +88,15 @@ void JSONWrapper::Load(const char* fileName, ModelComponent& component)
         auto l_j = j["AnimationComponents"];
         // @TODO: Implement AnimationComponent loading
     }
+
+    return true;
 }
 
-void JSONWrapper::Load(const char* fileName, DrawCallComponent& component)
+bool  JSONWrapper::Load(const char* fileName, DrawCallComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
 
     if (j.find("MeshComponent") != j.end())
     {
@@ -108,36 +109,39 @@ void JSONWrapper::Load(const char* fileName, DrawCallComponent& component)
         auto l_j = j["MaterialComponent"];
         component.m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>(l_j["Name"].get<std::string>().c_str(), component.m_Owner);
     }
+
+    return true;
 }
 
-void JSONWrapper::Load(const char* fileName, MeshComponent& component)
+bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
 
-    MeshShape l_meshShape = MeshShape(j["MeshShape"].get<int32_t>());
+    MeshShape l_meshShape = MeshShape(j["MeshShape"]);
     if (l_meshShape != MeshShape::Customized)
     {
         component = *g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_meshShape);
-        return;
+        return true;
     }
 
     auto l_meshFileName = j["File"].get<std::string>();
-    std::ifstream l_meshFile(g_Engine->Get<IOService>()->getWorkingDirectory() + l_meshFileName, std::ios::binary);
+    std::ifstream l_meshFile("../Data/Components/" + l_meshFileName, std::ios::binary);
     if (!l_meshFile.is_open())
     {
         Log(Error, "Can't open file ", l_meshFileName.c_str(), "!");
-        return;
+        return false;
     }
 
     size_t l_verticesNumber = j["VerticesNumber"];
     size_t l_indicesNumber = j["IndicesNumber"];
 
     std::vector<Vertex> l_vertices;
-    l_vertices.reserve(l_verticesNumber);
+    l_vertices.resize(l_verticesNumber);
 
     std::vector<Index> l_indices;
-    l_indices.reserve(l_indicesNumber);
+    l_indices.resize(l_indicesNumber);
 
     g_Engine->Get<IOService>()->deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_vertices);
     g_Engine->Get<IOService>()->deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_indices);
@@ -154,13 +158,15 @@ void JSONWrapper::Load(const char* fileName, MeshComponent& component)
     component.m_ObjectStatus = ObjectStatus::Created;
     g_Engine->getRenderingServer()->Initialize(&component, l_vertices, l_indices);
 
-    //g_Engine->Get<PhysicsSimulationService>()->CreateCollisionComponent(&component);
+    return true;
 }
 
-void JSONWrapper::Load(const char* fileName, MaterialComponent& component)
+bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
+
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
@@ -184,21 +190,26 @@ void JSONWrapper::Load(const char* fileName, MaterialComponent& component)
 
     component.m_ObjectStatus = ObjectStatus::Created;
     g_Engine->getRenderingServer()->Initialize(&component);
+
+    return true;
 }
 
-void JSONWrapper::Load(const char* fileName, TextureComponent& component)
+bool JSONWrapper::Load(const char* fileName, TextureComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
 
     component.m_TextureDesc.Sampler = TextureSampler(j["Sampler"]);
     component.m_TextureDesc.Usage = TextureUsage(j["Usage"]);
     component.m_TextureDesc.IsSRGB = j["IsSRGB"];
 
-    void* textureData = STBWrapper::Load(j["File"].get<std::string>().c_str(), component);
+    void* textureData = STBWrapper::Load(("../Data/Components/" + j["File"].get<std::string>()).c_str(), component);
     component.m_ObjectStatus = ObjectStatus::Created;
 
     g_Engine->getRenderingServer()->Initialize(&component, textureData);
+
+    return true;
 }
 
 // SkeletonComponent* JSONWrapper::ProcessSkeleton(const json& j, const char* name)
@@ -270,24 +281,32 @@ void JSONWrapper::Load(const char* fileName, TextureComponent& component)
 // 	return true;
 // }
 
-void JSONWrapper::Load(const char* fileName, LightComponent& component)
+bool JSONWrapper::Load(const char* fileName, LightComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
 
     from_json(j["Transform"], component.m_Transform);
     from_json(j["RGBColor"], component.m_RGBColor);
     from_json(j["Shape"], component.m_Shape);
-    component.m_LightType = j["LightType"];
+    
+    int lightTypeValue = j["LightType"].get<int>();
+    component.m_LightType = static_cast<LightType>(lightTypeValue);
+    Log(Verbose, "Loaded LightComponent from ", fileName, " with LightType: ", lightTypeValue, " (", static_cast<int>(component.m_LightType), ")");
+    
     component.m_ColorTemperature = j["ColorTemperature"];
     component.m_LuminousFlux = j["LuminousFlux"];
     component.m_UseColorTemperature = j["UseColorTemperature"];
+
+    return true;
 }
 
-void JSONWrapper::Load(const char* fileName, CameraComponent& component)
+bool JSONWrapper::Load(const char* fileName, CameraComponent& component)
 {
     json j;
-    Load(fileName, j);
+    if (!Load(fileName, j))
+        return false;
 
     from_json(j["Transform"], component.m_Transform);
     component.m_FOVX = j["FOVX"];
@@ -298,4 +317,6 @@ void JSONWrapper::Load(const char* fileName, CameraComponent& component)
     component.m_aperture = j["Aperture"];
     component.m_shutterTime = j["ShutterTime"];
     component.m_ISO = j["ISO"];
+
+    return true;
 }
