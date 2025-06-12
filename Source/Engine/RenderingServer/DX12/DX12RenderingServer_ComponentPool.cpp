@@ -30,7 +30,8 @@ bool DX12RenderingServer::TerminatePool()
 	m_MeshIndexBuffers_Default.clear();
 	m_MeshBLAS.clear();
 	m_MeshScratchBuffers.clear();
-	m_TextureUploadBuffers.clear();
+	m_TextureBuffers_Upload.clear();
+	m_TextureBuffers_Default.clear();
 
 	delete m_PSOPool;
 	delete m_CommandListPool;
@@ -113,11 +114,17 @@ bool DX12RenderingServer::Delete(TextureComponent* rhs)
 
 	auto componentUUID = rhs->m_UUID;
 
-	// Clean up texture upload buffer if it exists
-	auto uploadIt = m_TextureUploadBuffers.find(componentUUID);
-	if (uploadIt != m_TextureUploadBuffers.end()) {
+	// Clean up texture upload/default buffer if it exists
+	auto uploadIt = m_TextureBuffers_Upload.find(componentUUID);
+	if (uploadIt != m_TextureBuffers_Upload.end()) {
 		if (uploadIt->second) uploadIt->second.Reset();
-		m_TextureUploadBuffers.erase(uploadIt);
+		m_TextureBuffers_Upload.erase(uploadIt);
+	}
+
+	auto defaultIt = m_TextureBuffers_Default.find(componentUUID);
+	if (defaultIt != m_TextureBuffers_Default.end()) {
+		if (defaultIt->second) defaultIt->second.Reset();
+		m_TextureBuffers_Default.erase(defaultIt);
 	}
 
 	// Clear GPU resources safely

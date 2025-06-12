@@ -3,6 +3,7 @@
 #include "../../Services/ComponentManager.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/PhysicsSimulationService.h"
+#include "../../Services/AssetService.h"
 #include "../STBWrapper/STBWrapper.h"
 
 #include "../../Engine.h"
@@ -13,12 +14,57 @@ void JSONWrapper::to_json(json& j, const ModelComponent& component)
     json transform;
     to_json(transform, component.m_Transform);
 
+    json drawCallComponents = json::array();
+    for (auto drawCallComponentID : component.m_DrawCallComponents)
+    {
+        auto drawCallComponent = g_Engine->Get<ComponentManager>()->FindByUUID<DrawCallComponent>(drawCallComponentID);
+        if (!drawCallComponent)
+            continue;
+
+        AssetService::Save(*drawCallComponent);
+
+        json drawCallComponentJson;
+        drawCallComponentJson["Name"] = drawCallComponent->m_InstanceName.c_str();
+        drawCallComponents.push_back(drawCallComponentJson);
+    }
+
     j = json
     {
         {"ComponentType", component.GetTypeID()},
         {"Transform", transform},
-        // @TODO: Finish all the writings of the child components
+        {"DrawCallComponents", drawCallComponents},
+        // @TODO: Add AnimationComponents when implemented
     };
+}
+
+void JSONWrapper::to_json(json& j, const DrawCallComponent& component)
+{
+    j = json
+    {
+        {"ComponentType", component.GetTypeID()}
+    };
+
+    if (component.m_MeshComponent != 0)
+    {
+        auto meshComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(component.m_MeshComponent);
+        if (meshComponent)
+        {
+            json meshJson;
+            meshJson["Name"] = meshComponent->m_InstanceName.c_str();
+            j["MeshComponent"] = meshJson;
+        }
+    }
+
+    if (component.m_MaterialComponent != 0)
+    {
+        auto materialComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(component.m_MaterialComponent);
+        if (materialComponent)
+        {
+            json materialJson;
+            materialJson["Name"] = materialComponent->m_InstanceName.c_str();
+            j["MaterialComponent"] = materialJson;
+        }
+    }
 }
 
 void JSONWrapper::to_json(json& j, const LightComponent& component)
@@ -63,6 +109,62 @@ void JSONWrapper::to_json(json& j, const CameraComponent& component)
         {"ISO", component.m_ISO},
         {"Transform", transform},
     };
+}
+
+void JSONWrapper::to_json(json& j, const MeshComponent& component)
+{
+    j = json
+    {
+        {"ComponentType", component.GetTypeID()},
+        {"MeshShape", MeshShape::Customized}
+    };
+
+    // Note: For binary mesh data, additional fields are added by AssetService::Save
+}
+
+void JSONWrapper::to_json(json& j, const MaterialComponent& component)
+{
+    j = json
+    {
+        {"ComponentType", component.GetTypeID()},
+        {"ShaderModel", component.m_ShaderModel},
+        {"Albedo", {
+            {"R", component.m_materialAttributes.AlbedoR},
+            {"G", component.m_materialAttributes.AlbedoG},
+            {"B", component.m_materialAttributes.AlbedoB},
+            {"A", component.m_materialAttributes.Alpha}
+        }},
+        {"Metallic", component.m_materialAttributes.Metallic},
+        {"Roughness", component.m_materialAttributes.Roughness},
+        {"AO", component.m_materialAttributes.AO},
+        {"Thickness", component.m_materialAttributes.Thickness}
+    };
+
+    json textureComponents = json::array();
+    for (auto textureComponentID : component.m_TextureComponents)
+    {
+        auto textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(textureComponentID);
+        if (textureComponent)
+        {
+            json textureJson;
+            textureJson["Name"] = textureComponent->m_InstanceName.c_str();
+            textureComponents.push_back(textureJson);
+        }
+    }
+    j["TextureComponents"] = textureComponents;
+}
+
+void JSONWrapper::to_json(json& j, const TextureComponent& component)
+{
+    j = json
+    {
+        {"ComponentType", component.GetTypeID()},
+        {"Sampler", component.m_TextureDesc.Sampler},
+        {"Usage", component.m_TextureDesc.Usage},
+        {"IsSRGB", component.m_TextureDesc.IsSRGB}
+    };
+
+    // Note: For binary texture data, additional fields are added by AssetService::Save
 }
 
 bool JSONWrapper::Load(const char* fileName, ModelComponent& component)
@@ -290,11 +392,9 @@ bool JSONWrapper::Load(const char* fileName, LightComponent& component)
     from_json(j["Transform"], component.m_Transform);
     from_json(j["RGBColor"], component.m_RGBColor);
     from_json(j["Shape"], component.m_Shape);
-    
+
     int lightTypeValue = j["LightType"].get<int>();
     component.m_LightType = static_cast<LightType>(lightTypeValue);
-    Log(Verbose, "Loaded LightComponent from ", fileName, " with LightType: ", lightTypeValue, " (", static_cast<int>(component.m_LightType), ")");
-    
     component.m_ColorTemperature = j["ColorTemperature"];
     component.m_LuminousFlux = j["LuminousFlux"];
     component.m_UseColorTemperature = j["UseColorTemperature"];

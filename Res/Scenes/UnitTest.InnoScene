@@ -2,7 +2,7 @@
     "Name": "UnitTest",
     "Entities": [
         {
-            "UUID": 2887582696398583175,
+            "UUID": 4032927590415763151,
             "Name": "Sun",
             "Components": [
                 {
@@ -12,7 +12,7 @@
             ]
         },
         {
-            "UUID": 4516936720660070852,
+            "UUID": 3350532920744943025,
             "Name": "Main Camera",
             "Components": [
                 {
@@ -22,7 +22,7 @@
             ]
         },
         {
-            "UUID": 4565143759694083001,
+            "UUID": 3231656943142948225,
             "Name": "Test Point Light",
             "Components": [
                 {
@@ -32,7 +32,7 @@
             ]
         },
         {
-            "UUID": 2515977160818263378,
+            "UUID": 2680213925320138086,
             "Name": "Test Sphere Light",
             "Components": [
                 {
@@ -42,7 +42,7 @@
             ]
         },
         {
-            "UUID": 2655835598380720967,
+            "UUID": 4374220987114189646,
             "Name": "Player Character",
             "Components": [
                 {
@@ -52,7 +52,7 @@
             ]
         },
         {
-            "UUID": 4223712849007900498,
+            "UUID": 3684072528674159087,
             "Name": "Landscape Box",
             "Components": [
                 {

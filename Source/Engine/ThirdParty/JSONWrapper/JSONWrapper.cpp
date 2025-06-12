@@ -80,8 +80,7 @@ bool JSONWrapper::Save(const char* fileName, const json& data)
 bool JSONWrapper::SaveScene(const char* fileName)
 {
 	json topLevel;
-	
-	// Use IOService to extract just the filename without path and extension
+
 	std::string sceneName = g_Engine->Get<IOService>()->getFileName(fileName);
 	
 	topLevel["Name"] = sceneName;

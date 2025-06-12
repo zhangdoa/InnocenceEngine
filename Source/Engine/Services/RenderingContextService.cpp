@@ -383,8 +383,8 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 
 			PerObjectConstantBuffer l_perObjectCB = {};
 			l_perObjectCB.m = l_modelComponent->m_Transform.GetMatrix();
-			l_perObjectCB.m_prev = l_modelComponent->m_Transform.GetMatrix(); // @TODO:
-			//l_perObjectCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
+			l_perObjectCB.m_prev = l_modelComponent->m_Transform.GetMatrix(); // @TODO: Add a previous-frame GPU buffer for these
+			l_perObjectCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
 			l_perObjectCB.UUID = (float)l_modelComponent->m_UUID;
 			l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
 

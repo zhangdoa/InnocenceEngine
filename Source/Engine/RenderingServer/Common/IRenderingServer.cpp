@@ -324,7 +324,8 @@ void IRenderingServer::Initialize(SamplerComponent* rhs)
 
 void IRenderingServer::Initialize(GPUBufferComponent* rhs)
 {
-	InitializeImpl(rhs);
+	if (InitializeImpl(rhs))
+		m_initializedGPUBuffers.emplace(rhs);
 }
 
 void IRenderingServer::Initialize(RenderPassComponent* rhs)
@@ -336,8 +337,6 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 
 	m_initializedRenderPasses.emplace_back(rhs);
 }
-
-
 
 bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
 {

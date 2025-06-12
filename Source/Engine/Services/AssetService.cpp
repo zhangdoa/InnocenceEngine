@@ -147,20 +147,7 @@ bool AssetService::Save(const ModelComponent& component)
 bool AssetService::Save(const DrawCallComponent& component)
 {
 	json j;
-	j["ComponentType"] = component.GetTypeID();
-
-	if (component.m_MeshComponent != 0)
-	{
-		auto l_meshComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(component.m_MeshComponent);
-		j["MeshComponent"]["Name"] = l_meshComponent->m_InstanceName.c_str();
-	}
-
-	if (component.m_MaterialComponent != 0)
-	{
-		auto l_materialComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(component.m_MaterialComponent);
-		j["MaterialComponent"]["Name"] = std::to_string(component.m_MaterialComponent);
-	}
-
+	JSONWrapper::to_json(j, component);
 	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
@@ -168,8 +155,9 @@ bool AssetService::Save(const DrawCallComponent& component)
 bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
 	json j;
-	j["ComponentType"] = component.GetTypeID();
-	j["MeshShape"] = MeshShape::Customized;
+	JSONWrapper::to_json(j, component);
+	
+	// Add binary-specific fields
 	j["VerticesNumber"] = vertices.size();
 	j["IndicesNumber"] = indices.size();
 
@@ -200,26 +188,7 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 bool AssetService::Save(const MaterialComponent& component)
 {
 	json j;
-	j["ComponentType"] = component.GetTypeID();
-	j["ShaderModel"] = component.m_ShaderModel;
-
-	j["Albedo"]["R"] = component.m_materialAttributes.AlbedoR;
-	j["Albedo"]["G"] = component.m_materialAttributes.AlbedoG;
-	j["Albedo"]["B"] = component.m_materialAttributes.AlbedoB;
-	j["Albedo"]["A"] = component.m_materialAttributes.Alpha;
-	j["Metallic"] = component.m_materialAttributes.Metallic;
-	j["Roughness"] = component.m_materialAttributes.Roughness;
-	j["AO"] = component.m_materialAttributes.AO;
-	j["Thickness"] = component.m_materialAttributes.Thickness;
-
-	for (size_t i = 0; i < component.m_TextureComponents.size(); i++)
-	{
-		auto l_textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(component.m_TextureComponents[i]);
-		json textureRef;
-		textureRef["Name"] = l_textureComponent->m_InstanceName.c_str();
-		j["TextureComponents"].push_back(textureRef);
-	}
-
+	JSONWrapper::to_json(j, component);
 	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
@@ -227,10 +196,7 @@ bool AssetService::Save(const MaterialComponent& component)
 bool AssetService::Save(const TextureComponent& component, void* textureData)
 {
 	json j;
-	j["ComponentType"] = component.GetTypeID();
-	j["Sampler"] = component.m_TextureDesc.Sampler;
-	j["Usage"] = component.m_TextureDesc.Usage;
-	j["IsSRGB"] = component.m_TextureDesc.IsSRGB;
+	JSONWrapper::to_json(j, component);
 
 	auto l_workingDir = "../Data/Components/";
 	std::string l_baseName = component.m_InstanceName.c_str();

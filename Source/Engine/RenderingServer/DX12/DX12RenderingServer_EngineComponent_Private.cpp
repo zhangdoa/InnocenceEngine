@@ -58,7 +58,8 @@ bool DX12RenderingServer::CreateSRV(TextureComponent* rhs, uint32_t mipSlice)
 		rhs->m_ReadHandles[handleIndex] = l_descHeapAccessor.GetNewHandle();
 		m_device->CreateShaderResourceView(resource,
 			&l_desc,
-			D3D12_CPU_DESCRIPTOR_HANDLE { rhs->m_ReadHandles[handleIndex].m_CPUHandle });
+			D3D12_CPU_DESCRIPTOR_HANDLE{ rhs->m_ReadHandles[handleIndex].m_CPUHandle });
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", handleIndex, " for ", rhs->m_InstanceName, " has been created.");
 	}
 
 	return true;
@@ -92,9 +93,10 @@ bool DX12RenderingServer::CreateUAV(TextureComponent* rhs, uint32_t mipSlice)
 		rhs->m_WriteHandles[handleIndex].m_Index = l_descHandle.m_Index;
 
 		m_device->CreateUnorderedAccessView(resource, 0,
-			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE { l_descHandle_ShaderNonVisible.m_CPUHandle });
+			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle_ShaderNonVisible.m_CPUHandle });
 		m_device->CreateUnorderedAccessView(resource, 0,
-			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE { l_descHandle.m_CPUHandle });
+			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle.m_CPUHandle });
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", handleIndex, " for ", rhs->m_InstanceName, " has been created.");
 	}
 
 	return true;
@@ -118,6 +120,7 @@ bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
 		l_DX12DeviceMemory->m_SRV.SRVDesc = l_desc;
 		l_DX12DeviceMemory->m_SRV.Handle = l_descHeapAccessor.GetNewHandle();
 		m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), &l_DX12DeviceMemory->m_SRV.SRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_DX12DeviceMemory->m_SRV.Handle.m_CPUHandle });
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_DX12DeviceMemory->m_SRV.Handle.m_Index, " for ", rhs->m_InstanceName, " has been created.");			
 	}
 
 	return true;
@@ -148,12 +151,14 @@ bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 		l_result.Handle.m_GPUHandle = l_descHandle.m_GPUHandle;
 		l_result.Handle.m_Index = l_descHandle.m_Index;
 
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 
-		l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle_ShaderNonVisible.m_CPUHandle });
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 
-		l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle.m_CPUHandle });
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ?
+			l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle_ShaderNonVisible.m_CPUHandle });
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ?
+			l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle.m_CPUHandle });
 
 		l_DX12DeviceMemory->m_UAV = l_result;
+
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_result.Handle.m_Index, " for ", rhs->m_InstanceName, " has been created.");
 	}
 
 	return true;
@@ -175,6 +180,8 @@ bool DX12RenderingServer::CreateCBV(GPUBufferComponent* rhs)
 		m_device->CreateConstantBufferView(&l_result.CBVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_result.Handle.m_CPUHandle });
 
 		l_DX12MappedMemory->m_CBV = l_result;
+		
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_result.Handle.m_Index, " for ", rhs->m_InstanceName, " has been created.");		
 	}
 
 	return true;
@@ -537,162 +544,152 @@ bool DX12RenderingServer::Close(ICommandList* commandList, GPUEngineType GPUEngi
 
 bool DX12RenderingServer::GenerateMipmapImpl(TextureComponent* TextureComp, ICommandList* commandList)
 {
-	// struct DWParam
-	// {
-	// 	DWParam(FLOAT f) : Float(f) {}
-	// 	DWParam(UINT u) : Uint(u) {}
+	struct DWParam
+	{
+		DWParam(FLOAT f) : Float(f) {}
+		DWParam(UINT u) : Uint(u) {}
 
-	// 	void operator=(FLOAT f) { Float = f; }
-	// 	void operator=(UINT u) { Uint = u; }
+		void operator=(FLOAT f) { Float = f; }
+		void operator=(UINT u) { Uint = u; }
 
-	// 	union
-	// 	{
-	// 		FLOAT Float;
-	// 		UINT Uint;
-	// 	};
-	// };
+		union
+		{
+			FLOAT Float;
+			UINT Uint;
+		};
+	};
 
-	// if (DX12TextureComp->m_TextureDesc.MipLevels == 1)
-	// {
-	// 	Log(Warning, DX12TextureComp->m_InstanceName, " Attempt to generate mipmaps for texture without mipmaps requirement.");
-	// 	return false;
-	// }
+	if (TextureComp->m_TextureDesc.MipLevels == 1)
+	{
+		Log(Warning, TextureComp->m_InstanceName, " Attempt to generate mipmaps for texture without mipmaps requirement.");
+		return false;
+	}
 
-	// // Determine if this is a static texture (Sample usage) or render target (attachment usage)
-	// bool isStaticTexture = (DX12TextureComp->m_TextureDesc.Usage == TextureUsage::Sample);
-	// bool isRenderTarget = (DX12TextureComp->m_TextureDesc.Usage == TextureUsage::ColorAttachment ||
-	// 	DX12TextureComp->m_TextureDesc.Usage == TextureUsage::DepthAttachment ||
-	// 	DX12TextureComp->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment);
+	// Determine if this is a static texture (Sample usage) or render target (attachment usage)
+	bool isStaticTexture = (TextureComp->m_TextureDesc.Usage == TextureUsage::Sample);
+	bool isRenderTarget = (TextureComp->m_TextureDesc.Usage == TextureUsage::ColorAttachment ||
+		TextureComp->m_TextureDesc.Usage == TextureUsage::DepthAttachment ||
+		TextureComp->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment);
 
-	// // For static textures: generate mipmaps for all device memories
-	// // For render targets: generate mipmaps only for current frame's device memory
-	// size_t startIndex = 0;
-	// size_t endIndex = 1;
+	// For static textures: generate mipmaps for all device memories
+	// For render targets: generate mipmaps only for current frame's device memory
+	size_t startIndex = 0;
+	size_t endIndex = 1;
 
-	// if (isStaticTexture && DX12TextureComp->m_TextureDesc.IsMultiBuffer)
-	// {
-	// 	// Static textures with multi-buffer: generate for all buffers
-	// 	endIndex = DX12TextureComp->m_DeviceMemories.size();
-	// }
-	// else if (isRenderTarget && DX12TextureComp->m_TextureDesc.IsMultiBuffer)
-	// {
-	// 	// Render targets with multi-buffer: generate only for current frame
-	// 	startIndex = GetCurrentFrame();
-	// 	endIndex = startIndex + 1;
-	// }
-	// else
-	// {
-	// 	// Single buffer textures: always use index 0
-	// 	startIndex = 0;
-	// 	endIndex = 1;
-	// }
+	if (isStaticTexture && TextureComp->m_TextureDesc.IsMultiBuffer)
+	{
+		// Static textures with multi-buffer: generate for all buffers
+		endIndex = TextureComp->m_ReadHandles.size();
+	}
+	else if (isRenderTarget && TextureComp->m_TextureDesc.IsMultiBuffer)
+	{
+		// Render targets with multi-buffer: generate only for current frame
+		startIndex = GetCurrentFrame();
+		endIndex = startIndex + 1;
+	}
+	else
+	{
+		// Single buffer textures: always use index 0
+		startIndex = 0;
+		endIndex = 1;
+	}
 
-	// auto l_DX12CommandList = reinterpret_cast<DX12CommandList*>(commandList);
-	// if (!l_DX12CommandList)
-	// {
-	// 	Log(Error, DX12TextureComp->m_InstanceName, " Invalid command list");
-	// 	return false;
-	// }
+	auto l_DX12CommandList = reinterpret_cast<DX12CommandList*>(commandList);
+	if (!l_DX12CommandList)
+	{
+		Log(Error, TextureComp->m_InstanceName, " Invalid command list");
+		return false;
+	}
 
-	// auto l_computeCommandList = l_DX12CommandList->m_ComputeCommandList;
-	// auto l_directCommandList = l_DX12CommandList->m_DirectCommandList;
-	// if (!l_computeCommandList || !l_directCommandList)
-	// {
-	// 	Log(Error, DX12TextureComp->m_InstanceName, " Invalid command lists");
-	// 	return false;
-	// }
+	auto l_computeCommandList = l_DX12CommandList->m_ComputeCommandList;
+	auto l_directCommandList = l_DX12CommandList->m_DirectCommandList;
+	if (!l_computeCommandList || !l_directCommandList)
+	{
+		Log(Error, TextureComp->m_InstanceName, " Invalid command lists");
+		return false;
+	}
 
-	// // Set pipeline state based on texture type
-	// if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
-	// {
-	// 	l_computeCommandList->SetComputeRootSignature(m_3DMipmapRootSignature);
-	// 	l_computeCommandList->SetPipelineState(m_3DMipmapPSO);
-	// }
-	// else
-	// {
-	// 	l_computeCommandList->SetComputeRootSignature(m_2DMipmapRootSignature);
-	// 	l_computeCommandList->SetPipelineState(m_2DMipmapPSO);
-	// }
+	// Set pipeline state based on texture type
+	if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+	{
+		l_computeCommandList->SetComputeRootSignature(m_3DMipmapRootSignature);
+		l_computeCommandList->SetPipelineState(m_3DMipmapPSO);
+	}
+	else
+	{
+		l_computeCommandList->SetComputeRootSignature(m_2DMipmapRootSignature);
+		l_computeCommandList->SetPipelineState(m_2DMipmapPSO);
+	}
 
-	// // Set descriptor heaps
-	// ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
-	// l_computeCommandList->SetDescriptorHeaps(1, l_heaps);
+	// Set descriptor heaps
+	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
+	l_computeCommandList->SetDescriptorHeaps(1, l_heaps);
 
-	// uint32_t l_mipLevels = DX12TextureComp->m_DX12TextureDesc.MipLevels;
+	uint32_t l_mipLevels = TextureComp->m_TextureDesc.MipLevels;
 
-	// // Process each required device memory
-	// for (size_t deviceMemoryIndex = startIndex; deviceMemoryIndex < endIndex; deviceMemoryIndex++)
-	// {
-	// 	auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(DX12TextureComp->m_DeviceMemories[deviceMemoryIndex]);
-	// 	if (!l_DX12DeviceMemory)
-	// 	{
-	// 		Log(Error, DX12TextureComp->m_InstanceName, " Invalid device memory at index ", deviceMemoryIndex);
-	// 		return false;
-	// 	}
+	// Process each required device memory
+	for (size_t deviceMemoryIndex = startIndex; deviceMemoryIndex < endIndex; deviceMemoryIndex++)
+	{
+		auto l_defaultHeapBuffer = reinterpret_cast<ID3D12Resource*>(TextureComp->m_GPUResources[deviceMemoryIndex]);
+		if (!l_defaultHeapBuffer)
+		{
+			Log(Error, TextureComp->m_InstanceName, " Invalid device memory at index ", deviceMemoryIndex);
+			return false;
+		}
 
-	// 	// Transition this device memory to UAV state for mipmap generation
-	// 	auto l_writeState = DX12TextureComp->m_WriteState;
-	// 	if (DX12TextureComp->m_CurrentState != l_writeState)
-	// 	{
-	// 		auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), DX12TextureComp->m_CurrentState, l_writeState);
-	// 		l_directCommandList->ResourceBarrier(1, &l_transition);
-	// 	}
+		if (TextureComp->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, 
+				static_cast<D3D12_RESOURCE_STATES>(TextureComp->m_CurrentState), 
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			l_directCommandList->ResourceBarrier(1, &l_transition);
+		}
 
-	// 	for (uint32_t mipLevel = 0; mipLevel < l_mipLevels - 1; mipLevel++)
-	// 	{
-	// 		uint32_t dstWidth = std::max(DX12TextureComp->m_TextureDesc.Width >> (mipLevel + 1), 1u);
-	// 		uint32_t dstHeight = std::max(DX12TextureComp->m_TextureDesc.Height >> (mipLevel + 1), 1u);
-	// 		uint32_t dstDepth = 1;
+		for (uint32_t mipLevel = 0; mipLevel < l_mipLevels - 1; mipLevel++)
+		{
+			uint32_t dstWidth = std::max(TextureComp->m_TextureDesc.Width >> (mipLevel + 1), 1u);
+			uint32_t dstHeight = std::max(TextureComp->m_TextureDesc.Height >> (mipLevel + 1), 1u);
+			uint32_t dstDepth = 1;
 
-	// 		// Set texel size constants (1.0 / dstSize)
-	// 		l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
-	// 		l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
+			// Set texel size constants (1.0 / dstSize)
+			l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
+			l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
 
-	// 		if (DX12TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
-	// 		{
-	// 			dstDepth = std::max(DX12TextureComp->m_TextureDesc.DepthOrArraySize >> (mipLevel + 1), 1u);
-	// 			l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
-	// 		}
+			if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+			{
+				dstDepth = std::max(TextureComp->m_TextureDesc.DepthOrArraySize >> (mipLevel + 1), 1u);
+				l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
+			}
 
-	// 		// Bind source mip (SRV) and destination mip (UAV) using array indices
-	// 		// Source: mipLevel (read from current mip)
-	// 		// Destination: mipLevel + 1 (write to next smaller mip)
-	// 		D3D12_GPU_DESCRIPTOR_HANDLE l_srcSRV = l_DX12DeviceMemory->m_SRVs[mipLevel].Handle.GPUHandle;
-	// 		D3D12_GPU_DESCRIPTOR_HANDLE l_dstUAV = l_DX12DeviceMemory->m_UAVs[mipLevel + 1].Handle.GPUHandle;
+			// Bind source mip (SRV) and destination mip (UAV) using array indices
+			// Source: mipLevel (read from current mip)
+			// Destination: mipLevel + 1 (write to next smaller mip)
+			auto l_readHandleIndex = TextureComp->GetHandleIndex(deviceMemoryIndex, mipLevel);
+			auto l_srcSRV = D3D12_GPU_DESCRIPTOR_HANDLE { TextureComp->m_ReadHandles[l_readHandleIndex].m_GPUHandle };
 
-	// 		l_computeCommandList->SetComputeRootDescriptorTable(1, l_srcSRV);
-	// 		l_computeCommandList->SetComputeRootDescriptorTable(2, l_dstUAV);
+			auto l_writeHandleIndex = TextureComp->GetHandleIndex(deviceMemoryIndex, mipLevel + 1);
+			auto l_dstUAV = D3D12_GPU_DESCRIPTOR_HANDLE { TextureComp->m_WriteHandles[l_writeHandleIndex].m_GPUHandle };
 
-	// 		// Dispatch compute shader
-	// 		uint32_t dispatchX = std::max(dstWidth / 8, 1u);
-	// 		uint32_t dispatchY = std::max(dstHeight / 8, 1u);
-	// 		uint32_t dispatchZ = std::max(dstDepth / 8, 1u);
+			l_computeCommandList->SetComputeRootDescriptorTable(1, l_srcSRV);
+			l_computeCommandList->SetComputeRootDescriptorTable(2, l_dstUAV);
 
-	// 		l_computeCommandList->Dispatch(dispatchX, dispatchY, dispatchZ);
+			// Dispatch compute shader
+			uint32_t dispatchX = std::max(dstWidth / 8, 1u);
+			uint32_t dispatchY = std::max(dstHeight / 8, 1u);
+			uint32_t dispatchZ = std::max(dstDepth / 8, 1u);
 
-	// 		D3D12_RESOURCE_BARRIER l_uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get());
-	// 		l_directCommandList->ResourceBarrier(1, &l_uavBarrier);
-	// 	}
+			l_computeCommandList->Dispatch(dispatchX, dispatchY, dispatchZ);
 
-	// 	// Transition static textures back to read state after mipmap generation
-	// 	if (isStaticTexture)
-	// 	{
-	// 		auto l_readState = DX12TextureComp->m_ReadState;
-	// 		auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), l_writeState, l_readState);
-	// 		l_directCommandList->ResourceBarrier(1, &l_transition);
-	// 	}
-	// }
+			D3D12_RESOURCE_BARRIER l_uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_defaultHeapBuffer);
+			l_directCommandList->ResourceBarrier(1, &l_uavBarrier);
+		}
 
-	// // Update the texture's current state
-	// if (isStaticTexture)
-	// {
-	// 	DX12TextureComp->m_CurrentState = DX12TextureComp->m_ReadState;
-	// }
-	// else
-	// {
-	// 	DX12TextureComp->m_CurrentState = DX12TextureComp->m_WriteState;
-	// }
+		l_directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			l_defaultHeapBuffer,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			static_cast<D3D12_RESOURCE_STATES>(TextureComp->m_CurrentState)));
+	}
 
-	// Log(Verbose, DX12TextureComp->m_InstanceName, " Successfully generated ", l_mipLevels, " mip levels for ", (endIndex - startIndex), " device memory/memories with proper synchronization");
+	Log(Verbose, TextureComp->m_InstanceName, " Successfully generated ", l_mipLevels, " mip levels for ", (endIndex - startIndex), " device memory/memories with proper synchronization");
 	return true;
 }

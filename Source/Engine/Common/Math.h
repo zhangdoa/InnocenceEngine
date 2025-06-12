@@ -1022,17 +1022,18 @@ namespace Inno
 			TVec3<T> m_scale;   // 3 * sizeof(T) = 12 bytes  
 			TVec2<T> m_pad1;    // 2 * sizeof(T) = 8 bytes padding
 
-			// Computed getters - inline implementations to avoid linker issues
-			auto GetMatrix() const -> TMat4<T>
+			auto GetScaleMatrix() const -> TMat4<T>
 			{
-				// Create transformation matrix: T * R * S
 				auto scaleMat = TMat4<T>();
 				scaleMat.m00 = m_scale.x;
 				scaleMat.m11 = m_scale.y;
 				scaleMat.m22 = m_scale.z;
 				scaleMat.m33 = one<T>;
+				return scaleMat;
+			}
 
-				// Rotation matrix from quaternion
+			auto GetRotationMatrix() const -> TMat4<T>
+			{
 				auto rotMat = TMat4<T>();
 				rotMat.m00 = (one<T> - two<T> * m_rot.y * m_rot.y - two<T> * m_rot.z * m_rot.z);
 				rotMat.m01 = (two<T> * m_rot.x * m_rot.y - two<T> * m_rot.z * m_rot.w);
@@ -1044,8 +1045,11 @@ namespace Inno
 				rotMat.m21 = (two<T> * m_rot.y * m_rot.z + two<T> * m_rot.x * m_rot.w);
 				rotMat.m22 = (one<T> - two<T> * m_rot.x * m_rot.x - two<T> * m_rot.y * m_rot.y);
 				rotMat.m33 = one<T>;
+				return rotMat;
+			}
 
-				// Translation matrix
+			auto GetTranslationMatrix() const -> TMat4<T>
+			{
 				auto transMat = TMat4<T>();
 				transMat.m00 = one<T>;
 				transMat.m03 = m_pos.x;
@@ -1054,8 +1058,13 @@ namespace Inno
 				transMat.m22 = one<T>;
 				transMat.m23 = m_pos.z;
 				transMat.m33 = one<T>;
+				return transMat;
+			}
 
-				return transMat * rotMat * scaleMat;
+			auto GetMatrix() const -> TMat4<T>
+			{
+				// Create transformation matrix: T * R * S
+				return GetTranslationMatrix() * GetRotationMatrix() * GetScaleMatrix();
 			}
 
 			auto GetInverseMatrix() const -> TMat4<T>

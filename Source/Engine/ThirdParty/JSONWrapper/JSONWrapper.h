@@ -18,8 +18,11 @@ namespace Inno
 
 		void to_json(json& j, const Entity& p);
 
-
 		void to_json(json& j, const ModelComponent& p);
+		void to_json(json& j, const DrawCallComponent& p);
+		void to_json(json& j, const MeshComponent& p);
+		void to_json(json& j, const MaterialComponent& p);
+		void to_json(json& j, const TextureComponent& p);
 		void to_json(json& j, const LightComponent& p);
 		void to_json(json& j, const CameraComponent& p);
 		void to_json(json& j, const RenderPassComponent& p);

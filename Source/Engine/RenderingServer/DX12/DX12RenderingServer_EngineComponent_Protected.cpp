@@ -222,24 +222,25 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 	rhs->m_GPUResources.resize(frameCount);
 	for (uint32_t frame = 0; frame < frameCount; frame++)
 	{
-		ComPtr<ID3D12Resource> resource;
+		ComPtr<ID3D12Resource> defaultHeapBuffer;
 		if (useClearValue)
-			resource = CreateDefaultHeapBuffer(&l_textureDesc, D3D12_RESOURCE_STATE_COMMON, &l_clearValue);
+			defaultHeapBuffer = CreateDefaultHeapBuffer(&l_textureDesc, D3D12_RESOURCE_STATE_COMMON, &l_clearValue);
 		else
-			resource = CreateDefaultHeapBuffer(&l_textureDesc);
+			defaultHeapBuffer = CreateDefaultHeapBuffer(&l_textureDesc);
 
-		if (!resource)
+		if (!defaultHeapBuffer)
 		{
 			Log(Error, "Failed to create texture buffer for frame ", frame);
 			return false;
 		}
 
 #ifdef INNO_DEBUG
-		SetObjectName(rhs, resource, ("DefaultHeap_Texture_Frame" + std::to_string(frame)).c_str());
+		SetObjectName(rhs, defaultHeapBuffer, ("DefaultHeap_Texture_Frame" + std::to_string(frame)).c_str());
 #endif
 
-		rhs->m_GPUResources[frame] = resource.Get();
-		resource.Detach(); // Component now owns the resource
+		rhs->m_GPUResources[frame] = defaultHeapBuffer.Get();
+		m_TextureBuffers_Default[rhs->m_UUID] = defaultHeapBuffer;
+		defaultHeapBuffer.Detach();
 	}
 
 	DX12CommandList l_commandList = {};
@@ -247,10 +248,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 	if (textureData)
 	{
 		// Upload to first frame's resource
-		auto* resource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[0]);
+		auto* defaultHeapBuffer_Frame0 = static_cast<ID3D12Resource*>(rhs->m_GPUResources[0]);
 
 		uint32_t l_subresourcesCount = rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 6 : 1;
-		UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(resource, 0, l_subresourcesCount);
+		UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(defaultHeapBuffer_Frame0, 0, l_subresourcesCount);
 
 		auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 		auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc);
@@ -265,24 +266,23 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 		SetObjectName(rhs, l_uploadHeapBuffer, "UploadHeap_Texture");
 #endif
 
-		// Store the upload buffer to keep it alive during GPU command execution
-		m_TextureUploadBuffers[rhs->m_UUID] = l_uploadHeapBuffer;
+		m_TextureBuffers_Upload[rhs->m_UUID] = l_uploadHeapBuffer;
 
 		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 		l_textureSubResourceData.RowPitch = rhs->m_TextureDesc.Width * GetTexturePixelDataSize(rhs->m_TextureDesc);
 		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * rhs->m_TextureDesc.Height;
 		l_textureSubResourceData.pData = (unsigned char*)textureData;
 
-		UpdateSubresources(l_commandList.m_DirectCommandList.Get(), resource, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
-		l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_DEST, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
+		UpdateSubresources(l_commandList.m_DirectCommandList.Get(), defaultHeapBuffer_Frame0, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
+		l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(defaultHeapBuffer_Frame0, D3D12_RESOURCE_STATE_COPY_DEST, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
 
 		// Copy to all other frames
 		for (uint32_t frame = 1; frame < frameCount; frame++)
 		{
-			auto* destResource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
-			l_commandList.m_DirectCommandList->CopyResource(destResource, resource);
+			auto* defaultHeapBuffer_FrameN = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
+			l_commandList.m_DirectCommandList->CopyResource(defaultHeapBuffer_FrameN, defaultHeapBuffer_Frame0);
 			l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				destResource, D3D12_RESOURCE_STATE_COPY_DEST, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
+				defaultHeapBuffer_FrameN, D3D12_RESOURCE_STATE_COPY_DEST, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
 		}
 	}
 	else
@@ -290,9 +290,9 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 		// Transition all resources to initial state
 		for (uint32_t frame = 0; frame < frameCount; frame++)
 		{
-			auto* resource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
+			auto* defaultHeapBuffer = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
 			l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				resource, D3D12_RESOURCE_STATE_COMMON, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
+				defaultHeapBuffer, D3D12_RESOURCE_STATE_COMMON, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
 		}
 	}
 
@@ -851,13 +851,10 @@ bool DX12RenderingServer::Clear(ICommandList* commandList, TextureComponent* rhs
 			NULL);
 	}
 
-	if (rhs->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-	{
-		l_commandList->m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			resource,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
-	}
-
+	l_commandList->m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		resource,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
+	
 	return true;
 }

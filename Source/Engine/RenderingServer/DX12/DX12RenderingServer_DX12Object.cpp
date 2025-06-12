@@ -205,9 +205,7 @@ DescriptorHandle DX12DescriptorHeapAccessor::GetNewHandle()
 		m_CurrentHandle.m_GPUHandle += m_Desc.m_DescriptorSize;
 
 	m_CurrentHandle.m_CPUHandle += m_Desc.m_DescriptorSize;
-	
-	Log(Verbose, "New handle on ", m_Desc.m_Name, " with index ", m_CurrentHandle.m_Index, " has been created.");
-	
+
 	m_CurrentHandle.m_Index++;
 	
 	return l_handle;
