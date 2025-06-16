@@ -56,7 +56,9 @@ namespace Inno
 		std::vector<PerObjectConstantBuffer> m_debugPassPerObjectCB;
 
 		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
+		GPUBufferComponent* m_PerFrameCBufferPrevGPUBufferComp;
 		GPUBufferComponent* m_PerObjectGPUBufferComp;
+		GPUBufferComponent* m_PerObjectPrevGPUBufferComp;
 		GPUBufferComponent* m_MaterialGPUBufferComp;
 		GPUBufferComponent* m_PointLightGPUBufferComp;
 		GPUBufferComponent* m_SphereLightGPUBufferComp;
@@ -81,6 +83,11 @@ namespace Inno
 		bool UpdateBillboardPassData();
 		bool UpdateDebuggerPassData();
 		bool UploadGPUBuffers();
+
+		GPUBufferComponent* GetCurrentFramePerFrameBuffer();
+		GPUBufferComponent* GetPreviousFramePerFrameBuffer();
+		GPUBufferComponent* GetCurrentFramePerObjectBuffer();
+		GPUBufferComponent* GetPreviousFramePerObjectBuffer();
 	};
 }
 
@@ -100,12 +107,42 @@ float RenderingContextServiceImpl::RadicalInverse(uint32_t n, uint32_t base)
 	return val;
 }
 
+GPUBufferComponent* RenderingContextServiceImpl::GetCurrentFramePerFrameBuffer()
+{
+	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	return l_isOddFrame ? m_PerFrameCBufferGPUBufferComp : m_PerFrameCBufferPrevGPUBufferComp;
+}
+
+GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFramePerFrameBuffer()
+{
+	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
+}
+
+GPUBufferComponent* RenderingContextServiceImpl::GetCurrentFramePerObjectBuffer()
+{
+	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	return l_isOddFrame ? m_PerObjectGPUBufferComp : m_PerObjectPrevGPUBufferComp;
+}
+
+GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFramePerObjectBuffer()
+{
+	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	return l_isOddFrame ? m_PerObjectPrevGPUBufferComp : m_PerObjectGPUBufferComp;
+}
+
 bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
+	m_PerFrameCBufferPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBufferPrev/");
 	m_PerObjectGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
+	m_PerObjectPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBufferPrev/");
 	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
 	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
 	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
@@ -147,11 +184,23 @@ bool RenderingContextServiceImpl::Initialize()
 
 		l_renderingServer->Initialize(m_PerFrameCBufferGPUBufferComp);
 
+		m_PerFrameCBufferPrevGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
+		m_PerFrameCBufferPrevGPUBufferComp->m_ElementCount = 1;
+		m_PerFrameCBufferPrevGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
+
+		l_renderingServer->Initialize(m_PerFrameCBufferPrevGPUBufferComp);
+
 		m_PerObjectGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_PerObjectGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_PerObjectGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
 
 		l_renderingServer->Initialize(m_PerObjectGPUBufferComp);
+
+		m_PerObjectPrevGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_PerObjectPrevGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_PerObjectPrevGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+
+		l_renderingServer->Initialize(m_PerObjectPrevGPUBufferComp);
 
 		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
@@ -231,9 +280,6 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 
 	l_perFrameCB.camera_posWS = l_camera->m_Transform.m_pos;
 	l_perFrameCB.v = r * t;
-
-	// @TODO: Need to implement previous frame transform for camera component
-	l_perFrameCB.v_prev = l_perFrameCB.v; // Temporary - use current for prev
 
 	l_perFrameCB.zNear = l_camera->m_zNear;
 	l_perFrameCB.zFar = l_camera->m_zFar;
@@ -374,7 +420,6 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 
 			PerObjectConstantBuffer l_perObjectCB = {};
 			l_perObjectCB.m = l_modelComponent->m_Transform.GetMatrix();
-			l_perObjectCB.m_prev = l_modelComponent->m_Transform.GetMatrix(); // @TODO: Add a previous-frame GPU buffer for these
 			l_perObjectCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
 			l_perObjectCB.UUID = (float)l_modelComponent->m_UUID;
 			l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
@@ -516,11 +561,14 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Upload(m_PerFrameCBufferGPUBufferComp, &m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()]);
+	auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
+	auto l_currentFramePerObjectBuffer = GetCurrentFramePerObjectBuffer();
+
+	l_renderingServer->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()]);
 
 	if (m_perObjectCBVector.size() > 0)
 	{
-		l_renderingServer->Upload(m_PerObjectGPUBufferComp, m_perObjectCBVector, 0, m_perObjectCBVector.size());
+		l_renderingServer->Upload(l_currentFramePerObjectBuffer, m_perObjectCBVector, 0, m_perObjectCBVector.size());
 	}
 	if (m_materialCBVector.size() > 0)
 	{
@@ -582,7 +630,9 @@ bool RenderingContextServiceImpl::Terminate()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->Delete(m_PerFrameCBufferGPUBufferComp);
+	l_renderingServer->Delete(m_PerFrameCBufferPrevGPUBufferComp);
 	l_renderingServer->Delete(m_PerObjectGPUBufferComp);
+	l_renderingServer->Delete(m_PerObjectPrevGPUBufferComp);
 	l_renderingServer->Delete(m_MaterialGPUBufferComp);
 	l_renderingServer->Delete(m_PointLightGPUBufferComp);
 	l_renderingServer->Delete(m_SphereLightGPUBufferComp);
@@ -631,9 +681,13 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 
 	switch (usageType)
 	{
-	case GPUBufferUsageType::PerFrame: l_result = m_Impl->m_PerFrameCBufferGPUBufferComp;
+	case GPUBufferUsageType::PerFrame: l_result = m_Impl->GetCurrentFramePerFrameBuffer();
 		break;
-	case GPUBufferUsageType::Mesh: l_result = m_Impl->m_PerObjectGPUBufferComp;
+	case GPUBufferUsageType::PerFramePrev: l_result = m_Impl->GetPreviousFramePerFrameBuffer();
+		break;
+	case GPUBufferUsageType::Mesh: l_result = m_Impl->GetCurrentFramePerObjectBuffer();
+		break;
+	case GPUBufferUsageType::MeshPrev: l_result = m_Impl->GetPreviousFramePerObjectBuffer();
 		break;
 	case GPUBufferUsageType::Material: l_result = m_Impl->m_MaterialGPUBufferComp;
 		break;

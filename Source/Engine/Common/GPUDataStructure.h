@@ -22,7 +22,6 @@ namespace Inno
 		Mat4 p_original;
 		Mat4 p_jittered;
 		Mat4 v;
-		Mat4 v_prev;
 		Mat4 p_inv;
 		Mat4 v_inv;
 		float zNear;
@@ -40,7 +39,7 @@ namespace Inno
 		uint32_t activeCascade;
 		Vec2 radianceCacheHaltonJitter;
 		uint32_t frameIndex;
-		float padding;
+		float padding[17]; // Increased padding to maintain alignment after removing v_prev
 	};
 
 	struct alignas(16) CSMConstantBuffer
@@ -71,11 +70,10 @@ namespace Inno
 	struct alignas(16) PerObjectConstantBuffer
 	{
 		Mat4 m;
-		Mat4 m_prev;
 		Mat4 normalMat;
 		float UUID;
 		uint32_t m_MaterialIndex = 0;
-		float padding[14];
+		float padding[30]; // Increased padding to maintain alignment after removing m_prev
 	};
 
 	struct MaterialAttributes

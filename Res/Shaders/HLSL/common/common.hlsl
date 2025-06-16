@@ -54,38 +54,37 @@ struct PerFrame_CB
 	float4x4 p_original; // 0 - 3
 	float4x4 p_jittered; // 4 - 7
 	float4x4 v; // 8 - 11
-	float4x4 v_prev; // 12 - 15
-	float4x4 p_inv; // 16 - 19
-	float4x4 v_inv; // 20 - 23
-	float zNear; // Tight packing 24
-	float zFar; // Tight packing 24
-	float minLogLuminance; // Tight packing 24
-	float maxLogLuminance; // Tight packing 24
-	float4 sun_direction; // 25
-	float4 sun_illuminance; // 26
-	float4 viewportSize; // 27
-	float4 posWSNormalizer; // 28
-	float4 camera_posWS; // 29
-	float aperture; // Tight packing 30
-	float shutterTime; // Tight packing 30
-	float ISO; // Tight packing 30
-	uint activeCascade; // Tight packing 30
-	float radianceCacheJitter_x; // Tight packing 31
-	float radianceCacheJitter_y; // Tight packing 31
-	uint frameIndex; // Tight packing 31
-	float padding_b; // Tight packing 31
+	float4x4 p_inv; // 12 - 15
+	float4x4 v_inv; // 16 - 19
+	float zNear; // Tight packing 20
+	float zFar; // Tight packing 20
+	float minLogLuminance; // Tight packing 20
+	float maxLogLuminance; // Tight packing 20
+	float4 sun_direction; // 21
+	float4 sun_illuminance; // 22
+	float4 viewportSize; // 23
+	float4 posWSNormalizer; // 24
+	float4 camera_posWS; // 25
+	float aperture; // Tight packing 26
+	float shutterTime; // Tight packing 26
+	float ISO; // Tight packing 26
+	uint activeCascade; // Tight packing 26
+	float radianceCacheJitter_x; // Tight packing 27
+	float radianceCacheJitter_y; // Tight packing 27
+	uint frameIndex; // Tight packing 27
+	float padding_b; // Tight packing 27
+	float4 padding_c[4]; // 28 - 31 (to maintain 16-byte alignment)
 };
 
 struct PerObject_CB
 {
 	float4x4 m; // 0 - 3
-	float4x4 m_prev; // 4 - 7
-	float4x4 normalMat; // 8 - 11
-	float UUID; // Tight packing 12
-	uint m_MaterialIndex; // Tight packing 12
-	uint padding_a; // Tight packing 12
-	uint padding_b; // Tight packing 12
-	float4 padding_c[3]; // 13 - 15
+	float4x4 normalMat; // 4 - 7
+	float UUID; // Tight packing 8
+	uint m_MaterialIndex; // Tight packing 8
+	uint padding_a; // Tight packing 8
+	uint padding_b; // Tight packing 8
+	float4 padding_c[7]; // 9 - 15 (to maintain 16-byte alignment)
 };
 
 static const uint MaxTextureSlotCount = 7;

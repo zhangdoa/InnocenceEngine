@@ -7,6 +7,37 @@ struct AnimationKeyData_SB
 	float4x4 m;
 };
 
+[[vk::binding(0, 0)]]
+cbuffer RootConstants : register(b0)
+{
+	uint m_ObjectIndex;
+};
+
+[[vk::binding(1, 0)]]
+cbuffer PerFrameConstantBuffer : register(b1)
+{
+    PerFrame_CB perFrameCBuffer;
+}
+
+[[vk::binding(2, 0)]]
+cbuffer PerFrameConstantBufferPrev : register(b2)
+{
+    PerFrame_CB perFrameCBufferPrev;
+}
+
+[[vk::binding(3, 0)]]
+cbuffer AnimationPassConstantBuffer : register(b3)
+{
+    AnimationPass_CB animationPassCBuffer;
+}
+
+[[vk::binding(0, 1)]]
+StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+
+[[vk::binding(1, 1)]]
+StructuredBuffer<PerObject_CB> g_ObjectsPrev : register(t1);
+
+[[vk::binding(5, 1)]]
 StructuredBuffer<AnimationKeyData_SB> animationKeyDataSBuffer : register(t5);
 
 struct PixelInputType
@@ -42,13 +73,16 @@ PixelInputType main(VertexInputType input)
 	float4 posBS = float4(input.posLS.xyz, 1.0f);
 	float4 posLS = mul(posBS, m);
 
+	PerObject_CB perObjectCBuffer = g_Objects[m_ObjectIndex];
+	PerObject_CB perObjectCBufferPrev = g_ObjectsPrev[m_ObjectIndex];
+
 	float4 posWS = mul(posLS, perObjectCBuffer.m);
 	float4 posVS = mul(posWS, perFrameCBuffer.v);
 	output.posCS_orig = mul(posVS, perFrameCBuffer.p_original);
 
-	float4 posWS_prev = mul(posLS, perObjectCBuffer.m_prev);
-	float4 posVS_prev = mul(posWS_prev, perFrameCBuffer.v_prev);
-	output.posCS_prev = mul(posVS_prev, perFrameCBuffer.p_original);
+	float4 posWS_prev = mul(posLS, perObjectCBufferPrev.m);
+	float4 posVS_prev = mul(posWS_prev, perFrameCBufferPrev.v);
+	output.posCS_prev = mul(posVS_prev, perFrameCBufferPrev.p_original);
 
 	output.posCS = mul(posVS, perFrameCBuffer.p_jittered);
 

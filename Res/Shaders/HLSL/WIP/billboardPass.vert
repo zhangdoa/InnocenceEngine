@@ -4,11 +4,16 @@
 struct billboardMeshData
 {
 	matrix m;
-	matrix m_prev;
 	matrix normalMat;
 	float UUID;
-	float padding[15];
+	float padding[31]; // Increased padding after removing m_prev
 };
+
+[[vk::binding(1, 0)]]
+cbuffer PerFrameConstantBuffer : register(b1)
+{
+    PerFrame_CB perFrameCBuffer;
+}
 
 [[vk::binding(12, 0)]]
 StructuredBuffer<billboardMeshData> billboardSBuffer : register(t12);

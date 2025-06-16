@@ -13,14 +13,23 @@ cbuffer PerFrameConstantBuffer : register(b1)
     PerFrame_CB g_Frame;
 }
 
+[[vk::binding(2, 0)]]
+cbuffer PerFrameConstantBufferPrev : register(b2)
+{
+    PerFrame_CB g_FramePrev;
+}
+
 [[vk::binding(0, 1)]]
 StructuredBuffer<PerObject_CB> g_Objects : register(t0);
 
 [[vk::binding(1, 1)]]
-StructuredBuffer<Material_CB> g_Materials : register(t1);
+StructuredBuffer<PerObject_CB> g_ObjectsPrev : register(t1);
 
 [[vk::binding(2, 1)]]
-Texture2D g_2DTextures[] : register(t2);
+StructuredBuffer<Material_CB> g_Materials : register(t2);
+
+[[vk::binding(3, 1)]]
+Texture2D g_2DTextures[] : register(t3);
 
 [[vk::binding(0, 2)]]
 SamplerState g_Sampler : register(s0);
@@ -101,9 +110,11 @@ PixelOutputType main(PixelInputType input)
 		out_AO = t2d_ao.Sample(g_Sampler, input.texCoord).r;
 	}
 
-	float4 posWS_prev = float4(input.posWS, 1.0);
-	float4 posVS_prev = mul(posWS_prev, g_Frame.v_prev);
-	float4 posCS_prev = mul(posVS_prev, g_Frame.p_original);
+	// For motion vectors, we need to calculate where this pixel was in the previous frame
+	// input.posWS is the current world space position
+	float4 posWS_curr = float4(input.posWS, 1.0);
+	float4 posVS_prev = mul(posWS_curr, g_FramePrev.v);
+	float4 posCS_prev = mul(posVS_prev, g_FramePrev.p_original);
 
 	float w_orig = max(abs(input.posCS_orig.w), EPSILON);
 	float w_prev = max(abs(posCS_prev.w), EPSILON);

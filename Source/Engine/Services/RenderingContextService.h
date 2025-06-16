@@ -16,7 +16,9 @@ namespace Inno
 	enum class GPUBufferUsageType
 	{
 		PerFrame,
+		PerFramePrev,
 		Mesh,
+		MeshPrev,
 		Material,
 		PointLight,
 		SphereLight,
