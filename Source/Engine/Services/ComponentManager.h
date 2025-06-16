@@ -51,6 +51,19 @@ namespace Inno
 						m_ComponentLUT.erase(component->m_Owner);
 						m_ComponentLUTByUUID.erase(component->m_UUID);
 
+						// Remove from loaded components map by finding matching UUID
+						for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
+						{
+							if (it->second == component->m_UUID)
+							{
+								it = m_LoadedComponents.erase(it);
+							}
+							else
+							{
+								++it;
+							}
+						}
+
 						// Destroy the component
 						DestroyComponent(component);
 
@@ -96,6 +109,8 @@ namespace Inno
 			m_ComponentLUT.emplace(owner, l_Component);
 			m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
 
+			Log(Verbose, "Component ", l_Component->m_InstanceName.c_str(), " has been created.");
+
 			return l_Component;
 		}
 
@@ -103,6 +118,19 @@ namespace Inno
 		{
 			if (!DestroyComponent(component))
 				return;
+
+			// Remove from loaded components map by finding matching UUID
+			for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
+			{
+				if (it->second == component->m_UUID)
+				{
+					it = m_LoadedComponents.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
 
 			m_ComponentPointers.eraseByValue(component);
 			m_ComponentLUT.erase(component->m_Owner);
