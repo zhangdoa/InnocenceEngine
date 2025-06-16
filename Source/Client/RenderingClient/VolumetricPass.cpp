@@ -433,7 +433,8 @@ bool VolumetricPass::irraidanceInjection()
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
 	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
+	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
@@ -446,7 +447,8 @@ bool VolumetricPass::irraidanceInjection()
 	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
+	// TODO: Implement per-pass dispatch params buffer upload
+	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
 
 	// l_renderingServer->CommandListBegin(m_irraidanceInjectionRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp);
@@ -497,7 +499,8 @@ bool VolumetricPass::rayMarching()
 	}
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
+	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
@@ -510,7 +513,8 @@ bool VolumetricPass::rayMarching()
 	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
-	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
+	// TODO: Implement per-pass dispatch params buffer upload
+	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
 
 	// l_renderingServer->CommandListBegin(m_rayMarchingRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp);

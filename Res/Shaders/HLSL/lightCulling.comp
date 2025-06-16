@@ -22,9 +22,9 @@ cbuffer PointLightCBuffer : register(b1)
 };
 
 [[vk::binding(2, 0)]]
-cbuffer PerFrameConstantBuffer : register(b2)
+cbuffer LightCullingDispatchParams : register(b2)
 {
-	DispatchParams_CB g_DispatchParams[NUM_DISPATCH_PARAMS];
+	DispatchParams_CB g_DispatchParams;
 }
 
 [[vk::binding(0, 1)]]
@@ -76,7 +76,7 @@ void main(ComputeInputType input)
 		l_uMaxDepth = 0;
 		l_LightCount = 0;
 		l_LightIndexStartOffset = 0;
-		l_TileFrustum = in_Frustums[input.groupID.x + (input.groupID.y * g_DispatchParams[1].numThreadGroups.x)];
+		l_TileFrustum = in_Frustums[input.groupID.x + (input.groupID.y * g_DispatchParams.numThreadGroups.x)];
 	}
 
 	GroupMemoryBarrierWithGroupSync();

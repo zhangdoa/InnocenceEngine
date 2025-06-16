@@ -21,7 +21,6 @@ namespace Inno
 		PointLight,
 		SphereLight,
 		CSM,
-		ComputeDispatchParam,
 		GI,
 		Animation,
 		Billboard

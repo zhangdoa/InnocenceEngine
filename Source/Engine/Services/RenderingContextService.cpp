@@ -61,12 +61,10 @@ namespace Inno
 		GPUBufferComponent* m_PointLightGPUBufferComp;
 		GPUBufferComponent* m_SphereLightGPUBufferComp;
 		GPUBufferComponent* m_CSMGPUBufferComp;
-		GPUBufferComponent* m_DispatchParamsGPUBufferComp;
 		GPUBufferComponent* m_GICBufferGPUBufferComp;
 		GPUBufferComponent* m_animationGPUBufferComp;
 		GPUBufferComponent* m_billboardGPUBufferComp;
 
-		std::vector<DispatchParamsConstantBuffer> m_DispatchParamsConstantBuffer;
 
 		std::function<void()> f_sceneLoadingFinishedCallback;
 
@@ -112,7 +110,6 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
 	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
 	m_CSMGPUBufferComp = l_renderingServer->AddGPUBufferComponent("CSMCBuffer/");
-	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DispatchParamsCBuffer/");
 	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
 	m_animationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
 	m_billboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
@@ -176,12 +173,6 @@ bool RenderingContextServiceImpl::Initialize()
 		m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
 
 		l_renderingServer->Initialize(m_CSMGPUBufferComp);
-
-		// @TODO: get rid of hard-code stuffs
-		m_DispatchParamsGPUBufferComp->m_ElementCount = 8;
-		m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
-
-		l_renderingServer->Initialize(m_DispatchParamsGPUBufferComp);
 
 		m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
 		m_GICBufferGPUBufferComp->m_ElementCount = 1;
@@ -596,7 +587,6 @@ bool RenderingContextServiceImpl::Terminate()
 	l_renderingServer->Delete(m_PointLightGPUBufferComp);
 	l_renderingServer->Delete(m_SphereLightGPUBufferComp);
 	l_renderingServer->Delete(m_CSMGPUBufferComp);
-	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Delete(m_GICBufferGPUBufferComp);
 	l_renderingServer->Delete(m_animationGPUBufferComp);
 	l_renderingServer->Delete(m_billboardGPUBufferComp);
@@ -652,8 +642,6 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 	case GPUBufferUsageType::SphereLight: l_result = m_Impl->m_SphereLightGPUBufferComp;
 		break;
 	case GPUBufferUsageType::CSM: l_result = m_Impl->m_CSMGPUBufferComp;
-		break;
-	case GPUBufferUsageType::ComputeDispatchParam: l_result = m_Impl->m_DispatchParamsGPUBufferComp;
 		break;
 	case GPUBufferUsageType::GI:l_result = m_Impl->m_GICBufferGPUBufferComp;
 		break;

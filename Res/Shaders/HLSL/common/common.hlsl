@@ -11,8 +11,6 @@ static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
 static const int NR_CSM_SPLITS = 4;
 
-// @TODO: Do not hardcode this
-static const int NUM_DISPATCH_PARAMS = 8;
 
 static const float FLT_MIN = 1.175494351e-38;
 static const float FLT_MAX = 3.402823466e+38;

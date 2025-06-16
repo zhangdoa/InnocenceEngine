@@ -715,7 +715,8 @@ bool GIResolvePass::litSurfels()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
+	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
 	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
@@ -760,7 +761,8 @@ bool GIResolvePass::litBricks()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
+	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 	auto l_threadCountPerGroupPerSide = 8;
@@ -803,7 +805,8 @@ bool GIResolvePass::litProbes()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
+	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 	auto l_threadCountPerGroupPerSide = 8;
@@ -849,7 +852,8 @@ bool GIResolvePass::generateIrradianceVolume()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
+	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
+	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 	auto l_numThreadsX = 64;

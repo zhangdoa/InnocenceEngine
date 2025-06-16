@@ -14,6 +14,8 @@ bool TiledFrustumGenerationPass::Setup(ISystemConfig* systemConfig)
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";
 
+	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("TiledFrustumDispatchParams/");
+
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -52,6 +54,11 @@ bool TiledFrustumGenerationPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
+	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
+	m_DispatchParamsGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
+
+	l_renderingServer->Initialize(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
 
@@ -63,13 +70,12 @@ bool TiledFrustumGenerationPass::Initialize()
 bool TiledFrustumGenerationPass::Update()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	DispatchParamsConstantBuffer l_tiledFrustumWorkload;
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;
 	l_tiledFrustumWorkload.numThreads = m_numThreads;
 
-	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
+	l_renderingServer->Upload(m_DispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
 
 	return true;
 }
@@ -79,6 +85,7 @@ bool TiledFrustumGenerationPass::Terminate()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->Delete(m_TiledFrustum);
+	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
 
@@ -100,13 +107,12 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 1);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_TiledFrustum, 2);
 
 	l_renderingServer->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);

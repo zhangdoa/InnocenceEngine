@@ -22,6 +22,8 @@ bool LightCullingPass::Setup(ISystemConfig* systemConfig)
 	m_lightListIndexCounter->m_ElementSize = sizeof(uint32_t);
 	m_lightListIndexCounter->m_InitialData = &l_initialIndexCount;
 
+	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("LightCullingDispatchParams/");
+
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -112,6 +114,11 @@ bool LightCullingPass::Initialize()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
+	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
+	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
+	m_DispatchParamsGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
+
+	l_renderingServer->Initialize(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
 	l_renderingServer->Initialize(m_SamplerComp);
@@ -134,9 +141,7 @@ bool LightCullingPass::Update()
 	lightCullingWorkload.numThreadGroups = m_numThreadGroups;
 	lightCullingWorkload.numThreads = m_numThreads;
 
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
-
-	l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &lightCullingWorkload, 1, 1);
+	l_renderingServer->Upload(m_DispatchParamsGPUBufferComp, &lightCullingWorkload, 0, 1);
 
 	return true;
 }
@@ -147,6 +152,7 @@ bool LightCullingPass::Terminate()
 
 	l_renderingServer->Delete(m_lightListIndexCounter);
 	l_renderingServer->Delete(m_lightIndexList);
+	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Delete(m_lightGrid);
 	l_renderingServer->Delete(m_heatMap);
 
@@ -183,14 +189,13 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
-	auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_dispatchParamsGPUBufferComp, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 2);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TiledFrustumGenerationPass::Get().GetTiledFrustum(), 3);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightListIndexCounter, 4);

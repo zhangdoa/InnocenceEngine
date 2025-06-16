@@ -16,9 +16,9 @@ cbuffer PerFrameConstantBuffer : register(b0)
 }
 
 [[vk::binding(1, 0)]]
-cbuffer PerFrameConstantBuffer : register(b1)
+cbuffer TiledFrustumDispatchParams : register(b1)
 {
-	DispatchParams_CB g_DispatchParams[NUM_DISPATCH_PARAMS];
+	DispatchParams_CB g_DispatchParams;
 }
 
 [[vk::binding(0, 1)]]
@@ -66,7 +66,7 @@ void main(ComputeInputType input)
 	frustum.planes[3] = ComputePlane(eyePos, viewSpace[3], viewSpace[2]);
 
 	// Store the computed frustum in global memory (if our thread ID is in bounds of the grid).
-	uint4 numThreads = g_DispatchParams[0].numThreads;
+	uint4 numThreads = g_DispatchParams.numThreads;
 	if (input.dispatchThreadID.x < numThreads.x && input.dispatchThreadID.y < numThreads.y)
 	{
 		uint flattenedIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * numThreads.x);

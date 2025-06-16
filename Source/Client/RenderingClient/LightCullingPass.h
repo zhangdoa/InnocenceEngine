@@ -36,6 +36,7 @@ namespace Inno
 
 		GPUBufferComponent* m_lightListIndexCounter;
 		GPUBufferComponent* m_lightIndexList;
+		GPUBufferComponent* m_DispatchParamsGPUBufferComp;
 
 		TextureComponent* m_lightGrid;
 		TextureComponent* m_heatMap;

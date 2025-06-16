@@ -24,6 +24,7 @@ namespace Inno
 		RenderPassComponent *m_RenderPassComp;
 		ShaderProgramComponent *m_ShaderProgramComp;
 		GPUBufferComponent* m_TiledFrustum;
+		GPUBufferComponent* m_DispatchParamsGPUBufferComp;
 		const uint32_t m_tileSize = 16;
 		const uint32_t m_numThreadPerGroup = 16;
 		Math::TVec4<uint32_t> m_numThreads;
