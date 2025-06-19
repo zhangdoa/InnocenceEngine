@@ -104,6 +104,9 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
+	if (m_TiledFrustum->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
@@ -133,7 +136,7 @@ GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 	return m_TiledFrustum;
 }
 
-bool Inno::TiledFrustumGenerationPass::CreateResources()
+bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -157,15 +160,6 @@ bool Inno::TiledFrustumGenerationPass::CreateResources()
 	m_TiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_TiledFrustum->m_ElementCount = l_elementCount;
 	m_TiledFrustum->m_ElementSize = 64; // 4 planes to make a frustum, float3 normal + float distance for each plane
-
-	return true;
-}
-
-bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
-{
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	CreateResources();
 
 	l_renderingServer->Initialize(m_TiledFrustum);
 

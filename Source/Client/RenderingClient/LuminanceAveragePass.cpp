@@ -17,6 +17,7 @@ bool LuminanceAveragePass::Setup(ISystemConfig* systemConfig)
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
+	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_Resizable = false;
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("LuminanceAveragePass/");
@@ -75,6 +76,12 @@ bool LuminanceAveragePass::Initialize()
 	return true;
 }
 
+bool LuminanceAveragePass::Update()
+{
+	m_ObjectStatus = ObjectStatus::Activated;
+	return true;
+}
+
 bool LuminanceAveragePass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
@@ -96,6 +103,9 @@ ObjectStatus LuminanceAveragePass::GetStatus()
 bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (LuminanceHistogramPass::Get().GetResult()->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
 	if (m_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)

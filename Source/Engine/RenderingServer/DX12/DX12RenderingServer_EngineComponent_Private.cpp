@@ -130,10 +130,10 @@ bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 {
 	bool l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
-	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_UINT;
+	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
 	l_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)rhs->m_ElementCount;
-	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? (uint32_t)rhs->m_ElementSize : 0;
+	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
 
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite);
 	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite, TextureUsage::Invalid, false);
@@ -307,7 +307,7 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 		return false;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(RenderPassComp, l_PSO->m_RootSignature, "RootSignature");
 #endif // INNO_DEBUG
 
@@ -317,11 +317,11 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 	{
 		D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[4] = {};
 
-		// 1. Constant argument.
+		// 1. Constant argument (must be first to match HLSL structure).
 		argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT;
 		argumentDescs[0].Constant.RootParameterIndex = 0; // The root signature slot for the constant.
 		argumentDescs[0].Constant.DestOffsetIn32BitValues = 0; // Start at offset 0.
-		argumentDescs[0].Constant.Num32BitValuesToSet = 1; // Number of 32-bit values.
+		argumentDescs[0].Constant.Num32BitValuesToSet = 2; // Number of 32-bit values. Because of the 8-byte alignment requirement, we put two 32-bit values here.
 
 		// 2. Vertex buffer view.
 		argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
@@ -329,13 +329,13 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 		// 3. Index buffer view.
 		argumentDescs[2].Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
 
-		// 4. Draw indexed arguments.
+		// 4. Draw indexed arguments (must be last).
 		argumentDescs[3].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
 
 		D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
 		commandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
 		commandSignatureDesc.pArgumentDescs = argumentDescs;
-		commandSignatureDesc.ByteStride = sizeof(DX12DrawIndirectCommand);
+		commandSignatureDesc.ByteStride = 64;
 
 		l_HResult = m_device->CreateCommandSignature(&commandSignatureDesc, l_PSO->m_RootSignature.Get(), IID_PPV_ARGS(&l_PSO->m_IndirectCommandSignature));
 		if (FAILED(l_HResult))
@@ -402,7 +402,8 @@ D3D12_DESCRIPTOR_RANGE1 DX12RenderingServer::GetDescriptorRange(RenderPassCompon
 			l_range.NumDescriptors = l_descriptorAccessor.m_Desc.m_MaxDescriptors;
 		else if (resourceBinderLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBinderLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
-			|| resourceBinderLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
+			|| resourceBinderLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment 
+			|| resourceBinderLayoutDesc.m_TextureUsage == TextureUsage::ComputeOnly)
 			l_range.NumDescriptors = 1;
 	}
 	else if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
@@ -423,6 +424,12 @@ bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, DX
 		l_commandList = commandList->m_ComputeCommandList;
 	}
 
+	if (!l_commandList)
+	{
+		Log(Error, "Command list is null in SetDescriptorHeaps for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
+
 	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get(), m_SamplerDescHeap.Get() };
 	l_commandList->SetDescriptorHeaps(2, l_heaps);
 
@@ -434,9 +441,21 @@ bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, DX12
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
 
+	if (!commandList || !commandList->m_DirectCommandList)
+	{
+		Log(Error, "Command list is null in SetRenderTargets for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
+
 	auto l_commandList = commandList->m_DirectCommandList;
 	auto l_currentFrame = GetCurrentFrame();
 	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
+
+	if (!l_outputMergerTarget)
+	{
+		Log(Error, "Output merger target is null in SetRenderTargets for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE* l_DSV = NULL;
 	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
@@ -464,6 +483,12 @@ bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, DX12C
 		l_commandList = commandList->m_DirectCommandList;
 	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 		l_commandList = commandList->m_ComputeCommandList;
+
+	if (!l_commandList)
+	{
+		Log(Error, "Command list is null in PreparePipeline for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
 
 	if (PSO->m_PSO)
 		l_commandList->SetPipelineState(PSO->m_PSO.Get());
@@ -501,20 +526,35 @@ bool DX12RenderingServer::Open(ICommandList* commandList, GPUEngineType GPUEngin
 	auto l_pipelineStateObject = reinterpret_cast<DX12PipelineStateObject*>(pipelineStateObject);
 	auto l_PSO = l_pipelineStateObject ? l_pipelineStateObject->m_PSO.Get() : nullptr;
 	auto l_currentFrame = GetCurrentFrame();
-	if (GPUEngineType == GPUEngineType::Graphics)
+
+	// Always open the direct command list since TryToTransitState requires it for resource state transitions
+	auto l_directCommandList = l_commandList->m_DirectCommandList;
+	if (!l_directCommandList)
 	{
-		auto l_DX12CommandList = l_commandList->m_DirectCommandList;
-		l_DX12CommandList->Reset(m_directCommandAllocators[l_currentFrame].Get(), l_PSO);
+		Log(Error, "DirectCommandList is null");
+		return false;
 	}
-	else if (GPUEngineType == GPUEngineType::Compute)
+	l_directCommandList->Reset(m_directCommandAllocators[l_currentFrame].Get(), l_PSO);
+
+	if (GPUEngineType == GPUEngineType::Compute)
 	{
-		auto l_DX12CommandList = l_commandList->m_ComputeCommandList;
-		l_DX12CommandList->Reset(m_computeCommandAllocators[l_currentFrame].Get(), l_PSO);
+		auto l_computeCommandList = l_commandList->m_ComputeCommandList;
+		if (!l_computeCommandList)
+		{
+			Log(Error, "ComputeCommandList is null for Compute engine type");
+			return false;
+		}
+		l_computeCommandList->Reset(m_computeCommandAllocators[l_currentFrame].Get(), l_PSO);
 	}
 	else if (GPUEngineType == GPUEngineType::Copy)
 	{
-		auto l_DX12CommandList = l_commandList->m_CopyCommandList;
-		l_DX12CommandList->Reset(m_copyCommandAllocators[l_currentFrame].Get(), l_PSO);
+		auto l_copyCommandList = l_commandList->m_CopyCommandList;
+		if (!l_copyCommandList)
+		{
+			Log(Error, "CopyCommandList is null for Copy engine type");
+			return false;
+		}
+		l_copyCommandList->Reset(m_copyCommandAllocators[l_currentFrame].Get(), l_PSO);
 	}
 
 	return true;
@@ -523,173 +563,37 @@ bool DX12RenderingServer::Open(ICommandList* commandList, GPUEngineType GPUEngin
 bool DX12RenderingServer::Close(ICommandList* commandList, GPUEngineType GPUEngineType)
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-	if (GPUEngineType == GPUEngineType::Graphics)
+
+	// Always close the direct command list since we always open it
+	auto l_directCommandList = l_commandList->m_DirectCommandList;
+	if (!l_directCommandList)
 	{
-		auto l_DX12CommandList = l_commandList->m_DirectCommandList;
-		l_DX12CommandList->Close();
+		Log(Error, "DirectCommandList is null in Close");
+		return false;
 	}
-	else if (GPUEngineType == GPUEngineType::Compute)
+	l_directCommandList->Close();
+
+	if (GPUEngineType == GPUEngineType::Compute)
 	{
-		auto l_DX12CommandList = l_commandList->m_ComputeCommandList;
-		l_DX12CommandList->Close();
+		auto l_computeCommandList = l_commandList->m_ComputeCommandList;
+		if (!l_computeCommandList)
+		{
+			Log(Error, "ComputeCommandList is null in Close for Compute engine type");
+			return false;
+		}
+		l_computeCommandList->Close();
 	}
 	else if (GPUEngineType == GPUEngineType::Copy)
 	{
-		auto l_DX12CommandList = l_commandList->m_CopyCommandList;
-		l_DX12CommandList->Close();
-	}
-
-	return true;
-}
-
-bool DX12RenderingServer::GenerateMipmapImpl(TextureComponent* TextureComp, ICommandList* commandList)
-{
-	struct DWParam
-	{
-		DWParam(FLOAT f) : Float(f) {}
-		DWParam(UINT u) : Uint(u) {}
-
-		void operator=(FLOAT f) { Float = f; }
-		void operator=(UINT u) { Uint = u; }
-
-		union
+		auto l_copyCommandList = l_commandList->m_CopyCommandList;
+		if (!l_copyCommandList)
 		{
-			FLOAT Float;
-			UINT Uint;
-		};
-	};
-
-	if (TextureComp->m_TextureDesc.MipLevels == 1)
-	{
-		Log(Warning, TextureComp->m_InstanceName, " Attempt to generate mipmaps for texture without mipmaps requirement.");
-		return false;
-	}
-
-	// Determine if this is a static texture (Sample usage) or render target (attachment usage)
-	bool isStaticTexture = (TextureComp->m_TextureDesc.Usage == TextureUsage::Sample);
-	bool isRenderTarget = (TextureComp->m_TextureDesc.Usage == TextureUsage::ColorAttachment ||
-		TextureComp->m_TextureDesc.Usage == TextureUsage::DepthAttachment ||
-		TextureComp->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment);
-
-	// For static textures: generate mipmaps for all device memories
-	// For render targets: generate mipmaps only for current frame's device memory
-	size_t startIndex = 0;
-	size_t endIndex = 1;
-
-	if (isStaticTexture && TextureComp->m_TextureDesc.IsMultiBuffer)
-	{
-		// Static textures with multi-buffer: generate for all buffers
-		endIndex = TextureComp->m_ReadHandles.size();
-	}
-	else if (isRenderTarget && TextureComp->m_TextureDesc.IsMultiBuffer)
-	{
-		// Render targets with multi-buffer: generate only for current frame
-		startIndex = GetCurrentFrame();
-		endIndex = startIndex + 1;
-	}
-	else
-	{
-		// Single buffer textures: always use index 0
-		startIndex = 0;
-		endIndex = 1;
-	}
-
-	auto l_DX12CommandList = reinterpret_cast<DX12CommandList*>(commandList);
-	if (!l_DX12CommandList)
-	{
-		Log(Error, TextureComp->m_InstanceName, " Invalid command list");
-		return false;
-	}
-
-	auto l_computeCommandList = l_DX12CommandList->m_ComputeCommandList;
-	auto l_directCommandList = l_DX12CommandList->m_DirectCommandList;
-	if (!l_computeCommandList || !l_directCommandList)
-	{
-		Log(Error, TextureComp->m_InstanceName, " Invalid command lists");
-		return false;
-	}
-
-	// Set pipeline state based on texture type
-	if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
-	{
-		l_computeCommandList->SetComputeRootSignature(m_3DMipmapRootSignature);
-		l_computeCommandList->SetPipelineState(m_3DMipmapPSO);
-	}
-	else
-	{
-		l_computeCommandList->SetComputeRootSignature(m_2DMipmapRootSignature);
-		l_computeCommandList->SetPipelineState(m_2DMipmapPSO);
-	}
-
-	// Set descriptor heaps
-	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
-	l_computeCommandList->SetDescriptorHeaps(1, l_heaps);
-
-	uint32_t l_mipLevels = TextureComp->m_TextureDesc.MipLevels;
-
-	// Process each required device memory
-	for (size_t deviceMemoryIndex = startIndex; deviceMemoryIndex < endIndex; deviceMemoryIndex++)
-	{
-		auto l_defaultHeapBuffer = reinterpret_cast<ID3D12Resource*>(TextureComp->m_GPUResources[deviceMemoryIndex]);
-		if (!l_defaultHeapBuffer)
-		{
-			Log(Error, TextureComp->m_InstanceName, " Invalid device memory at index ", deviceMemoryIndex);
+			Log(Error, "CopyCommandList is null in Close for Copy engine type");
 			return false;
 		}
-
-		if (TextureComp->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-		{
-			auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, 
-				static_cast<D3D12_RESOURCE_STATES>(TextureComp->m_CurrentState), 
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			l_directCommandList->ResourceBarrier(1, &l_transition);
-		}
-
-		for (uint32_t mipLevel = 0; mipLevel < l_mipLevels - 1; mipLevel++)
-		{
-			uint32_t dstWidth = std::max(TextureComp->m_TextureDesc.Width >> (mipLevel + 1), 1u);
-			uint32_t dstHeight = std::max(TextureComp->m_TextureDesc.Height >> (mipLevel + 1), 1u);
-			uint32_t dstDepth = 1;
-
-			// Set texel size constants (1.0 / dstSize)
-			l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
-			l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
-
-			if (TextureComp->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
-			{
-				dstDepth = std::max(TextureComp->m_TextureDesc.DepthOrArraySize >> (mipLevel + 1), 1u);
-				l_computeCommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
-			}
-
-			// Bind source mip (SRV) and destination mip (UAV) using array indices
-			// Source: mipLevel (read from current mip)
-			// Destination: mipLevel + 1 (write to next smaller mip)
-			auto l_readHandleIndex = TextureComp->GetHandleIndex(deviceMemoryIndex, mipLevel);
-			auto l_srcSRV = D3D12_GPU_DESCRIPTOR_HANDLE { TextureComp->m_ReadHandles[l_readHandleIndex].m_GPUHandle };
-
-			auto l_writeHandleIndex = TextureComp->GetHandleIndex(deviceMemoryIndex, mipLevel + 1);
-			auto l_dstUAV = D3D12_GPU_DESCRIPTOR_HANDLE { TextureComp->m_WriteHandles[l_writeHandleIndex].m_GPUHandle };
-
-			l_computeCommandList->SetComputeRootDescriptorTable(1, l_srcSRV);
-			l_computeCommandList->SetComputeRootDescriptorTable(2, l_dstUAV);
-
-			// Dispatch compute shader
-			uint32_t dispatchX = std::max(dstWidth / 8, 1u);
-			uint32_t dispatchY = std::max(dstHeight / 8, 1u);
-			uint32_t dispatchZ = std::max(dstDepth / 8, 1u);
-
-			l_computeCommandList->Dispatch(dispatchX, dispatchY, dispatchZ);
-
-			D3D12_RESOURCE_BARRIER l_uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_defaultHeapBuffer);
-			l_directCommandList->ResourceBarrier(1, &l_uavBarrier);
-		}
-
-		l_directCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			l_defaultHeapBuffer,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			static_cast<D3D12_RESOURCE_STATES>(TextureComp->m_CurrentState)));
+		l_copyCommandList->Close();
 	}
 
-	Log(Verbose, TextureComp->m_InstanceName, " Successfully generated ", l_mipLevels, " mip levels for ", (endIndex - startIndex), " device memory/memories with proper synchronization");
 	return true;
 }
+

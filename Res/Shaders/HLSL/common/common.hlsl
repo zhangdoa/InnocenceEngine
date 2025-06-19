@@ -72,19 +72,14 @@ struct PerFrame_CB
 	float radianceCacheJitter_x; // Tight packing 27
 	float radianceCacheJitter_y; // Tight packing 27
 	uint frameIndex; // Tight packing 27
-	float padding_b; // Tight packing 27
+	uint modelCount; // Tight packing 27
 	float4 padding_c[4]; // 28 - 31 (to maintain 16-byte alignment)
 };
 
-struct PerObject_CB
+struct Transform_CB
 {
-	float4x4 m; // 0 - 3
-	float4x4 normalMat; // 4 - 7
-	float UUID; // Tight packing 8
-	uint m_MaterialIndex; // Tight packing 8
-	uint padding_a; // Tight packing 8
-	uint padding_b; // Tight packing 8
-	float4 padding_c[7]; // 9 - 15 (to maintain 16-byte alignment)
+	float4x4 m;         // Model transformation matrix (0 - 3)
+	float4x4 normalMat; // Normal transformation matrix (4 - 7)
 };
 
 static const uint MaxTextureSlotCount = 7;
@@ -483,4 +478,67 @@ struct Probe
 	uint brickFactorRange[12];
 	float skyVisibility[6];
 	uint padding[10];
+};
+
+// GPU model data structure (must match C++ GPUModelData)
+struct GPUModelData
+{
+    uint64_t m_VertexBufferAddress;
+    uint64_t m_IndexBufferAddress;
+    
+    uint m_VertexCount;
+    uint m_IndexCount;
+    uint m_VertexStride;
+    uint m_IndexStride;
+    
+    uint m_MaterialIndex;
+    uint m_ShaderProgramIndex;
+    float m_UUID;
+    uint m_RenderPassIndex;
+    
+    uint m_VisibilityMask;
+    uint m_MeshUsage;
+    
+    float4 m_BoundingBoxMin;
+    float4 m_BoundingBoxMax;
+    
+    uint m_InstanceCount;
+    uint m_FirstInstance;
+    
+    float padding[16];
+};
+
+// DirectX 12 indirect draw command structure (64 bytes total)
+// CRITICAL: Must match D3D12_COMMAND_SIGNATURE_DESC layout exactly:
+// Based on Microsoft documentation for argument types:
+// 1. D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT (8 bytes - 2 x 32-bit values for alignment)
+// 2. D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW (16 bytes)  
+// 3. D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW (16 bytes)
+// 4. D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED (20 bytes)
+struct DX12IndirectDrawCommand
+{
+    // Root constant (8 bytes) - D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT (2 x 32-bit values)
+    uint m_ObjectIndex;
+    uint m_Padding1;                 // 4 bytes padding to align uint64_t to 8-byte boundary
+    
+    // D3D12_VERTEX_BUFFER_VIEW (16 bytes) - D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW
+    uint64_t m_VertexBufferLocation; // BufferLocation (8 bytes) - now at offset 8 (8-byte aligned)
+    uint m_VertexBufferSizeInBytes;  // SizeInBytes (4 bytes)
+    uint m_VertexStride;             // StrideInBytes (4 bytes)
+    
+    // D3D12_INDEX_BUFFER_VIEW (16 bytes) - D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW
+    uint64_t m_IndexBufferLocation;  // BufferLocation (8 bytes) - now at offset 24 (8-byte aligned)
+    uint m_IndexBufferSizeInBytes;   // SizeInBytes (4 bytes)
+    uint m_IndexFormat;              // Format (4 bytes) - DXGI_FORMAT_R32_UINT = 42
+    
+    // D3D12_DRAW_INDEXED_ARGUMENTS (20 bytes) - D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED
+    uint m_IndexCountPerInstance;    // IndexCountPerInstance
+    uint m_InstanceCount;            // InstanceCount  
+    uint m_StartIndexLocation;       // StartIndexLocation
+    int m_BaseVertexLocation;        // BaseVertexLocation
+    uint m_StartInstanceLocation;    // StartInstanceLocation
+    
+    // Total: 8 + 16 + 16 + 20 = 60 bytes  
+    // Padding to reach 64 bytes as specified by command signature ByteStride
+    uint m_Padding2;              // 4 bytes padding
 };

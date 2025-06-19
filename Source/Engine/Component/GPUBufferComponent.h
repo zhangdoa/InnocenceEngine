@@ -14,8 +14,11 @@ namespace Inno
 		size_t m_TotalSize = 0;
 		GPUBufferUsage m_Usage = GPUBufferUsage::None;
 		void* m_InitialData = 0;
-		IIndirectDrawCommandList* m_IndirectDrawCommandList = 0;
 		std::vector<IMappedMemory*> m_MappedMemories;
 		std::vector<IDeviceMemory*> m_DeviceMemories;
+		
+		uint32_t m_ReadState = 0;
+		uint32_t m_WriteState = 0;
+		uint32_t m_CurrentState = 0;
 	};
 }

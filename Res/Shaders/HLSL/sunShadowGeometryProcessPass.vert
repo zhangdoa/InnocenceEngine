@@ -14,15 +14,15 @@ cbuffer RootConstants : register(b0)
 };
 
 [[vk::binding(0, 1)]]
-StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+StructuredBuffer<Transform_CB> g_Transforms : register(t0);
 
 GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
+	Transform_CB transformCB = g_Transforms[m_ObjectIndex];
 
-	output.posWS = mul(float4(input.posLS, 1.0f), perObjectCB.m);
+	output.posWS = mul(float4(input.posLS, 1.0f), transformCB.m);
 	output.texCoord = input.texCoord;
 
 	return output;

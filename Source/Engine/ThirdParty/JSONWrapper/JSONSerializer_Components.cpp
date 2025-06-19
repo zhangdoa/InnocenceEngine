@@ -174,6 +174,8 @@ bool JSONWrapper::Load(const char* fileName, ModelComponent& component)
         return false;
 
     from_json(j["Transform"], component.m_Transform);
+    
+    // Load DrawCallComponents if present
     if (j.find("DrawCallComponents") != j.end())
     {
         auto l_j = j["DrawCallComponents"];
@@ -185,12 +187,44 @@ bool JSONWrapper::Load(const char* fileName, ModelComponent& component)
         }
     }
 
+    // Load AnimationComponents if present  
     if (j.find("AnimationComponents") != j.end())
     {
         auto l_j = j["AnimationComponents"];
         // @TODO: Implement AnimationComponent loading
     }
 
+    // Calculate model AABB from all mesh AABBs after draw calls are loaded
+    bool firstMesh = true;
+    for (auto drawCallID : component.m_DrawCallComponents)
+    {
+        auto drawCallComponent = g_Engine->Get<ComponentManager>()->FindByUUID<DrawCallComponent>(drawCallID);
+        if (!drawCallComponent || drawCallComponent->m_MeshComponent == 0)
+            continue;
+
+        auto meshComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(drawCallComponent->m_MeshComponent);
+        if (!meshComponent)
+            continue;
+
+        if (firstMesh)
+        {
+            // Transform mesh AABB to world space
+            component.m_AABB = Math::TransformAABB(meshComponent->m_AABB, component.m_Transform.GetMatrix());
+            firstMesh = false;
+        }
+        else
+        {
+            // Merge with existing AABB
+            auto transformedAABB = Math::TransformAABB(meshComponent->m_AABB, component.m_Transform.GetMatrix());
+            component.m_AABB.m_boundMin = Math::elementWiseMin(component.m_AABB.m_boundMin, transformedAABB.m_boundMin);
+            component.m_AABB.m_boundMax = Math::elementWiseMax(component.m_AABB.m_boundMax, transformedAABB.m_boundMax);
+        }
+    }
+    
+    // Recalculate center and extent
+    component.m_AABB.m_center = (component.m_AABB.m_boundMax + component.m_AABB.m_boundMin) * 0.5f;
+    component.m_AABB.m_extend = component.m_AABB.m_boundMax - component.m_AABB.m_center;
+  
     return true;
 }
 

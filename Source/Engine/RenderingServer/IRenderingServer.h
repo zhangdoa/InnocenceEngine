@@ -79,7 +79,6 @@ namespace Inno
 		virtual bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
 		virtual bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) { return false; }
 
-		virtual bool UpdateIndirectDrawCommand(GPUBufferComponent* indirectDrawCommand, const std::vector<DrawCallInfo>& drawCallList, std::function<bool(const DrawCallInfo&)>&& isDrawCallValid) { return false; }
 		virtual bool ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand) { return false; }
 		virtual void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) {}
 		virtual bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount = 1) { return false; }
@@ -215,8 +214,28 @@ namespace Inno
 		
 		std::function<void()> m_SceneLoadingStartedCallback;
 
-		ThreadSafeQueue<MeshComponent*> m_uninitializedMeshes;
-		ThreadSafeQueue<TextureComponent*> m_uninitializedTextures;
+		// Init task objects for deferred component initialization
+		struct MeshInitTask
+		{
+			MeshInitTask(MeshComponent* component, std::vector<Vertex>&& vertices, std::vector<Index>&& indices)
+				: m_Component(component), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)) {}
+			
+			MeshComponent* m_Component;
+			std::vector<Vertex> m_Vertices;
+			std::vector<Index> m_Indices;
+		};
+
+		struct TextureInitTask
+		{
+			TextureInitTask(TextureComponent* component, void* textureData)
+				: m_Component(component), m_TextureData(textureData) {}
+			
+			TextureComponent* m_Component;
+			void* m_TextureData;
+		};
+
+		ThreadSafeQueue<MeshInitTask> m_uninitializedMeshes;
+		ThreadSafeQueue<TextureInitTask> m_uninitializedTextures;
 		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
 		ThreadSafeQueue<GPUBufferComponent*> m_uninitializedGPUBuffers;
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;

@@ -107,7 +107,6 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_readTexture, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, m_Result, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 2);
 
 	auto dispatch_x = (l_readTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto dispatch_y = (l_readTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;

@@ -1,4 +1,5 @@
 #cmakedefine INNO_DEBUG
+#cmakedefine INNO_RELWITHDEBINFO
 #cmakedefine INNO_RELEASE
 
 #cmakedefine INNO_PLATFORM_WIN

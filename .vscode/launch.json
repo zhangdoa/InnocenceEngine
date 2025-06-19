@@ -17,6 +17,22 @@
             "externalConsole": false
         },
         {
+            "name": "(Windows) Launch Main (Offscreen)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
+            "args": [
+                "-mode 0",
+                "-renderer 0",
+                "-loglevel 0",
+                "-offscreen",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },        
+        {
             "name": "(Windows) Launch Test",
             "type": "cppvsdbg",
             "request": "launch",

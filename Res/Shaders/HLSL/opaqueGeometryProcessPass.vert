@@ -24,16 +24,16 @@ cbuffer PerFrameConstantBuffer : register(b1)
 }
 
 [[vk::binding(0, 1)]]
-StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+StructuredBuffer<Transform_CB> g_Transforms : register(t0);
 
 PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
+	Transform_CB transformCB = g_Transforms[m_ObjectIndex];
 
 	float4 posLS = float4(input.posLS.xyz, 1.0f);
-	float4 posWS = mul(posLS, perObjectCB.m);
+	float4 posWS = mul(posLS, transformCB.m);
 	float4 posVS = mul(posWS, g_Frame.v);
 	output.posCS_orig = mul(posVS, g_Frame.p_original);
 
@@ -41,8 +41,8 @@ PixelInputType main(VertexInputType input)
 
 	output.posWS = posWS.xyz;
 	output.texCoord = input.texCoord;
-	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCB.normalMat).xyz;
-	output.tangentWS = mul(float4(input.tangentLS, 0.0f), perObjectCB.normalMat).xyz;
+	output.normalWS = mul(float4(input.normalLS, 0.0f), transformCB.normalMat).xyz;
+	output.tangentWS = mul(float4(input.tangentLS, 0.0f), transformCB.normalMat).xyz;
 
 	return output;
 }

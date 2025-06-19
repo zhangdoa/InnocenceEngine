@@ -77,7 +77,7 @@ namespace Inno
 		enum class MeshShape { Invalid, Customized, Triangle, Square, Pentagon, Hexagon, Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Sphere };
 
 		enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
-		enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment };
+		enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, ComputeOnly };
 		enum class TexturePixelDataFormat { Invalid, R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
 		enum class TexturePixelDataType { Invalid, UByte, SByte, UShort, SShort, UInt8, SInt8, UInt16, SInt16, UInt32, SInt32, Float16, Float32, Double };
 		enum class TextureWrapMethod { Invalid, Edge, Repeat, Border };
@@ -276,7 +276,6 @@ namespace Inno
 		};
 
 		struct IPipelineStateObject {};
-		struct IIndirectDrawCommandList {};
 	
 		enum class GPUResourceType
 		{
@@ -328,6 +327,17 @@ namespace Inno
 		};
 	}
 
+	// TODO: CRITICAL - ICommandList abstraction is problematic
+	// It wraps both direct/graphics and compute command lists, causing confusion about
+	// which command list type should be used for resource state transitions.
+	// 
+	// RECOMMENDED FIXES:
+	// 1. Remove ICommandList entirely and use specific command list types
+	// 2. OR: Make ICommandList not wrap both compute and direct lists
+	// 3. Resource state transitions should ALWAYS use direct/graphics command lists
+	// 4. Client should handle compute/graphics synchronization explicitly
+	//
+	// Current workaround: TryToTransitState always uses m_DirectCommandList
 	struct ICommandList {};
 
 	struct ISemaphore {};

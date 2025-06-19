@@ -39,7 +39,8 @@ namespace Inno
 		uint32_t activeCascade;
 		Vec2 radianceCacheHaltonJitter;
 		uint32_t frameIndex;
-		float padding[17]; // Increased padding to maintain alignment after removing v_prev
+		uint32_t modelCount;
+		float padding[16]; // Reduced padding after adding modelCount
 	};
 
 	struct alignas(16) CSMConstantBuffer
@@ -67,13 +68,11 @@ namespace Inno
 		//float sphereRadius;
 	};
 
-	struct alignas(16) PerObjectConstantBuffer
+	// Minimal transform constant buffer for GPU-driven rendering (replaces PerObjectConstantBuffer where only transforms are needed)
+	struct alignas(16) TransformConstantBuffer
 	{
-		Mat4 m;
-		Mat4 normalMat;
-		float UUID;
-		uint32_t m_MaterialIndex = 0;
-		float padding[30]; // Increased padding to maintain alignment after removing m_prev
+		Mat4 m;         // Model transformation matrix
+		Mat4 normalMat; // Normal transformation matrix
 	};
 
 	struct MaterialAttributes
@@ -153,6 +152,40 @@ namespace Inno
 		uint32_t m_PerObjectConstantBufferIndex = 0;
 		VisibilityMask m_VisibilityMask = VisibilityMask::Invalid;
 		MeshUsage meshUsage = MeshUsage::Invalid;
+	};
+
+	// GPU-resident model data for GPU-driven rendering
+	struct alignas(16) GPUModelData
+	{
+		// Vertex and index buffer GPU addresses
+		uint64_t m_VertexBufferAddress = 0;
+		uint64_t m_IndexBufferAddress = 0;
+		
+		// Buffer metadata
+		uint32_t m_VertexCount = 0;
+		uint32_t m_IndexCount = 0;
+		uint32_t m_VertexStride = 0;
+		uint32_t m_IndexStride = 0;
+		
+		// Material and shader identification
+		uint32_t m_MaterialIndex = 0;
+		uint32_t m_ShaderProgramIndex = 0;
+		float m_UUID = 0.0f;
+		uint32_t m_RenderPassIndex = 0;
+		
+		// Visibility and culling data
+		uint32_t m_VisibilityMask = 0;
+		uint32_t m_MeshUsage = 0;
+		
+		// Bounding box for GPU culling
+		Vec4 m_BoundingBoxMin;
+		Vec4 m_BoundingBoxMax;
+		
+		// Additional data for GPU-driven rendering
+		uint32_t m_InstanceCount = 1;
+		uint32_t m_FirstInstance = 0;
+		
+		float padding[16]; // Adjusted padding after adding shader fields
 	};
 
 	struct BillboardPassDrawCallInfo

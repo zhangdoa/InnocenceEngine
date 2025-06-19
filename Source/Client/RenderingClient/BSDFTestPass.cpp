@@ -82,7 +82,7 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 	//
 	auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
-	m_meshConstantBuffer.resize(l_RenderingCapability.maxMeshes);
+	m_transformConstantBuffer.resize(l_RenderingCapability.maxMeshes);
 	m_materialConstantBuffer.resize(l_RenderingCapability.maxMaterials);
 
 	size_t l_index = 0;
@@ -93,11 +93,11 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 	{
 		for (size_t j = 0; j < m_shpereCount; j++)
 		{
-			PerObjectConstantBuffer l_meshConstantBuffer;
-			l_meshConstantBuffer.m = Math::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
-			l_meshConstantBuffer.normalMat = Math::generateIdentityMatrix<float>();
+			TransformConstantBuffer l_transformCBuffer;
+			l_transformCBuffer.m = Math::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
+			l_transformCBuffer.normalMat = Math::generateIdentityMatrix<float>();
 
-			m_meshConstantBuffer[l_index] = l_meshConstantBuffer;
+			m_transformConstantBuffer[l_index] = l_transformCBuffer;
 
 			MaterialConstantBuffer l_materialConstantBuffer;
 
@@ -149,10 +149,10 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->Upload(l_MeshGPUBufferComp, m_meshConstantBuffer);
+	l_renderingServer->Upload(l_MeshGPUBufferComp, m_transformConstantBuffer);
 	l_renderingServer->Upload(l_MaterialGPUBufferComp, m_materialConstantBuffer);
 
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);

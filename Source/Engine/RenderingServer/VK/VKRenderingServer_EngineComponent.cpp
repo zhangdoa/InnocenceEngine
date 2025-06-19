@@ -60,7 +60,7 @@ bool VKRenderingServer::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &
 	InitializeDeviceLocalBuffer(&indices[0], l_IBSize, l_rhs->m_IBO, l_rhs->m_IBMemory);
 	Log(Verbose, "IBO ", l_rhs->m_IBO, " is initialized.");
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(l_rhs, l_rhs->m_VBO, VK_OBJECT_TYPE_BUFFER, "VB");
 	SetObjectName(l_rhs, l_rhs->m_IBO, VK_OBJECT_TYPE_BUFFER, "IB");
 #endif //  INNO_DEBUG
@@ -90,7 +90,7 @@ bool VKRenderingServer::InitializeImpl(TextureComponent *rhs, void *textureData)
 
 	CreateImage(l_rhs->m_ImageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_image, l_rhs->m_imageMemory);
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(l_rhs, l_rhs->m_image, VK_OBJECT_TYPE_IMAGE, "Image");
 #endif //  INNO_DEBUG
 
@@ -389,7 +389,7 @@ bool VKRenderingServer::CreateImageView(VKTextureComponent *VKTextureComp)
 		return false;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(VKTextureComp, VKTextureComp->m_imageView, VK_OBJECT_TYPE_IMAGE_VIEW, "ImageView");
 #endif //  INNO_DEBUG
 
@@ -546,7 +546,7 @@ bool VKRenderingServer::CreateDescriptorPool(VKRenderPassComponent *VKRenderPass
 	}
 
 	auto l_result = CreateDescriptorPool(&l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRenderPassComp->m_ResourceBindingLayoutDescs[VKRenderPassComp->m_ResourceBindingLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRenderPassComp->m_DescriptorPool);
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	if (l_result == VK_SUCCESS)
 	{
 		SetObjectName(VKRenderPassComp, VKRenderPassComp->m_DescriptorPool, VK_OBJECT_TYPE_DESCRIPTOR_POOL, "DescriptorPool");
@@ -731,7 +731,7 @@ bool VKRenderingServer::CreateRenderPass(VKRenderPassComponent *VKRenderPassComp
 		return false;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(VKRenderPassComp, l_PSO->m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS, "RenderPass");
 #endif //  INNO_DEBUG
 
@@ -809,7 +809,7 @@ bool VKRenderingServer::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 			continue;
 		}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		auto l_name = "FrameBuffer_" + std::to_string(i);
 		SetObjectName(VKRenderPassComp, VKRenderPassComp->m_Framebuffers[i], VK_OBJECT_TYPE_FRAMEBUFFER, l_name.c_str());
 	#endif //  INNO_DEBUG
@@ -841,7 +841,7 @@ bool VKRenderingServer::CreatePipelineLayout(VKRenderPassComponent *VKRenderPass
 		return false;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(VKRenderPassComp, l_PSO->m_PipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "PipelineLayout");
 #endif //  INNO_DEBUG
 
@@ -907,7 +907,7 @@ bool VKRenderingServer::CreateGraphicsPipelines(VKRenderPassComponent *VKRenderP
 		return false;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(VKRenderPassComp, l_PSO->m_Pipeline, VK_OBJECT_TYPE_PIPELINE, "GraphicsPipeline");
 #endif //  INNO_DEBUG
 
@@ -934,7 +934,7 @@ bool VKRenderingServer::CreateComputePipelines(VKRenderPassComponent *VKRenderPa
 		return false;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(VKRenderPassComp, l_PSO->m_Pipeline, VK_OBJECT_TYPE_PIPELINE, "ComputePipeline");
 #endif //  INNO_DEBUG
 
@@ -962,7 +962,7 @@ bool VKRenderingServer::CreateCommandBuffers(VKRenderPassComponent *VKRenderPass
 			return false;
 		}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	auto l_graphicsName = "GraphicsCommandBuffer_" + std::to_string(i);
 	SetObjectName(VKRenderPassComp, l_VKCommandList->m_GraphicsCommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_graphicsName.c_str());
 #endif //  INNO_DEBUG
@@ -979,7 +979,7 @@ bool VKRenderingServer::CreateCommandBuffers(VKRenderPassComponent *VKRenderPass
 			return false;
 		}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	auto l_computeName = "ComputeCommandBuffer_" + std::to_string(i);
 	SetObjectName(VKRenderPassComp, l_VKCommandList->m_ComputeCommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_computeName.c_str());
 #endif //  INNO_DEBUG
@@ -1014,7 +1014,7 @@ bool VKRenderingServer::CreateSyncPrimitives(VKRenderPassComponent *VKRenderPass
 			return false;
 		}
 		
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	auto l_graphicsName = "GraphicsSemaphore_" + std::to_string(i);
 	SetObjectName(VKRenderPassComp, l_VKSemaphore->m_GraphicsSemaphore, VK_OBJECT_TYPE_SEMAPHORE, l_graphicsName.c_str());
 #endif //  INNO_DEBUG
@@ -1025,7 +1025,7 @@ bool VKRenderingServer::CreateSyncPrimitives(VKRenderPassComponent *VKRenderPass
 			return false;
 		}
 		
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	auto l_computeName = "ComputeSemaphore_" + std::to_string(i);
 	SetObjectName(VKRenderPassComp, l_VKSemaphore->m_ComputeSemaphore, VK_OBJECT_TYPE_SEMAPHORE, l_computeName.c_str());
 #endif //  INNO_DEBUG

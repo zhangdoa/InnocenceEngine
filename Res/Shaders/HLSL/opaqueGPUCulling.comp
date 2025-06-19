@@ -1,0 +1,133 @@
+// Opaque geometry culling compute shader
+#include "common/common.hlsl"
+
+// Constant buffer for per-frame data
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB perFrameCB;
+};
+
+// Input: GPU model data buffer
+[[vk::binding(0, 1)]]
+StructuredBuffer<GPUModelData> u_ModelDataBuffer : register(t0);
+
+// Input: Material data
+[[vk::binding(1, 1)]]
+StructuredBuffer<Material_CB> u_MaterialBuffer : register(t1);
+
+// Output: Array of DirectX 12 indirect draw commands
+[[vk::binding(0, 2)]]
+RWStructuredBuffer<DX12IndirectDrawCommand> u_DrawCommandBuffer : register(u0);
+
+// Thread group size
+#define THREAD_GROUP_SIZE 64
+
+// Frustum culling function using bounding box
+bool IsInFrustum(float4 boundingBoxMin, float4 boundingBoxMax, float4x4 viewProjectionMatrix)
+{
+    // Get the 8 corners of the bounding box
+    float3 corners[8];
+    corners[0] = float3(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMin.z);
+    corners[1] = float3(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMin.z);
+    corners[2] = float3(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMin.z);
+    corners[3] = float3(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMin.z);
+    corners[4] = float3(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMax.z);
+    corners[5] = float3(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMax.z);
+    corners[6] = float3(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMax.z);
+    corners[7] = float3(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMax.z);
+
+    // Check each frustum plane: if all corners are outside any plane, cull the object
+    for (int i = 0; i < 8; i++)
+    {
+        float4 clipPos = mul(float4(corners[i], 1.0), viewProjectionMatrix);
+        corners[i] = clipPos.xyz / clipPos.w; // Store NDC coordinates
+    }
+
+    // Check if all corners are outside any frustum plane
+    // Left plane (x = -1)
+    bool allOutsideLeft = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].x >= -1.0) { allOutsideLeft = false; break; }
+    if (allOutsideLeft) return false;
+
+    // Right plane (x = 1)
+    bool allOutsideRight = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].x <= 1.0) { allOutsideRight = false; break; }
+    if (allOutsideRight) return false;
+
+    // Bottom plane (y = -1)
+    bool allOutsideBottom = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].y >= -1.0) { allOutsideBottom = false; break; }
+    if (allOutsideBottom) return false;
+
+    // Top plane (y = 1)
+    bool allOutsideTop = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].y <= 1.0) { allOutsideTop = false; break; }
+    if (allOutsideTop) return false;
+
+    // Near plane (z = -1)
+    bool allOutsideNear = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].z >= -1.0) { allOutsideNear = false; break; }
+    if (allOutsideNear) return false;
+
+    // Far plane (z = 1)
+    bool allOutsideFar = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].z <= 1.0) { allOutsideFar = false; break; }
+    if (allOutsideFar) return false;
+
+    // Object is at least partially inside frustum
+    return true;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+    uint objectIndex = id.x;
+
+    // Bounds check using model count from per-frame buffer
+    if (objectIndex >= perFrameCB.modelCount)
+        return;
+
+    // Get GPU model data
+    GPUModelData modelData = u_ModelDataBuffer[objectIndex];
+
+    // Frustum culling using bounding box
+    float4x4 viewProjectionMatrix = mul(perFrameCB.v, perFrameCB.p_original);
+    bool isVisible = IsInFrustum(modelData.m_BoundingBoxMin, modelData.m_BoundingBoxMax, viewProjectionMatrix);
+
+    // Create DirectX 12 indirect draw command
+    DX12IndirectDrawCommand drawCmd;
+
+    // Root constant (object index) with alignment padding
+    drawCmd.m_ObjectIndex = objectIndex;
+    drawCmd.m_Padding1 = 0;
+
+    // Vertex buffer view
+    drawCmd.m_VertexBufferLocation = modelData.m_VertexBufferAddress;
+    drawCmd.m_VertexBufferSizeInBytes = modelData.m_VertexCount * modelData.m_VertexStride;
+    drawCmd.m_VertexStride = modelData.m_VertexStride;
+
+    // Index buffer view
+    drawCmd.m_IndexBufferLocation = modelData.m_IndexBufferAddress;
+    drawCmd.m_IndexBufferSizeInBytes = modelData.m_IndexCount * modelData.m_IndexStride;
+    drawCmd.m_IndexFormat = 42; // DXGI_FORMAT_R32_UINT
+
+    // Draw arguments - set to zero for culled objects (must be last)
+    drawCmd.m_IndexCountPerInstance = isVisible ? modelData.m_IndexCount : 0;
+    drawCmd.m_InstanceCount = isVisible ? modelData.m_InstanceCount : 0;
+    drawCmd.m_StartIndexLocation = 0;
+    drawCmd.m_BaseVertexLocation = 0;
+    drawCmd.m_StartInstanceLocation = modelData.m_FirstInstance;
+
+    // Initialize padding to zero for consistency
+    drawCmd.m_Padding2 = 0;
+
+    // Store the draw command at object index (1:1 mapping)
+    u_DrawCommandBuffer[objectIndex] = drawCmd;
+}

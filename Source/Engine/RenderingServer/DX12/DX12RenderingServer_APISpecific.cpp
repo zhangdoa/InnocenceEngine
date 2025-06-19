@@ -86,10 +86,11 @@ DX12DescriptorHeapAccessor& DX12RenderingServer::GetDescriptorHeapAccessor(GPURe
 			switch (textureUsage)
 			{
 			case TextureUsage::Sample:
-				return m_MaterialTexture_SRV_DescHeapAccessor;
+			return m_MaterialTexture_SRV_DescHeapAccessor;
 			case TextureUsage::DepthAttachment:
 			case TextureUsage::DepthStencilAttachment:
 			case TextureUsage::ColorAttachment:
+			case TextureUsage::ComputeOnly:
 				return m_RenderTarget_SRV_DescHeapAccessor;
 			case TextureUsage::Invalid:
 			default:
@@ -104,10 +105,11 @@ DX12DescriptorHeapAccessor& DX12RenderingServer::GetDescriptorHeapAccessor(GPURe
 			switch (textureUsage)
 			{
 			case TextureUsage::Sample:
-				return isShaderVisible ? m_MaterialTexture_UAV_DescHeapAccessor : m_MaterialTexture_UAV_DescHeapAccessor_ShaderNonVisible;
+			return isShaderVisible ? m_MaterialTexture_UAV_DescHeapAccessor : m_MaterialTexture_UAV_DescHeapAccessor_ShaderNonVisible;
 			case TextureUsage::DepthAttachment:
 			case TextureUsage::DepthStencilAttachment:
 			case TextureUsage::ColorAttachment:
+			case TextureUsage::ComputeOnly:
 				return isShaderVisible ? m_RenderTarget_UAV_DescHeapAccessor : m_RenderTarget_UAV_DescHeapAccessor_ShaderNonVisible;
 			case TextureUsage::Invalid:
 			default:

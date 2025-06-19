@@ -17,8 +17,9 @@ namespace Inno
 	{
 		PerFrame,
 		PerFramePrev,
-		Mesh,
-		MeshPrev,
+		GPUModelData,
+		Transform,
+		TransformPrev,
 		Material,
 		PointLight,
 		SphereLight,
@@ -31,7 +32,7 @@ namespace Inno
 	struct AnimationDrawCallInfo
 	{
 		AnimationInstance animationInstance;
-		DrawCallInfo drawCallInfo;
+		uint32_t modelDataIndex;
 		uint32_t animationConstantBufferIndex;
 	};
 
@@ -52,7 +53,7 @@ namespace Inno
 
 		const PerFrameConstantBuffer& GetPerFrameConstantBuffer();
 
-		const std::vector<DrawCallInfo>& GetDrawCallInfo();
+		const std::vector<GPUModelData>& GetGPUModelData();
 		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
 		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
 		const std::vector<AnimationDrawCallInfo>& GetAnimationDrawCallInfo();

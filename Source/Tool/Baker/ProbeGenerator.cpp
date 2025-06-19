@@ -129,7 +129,7 @@ namespace Inno
 
             Log(Success, "There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
             auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
             l_renderingServer->Upload(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
@@ -164,7 +164,7 @@ namespace Inno
 
             Log(Success, "Start to draw probe height map...");
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
+            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
 
             l_renderingServer->CommandListBegin(m_RenderPassComp_Probe, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Probe);

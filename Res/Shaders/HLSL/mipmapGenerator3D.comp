@@ -1,6 +1,6 @@
-Texture3D<float4> SrcTexture : register(t0);
-RWTexture3D<float4> DstTexture : register(u0);
-SamplerState BilinearClamp : register(s0);
+// UAV-based 3D mipmap generator to avoid SRV/UAV resource state conflicts
+RWTexture3D<float4> SrcTexture : register(u0);
+RWTexture3D<float4> DstTexture : register(u1);
 
 // Root constants should be declared directly as cbuffer, not ConstantBuffer<T>
 cbuffer RootConstants : register(b0)
@@ -10,12 +10,54 @@ cbuffer RootConstants : register(b0)
 	float InvDepth;
 };
 
+// Manual trilinear sampling from UAV
+float4 SampleTrilinear(RWTexture3D<float4> tex, float3 uv, uint3 srcSize)
+{
+	// Convert UV to texel coordinates
+	float3 texelCoords = uv * float3(srcSize) - 0.5;
+	
+	// Get integer texel coordinates and fractional parts
+	int3 texel0 = int3(floor(texelCoords));
+	float3 fracPart = texelCoords - float3(texel0);
+	
+	// Clamp to texture bounds
+	int3 texel1 = min(texel0 + int3(1, 1, 1), int3(srcSize - 1));
+	texel0 = max(texel0, int3(0, 0, 0));
+	
+	// Sample the eight texels for trilinear interpolation
+	float4 s000 = tex[int3(texel0.x, texel0.y, texel0.z)];
+	float4 s100 = tex[int3(texel1.x, texel0.y, texel0.z)];
+	float4 s010 = tex[int3(texel0.x, texel1.y, texel0.z)];
+	float4 s110 = tex[int3(texel1.x, texel1.y, texel0.z)];
+	float4 s001 = tex[int3(texel0.x, texel0.y, texel1.z)];
+	float4 s101 = tex[int3(texel1.x, texel0.y, texel1.z)];
+	float4 s011 = tex[int3(texel0.x, texel1.y, texel1.z)];
+	float4 s111 = tex[int3(texel1.x, texel1.y, texel1.z)];
+	
+	// Trilinear interpolation
+	float4 s00 = lerp(s000, s100, fracPart.x);
+	float4 s10 = lerp(s010, s110, fracPart.x);
+	float4 s01 = lerp(s001, s101, fracPart.x);
+	float4 s11 = lerp(s011, s111, fracPart.x);
+	
+	float4 s0 = lerp(s00, s10, fracPart.y);
+	float4 s1 = lerp(s01, s11, fracPart.y);
+	
+	return lerp(s0, s1, fracPart.z);
+}
+
 [numthreads(8, 8, 8)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-	float3 texcoords = float3(InvWidth, InvHeight, InvDepth) * (DTid.xyz + 0.5);
-
-	float4 color = SrcTexture.SampleLevel(BilinearClamp, texcoords, 0);
-
+	// Calculate source texture size from destination size and inverse values
+	uint3 dstSize = uint3(1.0 / InvWidth, 1.0 / InvHeight, 1.0 / InvDepth);
+	uint3 srcSize = dstSize * 2; // Source is 2x larger than destination
+	
+	// Calculate UV coordinates for sampling
+	float3 uv = (float3(DTid.xyz) + 0.5) / float3(dstSize);
+	
+	// Sample using manual trilinear filtering
+	float4 color = SampleTrilinear(SrcTexture, uv, srcSize);
+	
 	DstTexture[DTid.xyz] = color;
 }

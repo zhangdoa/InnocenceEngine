@@ -31,9 +31,14 @@ namespace Inno
 		void* m_MappedMemory_IB = nullptr;
 		GPUBufferView m_VertexBufferView;
 		GPUBufferView m_IndexBufferView;
+		
+		// Bounding box calculated from vertex data
+		AABB m_AABB;
 
 		uint32_t GetIndexCount() const
 		{
+			if (m_IndexBufferView.m_StrideInBytes == 0)
+				return 0;
 			return m_IndexBufferView.m_SizeInBytes / m_IndexBufferView.m_StrideInBytes;
 		}
 	};

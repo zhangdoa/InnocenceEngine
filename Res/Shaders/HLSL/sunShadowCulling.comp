@@ -1,0 +1,162 @@
+// Sun shadow map culling compute shader
+#include "common/common.hlsl"
+
+// Constant buffer for per-frame data (contains modelCount)
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0)
+{
+    PerFrame_CB PerFrameData;
+};
+
+// Input: GPU model data buffer
+[[vk::binding(0, 1)]]
+StructuredBuffer<GPUModelData> u_ModelDataBuffer : register(t0);
+
+// Input: Material data buffer
+[[vk::binding(1, 1)]]
+StructuredBuffer<Material_CB> u_MaterialBuffer : register(t1);
+
+// Output: Array of DirectX 12 indirect draw commands
+[[vk::binding(0, 2)]]
+RWStructuredBuffer<DX12IndirectDrawCommand> u_DrawCommandBuffer : register(u0);
+
+// Thread group size
+#define THREAD_GROUP_SIZE 64
+
+// Simplified shadow frustum culling function using main camera frustum
+// TODO: This should use actual shadow cascade data, but for now using main camera to test bounds checking
+bool IsInShadowFrustum(float4 boundingBoxMin, float4 boundingBoxMax)
+{
+    // Use the main camera view-projection matrix as placeholder
+    float4x4 viewProjectionMatrix = mul(PerFrameData.v, PerFrameData.p_original);
+    
+    // Transform bounding box corners
+    float3 corners[8];
+    corners[0] = float3(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMin.z);
+    corners[1] = float3(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMin.z);
+    corners[2] = float3(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMin.z);
+    corners[3] = float3(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMin.z);
+    corners[4] = float3(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMax.z);
+    corners[5] = float3(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMax.z);
+    corners[6] = float3(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMax.z);
+    corners[7] = float3(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMax.z);
+    
+    // Transform corners to clip space NDC
+    for (int i = 0; i < 8; i++)
+    {
+        float4 clipSpacePos = mul(float4(corners[i], 1.0), viewProjectionMatrix);
+        // Prevent division by zero which can cause GPU hangs
+        if (abs(clipSpacePos.w) > 0.0001)
+        {
+            corners[i] = clipSpacePos.xyz / clipSpacePos.w;
+        }
+        else
+        {
+            corners[i] = clipSpacePos.xyz; // Use non-normalized coordinates as fallback
+        }
+    }
+    
+    // Check if all corners are outside any frustum plane ([-1, 1] in all axes)
+    // Left plane (x = -1)
+    bool allOutsideLeft = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].x >= -1.0) { allOutsideLeft = false; break; }
+    if (allOutsideLeft) return false;
+    
+    // Right plane (x = 1)
+    bool allOutsideRight = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].x <= 1.0) { allOutsideRight = false; break; }
+    if (allOutsideRight) return false;
+    
+    // Bottom plane (y = -1)
+    bool allOutsideBottom = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].y >= -1.0) { allOutsideBottom = false; break; }
+    if (allOutsideBottom) return false;
+    
+    // Top plane (y = 1)
+    bool allOutsideTop = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].y <= 1.0) { allOutsideTop = false; break; }
+    if (allOutsideTop) return false;
+    
+    // Near plane (z = -1)
+    bool allOutsideNear = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].z >= -1.0) { allOutsideNear = false; break; }
+    if (allOutsideNear) return false;
+    
+    // Far plane (z = 1)
+    bool allOutsideFar = true;
+    for (int i = 0; i < 8; i++)
+        if (corners[i].z <= 1.0) { allOutsideFar = false; break; }
+    if (allOutsideFar) return false;
+    
+    return true;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+    uint objectIndex = id.x;
+
+    if (objectIndex >= PerFrameData.modelCount)
+        return;
+
+    GPUModelData modelData = u_ModelDataBuffer[objectIndex];
+   
+    // Simplified visibility check - just allow all objects for now to avoid TDR
+    // TODO: Re-enable proper frustum culling once TDR issue is resolved
+    bool isVisible = true;
+    
+    // Create DirectX 12 indirect draw command
+    DX12IndirectDrawCommand drawCmd;
+    
+    // Root constant (object index)
+    drawCmd.m_ObjectIndex = objectIndex;
+    
+    // Validate GPU addresses and data before using them (prevent TDR)
+    bool hasValidVertexBuffer = (modelData.m_VertexBufferAddress != 0 && 
+                                modelData.m_VertexCount > 0 && 
+                                modelData.m_VertexStride > 0 && 
+                                modelData.m_VertexStride < 1024); // Reasonable stride limit
+                                
+    bool hasValidIndexBuffer = (modelData.m_IndexBufferAddress != 0 && 
+                               modelData.m_IndexCount > 0 && 
+                               modelData.m_IndexStride > 0 && 
+                               modelData.m_IndexStride <= 4); // 2 or 4 bytes for indices
+    
+    // Additional safety checks
+    bool hasReasonableCounts = (modelData.m_VertexCount < 100000 && 
+                               modelData.m_IndexCount < 300000 && 
+                               modelData.m_InstanceCount > 0 && 
+                               modelData.m_InstanceCount < 1000);
+    
+    // Only draw if everything is valid and reasonable
+    bool canDraw = isVisible && hasValidVertexBuffer && hasValidIndexBuffer && hasReasonableCounts;
+    
+    // Vertex buffer view - use valid addresses or zero for safety
+    drawCmd.m_VertexBufferLocation = hasValidVertexBuffer ? modelData.m_VertexBufferAddress : 0;
+    drawCmd.m_VertexBufferSizeInBytes = hasValidVertexBuffer ? (modelData.m_VertexCount * modelData.m_VertexStride) : 0;
+    drawCmd.m_VertexStride = hasValidVertexBuffer ? modelData.m_VertexStride : 0;
+    
+    // Index buffer view - use valid addresses or zero for safety
+    drawCmd.m_IndexBufferLocation = hasValidIndexBuffer ? modelData.m_IndexBufferAddress : 0;
+    drawCmd.m_IndexBufferSizeInBytes = hasValidIndexBuffer ? (modelData.m_IndexCount * modelData.m_IndexStride) : 0;
+    drawCmd.m_IndexFormat = 42; // DXGI_FORMAT_R32_UINT
+    
+    // Draw arguments - only draw if everything is valid
+    drawCmd.m_IndexCountPerInstance = canDraw ? modelData.m_IndexCount : 0;
+    drawCmd.m_InstanceCount = canDraw ? modelData.m_InstanceCount : 0;
+    drawCmd.m_StartIndexLocation = 0;
+    drawCmd.m_BaseVertexLocation = 0;
+    drawCmd.m_StartInstanceLocation = canDraw ? modelData.m_FirstInstance : 0;
+    
+    // Initialize padding to zero for consistency
+    drawCmd.m_Padding1 = 0;
+    drawCmd.m_Padding2 = 0;
+    
+    // Store the draw command at object index (1:1 mapping)
+    u_DrawCommandBuffer[objectIndex] = drawCmd;
+}

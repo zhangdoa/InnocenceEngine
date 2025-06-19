@@ -19,11 +19,8 @@ cbuffer PerFrameConstantBufferPrev : register(b2)
     PerFrame_CB g_FramePrev;
 }
 
-[[vk::binding(0, 1)]]
-StructuredBuffer<PerObject_CB> g_Objects : register(t0);
-
 [[vk::binding(1, 1)]]
-StructuredBuffer<PerObject_CB> g_ObjectsPrev : register(t1);
+StructuredBuffer<GPUModelData> g_ModelDataBuffer : register(t1);
 
 [[vk::binding(2, 1)]]
 StructuredBuffer<Material_CB> g_Materials : register(t2);
@@ -56,8 +53,8 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
-	Material_CB materialCBuffer = g_Materials[perObjectCB.m_MaterialIndex];
+	uint materialIndex = g_ModelDataBuffer[m_ObjectIndex].m_MaterialIndex;
+	Material_CB materialCBuffer = g_Materials[materialIndex];
 
 	float3 normalWS = normalize(input.normalWS);
 	uint normalTextureIndex = materialCBuffer.m_TextureIndices_0;

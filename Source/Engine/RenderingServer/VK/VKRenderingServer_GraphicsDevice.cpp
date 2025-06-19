@@ -48,7 +48,7 @@ bool VKRenderingServer::CreateHardwareResources()
     bool l_result = true;
 
     l_result &= CreateVkInstance();
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	l_result &= CreateDebugCallback();
 #endif
 

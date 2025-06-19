@@ -32,10 +32,10 @@ struct ComputeInputType
 //             will be written.
 // ----------------------------------------------------------------------------
 [[vk::binding(0, 0)]]
-Texture2D in_BRDFLUT : register(t0);
+RWTexture2D<float4> in_BRDFLUT : register(u0);
 
-[[vk::binding(0, 1)]]
-RWTexture2D<float4> out_BRDFLUTMSPassRT0 : register(u0);
+[[vk::binding(1, 0)]]
+RWTexture2D<float4> out_BRDFLUTMSPassRT0 : register(u1);
 
 // ----------------------------------------------------------------------------
 // Multi-Scattering Correction Compute Shader

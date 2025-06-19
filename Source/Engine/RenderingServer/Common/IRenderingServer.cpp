@@ -6,6 +6,7 @@
 #include "../../Common/TaskScheduler.h"
 #include "../../Common/ThreadSafeQueue.h"
 #include "../../Common/Randomizer.h"
+#include "../../Common/MathHelper.h"
 
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
@@ -114,6 +115,13 @@ bool IRenderingServer::Initialize()
 
 bool IRenderingServer::InitializeSwapChainRenderPassComponent()
 {
+    // Skip swap chain render pass initialization in offscreen mode
+    if (g_Engine->getInitConfig().isOffscreen)
+    {
+        Log(Verbose, "InitializeSwapChainRenderPassComponent: Skipping in offscreen mode");
+        return true;
+    }
+
     if (!GetSwapChainImages())
     {
         Log(Error, "Failed to get swap chain images.");
@@ -299,17 +307,32 @@ GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
 
 void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	InitializeImpl(rhs, vertices, indices);
+	// Calculate AABB from vertex data before queuing for deferred initialization
+	if (!vertices.empty())
+	{
+		rhs->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
+		Log(Verbose, "Calculated AABB for MeshComponent: min(", 
+			rhs->m_AABB.m_boundMin.x, ",", rhs->m_AABB.m_boundMin.y, ",", rhs->m_AABB.m_boundMin.z, 
+			") max(", rhs->m_AABB.m_boundMax.x, ",", rhs->m_AABB.m_boundMax.y, ",", rhs->m_AABB.m_boundMax.z, ")");
+	}
+	
+	// Queue mesh for deferred initialization using move semantics to avoid copying vertex/index data
+	m_uninitializedMeshes.push(MeshInitTask(rhs, std::move(vertices), std::move(indices)));
+	Log(Verbose, "MeshComponent ", rhs->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(TextureComponent* rhs, void* textureData)
 {
-	InitializeImpl(rhs, textureData);
+	// Queue texture for deferred initialization
+	m_uninitializedTextures.push(TextureInitTask(rhs, textureData));
+	Log(Verbose, "TextureComponent ", rhs->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(MaterialComponent* rhs)
 {
-	InitializeImpl(rhs);
+	// Queue material for deferred initialization
+	m_uninitializedMaterials.push(rhs);
+	Log(Verbose, "MaterialComponent ", rhs->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(ShaderProgramComponent* rhs)
@@ -324,8 +347,9 @@ void IRenderingServer::Initialize(SamplerComponent* rhs)
 
 void IRenderingServer::Initialize(GPUBufferComponent* rhs)
 {
-	if (InitializeImpl(rhs))
-		m_initializedGPUBuffers.emplace(rhs);
+	// Queue GPU buffer for deferred initialization
+	m_uninitializedGPUBuffers.push(rhs);
+	Log(Verbose, "GPUBufferComponent ", rhs->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(RenderPassComponent* rhs)
@@ -333,9 +357,9 @@ void IRenderingServer::Initialize(RenderPassComponent* rhs)
 	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), rhs) != m_initializedRenderPasses.end())
 		return;
 
-	InitializeImpl(rhs);
-
-	m_initializedRenderPasses.emplace_back(rhs);
+	// Queue render pass for deferred initialization
+	m_uninitializedRenderPasses.push(rhs);
+	Log(Verbose, "RenderPassComponent ", rhs->m_InstanceName, " queued for deferred initialization");
 }
 
 bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
@@ -689,6 +713,86 @@ uint32_t IRenderingServer::GetFrameCountSinceLaunch()
 
 bool IRenderingServer::InitializeComponents()
 {
+	// Process queued mesh initialization tasks
+	while (m_uninitializedMeshes.size() > 0)
+	{
+		MeshInitTask l_task(nullptr, std::vector<Vertex>(), std::vector<Index>());
+		m_uninitializedMeshes.tryPop(l_task);
+		
+		if (!l_task.m_Component)
+			continue;
+			
+		Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
+		if (InitializeImpl(l_task.m_Component, l_task.m_Vertices, l_task.m_Indices))
+		{
+			m_initializedMeshes.emplace(l_task.m_Component);
+		}
+	}
+	
+	// Process queued texture initialization tasks
+	while (m_uninitializedTextures.size() > 0)
+	{
+		TextureInitTask l_task(nullptr, nullptr);
+		m_uninitializedTextures.tryPop(l_task);
+		
+		if (!l_task.m_Component)
+			continue;
+			
+		Log(Verbose, "Processing deferred texture initialization for: ", l_task.m_Component->m_InstanceName);
+		if (InitializeImpl(l_task.m_Component, l_task.m_TextureData))
+		{
+			m_initializedTextures.emplace(l_task.m_Component);
+		}
+	}
+	
+	// Process queued material components
+	while (m_uninitializedMaterials.size() > 0)
+	{
+		MaterialComponent* l_component;
+		m_uninitializedMaterials.tryPop(l_component);
+		
+		if (!l_component)
+			continue;
+			
+		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
+		if (InitializeImpl(l_component))
+		{
+			m_initializedMaterials.emplace(l_component);
+		}
+	}
+	
+	// Process queued GPU buffer components
+	while (m_uninitializedGPUBuffers.size() > 0)
+	{
+		GPUBufferComponent* l_component;
+		m_uninitializedGPUBuffers.tryPop(l_component);
+		
+		if (!l_component)
+			continue;
+			
+		Log(Verbose, "Processing deferred GPU buffer initialization for: ", l_component->m_InstanceName);
+		if (InitializeImpl(l_component))
+		{
+			m_initializedGPUBuffers.emplace(l_component);
+		}
+	}
+	
+	// Process queued render pass components
+	while (m_uninitializedRenderPasses.size() > 0)
+	{
+		RenderPassComponent* l_component;
+		m_uninitializedRenderPasses.tryPop(l_component);
+		
+		if (!l_component)
+			continue;
+			
+		Log(Verbose, "Processing deferred render pass initialization for: ", l_component->m_InstanceName);
+		if (InitializeImpl(l_component))
+		{
+			m_initializedRenderPasses.emplace_back(l_component);
+		}
+	}
+	
 	return true;
 }
 
@@ -785,6 +889,13 @@ bool IRenderingServer::ExecuteGlobalCommands()
 
 bool IRenderingServer::PrepareSwapChainCommands()
 {
+	// Skip swap chain commands in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		//Log(Verbose, "IRenderingServer: Skipping swap chain commands in offscreen mode");
+		return true;
+	}
+
 	auto l_userPipelineOutput = m_GetUserPipelineOutputFunc();
 	if (!l_userPipelineOutput)
 		return false;
@@ -812,6 +923,13 @@ bool IRenderingServer::PrepareSwapChainCommands()
 
 bool IRenderingServer::ExecuteSwapChainCommands()
 {
+	// Skip swap chain execution in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		//Log(Verbose, "IRenderingServer: Skipping swap chain execution in offscreen mode");
+		return true;
+	}
+
 	auto l_userPipelineOutput = m_GetUserPipelineOutputFunc();
 	if (!l_userPipelineOutput)
 		return false;

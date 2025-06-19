@@ -7,14 +7,14 @@ cbuffer RootConstants : register(b0)
 	uint m_ObjectIndex;
 };
 
-[[vk::binding(0, 1)]]
-StructuredBuffer<PerObject_CB> g_Objects : register(t0);
-
 [[vk::binding(1, 1)]]
-StructuredBuffer<Material_CB> g_Materials : register(t1);
+StructuredBuffer<GPUModelData> g_ModelDataBuffer : register(t1);
 
 [[vk::binding(2, 1)]]
-Texture2D g_2DTextures[] : register(t2);
+StructuredBuffer<Material_CB> g_Materials : register(t2);
+
+[[vk::binding(3, 1)]]
+Texture2D g_2DTextures[] : register(t3);
 
 [[vk::binding(0, 2)]]
 SamplerState g_Sampler : register(s0);
@@ -37,8 +37,8 @@ PixelOutputType main(PixelInputType input)
 
 	float depth = input.posCS.z;
 
-	PerObject_CB perObjectCB = g_Objects[m_ObjectIndex];
-	Material_CB materialCBuffer = g_Materials[perObjectCB.m_MaterialIndex];
+	uint materialIndex = g_ModelDataBuffer[m_ObjectIndex].m_MaterialIndex;
+	Material_CB materialCBuffer = g_Materials[materialIndex];
 
 	float transparency;
 	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;

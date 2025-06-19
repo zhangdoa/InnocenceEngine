@@ -1,6 +1,7 @@
 #include "DX12RenderingServer.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/RenderingContextService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Texture.h"
 
@@ -35,6 +36,13 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	
+	if (!l_commandList || !l_commandList->m_DirectCommandList)
+	{
+		Log(Error, "Command list is null in ClearRenderTargets for render pass ", rhs->m_InstanceName);
+		return false;
+	}
+	
 	auto f_clearRenderTargetAsUAV = [&](DX12DeviceMemory* l_RT)
 		{
 			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
@@ -56,18 +64,56 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 		};
 
 	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(l_rhs->m_OutputMergerTarget);
+	if (!l_outputMergerTarget)
+	{
+		Log(Error, "Output merger target is null in ClearRenderTargets for render pass ", rhs->m_InstanceName);
+		return false;
+	}
+	
 	auto l_currentFrame = GetCurrentFrame();
 	if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		auto l_RTV = l_outputMergerTarget->m_RTVs[l_currentFrame];
+		if (l_currentFrame >= l_outputMergerTarget->m_RTVs.size())
+		{
+			Log(Error, "Invalid frame index ", l_currentFrame, " for RTVs in render pass ", rhs->m_InstanceName);
+			return false;
+		}
+		
+		auto& l_RTV = l_outputMergerTarget->m_RTVs[l_currentFrame];
+		if (l_RTV.m_Handles.empty())
+		{
+			Log(Error, "RTV handles are empty for render pass ", rhs->m_InstanceName);
+			return false;
+		}
+		
 		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
+			if (index >= l_RTV.m_Handles.size())
+			{
+				Log(Error, "Invalid RTV handle index ", index, " for render pass ", rhs->m_InstanceName);
+				return false;
+			}
+			if (l_RTV.m_Handles[index].ptr == 0)
+			{
+				Log(Error, "Null RTV handle at index ", index, " for render pass ", rhs->m_InstanceName);
+				return false;
+			}
 			l_commandList->m_DirectCommandList->ClearRenderTargetView(l_RTV.m_Handles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 		}
 		else
 		{
 			for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
+				if (i >= l_RTV.m_Handles.size())
+				{
+					Log(Error, "Invalid RTV handle index ", i, " for render pass ", rhs->m_InstanceName);
+					return false;
+				}
+				if (l_RTV.m_Handles[i].ptr == 0)
+				{
+					Log(Error, "Null RTV handle at index ", i, " for render pass ", rhs->m_InstanceName);
+					return false;
+				}
 				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_RTV.m_Handles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 			}
 		}
@@ -76,13 +122,13 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 	{
 		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			//f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(l_outputMergerTarget->m_ColorOutputs[index]->m_DeviceMemories[l_currentFrame]));
+			f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(l_outputMergerTarget->m_ColorOutputs[index]->m_GPUResources[l_currentFrame]));
 		}
 		else
 		{
 			for (auto i : l_outputMergerTarget->m_ColorOutputs)
 			{
-				//f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(i->m_DeviceMemories[l_currentFrame]));
+				f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(i->m_GPUResources[l_currentFrame]));
 			}
 		}
 	}
@@ -102,6 +148,18 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 
 bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
 {
+	if (!commandList)
+	{
+		Log(Error, "CommandList is null in BindComputeResource");
+		return false;
+	}
+
+	if (!commandList->m_ComputeCommandList)
+	{
+		Log(Error, "ComputeCommandList is null in BindComputeResource");
+		return false;
+	}
+
 	if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer)
 	{
 		if (resourceBindingLayoutDesc.m_IsRootConstant)
@@ -112,7 +170,10 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			return false;
 
 		if (l_buffer->m_ObjectStatus != ObjectStatus::Activated)
+		{
+			Log(Error, "Attempt to bind inactivated GPU buffer ", l_buffer->m_InstanceName);
 			return false;
+		}
 
 		auto l_currentFrame = GetCurrentFrame();
 		auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(l_buffer->m_MappedMemories[l_currentFrame]);
@@ -161,17 +222,28 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		}
 		else if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
-			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
+			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment
+			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ComputeOnly)
 		{
 			auto l_image = reinterpret_cast<TextureComponent*>(resource);
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
+			{
+				Log(Error, "Attempt to bind inactivated texture ", l_image->m_InstanceName);
 				return false;
+			}
 
 			auto l_handleIndex = l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
+			
+			// Note: Resource state transitions should be handled by the rendering client
+			// using direct command lists before compute passes begin
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
+			{
 				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
+			}
 			else
+			{
 				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
+			}
 		}
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
@@ -186,6 +258,18 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 
 bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
 {
+	if (!commandList)
+	{
+		Log(Error, "CommandList is null in BindGraphicsResource");
+		return false;
+	}
+
+	if (!commandList->m_DirectCommandList)
+	{
+		Log(Error, "DirectCommandList is null in BindGraphicsResource");
+		return false;
+	}
+
 	if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer)
 	{
 		if (resourceBindingLayoutDesc.m_IsRootConstant)
@@ -196,7 +280,10 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			return false;
 
 		if (l_buffer->m_ObjectStatus != ObjectStatus::Activated)
+		{
+			Log(Error, "Attempt to bind inactivated GPU buffer ", l_buffer->m_InstanceName);
 			return false;
+		}
 
 		auto l_currentFrame = GetCurrentFrame();
 		auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(l_buffer->m_MappedMemories[l_currentFrame]);
@@ -236,18 +323,26 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		}
 		else if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
-			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment)
+			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ColorAttachment
+			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::ComputeOnly)
 		{
 			auto l_image = reinterpret_cast<TextureComponent*>(resource);
 			if (l_image->m_ObjectStatus != ObjectStatus::Activated)
+			{
+				Log(Error, "Attempt to bind inactivated texture ", l_image->m_InstanceName);
 				return false;
+			}
 
 			auto l_handleIndex = l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
-
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
+			{
 				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
+			}
 			else
+			{
+
 				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
+			}
 		}
 		return true;
 	}
@@ -265,10 +360,18 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	if (!renderPass)
+	{
+		Log(Error, "Attempt to bind GPU resources on an invalid render pass");
 		return false;
+	}
 
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	if (!l_commandList)
+	{
+		Log(Error, "Command list is null in BindGPUResource for: ", l_renderPass->m_InstanceName);
+		return false;
+	}
 
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 		return BindComputeResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
@@ -285,11 +388,14 @@ bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList*
 
 	auto* resource = static_cast<ID3D12Resource*>(rhs->GetGPUResource(frameIndex));
 	if (!resource)
+	{
+		Log(Error, "No resource found for ", rhs->m_InstanceName);
 		return false;
+	}
 
 	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
-	auto l_newState = accessibility == Accessibility::ReadOnly ? rhs->m_ReadState : rhs->m_WriteState;
-	
+	auto l_newState = accessibility.CanWrite() ? rhs->m_WriteState : rhs->m_ReadState;
+
 	if (rhs->m_CurrentState == l_newState)
 		return false;
 
@@ -297,68 +403,66 @@ bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList*
 		resource, 
 		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState), 
 		static_cast<D3D12_RESOURCE_STATES>(l_newState));
+
+	// TODO: Fix ICommandList abstraction - it should not wrap both compute and direct lists
+	// Resource state transitions should ALWAYS use direct command lists for proper synchronization
+	// The client should handle compute/graphics command list ordering with GPU synchronization
 	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
 
 	rhs->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
 
-bool DX12RenderingServer::UpdateIndirectDrawCommand(GPUBufferComponent* indirectDrawCommand, const std::vector<DrawCallInfo>& drawCallList, std::function<bool(const DrawCallInfo&)>&& isDrawCallValid)
+bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* rhs, ICommandList* commandList, Accessibility accessibility)
 {
-	auto l_indirectDrawCommandList = reinterpret_cast<DX12IndirectDrawCommandList*>(indirectDrawCommand->m_IndirectDrawCommandList);
-	auto l_drawCallCount = drawCallList.size();
-	l_indirectDrawCommandList->m_CommandList.clear();
-	for (uint32_t i = 0; i < l_drawCallCount; i++)
-	{
-		auto& l_drawCall = drawCallList[i];
-		if (!isDrawCallValid(l_drawCall))
-			continue;
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	uint32_t frameIndex = GetCurrentFrame();
 
-		auto l_mesh = l_drawCall.mesh;
-		
-		D3D12_VERTEX_BUFFER_VIEW vbv = {};
-		vbv.BufferLocation = l_mesh->m_VertexBufferView.m_BufferLocation;
-		vbv.StrideInBytes = l_mesh->m_VertexBufferView.m_StrideInBytes;
-		vbv.SizeInBytes = l_mesh->m_VertexBufferView.m_SizeInBytes;
+	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(rhs->m_DeviceMemories[frameIndex]);
+	if (!l_deviceMemory || !l_deviceMemory->m_DefaultHeapBuffer)
+		return false;
 
-		D3D12_INDEX_BUFFER_VIEW ibv = {};
-		ibv.BufferLocation = l_mesh->m_IndexBufferView.m_BufferLocation;
-		ibv.Format = DXGI_FORMAT_R32_UINT; // Index format
-		ibv.SizeInBytes = l_mesh->m_IndexBufferView.m_SizeInBytes;
+	auto l_newState = accessibility.CanWrite() ? rhs->m_WriteState : rhs->m_ReadState;
+	
+	if (rhs->m_CurrentState == l_newState)
+		return false;
 
-		DX12DrawIndirectCommand l_command;
-		l_command.RootConstant = l_drawCall.m_PerObjectConstantBufferIndex;
-		l_command.VBV = vbv;
-		l_command.IBV = ibv;
-		l_command.DrawIndexedArgs.BaseVertexLocation = 0;
-		l_command.DrawIndexedArgs.IndexCountPerInstance = l_mesh->GetIndexCount();
-		l_command.DrawIndexedArgs.StartIndexLocation = 0;
-		l_command.DrawIndexedArgs.StartInstanceLocation = 0;
-		l_command.DrawIndexedArgs.InstanceCount = 1;
-		l_indirectDrawCommandList->m_CommandList.emplace_back(l_command);
-	}
+	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
+		l_deviceMemory->m_DefaultHeapBuffer.Get(),
+		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState),
+		static_cast<D3D12_RESOURCE_STATES>(l_newState));
 
-	auto l_mappedMemory = indirectDrawCommand->m_MappedMemories[GetCurrentFrame()];
-	WriteMappedMemory(indirectDrawCommand, l_mappedMemory, l_indirectDrawCommandList->m_CommandList.data(), 0, l_indirectDrawCommandList->m_CommandList.size());
+	// TODO: Fix ICommandList abstraction - it should not wrap both compute and direct lists
+	// Resource state transitions should ALWAYS use direct command lists for proper synchronization
+	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
 
+	rhs->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
+
 
 bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand)
 {
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
-	auto l_indirectDrawCommandList = reinterpret_cast<DX12IndirectDrawCommandList*>(indirectDrawCommand->m_IndirectDrawCommandList);
 	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(indirectDrawCommand->m_DeviceMemories[GetCurrentFrame()]);
 
 	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
-	UINT drawCommandCount = l_indirectDrawCommandList->m_CommandList.size();
-	if (drawCommandCount == 0)
+	// Get actual model count from RenderingContextService instead of buffer capacity
+	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
+	auto& l_gpuModelData = l_renderingContextService->GetGPUModelData();
+	UINT maxDrawCommandCount = static_cast<UINT>(l_gpuModelData.size());
+	
+	if (maxDrawCommandCount == 0)
 		return false;
 
-	l_commandList->m_DirectCommandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), drawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
+	TryToTransitState(indirectDrawCommand, l_commandList, Accessibility::ReadOnly);
+
+	l_commandList->m_DirectCommandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), maxDrawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
+
+	TryToTransitState(indirectDrawCommand, l_commandList, Accessibility::ReadWrite);
 
 	return true;
 }
@@ -417,6 +521,12 @@ bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, uint32_t thr
 	auto l_rhs = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
+	if (!l_commandList->m_ComputeCommandList)
+	{
+		Log(Error, "ComputeCommandList is null in Dispatch for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
+
 	l_commandList->m_ComputeCommandList->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 
 	return true;
@@ -465,7 +575,6 @@ bool DX12RenderingServer::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueTy
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12Fence* fence = nullptr;
 	uint64_t semaphoreValue = 0;
-	auto l_currentFrame = GetCurrentFrame();
 	auto l_semaphore = semaphore ? reinterpret_cast<DX12Semaphore*>(semaphore) : reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 
 	if (queueType == GPUEngineType::Graphics)
@@ -507,7 +616,6 @@ bool DX12RenderingServer::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueTy
 
 bool DX12RenderingServer::Execute(ICommandList* commandList, GPUEngineType queueType)
 {
-	auto l_currentFrame = GetCurrentFrame();
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
 
 	if (queueType == GPUEngineType::Graphics)
@@ -562,31 +670,104 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 		fenceEvent = &l_semaphore->m_CopyCommandQueueFenceEvent;
 	}
 
+	// Validate fence event handle
+	if (!fenceEvent || *fenceEvent == nullptr)
+	{
+		Log(Error, "Invalid fence event handle in WaitOnCPU for queue type: ", (uint32_t)queueType);
+		return false;
+	}
+
 	if (queueType == GPUEngineType::Graphics)
 	{
+		if (!m_directCommandQueueFence)
+		{
+			Log(Error, "DirectCommandQueueFence is null in WaitOnCPU");
+			return false;
+		}
+		
 		if (m_directCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
 			//Log(Verbose, "Waiting for DirectCommandQueueFence: ", semaphoreValue);
 			m_directCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			WaitForSingleObject(*fenceEvent, INFINITE);
+			
+			// Double-check to avoid race condition where GPU completes between check and SetEventOnCompletion
+			if (m_directCommandQueueFence->GetCompletedValue() < semaphoreValue)
+			{
+				DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
+				if (waitResult == WAIT_TIMEOUT)
+				{
+					//Log(Error, "DirectCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue, 
+					//	", Completed value: ", m_directCommandQueueFence->GetCompletedValue());
+					return false;
+				}
+				else if (waitResult != WAIT_OBJECT_0)
+				{
+					//Log(Error, "DirectCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
+					return false;
+				}
+			}
 		}
 	}
 	else if (queueType == GPUEngineType::Compute)
 	{
+		if (!m_computeCommandQueueFence)
+		{
+			Log(Error, "ComputeCommandQueueFence is null in WaitOnCPU");
+			return false;
+		}
+		
 		if (m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			//Log(Verbose, "Waiting for ComputeCommandQueueFence: ", semaphoreValue);
+			Log(Verbose, "Waiting for ComputeCommandQueueFence: ", semaphoreValue);
 			m_computeCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			WaitForSingleObject(*fenceEvent, INFINITE);
+			
+			// Double-check to avoid race condition
+			if (m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
+			{
+				DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
+				if (waitResult == WAIT_TIMEOUT)
+				{
+					Log(Error, "ComputeCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue, 
+						", Completed value: ", m_computeCommandQueueFence->GetCompletedValue());
+					return false;
+				}
+				else if (waitResult != WAIT_OBJECT_0)
+				{
+					Log(Error, "ComputeCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
+					return false;
+				}
+			}
 		}
 	}
 	else if (queueType == GPUEngineType::Copy)
 	{
+		if (!m_copyCommandQueueFence)
+		{
+			Log(Error, "CopyCommandQueueFence is null in WaitOnCPU");
+			return false;
+		}
+		
 		if (m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			//Log(Verbose, "Waiting for CopyCommandQueueFence: ", semaphoreValue);
+			Log(Verbose, "Waiting for CopyCommandQueueFence: ", semaphoreValue);
 			m_copyCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			WaitForSingleObject(*fenceEvent, INFINITE);
+			
+			// Double-check to avoid race condition
+			if (m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
+			{
+				DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
+				if (waitResult == WAIT_TIMEOUT)
+				{
+					Log(Error, "CopyCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue, 
+						", Completed value: ", m_copyCommandQueueFence->GetCompletedValue());
+					return false;
+				}
+				else if (waitResult != WAIT_OBJECT_0)
+				{
+					Log(Error, "CopyCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
+					return false;
+				}
+			}
 		}
 	}
 

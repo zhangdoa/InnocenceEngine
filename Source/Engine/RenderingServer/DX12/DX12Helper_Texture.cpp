@@ -328,6 +328,10 @@ D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDesc textureDesc)
 	{
 		l_result |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
+	else if (textureDesc.Usage == TextureUsage::ComputeOnly)
+	{
+		// ComputeOnly only needs UAV access, already set by default
+	}
 	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -381,6 +385,10 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 	if (textureDesc.Usage == TextureUsage::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	}
+	else if (textureDesc.Usage == TextureUsage::ComputeOnly)
+	{
+		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	}
 	else if (textureDesc.Usage == TextureUsage::DepthAttachment
 		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment)

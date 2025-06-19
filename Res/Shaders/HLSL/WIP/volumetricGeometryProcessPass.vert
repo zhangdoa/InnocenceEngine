@@ -20,10 +20,10 @@ cbuffer PerFrameConstantBufferPrev : register(b2)
 }
 
 [[vk::binding(0, 1)]]
-StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+StructuredBuffer<Transform_CB> g_Transforms : register(t0);
 
 [[vk::binding(1, 1)]]
-StructuredBuffer<PerObject_CB> g_ObjectsPrev : register(t1);
+StructuredBuffer<Transform_CB> g_TransformsPrev : register(t1);
 
 struct GeometryInputType
 {
@@ -37,15 +37,15 @@ GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	PerObject_CB perObjectCBuffer = g_Objects[m_ObjectIndex];
-	PerObject_CB perObjectCBufferPrev = g_ObjectsPrev[m_ObjectIndex];
+	Transform_CB transformCBuffer = g_Transforms[m_ObjectIndex];
+	Transform_CB transformCBufferPrev = g_TransformsPrev[m_ObjectIndex];
 
-	float4 posWS = mul(float4(input.posLS, 1.0f), perObjectCBuffer.m);
+	float4 posWS = mul(float4(input.posLS, 1.0f), transformCBuffer.m);
 	float4 posVS = mul(posWS, perFrameCBuffer.v);
 	output.posCS_orig = mul(posVS, perFrameCBuffer.p_original);
 	output.posCS_orig /= output.posCS_orig.w;
 
-	float4 posWS_prev = mul(float4(input.posLS, 1.0f), perObjectCBufferPrev.m);
+	float4 posWS_prev = mul(float4(input.posLS, 1.0f), transformCBufferPrev.m);
 	float4 posVS_prev = mul(posWS_prev, perFrameCBufferPrev.v);
 	output.posCS_prev = mul(posVS_prev, perFrameCBufferPrev.p_original);
 	output.posCS_prev /= output.posCS_prev.w;

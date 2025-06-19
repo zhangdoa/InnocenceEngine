@@ -12,9 +12,9 @@ GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	output.posWS = mul(float4(input.posLS, 1.0f), perObjectCBuffer.m);
+	output.posWS = mul(float4(input.posLS, 1.0f), transformCBuffer.m);
 	output.texCoord = input.texCoord;
-	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCBuffer.normalMat);
+	output.normalWS = mul(float4(input.normalLS, 0.0f), transformCBuffer.normalMat);
 
 	return output;
 }

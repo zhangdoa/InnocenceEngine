@@ -71,6 +71,12 @@ bool ImGuiRenderPass::Initialize()
 	// The actual rendering is called by the rendering server
 	m_RenderPassComp->m_CustomCommandsFunc = [&](ICommandList* cmdList)
 		{
+			// Skip all rendering in offscreen mode
+			if (g_Engine->getInitConfig().isOffscreen)
+			{
+				return;
+			}
+
 			auto l_renderingServer = g_Engine->getRenderingServer();
 			auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
 			auto l_currentFrame =l_renderingServer->GetCurrentFrame();
@@ -80,8 +86,13 @@ bool ImGuiRenderPass::Initialize()
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), directCommandList);
 
-			// Change the swap chain image state to read-only.
-			l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::ReadOnly);
+			// Change the swap chain image state to read-only (skip in offscreen mode).
+			if (!g_Engine->getInitConfig().isOffscreen && l_swapChainRenderPassComp && 
+				l_swapChainRenderPassComp->m_OutputMergerTarget && 
+				!l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs.empty())
+			{
+				l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::ReadOnly);
+			}
 		};
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -104,6 +115,12 @@ ObjectStatus ImGuiRenderPass::GetStatus()
 
 bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/)
 {
+	// Skip command list preparation in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		return true;
+	}
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
@@ -135,6 +152,14 @@ bool ImGuiRenderPass::RenderTargetsCreationFunc()
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
 	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
 	
+	// Skip render target creation in offscreen mode or if swap chain is not available
+	if (g_Engine->getInitConfig().isOffscreen || !l_swapChainRenderPassComp || 
+		!l_swapChainRenderPassComp->m_OutputMergerTarget)
+	{
+		Log(Verbose, "ImGuiRenderPass: Skipping render target creation in offscreen mode or invalid swap chain");
+		return true;
+	}
+	
 	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
 	for (size_t j = 0; j < l_outputMergerTarget->m_ColorOutputs.size(); j++)
 		l_outputMergerTarget->m_ColorOutputs[j] = l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[j];
@@ -154,6 +179,13 @@ bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
 
 bool ImGuiRendererDX12::Initialize()
 {
+	// Skip initialization in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		Log(Verbose, "ImGuiRendererDX12: Skipping initialization in offscreen mode");
+		return true;
+	}
+
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
 	auto l_device = l_renderingServer->GetDevice().Get();
 	auto& l_descHeapAccessor = l_renderingServer->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
@@ -173,6 +205,12 @@ bool ImGuiRendererDX12::Initialize()
 
 bool ImGuiRendererDX12::NewFrame()
 {
+	// Skip frame processing in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		return true;
+	}
+
 	ImGui_ImplDX12_NewFrame();
 
 	return true;
@@ -180,6 +218,12 @@ bool ImGuiRendererDX12::NewFrame()
 
 bool ImGuiRendererDX12::Prepare()
 {
+	// Skip preparation in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		return true;
+	}
+
 	m_RenderPass->PrepareCommandList(nullptr);
 
 	return true;
@@ -189,6 +233,13 @@ bool ImGuiRendererDX12::ExecuteCommands()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
+
+	// Skip ImGui execution in offscreen mode or if swap chain is not available
+	if (g_Engine->getInitConfig().isOffscreen || !l_swapChainRenderPassComp)
+	{
+		Log(Verbose, "ImGuiRendererDX12: Skipping command execution in offscreen mode or invalid swap chain");
+		return true;
+	}
 
 	// Let the swap chain rendering finish.
 	l_renderingServer->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
@@ -202,7 +253,12 @@ bool ImGuiRendererDX12::ExecuteCommands()
 
 bool ImGuiRendererDX12::Terminate()
 {
-	ImGui_ImplDX12_Shutdown();
+	// Only shutdown ImGui if it was initialized (not in offscreen mode)
+	if (!g_Engine->getInitConfig().isOffscreen)
+	{
+		ImGui_ImplDX12_Shutdown();
+	}
+	
 	m_RenderPass->Terminate();
 
 	delete m_RenderPass;

@@ -231,7 +231,13 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	if (m_IlluminanceResult->m_ObjectStatus != ObjectStatus::Activated)
-		return false;	
+		return false;
+
+	if (BRDFLUTPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (BRDFLUTMSPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
@@ -247,6 +253,9 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()), m_RenderPassComp->m_CommandLists[m_RenderPassComp->m_CurrentFrame], Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_RenderPassComp->m_CommandLists[m_RenderPassComp->m_CurrentFrame], Accessibility::ReadOnly);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);

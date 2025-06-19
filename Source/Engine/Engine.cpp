@@ -298,6 +298,13 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "Launch in headless mode, no windowing or rendering systems.");
 	}
 
+	auto l_offscreenArgPos = arg.find("offscreen");
+	if (l_offscreenArgPos != std::string::npos)
+	{
+		l_result.isOffscreen = true;
+		Log(Success, "Launch in offscreen mode, no windowing but real rendering server for testing.");
+	}
+
 	return l_result;
 }
 
@@ -315,8 +322,8 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<IOService>();
 	Get<HIDService>();
 
-	// Create WindowSystem based on headless mode
-	if (m_pImpl->m_initConfig.isHeadless) {
+	// Create WindowSystem based on headless/offscreen mode
+	if (m_pImpl->m_initConfig.isHeadless || m_pImpl->m_initConfig.isOffscreen) {
 		m_pImpl->m_WindowSystem = std::make_unique<HeadlessWindowSystem>();
 	} else {
 #if defined INNO_PLATFORM_WIN
@@ -333,7 +340,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	// Create other rendering-related services if not headless
+	// Create other rendering-related services if not headless (but do create for offscreen)
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		Get<RenderingConfigurationService>();
 		Get<TemplateAssetService>();
@@ -342,10 +349,11 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<GUISystem>();
 	}
 
-	// Create RenderingServer based on headless mode
+	// Create RenderingServer based on headless mode (offscreen uses real rendering server)
 	if (m_pImpl->m_initConfig.isHeadless) {
 		m_pImpl->m_RenderingServer = std::make_unique<HeadlessRenderingServer>();
 	} else {
+		// For both windowed and offscreen modes, create real rendering server
 		switch (m_pImpl->m_initConfig.renderingServer) {
 		case RenderingServer::DX12:
 #if defined INNO_RENDERER_DIRECTX
@@ -401,7 +409,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	if (!CreateServices(appHook, extraHook, pScmdline))
 		return false;
 
-	// Skip LogicClient and RenderingClient in headless mode
+	// Skip LogicClient and RenderingClient only in true headless mode
 	if (!m_pImpl->m_initConfig.isHeadless)
 	{
 		m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
@@ -418,7 +426,15 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 			return false;
 		}
 
-		m_pImpl->m_applicationName = m_pImpl->m_LogicClient->GetApplicationName();
+		if (m_pImpl->m_initConfig.isOffscreen)
+		{
+			m_pImpl->m_applicationName = "OffscreenEngine";
+			Log(Success, "Offscreen mode: Created LogicClient and RenderingClient for testing.");
+		}
+		else
+		{
+			m_pImpl->m_applicationName = m_pImpl->m_LogicClient->GetApplicationName();
+		}
 	}
 	else
 	{
@@ -601,7 +617,16 @@ bool Engine::Initialize()
 		l_DefaultRenderingClientInitializationTask->Activate();
 		l_DefaultRenderingClientInitializationTask->Wait();
 
-		m_pImpl->m_RenderingExecutionTask->Activate();
+		// Check if m_RenderingExecutionTask exists before activating
+		if (m_pImpl->m_RenderingExecutionTask)
+		{
+			Log(Verbose, "Activating rendering execution task...");
+			m_pImpl->m_RenderingExecutionTask->Activate();
+		}
+		else
+		{
+			Log(Error, "m_RenderingExecutionTask is null!");
+		}
 	}
 
 	// Only initialize LogicClient if it exists

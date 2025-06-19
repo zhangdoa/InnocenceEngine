@@ -19,7 +19,7 @@ bool DX12RenderingServer::CreateHardwareResources()
 {
     bool l_result = true;
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     l_result &= CreateDebugCallback();
 #endif
     l_result &= CreatePhysicalDevices();
@@ -28,7 +28,12 @@ bool DX12RenderingServer::CreateHardwareResources()
     l_result &= CreateSyncPrimitives();
     l_result &= CreateGlobalDescriptorHeaps();
     l_result &= CreateMipmapGenerator();
-    l_result &= CreateSwapChain();
+    
+    // Only create swap chain if not in offscreen mode
+    if (!g_Engine->getInitConfig().isOffscreen)
+    {
+        l_result &= CreateSwapChain();
+    }
 
     m_TLASBufferComponent = AddGPUBufferComponent("TLASBuffer/");
     m_TLASBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -109,12 +114,6 @@ bool DX12RenderingServer::ReleaseHardwareResources()
 
     m_GlobalCommandLists.clear();
 
-    for (size_t i = 0; i < m_swapChainImageCount; i++)
-    {
-        m_directCommandAllocators[i]->Release();
-        m_computeCommandAllocators[i]->Release();
-        m_copyCommandAllocators[i]->Release();
-    }
     m_directCommandAllocators.clear();
     m_computeCommandAllocators.clear();
     m_copyCommandAllocators.clear();
@@ -124,6 +123,23 @@ bool DX12RenderingServer::ReleaseHardwareResources()
     m_copyCommandQueue = nullptr;
 
     m_swapChain = nullptr;
+
+    if (m_debugInterface && m_debugCallbackCookie != 0)
+    {
+        ComPtr<ID3D12InfoQueue> l_pInfoQueue;
+        HRESULT l_HResult = m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
+        if (SUCCEEDED(l_HResult) && l_pInfoQueue)
+        {
+            ComPtr<ID3D12InfoQueue1> l_pInfoQueue1;
+            l_HResult = l_pInfoQueue.As(&l_pInfoQueue1);
+            if (SUCCEEDED(l_HResult) && l_pInfoQueue1)
+            {
+                l_pInfoQueue1->UnregisterMessageCallback(m_debugCallbackCookie);
+                Log(Verbose, "D3D12 debug message callback unregistered.");
+                m_debugCallbackCookie = 0;
+            }
+        }
+    }
 
     m_device = nullptr;
 
@@ -137,7 +153,7 @@ bool DX12RenderingServer::ReleaseHardwareResources()
 
     m_debugInterface = nullptr;
     
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     IDXGIDebug1* pDebug = nullptr;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
     {
@@ -151,6 +167,22 @@ bool DX12RenderingServer::ReleaseHardwareResources()
 
 bool DX12RenderingServer::GetSwapChainImages()
 {
+    Log(Verbose, "GetSwapChainImages: Called with offscreen=", g_Engine->getInitConfig().isOffscreen);
+    
+    // Skip swap chain image retrieval in offscreen mode
+    if (g_Engine->getInitConfig().isOffscreen)
+    {
+        Log(Verbose, "GetSwapChainImages: Skipping in offscreen mode");
+        return true;
+    }
+
+    // Runtime validation: Ensure swap chain exists before dereferencing
+    if (!m_swapChain)
+    {
+        Log(Error, "GetSwapChainImages: m_swapChain is null! This should not happen in windowed mode.");
+        return false;
+    }
+
     m_swapChainImages.resize(m_swapChainImageCount);
 
     for (size_t i = 0; i < m_swapChainImageCount; i++)
@@ -169,6 +201,12 @@ bool DX12RenderingServer::GetSwapChainImages()
 
 bool DX12RenderingServer::AssignSwapChainImages()
 {
+    // Skip swap chain image assignment in offscreen mode
+    if (g_Engine->getInitConfig().isOffscreen)
+    {
+        return true;
+    }
+
     auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTarget;
     auto l_textureComp = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
     
@@ -234,7 +272,7 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
 
     if (l_PSO->m_PSO)
     {
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
         SetObjectName(rhs, l_PSO->m_PSO, "PSO");
 #endif // INNO_DEBUG
         Log(Verbose, rhs->m_InstanceName, " PSO has been created.");
@@ -380,7 +418,7 @@ bool DX12RenderingServer::CreateRaytracingPipelineStateObject(RenderPassComponen
         return false;
     }
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     SetObjectName(RenderPassComp, PSO->m_RaytracingPSO, "RaytracingPSO");
 #endif // INNO_DEBUG
 
@@ -415,16 +453,50 @@ bool DX12RenderingServer::CreateRaytracingPipelineStateObject(RenderPassComponen
 
 bool DX12RenderingServer::CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name)
 {
+    if (swapChainImageIndex >= m_directCommandAllocators.size())
+    {
+        Log(Error, "Invalid swapChainImageIndex ", (uint32_t)swapChainImageIndex, " for command list. Max index: ", (uint32_t)(m_directCommandAllocators.size() - 1));
+        return false;
+    }
+
     auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
     l_commandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_directCommandAllocators[swapChainImageIndex].Get(), (name + L"_DirectCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
     l_commandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommandAllocators[swapChainImageIndex].Get(), (name + L"_ComputeCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
     l_commandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommandAllocators[swapChainImageIndex].Get(), (name + L"_CopyCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
 
-    l_commandList->m_DirectCommandList->Close();
-    l_commandList->m_ComputeCommandList->Close();
-    l_commandList->m_CopyCommandList->Close();
+    bool result = true;
+    
+    if (l_commandList->m_DirectCommandList)
+    {
+        l_commandList->m_DirectCommandList->Close();
+    }
+    else
+    {
+        Log(Error, "Failed to create DirectCommandList at index ", (uint32_t)swapChainImageIndex);
+        result = false;
+    }
+    
+    if (l_commandList->m_ComputeCommandList)
+    {
+        l_commandList->m_ComputeCommandList->Close();
+    }
+    else
+    {
+        Log(Error, "Failed to create ComputeCommandList at index ", (uint32_t)swapChainImageIndex);
+        result = false;
+    }
+    
+    if (l_commandList->m_CopyCommandList)
+    {
+        l_commandList->m_CopyCommandList->Close();
+    }
+    else
+    {
+        Log(Error, "Failed to create CopyCommandList at index ", (uint32_t)swapChainImageIndex);
+        result = false;
+    }
 
-    return true;
+    return result;
 }
 
 bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* rhs)
@@ -596,6 +668,12 @@ bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
 
 bool DX12RenderingServer::PresentImpl()
 {
+    // Skip present in offscreen mode - no swap chain to present to
+    if (g_Engine->getInitConfig().isOffscreen)
+    {
+        return true;
+    }
+
     m_swapChain->Present(0, 0);
 
     return true;
@@ -603,6 +681,12 @@ bool DX12RenderingServer::PresentImpl()
 
 bool DX12RenderingServer::EndFrame()
 {
+    // Skip frame management in offscreen mode - no swap chain frames
+    if (g_Engine->getInitConfig().isOffscreen)
+    {
+        return true;
+    }
+
     m_PreviousFrame = m_CurrentFrame;
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
     m_SwapChainRenderPassComp->m_CurrentFrame = m_CurrentFrame;
@@ -612,6 +696,12 @@ bool DX12RenderingServer::EndFrame()
 
 bool DX12RenderingServer::ResizeImpl()
 {
+    // Skip resize in offscreen mode - no swap chain to resize
+    if (g_Engine->getInitConfig().isOffscreen)
+    {
+        return true;
+    }
+
     // @TODO: reset m_RenderTarget_SRV_DescHeapAccessor and other render target desc heaps
     Log(Verbose, "Resizing the swap chain...");
 

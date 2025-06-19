@@ -28,10 +28,10 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	auto l_defaultHeapBuffer_VB = CreateDefaultHeapBuffer(&l_verticesResourceDesc);
 	if (!l_defaultHeapBuffer_VB)
 	{
-		Log(Error, "can't create vertex buffer on Default Heap!");
+		Log(Error, rhs->m_InstanceName, " can't create vertex buffer on Default Heap!");
 		return false;
 	}
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(rhs, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
 #endif //  INNO_DEBUG
 	m_MeshVertexBuffers_Default[componentUUID] = l_defaultHeapBuffer_VB;
@@ -39,10 +39,10 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	auto l_uploadHeapBuffer_VB = CreateUploadHeapBuffer(&l_verticesResourceDesc);
 	if (!l_uploadHeapBuffer_VB)
 	{
-		Log(Error, "can't create vertex buffer on Upload Heap!");
+		Log(Error, rhs->m_InstanceName, " can't create vertex buffer on Upload Heap!");
 		return false;
 	}
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(rhs, l_uploadHeapBuffer_VB, "UploadHeap_VB");
 #endif //  INNO_DEBUG
 	m_MeshVertexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_VB;
@@ -60,10 +60,10 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	auto l_defaultHeapBuffer_IB = CreateDefaultHeapBuffer(&l_indicesResourceDesc);
 	if (!l_defaultHeapBuffer_IB)
 	{
-		Log(Error, "can't create index buffer on Default Heap!");
+		Log(Error, rhs->m_InstanceName, " can't create index buffer on Default Heap!");
 		return false;
 	}
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(rhs, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
 #endif //  INNO_DEBUG
 	m_MeshIndexBuffers_Default[componentUUID] = l_defaultHeapBuffer_IB;
@@ -71,10 +71,10 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	auto l_uploadHeapBuffer_IB = CreateUploadHeapBuffer(&l_indicesResourceDesc);
 	if (!l_uploadHeapBuffer_IB)
 	{
-		Log(Error, "can't create index buffer on Upload Heap!");
+		Log(Error, rhs->m_InstanceName, " can't create index buffer on Upload Heap!");
 		return false;
 	}
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(rhs, l_uploadHeapBuffer_IB, "UploadHeap_IB");
 #endif //  INNO_DEBUG
 	m_MeshIndexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_IB;
@@ -99,7 +99,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	std::memcpy((char*)rhs->m_MappedMemory_IB, &indices[0], indices.size() * sizeof(Index));
 
 	DX12CommandList l_commandList = {};
-	l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
+	l_commandList.m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"MeshInitCommandList");
 
 	UploadToGPU(&l_commandList, rhs);
 
@@ -127,7 +127,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0)
 	{
-		Log(Error, "Failed to get prebuild info for BLAS!");
+		Log(Error, rhs->m_InstanceName, " Failed to get prebuild info for BLAS!");
 		return false;
 	}
 
@@ -135,10 +135,10 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	auto l_BLAS = CreateDefaultHeapBuffer(&blasResourceDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 	if (!l_BLAS)
 	{
-		Log(Error, "Failed to create BLAS buffer!");
+		Log(Error, rhs->m_InstanceName, " Failed to create BLAS buffer!");
 		return false;
 	}
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(rhs, l_BLAS, "BLAS");
 #endif // INNO_DEBUG
 	m_MeshBLAS[componentUUID] = l_BLAS;
@@ -147,10 +147,10 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	auto l_scratchBuffer = CreateDefaultHeapBuffer(&scratchResourceDesc);
 	if (!l_scratchBuffer)
 	{
-		Log(Error, "Failed to create scratch buffer for BLAS!");
+		Log(Error, rhs->m_InstanceName, " Failed to create scratch buffer for BLAS!");
 		return false;
 	}
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(rhs, l_scratchBuffer, "ScratchBuffer_BLAS");
 #endif // INNO_DEBUG
 	m_MeshScratchBuffers[componentUUID] = l_scratchBuffer;
@@ -176,7 +176,11 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* rhs, std::vector<Vertex>
 	l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
-	ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
+	Close(&l_commandList, GPUEngineType::Graphics);
+	Execute(&l_commandList, GPUEngineType::Graphics);
+	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+	auto l_semaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+	WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
 
 	Log(Verbose, rhs->m_InstanceName, " BLAS is initialized.");
 
@@ -220,21 +224,23 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 
 	uint32_t frameCount = rhs->m_TextureDesc.IsMultiBuffer ? GetSwapChainImageCount() : 1;
 	rhs->m_GPUResources.resize(frameCount);
+	
+	D3D12_RESOURCE_STATES l_initialState = static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState);	
 	for (uint32_t frame = 0; frame < frameCount; frame++)
 	{
 		ComPtr<ID3D12Resource> defaultHeapBuffer;
 		if (useClearValue)
-			defaultHeapBuffer = CreateDefaultHeapBuffer(&l_textureDesc, D3D12_RESOURCE_STATE_COMMON, &l_clearValue);
+			defaultHeapBuffer = CreateDefaultHeapBuffer(&l_textureDesc, l_initialState, &l_clearValue);
 		else
-			defaultHeapBuffer = CreateDefaultHeapBuffer(&l_textureDesc);
+			defaultHeapBuffer = CreateDefaultHeapBuffer(&l_textureDesc, l_initialState);
 
 		if (!defaultHeapBuffer)
 		{
-			Log(Error, "Failed to create texture buffer for frame ", frame);
+			Log(Error, rhs->m_InstanceName, " Failed to create default heap buffer for frame ", frame);
 			return false;
 		}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		SetObjectName(rhs, defaultHeapBuffer, ("DefaultHeap_Texture_Frame" + std::to_string(frame)).c_str());
 #endif
 
@@ -243,26 +249,25 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 		defaultHeapBuffer.Detach();
 	}
 
-	DX12CommandList l_commandList = {};
-	l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
+	// Phase 1: Upload texture data with direct command list
 	if (textureData)
 	{
-		// Upload to first frame's resource
+		DX12CommandList l_uploadCommandList = {};
+		l_uploadCommandList.m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"TextureUploadCommandList");
+		
 		auto* defaultHeapBuffer_Frame0 = static_cast<ID3D12Resource*>(rhs->m_GPUResources[0]);
-
 		uint32_t l_subresourcesCount = rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 6 : 1;
 		UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(defaultHeapBuffer_Frame0, 0, l_subresourcesCount);
 
 		auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 		auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc);
-
 		if (!l_uploadHeapBuffer)
 		{
-			Log(Error, "can't create texture buffer on Upload Heap!");
+			Log(Error, rhs->m_InstanceName, " Failed to create upload heap buffer for frame 0");
 			return false;
 		}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		SetObjectName(rhs, l_uploadHeapBuffer, "UploadHeap_Texture");
 #endif
 
@@ -273,29 +278,34 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * rhs->m_TextureDesc.Height;
 		l_textureSubResourceData.pData = (unsigned char*)textureData;
 
-		UpdateSubresources(l_commandList.m_DirectCommandList.Get(), defaultHeapBuffer_Frame0, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
-		l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(defaultHeapBuffer_Frame0, D3D12_RESOURCE_STATE_COPY_DEST, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
-
-		// Copy to all other frames
-		for (uint32_t frame = 1; frame < frameCount; frame++)
+		// Determine final state after upload
+		// D3D12_RESOURCE_STATES l_finalState = (rhs->m_TextureDesc.MipLevels > 1) ? 
+		// 	D3D12_RESOURCE_STATE_UNORDERED_ACCESS : static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState);
+		D3D12_RESOURCE_STATES l_finalState =static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState);
+		for (auto gpuResource : rhs->m_GPUResources)
 		{
-			auto* defaultHeapBuffer_FrameN = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
-			l_commandList.m_DirectCommandList->CopyResource(defaultHeapBuffer_FrameN, defaultHeapBuffer_Frame0);
-			l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				defaultHeapBuffer_FrameN, D3D12_RESOURCE_STATE_COPY_DEST, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
+			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
+			l_uploadCommandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+				l_defaultHeapBuffer, l_initialState, D3D12_RESOURCE_STATE_COPY_DEST));
+			
+			UpdateSubresources(l_uploadCommandList.m_DirectCommandList.Get(), l_defaultHeapBuffer, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
+			
+			l_uploadCommandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+				l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_DEST, l_finalState));
 		}
-	}
-	else
-	{
-		// Transition all resources to initial state
-		for (uint32_t frame = 0; frame < frameCount; frame++)
-		{
-			auto* defaultHeapBuffer = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
-			l_commandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				defaultHeapBuffer, D3D12_RESOURCE_STATE_COMMON, static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState)));
-		}
+		
+		// Update current state
+		rhs->m_CurrentState = static_cast<uint32_t>(l_finalState);
+		
+		// Execute and wait for upload phase
+		Close(&l_uploadCommandList, GPUEngineType::Graphics);
+		Execute(&l_uploadCommandList, GPUEngineType::Graphics);
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+		auto l_uploadSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+		WaitOnCPU(l_uploadSemaphoreValue, GPUEngineType::Graphics);
 	}
 
+	// Create descriptor handles
 	uint32_t mipLevels = l_textureDesc.MipLevels;
 	rhs->m_ReadHandles.resize(frameCount * mipLevels);
 	rhs->m_WriteHandles.resize(frameCount * mipLevels);
@@ -306,7 +316,7 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 			uint32_t handleIndex = rhs->GetHandleIndex(frame, mip);
 			if (!CreateSRV(rhs, mip))
 			{
-				Log(Error, "Failed to create SRV for frame ", frame, " mip ", mip);
+				Log(Error, rhs->m_InstanceName, " Failed to create SRV for frame ", frame, " mip ", mip);
 				return false;
 			}
 		}
@@ -322,23 +332,58 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 			{
 				if (!CreateUAV(rhs, mip))
 				{
-					Log(Error, "Failed to create UAV for frame ", frame, " mip ", mip);
+					Log(Error, rhs->m_InstanceName, " Failed to create UAV for frame ", frame, " mip ", mip);
 					return false;
 				}
 			}
 		}
 	}
 
-	ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-	if (rhs->m_TextureDesc.MipLevels > 1)
-	{
-		GenerateMipmap(rhs, nullptr);
-	}
-
+	// Phase 2: Generate mipmaps with compute command list (if needed)
+	// if (rhs->m_TextureDesc.MipLevels > 1 && textureData)
+	// {
+	// 	// Texture should already be in UAV state from upload phase
+	// 	DX12CommandList l_mipmapCommandList = {};
+	// 	l_mipmapCommandList.m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE), L"TextureMipmapCommandList");
+		
+	// 	// Generate mipmaps (texture must be in UAV state)
+	// 	GenerateMipmap(rhs, &l_mipmapCommandList);
+		
+	// 	// Execute and wait for mipmap generation
+	// 	Close(&l_mipmapCommandList, GPUEngineType::Compute);
+	// 	Execute(&l_mipmapCommandList, GPUEngineType::Compute);
+	// 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
+	// 	auto l_computeSemaphoreValue = GetSemaphoreValue(GPUEngineType::Compute);
+	// 	WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
+		
+	// 	// Phase 3: Transition texture back to read state for rendering passes
+	// 	DX12CommandList l_transitionCommandList = {};
+	// 	l_transitionCommandList.m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"TextureTransitionCommandList");
+		
+	// 	// Transition all texture resources back to their read state
+	// 	for (auto gpuResource : rhs->m_GPUResources)
+	// 	{
+	// 		auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
+	// 		l_transitionCommandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	// 			l_defaultHeapBuffer, 
+	// 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 
+	// 			static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState)));
+	// 	}
+		
+	// 	// Update texture state
+	// 	rhs->m_CurrentState = rhs->m_ReadState;
+		
+	// 	// Execute and wait for transition
+	// 	Close(&l_transitionCommandList, GPUEngineType::Graphics);
+	// 	Execute(&l_transitionCommandList, GPUEngineType::Graphics);
+	// 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+	// 	auto l_transitionSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+	// 	WaitOnCPU(l_transitionSemaphoreValue, GPUEngineType::Graphics);
+	// }
+	
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	Log(Verbose, "Texture ", rhs->m_InstanceName, " is initialized.");
+	Log(Verbose, rhs->m_InstanceName, " is initialized.");
 
 	return true;
 }
@@ -509,14 +554,17 @@ bool DX12RenderingServer::InitializeImpl(SamplerComponent* rhs)
 
 bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 {
-	// @TODO: Make it just like the texture's read/write state
 	auto l_initialState = D3D12_RESOURCE_STATE_COMMON;
 	auto l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;
 	if (rhs->m_Usage == GPUBufferUsage::IndirectDraw)
 	{
-		rhs->m_ElementSize = sizeof(DX12DrawIndirectCommand);
-		rhs->m_ElementCount = 256;  // TODO: Don't hardcode
-		rhs->m_IndirectDrawCommandList = new DX12IndirectDrawCommandList();
+		// GPU-driven indirect draw - element size padded to 64 bytes
+		rhs->m_ElementSize = 64;
+		rhs->m_CPUAccessibility = Accessibility::Immutable;
+		rhs->m_GPUAccessibility = Accessibility::ReadWrite;
+		rhs->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+		rhs->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		rhs->m_CurrentState = rhs->m_WriteState;
 	}
 	else if (l_isRaytracingAS)
 	{
@@ -524,7 +572,8 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 		tlasInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 		tlasInputs.NumDescs = rhs->m_ElementCount;
 		tlasInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-		tlasInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+		tlasInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE 
+		| D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
 
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo = {};
 		m_device->GetRaytracingAccelerationStructurePrebuildInfo(&tlasInputs, &prebuildInfo);
@@ -535,6 +584,17 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 		rhs->m_ElementSize = rhs->m_Usage == GPUBufferUsage::TLAS ? TLAS_SIZE_IN_BYTES : SCRATCH_SIZE_IN_BYTES;
 		if (rhs->m_Usage == GPUBufferUsage::TLAS)
 			l_initialState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE; // This has to be set when the heap is created.
+		
+		rhs->m_ReadState = static_cast<uint32_t>(l_initialState);
+		rhs->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		rhs->m_CurrentState = rhs->m_ReadState;
+	}
+	else
+	{
+		// Default buffer states for other usage types
+		rhs->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_COMMON);
+		rhs->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		rhs->m_CurrentState = rhs->m_ReadState;
 	}
 
 	auto l_actualElementCount = l_isRaytracingAS ? 1 : rhs->m_ElementCount;
@@ -551,8 +611,15 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 	{
 		auto l_mappedMemory = new DX12MappedMemory();
 		l_mappedMemory->m_UploadHeapBuffer = CreateUploadHeapBuffer(&l_uploadBufferDesc);
+		
+		if (!l_mappedMemory->m_UploadHeapBuffer)
+		{
+			Log(Error, "Failed to create upload heap buffer for frame ", i);
+			delete l_mappedMemory;
+			return false;
+		}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		SetObjectName(rhs, l_mappedMemory->m_UploadHeapBuffer, ("UploadHeap_" + std::to_string(i)).c_str());
 #endif
 		CD3DX12_RANGE m_readRange(0, 0);
@@ -567,7 +634,7 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 		auto l_deviceMemory = new DX12DeviceMemory();
 		l_deviceMemory->m_DefaultHeapBuffer = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc, l_initialState);
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		SetObjectName(rhs, l_deviceMemory->m_DefaultHeapBuffer, ("DefaultHeap_" + std::to_string(i)).c_str());
 #endif
 		rhs->m_DeviceMemories[i] = l_deviceMemory;
@@ -576,7 +643,7 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 	if (rhs->m_InitialData)
 	{
 		DX12CommandList l_commandList = {};
-		l_commandList.m_DirectCommandList = CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT));
+		l_commandList.m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"GPUBufferInitCommandList");
 
 		for (uint32_t i = 0; i < l_swapChainImageCount; ++i)
 		{
@@ -587,18 +654,21 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* rhs)
 			UploadToGPU(&l_commandList, l_mappedMemory, l_deviceMemory, rhs);
 		}
 
-		ExecuteCommandListAndWait(l_commandList.m_DirectCommandList, GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
+		Close(&l_commandList, GPUEngineType::Graphics);
+		Execute(&l_commandList, GPUEngineType::Graphics);
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+		auto l_semaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+		WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
 	}
 
-	if (rhs->m_Usage != GPUBufferUsage::IndirectDraw
-		&& rhs->m_Usage != GPUBufferUsage::ScratchBuffer)
+	if (rhs->m_Usage != GPUBufferUsage::ScratchBuffer)
 	{
 		CreateSRV(rhs);
 		if (l_needDefaultHeap)
 			CreateUAV(rhs);
 	}
 
-	Log(Verbose, "GPU Buffer: ", rhs->m_InstanceName, " (", rhs->m_Usage, ") is initialized.");
+	Log(Verbose, rhs->m_InstanceName, " (", rhs->m_Usage, ") is initialized.");
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 	return true;
 }
@@ -715,12 +785,7 @@ bool DX12RenderingServer::UploadToGPU(DX12CommandList* commandList, DX12MappedMe
 		return true;
 
 	auto l_DX12CommandList = commandList->m_DirectCommandList;
-	auto l_beforeState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-	if (GPUBufferComponent->m_Usage == GPUBufferUsage::IndirectDraw)
-		l_beforeState = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-	else if (GPUBufferComponent->m_Usage == GPUBufferUsage::TLAS)
-		l_beforeState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-
+	auto l_beforeState = static_cast<D3D12_RESOURCE_STATES>(GPUBufferComponent->m_CurrentState);
 	auto l_afterState = D3D12_RESOURCE_STATE_COPY_DEST;
 	if (GPUBufferComponent->m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -737,8 +802,6 @@ bool DX12RenderingServer::UploadToGPU(DX12CommandList* commandList, DX12MappedMe
 bool DX12RenderingServer::Clear(ICommandList* commandList, GPUBufferComponent* rhs)
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-
-	l_commandList->m_DirectCommandList->Reset(GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT).Get(), nullptr);
 
 	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
 	l_commandList->m_DirectCommandList->SetDescriptorHeaps(1, l_heaps);

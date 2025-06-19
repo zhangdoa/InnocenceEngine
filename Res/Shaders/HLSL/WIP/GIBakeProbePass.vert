@@ -11,7 +11,7 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	output.posWS = mul(float4(input.posLS, 1.0f), perObjectCBuffer.m);
+	output.posWS = mul(float4(input.posLS, 1.0f), transformCBuffer.m);
 	output.posCS = mul(output.posWS, GICBuffer.t);
 	output.posCS = mul(output.posCS, GICBuffer.r[0]);
 	output.posCS = mul(output.posCS, GICBuffer.p);

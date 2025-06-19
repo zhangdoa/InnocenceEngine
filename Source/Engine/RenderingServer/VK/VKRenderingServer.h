@@ -211,7 +211,7 @@ namespace Inno
 			VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME 
 		};
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		const bool m_enableValidationLayers = true;
 #else
 		const bool m_enableValidationLayers = false;

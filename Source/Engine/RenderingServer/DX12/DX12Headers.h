@@ -14,22 +14,7 @@ using namespace Microsoft::WRL;
 namespace Inno
 {
 #define USE_DXIL
- #pragma pack(push, 1)
-	struct DX12DrawIndirectCommand
-	{
-		UINT RootConstant;
-		D3D12_VERTEX_BUFFER_VIEW VBV;
-		D3D12_INDEX_BUFFER_VIEW IBV;
-		D3D12_DRAW_INDEXED_ARGUMENTS DrawIndexedArgs;
-	};
-#pragma pack(pop)
-
-	class DX12IndirectDrawCommandList : public IIndirectDrawCommandList
-	{
-	public:
-		std::vector<DX12DrawIndirectCommand> m_CommandList;
-	};
-
+ 
 	struct DX12CBV
 	{
 		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc = {};

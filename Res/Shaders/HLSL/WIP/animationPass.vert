@@ -32,10 +32,10 @@ cbuffer AnimationPassConstantBuffer : register(b3)
 }
 
 [[vk::binding(0, 1)]]
-StructuredBuffer<PerObject_CB> g_Objects : register(t0);
+StructuredBuffer<Transform_CB> g_Transforms : register(t0);
 
 [[vk::binding(1, 1)]]
-StructuredBuffer<PerObject_CB> g_ObjectsPrev : register(t1);
+StructuredBuffer<Transform_CB> g_TransformsPrev : register(t1);
 
 [[vk::binding(5, 1)]]
 StructuredBuffer<AnimationKeyData_SB> animationKeyDataSBuffer : register(t5);
@@ -73,14 +73,14 @@ PixelInputType main(VertexInputType input)
 	float4 posBS = float4(input.posLS.xyz, 1.0f);
 	float4 posLS = mul(posBS, m);
 
-	PerObject_CB perObjectCBuffer = g_Objects[m_ObjectIndex];
-	PerObject_CB perObjectCBufferPrev = g_ObjectsPrev[m_ObjectIndex];
+	Transform_CB transformCBuffer = g_Transforms[m_ObjectIndex];
+	Transform_CB transformCBufferPrev = g_TransformsPrev[m_ObjectIndex];
 
-	float4 posWS = mul(posLS, perObjectCBuffer.m);
+	float4 posWS = mul(posLS, transformCBuffer.m);
 	float4 posVS = mul(posWS, perFrameCBuffer.v);
 	output.posCS_orig = mul(posVS, perFrameCBuffer.p_original);
 
-	float4 posWS_prev = mul(posLS, perObjectCBufferPrev.m);
+	float4 posWS_prev = mul(posLS, transformCBufferPrev.m);
 	float4 posVS_prev = mul(posWS_prev, perFrameCBufferPrev.v);
 	output.posCS_prev = mul(posVS_prev, perFrameCBufferPrev.p_original);
 
@@ -88,8 +88,8 @@ PixelInputType main(VertexInputType input)
 
 	output.posWS = posWS.xyz;
 	output.texCoord = input.texCoord;
-	output.normalWS = mul(float4(input.normalLS, 0.0f), perObjectCBuffer.normalMat).xyz;
-	output.tangentWS = mul(float4(input.tangentLS, 0.0f), perObjectCBuffer.normalMat).xyz;
+	output.normalWS = mul(float4(input.normalLS, 0.0f), transformCBuffer.normalMat).xyz;
+	output.tangentWS = mul(float4(input.tangentLS, 0.0f), transformCBuffer.normalMat).xyz;
 
 	return output;
 }

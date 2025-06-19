@@ -1,6 +1,6 @@
-Texture2D<float4> SrcTexture : register(t0);
-RWTexture2D<float4> DstTexture : register(u0);
-SamplerState BilinearClamp : register(s0);
+// UAV-based mipmap generator to avoid SRV/UAV resource state conflicts
+RWTexture2D<float4> SrcTexture : register(u0);
+RWTexture2D<float4> DstTexture : register(u1);
 
 // Root constants should be declared directly as cbuffer, not ConstantBuffer<T>
 cbuffer RootConstants : register(b0)
@@ -9,12 +9,46 @@ cbuffer RootConstants : register(b0)
 	float InvHeight;
 };
 
+// Manual bilinear sampling from UAV
+float4 SampleBilinear(RWTexture2D<float4> tex, float2 uv, uint2 srcSize)
+{
+	// Convert UV to texel coordinates
+	float2 texelCoords = uv * float2(srcSize) - 0.5;
+	
+	// Get integer texel coordinates and fractional parts
+	int2 texel0 = int2(floor(texelCoords));
+	float2 fracPart = frac(texelCoords);
+	
+	// Clamp to texture bounds
+	int2 texel1 = min(texel0 + int2(1, 0), int2(srcSize - 1));
+	int2 texel2 = min(texel0 + int2(0, 1), int2(srcSize - 1));
+	int2 texel3 = min(texel0 + int2(1, 1), int2(srcSize - 1));
+	texel0 = max(texel0, int2(0, 0));
+	
+	// Sample the four texels
+	float4 s0 = tex[texel0];
+	float4 s1 = tex[int2(texel1.x, texel0.y)];
+	float4 s2 = tex[int2(texel0.x, texel2.y)];
+	float4 s3 = tex[texel3];
+	
+	// Bilinear interpolation
+	float4 h0 = lerp(s0, s1, fracPart.x);
+	float4 h1 = lerp(s2, s3, fracPart.x);
+	return lerp(h0, h1, fracPart.y);
+}
+
 [numthreads(8, 8, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-	float2 texcoords = float2(InvWidth, InvHeight) * (DTid.xy + 0.5);
-
-	float4 color = SrcTexture.SampleLevel(BilinearClamp, texcoords, 0);
-
+	// Calculate source texture size from destination size and inverse values
+	uint2 dstSize = uint2(1.0 / InvWidth, 1.0 / InvHeight);
+	uint2 srcSize = dstSize * 2; // Source is 2x larger than destination
+	
+	// Calculate UV coordinates for sampling
+	float2 uv = (float2(DTid.xy) + 0.5) / float2(dstSize);
+	
+	// Sample using manual bilinear filtering
+	float4 color = SampleBilinear(SrcTexture, uv, srcSize);
+	
 	DstTexture[DTid.xy] = color;
 }

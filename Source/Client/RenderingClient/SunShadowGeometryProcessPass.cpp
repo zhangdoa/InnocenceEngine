@@ -1,4 +1,5 @@
 #include "SunShadowGeometryProcessPass.h"
+#include "SunShadowCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
@@ -27,8 +28,6 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
-	m_IndirectDrawCommand = l_renderingServer->AddGPUBufferComponent("SunShadowGeometryProcessPass/IndirectDrawCommand/");
-	m_IndirectDrawCommand->m_Usage = GPUBufferUsage::IndirectDraw;
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -60,46 +59,54 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(6);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(7);
 
 	// b0 - Object Index
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IsRootConstant = true;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 2; // Indirect root constants
 
-	// b1 - PerObjectCBuffer
+	// t0 - Transform
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
 
-	// b2 - CSM
+	// b1 - CSM
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Geometry;
-
-	// t0 - Material
+	
+	// t1 - Model Data
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Pixel;
 
-	// t1 - Textures
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_TextureUsage = TextureUsage::Sample;
+	// t2 - Material
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
 
-	// s0 - Sampler
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 0;
+	// t3 - Textures
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_TextureUsage = TextureUsage::Sample;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 3;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Pixel;
+
+	// s0 - Sampler
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_ShaderStage = ShaderStage::Pixel;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -115,31 +122,8 @@ bool SunShadowGeometryProcessPass::Initialize()
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
 	l_renderingServer->Initialize(m_SamplerComp);
-	l_renderingServer->Initialize(m_IndirectDrawCommand);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
-
-	return true;
-}
-
-bool SunShadowGeometryProcessPass::Update()
-{
-	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	if (m_IndirectDrawCommand->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	auto& l_drawCallList = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	auto f_drawCallValid = [](const DrawCallInfo& drawCall) 
-	{ 
-		auto l_visible = static_cast<uint32_t>(drawCall.m_VisibilityMask & VisibilityMask::Sun);
-		return l_visible && drawCall.meshUsage != MeshUsage::Skeletal;
-	};
-
-	l_renderingServer->UpdateIndirectDrawCommand(m_IndirectDrawCommand, l_drawCallList, f_drawCallValid);
 
 	return true;
 }
@@ -148,7 +132,6 @@ bool SunShadowGeometryProcessPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Delete(m_IndirectDrawCommand);
 	l_renderingServer->Delete(m_SamplerComp);	
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
@@ -175,17 +158,22 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_perObjectCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	auto l_CSMCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	auto l_materialCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
+	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
+	auto l_gpuModelDataBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
+	auto l_CSMCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	auto l_materialCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_perObjectCBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_CSMCBuffer, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_materialCBuffer, 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_SamplerComp, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_transformCBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_CSMCBuffer, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_materialCBuffer, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 6);
 
-	l_renderingServer->ExecuteIndirect(m_RenderPassComp, m_IndirectDrawCommand);
+	// Use the indirect draw command buffer from SunShadowCullingPass
+	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(SunShadowCullingPass::Get().GetResult());
+	l_renderingServer->ExecuteIndirect(m_RenderPassComp, l_indirectDrawCommandBuffer);
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 

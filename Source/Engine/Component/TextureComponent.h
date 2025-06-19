@@ -22,6 +22,9 @@ namespace Inno
 		
 		void* GetGPUResource(uint32_t frameIndex) const
 		{
+			if (!m_TextureDesc.IsMultiBuffer)
+				return m_GPUResources[0];
+		
 			if (frameIndex < m_GPUResources.size())
 				return m_GPUResources[frameIndex];
 			return nullptr;

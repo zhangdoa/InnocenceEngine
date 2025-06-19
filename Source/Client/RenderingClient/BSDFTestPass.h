@@ -25,7 +25,7 @@ namespace Inno
 		ShaderProgramComponent *m_ShaderProgramComp;
 		SamplerComponent *m_SamplerComp;
 
-		std::vector<PerObjectConstantBuffer> m_meshConstantBuffer;
+		std::vector<TransformConstantBuffer> m_transformConstantBuffer;
 		std::vector<MaterialConstantBuffer> m_materialConstantBuffer;
 
 		const size_t m_shpereCount = 10;

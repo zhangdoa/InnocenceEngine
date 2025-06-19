@@ -162,11 +162,7 @@ bool DX12RenderingServer::Delete(RenderPassComponent* rhs)
 		if (!l_commandList)
 			continue;
 
-		l_commandList->m_DirectCommandList.Reset();
-		l_commandList->m_ComputeCommandList.Reset();
-		l_commandList->m_CopyCommandList.Reset();
-
-		m_CommandListPool->Destroy(l_commandList);
+		Delete(l_commandList);
 	}
 
 	l_rhs->m_CommandLists.clear();

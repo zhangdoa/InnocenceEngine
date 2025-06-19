@@ -1,4 +1,5 @@
 #include "OpaquePass.h"
+#include "OpaqueCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/RenderingContextService.h"
@@ -23,9 +24,6 @@ bool OpaquePass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("OpaquePass/");
 
-	m_IndirectDrawCommand = l_renderingServer->AddGPUBufferComponent("OpaquePass/IndirectDrawCommand/");
-	m_IndirectDrawCommand->m_Usage = GPUBufferUsage::IndirectDraw;
-
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
@@ -48,6 +46,7 @@ bool OpaquePass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IsRootConstant = true;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 2; // Indirect root constants	
 
 	// b1 - per frame constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
@@ -61,19 +60,19 @@ bool OpaquePass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Pixel;
 
-	// t0 - per object constant buffer
+	// t0 - transform constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Vertex;
 	
-	// t1 - previous frame per object constant buffer
+	// t1 - model constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Vertex | ShaderStage::Pixel;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Pixel;
 
 	// t2 - material constant buffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
@@ -109,31 +108,8 @@ bool OpaquePass::Initialize()
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
 	l_renderingServer->Initialize(m_SamplerComp);
-	l_renderingServer->Initialize(m_IndirectDrawCommand);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
-
-	return true;
-}
-
-bool OpaquePass::Update()
-{
-	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	if (m_IndirectDrawCommand->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	auto& l_drawCallList = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	auto f_drawCallValid = [](const DrawCallInfo& drawCall) 
-	{ 
-		auto l_visible = static_cast<uint32_t>(drawCall.m_VisibilityMask & VisibilityMask::MainCamera);
-		return l_visible && drawCall.meshUsage != MeshUsage::Skeletal;
-	};
-
-	l_renderingServer->UpdateIndirectDrawCommand(m_IndirectDrawCommand, l_drawCallList, f_drawCallValid);
 
 	return true;
 }
@@ -142,7 +118,6 @@ bool OpaquePass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Delete(m_IndirectDrawCommand);
 	l_renderingServer->Delete(m_SamplerComp);	
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
@@ -163,26 +138,34 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
 
+	// GPU-driven rendering: GPU generates draw commands directly from GPU model data
+	auto l_gpuModelDataBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
+
+	// Graphics pass consumes GPU-generated indirect draw buffer
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	auto l_perFrameCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_perObjectCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Mesh);
-	auto l_materialCBuffer = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
-	auto l_perFrameCBufferPrev = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFramePrev);
-	auto l_perObjectCBufferPrev = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::MeshPrev);
+	// Bind resources for graphics rendering
+	auto l_perFrameCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perFrameCBufferPrev = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFramePrev);
+	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
+	auto l_gpuModelDataCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
+	auto l_materialCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_perFrameCBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_perFrameCBufferPrev, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perObjectCBuffer, 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_perObjectCBufferPrev, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_materialCBuffer, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBufferPrev, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex , l_transformCBuffer, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_gpuModelDataCBuffer, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_materialCBuffer, 5);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 6);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 7);
 
-	l_renderingServer->ExecuteIndirect(m_RenderPassComp, m_IndirectDrawCommand);
+	// Execute indirect draws using the GPU-generated draw command buffer from culling pass
+	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(OpaqueCullingPass::Get().GetResult());
+	l_renderingServer->ExecuteIndirect(m_RenderPassComp, l_indirectDrawCommandBuffer);
 	
 	l_renderingServer->CommandListEnd(m_RenderPassComp);
 

@@ -33,8 +33,8 @@ namespace Inno
         bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) override;
         bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount) override;
         bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) override;
+        bool TryToTransitState(GPUBufferComponent* rhs, ICommandList* commandList, Accessibility accessibility);
 
-        bool UpdateIndirectDrawCommand(GPUBufferComponent* indirectDrawCommand, const std::vector<DrawCallInfo>& drawCallList, std::function<bool(const DrawCallInfo&)>&& isDrawCallValid) override;
         bool ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand) override;
         void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) override;
         bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount) override;
@@ -133,8 +133,6 @@ namespace Inno
         ComPtr<ID3D12GraphicsCommandList7> CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator);
         ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc, const wchar_t* name = L"");
 
-        bool ExecuteCommandListAndWait(ComPtr<ID3D12GraphicsCommandList7> commandList, ComPtr<ID3D12CommandQueue> commandQueue);
-
         // APIs for engine components
         // In DX12RenderingServer_EngineComponent_Private.cpp
         DX12DescriptorHeapAccessor CreateDescriptorHeapAccessor
@@ -167,7 +165,6 @@ namespace Inno
         bool SetRenderTargets(RenderPassComponent* renderPass, DX12CommandList* commandList);
         bool PreparePipeline(RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO);
 
-        bool GenerateMipmapImpl(TextureComponent* TextureComp, ICommandList* commandList);
         bool UploadToGPU(DX12CommandList* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent);
 
         // DX12 objects
@@ -176,6 +173,7 @@ namespace Inno
 
         ComPtr<ID3D12Debug1> m_debugInterface = nullptr;
         ComPtr<IDXGraphicsAnalysis> m_graphicsAnalysis = nullptr;
+        DWORD m_debugCallbackCookie = 0;
 
         ComPtr<IDXGIFactory7> m_factory = nullptr;
 

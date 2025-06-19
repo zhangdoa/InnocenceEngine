@@ -29,6 +29,7 @@ namespace Inno
 		RenderingServer renderingServer = RenderingServer::DX12;
 		LogLevel logLevel = LogLevel::Success;
 		bool isHeadless = false;
+		bool isOffscreen = false;
 	};
 
 	class IWindowSystem;

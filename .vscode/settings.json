@@ -163,6 +163,7 @@
         "*.impl": "cpp",
         "stacktrace": "cpp",
         "stdfloat": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "*.def": "cpp"
     },
 }

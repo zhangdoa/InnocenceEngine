@@ -10,7 +10,86 @@ using namespace Inno;
 #include "DX12Helper_Common.h"
 #include "DX12Helper_Pipeline.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#include <DbgHelp.h>
+#pragma comment(lib, "dbghelp.lib")
+#endif
+
 using namespace DX12Helper;
+
+#ifdef _WIN32
+// Helper function to capture and format callstack
+static std::string CaptureCallstack(UINT framesToSkip = 1, UINT maxFrames = 10)
+{
+    static bool symbolsInitialized = false;
+    if (!symbolsInitialized)
+    {
+        SymInitialize(GetCurrentProcess(), NULL, TRUE);
+        symbolsInitialized = true;
+    }
+
+    std::string callstack = "\nCallstack:\n";
+    
+    void* stack[32];
+    WORD numberOfFrames = CaptureStackBackTrace(framesToSkip, maxFrames, stack, NULL);
+    
+    SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    
+    for (int i = 0; i < numberOfFrames; i++)
+    {
+        DWORD64 address = (DWORD64)(stack[i]);
+        
+        if (SymFromAddr(GetCurrentProcess(), address, 0, symbol))
+        {
+            callstack += "  " + std::to_string(i) + ": " + symbol->Name + " (0x" + 
+                        std::to_string(address) + ")\n";
+        }
+        else
+        {
+            callstack += "  " + std::to_string(i) + ": <unknown> (0x" + 
+                        std::to_string(address) + ")\n";
+        }
+    }
+    
+    free(symbol);
+    return callstack;
+}
+#endif
+
+// Static callback function to capture D3D12 debug messages
+static void CALLBACK D3D12DebugMessageCallback(
+    D3D12_MESSAGE_CATEGORY Category,
+    D3D12_MESSAGE_SEVERITY Severity,
+    D3D12_MESSAGE_ID ID,
+    LPCSTR pDescription,
+    void* pContext)
+{
+    // Convert D3D12 severity to engine log level
+    switch (Severity)
+    {
+    case D3D12_MESSAGE_SEVERITY_CORRUPTION:
+    case D3D12_MESSAGE_SEVERITY_ERROR:
+        {
+#ifdef _WIN32
+            std::string callstackInfo = CaptureCallstack(2, 15);  // Skip callback frames, capture up to 15 frames
+            Log(Error, "D3D12 ERROR: ", pDescription, callstackInfo.c_str());
+#else
+            Log(Error, "D3D12 ERROR: ", pDescription);
+#endif
+        }
+        break;
+    case D3D12_MESSAGE_SEVERITY_WARNING:
+        Log(Warning, "D3D12 WARNING: ", pDescription);
+        break;
+    case D3D12_MESSAGE_SEVERITY_INFO:
+    case D3D12_MESSAGE_SEVERITY_MESSAGE:
+        Log(Verbose, "D3D12 INFO: ", pDescription);
+        break;
+    }
+}
 
 bool DX12RenderingServer::CreateDebugCallback()
 {
@@ -34,7 +113,8 @@ bool DX12RenderingServer::CreateDebugCallback()
 
     m_debugInterface->EnableDebugLayer();
     //m_debugInterface->SetEnableGPUBasedValidation(true);
-
+    //m_debugInterface->SetEnableSynchronizedCommandQueueValidation(true);
+   
     Log(Success, "Debug layer and GPU based validation has been enabled.");
 
     l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_graphicsAnalysis));
@@ -50,7 +130,7 @@ bool DX12RenderingServer::CreatePhysicalDevices()
 {
     // Create a DirectX graphics interface factory.
     UINT l_DXGIFlag = 0;
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     l_DXGIFlag |= DXGI_CREATE_FACTORY_DEBUG;
 #endif // INNO_DEBUG
 
@@ -179,18 +259,13 @@ bool DX12RenderingServer::CreatePhysicalDevices()
         return false;
     }
 
-    // Release the display mode list.
-    // displayModeList.clear();
-
-    // Set the feature level to DirectX 12.1 to enable using all the DirectX 12 features.
-    // Note: Not all cards support full DirectX 12, this feature level may need to be reduced on some cards to 12.0.
-    auto featureLevel = D3D_FEATURE_LEVEL_12_1;
+    auto featureLevel = D3D_FEATURE_LEVEL_12_2;
 
     // Create the Direct3D 12 device.
     l_HResult = D3D12CreateDevice(m_adapter.Get(), featureLevel, IID_PPV_ARGS(&m_device));
     if (FAILED(l_HResult))
     {
-        Log(Error, "Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
+        Log(Error, "Can't create a DirectX 12.2 device. The default video card does not support DirectX 12.2!");
         m_ObjectStatus = ObjectStatus::Suspended;
         return false;
     }
@@ -211,12 +286,44 @@ bool DX12RenderingServer::CreatePhysicalDevices()
     ComPtr<ID3D12InfoQueue> l_pInfoQueue;
     l_HResult = m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
 
-    if (SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE))
-        && SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE))
-        //&& SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE))
-        )
+    if (SUCCEEDED(l_HResult) && l_pInfoQueue)
     {
-        Log(Success, "Debug report severity has been set.");
+        if (SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE))
+            && SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE))
+            //&& SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE))
+            )
+        {
+            Log(Success, "Debug report severity has been set.");
+            
+            // Register message callback to capture debug messages (requires ID3D12InfoQueue1)
+            ComPtr<ID3D12InfoQueue1> l_pInfoQueue1;
+            l_HResult = l_pInfoQueue.As(&l_pInfoQueue1);
+            if (SUCCEEDED(l_HResult) && l_pInfoQueue1)
+            {
+                l_HResult = l_pInfoQueue1->RegisterMessageCallback(
+                    D3D12DebugMessageCallback,
+                    D3D12_MESSAGE_CALLBACK_FLAG_NONE,
+                    nullptr,
+                    &m_debugCallbackCookie);
+                    
+                if (SUCCEEDED(l_HResult))
+                {
+                    Log(Success, "D3D12 debug message callback registered.");
+                }
+                else
+                {
+                    Log(Warning, "Failed to register D3D12 debug message callback.");
+                }
+            }
+            else
+            {
+                Log(Warning, "ID3D12InfoQueue1 not available - debug message callback not supported.");
+            }
+        }
+    }
+    else
+    {
+        Log(Warning, "Debug info queue not available (debug layer not enabled).");
     }
 
     return true;
@@ -296,7 +403,7 @@ bool DX12RenderingServer::CreateSyncPrimitives()
         Log(Error, "Can't create Fence for copy CommandQueue!");
         return false;
     }
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     m_directCommandQueueFence->SetName(L"DirectCommandQueueFence");
     m_computeCommandQueueFence->SetName(L"ComputeCommandQueueFence");
     m_copyCommandQueueFence->SetName(L"CopyCommandQueueFence");
@@ -579,34 +686,19 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
 
 bool DX12RenderingServer::CreateMipmapGenerator()
 {
-    D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-    samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-    samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-    samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-    samplerDesc.MipLODBias = 0.0f;
-    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-    samplerDesc.MinLOD = 0.0f;
-    samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-    samplerDesc.MaxAnisotropy = 0;
-    samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-    samplerDesc.ShaderRegister = 0;
-    samplerDesc.RegisterSpace = 0;
-    samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
     {
-        CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+        CD3DX12_DESCRIPTOR_RANGE uavRanges[2];
         CD3DX12_ROOT_PARAMETER rootParameters[3];
-        srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
-        srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+        uavRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);  // Source UAV
+        uavRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0);  // Destination UAV
         rootParameters[0].InitAsConstants(3, 0);
-        rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
-        rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
+        rootParameters[1].InitAsDescriptorTable(1, &uavRanges[0]);
+        rootParameters[2].InitAsDescriptorTable(1, &uavRanges[1]);
 
         ID3DBlob* signature;
         ID3DBlob* error;
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
         D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
         m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_3DMipmapRootSignature));
 
@@ -629,18 +721,18 @@ bool DX12RenderingServer::CreateMipmapGenerator()
         Log(Success, "Mipmap generator for 3D texture has been created.");
     }
     {
-        CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+        CD3DX12_DESCRIPTOR_RANGE uavRanges[2];
         CD3DX12_ROOT_PARAMETER rootParameters[3];
-        srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
-        srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+        uavRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);  // Source UAV
+        uavRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0);  // Destination UAV
         rootParameters[0].InitAsConstants(2, 0);
-        rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
-        rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
+        rootParameters[1].InitAsDescriptorTable(1, &uavRanges[0]);
+        rootParameters[2].InitAsDescriptorTable(1, &uavRanges[1]);
 
         ID3DBlob* signature;
         ID3DBlob* error;
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_NONE);
         D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
         m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_2DMipmapRootSignature));
 
@@ -667,7 +759,7 @@ bool DX12RenderingServer::CreateMipmapGenerator()
 
 bool DX12RenderingServer::CreateSwapChain()
 {
-    // Set the swap chain to use double buffering.
+    // Set the swap chain to use multi-buffering.
     m_swapChainDesc.BufferCount = m_swapChainImageCount;
 
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();

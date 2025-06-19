@@ -38,27 +38,29 @@ namespace Inno
 		std::vector<PointLightConstantBuffer> m_pointLightCBVector;
 		std::vector<SphereLightConstantBuffer> m_sphereLightCBVector;
 
-		std::vector<DrawCallInfo> m_drawCallInfoVector;
-		std::vector<PerObjectConstantBuffer> m_perObjectCBVector;
+		std::vector<GPUModelData> m_gpuModelDataVector;
+		std::vector<TransformConstantBuffer> m_transformBufferVector;
+		std::vector<TransformConstantBuffer> m_transformPrevBufferVector;
 		std::vector<MaterialConstantBuffer> m_materialCBVector;
 
 		std::vector<AnimationDrawCallInfo> m_animationDrawCallInfoVector;
 		std::vector<AnimationConstantBuffer> m_animationCBVector;
 
-		std::vector<PerObjectConstantBuffer> m_directionalLightPerObjectCB;
-		std::vector<PerObjectConstantBuffer> m_pointLightPerObjectCB;
-		std::vector<PerObjectConstantBuffer> m_sphereLightPerObjectCB;
+		std::vector<TransformConstantBuffer> m_directionalLightPerObjectCB;
+		std::vector<TransformConstantBuffer> m_pointLightPerObjectCB;
+		std::vector<TransformConstantBuffer> m_sphereLightPerObjectCB;
 
 		std::vector<BillboardPassDrawCallInfo> m_billboardPassDrawCallInfoVector;
-		std::vector<PerObjectConstantBuffer> m_billboardPassPerObjectCB;
+		std::vector<TransformConstantBuffer> m_billboardPassPerObjectCB;
 
 		std::vector<DebugPassDrawCallInfo> m_debugPassDrawCallInfoVector;
-		std::vector<PerObjectConstantBuffer> m_debugPassPerObjectCB;
+		std::vector<TransformConstantBuffer> m_debugPassPerObjectCB;
 
 		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
 		GPUBufferComponent* m_PerFrameCBufferPrevGPUBufferComp;
-		GPUBufferComponent* m_PerObjectGPUBufferComp;
-		GPUBufferComponent* m_PerObjectPrevGPUBufferComp;
+		GPUBufferComponent* m_GPUModelDataBufferComp;
+		GPUBufferComponent* m_TransformBufferComp;
+		GPUBufferComponent* m_TransformPrevBufferComp;
 		GPUBufferComponent* m_MaterialGPUBufferComp;
 		GPUBufferComponent* m_PointLightGPUBufferComp;
 		GPUBufferComponent* m_SphereLightGPUBufferComp;
@@ -66,7 +68,6 @@ namespace Inno
 		GPUBufferComponent* m_GICBufferGPUBufferComp;
 		GPUBufferComponent* m_animationGPUBufferComp;
 		GPUBufferComponent* m_billboardGPUBufferComp;
-
 
 		std::function<void()> f_sceneLoadingFinishedCallback;
 
@@ -86,8 +87,6 @@ namespace Inno
 
 		GPUBufferComponent* GetCurrentFramePerFrameBuffer();
 		GPUBufferComponent* GetPreviousFramePerFrameBuffer();
-		GPUBufferComponent* GetCurrentFramePerObjectBuffer();
-		GPUBufferComponent* GetPreviousFramePerObjectBuffer();
 	};
 }
 
@@ -121,19 +120,6 @@ GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFramePerFrameBuffer(
 	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
 }
 
-GPUBufferComponent* RenderingContextServiceImpl::GetCurrentFramePerObjectBuffer()
-{
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
-	auto l_isOddFrame = l_frameCount % 2 == 1;
-	return l_isOddFrame ? m_PerObjectGPUBufferComp : m_PerObjectPrevGPUBufferComp;
-}
-
-GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFramePerObjectBuffer()
-{
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
-	auto l_isOddFrame = l_frameCount % 2 == 1;
-	return l_isOddFrame ? m_PerObjectPrevGPUBufferComp : m_PerObjectGPUBufferComp;
-}
 
 bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
@@ -141,8 +127,9 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 
 	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
 	m_PerFrameCBufferPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBufferPrev/");
-	m_PerObjectGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBuffer/");
-	m_PerObjectPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerObjectCBufferPrev/");
+	m_GPUModelDataBufferComp = l_renderingServer->AddGPUBufferComponent("GPUModelDataBuffer/");
+	m_TransformBufferComp = l_renderingServer->AddGPUBufferComponent("TransformBuffer/");
+	m_TransformPrevBufferComp = l_renderingServer->AddGPUBufferComponent("TransformPrevBuffer/");
 	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
 	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
 	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
@@ -190,17 +177,23 @@ bool RenderingContextServiceImpl::Initialize()
 
 		l_renderingServer->Initialize(m_PerFrameCBufferPrevGPUBufferComp);
 
-		m_PerObjectGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
-		m_PerObjectGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
-		m_PerObjectGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+		m_GPUModelDataBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_GPUModelDataBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_GPUModelDataBufferComp->m_ElementSize = sizeof(GPUModelData);
 
-		l_renderingServer->Initialize(m_PerObjectGPUBufferComp);
+		l_renderingServer->Initialize(m_GPUModelDataBufferComp);
 
-		m_PerObjectPrevGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
-		m_PerObjectPrevGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
-		m_PerObjectPrevGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+		m_TransformBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_TransformBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_TransformBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
-		l_renderingServer->Initialize(m_PerObjectPrevGPUBufferComp);
+		l_renderingServer->Initialize(m_TransformBufferComp);
+
+		m_TransformPrevBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
+		m_TransformPrevBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
+		m_TransformPrevBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
+
+		l_renderingServer->Initialize(m_TransformPrevBufferComp);
 
 		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
@@ -234,11 +227,10 @@ bool RenderingContextServiceImpl::Initialize()
 		l_renderingServer->Initialize(m_animationGPUBufferComp);
 
 		m_billboardGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
-		m_billboardGPUBufferComp->m_ElementSize = sizeof(PerObjectConstantBuffer);
+		m_billboardGPUBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 		m_billboardGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 		l_renderingServer->Initialize(m_billboardGPUBufferComp);
-
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "RenderingContextService has been initialized.");
@@ -261,6 +253,7 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 
 	PerFrameConstantBuffer l_perFrameCB = {};
 	l_perFrameCB.frameIndex = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	l_perFrameCB.modelCount = static_cast<uint32_t>(m_gpuModelDataVector.size());
 	l_perFrameCB.p_original = l_p;
 	l_perFrameCB.p_jittered = l_p;
 
@@ -373,8 +366,9 @@ bool RenderingContextServiceImpl::UpdateLightData()
 
 bool RenderingContextServiceImpl::UpdateDrawCalls()
 {
-	m_drawCallInfoVector.clear();
-	m_perObjectCBVector.clear();
+	m_gpuModelDataVector.clear();
+	m_transformBufferVector.clear();
+	m_transformPrevBufferVector.clear();
 	m_materialCBVector.clear();
 	m_animationDrawCallInfoVector.clear();
 	m_animationCBVector.clear();
@@ -411,20 +405,54 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 			if (!l_material || l_material->m_ObjectStatus != ObjectStatus::Activated)
 				continue;
 
-			DrawCallInfo l_drawCallInfo = {};
+			GPUModelData l_gpuModelData = {};
 
-			l_drawCallInfo.mesh = l_mesh;
-			l_drawCallInfo.m_PerObjectConstantBufferIndex = l_drawCallIndex;
-			l_drawCallInfo.meshUsage = MeshUsage::Static;
-			l_drawCallInfo.m_VisibilityMask = VisibilityMask::MainCamera;
+			// Vertex and index buffer GPU addresses
+			l_gpuModelData.m_VertexBufferAddress = l_mesh->m_VertexBufferView.m_BufferLocation;
+			l_gpuModelData.m_IndexBufferAddress = l_mesh->m_IndexBufferView.m_BufferLocation;
+			
+			// Buffer metadata
+			if (l_mesh->m_VertexBufferView.m_StrideInBytes == 0)
+			{
+				Log(Error, "Vertex stride is zero - cannot calculate vertex count");
+				l_gpuModelData.m_VertexCount = 0;
+			}
+			else
+			{
+				l_gpuModelData.m_VertexCount = l_mesh->m_VertexBufferView.m_SizeInBytes / l_mesh->m_VertexBufferView.m_StrideInBytes;
+			}
+			l_gpuModelData.m_IndexCount = l_mesh->GetIndexCount();
+			l_gpuModelData.m_VertexStride = l_mesh->m_VertexBufferView.m_StrideInBytes;
+			l_gpuModelData.m_IndexStride = l_mesh->m_IndexBufferView.m_StrideInBytes;
+			
+			// Material and identification
+			l_gpuModelData.m_MaterialIndex = l_drawCallIndex;
+			l_gpuModelData.m_UUID = (float)l_modelComponent->m_UUID;
+			
+			// Visibility and culling data
+			l_gpuModelData.m_VisibilityMask = static_cast<uint32_t>(VisibilityMask::MainCamera);
+			l_gpuModelData.m_MeshUsage = static_cast<uint32_t>(MeshUsage::Static);
+			
+			// Bounding box for GPU culling
+			l_gpuModelData.m_BoundingBoxMin = Vec4(l_modelComponent->m_AABB.m_boundMin.x, l_modelComponent->m_AABB.m_boundMin.y, l_modelComponent->m_AABB.m_boundMin.z, 1.0f);
+			l_gpuModelData.m_BoundingBoxMax = Vec4(l_modelComponent->m_AABB.m_boundMax.x, l_modelComponent->m_AABB.m_boundMax.y, l_modelComponent->m_AABB.m_boundMax.z, 1.0f);
+			
+			// Instance data
+			l_gpuModelData.m_InstanceCount = 1;
+			l_gpuModelData.m_FirstInstance = 0;
 
-			PerObjectConstantBuffer l_perObjectCB = {};
-			l_perObjectCB.m = l_modelComponent->m_Transform.GetMatrix();
-			l_perObjectCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
-			l_perObjectCB.UUID = (float)l_modelComponent->m_UUID;
-			l_perObjectCB.m_MaterialIndex = l_drawCallIndex; // @TODO: The material is duplicated per object, this should be fixed
+			m_gpuModelDataVector.emplace_back(l_gpuModelData);
 
-			m_perObjectCBVector.emplace_back(l_perObjectCB);
+			// Create transform buffer data (current frame)
+			TransformConstantBuffer l_transformCB = {};
+			l_transformCB.m = l_modelComponent->m_Transform.GetMatrix();
+			l_transformCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
+			m_transformBufferVector.emplace_back(l_transformCB);
+
+			// Create transform buffer data (previous frame) - for now, same as current
+			// TODO: Implement proper previous frame transform tracking
+			TransformConstantBuffer l_transformPrevCB = l_transformCB;
+			m_transformPrevBufferVector.emplace_back(l_transformPrevCB);
 
 			MaterialConstantBuffer l_materialCB = {};
 			l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
@@ -452,7 +480,6 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 			}
 
 			m_materialCBVector.emplace_back(l_materialCB);
-			m_drawCallInfoVector.emplace_back(l_drawCallInfo);
 			l_drawCallIndex++;
 
 			// if (l_modelComponent->m_meshUsage == MeshUsage::Skeletal)
@@ -509,23 +536,23 @@ bool RenderingContextServiceImpl::UpdateBillboardPassData()
 		if (i == nullptr)
 			continue;
 
-		PerObjectConstantBuffer l_meshCB;
-		l_meshCB.m = Math::toTranslationMatrix(Vec4(i->m_Transform.m_pos, 1.0f));
+		TransformConstantBuffer l_transformCB;
+		l_transformCB.m = Math::toTranslationMatrix(Vec4(i->m_Transform.m_pos, 1.0f));
 
 		switch (i->m_LightType)
 		{
 		case LightType::Directional:
-			m_directionalLightPerObjectCB.emplace_back(l_meshCB);
+			m_directionalLightPerObjectCB.emplace_back(l_transformCB);
 			m_billboardPassDrawCallInfoVector[0].instanceCount++;
 			break;
 		case LightType::Point:
-			m_pointLightPerObjectCB.emplace_back(l_meshCB);
+			m_pointLightPerObjectCB.emplace_back(l_transformCB);
 			m_billboardPassDrawCallInfoVector[1].instanceCount++;
 			break;
 		case LightType::Spot:
 			break;
 		case LightType::Sphere:
-			m_sphereLightPerObjectCB.emplace_back(l_meshCB);
+			m_sphereLightPerObjectCB.emplace_back(l_transformCB);
 			m_billboardPassDrawCallInfoVector[2].instanceCount++;
 			break;
 		case LightType::Disk:
@@ -562,13 +589,19 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
-	auto l_currentFramePerObjectBuffer = GetCurrentFramePerObjectBuffer();
-
 	l_renderingServer->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()]);
 
-	if (m_perObjectCBVector.size() > 0)
+	if (m_gpuModelDataVector.size() > 0)
 	{
-		l_renderingServer->Upload(l_currentFramePerObjectBuffer, m_perObjectCBVector, 0, m_perObjectCBVector.size());
+		l_renderingServer->Upload(m_GPUModelDataBufferComp, m_gpuModelDataVector, 0, m_gpuModelDataVector.size());
+	}
+	if (m_transformBufferVector.size() > 0)
+	{
+		l_renderingServer->Upload(m_TransformBufferComp, m_transformBufferVector, 0, m_transformBufferVector.size());
+	}
+	if (m_transformPrevBufferVector.size() > 0)
+	{
+		l_renderingServer->Upload(m_TransformPrevBufferComp, m_transformPrevBufferVector, 0, m_transformPrevBufferVector.size());
 	}
 	if (m_materialCBVector.size() > 0)
 	{
@@ -616,6 +649,16 @@ bool RenderingContextServiceImpl::Update()
 
 		UploadGPUBuffers();
 
+		// CRITICAL: Synchronize CPU-GPU after uploading GPU model data buffers
+		// This ensures vertex/index buffer addresses are valid before GPU-driven culling shaders execute
+		// Wait for all pending graphics operations to complete before proceeding
+		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_semaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
+		if (l_semaphoreValue > 0)
+		{
+			l_renderingServer->WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
+		}
+
 		return true;
 	}
 	else
@@ -631,8 +674,7 @@ bool RenderingContextServiceImpl::Terminate()
 
 	l_renderingServer->Delete(m_PerFrameCBufferGPUBufferComp);
 	l_renderingServer->Delete(m_PerFrameCBufferPrevGPUBufferComp);
-	l_renderingServer->Delete(m_PerObjectGPUBufferComp);
-	l_renderingServer->Delete(m_PerObjectPrevGPUBufferComp);
+	l_renderingServer->Delete(m_GPUModelDataBufferComp);
 	l_renderingServer->Delete(m_MaterialGPUBufferComp);
 	l_renderingServer->Delete(m_PointLightGPUBufferComp);
 	l_renderingServer->Delete(m_SphereLightGPUBufferComp);
@@ -685,9 +727,11 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 		break;
 	case GPUBufferUsageType::PerFramePrev: l_result = m_Impl->GetPreviousFramePerFrameBuffer();
 		break;
-	case GPUBufferUsageType::Mesh: l_result = m_Impl->GetCurrentFramePerObjectBuffer();
+	case GPUBufferUsageType::GPUModelData: l_result = m_Impl->m_GPUModelDataBufferComp;
 		break;
-	case GPUBufferUsageType::MeshPrev: l_result = m_Impl->GetPreviousFramePerObjectBuffer();
+	case GPUBufferUsageType::Transform: l_result = m_Impl->m_TransformBufferComp;
+		break;
+	case GPUBufferUsageType::TransformPrev: l_result = m_Impl->m_TransformPrevBufferComp;
 		break;
 	case GPUBufferUsageType::Material: l_result = m_Impl->m_MaterialGPUBufferComp;
 		break;
@@ -716,10 +760,10 @@ const PerFrameConstantBuffer& RenderingContextService::GetPerFrameConstantBuffer
 	return m_Impl->m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()];
 }
 
-const std::vector<DrawCallInfo>& RenderingContextService::GetDrawCallInfo()
+const std::vector<GPUModelData>& RenderingContextService::GetGPUModelData()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_drawCallInfoVector;
+	return m_Impl->m_gpuModelDataVector;
 }
 
 const std::vector<AnimationDrawCallInfo>& RenderingContextService::GetAnimationDrawCallInfo()

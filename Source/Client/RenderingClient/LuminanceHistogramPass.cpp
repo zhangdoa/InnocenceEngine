@@ -94,12 +94,15 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
+	auto l_renderingContext = reinterpret_cast<LuminanceHistogramPassRenderingContext*>(renderingContext);
+	if (l_renderingContext->m_input->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	if (m_luminanceHistogram->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_renderingContext = reinterpret_cast<LuminanceHistogramPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / 16);

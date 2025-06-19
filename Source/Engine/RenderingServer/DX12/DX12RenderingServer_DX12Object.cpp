@@ -85,7 +85,7 @@ ComPtr<ID3D12CommandQueue> DX12RenderingServer::CreateCommandQueue(D3D12_COMMAND
 		return nullptr;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	l_commandQueue->SetName(name);
 #endif // INNO_DEBUG
 
@@ -105,7 +105,7 @@ ComPtr<ID3D12CommandAllocator> DX12RenderingServer::CreateCommandAllocator(D3D12
 		return nullptr;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	l_commandAllocator->SetName(name);
 #endif // INNO_DEBUG
 
@@ -125,7 +125,7 @@ ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateCommandList(D3D12_
 		return nullptr;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	l_commandList->SetName(name);
 #endif // INNO_DEBUG
 
@@ -141,40 +141,6 @@ ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateTemporaryCommandLi
 	return CreateCommandList(commandListType, commandAllocator, (L"TemporaryCommandList_" + std::to_wstring(index++)).c_str());
 }
 
-bool DX12RenderingServer::ExecuteCommandListAndWait(ComPtr<ID3D12GraphicsCommandList7> commandList, ComPtr<ID3D12CommandQueue> commandQueue)
-{
-	auto l_HResult = commandList->Close();
-	if (FAILED(l_HResult))
-	{
-		Log(Error, "Can't close command list.");
-	}
-
-	ComPtr<ID3D12Fence1> l_commandListFence;
-	l_HResult = m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_commandListFence));
-	if (FAILED(l_HResult))
-	{
-		Log(Error, "Can't create fence for command list.");
-	}
-
-	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	if (l_fenceEvent == nullptr)
-	{
-		Log(Error, "Can't create fence event for command list.");
-	}
-
-	const auto onFinishedValue = 1;
-	l_commandListFence->SetEventOnCompletion(onFinishedValue, l_fenceEvent);
-
-	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
-	commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	commandQueue->Signal(l_commandListFence.Get(), onFinishedValue);
-
-	WaitForSingleObject(l_fenceEvent, INFINITE);
-	CloseHandle(l_fenceEvent);
-
-	return true;
-}
-
 ComPtr<ID3D12DescriptorHeap> DX12RenderingServer::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc, const wchar_t* name)
 {
 	ComPtr<ID3D12DescriptorHeap> l_descriptorHeap = 0;
@@ -185,7 +151,7 @@ ComPtr<ID3D12DescriptorHeap> DX12RenderingServer::CreateDescriptorHeap(D3D12_DES
 		return 0;
 	}
 
-#ifdef INNO_DEBUG
+#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 	SetObjectName(name, l_descriptorHeap, "DescriptorHeap");
 #endif // INNO_DEBUG
 
