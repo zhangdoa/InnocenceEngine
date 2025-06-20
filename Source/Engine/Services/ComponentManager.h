@@ -210,7 +210,6 @@ namespace Inno
 			m_ComponentLUTByUUID.emplace(l_result, l_componentPtr);
 			m_LoadedComponents.emplace(l_filePath, l_result);
 
-			component.m_ObjectStatus = ObjectStatus::Activated;
 			return l_result;
 		}
 

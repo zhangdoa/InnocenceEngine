@@ -718,7 +718,7 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 		
 		if (m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			Log(Verbose, "Waiting for ComputeCommandQueueFence: ", semaphoreValue);
+			//Log(Verbose, "Waiting for ComputeCommandQueueFence: ", semaphoreValue);
 			m_computeCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
 			
 			// Double-check to avoid race condition
@@ -749,7 +749,7 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 		
 		if (m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			Log(Verbose, "Waiting for CopyCommandQueueFence: ", semaphoreValue);
+			//Log(Verbose, "Waiting for CopyCommandQueueFence: ", semaphoreValue);
 			m_copyCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
 			
 			// Double-check to avoid race condition

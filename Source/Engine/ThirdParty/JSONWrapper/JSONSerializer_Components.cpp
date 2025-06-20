@@ -248,6 +248,7 @@ bool  JSONWrapper::Load(const char* fileName, DrawCallComponent& component)
         component.m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>(l_j["Name"].get<std::string>().c_str(), component.m_Owner);
     }
 
+    component.m_ObjectStatus = ObjectStatus::Activated;
     return true;
 }
 

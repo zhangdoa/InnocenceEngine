@@ -279,9 +279,8 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 		l_textureSubResourceData.pData = (unsigned char*)textureData;
 
 		// Determine final state after upload
-		// D3D12_RESOURCE_STATES l_finalState = (rhs->m_TextureDesc.MipLevels > 1) ? 
-		// 	D3D12_RESOURCE_STATE_UNORDERED_ACCESS : static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState);
-		D3D12_RESOURCE_STATES l_finalState =static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState);
+		D3D12_RESOURCE_STATES l_finalState = (rhs->m_TextureDesc.MipLevels > 1) ? 
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS : static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState);
 		for (auto gpuResource : rhs->m_GPUResources)
 		{
 			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
@@ -340,46 +339,46 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* rhs, void* textureDat
 	}
 
 	// Phase 2: Generate mipmaps with compute command list (if needed)
-	// if (rhs->m_TextureDesc.MipLevels > 1 && textureData)
-	// {
-	// 	// Texture should already be in UAV state from upload phase
-	// 	DX12CommandList l_mipmapCommandList = {};
-	// 	l_mipmapCommandList.m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE), L"TextureMipmapCommandList");
+	if (rhs->m_TextureDesc.MipLevels > 1 && textureData)
+	{
+		// Texture should already be in UAV state from upload phase
+		DX12CommandList l_mipmapCommandList = {};
+		l_mipmapCommandList.m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE), L"TextureMipmapCommandList");
 		
-	// 	// Generate mipmaps (texture must be in UAV state)
-	// 	GenerateMipmap(rhs, &l_mipmapCommandList);
+		// Generate mipmaps (texture must be in UAV state)
+		GenerateMipmap(rhs, &l_mipmapCommandList);
 		
-	// 	// Execute and wait for mipmap generation
-	// 	Close(&l_mipmapCommandList, GPUEngineType::Compute);
-	// 	Execute(&l_mipmapCommandList, GPUEngineType::Compute);
-	// 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
-	// 	auto l_computeSemaphoreValue = GetSemaphoreValue(GPUEngineType::Compute);
-	// 	WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
+		// Execute and wait for mipmap generation
+		l_mipmapCommandList.m_ComputeCommandList->Close();
+		Execute(&l_mipmapCommandList, GPUEngineType::Compute);
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
+		auto l_computeSemaphoreValue = GetSemaphoreValue(GPUEngineType::Compute);
+		WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		
-	// 	// Phase 3: Transition texture back to read state for rendering passes
-	// 	DX12CommandList l_transitionCommandList = {};
-	// 	l_transitionCommandList.m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"TextureTransitionCommandList");
+		// Phase 3: Transition texture back to read state for rendering passes
+		DX12CommandList l_transitionCommandList = {};
+		l_transitionCommandList.m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"TextureTransitionCommandList");
 		
-	// 	// Transition all texture resources back to their read state
-	// 	for (auto gpuResource : rhs->m_GPUResources)
-	// 	{
-	// 		auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
-	// 		l_transitionCommandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-	// 			l_defaultHeapBuffer, 
-	// 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 
-	// 			static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState)));
-	// 	}
+		// Transition all texture resources back to their read state
+		for (auto gpuResource : rhs->m_GPUResources)
+		{
+			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
+			l_transitionCommandList.m_DirectCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+				l_defaultHeapBuffer, 
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 
+				static_cast<D3D12_RESOURCE_STATES>(rhs->m_ReadState)));
+		}
 		
-	// 	// Update texture state
-	// 	rhs->m_CurrentState = rhs->m_ReadState;
+		// Update texture state
+		rhs->m_CurrentState = rhs->m_ReadState;
 		
-	// 	// Execute and wait for transition
-	// 	Close(&l_transitionCommandList, GPUEngineType::Graphics);
-	// 	Execute(&l_transitionCommandList, GPUEngineType::Graphics);
-	// 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
-	// 	auto l_transitionSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
-	// 	WaitOnCPU(l_transitionSemaphoreValue, GPUEngineType::Graphics);
-	// }
+		// Execute and wait for transition
+		Close(&l_transitionCommandList, GPUEngineType::Graphics);
+		Execute(&l_transitionCommandList, GPUEngineType::Graphics);
+		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+		auto l_transitionSemaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
+		WaitOnCPU(l_transitionSemaphoreValue, GPUEngineType::Graphics);
+	}
 	
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -685,20 +684,17 @@ bool DX12RenderingServer::InitializeImpl(ModelComponent* rhs)
 		// Create instance descriptor for each mesh in each draw call component
 		for (const auto& drawCallUUID : rhs->m_DrawCallComponents)
 		{
-			auto drawCallComp = g_Engine->Get<ComponentManager>()->Get<DrawCallComponent>(drawCallUUID);
-			if (!drawCallComp || !drawCallComp->m_MeshComponent)
-				continue;
+			auto drawCallComp = g_Engine->Get<ComponentManager>()->FindByUUID<DrawCallComponent>(drawCallUUID);
+			if (!drawCallComp || !drawCallComp->m_MeshComponent || drawCallComp->m_ObjectStatus != ObjectStatus::Activated)
+				return false;
 
-			auto meshComp = g_Engine->Get<ComponentManager>()->Get<MeshComponent>(drawCallComp->m_MeshComponent);
-			if (!meshComp)
-				continue;
+			auto meshComp = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(drawCallComp->m_MeshComponent);
+			if (!meshComp || meshComp->m_ObjectStatus != ObjectStatus::Activated)
+				return false;
 
 			auto blasIt = m_MeshBLAS.find(meshComp->m_UUID);
 			if (blasIt == m_MeshBLAS.end())
-			{
-				Log(Warning, "BLAS not found for mesh ", meshComp->m_InstanceName, " in model ", rhs->m_InstanceName);
-				continue;
-			}
+				return false;
 
 			D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
 
@@ -730,6 +726,7 @@ bool DX12RenderingServer::InitializeImpl(ModelComponent* rhs)
 		}
 	}
 
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 	Log(Verbose, rhs->m_InstanceName, " Raytracing instances registered for ", rhs->m_DrawCallComponents.size(), " draw calls.");
 	m_initializedModels.emplace(rhs);
 

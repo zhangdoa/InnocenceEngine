@@ -302,6 +302,9 @@ GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
 
 void IRenderingServer::Initialize(ModelComponent* rhs)
 {
+	if (std::find(m_initializedModels.begin(), m_initializedModels.end(), rhs) != m_initializedModels.end())
+		return;
+		
 	// Queue model for deferred initialization
 	m_uninitializedModels.push(rhs);
 	Log(Verbose, "ModelComponent ", rhs->m_InstanceName, " queued for deferred initialization");
@@ -309,6 +312,9 @@ void IRenderingServer::Initialize(ModelComponent* rhs)
 
 void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
+	if (std::find(m_initializedMeshes.begin(), m_initializedMeshes.end(), rhs) != m_initializedMeshes.end())
+		return;
+
 	// Calculate AABB from vertex data before queuing for deferred initialization
 	if (!vertices.empty())
 	{
@@ -325,6 +331,9 @@ void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& verti
 
 void IRenderingServer::Initialize(TextureComponent* rhs, void* textureData)
 {
+	if (std::find(m_initializedTextures.begin(), m_initializedTextures.end(), rhs) != m_initializedTextures.end())
+		return;
+
 	// Queue texture for deferred initialization
 	m_uninitializedTextures.push(TextureInitTask(rhs, textureData));
 	Log(Verbose, "TextureComponent ", rhs->m_InstanceName, " queued for deferred initialization");
@@ -332,6 +341,9 @@ void IRenderingServer::Initialize(TextureComponent* rhs, void* textureData)
 
 void IRenderingServer::Initialize(MaterialComponent* rhs)
 {
+	if (std::find(m_initializedMaterials.begin(), m_initializedMaterials.end(), rhs) != m_initializedMaterials.end())
+		return;
+
 	// Queue material for deferred initialization
 	m_uninitializedMaterials.push(rhs);
 	Log(Verbose, "MaterialComponent ", rhs->m_InstanceName, " queued for deferred initialization");
@@ -349,6 +361,9 @@ void IRenderingServer::Initialize(SamplerComponent* rhs)
 
 void IRenderingServer::Initialize(GPUBufferComponent* rhs)
 {
+	if (std::find(m_initializedGPUBuffers.begin(), m_initializedGPUBuffers.end(), rhs) != m_initializedGPUBuffers.end())
+		return;
+
 	// Queue GPU buffer for deferred initialization
 	m_uninitializedGPUBuffers.push(rhs);
 	Log(Verbose, "GPUBufferComponent ", rhs->m_InstanceName, " queued for deferred initialization");
@@ -726,9 +741,9 @@ bool IRenderingServer::InitializeComponents()
 			
 		Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_Vertices, l_task.m_Indices))
-		{
 			m_initializedMeshes.emplace(l_task.m_Component);
-		}
+		else
+			m_uninitializedMeshes.push(std::move(l_task));		
 	}
 	
 	// Process queued texture initialization tasks
@@ -742,9 +757,9 @@ bool IRenderingServer::InitializeComponents()
 			
 		Log(Verbose, "Processing deferred texture initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_TextureData))
-		{
 			m_initializedTextures.emplace(l_task.m_Component);
-		}
+		else
+			m_uninitializedTextures.push(std::move(l_task));
 	}
 	
 	// Process queued material components
@@ -758,9 +773,9 @@ bool IRenderingServer::InitializeComponents()
 			
 		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-		{
 			m_initializedMaterials.emplace(l_component);
-		}
+		else
+			m_uninitializedMaterials.push(std::move(l_component));
 	}
 	
 	// Process queued GPU buffer components
@@ -774,9 +789,9 @@ bool IRenderingServer::InitializeComponents()
 			
 		Log(Verbose, "Processing deferred GPU buffer initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-		{
 			m_initializedGPUBuffers.emplace(l_component);
-		}
+		else
+			m_uninitializedGPUBuffers.push(std::move(l_component));
 	}
 
 	// Process queued render pass components
@@ -790,9 +805,9 @@ bool IRenderingServer::InitializeComponents()
 			
 		Log(Verbose, "Processing deferred render pass initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-		{
 			m_initializedRenderPasses.emplace_back(l_component);
-		}
+		else
+			m_uninitializedRenderPasses.push(std::move(l_component));
 	}
 
 	// Process queued model components
@@ -806,9 +821,9 @@ bool IRenderingServer::InitializeComponents()
 			
 		Log(Verbose, "Processing deferred model initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-		{
 			m_initializedModels.emplace(l_component);
-		}
+		else
+			m_uninitializedModels.push(std::move(l_component));
 	}	
 
 	return true;

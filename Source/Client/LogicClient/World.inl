@@ -99,6 +99,17 @@ namespace Inno
 		{
 			m_referenceSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_referenceSphereEntities[i], false, ObjectLifespan::Scene);
 			m_referenceSphereModelComponents[i]->m_Transform.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// Create DrawCallComponent for sphere mesh
+			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(m_referenceSphereEntities[i], true, ObjectLifespan::Scene);
+			if (l_drawCallComponent)
+			{
+				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitSphereMesh.MeshComponent", m_referenceSphereEntities[i]);
+				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", m_referenceSphereEntities[i]);
+				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
+					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
+				m_referenceSphereModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
+			}
 		}
 
 		for (uint32_t i = 0; i < m_matrixDim; i++)
@@ -113,6 +124,11 @@ namespace Inno
 						(j * l_breadthInterval) - 2.0f * (m_matrixDim - 1),
 						0.0f);
 			}
+		}
+
+		for (uint32_t i = 0; i < l_containerSize; i++)
+		{
+			g_Engine->getRenderingServer()->Initialize(m_referenceSphereModelComponents[i]);
 		}
 
 		return true;
@@ -140,6 +156,17 @@ namespace Inno
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_occlusionCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_occlusionCubeEntities[i], false, ObjectLifespan::Scene);
+
+			// Create DrawCallComponent for cube mesh
+			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(m_occlusionCubeEntities[i], true, ObjectLifespan::Scene);
+			if (l_drawCallComponent)
+			{
+				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitCubeMesh.MeshComponent", m_occlusionCubeEntities[i]);
+				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", m_occlusionCubeEntities[i]);
+				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
+					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
+				m_occlusionCubeModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
+			}
 		}
 
 		std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
@@ -176,6 +203,11 @@ namespace Inno
 			}
 		}
 
+		for (uint32_t i = 0; i < l_containerSize; i++)
+		{
+			g_Engine->getRenderingServer()->Initialize(m_occlusionCubeModelComponents[i]);
+		}
+
 		return true;
 	}
 
@@ -201,6 +233,17 @@ namespace Inno
 		{
 			m_opaqueSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_opaqueSphereEntities[i], false, ObjectLifespan::Scene);
 			m_opaqueSphereModelComponents[i]->m_Transform.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// Create DrawCallComponent for sphere mesh
+			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(m_opaqueSphereEntities[i], true, ObjectLifespan::Scene);
+			if (l_drawCallComponent)
+			{
+				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitSphereMesh.MeshComponent", m_opaqueSphereEntities[i]);
+				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", m_opaqueSphereEntities[i]);
+				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
+					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
+				m_opaqueSphereModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
+			}
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
@@ -224,6 +267,11 @@ namespace Inno
 						Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
 						l_randomRotDelta(m_generator));
 			}
+		}
+
+		for (uint32_t i = 0; i < l_containerSize; i++)
+		{
+			g_Engine->getRenderingServer()->Initialize(m_opaqueSphereModelComponents[i]);
 		}
 
 		return true;
@@ -251,11 +299,23 @@ namespace Inno
 		{
 			m_transparentCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_transparentCubeEntities[i], false, ObjectLifespan::Scene);
 			m_transparentCubeModelComponents[i]->m_Transform.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
+
+			// Create DrawCallComponent for cube mesh
+			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(m_transparentCubeEntities[i], true, ObjectLifespan::Scene);
+			if (l_drawCallComponent)
+			{
+				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitCubeMesh.MeshComponent", m_transparentCubeEntities[i]);
+				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", m_transparentCubeEntities[i]);
+				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
+					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
+				m_transparentCubeModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
+			}
 		}
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_transparentCubeModelComponents[i]->m_Transform.m_pos = Vec4(0.0f, 2.0f * i, -(i * l_breadthInterval) - 4.0f, 1.0f);
+			g_Engine->getRenderingServer()->Initialize(m_transparentCubeModelComponents[i]);
 		}
 
 		return true;
@@ -282,6 +342,17 @@ namespace Inno
 		{
 			m_volumetricCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_volumetricCubeEntities[i], false, ObjectLifespan::Scene);
 			m_volumetricCubeModelComponents[i]->m_Transform.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
+
+			// Create DrawCallComponent for cube mesh
+			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(m_volumetricCubeEntities[i], true, ObjectLifespan::Scene);
+			if (l_drawCallComponent)
+			{
+				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitCubeMesh.MeshComponent", m_volumetricCubeEntities[i]);
+				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", m_volumetricCubeEntities[i]);
+				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
+					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
+				m_volumetricCubeModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
+			}
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(-40.0f, 40.0f);
@@ -289,6 +360,7 @@ namespace Inno
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
 			m_volumetricCubeModelComponents[i]->m_Transform.m_pos = Vec4(l_randomPosDelta(m_generator), 2.0f, l_randomPosDelta(m_generator), 1.0f);
+			g_Engine->getRenderingServer()->Initialize(m_volumetricCubeModelComponents[i]);
 		}
 
 		return true;
