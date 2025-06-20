@@ -40,7 +40,6 @@ namespace Inno
 
 		std::vector<GPUModelData> m_gpuModelDataVector;
 		std::vector<TransformConstantBuffer> m_transformBufferVector;
-		std::vector<TransformConstantBuffer> m_transformPrevBufferVector;
 		std::vector<MaterialConstantBuffer> m_materialCBVector;
 
 		std::vector<AnimationDrawCallInfo> m_animationDrawCallInfoVector;
@@ -87,6 +86,9 @@ namespace Inno
 
 		GPUBufferComponent* GetCurrentFramePerFrameBuffer();
 		GPUBufferComponent* GetPreviousFramePerFrameBuffer();
+		
+		GPUBufferComponent* GetCurrentFrameTransformBuffer();
+		GPUBufferComponent* GetPreviousFrameTransformBuffer();
 	};
 }
 
@@ -118,6 +120,20 @@ GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFramePerFrameBuffer(
 	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
+}
+
+GPUBufferComponent* RenderingContextServiceImpl::GetCurrentFrameTransformBuffer()
+{
+	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	return l_isOddFrame ? m_TransformBufferComp : m_TransformPrevBufferComp;
+}
+
+GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFrameTransformBuffer()
+{
+	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+	return l_isOddFrame ? m_TransformPrevBufferComp : m_TransformBufferComp;
 }
 
 
@@ -368,7 +384,6 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 {
 	m_gpuModelDataVector.clear();
 	m_transformBufferVector.clear();
-	m_transformPrevBufferVector.clear();
 	m_materialCBVector.clear();
 	m_animationDrawCallInfoVector.clear();
 	m_animationCBVector.clear();
@@ -443,16 +458,11 @@ bool RenderingContextServiceImpl::UpdateDrawCalls()
 
 			m_gpuModelDataVector.emplace_back(l_gpuModelData);
 
-			// Create transform buffer data (current frame)
+			// Create transform buffer data
 			TransformConstantBuffer l_transformCB = {};
 			l_transformCB.m = l_modelComponent->m_Transform.GetMatrix();
 			l_transformCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
 			m_transformBufferVector.emplace_back(l_transformCB);
-
-			// Create transform buffer data (previous frame) - for now, same as current
-			// TODO: Implement proper previous frame transform tracking
-			TransformConstantBuffer l_transformPrevCB = l_transformCB;
-			m_transformPrevBufferVector.emplace_back(l_transformPrevCB);
 
 			MaterialConstantBuffer l_materialCB = {};
 			l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
@@ -597,11 +607,8 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 	}
 	if (m_transformBufferVector.size() > 0)
 	{
-		l_renderingServer->Upload(m_TransformBufferComp, m_transformBufferVector, 0, m_transformBufferVector.size());
-	}
-	if (m_transformPrevBufferVector.size() > 0)
-	{
-		l_renderingServer->Upload(m_TransformPrevBufferComp, m_transformPrevBufferVector, 0, m_transformPrevBufferVector.size());
+		auto l_currentFrameTransformBuffer = GetCurrentFrameTransformBuffer();
+		l_renderingServer->Upload(l_currentFrameTransformBuffer, m_transformBufferVector, 0, m_transformBufferVector.size());
 	}
 	if (m_materialCBVector.size() > 0)
 	{
@@ -648,16 +655,6 @@ bool RenderingContextServiceImpl::Update()
 		UpdateDebuggerPassData();
 
 		UploadGPUBuffers();
-
-		// CRITICAL: Synchronize CPU-GPU after uploading GPU model data buffers
-		// This ensures vertex/index buffer addresses are valid before GPU-driven culling shaders execute
-		// Wait for all pending graphics operations to complete before proceeding
-		auto l_renderingServer = g_Engine->getRenderingServer();
-		auto l_semaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
-		if (l_semaphoreValue > 0)
-		{
-			l_renderingServer->WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
-		}
 
 		return true;
 	}
@@ -729,9 +726,9 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 		break;
 	case GPUBufferUsageType::GPUModelData: l_result = m_Impl->m_GPUModelDataBufferComp;
 		break;
-	case GPUBufferUsageType::Transform: l_result = m_Impl->m_TransformBufferComp;
+	case GPUBufferUsageType::Transform: l_result = m_Impl->GetCurrentFrameTransformBuffer();
 		break;
-	case GPUBufferUsageType::TransformPrev: l_result = m_Impl->m_TransformPrevBufferComp;
+	case GPUBufferUsageType::TransformPrev: l_result = m_Impl->GetPreviousFrameTransformBuffer();
 		break;
 	case GPUBufferUsageType::Material: l_result = m_Impl->m_MaterialGPUBufferComp;
 		break;

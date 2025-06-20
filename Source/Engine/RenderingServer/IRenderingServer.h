@@ -52,6 +52,7 @@ namespace Inno
 		virtual	bool Delete(ISemaphore* rhs) = 0;
 		virtual	bool Delete(IOutputMergerTarget* rhs) = 0;
 
+		void Initialize(ModelComponent* rhs);
 		void Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices);
 		void Initialize(TextureComponent* rhs, void* textureData = nullptr);
 		void Initialize(MaterialComponent* rhs);
@@ -197,8 +198,7 @@ namespace Inno
 		uint32_t m_PreviousFrame = 1;
 		uint32_t m_CurrentFrame = 0;
 		std::atomic<uint32_t> m_FrameCountSinceLaunch = 0;
-		
-		std::vector<uint64_t> m_CopyUploadToDefaultHeapSemaphoreValues;
+
 		std::vector<uint64_t> m_GraphicsSemaphoreValues;
 		std::vector<uint64_t> m_ComputeSemaphoreValues;
 		std::vector<uint64_t> m_CopySemaphoreValues;
@@ -239,6 +239,7 @@ namespace Inno
 		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
 		ThreadSafeQueue<GPUBufferComponent*> m_uninitializedGPUBuffers;
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
+		ThreadSafeQueue<ModelComponent*> m_uninitializedModels;
 
 		struct CopyCommand
 		{

@@ -224,7 +224,9 @@ bool JSONWrapper::Load(const char* fileName, ModelComponent& component)
     // Recalculate center and extent
     component.m_AABB.m_center = (component.m_AABB.m_boundMax + component.m_AABB.m_boundMin) * 0.5f;
     component.m_AABB.m_extend = component.m_AABB.m_boundMax - component.m_AABB.m_center;
-  
+
+    g_Engine->getRenderingServer()->Initialize(&component);
+
     return true;
 }
 
@@ -291,7 +293,6 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
         // @TODO: Implement SkeletonComponent loading
     }
 
-    component.m_ObjectStatus = ObjectStatus::Created;
     g_Engine->getRenderingServer()->Initialize(&component, l_vertices, l_indices);
 
     return true;
@@ -324,7 +325,6 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
     component.m_materialAttributes.Thickness = j["Thickness"];
     component.m_ShaderModel = ShaderModel(j["ShaderModel"]);
 
-    component.m_ObjectStatus = ObjectStatus::Created;
     g_Engine->getRenderingServer()->Initialize(&component);
 
     return true;
@@ -341,10 +341,8 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component)
     component.m_TextureDesc.IsSRGB = j["IsSRGB"];
 
     void* textureData = STBWrapper::Load(("../Data/Components/" + j["File"].get<std::string>()).c_str(), component);
-    component.m_ObjectStatus = ObjectStatus::Created;
 
     g_Engine->getRenderingServer()->Initialize(&component, textureData);
-
     return true;
 }
 

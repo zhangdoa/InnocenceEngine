@@ -102,7 +102,6 @@ bool IRenderingServer::Initialize()
 
 	InitializeSwapChainRenderPassComponent();
 
-	m_CopyUploadToDefaultHeapSemaphoreValues.resize(m_swapChainImageCount, 0);
 	m_GraphicsSemaphoreValues.resize(m_swapChainImageCount, 0);
 	m_ComputeSemaphoreValues.resize(m_swapChainImageCount, 0);
 	m_CopySemaphoreValues.resize(m_swapChainImageCount, 0);
@@ -173,13 +172,9 @@ bool IRenderingServer::Update()
 
 	m_UploadHeapPreparationCallback();
 
-	// Let any unfinished copy/upload commands from the previous run finish before we start preparing the global commands.
-	WaitOnCPU(m_CopyUploadToDefaultHeapSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	PrepareGlobalCommands();
 
 	ExecuteGlobalCommands();
-	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
-	m_CopyUploadToDefaultHeapSemaphoreValues[l_currentFrame] = GetSemaphoreValue(GPUEngineType::Graphics);
 
 	if (!g_Engine->Get<SceneService>()->IsLoading())
 	{
@@ -303,6 +298,13 @@ SamplerComponent* IRenderingServer::AddSamplerComponent(const char* name)
 GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
 {
 	return AddComponent<GPUBufferComponent>(name);
+}
+
+void IRenderingServer::Initialize(ModelComponent* rhs)
+{
+	// Queue model for deferred initialization
+	m_uninitializedModels.push(rhs);
+	Log(Verbose, "ModelComponent ", rhs->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)
@@ -776,7 +778,7 @@ bool IRenderingServer::InitializeComponents()
 			m_initializedGPUBuffers.emplace(l_component);
 		}
 	}
-	
+
 	// Process queued render pass components
 	while (m_uninitializedRenderPasses.size() > 0)
 	{
@@ -792,7 +794,23 @@ bool IRenderingServer::InitializeComponents()
 			m_initializedRenderPasses.emplace_back(l_component);
 		}
 	}
-	
+
+	// Process queued model components
+	while (m_uninitializedModels.size() > 0)
+	{
+		ModelComponent* l_component;
+		m_uninitializedModels.tryPop(l_component);
+		
+		if (!l_component)
+			continue;
+			
+		Log(Verbose, "Processing deferred model initialization for: ", l_component->m_InstanceName);
+		if (InitializeImpl(l_component))
+		{
+			m_initializedModels.emplace(l_component);
+		}
+	}	
+
 	return true;
 }
 
@@ -883,7 +901,8 @@ bool IRenderingServer::ExecuteGlobalCommands()
 
 	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
 	Execute(l_commandList, GPUEngineType::Graphics);
-
+	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+	
 	return true;
 }
 

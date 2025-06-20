@@ -140,15 +140,10 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
 
-	// GPU-driven rendering: GPU generates draw commands directly from GPU model data
-	auto l_gpuModelDataBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-
-	// Graphics pass consumes GPU-generated indirect draw buffer
 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
 
-	// Bind resources for graphics rendering
 	auto l_perFrameCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_perFrameCBufferPrev = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFramePrev);
 	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
@@ -157,13 +152,12 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBuffer, 1);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBufferPrev, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex , l_transformCBuffer, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_transformCBuffer, 3);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_gpuModelDataCBuffer, 4);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_materialCBuffer, 5);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 6);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 7);
 
-	// Execute indirect draws using the GPU-generated draw command buffer from culling pass
 	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(OpaqueCullingPass::Get().GetResult());
 	l_renderingServer->ExecuteIndirect(m_RenderPassComp, l_indirectDrawCommandBuffer);
 	

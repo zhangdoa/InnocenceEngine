@@ -46,7 +46,7 @@ bool DX12RenderingServer::CreateHardwareResources()
     m_ScratchBufferComponent = AddGPUBufferComponent("ScratchBuffer/");
     m_ScratchBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
     m_ScratchBufferComponent->m_Usage = GPUBufferUsage::ScratchBuffer;
-    m_ScratchBufferComponent->m_ElementCount = 256; 
+    m_ScratchBufferComponent->m_ElementCount = 256;
 
     InitializeImpl(m_ScratchBufferComponent);
 
