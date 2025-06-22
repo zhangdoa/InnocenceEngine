@@ -105,6 +105,12 @@ bool LightCullingPass::Setup(ISystemConfig* systemConfig)
 
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("LightCullingPass/");
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("LightCullingPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("LightCullingPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -121,6 +127,8 @@ bool LightCullingPass::Initialize()
 	l_renderingServer->Initialize(m_DispatchParamsGPUBufferComp);
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 	l_renderingServer->Initialize(m_SamplerComp);
 
 	l_renderingServer->Initialize(m_lightListIndexCounter);
@@ -190,26 +198,31 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// Use graphics command list to transition depth buffer from DEPTH_WRITE to NON_PIXEL_SHADER_RESOURCE state
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, TiledFrustumGenerationPass::Get().GetTiledFrustum(), 3);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightListIndexCounter, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightIndexList, 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_lightGrid, 6);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_heatMap, 7);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, TiledFrustumGenerationPass::Get().GetTiledFrustum(), 3);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput, 8);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightListIndexCounter, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightIndexList, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightGrid, 6);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_heatMap, 7);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 9);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput, 8);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp, 9);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

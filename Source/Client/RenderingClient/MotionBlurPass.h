@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent *m_input;
 	};
 
-	class MotionBlurPass : IRenderPass
+	class MotionBlurPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(MotionBlurPass)

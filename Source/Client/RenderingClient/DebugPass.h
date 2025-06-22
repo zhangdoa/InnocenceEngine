@@ -16,7 +16,7 @@ namespace Inno
 		Math::Vec4 color;
 	};
 
-	class DebugPass : IRenderPass
+	class DebugPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(DebugPass)
@@ -27,7 +27,6 @@ namespace Inno
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
-        void InitializeResourceBindingLayoutDescs() override;
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent *GetRenderPassComp() override;
 

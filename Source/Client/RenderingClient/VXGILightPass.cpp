@@ -135,7 +135,7 @@ bool VXGILightPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-	return true;
+	return false;
 }
 
 RenderPassComponent* VXGILightPass::GetRenderPassComp()

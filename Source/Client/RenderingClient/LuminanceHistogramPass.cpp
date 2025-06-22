@@ -47,6 +47,12 @@ bool LuminanceHistogramPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("LuminanceHistogramPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("LuminanceHistogramPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
 	m_luminanceHistogram = l_renderingServer->AddGPUBufferComponent("LuminanceHistogramGPUBuffer/");
 	m_luminanceHistogram->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceHistogram->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -64,6 +70,8 @@ bool LuminanceHistogramPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);	
 	l_renderingServer->Initialize(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -76,6 +84,8 @@ bool LuminanceHistogramPass::Terminate()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->Delete(m_luminanceHistogram);
+	l_renderingServer->Delete(m_CommandListComp_Compute);
+	l_renderingServer->Delete(m_CommandListComp_Graphics);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
 
@@ -110,16 +120,20 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_luminanceHistogram, 2);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_luminanceHistogram, 2);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
+
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

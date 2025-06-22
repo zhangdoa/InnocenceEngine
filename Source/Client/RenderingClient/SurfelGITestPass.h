@@ -16,7 +16,7 @@ namespace Inno
 		float padding[12];
 	};
 
-	class SurfelGITestPass : IRenderPass
+	class SurfelGITestPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(SurfelGITestPass)

@@ -17,27 +17,26 @@ namespace Inno
 
 		// Component Pool APIs - return null/dummy components
 		IPipelineStateObject* AddPipelineStateObject() override;
-		ICommandList* AddCommandList() override;
 		ISemaphore* AddSemaphore() override;
 		bool Add(IOutputMergerTarget*& rhs) override;
 
 		// Delete operations - all return true (success)
-		bool Delete(MeshComponent* rhs) override;
-		bool Delete(TextureComponent* rhs) override;
-		bool Delete(MaterialComponent* rhs) override;
-		bool Delete(RenderPassComponent* rhs) override;
-		bool Delete(ShaderProgramComponent* rhs) override;
-		bool Delete(SamplerComponent* rhs) override;
-		bool Delete(GPUBufferComponent* rhs) override;
+		bool Delete(MeshComponent* mesh) override;
+		bool Delete(TextureComponent* texture) override;
+		bool Delete(MaterialComponent* material) override;
+		bool Delete(RenderPassComponent* renderPass) override;
+		bool Delete(ShaderProgramComponent* shaderProgram) override;
+		bool Delete(SamplerComponent* sampler) override;
+		bool Delete(GPUBufferComponent* gpuBuffer) override;
 		bool Delete(IPipelineStateObject* rhs) override;
-		bool Delete(ICommandList* rhs) override;
+		bool Delete(CommandListComponent* rhs) override;
 		bool Delete(ISemaphore* rhs) override;
 		bool Delete(IOutputMergerTarget* rhs) override;
 
 		// Most rendering operations are no-ops
-		bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) override;
-		bool CommandListEnd(RenderPassComponent* rhs) override;
-		bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) override;
+		bool CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex) override;
+		bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
+		bool Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType) override;
 		bool Present() override;
 
 	protected:

@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class SkyPass : IRenderPass
+	class SkyPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(SkyPass)

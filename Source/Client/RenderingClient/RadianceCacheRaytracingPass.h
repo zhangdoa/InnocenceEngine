@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class RadianceCacheRaytracingPass : IRenderPass
+	class RadianceCacheRaytracingPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(RadianceCacheRaytracingPass)

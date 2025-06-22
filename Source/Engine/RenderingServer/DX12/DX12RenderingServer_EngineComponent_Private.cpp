@@ -38,107 +38,107 @@ DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(Com
 	return l_descHeapAccessor;
 }
 
-bool DX12RenderingServer::CreateSRV(TextureComponent* rhs, uint32_t mipSlice)
+bool DX12RenderingServer::CreateSRV(TextureComponent* texture, uint32_t mipSlice)
 {
-	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
-	auto l_desc = GetSRVDesc(rhs->m_TextureDesc, l_textureDesc, mipSlice);
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage);
+	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
+	auto l_desc = GetSRVDesc(texture->m_TextureDesc, l_textureDesc, mipSlice);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(texture->m_GPUResourceType, Accessibility::ReadOnly, texture->m_GPUAccessibility, texture->m_TextureDesc.Usage);
 
-	uint32_t frameCount = rhs->m_GPUResources.size();
+	uint32_t frameCount = texture->m_GPUResources.size();
 	for (uint32_t frame = 0; frame < frameCount; frame++)
 	{
-		auto* resource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
+		auto* resource = static_cast<ID3D12Resource*>(texture->m_GPUResources[frame]);
 		if (!resource)
 		{
-			Log(Error, rhs->m_InstanceName, " No GPU resource found for frame ", frame);
+			Log(Error, texture->m_InstanceName, " No GPU resource found for frame ", frame);
 			return false;
 		}
 
-		uint32_t handleIndex = rhs->GetHandleIndex(frame, mipSlice);
-		rhs->m_ReadHandles[handleIndex] = l_descHeapAccessor.GetNewHandle();
+		uint32_t handleIndex = texture->GetHandleIndex(frame, mipSlice);
+		texture->m_ReadHandles[handleIndex] = l_descHeapAccessor.GetNewHandle();
 		m_device->CreateShaderResourceView(resource,
 			&l_desc,
-			D3D12_CPU_DESCRIPTOR_HANDLE{ rhs->m_ReadHandles[handleIndex].m_CPUHandle });
-		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", handleIndex, " for ", rhs->m_InstanceName, " has been created.");
+			D3D12_CPU_DESCRIPTOR_HANDLE{ texture->m_ReadHandles[handleIndex].m_CPUHandle });
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", handleIndex, " for ", texture->m_InstanceName, " has been created.");
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateUAV(TextureComponent* rhs, uint32_t mipSlice)
+bool DX12RenderingServer::CreateUAV(TextureComponent* texture, uint32_t mipSlice)
 {
-	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
-	auto l_desc = GetUAVDesc(rhs->m_TextureDesc, l_textureDesc, mipSlice);
+	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
+	auto l_desc = GetUAVDesc(texture->m_TextureDesc, l_textureDesc, mipSlice);
 
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage);
-	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, rhs->m_GPUAccessibility, rhs->m_TextureDesc.Usage, false);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(texture->m_GPUResourceType, Accessibility::ReadWrite, texture->m_GPUAccessibility, texture->m_TextureDesc.Usage);
+	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(texture->m_GPUResourceType, Accessibility::ReadWrite, texture->m_GPUAccessibility, texture->m_TextureDesc.Usage, false);
 
-	uint32_t frameCount = rhs->m_GPUResources.size();
+	uint32_t frameCount = texture->m_GPUResources.size();
 	for (uint32_t frame = 0; frame < frameCount; frame++)
 	{
-		auto* resource = static_cast<ID3D12Resource*>(rhs->m_GPUResources[frame]);
+		auto* resource = static_cast<ID3D12Resource*>(texture->m_GPUResources[frame]);
 		if (!resource)
 		{
-			Log(Error, rhs->m_InstanceName, " No GPU resource found for frame ", frame);
+			Log(Error, texture->m_InstanceName, " No GPU resource found for frame ", frame);
 			return false;
 		}
 
-		uint32_t handleIndex = rhs->GetHandleIndex(frame, mipSlice);
+		uint32_t handleIndex = texture->GetHandleIndex(frame, mipSlice);
 
 		auto l_descHandle = l_descHeapAccessor.GetNewHandle();
 		auto l_descHandle_ShaderNonVisible = l_descHeapAccessor_ShaderNonVisible.GetNewHandle();
 
-		rhs->m_WriteHandles[handleIndex].m_CPUHandle = l_descHandle_ShaderNonVisible.m_CPUHandle;
-		rhs->m_WriteHandles[handleIndex].m_GPUHandle = l_descHandle.m_GPUHandle;
-		rhs->m_WriteHandles[handleIndex].m_Index = l_descHandle.m_Index;
+		texture->m_WriteHandles[handleIndex].m_CPUHandle = l_descHandle_ShaderNonVisible.m_CPUHandle;
+		texture->m_WriteHandles[handleIndex].m_GPUHandle = l_descHandle.m_GPUHandle;
+		texture->m_WriteHandles[handleIndex].m_Index = l_descHandle.m_Index;
 
 		m_device->CreateUnorderedAccessView(resource, 0,
 			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle_ShaderNonVisible.m_CPUHandle });
 		m_device->CreateUnorderedAccessView(resource, 0,
 			&l_desc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle.m_CPUHandle });
-		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", handleIndex, " for ", rhs->m_InstanceName, " has been created.");
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", handleIndex, " for ", texture->m_InstanceName, " has been created.");
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateSRV(GPUBufferComponent* rhs)
+bool DX12RenderingServer::CreateSRV(GPUBufferComponent* gpuBuffer)
 {
-	bool l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;
+	bool l_isRaytracingAS = gpuBuffer->m_Usage == GPUBufferUsage::TLAS || gpuBuffer->m_Usage == GPUBufferUsage::ScratchBuffer;
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_desc = {};
-	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
+	l_desc.Format = gpuBuffer->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
 	l_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)rhs->m_ElementCount;
-	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
+	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)gpuBuffer->m_ElementCount;
+	l_desc.Buffer.StructureByteStride = gpuBuffer->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)gpuBuffer->m_ElementSize;
 	l_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(gpuBuffer->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadWrite);
 
-	for (auto i : rhs->m_DeviceMemories)
+	for (auto i : gpuBuffer->m_DeviceMemories)
 	{
 		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
 		l_DX12DeviceMemory->m_SRV.SRVDesc = l_desc;
 		l_DX12DeviceMemory->m_SRV.Handle = l_descHeapAccessor.GetNewHandle();
 		m_device->CreateShaderResourceView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), &l_DX12DeviceMemory->m_SRV.SRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_DX12DeviceMemory->m_SRV.Handle.m_CPUHandle });
-		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_DX12DeviceMemory->m_SRV.Handle.m_Index, " for ", rhs->m_InstanceName, " has been created.");			
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_DX12DeviceMemory->m_SRV.Handle.m_Index, " for ", gpuBuffer->m_InstanceName, " has been created.");			
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
+bool DX12RenderingServer::CreateUAV(GPUBufferComponent* gpuBuffer)
 {
-	bool l_isRaytracingAS = rhs->m_Usage == GPUBufferUsage::TLAS || rhs->m_Usage == GPUBufferUsage::ScratchBuffer;
+	bool l_isRaytracingAS = gpuBuffer->m_Usage == GPUBufferUsage::TLAS || gpuBuffer->m_Usage == GPUBufferUsage::ScratchBuffer;
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
-	l_desc.Format = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
+	l_desc.Format = gpuBuffer->m_Usage == GPUBufferUsage::AtomicCounter ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
 	l_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)rhs->m_ElementCount;
-	l_desc.Buffer.StructureByteStride = rhs->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)rhs->m_ElementSize;
+	l_desc.Buffer.NumElements = l_isRaytracingAS ? 1 : (uint32_t)gpuBuffer->m_ElementCount;
+	l_desc.Buffer.StructureByteStride = gpuBuffer->m_Usage == GPUBufferUsage::AtomicCounter ? 0 : (uint32_t)gpuBuffer->m_ElementSize;
 
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite);
-	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite, TextureUsage::Invalid, false);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(gpuBuffer->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite);
+	auto& l_descHeapAccessor_ShaderNonVisible = GetDescriptorHeapAccessor(gpuBuffer->m_GPUResourceType, Accessibility::ReadWrite, Accessibility::ReadWrite, TextureUsage::Invalid, false);
 
-	for (auto i : rhs->m_DeviceMemories)
+	for (auto i : gpuBuffer->m_DeviceMemories)
 	{
 		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
 		DX12UAV l_result = {};
@@ -151,37 +151,37 @@ bool DX12RenderingServer::CreateUAV(GPUBufferComponent* rhs)
 		l_result.Handle.m_GPUHandle = l_descHandle.m_GPUHandle;
 		l_result.Handle.m_Index = l_descHandle.m_Index;
 
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ?
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), gpuBuffer->m_Usage == GPUBufferUsage::AtomicCounter ?
 			l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle_ShaderNonVisible.m_CPUHandle });
-		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), rhs->m_Usage == GPUBufferUsage::AtomicCounter ?
+		m_device->CreateUnorderedAccessView(l_DX12DeviceMemory->m_DefaultHeapBuffer.Get(), gpuBuffer->m_Usage == GPUBufferUsage::AtomicCounter ?
 			l_DX12DeviceMemory->m_DefaultHeapBuffer.Get() : 0, &l_result.UAVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_descHandle.m_CPUHandle });
 
 		l_DX12DeviceMemory->m_UAV = l_result;
 
-		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_result.Handle.m_Index, " for ", rhs->m_InstanceName, " has been created.");
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_result.Handle.m_Index, " for ", gpuBuffer->m_InstanceName, " has been created.");
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::CreateCBV(GPUBufferComponent* rhs)
+bool DX12RenderingServer::CreateCBV(GPUBufferComponent* gpuBuffer)
 {
-	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(rhs->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadOnly);
+	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(gpuBuffer->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadOnly);
 
-	for (auto i : rhs->m_MappedMemories)
+	for (auto i : gpuBuffer->m_MappedMemories)
 	{
 		auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
 		DX12CBV l_result;
 
 		l_result.CBVDesc.BufferLocation = l_DX12MappedMemory->m_UploadHeapBuffer->GetGPUVirtualAddress();
-		l_result.CBVDesc.SizeInBytes = (uint32_t)rhs->m_ElementSize;
+		l_result.CBVDesc.SizeInBytes = (uint32_t)gpuBuffer->m_ElementSize;
 		l_result.Handle = l_descHeapAccessor.GetNewHandle();
 
 		m_device->CreateConstantBufferView(&l_result.CBVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_result.Handle.m_CPUHandle });
 
 		l_DX12MappedMemory->m_CBV = l_result;
 		
-		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_result.Handle.m_Index, " for ", rhs->m_InstanceName, " has been created.");		
+		Log(Verbose, "New handle on ", l_descHeapAccessor.GetDesc().m_Name, " with index ", l_result.Handle.m_Index, " for ", gpuBuffer->m_InstanceName, " has been created.");		
 	}
 
 	return true;
@@ -412,18 +412,9 @@ D3D12_DESCRIPTOR_RANGE1 DX12RenderingServer::GetDescriptorRange(RenderPassCompon
 	return l_range;
 }
 
-bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, DX12CommandList* commandList)
+bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
-	ComPtr<ID3D12GraphicsCommandList7> l_commandList;
-	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-	{
-		l_commandList = commandList->m_DirectCommandList;
-	}
-	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
-		l_commandList = commandList->m_ComputeCommandList;
-	}
-
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	if (!l_commandList)
 	{
 		Log(Error, "Command list is null in SetDescriptorHeaps for render pass ", renderPass->m_InstanceName);
@@ -436,18 +427,18 @@ bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, DX
 	return true;
 }
 
-bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, DX12CommandList* commandList)
+bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
 
-	if (!commandList || !commandList->m_DirectCommandList)
+	if (!commandList || !commandList->m_CommandList)
 	{
 		Log(Error, "Command list is null in SetRenderTargets for render pass ", renderPass->m_InstanceName);
 		return false;
 	}
 
-	auto l_commandList = commandList->m_DirectCommandList;
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_currentFrame = GetCurrentFrame();
 	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
 
@@ -476,13 +467,9 @@ bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, DX12
 	return true;
 }
 
-bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO)
+bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, CommandListComponent* commandList, DX12PipelineStateObject* PSO)
 {
-	ComPtr<ID3D12GraphicsCommandList7> l_commandList;
-	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-		l_commandList = commandList->m_DirectCommandList;
-	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-		l_commandList = commandList->m_ComputeCommandList;
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
 	if (!l_commandList)
 	{
@@ -520,80 +507,38 @@ bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, DX12C
 	return true;
 }
 
-bool DX12RenderingServer::Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject)
+bool DX12RenderingServer::Open(CommandListComponent* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_pipelineStateObject = reinterpret_cast<DX12PipelineStateObject*>(pipelineStateObject);
 	auto l_PSO = l_pipelineStateObject ? l_pipelineStateObject->m_PSO.Get() : nullptr;
 	auto l_currentFrame = GetCurrentFrame();
 
-	// Always open the direct command list since TryToTransitState requires it for resource state transitions
-	auto l_directCommandList = l_commandList->m_DirectCommandList;
-	if (!l_directCommandList)
+	// Get the appropriate allocator based on the command list type
+	ID3D12CommandAllocator* allocator = nullptr;
+	switch (commandList->m_Type)
 	{
-		Log(Error, "DirectCommandList is null");
+	case GPUEngineType::Graphics:
+		allocator = m_directCommandAllocators[l_currentFrame].Get();
+		break;
+	case GPUEngineType::Compute:
+		allocator = m_computeCommandAllocators[l_currentFrame].Get();
+		break;
+	case GPUEngineType::Copy:
+		allocator = m_copyCommandAllocators[l_currentFrame].Get();
+		break;
+	default:
+		Log(Error, "Invalid command list type for Open operation");
 		return false;
 	}
-	l_directCommandList->Reset(m_directCommandAllocators[l_currentFrame].Get(), l_PSO);
 
-	if (GPUEngineType == GPUEngineType::Compute)
-	{
-		auto l_computeCommandList = l_commandList->m_ComputeCommandList;
-		if (!l_computeCommandList)
-		{
-			Log(Error, "ComputeCommandList is null for Compute engine type");
-			return false;
-		}
-		l_computeCommandList->Reset(m_computeCommandAllocators[l_currentFrame].Get(), l_PSO);
-	}
-	else if (GPUEngineType == GPUEngineType::Copy)
-	{
-		auto l_copyCommandList = l_commandList->m_CopyCommandList;
-		if (!l_copyCommandList)
-		{
-			Log(Error, "CopyCommandList is null for Copy engine type");
-			return false;
-		}
-		l_copyCommandList->Reset(m_copyCommandAllocators[l_currentFrame].Get(), l_PSO);
-	}
-
+	l_commandList->Reset(allocator, l_PSO);
 	return true;
 }
 
-bool DX12RenderingServer::Close(ICommandList* commandList, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::Close(CommandListComponent* commandList, GPUEngineType GPUEngineType)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-
-	// Always close the direct command list since we always open it
-	auto l_directCommandList = l_commandList->m_DirectCommandList;
-	if (!l_directCommandList)
-	{
-		Log(Error, "DirectCommandList is null in Close");
-		return false;
-	}
-	l_directCommandList->Close();
-
-	if (GPUEngineType == GPUEngineType::Compute)
-	{
-		auto l_computeCommandList = l_commandList->m_ComputeCommandList;
-		if (!l_computeCommandList)
-		{
-			Log(Error, "ComputeCommandList is null in Close for Compute engine type");
-			return false;
-		}
-		l_computeCommandList->Close();
-	}
-	else if (GPUEngineType == GPUEngineType::Copy)
-	{
-		auto l_copyCommandList = l_commandList->m_CopyCommandList;
-		if (!l_copyCommandList)
-		{
-			Log(Error, "CopyCommandList is null in Close for Copy engine type");
-			return false;
-		}
-		l_copyCommandList->Close();
-	}
-
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	l_commandList->Close();
 	return true;
 }
-

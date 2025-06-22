@@ -61,6 +61,9 @@ bool OpaqueCullingPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("OpaqueCullingPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -72,6 +75,7 @@ bool OpaqueCullingPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 	l_renderingServer->Initialize(m_IndirectDrawCommandBuffer);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -113,27 +117,27 @@ bool OpaqueCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
 	// Bind resources for compute shader
 	auto l_perFrameCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_gpuModelDataBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_materialBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameCBuffer, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_gpuModelDataBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_materialBuffer, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_IndirectDrawCommandBuffer, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_perFrameCBuffer, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_gpuModelDataBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_materialBuffer, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IndirectDrawCommandBuffer, 3);
 
 	// Dispatch culling compute shader
 	// Calculate thread groups based on model count
 	uint32_t l_threadGroupSize = 64; // Typical compute shader thread group size
 	uint32_t l_threadGroups = (l_modelCount + l_threadGroupSize - 1) / l_threadGroupSize;
 
-	l_renderingServer->Dispatch(m_RenderPassComp, l_threadGroups, 1, 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, l_threadGroups, 1, 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

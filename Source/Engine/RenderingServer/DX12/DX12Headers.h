@@ -99,14 +99,6 @@ namespace Inno
 		ComPtr<ID3D12CommandSignature> m_IndirectCommandSignature = 0;
 	};
 
-	class DX12CommandList : public ICommandList
-	{
-	public:
-		ComPtr<ID3D12GraphicsCommandList7> m_DirectCommandList = 0;
-		ComPtr<ID3D12GraphicsCommandList7> m_ComputeCommandList = 0;
-		ComPtr<ID3D12GraphicsCommandList7> m_CopyCommandList = 0;
-	};
-
 	class DX12Semaphore : public ISemaphore
 	{
 	public:
@@ -136,18 +128,8 @@ namespace Inno
 		ComPtr<ID3D12Resource> m_DefaultHeapBuffer = 0;
 		ComPtr<ID3D12Resource> m_ReadBackHeapBuffer = 0;
 
-		// Multi-mip descriptor storage - CRITICAL FIX for mipmap generation
-		std::vector<DX12SRV> m_SRVs;    // Size = mipLevels-1 (no SRV for final mip)
-		std::vector<DX12UAV> m_UAVs;    // Size = mipLevels (all mips as destinations)
-		uint32_t m_MipLevels = 1;
-		
-		// Backward compatibility aliases (reference to arrays[0])
-		// This ensures existing rendering code works unchanged
-		DX12SRV& m_SRV;     // Alias for m_SRVs[0]
-		DX12UAV& m_UAV;     // Alias for m_UAVs[0]
-		
-		// Constructor to initialize references
-		DX12DeviceMemory() : m_SRVs(1), m_UAVs(1), m_SRV(m_SRVs[0]), m_UAV(m_UAVs[0]) {}
+		DX12SRV m_SRV = {};
+		DX12UAV m_UAV = {};
 	};
 
 	class DX12RaytracingInstanceDescList : public IRaytracingInstanceDescList

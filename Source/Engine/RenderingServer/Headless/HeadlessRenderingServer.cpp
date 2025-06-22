@@ -43,27 +43,26 @@ std::vector<std::type_index> HeadlessRenderingServer::GetDependencies()
 
 // Component Pool APIs - return nulls for headless mode
 IPipelineStateObject* HeadlessRenderingServer::AddPipelineStateObject() { return nullptr; }
-ICommandList* HeadlessRenderingServer::AddCommandList() { return nullptr; }
 ISemaphore* HeadlessRenderingServer::AddSemaphore() { return nullptr; }
 bool HeadlessRenderingServer::Add(IOutputMergerTarget*& rhs) { rhs = nullptr; return true; }
 
 // Delete operations - all succeed silently
-bool HeadlessRenderingServer::Delete(MeshComponent* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(TextureComponent* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(MaterialComponent* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(RenderPassComponent* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(ShaderProgramComponent* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(SamplerComponent* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(GPUBufferComponent* rhs) { return true; }
+bool HeadlessRenderingServer::Delete(MeshComponent* mesh) { return true; }
+bool HeadlessRenderingServer::Delete(TextureComponent* texture) { return true; }
+bool HeadlessRenderingServer::Delete(MaterialComponent* material) { return true; }
+bool HeadlessRenderingServer::Delete(RenderPassComponent* renderPass) { return true; }
+bool HeadlessRenderingServer::Delete(ShaderProgramComponent* shaderProgram) { return true; }
+bool HeadlessRenderingServer::Delete(SamplerComponent* sampler) { return true; }
+bool HeadlessRenderingServer::Delete(GPUBufferComponent* gpuBuffer) { return true; }
 bool HeadlessRenderingServer::Delete(IPipelineStateObject* rhs) { return true; }
-bool HeadlessRenderingServer::Delete(ICommandList* rhs) { return true; }
+bool HeadlessRenderingServer::Delete(CommandListComponent* rhs) { return true; }
 bool HeadlessRenderingServer::Delete(ISemaphore* rhs) { return true; }
 bool HeadlessRenderingServer::Delete(IOutputMergerTarget* rhs) { return true; }
 
 // Rendering operations - all no-ops that succeed
-bool HeadlessRenderingServer::CommandListBegin(RenderPassComponent* rhs, size_t frameIndex) { return true; }
-bool HeadlessRenderingServer::CommandListEnd(RenderPassComponent* rhs) { return true; }
-bool HeadlessRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType) { return true; }
+bool HeadlessRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex) { return true; }
+bool HeadlessRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) { return true; }
+bool HeadlessRenderingServer::Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType) { return true; }
 bool HeadlessRenderingServer::Present() { return true; }
 
 // Hardware resource operations - all no-ops that succeed

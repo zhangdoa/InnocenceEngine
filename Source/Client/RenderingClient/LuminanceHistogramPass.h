@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent *m_input;
 	};
 
-	class LuminanceHistogramPass : IRenderPass
+	class LuminanceHistogramPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(LuminanceHistogramPass)

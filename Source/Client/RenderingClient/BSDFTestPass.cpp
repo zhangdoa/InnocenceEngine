@@ -77,6 +77,9 @@ bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("BSDFTestPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("BSDFTestPass/");
 
 	//
@@ -121,6 +124,7 @@ bool BSDFTestPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
 	l_renderingServer->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -162,9 +166,9 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = BRDFLUTMSPass::Get().GetResult();
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
 
@@ -172,14 +176,14 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	for (size_t i = 0; i < m_shpereCount * m_shpereCount; i++)
 	{
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
-		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_offset, 1);
-		l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_mesh);
+		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
+		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_offset, 1);
+		l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, m_CommandListComp_Graphics, l_mesh);
 
 		l_offset++;
 	}
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }

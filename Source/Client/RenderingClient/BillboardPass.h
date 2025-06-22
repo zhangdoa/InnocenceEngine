@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class BillboardPass : IRenderPass
+	class BillboardPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(BillboardPass)

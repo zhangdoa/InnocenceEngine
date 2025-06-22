@@ -11,7 +11,7 @@ namespace Inno
 		uint32_t m_resolution;
 	};
 
-	class VXGILightPass: IRenderPass
+	class VXGILightPass: public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGILightPass)

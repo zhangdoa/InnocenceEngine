@@ -5,7 +5,7 @@
 #include "../../Engine/Services/TemplateAssetService.h"
 
 #include "RadianceCacheReprojectionPass.h"
-#include "RadianceCacheFilterPass.h"
+#include "RadianceCacheFilterVerticalPass.h"
 
 #include "../../Engine/Engine.h"
 
@@ -52,6 +52,12 @@ bool RadianceCacheIntegrationPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("RadianceCacheIntegrationPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("RadianceCacheIntegrationPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -63,8 +69,21 @@ bool RadianceCacheIntegrationPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
+
+	return true;
+}
+
+bool RadianceCacheIntegrationPass::Update()
+{
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
 
 	return true;
 }
@@ -98,21 +117,27 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	// Use filtered radiance cache instead of raw raytracing result
-	auto l_readTexture = RadianceCacheFilterPass::Get().GetFilteredResult();
+	auto l_readTexture = RadianceCacheFilterVerticalPass::Get().GetResult();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// Use graphics command list to transition resources to shader resource state
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(l_readTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_readTexture, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, m_Result, 1);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_readTexture, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_Result, 1);
 
 	auto dispatch_x = (l_readTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto dispatch_y = (l_readTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
 
-	l_renderingServer->Dispatch(m_RenderPassComp, dispatch_x, dispatch_y, 1);
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

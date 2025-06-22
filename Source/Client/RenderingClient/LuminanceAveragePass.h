@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class LuminanceAveragePass : IRenderPass
+	class LuminanceAveragePass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(LuminanceAveragePass)

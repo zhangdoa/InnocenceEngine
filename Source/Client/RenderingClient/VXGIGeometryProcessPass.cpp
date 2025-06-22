@@ -209,7 +209,7 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 
 	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-	return true;
+	return false;
 }
 
 RenderPassComponent* VXGIGeometryProcessPass::GetRenderPassComp()

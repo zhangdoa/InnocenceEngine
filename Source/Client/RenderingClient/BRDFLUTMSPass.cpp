@@ -56,6 +56,9 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("BRDFLUTMSPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -67,6 +70,7 @@ bool BRDFLUTMSPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 	l_renderingServer->Initialize(m_Result);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -99,16 +103,12 @@ bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
 			
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	
-	l_renderingServer->TryToTransitState(m_Result, m_RenderPassComp->m_CommandLists[m_RenderPassComp->m_CurrentFrame], Accessibility::WriteOnly);
-	
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-    l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 1);
-	l_renderingServer->Dispatch(m_RenderPassComp, 32, 32, 1);
-	
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+    l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, 32, 32, 1);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	

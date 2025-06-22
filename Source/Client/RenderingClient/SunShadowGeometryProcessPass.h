@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class SunShadowGeometryProcessPass : IRenderPass
+	class SunShadowGeometryProcessPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(SunShadowGeometryProcessPass)

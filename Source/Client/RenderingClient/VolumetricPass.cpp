@@ -45,6 +45,11 @@ namespace VolumetricPass
 	TextureComponent *m_rayMarchingResult_A;
 	TextureComponent *m_rayMarchingResult_B;
 
+	CommandListComponent *m_froxelizationCommandListComp;
+	CommandListComponent *m_irraidanceInjectionCommandListComp;
+	CommandListComponent *m_rayMarchingCommandListComp;
+	CommandListComponent *m_visualizationCommandListComp;
+
 	TVec4<uint32_t> m_voxelizationResolution = TVec4<uint32_t>(160, 90, 64, 0);
 	static bool m_isPassA = true;
 } // namespace VolumetricPass
@@ -332,6 +337,19 @@ bool VolumetricPass::Setup()
 	setupRayMarchingPass();
 	setupVisualizationPass();
 
+	// Add command list components for each render pass
+	m_froxelizationCommandListComp = l_renderingServer->AddCommandListComponent("VolumetricPass/Froxelization/Graphics/");
+	m_froxelizationCommandListComp->m_Type = GPUEngineType::Graphics;
+
+	m_irraidanceInjectionCommandListComp = l_renderingServer->AddCommandListComponent("VolumetricPass/IrraidanceInjection/Compute/");
+	m_irraidanceInjectionCommandListComp->m_Type = GPUEngineType::Compute;
+
+	m_rayMarchingCommandListComp = l_renderingServer->AddCommandListComponent("VolumetricPass/RayMarching/Compute/");
+	m_rayMarchingCommandListComp->m_Type = GPUEngineType::Compute;
+
+	m_visualizationCommandListComp = l_renderingServer->AddCommandListComponent("VolumetricPass/Visualization/Graphics/");
+	m_visualizationCommandListComp->m_Type = GPUEngineType::Graphics;
+
 	////
 	auto l_textureDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc().m_RenderTargetDesc;
 
@@ -373,6 +391,12 @@ bool VolumetricPass::Initialize()
 	l_renderingServer->Initialize(m_visualizationSPC);
 	l_renderingServer->Initialize(m_visualizationRenderPassComp);
 
+	// Initialize command list components
+	l_renderingServer->Initialize(m_froxelizationCommandListComp);
+	l_renderingServer->Initialize(m_irraidanceInjectionCommandListComp);
+	l_renderingServer->Initialize(m_rayMarchingCommandListComp);
+	l_renderingServer->Initialize(m_visualizationCommandListComp);
+
 	l_renderingServer->Initialize(m_irraidanceInjectionResult);
 	l_renderingServer->Initialize(m_rayMarchingResult_A);
 	l_renderingServer->Initialize(m_rayMarchingResult_B);
@@ -388,9 +412,9 @@ bool VolumetricPass::froxelization()
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	// l_renderingServer->CommandListBegin(m_froxelizationRenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_froxelizationRenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_froxelizationRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_froxelizationCommandListComp, m_froxelizationRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_froxelizationRenderPassComp, m_froxelizationCommandListComp);
+	// l_renderingServer->ClearRenderTargets(m_froxelizationRenderPassComp, m_froxelizationCommandListComp);
 
 	// l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
 	// l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3);
@@ -421,7 +445,7 @@ bool VolumetricPass::froxelization()
 	// l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3);
 	// l_renderingServer->UnbindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1], 4);
 
-	// l_renderingServer->CommandListEnd(m_froxelizationRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_froxelizationRenderPassComp, m_froxelizationCommandListComp);
 
 	return true;
 }
@@ -450,9 +474,9 @@ bool VolumetricPass::irraidanceInjection()
 	// TODO: Implement per-pass dispatch params buffer upload
 	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
 
-	// l_renderingServer->CommandListBegin(m_irraidanceInjectionRenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_irraidanceInjectionRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_irraidanceInjectionCommandListComp, m_irraidanceInjectionRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp, m_irraidanceInjectionCommandListComp);
+	// l_renderingServer->ClearRenderTargets(m_irraidanceInjectionRenderPassComp, m_irraidanceInjectionCommandListComp);
 
 	// l_renderingServer->BindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, m_SamplerComp, 9);
 
@@ -474,7 +498,7 @@ bool VolumetricPass::irraidanceInjection()
 	// l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7);
 	// l_renderingServer->UnbindGPUResource(m_irraidanceInjectionRenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8);
 
-	// l_renderingServer->CommandListEnd(m_irraidanceInjectionRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_irraidanceInjectionRenderPassComp, m_irraidanceInjectionCommandListComp);
 
 	return true;
 }
@@ -516,9 +540,9 @@ bool VolumetricPass::rayMarching()
 	// TODO: Implement per-pass dispatch params buffer upload
 	// l_renderingServer->Upload(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
 
-	// l_renderingServer->CommandListBegin(m_rayMarchingRenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_rayMarchingRenderPassComp);
+	// l_renderingServer->CommandListBegin(m_rayMarchingCommandListComp, m_rayMarchingRenderPassComp, 0);
+	// l_renderingServer->BindRenderPassComponent(m_rayMarchingRenderPassComp, m_rayMarchingCommandListComp);
+	// l_renderingServer->ClearRenderTargets(m_rayMarchingRenderPassComp, m_rayMarchingCommandListComp);
 
 	// l_renderingServer->BindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, m_SamplerComp, 7);
 
@@ -538,7 +562,7 @@ bool VolumetricPass::rayMarching()
 	// l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_historyResultBinder, 5);
 	// l_renderingServer->UnbindGPUResource(m_rayMarchingRenderPassComp, ShaderStage::Compute, l_currentResultBinder, 6);
 
-	// l_renderingServer->CommandListEnd(m_rayMarchingRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_rayMarchingRenderPassComp, m_rayMarchingCommandListComp);
 
 	return true;
 }
@@ -551,9 +575,9 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->CommandListBegin(m_visualizationRenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_visualizationRenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_visualizationRenderPassComp);
+	l_renderingServer->CommandListBegin(m_visualizationRenderPassComp, m_visualizationCommandListComp, 0);
+	l_renderingServer->BindRenderPassComponent(m_visualizationRenderPassComp, m_visualizationCommandListComp);
+	l_renderingServer->ClearRenderTargets(m_visualizationRenderPassComp, m_visualizationCommandListComp);
 
 	// l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
@@ -585,7 +609,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 
 	// l_renderingServer->UnbindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3);
 
-	// l_renderingServer->CommandListEnd(m_visualizationRenderPassComp);
+	// l_renderingServer->CommandListEnd(m_visualizationRenderPassComp, m_visualizationCommandListComp);
 
 	return true;
 }
@@ -603,23 +627,29 @@ bool VolumetricPass::ExecuteCommands(bool visualize)
 		visualization(m_rayMarchingResult_A);
 	}
 
-	l_renderingServer->ExecuteCommandList(m_froxelizationRenderPassComp, GPUEngineType::Graphics);
+	// Note: Command lists are prepared in the functions above but currently commented out
+	// TODO: Implement proper command list preparation and execution
+	// auto l_cmdList1 = froxelizationCommandList();
+	// if (l_cmdList1) { l_renderingServer->Execute(l_cmdList1, GPUEngineType::Graphics); }
 	l_renderingServer->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	l_renderingServer->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics);
+	// auto l_cmdList2 = irraidanceInjectionCommandList();
+	// if (l_cmdList2) { l_renderingServer->Execute(l_cmdList2, GPUEngineType::Graphics); }
 	l_renderingServer->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
-	l_renderingServer->ExecuteCommandList(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute);
+	// if (l_cmdList2) { l_renderingServer->Execute(l_cmdList2, GPUEngineType::Compute); }
 	l_renderingServer->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
-	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Graphics);
+	// auto l_cmdList3 = rayMarchingCommandList();
+	// if (l_cmdList3) { l_renderingServer->Execute(l_cmdList3, GPUEngineType::Graphics); }
 	l_renderingServer->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
-	l_renderingServer->ExecuteCommandList(m_rayMarchingRenderPassComp, GPUEngineType::Compute);
+	// if (l_cmdList3) { l_renderingServer->Execute(l_cmdList3, GPUEngineType::Compute); }
 	l_renderingServer->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	if (visualize)
 	{
-		l_renderingServer->ExecuteCommandList(m_visualizationRenderPassComp, GPUEngineType::Graphics);
+		// auto l_cmdList4 = visualizationCommandList();
+		// if (l_cmdList4) { l_renderingServer->Execute(l_cmdList4, GPUEngineType::Graphics); }
 		l_renderingServer->WaitOnGPU(m_visualizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	}
 
@@ -653,5 +683,5 @@ GPUResourceComponent *VolumetricPass::GetRayMarchingResult()
 GPUResourceComponent *VolumetricPass::GetVisualizationResult()
 {
 	//return m_visualizationRenderPassComp->m_RenderTargets[0].m_Texture;
-	return nullptr;
+	return false;
 }

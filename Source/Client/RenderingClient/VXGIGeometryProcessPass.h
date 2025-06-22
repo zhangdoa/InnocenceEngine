@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class VXGIGeometryProcessPass : IRenderPass
+	class VXGIGeometryProcessPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIGeometryProcessPass)

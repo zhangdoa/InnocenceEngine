@@ -12,6 +12,7 @@
 #include "../Component/SamplerComponent.h"
 #include "../Component/GPUBufferComponent.h"
 #include "../Component/ModelComponent.h"
+#include "../Component/CommandListComponent.h"
 
 namespace Inno
 {
@@ -35,31 +36,32 @@ namespace Inno
 		virtual ShaderProgramComponent* AddShaderProgramComponent(const char* name = "");
 		virtual SamplerComponent* AddSamplerComponent(const char* name = "");
 		virtual GPUBufferComponent* AddGPUBufferComponent(const char* name = "");
+		virtual CommandListComponent* AddCommandListComponent(const char* name = "");
 		virtual IPipelineStateObject* AddPipelineStateObject() = 0;
-		virtual ICommandList* AddCommandList() = 0;
 		virtual ISemaphore* AddSemaphore() = 0;
 		virtual bool Add(IOutputMergerTarget*& rhs) = 0;
 
-		virtual	bool Delete(MeshComponent* rhs) = 0;
-		virtual	bool Delete(TextureComponent* rhs) = 0;
-		virtual	bool Delete(MaterialComponent* rhs) = 0;
-		virtual	bool Delete(RenderPassComponent* rhs) = 0;
-		virtual	bool Delete(ShaderProgramComponent* rhs) = 0;
-		virtual	bool Delete(SamplerComponent* rhs) = 0;
-		virtual	bool Delete(GPUBufferComponent* rhs) = 0;
+		virtual	bool Delete(MeshComponent* mesh) = 0;
+		virtual	bool Delete(TextureComponent* texture) = 0;
+		virtual	bool Delete(MaterialComponent* material) = 0;
+		virtual	bool Delete(RenderPassComponent* renderPass) = 0;
+		virtual	bool Delete(ShaderProgramComponent* shaderProgram) = 0;
+		virtual	bool Delete(SamplerComponent* sampler) = 0;
+		virtual	bool Delete(GPUBufferComponent* gpuBuffer) = 0;
 		virtual	bool Delete(IPipelineStateObject* rhs) = 0;
-		virtual	bool Delete(ICommandList* rhs) = 0;
+		virtual	bool Delete(CommandListComponent* rhs) = 0;
 		virtual	bool Delete(ISemaphore* rhs) = 0;
 		virtual	bool Delete(IOutputMergerTarget* rhs) = 0;
 
-		void Initialize(ModelComponent* rhs);
-		void Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices);
-		void Initialize(TextureComponent* rhs, void* textureData = nullptr);
-		void Initialize(MaterialComponent* rhs);
-		void Initialize(RenderPassComponent* rhs);
-		void Initialize(ShaderProgramComponent* rhs);
-		void Initialize(SamplerComponent* rhs);
-		void Initialize(GPUBufferComponent* rhs);
+		void Initialize(ModelComponent* model);
+		void Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices);
+		void Initialize(TextureComponent* texture, void* textureData = nullptr);
+		void Initialize(MaterialComponent* material);
+		void Initialize(RenderPassComponent* renderPass);
+		void Initialize(ShaderProgramComponent* shaderProgram);
+		void Initialize(SamplerComponent* sampler);
+		void Initialize(GPUBufferComponent* gpuBuffer);
+		void Initialize(CommandListComponent* commandList);
 
 		// Rendering Stage APIs
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
@@ -74,28 +76,28 @@ namespace Inno
 		uint32_t GetFrameCountSinceLaunch();
 
 		// Command List APIs
-		virtual bool CommandListBegin(RenderPassComponent* rhs, size_t frameIndex);
-		virtual bool BindRenderPassComponent(RenderPassComponent* rhs) { return false; }
-		virtual bool ClearRenderTargets(RenderPassComponent* rhs, size_t index = -1) { return false; }
-		virtual bool BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
-		virtual bool TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility) { return false; }
+		virtual bool CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex);
+		virtual bool BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList) { return false; }
+		virtual bool ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index = -1) { return false; }
+		virtual bool BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
+		virtual bool TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility accessibility) { return false; }
+		virtual bool TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility accessibility) { return false; }
 
-		virtual bool ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand) { return false; }
-		virtual void PushRootConstants(RenderPassComponent* rhs, size_t rootConstants) {}
-		virtual bool DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount = 1) { return false; }
-		virtual bool DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount = 1) { return false; }
+		virtual bool ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand) { return false; }
+		virtual void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) {}
+		virtual bool DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount = 1) { return false; }
+		virtual bool DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount = 1) { return false; }
 		
-		virtual bool SignalOnGPU(RenderPassComponent* rhs, GPUEngineType queueType);
-		virtual bool WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType);
-		virtual bool CommandListEnd(RenderPassComponent* rhs);
-		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
-		virtual bool ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType);
+		virtual bool SignalOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType);
+		virtual bool WaitOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType, GPUEngineType semaphoreType);
+		virtual bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList);
+		virtual bool UnbindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
 		virtual bool Present();
-		virtual bool Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) { return false; }
+		virtual bool Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) { return false; }
 
 		virtual bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) { return false; }
 		virtual bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) { return false; }
-		virtual bool Execute(ICommandList* commandList, GPUEngineType queueType) { return false; }
+		virtual bool Execute(CommandListComponent* commandList, GPUEngineType queueType) { return false; }
 		virtual uint64_t GetSemaphoreValue(GPUEngineType queueType) { return 0; }
 		virtual bool WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType) { return false; }
 
@@ -104,63 +106,61 @@ namespace Inno
 
 		virtual bool Resize();
 
+		virtual bool UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh) { return false; }
+		virtual bool UploadToGPU(CommandListComponent* commandList, TextureComponent* texture) { return false; }
+		virtual bool UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer) { return false; }
+		virtual bool Clear(CommandListComponent* commandList, TextureComponent* texture) { return false; }
+		virtual bool Copy(CommandListComponent* commandList, TextureComponent* sourceTexture, TextureComponent* destinationTexture) { return false; }
+		virtual bool Clear(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer) { return false; }
+
+		virtual bool Open(CommandListComponent* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
+		virtual bool Close(CommandListComponent* commandList, GPUEngineType GPUEngineType) { return false; }
+
 		// Component APIs
-		virtual bool Clear(TextureComponent* rhs);
-		virtual bool Copy(TextureComponent* lhs, TextureComponent* rhs);
-		virtual bool Clear(GPUBufferComponent* rhs);
-		virtual std::optional<uint32_t> GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility) { return std::nullopt; }
-		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
+		virtual std::optional<uint32_t> GetIndex(TextureComponent* texture, Accessibility bindingAccessibility) { return std::nullopt; }
+		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
 		virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) { return std::vector<Vec4>(); }
-		virtual bool GenerateMipmap(TextureComponent* rhs, ICommandList* commandList = nullptr) { return false; }
+		virtual bool GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList = nullptr) { return false; }
 
 		// Debug use only
 		virtual bool BeginCapture() { return false; }
 		virtual bool EndCapture() { return false; }
 
 		// Raytracing-related APIs
-		virtual bool DispatchRays(RenderPassComponent* rhs, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) { return false; }
+		virtual bool DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) { return false; }
 		GPUResourceComponent* GetTLASBuffer() { return m_TLASBufferComponent; }
 
 	protected:
-		bool WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range);
+		bool WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range);
 
 	public:
 		template<typename T>
-		bool Upload(GPUBufferComponent* rhs, const T* GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
+		bool Upload(GPUBufferComponent* gpuBuffer, const T* GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
-			auto l_mappedMemory = rhs->m_MappedMemories[GetCurrentFrame()];
-			return WriteMappedMemory(rhs, l_mappedMemory, GPUBufferValue, startOffset, range);
+			auto l_mappedMemory = gpuBuffer->m_MappedMemories[GetCurrentFrame()];
+			return WriteMappedMemory(gpuBuffer, l_mappedMemory, GPUBufferValue, startOffset, range);
 		}
 
 		template<typename T>
-		bool Upload(GPUBufferComponent* rhs, const std::vector<T>& GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
+		bool Upload(GPUBufferComponent* gpuBuffer, const std::vector<T>& GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 		{
-			return Upload(rhs, &GPUBufferValue[0], startOffset, range);
+			return Upload(gpuBuffer, &GPUBufferValue[0], startOffset, range);
 		}
 
 	protected:
-		virtual bool InitializeImpl(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
-		virtual bool InitializeImpl(TextureComponent* rhs, void* textureData) { return false; }
-		virtual bool InitializeImpl(MaterialComponent* rhs);
-		virtual bool InitializeImpl(RenderPassComponent* rhs);
-		virtual	bool InitializeImpl(ShaderProgramComponent* rhs) { return false; }
-		virtual bool InitializeImpl(SamplerComponent* rhs) { return false; }
-		virtual bool InitializeImpl(GPUBufferComponent* rhs) { return false; }
-		virtual bool InitializeImpl(ModelComponent* rhs) { return false; }
+		virtual bool InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
+		virtual bool InitializeImpl(TextureComponent* texture, void* textureData) { return false; }
+		virtual bool InitializeImpl(MaterialComponent* material);
+		virtual bool InitializeImpl(RenderPassComponent* renderPass);
+		virtual	bool InitializeImpl(ShaderProgramComponent* shaderProgram) { return false; }
+		virtual bool InitializeImpl(SamplerComponent* sampler) { return false; }
+		virtual bool InitializeImpl(GPUBufferComponent* gpuBuffer) { return false; }
+		virtual bool InitializeImpl(ModelComponent* model) { return false; }
+		virtual bool InitializeImpl(CommandListComponent* commandList) { return false; }
 
-        bool DeleteRenderTargets(RenderPassComponent* rhs);
+        bool DeleteRenderTargets(RenderPassComponent* renderPass);
 
-		virtual bool UploadToGPU(ICommandList* commandList, MeshComponent* rhs) { return false; }
-		virtual bool UploadToGPU(ICommandList* commandList, TextureComponent* rhs) { return false; }
-		virtual bool UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
-		virtual bool Clear(ICommandList* commandList, TextureComponent* rhs) { return false; }
-		virtual bool Copy(ICommandList* commandList, TextureComponent* lhs, TextureComponent* rhs) { return false; }
-		virtual bool Clear(ICommandList* commandList, GPUBufferComponent* rhs) { return false; }
-
-		virtual bool Open(ICommandList* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
-		virtual bool Close(ICommandList* commandList, GPUEngineType GPUEngineType) { return false; }
-
-		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility);
+		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility accessibility);
 
 		virtual bool InitializePool();
 		virtual bool TerminatePool();
@@ -172,15 +172,14 @@ namespace Inno
 		virtual bool ReleaseSwapChainImages() = 0;
         bool InitializeSwapChainRenderPassComponent();
 		
-		bool CreateOutputMergerTargets(RenderPassComponent* rhs);
-		bool InitializeOutputMergerTargets(RenderPassComponent* rhs);
-        virtual bool OnOutputMergerTargetsCreated(RenderPassComponent* rhs) { return false; }
-		virtual bool CreatePipelineStateObject(RenderPassComponent* rhs) { return false; }
-		virtual bool CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name) { return false; }
-		virtual bool CreateFenceEvents(RenderPassComponent* rhs) { return false; }
+		bool CreateOutputMergerTargets(RenderPassComponent* renderPass);
+		bool InitializeOutputMergerTargets(RenderPassComponent* renderPass);
+        virtual bool OnOutputMergerTargetsCreated(RenderPassComponent* renderPass) { return false; }
+		virtual bool CreatePipelineStateObject(RenderPassComponent* renderPass) { return false; }
+		virtual bool CreateFenceEvents(RenderPassComponent* renderPass) { return false; }
 
 		virtual bool BeginFrame() { return false; }
-		virtual bool PrepareRayTracing(ICommandList* commandList) { return false; }
+		virtual bool PrepareRayTracing(CommandListComponent* commandList) { return false; }
 		virtual bool PresentImpl() { return false; }
 		virtual bool WaitAllOnCPU() { return false; }
 		virtual bool ResizeImpl() { return false; }
@@ -191,7 +190,7 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 		TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
-		std::vector<ICommandList*> m_GlobalCommandLists;
+		std::vector<CommandListComponent*> m_GlobalGraphicsCommandLists;
 		ISemaphore* m_GlobalSemaphore;
 
 		uint32_t m_swapChainImageCount = 2;
@@ -241,16 +240,6 @@ namespace Inno
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
 		ThreadSafeQueue<ModelComponent*> m_uninitializedModels;
 
-		struct CopyCommand
-		{
-			CopyCommand(TextureComponent* lhs, TextureComponent* rhs) : m_lhs(lhs), m_rhs(rhs) {}
-			TextureComponent* m_lhs;
-			TextureComponent* m_rhs;
-		};
-
-		ThreadSafeQueue<CopyCommand> m_unprocessedCopyCommands;
-		ThreadSafeQueue<GPUResourceComponent*> m_unclearedResources;
-
 		std::unordered_set<MeshComponent*> m_initializedMeshes;
 		std::unordered_set<TextureComponent*> m_initializedTextures;
 		std::unordered_set<MaterialComponent*> m_initializedMaterials;
@@ -273,18 +262,10 @@ namespace Inno
 
 		bool ExecuteResize();
 		bool PreResize();
-    	bool PreResize(RenderPassComponent* rhs);
+    	bool PreResize(RenderPassComponent* renderPass);
 		bool PostResize();
-		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs);
+		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass);
 
-		std::atomic_bool m_needResize = false;
-
-		TObjectPool<MeshComponent>* m_MeshComponentPool = nullptr;
-        TObjectPool<MaterialComponent>* m_MaterialComponentPool = nullptr;
-        TObjectPool<TextureComponent>* m_TextureComponentPool = nullptr;
-        TObjectPool<RenderPassComponent>* m_RenderPassComponentPool = nullptr;
-        TObjectPool<ShaderProgramComponent>* m_ShaderProgramComponentPool = nullptr;
-        TObjectPool<SamplerComponent>* m_SamplerComponentPool = nullptr;
-        TObjectPool<GPUBufferComponent>* m_GPUBufferComponentPool = nullptr;
+		std::atomic_bool m_needResize = false;	
 	};
 }

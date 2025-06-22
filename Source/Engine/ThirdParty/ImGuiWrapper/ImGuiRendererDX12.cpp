@@ -58,7 +58,9 @@ bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	// No resource binding layout descriptors needed for ImGui.
-
+	
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("ImGuiRenderPass/Graphics");
+	
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
@@ -69,7 +71,7 @@ bool ImGuiRenderPass::Initialize()
 	l_renderingServer->Initialize(m_RenderPassComp);
 
 	// The actual rendering is called by the rendering server
-	m_RenderPassComp->m_CustomCommandsFunc = [&](ICommandList* cmdList)
+	m_RenderPassComp->m_CustomCommandsFunc = [&](CommandListComponent* cmdList)
 		{
 			// Skip all rendering in offscreen mode
 			if (g_Engine->getInitConfig().isOffscreen)
@@ -81,10 +83,10 @@ bool ImGuiRenderPass::Initialize()
 			auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
 			auto l_currentFrame =l_renderingServer->GetCurrentFrame();
 
-			auto dx12CmdList = reinterpret_cast<DX12CommandList*>(cmdList);
-			auto directCommandList = dx12CmdList->m_DirectCommandList.Get();
+			auto dx12CmdList = cmdList;
+			auto commandList = reinterpret_cast<ID3D12GraphicsCommandList*>(dx12CmdList->m_CommandList);
 
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), directCommandList);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
 			// Change the swap chain image state to read-only (skip in offscreen mode).
 			if (!g_Engine->getInitConfig().isOffscreen && l_swapChainRenderPassComp && 
@@ -95,6 +97,8 @@ bool ImGuiRenderPass::Initialize()
 			}
 		};
 
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
 }
@@ -103,6 +107,7 @@ bool ImGuiRenderPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	l_renderingServer->Delete(m_RenderPassComp);
+	l_renderingServer->Delete(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
@@ -122,9 +127,10 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 	}
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);	
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }
@@ -243,7 +249,13 @@ bool ImGuiRendererDX12::ExecuteCommands()
 
 	// Let the swap chain rendering finish.
 	l_renderingServer->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
-	l_renderingServer->ExecuteCommandList(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
+	if (m_RenderPass->PrepareCommandList(nullptr)) 
+	{ 
+		auto l_commandList = m_RenderPass->GetCommandListComp(GPUEngineType::Graphics);
+		if (l_commandList) {
+			l_renderingServer->Execute(l_commandList, GPUEngineType::Graphics); 
+		}
+	}
 	l_renderingServer->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
 
 	// Let the ImGui rendering finish.

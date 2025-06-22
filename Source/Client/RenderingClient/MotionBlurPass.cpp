@@ -125,7 +125,7 @@ bool MotionBlurPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-	return true;
+	return false;
 }
 
 RenderPassComponent* MotionBlurPass::GetRenderPassComp()
@@ -136,10 +136,10 @@ RenderPassComponent* MotionBlurPass::GetRenderPassComp()
 GPUResourceComponent* MotionBlurPass::GetResult()
 {
 	if (!m_RenderPassComp)
-		return nullptr;
+		return false;
 	
 	if (!m_RenderPassComp->m_OutputMergerTarget)
-		return nullptr;
+		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();

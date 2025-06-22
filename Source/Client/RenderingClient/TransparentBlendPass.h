@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent *m_output;
 	};
 
-	class TransparentBlendPass : IRenderPass
+	class TransparentBlendPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(TransparentBlendPass)

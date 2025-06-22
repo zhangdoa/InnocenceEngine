@@ -97,25 +97,39 @@ ObjectStatus VXGIVisualizationPass::GetStatus()
 
 bool VXGIVisualizationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	// Early check - skip if not activated
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_renderingContext = reinterpret_cast<VXGIVisualizationPassRenderingContext*>(renderingContext);
+	// Use the Graphics command list component for VXGI rendering
+	if (!m_CommandListComp_Graphics)
+	{
+		m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent();
+		if (!m_CommandListComp_Graphics) return false;
+	}
+
+	if (!l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0))
+		return false;
+
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	if (l_PerFrameCBufferGPUBufferComp && l_PerFrameCBufferGPUBufferComp->m_ObjectStatus == ObjectStatus::Activated)
+	{
+		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_PerFrameCBufferGPUBufferComp, 1);
+	}
 
-	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// TODO: Uncomment and fix resource bindings when dependencies are ready
+	// auto l_renderingContext = reinterpret_cast<VXGIVisualizationPassRenderingContext*>(renderingContext);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_renderingContext->m_input, 0);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2);
+	// l_renderingServer->DrawInstanced(m_RenderPassComp, m_CommandListComp_Graphics, l_renderingContext->m_resolution * l_renderingContext->m_resolution * l_renderingContext->m_resolution);
 
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_renderingContext->m_input, 0);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_PerFrameCBufferGPUBufferComp, 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 2);
-
-	// l_renderingServer->DrawInstanced(m_RenderPassComp, l_renderingContext->m_resolution * l_renderingContext->m_resolution * l_renderingContext->m_resolution);
-
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_renderingContext->m_input, 0);
-
-	// l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }
@@ -128,10 +142,10 @@ RenderPassComponent* VXGIVisualizationPass::GetRenderPassComp()
 GPUResourceComponent* VXGIVisualizationPass::GetResult()
 {
 	if (!m_RenderPassComp)
-		return nullptr;
+		return false;
 	
 	if (!m_RenderPassComp->m_OutputMergerTarget)
-		return nullptr;
+		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();

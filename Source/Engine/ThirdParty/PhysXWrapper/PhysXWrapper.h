@@ -24,7 +24,7 @@ namespace Inno
 		bool createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices);
 
 		// Updated to use ModelComponent instead of CollisionComponent
-		bool addForce(ModelComponent* rhs, Vec4 force);
+		bool addForce(ModelComponent* model, Vec4 force);
 
 	private:
 		PhysXWrapper() {};

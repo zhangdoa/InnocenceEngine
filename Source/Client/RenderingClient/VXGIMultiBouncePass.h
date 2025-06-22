@@ -10,7 +10,7 @@ namespace Inno
 		GPUResourceComponent *m_output;
 	};
 
-	class VXGIMultiBouncePass : IRenderPass
+	class VXGIMultiBouncePass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIMultiBouncePass)

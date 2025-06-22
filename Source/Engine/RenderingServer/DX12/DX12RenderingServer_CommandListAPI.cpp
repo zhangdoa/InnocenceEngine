@@ -8,119 +8,153 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
+bool DX12RenderingServer::CommandListBegin(RenderPassComponent* renderPassComp, CommandListComponent* commandList, size_t frameIndex)
 {
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	if (!commandList || !renderPassComp)
+	{
+		Log(Error, "DX12RenderingServer::CommandListBegin: Invalid parameters");
+		return false;
+	}
+		
+	return Open(commandList, commandList->m_Type, renderPassComp->m_PipelineStateObject);;
+}
 
-	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::WriteOnly);
-	SetDescriptorHeaps(l_rhs, l_commandList);
-	SetRenderTargets(l_rhs, l_commandList);
 
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
-	PreparePipeline(l_rhs, l_commandList, l_PSO);
 
-	if (l_rhs->m_CustomCommandsFunc)
-		l_rhs->m_CustomCommandsFunc(l_commandList);
+bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
+{
+	if (!renderPass || !commandList)
+	{
+		Log(Error, "Null render pass or command list in BindRenderPassComponent");
+		return false;
+	}
+	
+	// Cast once for readability
+	auto l_dx12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	if (!l_dx12CommandList)
+	{
+		Log(Error, "Invalid DX12 command list in BindRenderPassComponent");
+		return false;
+	}
+
+	ChangeRenderTargetStates(renderPass, commandList, Accessibility::WriteOnly);
+	SetDescriptorHeaps(renderPass, commandList);
+	SetRenderTargets(renderPass, commandList);
+
+	if (renderPass->m_PipelineStateObject)
+	{
+		auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
+		PreparePipeline(renderPass, commandList, l_PSO);
+	}
+
+	if (renderPass->m_CustomCommandsFunc)
+		renderPass->m_CustomCommandsFunc(commandList);
 
 	return true;
 }
 
-bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t index)
+bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index)
 {
-	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
-		return true;
-
-	if (rhs->m_RenderPassDesc.m_RenderTargetCount == 0)
-		return true;
-
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	
-	if (!l_commandList || !l_commandList->m_DirectCommandList)
+	if (!renderPass || !commandList)
 	{
-		Log(Error, "Command list is null in ClearRenderTargets for render pass ", rhs->m_InstanceName);
+		Log(Error, "Null render pass or command list in ClearRenderTargets");
 		return false;
 	}
-	
+
+	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
+		return true;
+
+	if (renderPass->m_RenderPassDesc.m_RenderTargetCount == 0)
+		return true;
+
+	// Cast once for readability
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	if (!l_commandList)
+	{
+		Log(Error, "Invalid DX12 command list in ClearRenderTargets");
+		return false;
+	}
+
 	auto f_clearRenderTargetAsUAV = [&](DX12DeviceMemory* l_RT)
 		{
-			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+			if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 			{
-				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
+				l_commandList->ClearUnorderedAccessViewUint(
 					D3D12_GPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_GPUHandle }, 
 					D3D12_CPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_CPUHandle },
 					l_RT->m_DefaultHeapBuffer.Get(), 
-					(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
+					(UINT*)renderPass->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+					0, nullptr);
 			}
 			else
 			{
-				l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
+				l_commandList->ClearUnorderedAccessViewFloat(
 					D3D12_GPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_GPUHandle }, 
 					D3D12_CPU_DESCRIPTOR_HANDLE{ l_RT->m_UAV.Handle.m_CPUHandle },
 					l_RT->m_DefaultHeapBuffer.Get(), 
-					l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, NULL);
+					renderPass->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
+					0, nullptr);
 			}
 		};
 
-	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(l_rhs->m_OutputMergerTarget);
+	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
 	if (!l_outputMergerTarget)
 	{
-		Log(Error, "Output merger target is null in ClearRenderTargets for render pass ", rhs->m_InstanceName);
+		Log(Error, "Output merger target is null in ClearRenderTargets for render pass ", renderPass->m_InstanceName);
 		return false;
 	}
 	
 	auto l_currentFrame = GetCurrentFrame();
-	if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
+	if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
 	{
 		if (l_currentFrame >= l_outputMergerTarget->m_RTVs.size())
 		{
-			Log(Error, "Invalid frame index ", l_currentFrame, " for RTVs in render pass ", rhs->m_InstanceName);
+			Log(Error, "Invalid frame index ", l_currentFrame, " for RTVs in render pass ", renderPass->m_InstanceName);
 			return false;
 		}
 		
 		auto& l_RTV = l_outputMergerTarget->m_RTVs[l_currentFrame];
 		if (l_RTV.m_Handles.empty())
 		{
-			Log(Error, "RTV handles are empty for render pass ", rhs->m_InstanceName);
+			Log(Error, "RTV handles are empty for render pass ", renderPass->m_InstanceName);
 			return false;
 		}
 		
-		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
+		if (index != -1 && index < renderPass->m_RenderPassDesc.m_RenderTargetCount)
 		{
 			if (index >= l_RTV.m_Handles.size())
 			{
-				Log(Error, "Invalid RTV handle index ", index, " for render pass ", rhs->m_InstanceName);
+				Log(Error, "Invalid RTV handle index ", index, " for render pass ", renderPass->m_InstanceName);
 				return false;
 			}
 			if (l_RTV.m_Handles[index].ptr == 0)
 			{
-				Log(Error, "Null RTV handle at index ", index, " for render pass ", rhs->m_InstanceName);
+				Log(Error, "Null RTV handle at index ", index, " for render pass ", renderPass->m_InstanceName);
 				return false;
 			}
-			l_commandList->m_DirectCommandList->ClearRenderTargetView(l_RTV.m_Handles[index], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+			l_commandList->ClearRenderTargetView(l_RTV.m_Handles[index], renderPass->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 		}
 		else
 		{
-			for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
 				if (i >= l_RTV.m_Handles.size())
 				{
-					Log(Error, "Invalid RTV handle index ", i, " for render pass ", rhs->m_InstanceName);
+					Log(Error, "Invalid RTV handle index ", i, " for render pass ", renderPass->m_InstanceName);
 					return false;
 				}
 				if (l_RTV.m_Handles[i].ptr == 0)
 				{
-					Log(Error, "Null RTV handle at index ", i, " for render pass ", rhs->m_InstanceName);
+					Log(Error, "Null RTV handle at index ", i, " for render pass ", renderPass->m_InstanceName);
 					return false;
 				}
-				l_commandList->m_DirectCommandList->ClearRenderTargetView(l_RTV.m_Handles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
+				l_commandList->ClearRenderTargetView(l_RTV.m_Handles[i], renderPass->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 			}
 		}
 	}
 	else
 	{
-		if (index != -1 && index < l_rhs->m_RenderPassDesc.m_RenderTargetCount)
+		if (index != -1 && index < renderPass->m_RenderPassDesc.m_RenderTargetCount)
 		{
 			f_clearRenderTargetAsUAV(reinterpret_cast<DX12DeviceMemory*>(l_outputMergerTarget->m_ColorOutputs[index]->m_GPUResources[l_currentFrame]));
 		}
@@ -133,20 +167,20 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t in
 		}
 	}
 
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
+	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 	{
 		auto l_flag = D3D12_CLEAR_FLAG_DEPTH;
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
+		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
 			l_flag |= D3D12_CLEAR_FLAG_STENCIL;
 
 		auto l_DSV = l_outputMergerTarget->m_DSVs[l_currentFrame];
-		l_commandList->m_DirectCommandList->ClearDepthStencilView(l_DSV.m_Handle, l_flag, 1.0f, 0x00, 0, nullptr);
+		l_commandList->ClearDepthStencilView(l_DSV.m_Handle, l_flag, 1.0f, 0x00, 0, nullptr);
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
+bool DX12RenderingServer::BindComputeResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
 {
 	if (!commandList)
 	{
@@ -154,9 +188,10 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		return false;
 	}
 
-	if (!commandList->m_ComputeCommandList)
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	if (!l_commandList)
 	{
-		Log(Error, "ComputeCommandList is null in BindComputeResource");
+		Log(Error, "CommandList is null in BindComputeResource");
 		return false;
 	}
 
@@ -185,7 +220,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			if (l_buffer->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
 				auto l_GPUVirtualAddress = l_mappedMemory->m_UploadHeapBuffer->GetGPUVirtualAddress();
-				commandList->m_ComputeCommandList->SetComputeRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
+				l_commandList->SetComputeRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
 				return true;
 			}
 			else if ((l_buffer->m_GPUAccessibility.CanWrite()))
@@ -193,12 +228,12 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 				if (l_buffer->m_Usage == GPUBufferUsage::TLAS)
 				{
 					auto l_GPUVirtualAddress = l_deviceMemory->m_DefaultHeapBuffer->GetGPUVirtualAddress();
-					commandList->m_ComputeCommandList->SetComputeRootShaderResourceView(rootParameterIndex, l_GPUVirtualAddress);
+					l_commandList->SetComputeRootShaderResourceView(rootParameterIndex, l_GPUVirtualAddress);
 					return true;
 				}
 				else
 				{
-					commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_SRV.Handle.m_GPUHandle });
+					l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_SRV.Handle.m_GPUHandle });
 					return true;
 				}
 			}
@@ -207,7 +242,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		{
 			if (l_buffer->m_GPUAccessibility.CanWrite())
 			{
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
+				l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
 				return true;
 			}
 		}
@@ -218,7 +253,7 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 		{
 			auto& l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
 				, resourceBindingLayoutDesc.m_ResourceAccessibility, TextureUsage::Sample);
-			commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_textureDescHeapAccessor.GetFirstHandle().m_GPUHandle });
+			l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_textureDescHeapAccessor.GetFirstHandle().m_GPUHandle });
 		}
 		else if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
@@ -238,25 +273,25 @@ bool DX12RenderingServer::BindComputeResource(DX12CommandList* commandList, uint
 			// using direct command lists before compute passes begin
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 			{
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
+				l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
 			}
 			else
 			{
-				commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
+				l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
 			}
 		}
 	}
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
 		auto l_handle = reinterpret_cast<SamplerComponent*>(resource)->m_ReadHandles[GetCurrentFrame()].m_GPUHandle;
-		commandList->m_ComputeCommandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
+		l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
 	}
 
 	assert(false);
 	return false;
 }
 
-bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
+bool DX12RenderingServer::BindGraphicsResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
 {
 	if (!commandList)
 	{
@@ -264,9 +299,16 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		return false;
 	}
 
-	if (!commandList->m_DirectCommandList)
+	if (!commandList->m_CommandList)
 	{
-		Log(Error, "DirectCommandList is null in BindGraphicsResource");
+		Log(Error, "CommandList is null in BindGraphicsResource");
+		return false;
+	}
+
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	if (!l_commandList)
+	{
+		Log(Error, "CommandList is null in BindGraphicsResource");
 		return false;
 	}
 
@@ -295,12 +337,12 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			if (l_buffer->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
 				auto l_GPUVirtualAddress = l_mappedMemory->m_UploadHeapBuffer->GetGPUVirtualAddress();
-				commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
+				l_commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
 				return true;
 			}
 			else if ((l_buffer->m_GPUAccessibility.CanWrite()))
 			{
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_SRV.Handle.m_GPUHandle });
+				l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_SRV.Handle.m_GPUHandle });
 				return true;
 			}
 		}
@@ -308,7 +350,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		{
 			if (l_buffer->m_GPUAccessibility.CanWrite())
 			{
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
+				l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
 				return true;
 			}
 		}
@@ -319,7 +361,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 		{
 			auto& l_textureDescHeapAccessor = GetDescriptorHeapAccessor(GPUResourceType::Image, resourceBindingLayoutDesc.m_BindingAccessibility
 				, resourceBindingLayoutDesc.m_ResourceAccessibility, TextureUsage::Sample);
-			commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_textureDescHeapAccessor.GetFirstHandle().m_GPUHandle });
+			l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_textureDescHeapAccessor.GetFirstHandle().m_GPUHandle });
 		}
 		else if (resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthAttachment
 			|| resourceBindingLayoutDesc.m_TextureUsage == TextureUsage::DepthStencilAttachment
@@ -336,12 +378,12 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 			auto l_handleIndex = l_image->m_TextureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
 			if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 			{
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
+				l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_WriteHandles[l_handleIndex].m_GPUHandle });
 			}
 			else
 			{
 
-				commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
+				l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_image->m_ReadHandles[l_handleIndex].m_GPUHandle });
 			}
 		}
 		return true;
@@ -349,7 +391,7 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 	else if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Sampler)
 	{
 		auto l_handle = reinterpret_cast<SamplerComponent*>(resource)->m_ReadHandles[GetCurrentFrame()].m_GPUHandle;
-		commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
+		l_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_handle });
 		return true;
 	}
 
@@ -357,98 +399,126 @@ bool DX12RenderingServer::BindGraphicsResource(DX12CommandList* commandList, uin
 	return false;
 }
 
-bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
-	if (!renderPass)
+	if (!renderPass || !commandList)
 	{
-		Log(Error, "Attempt to bind GPU resources on an invalid render pass");
+		Log(Error, "Null render pass or command list in BindGPUResource");
 		return false;
 	}
 
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	if (!l_commandList)
-	{
-		Log(Error, "Command list is null in BindGPUResource for: ", l_renderPass->m_InstanceName);
-		return false;
-	}
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-		return BindComputeResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
+		return BindComputeResource(commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
 	else
-		return BindGraphicsResource(l_commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
+		return BindGraphicsResource(commandList, resourceBindingLayoutDescIndex, l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
 
 	return false;
 }
 
-bool DX12RenderingServer::TryToTransitState(TextureComponent* rhs, ICommandList* commandList, Accessibility accessibility)
+bool DX12RenderingServer::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility accessibility)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
-	auto* resource = static_cast<ID3D12Resource*>(rhs->GetGPUResource(frameIndex));
+	auto* resource = static_cast<ID3D12Resource*>(texture->GetGPUResource(frameIndex));
 	if (!resource)
 	{
-		Log(Error, "No resource found for ", rhs->m_InstanceName);
+		Log(Error, "No resource found for ", texture->m_InstanceName);
 		return false;
 	}
 
-	auto l_textureDesc = GetDX12TextureDesc(rhs->m_TextureDesc);
-	auto l_newState = accessibility.CanWrite() ? rhs->m_WriteState : rhs->m_ReadState;
+	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
+	auto l_newState = accessibility.CanWrite() ? texture->m_WriteState : texture->m_ReadState;
 
-	if (rhs->m_CurrentState == l_newState)
+	if (texture->m_CurrentState == l_newState)
 		return false;
+
+	// Check if the resource states are valid for the command list type
+	auto l_currentState = static_cast<D3D12_RESOURCE_STATES>(texture->m_CurrentState);
+	auto l_targetState = static_cast<D3D12_RESOURCE_STATES>(l_newState);
+	
+	// Compute command lists have restrictions on which resource states they can use
+	if (commandList->m_Type == GPUEngineType::Compute)
+	{
+		// States not allowed on compute command lists
+		const D3D12_RESOURCE_STATES invalidComputeStates = 
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER |
+			D3D12_RESOURCE_STATE_INDEX_BUFFER |
+			D3D12_RESOURCE_STATE_RENDER_TARGET |
+			D3D12_RESOURCE_STATE_DEPTH_WRITE |
+			D3D12_RESOURCE_STATE_DEPTH_READ |
+			D3D12_RESOURCE_STATE_STREAM_OUT |
+			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT |
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		
+		if ((l_currentState & invalidComputeStates) || (l_targetState & invalidComputeStates))
+		{
+			Log(Warning, "Skipping resource state transition for ", texture->m_InstanceName, 
+				" on compute command list. Current state: 0x", std::hex, (uint32_t)l_currentState, 
+				", target state: 0x", (uint32_t)l_targetState, std::dec, 
+				". Resource state transitions with graphics-specific states should be done on direct command lists.");
+			return false;
+		}
+	}
 
 	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
 		resource, 
-		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState), 
-		static_cast<D3D12_RESOURCE_STATES>(l_newState));
+		l_currentState, 
+		l_targetState);
 
-	// TODO: Fix ICommandList abstraction - it should not wrap both compute and direct lists
-	// Resource state transitions should ALWAYS use direct command lists for proper synchronization
-	// The client should handle compute/graphics command list ordering with GPU synchronization
-	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
+	l_commandList->ResourceBarrier(1, &l_transition);
 
-	rhs->m_CurrentState = static_cast<uint32_t>(l_newState);
+	// @TODO: State should only be updated after command list execution, not during recording
+	texture->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
 
-bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* rhs, ICommandList* commandList, Accessibility accessibility)
+bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility accessibility)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
-	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(rhs->m_DeviceMemories[frameIndex]);
+	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(gpuBuffer->m_DeviceMemories[frameIndex]);
 	if (!l_deviceMemory || !l_deviceMemory->m_DefaultHeapBuffer)
 		return false;
 
-	auto l_newState = accessibility.CanWrite() ? rhs->m_WriteState : rhs->m_ReadState;
+	auto l_newState = accessibility.CanWrite() ? gpuBuffer->m_WriteState : gpuBuffer->m_ReadState;
 	
-	if (rhs->m_CurrentState == l_newState)
+	if (gpuBuffer->m_CurrentState == l_newState)
 		return false;
 
 	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
 		l_deviceMemory->m_DefaultHeapBuffer.Get(),
-		static_cast<D3D12_RESOURCE_STATES>(rhs->m_CurrentState),
+		static_cast<D3D12_RESOURCE_STATES>(gpuBuffer->m_CurrentState),
 		static_cast<D3D12_RESOURCE_STATES>(l_newState));
 
-	// TODO: Fix ICommandList abstraction - it should not wrap both compute and direct lists
-	// Resource state transitions should ALWAYS use direct command lists for proper synchronization
-	l_commandList->m_DirectCommandList->ResourceBarrier(1, &l_transition);
+	// Resource state transitions use the command list that was passed in
+	// The caller is responsible for ensuring proper synchronization between different queue types
+	l_commandList->ResourceBarrier(1, &l_transition);
 
-	rhs->m_CurrentState = static_cast<uint32_t>(l_newState);
+	// @TODO: State should only be updated after command list execution, not during recording
+	gpuBuffer->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
 
 
-bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* rhs, GPUBufferComponent* indirectDrawCommand)
+bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
 {
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
+	if (!renderPass || !commandList || !indirectDrawCommand)
+	{
+		Log(Error, "Null parameters in ExecuteIndirect");
+		return false;
+	}
+
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(indirectDrawCommand->m_DeviceMemories[GetCurrentFrame()]);
 
-	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
 	// Get actual model count from RenderingContextService instead of buffer capacity
 	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
@@ -458,30 +528,38 @@ bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* rhs, GPUBufferCom
 	if (maxDrawCommandCount == 0)
 		return false;
 
-	TryToTransitState(indirectDrawCommand, l_commandList, Accessibility::ReadOnly);
+	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadOnly);
 
-	l_commandList->m_DirectCommandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), maxDrawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
+	l_commandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), maxDrawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
 
-	TryToTransitState(indirectDrawCommand, l_commandList, Accessibility::ReadWrite);
+	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadWrite);
 
 	return true;
 }
 
-void DX12RenderingServer::PushRootConstants(RenderPassComponent* rhs, size_t rootConstants)
+void DX12RenderingServer::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
 {
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	if (!renderPass || !commandList)
+		return;
 
-	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
-		l_commandList->m_DirectCommandList->SetGraphicsRoot32BitConstants(0, 1, &rootConstants, 0);
-	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-		l_commandList->m_ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &rootConstants, 0);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+
+	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+		l_commandList->SetGraphicsRoot32BitConstants(0, 1, &rootConstants, 0);
+	else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+		l_commandList->SetComputeRoot32BitConstants(0, 1, &rootConstants, 0);
 }
 
-bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, MeshComponent* mesh, size_t instanceCount)
+bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount)
 {
+	if (!renderPass || !commandList || !mesh)
+	{
+		Log(Error, "Null parameters in DrawIndexedInstanced");
+		return false;
+	}
+
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
 
 	D3D12_VERTEX_BUFFER_VIEW vbv = {};
@@ -494,46 +572,82 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 	ibv.Format = DXGI_FORMAT_R32_UINT; // Index format
 	ibv.SizeInBytes = mesh->m_IndexBufferView.m_SizeInBytes;
 
-	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
-	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, &vbv);
-	l_commandList->m_DirectCommandList->IASetIndexBuffer(&ibv);
-	l_commandList->m_DirectCommandList->DrawIndexedInstanced(mesh->GetIndexCount(), (uint32_t)instanceCount, 0, 0, 0);
+	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+	l_commandList->IASetVertexBuffers(0, 1, &vbv);
+	l_commandList->IASetIndexBuffer(&ibv);
+	l_commandList->DrawIndexedInstanced(mesh->GetIndexCount(), (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }
 
-bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, size_t instanceCount)
+bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
-
-	l_commandList->m_DirectCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
-	l_commandList->m_DirectCommandList->IASetVertexBuffers(0, 1, nullptr);
-	l_commandList->m_DirectCommandList->IASetIndexBuffer(nullptr);
-	l_commandList->m_DirectCommandList->DrawInstanced(1, (uint32_t)instanceCount, 0, 0);
-
-	return true;
-}
-
-bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
-{
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-
-	if (!l_commandList->m_ComputeCommandList)
+	if (!renderPass || !commandList)
 	{
-		Log(Error, "ComputeCommandList is null in Dispatch for render pass ", renderPass->m_InstanceName);
+		Log(Error, "Null parameters in DrawInstanced");
 		return false;
 	}
 
-	l_commandList->m_ComputeCommandList->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
+	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
 
+	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+	l_commandList->IASetVertexBuffers(0, 1, nullptr);
+	l_commandList->IASetIndexBuffer(nullptr);
+	l_commandList->DrawInstanced(1, (uint32_t)instanceCount, 0, 0);
+
+	return true;
+}
+
+bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+{
+	if (!renderPass || !commandList)
+	{
+		Log(Error, "Null parameters in Dispatch");
+		return false;
+	}
+
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+
+	if (!reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList))
+	{
+		Log(Error, "CommandList is null in Dispatch for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
+
+	l_commandList->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
+
+	return true;
+}
+
+bool DX12RenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
+{
+	if (!renderPass || !commandList)
+	{
+		Log(Error, "Null render pass or command list in CommandListEnd");
+		return false;
+	}
+
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+
+	if (!Close(commandList, renderPass->m_RenderPassDesc.m_GPUEngineType))
+	{
+		Log(Error, "Failed to close command list for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
+	
 	return true;
 }
 
 bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType)
 {
+	if (!m_GlobalSemaphore)
+	{
+		Log(Error, "Global semaphore is null in SignalOnGPU");
+		return false;
+	}
+	
 	auto l_currentFrame = GetCurrentFrame();
 	auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(semaphore);
@@ -541,6 +655,12 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 
 	if (queueType == GPUEngineType::Graphics)
 	{
+		if (!m_directCommandQueue || !m_directCommandQueueFence)
+		{
+			Log(Error, "DirectCommandQueue or DirectCommandQueueFence is null in SignalOnGPU");
+			return false;
+		}
+		
 		uint64_t l_directCommandFinishedSemaphore = l_globalSemaphore->m_DirectCommandQueueSemaphore.fetch_add(1) + 1;
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
@@ -550,6 +670,12 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 	}
 	else if (queueType == GPUEngineType::Compute)
 	{
+		if (!m_computeCommandQueue || !m_computeCommandQueueFence)
+		{
+			Log(Error, "ComputeCommandQueue or ComputeCommandQueueFence is null in SignalOnGPU");
+			return false;
+		}
+		
 		UINT64 l_computeCommandFinishedSemaphore = l_globalSemaphore->m_ComputeCommandQueueSemaphore.fetch_add(1) + 1;
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
@@ -559,6 +685,12 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 	}
 	else if (queueType == GPUEngineType::Copy)
 	{
+		if (!m_copyCommandQueue || !m_copyCommandQueueFence)
+		{
+			Log(Error, "CopyCommandQueue or CopyCommandQueueFence is null in SignalOnGPU");
+			return false;
+		}
+		
 		UINT64 l_copyCommandFinishedSemaphore = l_globalSemaphore->m_CopyCommandQueueSemaphore.fetch_add(1) + 1;
 
 		if (l_semaphore && !l_isOnGlobalSemaphore)
@@ -614,24 +746,23 @@ bool DX12RenderingServer::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueTy
 	return true;
 }
 
-bool DX12RenderingServer::Execute(ICommandList* commandList, GPUEngineType queueType)
+bool DX12RenderingServer::Execute(CommandListComponent* commandList, GPUEngineType queueType)
 {
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
+	ID3D12CommandList* l_commandListToExecute[] = { l_commandList };
+	
 	if (queueType == GPUEngineType::Graphics)
 	{
-		ID3D12CommandList* l_directCommandLists[] = { l_commandList->m_DirectCommandList.Get() };
-		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
+		m_directCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
 	}
 	else if (queueType == GPUEngineType::Compute)
 	{
-		ID3D12CommandList* l_computeCommandLists[] = { l_commandList->m_ComputeCommandList.Get() };
-		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
+		m_computeCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
 	}
 	else if (queueType == GPUEngineType::Copy)
 	{
-		ID3D12CommandList* l_copyCommandLists[] = { l_commandList->m_CopyCommandList.Get() };
-		m_copyCommandQueue->ExecuteCommandLists(1, l_copyCommandLists);
+		m_copyCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
 	}
 
 	return true;
@@ -774,12 +905,17 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 	return true;
 }
 
-bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ)
+bool DX12RenderingServer::DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ)
 {
+	if (!renderPass || !commandList)
+	{
+		Log(Error, "Null parameters in DispatchRays");
+		return false;
+	}
+
 	auto l_currentFrame = GetCurrentFrame();
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_currentFrame]);
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 	
 	auto l_shaderIDBufferVirtualAddress = l_PSO->m_RaytracingShaderIDBuffer->GetGPUVirtualAddress();
 
@@ -800,7 +936,7 @@ bool DX12RenderingServer::DispatchRays(RenderPassComponent* rhs, uint32_t dimens
 	dispatchDesc.Height = dimensionY;
 	dispatchDesc.Depth = dimensionZ;
 
-	l_commandList->m_ComputeCommandList->DispatchRays(&dispatchDesc);
+	l_commandList->DispatchRays(&dispatchDesc);
 
 	return true;
 }

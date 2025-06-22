@@ -2,6 +2,7 @@
 #include "../Common/GraphicsPrimitive.h"
 #include "../Component/TextureComponent.h"
 #include "../Component/ShaderProgramComponent.h"
+#include "../Component/CommandListComponent.h"
 
 namespace Inno
 {
@@ -19,12 +20,10 @@ namespace Inno
 		size_t m_CurrentFrame = 0;
 
 		std::function<void()> m_OnResize;
-		std::function<void(ICommandList*)> m_CustomCommandsFunc;
+		std::function<void(CommandListComponent*)> m_CustomCommandsFunc;
 
 		IOutputMergerTarget* m_OutputMergerTarget = 0;
 		IPipelineStateObject* m_PipelineStateObject = 0;
-		std::vector<IShaderBindingTable*> m_ShaderBindingTables;
-		std::vector<ICommandList*> m_CommandLists;
 		std::vector<ISemaphore*> m_Semaphores;
 	};
 }

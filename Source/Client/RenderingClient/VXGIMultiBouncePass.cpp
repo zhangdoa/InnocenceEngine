@@ -124,9 +124,9 @@ bool VXGIMultiBouncePass::PrepareCommandList(IRenderingContext* renderingContext
 	auto l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(l_renderingContext);
 	auto l_numThreadGroup = l_VXGIRenderingConfig->m_voxelizationResolution / 8;
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
 
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);

@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class TiledFrustumGenerationPass : IRenderPass
+	class TiledFrustumGenerationPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(TiledFrustumGenerationPass)

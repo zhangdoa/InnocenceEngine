@@ -189,7 +189,7 @@ namespace Inno
 
             l_renderingServer->CommandListEnd(m_RenderPassComp_Probe);
 
-            l_renderingServer->ExecuteCommandList(m_RenderPassComp_Probe, GPUEngineType::Graphics);
+            l_renderingServer->Execute(m_RenderPassComp_Probe, GPUEngineType::Graphics);
             l_renderingServer->WaitOnGPU(m_RenderPassComp_Probe, GPUEngineType::Graphics, GPUEngineType::Graphics);
             l_renderingServer->WaitOnCPU(GPUEngineType::Graphics);
 

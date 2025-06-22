@@ -327,19 +327,6 @@ namespace Inno
 		};
 	}
 
-	// TODO: CRITICAL - ICommandList abstraction is problematic
-	// It wraps both direct/graphics and compute command lists, causing confusion about
-	// which command list type should be used for resource state transitions.
-	// 
-	// RECOMMENDED FIXES:
-	// 1. Remove ICommandList entirely and use specific command list types
-	// 2. OR: Make ICommandList not wrap both compute and direct lists
-	// 3. Resource state transitions should ALWAYS use direct/graphics command lists
-	// 4. Client should handle compute/graphics synchronization explicitly
-	//
-	// Current workaround: TryToTransitState always uses m_DirectCommandList
-	struct ICommandList {};
-
 	struct ISemaphore {};
 
 	struct IOutputMergerTarget
@@ -347,8 +334,6 @@ namespace Inno
 		std::vector<TextureComponent*> m_ColorOutputs;
 		TextureComponent* m_DepthStencilOutput = nullptr;
 	};
-
-	struct IShaderBindingTable {};
 
 	struct AccelerationStructureDesc
 	{

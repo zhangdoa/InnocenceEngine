@@ -198,7 +198,7 @@ bool AnimationService::InitializeAnimationComponent(AnimationComponent* rhs)
 	return true;
 }
 
-bool AnimationService::PlayAnimation(ModelComponent* rhs, const char* animationName, bool isLooping)
+bool AnimationService::PlayAnimation(ModelComponent* model, const char* animationName, bool isLooping)
 {
 	auto l_animationData = m_Impl->getAnimationData(animationName);
 
@@ -211,7 +211,7 @@ bool AnimationService::PlayAnimation(ModelComponent* rhs, const char* animationN
 		l_instance.isLooping = isLooping;
 		l_instance.isFinished = false;
 
-		m_Impl->m_animationInstanceMap.emplace(rhs->m_UUID, l_instance);
+		m_Impl->m_animationInstanceMap.emplace(model->m_UUID, l_instance);
 
 		return true;
 	}
@@ -219,9 +219,9 @@ bool AnimationService::PlayAnimation(ModelComponent* rhs, const char* animationN
 	return false;
 }
 
-bool AnimationService::StopAnimation(ModelComponent* rhs, const char* animationName)
+bool AnimationService::StopAnimation(ModelComponent* model, const char* animationName)
 {
-	auto l_result = m_Impl->m_animationInstanceMap.find(rhs->m_UUID);
+	auto l_result = m_Impl->m_animationInstanceMap.find(model->m_UUID);
 	if (l_result != m_Impl->m_animationInstanceMap.end())
 	{
 		m_Impl->m_animationInstanceMap.erase(l_result->first);

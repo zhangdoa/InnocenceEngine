@@ -44,6 +44,12 @@ bool PostTAAPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("PostTAAPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("PostTAAPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -55,6 +61,8 @@ bool PostTAAPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -65,7 +73,9 @@ bool PostTAAPass::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Delete(m_Result);	
+	l_renderingServer->Delete(m_Result);
+	l_renderingServer->Delete(m_CommandListComp_Compute);
+	l_renderingServer->Delete(m_CommandListComp_Graphics);	
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
 
@@ -92,19 +102,25 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// Use graphics command list to transition resources
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 1);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_Result, 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
+
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

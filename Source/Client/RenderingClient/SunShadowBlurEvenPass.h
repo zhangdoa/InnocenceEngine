@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class SunShadowBlurEvenPass : IRenderPass
+	class SunShadowBlurEvenPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(SunShadowBlurEvenPass)

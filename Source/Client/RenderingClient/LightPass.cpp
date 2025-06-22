@@ -97,13 +97,15 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 4;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage = ShaderStage::Compute;
 
 	// t5 - BRDF LUT MS
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 5;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage = ShaderStage::Compute;
 
 	// t6 - SSAO
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType = GPUResourceType::Image;
@@ -181,6 +183,12 @@ bool LightPass::Setup(ISystemConfig *systemConfig)
 	m_SamplerComp_Point->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_Point->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("LightPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("LightPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
 	m_ObjectStatus = ObjectStatus::Created;
 	
 	return true;
@@ -192,6 +200,8 @@ bool LightPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
 	l_renderingServer->Initialize(m_SamplerComp_Linear);
 	l_renderingServer->Initialize(m_SamplerComp_Point);
 
@@ -250,42 +260,48 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
 	//auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(SSAOPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(SunShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheIntegrationPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()), m_RenderPassComp->m_CommandLists[m_RenderPassComp->m_CurrentFrame], Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_RenderPassComp->m_CommandLists[m_RenderPassComp->m_CurrentFrame], Accessibility::ReadOnly);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_SphereLightGPUBufferComp, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_CSMGPUBufferComp, 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_SphereLightGPUBufferComp, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_CSMGPUBufferComp, 3);
 	//l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
 	//l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 5);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 6);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 7);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 8);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 9);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 10);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, BRDFLUTMSPass::Get().GetResult(), 11);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SSAOPass::Get().GetResult(), 12);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 13);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 14);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 15);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 6);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 7);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 8);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 9);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, BRDFLUTPass::Get().GetResult(), 10);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, BRDFLUTMSPass::Get().GetResult(), 11);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, SSAOPass::Get().GetResult(), 12);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetResult(), 13);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 14);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 15);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, RadianceCacheIntegrationPass::Get().GetResult(), 16);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 16);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 17);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_LuminanceResult, 18);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_IlluminanceResult, 19);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_Linear, 20);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp_Point, 21);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheIntegrationPass::Get().GetResult(), 16);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 16);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 17);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_LuminanceResult, 18);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IlluminanceResult, 19);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Linear, 20);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Point, 21);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

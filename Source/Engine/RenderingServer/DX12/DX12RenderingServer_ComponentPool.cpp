@@ -13,7 +13,6 @@ bool DX12RenderingServer::InitializePool()
 	IRenderingServer::InitializePool();
 
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
-	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
 	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
 	m_OutputMergerTargetPool = TObjectPool<DX12OutputMergerTarget>::Create(128);
 
@@ -34,7 +33,6 @@ bool DX12RenderingServer::TerminatePool()
 	m_TextureBuffers_Default.clear();
 
 	delete m_PSOPool;
-	delete m_CommandListPool;
 	delete m_SemaphorePool;
 	delete m_OutputMergerTargetPool;
 
@@ -44,11 +42,6 @@ bool DX12RenderingServer::TerminatePool()
 IPipelineStateObject* DX12RenderingServer::AddPipelineStateObject()
 {
 	return m_PSOPool->Spawn();
-}
-
-ICommandList* DX12RenderingServer::AddCommandList()
-{
-	return m_CommandListPool->Spawn();
 }
 
 ISemaphore* DX12RenderingServer::AddSemaphore()
@@ -62,9 +55,9 @@ bool DX12RenderingServer::Add(IOutputMergerTarget*& rhs)
 	return rhs != nullptr;
 }
 
-bool DX12RenderingServer::Delete(MeshComponent* rhs)
+bool DX12RenderingServer::Delete(MeshComponent* mesh)
 {
-	auto componentUUID = rhs->m_UUID;
+	auto componentUUID = mesh->m_UUID;
 
 	auto vertexUploadIt = m_MeshVertexBuffers_Upload.find(componentUUID);
 	if (vertexUploadIt != m_MeshVertexBuffers_Upload.end()) {
@@ -105,14 +98,14 @@ bool DX12RenderingServer::Delete(MeshComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(TextureComponent* rhs)
+bool DX12RenderingServer::Delete(TextureComponent* texture)
 {
-	if (!rhs)
+	if (!texture)
 	{
 		return false;
 	}
 
-	auto componentUUID = rhs->m_UUID;
+	auto componentUUID = texture->m_UUID;
 
 	// Clean up texture upload/default buffer if it exists
 	auto uploadIt = m_TextureBuffers_Upload.find(componentUUID);
@@ -129,16 +122,16 @@ bool DX12RenderingServer::Delete(TextureComponent* rhs)
 
 	// Clear GPU resources safely
 	try {
-		rhs->m_GPUResources.clear();
-		rhs->m_ReadHandles.clear();
-		rhs->m_WriteHandles.clear();
+		texture->m_GPUResources.clear();
+		texture->m_ReadHandles.clear();
+		texture->m_WriteHandles.clear();
 	}
 	catch (...) {
 		// Handle potential access violations during cleanup
 	}
 
 	// Remove from initialized textures with safety check
-	auto textureIt = m_initializedTextures.find(rhs);
+	auto textureIt = m_initializedTextures.find(texture);
 	if (textureIt != m_initializedTextures.end()) {
 		m_initializedTextures.erase(textureIt);
 	}
@@ -146,64 +139,54 @@ bool DX12RenderingServer::Delete(TextureComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(MaterialComponent* rhs)
+bool DX12RenderingServer::Delete(MaterialComponent* material)
 {
-	m_initializedMaterials.erase(rhs);
+	m_initializedMaterials.erase(material);
 
 	return true;
 }
 
-bool DX12RenderingServer::Delete(RenderPassComponent* rhs)
+bool DX12RenderingServer::Delete(RenderPassComponent* renderPass)
 {
-	auto l_rhs = reinterpret_cast<RenderPassComponent*>(rhs);
-	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
-	{
-		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[i]);
-		if (!l_commandList)
-			continue;
+	// Command lists are now created dynamically and managed separately - no cleanup needed
 
-		Delete(l_commandList);
-	}
+	DeleteRenderTargets(renderPass);
 
-	l_rhs->m_CommandLists.clear();
+	Delete(renderPass->m_ShaderProgram);
 
-	DeleteRenderTargets(rhs);
-
-	Delete(rhs->m_ShaderProgram);
-
-	//m_RenderPassComponentPool->Destroy(rhs);
+	//m_RenderPassComponentPool->Destroy(renderPass);
 
 	return true;
 }
 
-bool DX12RenderingServer::Delete(ShaderProgramComponent* rhs)
+bool DX12RenderingServer::Delete(ShaderProgramComponent* shaderProgram)
 {
-	//auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
+	//auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(shaderProgram);
 	//m_ShaderProgramComponentPool->Destroy(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::Delete(SamplerComponent* rhs)
+bool DX12RenderingServer::Delete(SamplerComponent* sampler)
 {
-	//auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(rhs);
+	//auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(sampler);
 	//m_SamplerComponentPool->Destroy(l_rhs);
 
 	return true;
 }
 
-bool DX12RenderingServer::Delete(GPUBufferComponent* rhs)
+bool DX12RenderingServer::Delete(GPUBufferComponent* gpuBuffer)
 {
-	for (auto i : rhs->m_DeviceMemories)
+	for (auto i : gpuBuffer->m_DeviceMemories)
 	{
 		auto l_DX12DeviceMemory = reinterpret_cast<DX12DeviceMemory*>(i);
 		if (l_DX12DeviceMemory->m_DefaultHeapBuffer)
 			l_DX12DeviceMemory->m_DefaultHeapBuffer.Reset();
 	}
 
-	rhs->m_DeviceMemories.clear();
+	gpuBuffer->m_DeviceMemories.clear();
 
-	for (auto i : rhs->m_MappedMemories)
+	for (auto i : gpuBuffer->m_MappedMemories)
 	{
 		auto l_DX12MappedMemory = reinterpret_cast<DX12MappedMemory*>(i);
 		if (l_DX12MappedMemory->m_UploadHeapBuffer)
@@ -224,14 +207,13 @@ bool DX12RenderingServer::Delete(IPipelineStateObject* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(ICommandList* rhs)
+bool DX12RenderingServer::Delete(CommandListComponent* commandList)
 {
-	auto l_rhs = reinterpret_cast<DX12CommandList*>(rhs);
-	l_rhs->m_DirectCommandList.Reset();
-	l_rhs->m_ComputeCommandList.Reset();
-	l_rhs->m_CopyCommandList.Reset();
-
-	m_CommandListPool->Destroy(l_rhs);
+	auto l_dx12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	if (l_dx12CommandList)
+	{
+		l_dx12CommandList->Release();
+	}
 
 	return true;
 }

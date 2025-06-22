@@ -180,12 +180,8 @@ bool VKRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 	l_result &= CreateCommandPool(m_windowSurface, GPUEngineType::Graphics, l_rhs->m_GraphicsCommandPool);
 	l_result &= CreateCommandPool(m_windowSurface, GPUEngineType::Compute, l_rhs->m_ComputeCommandPool);
 
-	l_rhs->m_CommandLists.resize(GetSwapChainImageCount());
-
-	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
-	{
-		l_rhs->m_CommandLists[i] = AddCommandList();
-	}
+	// Command lists are now created dynamically in CommandListBegin()
+	// No pre-allocation needed in the new architecture
 
 	l_result &= CreateCommandBuffers(l_rhs);
 
@@ -346,9 +342,9 @@ bool VKRenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 }
 
 // @TODO: The command list should be passed as a parameter.
-bool VKRenderingServer::UploadToGPU(ICommandList* commandList, GPUBufferComponent* rhs)
+bool VKRenderingServer::UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferComponent*>(gpuBuffer);
 	if (!l_rhs->m_DeviceLocalMemory)
 		return true;
 	
@@ -944,48 +940,24 @@ bool VKRenderingServer::CreateComputePipelines(VKRenderPassComponent *VKRenderPa
 
 bool VKRenderingServer::CreateCommandBuffers(VKRenderPassComponent *VKRenderPassComp)
 {
-	VKRenderPassComp->m_CommandLists.resize(GetSwapChainImageCount());
-
-	for (size_t i = 0; i < VKRenderPassComp->m_CommandLists.size(); i++)
+	// In the new architecture, command buffers are allocated dynamically when CommandListBegin is called
+	// This function now only needs to ensure the command pools are ready
+	// The actual command buffer allocation happens in AddCommandList() and CommandListBegin()
+	
+	// Command pools should already be created in CreateCommandPools()
+	if (VKRenderPassComp->m_GraphicsCommandPool == VK_NULL_HANDLE)
 	{
-		auto l_VKCommandList = reinterpret_cast<VKCommandList *>(VKRenderPassComp->m_CommandLists[i]);
-		
-		VkCommandBufferAllocateInfo l_graphicsAllocInfo = {};
-		l_graphicsAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		l_graphicsAllocInfo.commandPool = VKRenderPassComp->m_GraphicsCommandPool;
-		l_graphicsAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		l_graphicsAllocInfo.commandBufferCount = 1;
-		
-		if (vkAllocateCommandBuffers(m_device, &l_graphicsAllocInfo, &l_VKCommandList->m_GraphicsCommandBuffer) != VK_SUCCESS)
-		{
-			Log(Error, "Failed to allocate Graphics VkCommandBuffer!");
-			return false;
-		}
-
-#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	auto l_graphicsName = "GraphicsCommandBuffer_" + std::to_string(i);
-	SetObjectName(VKRenderPassComp, l_VKCommandList->m_GraphicsCommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_graphicsName.c_str());
-#endif //  INNO_DEBUG
-
-		VkCommandBufferAllocateInfo l_computeAllocInfo = {};
-		l_computeAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		l_computeAllocInfo.commandPool = VKRenderPassComp->m_ComputeCommandPool;
-		l_computeAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		l_computeAllocInfo.commandBufferCount = 1;
-
-		if (vkAllocateCommandBuffers(m_device, &l_computeAllocInfo, &l_VKCommandList->m_ComputeCommandBuffer) != VK_SUCCESS)
-		{
-			Log(Error, "Failed to allocate Compute VkCommandBuffer!");
-			return false;
-		}
-
-#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	auto l_computeName = "ComputeCommandBuffer_" + std::to_string(i);
-	SetObjectName(VKRenderPassComp, l_VKCommandList->m_ComputeCommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_computeName.c_str());
-#endif //  INNO_DEBUG
+		Log(Error, "Graphics command pool not created for render pass ", VKRenderPassComp->m_InstanceName.c_str());
+		return false;
 	}
-
-	Log(Verbose, "VkCommandBuffer has been created for ", VKRenderPassComp->m_InstanceName.c_str());
+	
+	if (VKRenderPassComp->m_ComputeCommandPool == VK_NULL_HANDLE) 
+	{
+		Log(Error, "Compute command pool not created for render pass ", VKRenderPassComp->m_InstanceName.c_str());
+		return false;
+	}
+	
+	Log(Verbose, "Command pools are ready for dynamic command buffer allocation for ", VKRenderPassComp->m_InstanceName.c_str());
 	return true;
 }
 

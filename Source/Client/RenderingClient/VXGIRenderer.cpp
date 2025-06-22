@@ -83,17 +83,32 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 		l_VXGILightPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
 		VXGILightPass::Get().PrepareCommandList(&l_VXGILightPassRenderingContext);
 
-		l_renderingServer->ExecuteCommandList(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		if (VXGIGeometryProcessPass::Get().PrepareCommandList(nullptr)) {
+			auto l_commandList1 = VXGIGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			if (l_commandList1) { l_renderingServer->Execute(l_commandList1, GPUEngineType::Graphics); }
+		}
 		l_renderingServer->WaitOnGPU(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
-		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		if (VXGIConvertPass::Get().PrepareCommandList(&l_VXGIConvertPassRenderingContext)) {
+			auto l_commandList2 = VXGIConvertPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			if (l_commandList2) { l_renderingServer->Execute(l_commandList2, GPUEngineType::Graphics); }
+		}
 		l_renderingServer->WaitOnGPU(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		{
+			auto l_commandList2 = VXGIConvertPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			if (l_commandList2) { l_renderingServer->Execute(l_commandList2, GPUEngineType::Compute); }
+		}
 		l_renderingServer->WaitOnGPU(VXGIConvertPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-		l_renderingServer->ExecuteCommandList(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		if (VXGILightPass::Get().PrepareCommandList(&l_VXGILightPassRenderingContext)) {
+			auto l_commandList3 = VXGILightPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			if (l_commandList3) { l_renderingServer->Execute(l_commandList3, GPUEngineType::Graphics); }
+		}
 		l_renderingServer->WaitOnGPU(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		{
+			auto l_commandList3 = VXGILightPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			if (l_commandList3) { l_renderingServer->Execute(l_commandList3, GPUEngineType::Compute); }
+		}
 		l_renderingServer->WaitOnGPU(VXGILightPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 
 		l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()));
@@ -123,20 +138,29 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 			m_isInitialLoadScene = false;
 
 			f_renderGeometryPasses();
-			l_renderingServer->Copy(reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()), reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
+
+			// @TODO: Fix it
+			l_renderingServer->Copy(nullptr, reinterpret_cast<TextureComponent*>(VXGILightPass::Get().GetIlluminanceVolume()), reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
 		}
 		else
 		{
 			l_renderingServer->WaitOnGPU(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_renderingServer->Clear(reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
+			
+			// @TODO: Fix it
+			l_renderingServer->Clear(nullptr, reinterpret_cast<TextureComponent*>(VXGIScreenSpaceFeedbackPass::Get().GetResult()));
 			
 			VXGIScreenSpaceFeedbackPassRenderingContext l_VXGIScreenSpaceFeedbackPassRenderingContext;
 			l_VXGIScreenSpaceFeedbackPassRenderingContext.m_output = VXGIScreenSpaceFeedbackPass::Get().GetResult();
-			VXGIScreenSpaceFeedbackPass::Get().PrepareCommandList(&l_VXGIScreenSpaceFeedbackPassRenderingContext);
-
-			l_renderingServer->ExecuteCommandList(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+			
+			if (VXGIScreenSpaceFeedbackPass::Get().PrepareCommandList(&l_VXGIScreenSpaceFeedbackPassRenderingContext)) {
+				auto l_commandList4 = VXGIScreenSpaceFeedbackPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+				if (l_commandList4) { l_renderingServer->Execute(l_commandList4, GPUEngineType::Graphics); }
+			}
 			l_renderingServer->WaitOnGPU(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-			l_renderingServer->ExecuteCommandList(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Compute);		
+			{
+				auto l_commandList4 = VXGIScreenSpaceFeedbackPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				if (l_commandList4) { l_renderingServer->Execute(l_commandList4, GPUEngineType::Compute); }
+			}		
 			l_renderingServer->WaitOnGPU(VXGIScreenSpaceFeedbackPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 		}
 
@@ -144,11 +168,15 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 		l_VXGIRayTracingPassRenderingContext.m_input = VXGIScreenSpaceFeedbackPass::Get().GetResult();
 		l_VXGIRayTracingPassRenderingContext.m_output = VXGIRayTracingPass::Get().GetResult();
 
-		VXGIRayTracingPass::Get().PrepareCommandList(&l_VXGIRayTracingPassRenderingContext);
-
-		l_renderingServer->ExecuteCommandList(VXGIRayTracingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		if (VXGIRayTracingPass::Get().PrepareCommandList(&l_VXGIRayTracingPassRenderingContext)) {
+			auto l_commandList5 = VXGIRayTracingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			if (l_commandList5) { l_renderingServer->Execute(l_commandList5, GPUEngineType::Graphics); }
+		}
 		l_renderingServer->WaitOnGPU(VXGIRayTracingPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(VXGIRayTracingPass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+		{
+			auto l_commandList5 = VXGIRayTracingPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			if (l_commandList5) { l_renderingServer->Execute(l_commandList5, GPUEngineType::Compute); }
+		}
 		l_renderingServer->WaitOnGPU(VXGIRayTracingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 		m_result = VXGIRayTracingPass::Get().GetResult();
@@ -179,7 +207,9 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 
 		////	
 		l_renderingServer->WaitOnGPU(VXGIGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-		l_renderingServer->Clear(reinterpret_cast<GPUBufferComponent*>(VXGIGeometryProcessPass::Get().GetResult()));
+		
+		// @TODO: Fix it
+		l_renderingServer->Clear(nullptr, reinterpret_cast<GPUBufferComponent*>(VXGIGeometryProcessPass::Get().GetResult()));
 
 		f_renderGeometryPasses();
 
@@ -192,10 +222,15 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 
 			for (uint32_t i = 0; i < l_VXGIRenderingConfig->m_multiBounceCount; i++)
 			{
-				VXGIMultiBouncePass::Get().PrepareCommandList(&l_VXGIMultiBouncePassRenderingContext);
-				l_renderingServer->ExecuteCommandList(VXGIMultiBouncePass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+				if (VXGIMultiBouncePass::Get().PrepareCommandList(&l_VXGIMultiBouncePassRenderingContext)) {
+					auto l_commandList6 = VXGIMultiBouncePass::Get().GetCommandListComp(GPUEngineType::Graphics);
+					if (l_commandList6) { l_renderingServer->Execute(l_commandList6, GPUEngineType::Graphics); }
+				}
 				l_renderingServer->WaitOnGPU(VXGIMultiBouncePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Graphics);
-				l_renderingServer->ExecuteCommandList(VXGIMultiBouncePass::Get().GetRenderPassComp(), GPUEngineType::Compute);
+				{
+					auto l_commandList6 = VXGIMultiBouncePass::Get().GetCommandListComp(GPUEngineType::Compute);
+					if (l_commandList6) { l_renderingServer->Execute(l_commandList6, GPUEngineType::Compute); }
+				}
 				l_renderingServer->WaitOnGPU(VXGIMultiBouncePass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 
 				l_renderingServer->GenerateMipmap(reinterpret_cast<TextureComponent*>(l_VXGIMultiBouncePassRenderingContext.m_output));
@@ -217,8 +252,10 @@ bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 		l_VXGIVisualizationPassRenderingContext.m_input = m_result;
 		l_VXGIVisualizationPassRenderingContext.m_resolution = l_VXGIRenderingConfig->m_voxelizationResolution;
 
-		VXGIVisualizationPass::Get().PrepareCommandList(&l_VXGIVisualizationPassRenderingContext);
-		l_renderingServer->ExecuteCommandList(VXGIVisualizationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics);
+		if (VXGIVisualizationPass::Get().PrepareCommandList(&l_VXGIVisualizationPassRenderingContext)) {
+			auto l_commandList7 = VXGIVisualizationPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			if (l_commandList7) { l_renderingServer->Execute(l_commandList7, GPUEngineType::Graphics); }
+		}
 	}
 
 	return true;

@@ -19,33 +19,6 @@ using namespace VKHelper;
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 
-bool VKRenderingServer::Clear(TextureComponent *rhs)
-{
-	return true;
-}
-
-bool VKRenderingServer::Copy(TextureComponent *lhs, TextureComponent *rhs)
-{
-	return true;
-}
-
-bool VKRenderingServer::Clear(GPUBufferComponent *rhs)
-{
-	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
-
-	auto l_commandBuffer = OpenTemporaryCommandBuffer(m_globalCommandPool);
-
-	vkCmdFillBuffer(l_commandBuffer, l_rhs->m_HostStagingBuffer, 0, 0, 0);
-	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
-	{
-		vkCmdFillBuffer(l_commandBuffer, l_rhs->m_DeviceLocalBuffer, 0, 0, 0);
-	}
-
-	CloseTemporaryCommandBuffer(m_globalCommandPool, m_graphicsQueue, l_commandBuffer);
-
-	return true;
-}
-
 bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
 {
 	if (queueType == GPUEngineType::Graphics)
@@ -60,28 +33,55 @@ bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueTy
 	return true;
 }
 
-std::optional<uint32_t> VKRenderingServer::GetIndex(TextureComponent* rhs, Accessibility bindingAccessibility)
+std::optional<uint32_t> VKRenderingServer::GetIndex(TextureComponent* texture, Accessibility bindingAccessibility)
 {
 	// Vulkan texture indexing not implemented yet
 	return std::nullopt;
 }
 
-bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameIndex)
+bool VKRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
+	
+	if (!commandList)
+		return false;
+
+	// Set the command list type based on render pass GPU engine type
+	commandList->m_Type = l_rhs->m_RenderPassDesc.m_GPUEngineType;
+	
+	// Use the appropriate command pool based on GPU engine type
+	VkCommandPool l_commandPool;
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+	{
+		l_commandPool = l_rhs->m_ComputeCommandPool;
+	}
+	else
+	{
+		l_commandPool = l_rhs->m_GraphicsCommandPool;
+	}
+
+	// Allocate command buffer from the appropriate pool
+	VkCommandBufferAllocateInfo l_allocInfo = {};
+	l_allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	l_allocInfo.commandPool = l_commandPool;
+	l_allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	l_allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer l_vkCommandBuffer;
+	if (vkAllocateCommandBuffers(m_device, &l_allocInfo, &l_vkCommandBuffer) != VK_SUCCESS)
+	{
+		Log(Error, "Failed to allocate command buffer!");
+		return false;
+	}
+
+	// Store the command buffer in the component
+	commandList->m_CommandList = reinterpret_cast<uint64_t>(l_vkCommandBuffer);
 
 	VkCommandBufferBeginInfo l_beginInfo = {};
 	l_beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	l_beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+	l_beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
-	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
-		l_commandBuffer = l_commandList->m_ComputeCommandBuffer;
-	}
-
-	if (vkBeginCommandBuffer(l_commandBuffer, &l_beginInfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(l_vkCommandBuffer, &l_beginInfo) != VK_SUCCESS)
 	{
 		Log(Error, "Failed to begin recording command buffer!");
 		return false;
@@ -90,13 +90,13 @@ bool VKRenderingServer::CommandListBegin(RenderPassComponent *rhs, size_t frameI
 	return true;
 }
 
-bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
+bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
-	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::WriteOnly);
+	ChangeRenderTargetStates(l_rhs, commandList, Accessibility::WriteOnly);
 
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
@@ -129,26 +129,26 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent *rhs)
 			l_renderPassBeginInfo.pClearValues = &l_clearValues[0];
 		}
 
-		vkCmdBeginRenderPass(l_commandList->m_GraphicsCommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(l_vkCommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(l_commandList->m_GraphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
+		vkCmdBindPipeline(l_vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
 	}
 	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 	{
-		vkCmdBindPipeline(l_commandList->m_ComputeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
+		vkCmdBindPipeline(l_vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
 
-	ChangeRenderTargetStates(l_rhs, l_commandList, Accessibility::ReadOnly);
+	ChangeRenderTargetStates(l_rhs, commandList, Accessibility::ReadOnly);
 
 	return true;
 }
 
-bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, size_t index)
+bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, CommandListComponent* commandList, size_t index)
 {
 	return true;
 }
 
-bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	if (resource == nullptr)
 	{
@@ -156,19 +156,15 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 		return false;
 	}
 
-	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent*>(renderPass);
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_bindingPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	if (l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 	{
 		l_bindingPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 	}
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_renderPass->m_PipelineStateObject);
-	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
-	if (l_renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
-		l_commandBuffer = l_commandList->m_ComputeCommandBuffer;
-	}
+	auto l_commandBuffer = l_vkCommandBuffer;
 
 	VkWriteDescriptorSet l_writeDescriptorSet = {};
 	VkDescriptorImageInfo l_descriptorImageInfo = {};
@@ -265,59 +261,60 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent *renderPass, ShaderS
 	return true;
 }
 
-void VKRenderingServer::PushRootConstants(RenderPassComponent* rhs, size_t rootConstants)
+void VKRenderingServer::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
 {
 }
 
-bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent *renderPass, MeshComponent *mesh, size_t instanceCount)
+bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent*>(renderPass);
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_mesh = reinterpret_cast<VKMeshComponent *>(mesh);
 
 	VkBuffer vertexBuffers[] = {l_mesh->m_VBO};
 	VkDeviceSize offsets[] = {0};
 
-	vkCmdBindVertexBuffers(l_commandList->m_GraphicsCommandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(l_commandList->m_GraphicsCommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
-	//vkCmdDrawIndexed(l_commandList->m_GraphicsCommandBuffer, static_cast<uint32_t>(l_mesh->m_IndexCount), 1, 0, 0, 0);
+	vkCmdBindVertexBuffers(l_vkCommandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(l_vkCommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
+	//vkCmdDrawIndexed(l_vkCommandBuffer, static_cast<uint32_t>(l_mesh->m_IndexCount), 1, 0, 0, 0);
 
 	return true;
 }
 
-bool VKRenderingServer::DrawInstanced(RenderPassComponent *renderPass, size_t instanceCount)
+bool VKRenderingServer::DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount)
 {
-	auto l_renderPass = reinterpret_cast<VKRenderPassComponent *>(renderPass);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_renderPass = reinterpret_cast<VKRenderPassComponent*>(renderPass);
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 
-	vkCmdDraw(l_commandList->m_GraphicsCommandBuffer, 1, static_cast<uint32_t>(instanceCount), 0, 0);
+	vkCmdDraw(l_vkCommandBuffer, 1, static_cast<uint32_t>(instanceCount), 0, 0);
 
 	return true;
 }
 
-bool VKRenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
+{
+	// Vulkan ExecuteIndirect not implemented yet
+	// TODO: Implement vkCmdDrawIndirect functionality
+	return true;
+}
+
+bool VKRenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::CommandListEnd(RenderPassComponent *rhs)
+bool VKRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
-		vkCmdEndRenderPass(l_commandList->m_GraphicsCommandBuffer);
+		vkCmdEndRenderPass(l_vkCommandBuffer);
 	}
 
-	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
-	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
-		l_commandBuffer = l_commandList->m_ComputeCommandBuffer;
-	}
-
-	if (vkEndCommandBuffer(l_commandBuffer) != VK_SUCCESS)
+	if (vkEndCommandBuffer(l_vkCommandBuffer) != VK_SUCCESS)
 	{
 		Log(Error, "Failed to end recording command buffer!");
 		return false;
@@ -326,60 +323,28 @@ bool VKRenderingServer::CommandListEnd(RenderPassComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngineType GPUEngineType)
+bool VKRenderingServer::Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType)
 {
-	if (rhs->m_RenderPassDesc.m_GPUEngineType != GPUEngineType)
-	{
-		return true;
-	}
+	if (!commandList)
+		return false;
+	
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 
-	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-
-	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
-	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-	timelineInfo.pNext = NULL;
-	timelineInfo.waitSemaphoreValueCount = 1;
-	timelineInfo.signalSemaphoreValueCount = 1;
-
+	// Simplified execution without semaphore management for now
+	// TODO: Implement proper semaphore management for dynamic command lists
 	VkSubmitInfo l_submitInfo = {};
 	l_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	l_submitInfo.pNext = &timelineInfo;
 	l_submitInfo.commandBufferCount = 1;
-	l_submitInfo.signalSemaphoreCount = 1;
-	l_submitInfo.waitSemaphoreCount = 1;
 
-	auto l_commandBuffer = l_commandList->m_GraphicsCommandBuffer;
 	VkQueue &queue = m_graphicsQueue;
 	VkFence &fence = m_graphicsQueueFence;
-	VkPipelineStageFlags waitDstStageMask[] = {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
-	l_submitInfo.pWaitDstStageMask = &waitDstStageMask[0];
+	
+	l_submitInfo.pCommandBuffers = &l_vkCommandBuffer;
 
-	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+	if (GPUEngineType == GPUEngineType::Compute)
 	{
-		l_semaphore->m_GraphicsWaitValue = l_semaphore->m_GraphicsSignalValue;
-		l_semaphore->m_GraphicsSignalValue = l_semaphore->m_GraphicsWaitValue + 1;
-		timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_GraphicsWaitValue;
-		timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_GraphicsSignalValue;
-		l_submitInfo.pSignalSemaphores = &l_semaphore->m_GraphicsSemaphore;
-		l_submitInfo.pWaitSemaphores = &l_semaphore->m_GraphicsSemaphore;
-		l_submitInfo.pCommandBuffers = &l_commandList->m_GraphicsCommandBuffer;
-	}
-	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
-	{
-		l_semaphore->m_ComputeWaitValue = l_semaphore->m_ComputeSignalValue;
-		l_semaphore->m_ComputeSignalValue = l_semaphore->m_ComputeWaitValue + 1;
-		timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_ComputeWaitValue;
-		timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_ComputeSignalValue;
-		l_submitInfo.pSignalSemaphores = &l_semaphore->m_ComputeSemaphore;
-		l_submitInfo.pWaitSemaphores = &l_semaphore->m_ComputeSemaphore;
-		l_submitInfo.pCommandBuffers = &l_commandList->m_ComputeCommandBuffer;
-
 		queue = m_computeQueue;
 		fence = m_computeQueueFence;
-
-		waitDstStageMask[0] = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	}
 
 	vkResetFences(m_device, 1, &fence);
@@ -388,6 +353,11 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassComponent *rhs, GPUEngineTy
 		Log(Error, "Failed to submit command buffer!");
 		return false;
 	}
+
+	// TODO: Command list lifecycle needs proper synchronization
+	// Cannot delete immediately as GPU execution is asynchronous
+	// Need to wait for fence completion before returning to pool
+	// Delete(commandList);
 
 	return true;
 }
@@ -400,7 +370,9 @@ bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueT
 	}
 
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	
+	// In the new architecture, command lists are not stored in render passes
+	// We need to use the semaphore-based synchronization instead
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
 
 	VkSemaphoreWaitInfo waitInfo = {};
@@ -422,14 +394,14 @@ bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueT
 	return true;
 }
 
-bool VKRenderingServer::TryToTransitState(TextureComponent *rhs, ICommandList *commandList, Accessibility accessibility)
+bool VKRenderingServer::TryToTransitState(TextureComponent *rhs, CommandListComponent *commandList, Accessibility accessibility)
 {
 	auto l_rhs = reinterpret_cast<VKTextureComponent *>(rhs);
 	auto l_newImageLayout = accessibility == Accessibility::ReadOnly ? l_rhs->m_ReadImageLayout : l_rhs->m_WriteImageLayout;
 	if (l_rhs->m_CurrentImageLayout == l_newImageLayout)
 		return false;
 
-	auto l_commandBuffer = reinterpret_cast<VKCommandList *>(commandList)->m_GraphicsCommandBuffer;
+	auto l_commandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_shaderStage = ShaderStage::Invalid; // @TODO: Nope this is not correct
 	TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, l_rhs->m_CurrentImageLayout, l_newImageLayout, l_shaderStage);
 	l_rhs->m_CurrentImageLayout = l_newImageLayout;
@@ -519,12 +491,11 @@ bool Inno::VKRenderingServer::EndFrame()
     return false;
 }
 
-bool VKRenderingServer::Dispatch(RenderPassComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool VKRenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(renderPass);
-	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 
-	vkCmdDispatch(l_commandList->m_ComputeCommandBuffer, threadGroupX, threadGroupY, threadGroupZ);
+	vkCmdDispatch(l_vkCommandBuffer, threadGroupX, threadGroupY, threadGroupZ);
 
 	return true;
 }
@@ -539,7 +510,7 @@ std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassComponent *c
 	return std::vector<Vec4>();
 }
 
-bool VKRenderingServer::GenerateMipmap(TextureComponent *rhs, ICommandList* commandList)
+bool VKRenderingServer::GenerateMipmap(TextureComponent *rhs, CommandListComponent* commandList)
 {
 	// Currently Vulkan GenerateMipmap is not implemented but accepts command list parameter
 	// for API compatibility with DX12 implementation

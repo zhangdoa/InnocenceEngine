@@ -30,107 +30,107 @@ ObjectStatus MTRenderingServer::GetStatus()
 	return ObjectStatus();
 }
 
-bool MTRenderingServer::Initialize(MeshComponent* rhs)
+bool MTRenderingServer::Initialize(MeshComponent* mesh)
 {
 	return true;
 }
 
-bool MTRenderingServer::Initialize(TextureComponent* rhs)
+bool MTRenderingServer::Initialize(TextureComponent* texture)
 {
 	return true;
 }
 
-bool MTRenderingServer::Initialize(MaterialComponent* rhs)
+bool MTRenderingServer::Initialize(MaterialComponent* material)
 {
 	return true;
 }
 
-bool MTRenderingServer::Initialize(RenderPassComponent* rhs)
+bool MTRenderingServer::Initialize(RenderPassComponent* renderPass)
 {
 	return true;
 }
 
-bool MTRenderingServer::Initialize(ShaderProgramComponent* rhs)
+bool MTRenderingServer::Initialize(ShaderProgramComponent* shaderProgram)
 {
 	return true;
 }
 
-bool MTRenderingServer::Initialize(SamplerComponent* rhs)
+bool MTRenderingServer::Initialize(SamplerComponent* sampler)
 {
 	return true;
 }
 
-bool MTRenderingServer::Initialize(GPUBufferComponent* rhs)
+bool MTRenderingServer::Initialize(GPUBufferComponent* gpuBuffer)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(MeshComponent* rhs)
+bool MTRenderingServer::Delete(MeshComponent* mesh)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(TextureComponent* rhs)
+bool MTRenderingServer::Delete(TextureComponent* texture)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(MaterialComponent* rhs)
+bool MTRenderingServer::Delete(MaterialComponent* material)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(RenderPassComponent* rhs)
+bool MTRenderingServer::Delete(RenderPassComponent* renderPass)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(ShaderProgramComponent* rhs)
+bool MTRenderingServer::Delete(ShaderProgramComponent* shaderProgram)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(SamplerComponent* rhs)
+bool MTRenderingServer::Delete(SamplerComponent* sampler)
 {
 	return true;
 }
 
-bool MTRenderingServer::Delete(GPUBufferComponent* rhs)
+bool MTRenderingServer::Delete(GPUBufferComponent* gpuBuffer)
 {
 	return true;
 }
 
-bool MTRenderingServer::Clear(TextureComponent* rhs)
+bool MTRenderingServer::Clear(TextureComponent* texture)
 {
 	return true;
 }
 
-bool MTRenderingServer::Copy(TextureComponent* lhs, TextureComponent* rhs)
+bool MTRenderingServer::Copy(TextureComponent* sourceTexture, TextureComponent* texture)
 {
 	return true;
 }
 
-bool MTRenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
+bool MTRenderingServer::UploadGPUBufferComponentImpl(GPUBufferComponent* gpuBuffer, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	return true;
 }
 
-bool MTRenderingServer::Clear(GPUBufferComponent* rhs)
+bool MTRenderingServer::Clear(GPUBufferComponent* gpuBuffer)
 {
 	return true;
 }
 
-bool MTRenderingServer::CommandListBegin(RenderPassComponent* rhs, size_t frameIndex)
+bool MTRenderingServer::CommandListBegin(CommandListComponent* commandList, RenderPassComponent* renderPass, size_t frameIndex)
 {
 	return true;
 }
 
-bool MTRenderingServer::BindRenderPassComponent(RenderPassComponent* rhs)
+bool MTRenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass)
 {
 	return true;
 }
 
-bool MTRenderingServer::ClearRenderTargets(RenderPassComponent* rhs, size_t index)
+bool MTRenderingServer::ClearRenderTargets(RenderPassComponent* renderPass, size_t index)
 {
 	return true;
 }
@@ -155,17 +155,17 @@ bool MTRenderingServer::UnbindGPUResource(RenderPassComponent* renderPass, Shade
 	return true;
 }
 
-bool MTRenderingServer::CommandListEnd(RenderPassComponent* rhs)
+bool MTRenderingServer::CommandListEnd(RenderPassComponent* renderPass)
 {
 	return true;
 }
 
-bool MTRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
+bool MTRenderingServer::Execute(RenderPassComponent* renderPass, GPUEngineType GPUEngineType)
 {
 	return true;
 }
 
-bool MTRenderingServer::WaitForFrame(RenderPassComponent* rhs)
+bool MTRenderingServer::WaitForFrame(RenderPassComponent* renderPass)
 {
 	return true;
 }
@@ -190,7 +190,7 @@ bool MTRenderingServer::Dispatch(RenderPassComponent* renderPass, uint32_t threa
 	return true;
 }
 
-Vec4 MTRenderingServer::ReadRenderTargetSample(RenderPassComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 MTRenderingServer::ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
@@ -200,7 +200,7 @@ std::vector<Vec4> MTRenderingServer::ReadTextureBackToCPU(RenderPassComponent* c
 	return std::vector<Vec4>();
 }
 
-bool MTRenderingServer::GenerateMipmap(TextureComponent* rhs)
+bool MTRenderingServer::GenerateMipmap(TextureComponent* texture)
 {
 	return true;
 }

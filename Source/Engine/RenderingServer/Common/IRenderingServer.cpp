@@ -38,20 +38,13 @@ bool IRenderingServer::InitializePool()
 	g_Engine->Get<ComponentManager>()->RegisterType<ShaderProgramComponent>(256, this);
 	g_Engine->Get<ComponentManager>()->RegisterType<SamplerComponent>(256, this);
 	g_Engine->Get<ComponentManager>()->RegisterType<GPUBufferComponent>(l_renderingCapability.maxBuffers, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<CommandListComponent>(256, this);
 
 	return true;
 }
 
 bool IRenderingServer::TerminatePool()
 {
-	delete m_MeshComponentPool;
-	delete m_TextureComponentPool;
-	delete m_MaterialComponentPool;
-	delete m_RenderPassComponentPool;
-	delete m_ShaderProgramComponentPool;
-	delete m_SamplerComponentPool;
-	delete m_GPUBufferComponentPool;
-
 	return true;
 }
 
@@ -71,6 +64,16 @@ bool IRenderingServer::Setup(ISystemConfig* systemConfig)
 		Log(Error, "Failed to create hardware resources.");
 		return false;
 	}
+
+    m_GlobalGraphicsCommandLists.resize(m_swapChainImageCount);
+    for (size_t i = 0; i < m_GlobalGraphicsCommandLists.size(); i++)
+    {
+        auto l_commandList = AddCommandListComponent(("GlobalGraphicsCommandList_" + std::to_string(i)).c_str());
+        Initialize(l_commandList);
+        m_GlobalGraphicsCommandLists[i] = l_commandList;
+    }
+
+    Log(Success, "Global Graphics CommandLists have been created.");
 
 	m_SwapChainRenderPassComp = AddRenderPassComponent("SwapChain/");
 	m_SwapChainShaderProgramComp = AddShaderProgramComponent("SwapChain/");
@@ -114,53 +117,53 @@ bool IRenderingServer::Initialize()
 
 bool IRenderingServer::InitializeSwapChainRenderPassComponent()
 {
-    // Skip swap chain render pass initialization in offscreen mode
-    if (g_Engine->getInitConfig().isOffscreen)
-    {
-        Log(Verbose, "InitializeSwapChainRenderPassComponent: Skipping in offscreen mode");
-        return true;
-    }
+	// Skip swap chain render pass initialization in offscreen mode
+	if (g_Engine->getInitConfig().isOffscreen)
+	{
+		Log(Verbose, "InitializeSwapChainRenderPassComponent: Skipping in offscreen mode");
+		return true;
+	}
 
-    if (!GetSwapChainImages())
-    {
-        Log(Error, "Failed to get swap chain images.");
-        return false;
-    }
+	if (!GetSwapChainImages())
+	{
+		Log(Error, "Failed to get swap chain images.");
+		return false;
+	}
 
-    auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-    l_RenderPassDesc.m_RenderTargetCount = 1;
-    l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
-    l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
+	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
+	l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
 
-    m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
-    m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
-    m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+	m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
+	m_SwapChainRenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs.resize(2);
 
-    // t0 - 2D texture (single image from the user pipeline)
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;
+	// t0 - 2D texture (single image from the user pipeline)
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ColorAttachment;
 
-    // s0 - sampler
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-    m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	// s0 - sampler
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_SwapChainRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
 
-    m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainShaderProgramComp;
+	m_SwapChainRenderPassComp->m_ShaderProgram = m_SwapChainShaderProgramComp;
 
-    Initialize(m_SwapChainRenderPassComp);
+	Initialize(m_SwapChainRenderPassComp);
 
-    return true;
+	return true;
 }
 
 bool IRenderingServer::Update()
 {
 	auto l_currentFrame = GetCurrentFrame();
-	
+
 	// Because we are about to reset the current frame's command allocators, we need to make sure that the command lists are not in use.
 	WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
@@ -194,7 +197,12 @@ bool IRenderingServer::Update()
 		WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 		ExecuteSwapChainCommands();
-		SignalOnGPU(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
+		
+		// Only signal on swap chain render pass in windowed mode
+		if (!g_Engine->getInitConfig().isOffscreen)
+		{
+			SignalOnGPU(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
+		}
 
 		// The GUI commands must signal on the GPU.
 		g_Engine->Get<GUISystem>()->ExecuteCommands();
@@ -209,7 +217,7 @@ bool IRenderingServer::Update()
 	EndFrame();
 
 	m_FrameCountSinceLaunch++;
-	
+
 	return true;
 }
 
@@ -300,157 +308,167 @@ GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
 	return AddComponent<GPUBufferComponent>(name);
 }
 
-void IRenderingServer::Initialize(ModelComponent* rhs)
+CommandListComponent* IRenderingServer::AddCommandListComponent(const char* name)
 {
-	if (std::find(m_initializedModels.begin(), m_initializedModels.end(), rhs) != m_initializedModels.end())
-		return;
-		
-	// Queue model for deferred initialization
-	m_uninitializedModels.push(rhs);
-	Log(Verbose, "ModelComponent ", rhs->m_InstanceName, " queued for deferred initialization");
+	return AddComponent<CommandListComponent>(name);
 }
 
-void IRenderingServer::Initialize(MeshComponent* rhs, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+void IRenderingServer::Initialize(ModelComponent* model)
 {
-	if (std::find(m_initializedMeshes.begin(), m_initializedMeshes.end(), rhs) != m_initializedMeshes.end())
+	if (std::find(m_initializedModels.begin(), m_initializedModels.end(), model) != m_initializedModels.end())
+		return;
+
+	// Queue model for deferred initialization
+	m_uninitializedModels.push(model);
+	Log(Verbose, "ModelComponent ", model->m_InstanceName, " queued for deferred initialization");
+}
+
+void IRenderingServer::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+{
+	if (std::find(m_initializedMeshes.begin(), m_initializedMeshes.end(), mesh) != m_initializedMeshes.end())
 		return;
 
 	// Calculate AABB from vertex data before queuing for deferred initialization
 	if (!vertices.empty())
 	{
-		rhs->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
-		Log(Verbose, "Calculated AABB for MeshComponent: min(", 
-			rhs->m_AABB.m_boundMin.x, ",", rhs->m_AABB.m_boundMin.y, ",", rhs->m_AABB.m_boundMin.z, 
-			") max(", rhs->m_AABB.m_boundMax.x, ",", rhs->m_AABB.m_boundMax.y, ",", rhs->m_AABB.m_boundMax.z, ")");
+		mesh->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
+		Log(Verbose, "Calculated AABB for MeshComponent: min(",
+			mesh->m_AABB.m_boundMin.x, ",", mesh->m_AABB.m_boundMin.y, ",", mesh->m_AABB.m_boundMin.z,
+			") max(", mesh->m_AABB.m_boundMax.x, ",", mesh->m_AABB.m_boundMax.y, ",", mesh->m_AABB.m_boundMax.z, ")");
 	}
-	
+
 	// Queue mesh for deferred initialization using move semantics to avoid copying vertex/index data
-	m_uninitializedMeshes.push(MeshInitTask(rhs, std::move(vertices), std::move(indices)));
-	Log(Verbose, "MeshComponent ", rhs->m_InstanceName, " queued for deferred initialization");
+	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices)));
+	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(TextureComponent* rhs, void* textureData)
+void IRenderingServer::Initialize(TextureComponent* texture, void* textureData)
 {
-	if (std::find(m_initializedTextures.begin(), m_initializedTextures.end(), rhs) != m_initializedTextures.end())
+	if (std::find(m_initializedTextures.begin(), m_initializedTextures.end(), texture) != m_initializedTextures.end())
 		return;
 
 	// Queue texture for deferred initialization
-	m_uninitializedTextures.push(TextureInitTask(rhs, textureData));
-	Log(Verbose, "TextureComponent ", rhs->m_InstanceName, " queued for deferred initialization");
+	m_uninitializedTextures.push(TextureInitTask(texture, textureData));
+	Log(Verbose, "TextureComponent ", texture->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(MaterialComponent* rhs)
+void IRenderingServer::Initialize(MaterialComponent* material)
 {
-	if (std::find(m_initializedMaterials.begin(), m_initializedMaterials.end(), rhs) != m_initializedMaterials.end())
+	if (std::find(m_initializedMaterials.begin(), m_initializedMaterials.end(), material) != m_initializedMaterials.end())
 		return;
 
 	// Queue material for deferred initialization
-	m_uninitializedMaterials.push(rhs);
-	Log(Verbose, "MaterialComponent ", rhs->m_InstanceName, " queued for deferred initialization");
+	m_uninitializedMaterials.push(material);
+	Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(ShaderProgramComponent* rhs)
+void IRenderingServer::Initialize(ShaderProgramComponent* shaderProgram)
 {
-	InitializeImpl(rhs);
+	InitializeImpl(shaderProgram);
 }
 
-void IRenderingServer::Initialize(SamplerComponent* rhs)
+void IRenderingServer::Initialize(SamplerComponent* sampler)
 {
-	InitializeImpl(rhs);
+	InitializeImpl(sampler);
 }
 
-void IRenderingServer::Initialize(GPUBufferComponent* rhs)
+void IRenderingServer::Initialize(GPUBufferComponent* gpuBuffer)
 {
-	if (std::find(m_initializedGPUBuffers.begin(), m_initializedGPUBuffers.end(), rhs) != m_initializedGPUBuffers.end())
+	if (std::find(m_initializedGPUBuffers.begin(), m_initializedGPUBuffers.end(), gpuBuffer) != m_initializedGPUBuffers.end())
 		return;
 
 	// Queue GPU buffer for deferred initialization
-	m_uninitializedGPUBuffers.push(rhs);
-	Log(Verbose, "GPUBufferComponent ", rhs->m_InstanceName, " queued for deferred initialization");
+	m_uninitializedGPUBuffers.push(gpuBuffer);
+	Log(Verbose, "GPUBufferComponent ", gpuBuffer->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(RenderPassComponent* rhs)
+void IRenderingServer::Initialize(RenderPassComponent* renderPass)
 {
-	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), rhs) != m_initializedRenderPasses.end())
+	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), renderPass) != m_initializedRenderPasses.end())
 		return;
 
 	// Queue render pass for deferred initialization
-	m_uninitializedRenderPasses.push(rhs);
-	Log(Verbose, "RenderPassComponent ", rhs->m_InstanceName, " queued for deferred initialization");
+	m_uninitializedRenderPasses.push(renderPass);
+	Log(Verbose, "RenderPassComponent ", renderPass->m_InstanceName, " queued for deferred initialization");
 }
 
-bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* rhs)
+void IRenderingServer::Initialize(CommandListComponent* commandList)
 {
-	if (rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc)
+	InitializeImpl(commandList);
+}
+
+bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* renderPass)
+{
+	if (renderPass->m_RenderPassDesc.m_RenderTargetsCreationFunc)
 	{
-		Log(Verbose, "Calling customized render targets reservation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_RenderTargetsCreationFunc();
+		Log(Verbose, "Calling customized render targets reservation function for: ", renderPass->m_InstanceName.c_str());
+		renderPass->m_RenderPassDesc.m_RenderTargetsCreationFunc();
 	}
 	else
 	{
-		if (!rhs->m_OutputMergerTarget)
-			Add(rhs->m_OutputMergerTarget);
+		if (!renderPass->m_OutputMergerTarget)
+			Add(renderPass->m_OutputMergerTarget);
 
-		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
 		auto l_swapChainImageCount = GetSwapChainImageCount();
-		l_outputMergerTarget->m_ColorOutputs.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
+		l_outputMergerTarget->m_ColorOutputs.resize(renderPass->m_RenderPassDesc.m_RenderTargetCount);
 		for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 		{
 			auto& l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
-			l_renderTarget = AddTextureComponent((std::string(rhs->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
+			l_renderTarget = AddTextureComponent((std::string(renderPass->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
 			Log(Verbose, "Render target: ", l_renderTarget->m_InstanceName, " has been allocated at: ", l_renderTarget);
 		}
 	}
 
-	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc)
+	if (renderPass->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc)
 	{
-		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc();
+		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", renderPass->m_InstanceName.c_str());
+		renderPass->m_RenderPassDesc.m_DepthStencilRenderTargetsCreationFunc();
 	}
-	else if (rhs->m_RenderPassDesc.m_UseDepthBuffer)
+	else if (renderPass->m_RenderPassDesc.m_UseDepthBuffer)
 	{
-		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
 		auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
-		l_depthStencilRenderTarget = AddTextureComponent((std::string(rhs->m_InstanceName.c_str()) + "_DS/").c_str());
-		Log(Verbose, rhs->m_InstanceName.c_str(), " depth stencil target has been allocated.");
+		l_depthStencilRenderTarget = AddTextureComponent((std::string(renderPass->m_InstanceName.c_str()) + "_DS/").c_str());
+		Log(Verbose, renderPass->m_InstanceName.c_str(), " depth stencil target has been allocated.");
 	}
 
 	return true;
 }
 
-bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
+bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* renderPass)
 {
-	if (rhs->m_RenderPassDesc.m_RenderTargetsInitializationFunc)
+	if (renderPass->m_RenderPassDesc.m_RenderTargetsInitializationFunc)
 	{
-		Log(Verbose, "Calling customized render targets creation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_RenderTargetsInitializationFunc();
+		Log(Verbose, "Calling customized render targets creation function for: ", renderPass->m_InstanceName.c_str());
+		renderPass->m_RenderPassDesc.m_RenderTargetsInitializationFunc();
 	}
 	else
 	{
-		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
 		for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 		{
 			auto l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
-			l_renderTarget->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
+			l_renderTarget->m_TextureDesc = renderPass->m_RenderPassDesc.m_RenderTargetDesc;
 
 			InitializeImpl(l_renderTarget, nullptr);
 		}
 
-		Log(Verbose, "Render target: ", rhs->m_InstanceName, " have been created.");
+		Log(Verbose, "Render target: ", renderPass->m_InstanceName, " have been created.");
 	}
 
-	if (rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc)
+	if (renderPass->m_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc)
 	{
-		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", rhs->m_InstanceName.c_str());
-		rhs->m_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc();
+		Log(Verbose, "Calling customized depth-stencil render target reservation function for: ", renderPass->m_InstanceName.c_str());
+		renderPass->m_RenderPassDesc.m_DepthStencilRenderTargetsInitializationFunc();
 	}
-	else if (rhs->m_RenderPassDesc.m_UseDepthBuffer)
+	else if (renderPass->m_RenderPassDesc.m_UseDepthBuffer)
 	{
-		auto l_outputMergerTarget = rhs->m_OutputMergerTarget;
+		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
 		auto l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
-		l_depthStencilRenderTarget->m_TextureDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
+		l_depthStencilRenderTarget->m_TextureDesc = renderPass->m_RenderPassDesc.m_RenderTargetDesc;
 
-		if (rhs->m_RenderPassDesc.m_UseStencilBuffer)
+		if (renderPass->m_RenderPassDesc.m_UseStencilBuffer)
 		{
 			l_depthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			l_depthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
@@ -465,50 +483,63 @@ bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* rhs)
 
 		InitializeImpl(l_depthStencilRenderTarget, nullptr);
 
-		Log(Verbose, rhs->m_InstanceName, " depth stencil target has been created.");
+		Log(Verbose, renderPass->m_InstanceName, " depth stencil target has been created.");
 	}
 
 	return true;
 }
 
-bool IRenderingServer::CommandListBegin(RenderPassComponent* rhs, size_t frameIndex)
+bool IRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
-	rhs->m_CurrentFrame = GetCurrentFrame();
-	Open(rhs->m_CommandLists[rhs->m_CurrentFrame], rhs->m_RenderPassDesc.m_GPUEngineType, rhs->m_PipelineStateObject);
-
+	// Base implementation does nothing - derived classes must override
 	return true;
 }
 
-bool IRenderingServer::SignalOnGPU(RenderPassComponent* rhs, GPUEngineType queueType)
+bool IRenderingServer::SignalOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType)
 {
-	auto l_semaphore = rhs == nullptr ? nullptr : rhs->m_Semaphores[rhs->m_CurrentFrame];
+	if (renderPass == nullptr)
+	{
+		return SignalOnGPU(static_cast<ISemaphore*>(nullptr), queueType);
+	}
 
+	// Add defensive checks for corrupted RenderPassComponent
+	if (renderPass->m_CurrentFrame >= renderPass->m_Semaphores.size())
+	{
+		Log(Error, "SignalOnGPU: Invalid m_CurrentFrame index %d for RenderPass %s (semaphore count: %d)", 
+			renderPass->m_CurrentFrame, renderPass->m_InstanceName.c_str(), renderPass->m_Semaphores.size());
+		return false;
+	}
+
+	auto l_semaphore = renderPass->m_Semaphores[renderPass->m_CurrentFrame];
 	return SignalOnGPU(l_semaphore, queueType);
 }
 
-bool IRenderingServer::WaitOnGPU(RenderPassComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool IRenderingServer::WaitOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
-	auto l_semaphore = rhs == nullptr ? nullptr : rhs->m_Semaphores[rhs->m_CurrentFrame];
+	if (renderPass == nullptr)
+	{
+		return WaitOnGPU(static_cast<ISemaphore*>(nullptr), queueType, semaphoreType);
+	}
 
+	// Add defensive checks for corrupted RenderPassComponent
+	if (renderPass->m_CurrentFrame >= renderPass->m_Semaphores.size())
+	{
+		Log(Error, "WaitOnGPU: Invalid m_CurrentFrame index %d for RenderPass %s (semaphore count: %d)", 
+			renderPass->m_CurrentFrame, renderPass->m_InstanceName.c_str(), renderPass->m_Semaphores.size());
+		return false;
+	}
+
+	auto l_semaphore = renderPass->m_Semaphores[renderPass->m_CurrentFrame];
 	return WaitOnGPU(l_semaphore, queueType, semaphoreType);
 }
 
-bool IRenderingServer::CommandListEnd(RenderPassComponent* rhs)
+bool IRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
-	auto l_commandList = rhs->m_CommandLists[rhs->m_CurrentFrame];
-	ChangeRenderTargetStates(rhs, l_commandList, Accessibility::ReadOnly);
-
-	Close(l_commandList, rhs->m_RenderPassDesc.m_GPUEngineType);
-
+	// Base implementation does nothing - derived classes should override
 	return true;
 }
 
-bool IRenderingServer::ExecuteCommandList(RenderPassComponent* rhs, GPUEngineType GPUEngineType)
-{
-	return Execute(rhs->m_CommandLists[rhs->m_CurrentFrame], GPUEngineType);
-}
-
-bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, ICommandList* commandList, Accessibility accessibility)
+bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility accessibility)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
@@ -547,7 +578,7 @@ bool IRenderingServer::Present()
 		WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
 		WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		WaitOnCPU(l_copySemaphoreValue, GPUEngineType::Copy);
-		
+
 		ExecuteResize();
 
 		m_needResize = false;
@@ -573,110 +604,78 @@ bool IRenderingServer::Resize()
 	return true;
 }
 
-bool IRenderingServer::Clear(TextureComponent* rhs)
+bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
 {
-	m_unclearedResources.push(rhs);
-    return true;
-}
-
-bool IRenderingServer::Copy(TextureComponent* lhs, TextureComponent* rhs)
-{
-	m_unprocessedCopyCommands.push(CopyCommand(lhs, rhs));
-	return true;
-}
-
-bool IRenderingServer::Clear(GPUBufferComponent* rhs)
-{
-	m_unclearedResources.push(rhs);
-	return true;
-}
-
-bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* rhs, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
-{
-	if (rhs->m_ObjectStatus != ObjectStatus::Activated)
+	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_size = rhs->m_TotalSize;
+	auto l_size = gpuBuffer->m_TotalSize;
 	if (range != SIZE_MAX)
-		l_size = range * rhs->m_ElementSize;
+		l_size = range * gpuBuffer->m_ElementSize;
 
 	auto l_currentFrame = GetCurrentFrame();
 	if (mappedMemory == nullptr)
 	{
-		if (rhs->m_ObjectStatus == ObjectStatus::Activated)
+		if (gpuBuffer->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			Log(Error, "Can't upload data to GPU buffer: ", rhs->m_InstanceName, " because it's not mapped.");
+			Log(Error, "Can't upload data to GPU buffer: ", gpuBuffer->m_InstanceName, " because it's not mapped.");
 		}
 		return false;
 	}
 
-	std::memcpy((char*)mappedMemory->m_Address + startOffset * rhs->m_ElementSize, sourceMemory, l_size);
+	std::memcpy((char*)mappedMemory->m_Address + startOffset * gpuBuffer->m_ElementSize, sourceMemory, l_size);
 
 	mappedMemory->m_NeedUploadToGPU = true;
 
 	return true;
 }
 
-bool IRenderingServer::InitializeImpl(MaterialComponent* rhs)
+bool IRenderingServer::InitializeImpl(MaterialComponent* material)
 {
-	rhs->m_GPUResourceType = GPUResourceType::Material;
-	rhs->m_ObjectStatus = ObjectStatus::Activated;
+	material->m_GPUResourceType = GPUResourceType::Material;
+	material->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool IRenderingServer::InitializeImpl(RenderPassComponent *rhs)
+bool IRenderingServer::InitializeImpl(RenderPassComponent* renderPass)
 {
 	bool l_result = true;
 
-	l_result &= CreateOutputMergerTargets(rhs);
+	l_result &= CreateOutputMergerTargets(renderPass);
 
-	l_result &= InitializeOutputMergerTargets(rhs);
+	l_result &= InitializeOutputMergerTargets(renderPass);
 
-	l_result &=	OnOutputMergerTargetsCreated(rhs);
+	l_result &= OnOutputMergerTargetsCreated(renderPass);
 
-	rhs->m_PipelineStateObject = AddPipelineStateObject();
+	renderPass->m_PipelineStateObject = AddPipelineStateObject();
 
-	l_result &= CreatePipelineStateObject(rhs);
+	l_result &= CreatePipelineStateObject(renderPass);
 
-	rhs->m_CommandLists.resize(GetSwapChainImageCount());
+	// Command lists are now created dynamically during execution
+	Log(Verbose, renderPass->m_InstanceName, " PipelineStateObject has been created.");
 
-	for (size_t i = 0; i < rhs->m_CommandLists.size(); i++)
+	renderPass->m_Semaphores.resize(GetSwapChainImageCount());
+	for (size_t i = 0; i < renderPass->m_Semaphores.size(); i++)
 	{
-		rhs->m_CommandLists[i] = AddCommandList();
+		renderPass->m_Semaphores[i] = AddSemaphore();
 	}
 
-    auto l_tempName = std::string(rhs->m_InstanceName.c_str());
-    auto l_tempNameL = std::wstring(l_tempName.begin(), l_tempName.end());
+	Log(Verbose, renderPass->m_InstanceName, " Semaphore has been created.");
 
-    for (size_t i = 0; i < rhs->m_CommandLists.size(); i++)
-    {
-        CreateCommandList(rhs->m_CommandLists[i], i, l_tempNameL);
-    }
+	CreateFenceEvents(renderPass);
 
-	Log(Verbose, rhs->m_InstanceName, " CommandList has been created.");
-
-	rhs->m_Semaphores.resize(rhs->m_CommandLists.size());
-	for (size_t i = 0; i < rhs->m_Semaphores.size(); i++)
-	{
-		rhs->m_Semaphores[i] = AddSemaphore();
-	}
-	
-	Log(Verbose, rhs->m_InstanceName, " Semaphore has been created.");
-
-	CreateFenceEvents(rhs);
-
-	rhs->m_ObjectStatus = ObjectStatus::Activated;
+	renderPass->m_ObjectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
 
-bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* rhs)
+bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* renderPass)
 {
-	Delete(rhs->m_OutputMergerTarget);
-	rhs->m_OutputMergerTarget = nullptr;
+	Delete(renderPass->m_OutputMergerTarget);
+	renderPass->m_OutputMergerTarget = nullptr;
 
-    Delete(rhs->m_PipelineStateObject);
+	Delete(renderPass->m_PipelineStateObject);
 
 	return true;
 }
@@ -735,58 +734,58 @@ bool IRenderingServer::InitializeComponents()
 	{
 		MeshInitTask l_task(nullptr, std::vector<Vertex>(), std::vector<Index>());
 		m_uninitializedMeshes.tryPop(l_task);
-		
+
 		if (!l_task.m_Component)
 			continue;
-			
+
 		Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_Vertices, l_task.m_Indices))
 			m_initializedMeshes.emplace(l_task.m_Component);
 		else
-			m_uninitializedMeshes.push(std::move(l_task));		
+			m_uninitializedMeshes.push(std::move(l_task));
 	}
-	
+
 	// Process queued texture initialization tasks
 	while (m_uninitializedTextures.size() > 0)
 	{
 		TextureInitTask l_task(nullptr, nullptr);
 		m_uninitializedTextures.tryPop(l_task);
-		
+
 		if (!l_task.m_Component)
 			continue;
-			
+
 		Log(Verbose, "Processing deferred texture initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_TextureData))
 			m_initializedTextures.emplace(l_task.m_Component);
 		else
 			m_uninitializedTextures.push(std::move(l_task));
 	}
-	
+
 	// Process queued material components
 	while (m_uninitializedMaterials.size() > 0)
 	{
 		MaterialComponent* l_component;
 		m_uninitializedMaterials.tryPop(l_component);
-		
+
 		if (!l_component)
 			continue;
-			
+
 		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			m_initializedMaterials.emplace(l_component);
 		else
 			m_uninitializedMaterials.push(std::move(l_component));
 	}
-	
+
 	// Process queued GPU buffer components
 	while (m_uninitializedGPUBuffers.size() > 0)
 	{
 		GPUBufferComponent* l_component;
 		m_uninitializedGPUBuffers.tryPop(l_component);
-		
+
 		if (!l_component)
 			continue;
-			
+
 		Log(Verbose, "Processing deferred GPU buffer initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			m_initializedGPUBuffers.emplace(l_component);
@@ -799,10 +798,10 @@ bool IRenderingServer::InitializeComponents()
 	{
 		RenderPassComponent* l_component;
 		m_uninitializedRenderPasses.tryPop(l_component);
-		
+
 		if (!l_component)
 			continue;
-			
+
 		Log(Verbose, "Processing deferred render pass initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			m_initializedRenderPasses.emplace_back(l_component);
@@ -815,16 +814,16 @@ bool IRenderingServer::InitializeComponents()
 	{
 		ModelComponent* l_component;
 		m_uninitializedModels.tryPop(l_component);
-		
+
 		if (!l_component)
 			continue;
-			
+
 		Log(Verbose, "Processing deferred model initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			m_initializedModels.emplace(l_component);
 		else
 			m_uninitializedModels.push(std::move(l_component));
-	}	
+	}
 
 	return true;
 }
@@ -833,39 +832,8 @@ bool IRenderingServer::PrepareGlobalCommands()
 {
 	auto l_currentFrame = GetCurrentFrame();
 
-	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
+	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	Open(l_commandList, GPUEngineType::Graphics);
-
-	while (m_unclearedResources.size() > 0)
-	{
-		GPUResourceComponent* l_GPUResource;
-		m_unclearedResources.tryPop(l_GPUResource);
-
-		if (!l_GPUResource)
-			continue;
-
-		if (l_GPUResource->m_GPUResourceType == GPUResourceType::Image)
-		{
-			auto l_texture = static_cast<TextureComponent*>(l_GPUResource);
-			Clear(l_commandList, l_texture);
-		}
-		else if (l_GPUResource->m_GPUResourceType == GPUResourceType::Buffer)
-		{
-			auto l_GPUBuffer = static_cast<GPUBufferComponent*>(l_GPUResource);	
-			Clear(l_commandList, l_GPUBuffer);
-		}
-	}
-
-	while (m_unprocessedCopyCommands.size() > 0)
-	{
-		CopyCommand l_copyCommand(nullptr, nullptr);
-		m_unprocessedCopyCommands.tryPop(l_copyCommand);
-
-		if (!l_copyCommand.m_lhs || !l_copyCommand.m_rhs)
-			continue;
-
-		Copy(l_commandList, l_copyCommand.m_lhs, l_copyCommand.m_rhs);
-	}
 
 	// for (auto i : m_initializedMeshes)
 	// {
@@ -914,10 +882,10 @@ bool IRenderingServer::ExecuteGlobalCommands()
 {
 	auto l_currentFrame = GetCurrentFrame();
 
-	auto l_commandList = m_GlobalCommandLists[l_currentFrame];
+	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	Execute(l_commandList, GPUEngineType::Graphics);
 	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
-	
+
 	return true;
 }
 
@@ -937,20 +905,26 @@ bool IRenderingServer::PrepareSwapChainCommands()
 	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	CommandListBegin(m_SwapChainRenderPassComp, GetCurrentFrame());
+	// Get the command list for swap chain rendering
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
+	
+	CommandListBegin(m_SwapChainRenderPassComp, l_commandList, l_currentFrame);
 
-	BindRenderPassComponent(m_SwapChainRenderPassComp);
+	TryToTransitState(reinterpret_cast<TextureComponent*>(l_userPipelineOutput), l_commandList, Accessibility::ReadOnly);
+	BindRenderPassComponent(m_SwapChainRenderPassComp, l_commandList);
 
-	ClearRenderTargets(m_SwapChainRenderPassComp);
+	ClearRenderTargets(m_SwapChainRenderPassComp, l_commandList);
 
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, l_userPipelineOutput, 0);
-	BindGPUResource(m_SwapChainRenderPassComp, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
+	BindGPUResource(m_SwapChainRenderPassComp, l_commandList, ShaderStage::Pixel, l_userPipelineOutput, 0);
+	BindGPUResource(m_SwapChainRenderPassComp, l_commandList, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 
-	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_mesh, 1);
-
-	CommandListEnd(m_SwapChainRenderPassComp);
+	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_commandList, l_mesh, 1);
+	TryToTransitState(m_SwapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], l_commandList, Accessibility::ReadOnly);
+	
+	CommandListEnd(m_SwapChainRenderPassComp, l_commandList);
 
 	return true;
 }
@@ -971,7 +945,10 @@ bool IRenderingServer::ExecuteSwapChainCommands()
 	if (l_userPipelineOutput->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	ExecuteCommandList(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
+	// Execute the swap chain command list
+	auto l_currentFrame = GetCurrentFrame();
+	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
+	Execute(l_commandList, GPUEngineType::Graphics);
 
 	return true;
 }
@@ -999,12 +976,12 @@ bool IRenderingServer::PreResize()
 	return true;
 }
 
-bool IRenderingServer::PreResize(RenderPassComponent* rhs)
+bool IRenderingServer::PreResize(RenderPassComponent* renderPass)
 {
-	if (!rhs->m_RenderPassDesc.m_Resizable)
+	if (!renderPass->m_RenderPassDesc.m_Resizable)
 		return true;
 
-    DeleteRenderTargets(rhs);
+	DeleteRenderTargets(renderPass);
 
 	return true;
 }
@@ -1024,28 +1001,28 @@ bool IRenderingServer::PostResize()
 	return true;
 }
 
-bool IRenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* rhs)
+bool IRenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass)
 {
-	if (!rhs->m_RenderPassDesc.m_Resizable)
+	if (!renderPass->m_RenderPassDesc.m_Resizable)
 		return true;
 
-	rhs->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
-	rhs->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
+	renderPass->m_RenderPassDesc.m_RenderTargetDesc.Width = screenResolution.x;
+	renderPass->m_RenderPassDesc.m_RenderTargetDesc.Height = screenResolution.y;
 
-	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
-	rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
+	renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
+	renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
 
-	CreateOutputMergerTargets(rhs);
-	InitializeOutputMergerTargets(rhs);
+	CreateOutputMergerTargets(renderPass);
+	InitializeOutputMergerTargets(renderPass);
 
-    OnOutputMergerTargetsCreated(rhs);
+	OnOutputMergerTargetsCreated(renderPass);
 
-    rhs->m_PipelineStateObject = AddPipelineStateObject();
+	renderPass->m_PipelineStateObject = AddPipelineStateObject();
 
-    CreatePipelineStateObject(rhs);
+	CreatePipelineStateObject(renderPass);
 
-	if (rhs->m_OnResize)
-		rhs->m_OnResize();
+	if (renderPass->m_OnResize)
+		renderPass->m_OnResize();
 
 	return true;
 }

@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class AnimationPass : IRenderPass
+	class AnimationPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(AnimationPass)

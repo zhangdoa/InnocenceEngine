@@ -226,12 +226,12 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-		// l_renderingServer->ExecuteCommandList(m_RenderPassComp, GPUEngineType::Graphics);
+		// l_renderingServer->Execute(m_RenderPassComp, GPUEngineType::Graphics);
 
 		
 	}
 
-	return true;
+	return false;
 }
 
 bool SurfelGITestPass::Terminate()

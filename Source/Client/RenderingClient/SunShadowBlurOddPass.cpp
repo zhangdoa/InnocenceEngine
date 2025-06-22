@@ -121,7 +121,7 @@ bool SunShadowBlurOddPass::PrepareCommandList(IRenderingContext* renderingContex
 
 	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-	return true;
+	return false;
 }
 
 RenderPassComponent* SunShadowBlurOddPass::GetRenderPassComp()
@@ -132,10 +132,10 @@ RenderPassComponent* SunShadowBlurOddPass::GetRenderPassComp()
 GPUResourceComponent* SunShadowBlurOddPass::GetResult()
 {
 	if (!m_RenderPassComp)
-		return nullptr;
+		return false;
 	
 	if (!m_RenderPassComp->m_OutputMergerTarget)
-		return nullptr;
+		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();

@@ -106,13 +106,13 @@ bool DX12RenderingServer::ReleaseHardwareResources()
     m_computeCommandQueueFence = nullptr;
     m_copyCommandQueueFence = nullptr;
 
-    for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
+    for (size_t i = 0; i < m_GlobalGraphicsCommandLists.size(); i++)
     {
-        auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[i]);
+        auto l_commandList = m_GlobalGraphicsCommandLists[i];
         Delete(l_commandList);
     }
 
-    m_GlobalCommandLists.clear();
+    m_GlobalGraphicsCommandLists.clear();
 
     m_directCommandAllocators.clear();
     m_computeCommandAllocators.clear();
@@ -243,29 +243,29 @@ bool DX12RenderingServer::ReleaseSwapChainImages()
     return true;
 }
 
-bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
+bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* renderPass)
 {
     bool l_result = true;
-    l_result &= CreateRootSignature(rhs);
+    l_result &= CreateRootSignature(renderPass);
 
-    auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
-    if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+    auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
+    if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
     {
-        if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+        if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
         {
-            l_result &= CreateGraphicsPipelineStateObject(rhs, l_PSO);
+            l_result &= CreateGraphicsPipelineStateObject(renderPass, l_PSO);
         }
     }
-    else if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && !rhs->m_RenderPassDesc.m_UseRaytracing)
+    else if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute && !renderPass->m_RenderPassDesc.m_UseRaytracing)
     {
-        LoadComputeShaders(rhs);
+        LoadComputeShaders(renderPass);
 
         l_PSO->m_ComputePSODesc.pRootSignature = l_PSO->m_RootSignature.Get();
         auto l_HResult = m_device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
 
         if (FAILED(l_HResult))
         {
-            Log(Error, rhs->m_InstanceName, " Can't create Compute PSO.");
+            Log(Error, renderPass->m_InstanceName, " Can't create Compute PSO.");
             return false;
         }
     }
@@ -273,14 +273,14 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* rhs)
     if (l_PSO->m_PSO)
     {
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-        SetObjectName(rhs, l_PSO->m_PSO, "PSO");
+        SetObjectName(renderPass, l_PSO->m_PSO, "PSO");
 #endif // INNO_DEBUG
-        Log(Verbose, rhs->m_InstanceName, " PSO has been created.");
+        Log(Verbose, renderPass->m_InstanceName, " PSO has been created.");
     }
 
-    if (rhs->m_RenderPassDesc.m_UseRaytracing)
+    if (renderPass->m_RenderPassDesc.m_UseRaytracing)
     {
-        l_result &= CreateRaytracingPipelineStateObject(rhs, l_PSO);
+        l_result &= CreateRaytracingPipelineStateObject(renderPass, l_PSO);
     }
 
     return l_result;
@@ -451,95 +451,46 @@ bool DX12RenderingServer::CreateRaytracingPipelineStateObject(RenderPassComponen
     return true;
 }
 
-bool DX12RenderingServer::CreateCommandList(ICommandList* commandList, size_t swapChainImageIndex, const std::wstring& name)
-{
-    if (swapChainImageIndex >= m_directCommandAllocators.size())
-    {
-        Log(Error, "Invalid swapChainImageIndex ", (uint32_t)swapChainImageIndex, " for command list. Max index: ", (uint32_t)(m_directCommandAllocators.size() - 1));
-        return false;
-    }
-
-    auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
-    l_commandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_directCommandAllocators[swapChainImageIndex].Get(), (name + L"_DirectCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
-    l_commandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommandAllocators[swapChainImageIndex].Get(), (name + L"_ComputeCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
-    l_commandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_copyCommandAllocators[swapChainImageIndex].Get(), (name + L"_CopyCommandList_" + std::to_wstring(swapChainImageIndex)).c_str());
-
-    bool result = true;
-    
-    if (l_commandList->m_DirectCommandList)
-    {
-        l_commandList->m_DirectCommandList->Close();
-    }
-    else
-    {
-        Log(Error, "Failed to create DirectCommandList at index ", (uint32_t)swapChainImageIndex);
-        result = false;
-    }
-    
-    if (l_commandList->m_ComputeCommandList)
-    {
-        l_commandList->m_ComputeCommandList->Close();
-    }
-    else
-    {
-        Log(Error, "Failed to create ComputeCommandList at index ", (uint32_t)swapChainImageIndex);
-        result = false;
-    }
-    
-    if (l_commandList->m_CopyCommandList)
-    {
-        l_commandList->m_CopyCommandList->Close();
-    }
-    else
-    {
-        Log(Error, "Failed to create CopyCommandList at index ", (uint32_t)swapChainImageIndex);
-        result = false;
-    }
-
-    return result;
-}
-
-bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* rhs)
+bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* renderPass)
 {
     bool result = true;
-    auto RenderPassComp = reinterpret_cast<RenderPassComponent*>(rhs);
-    for (size_t i = 0; i < RenderPassComp->m_Semaphores.size(); i++)
+    for (size_t i = 0; i < renderPass->m_Semaphores.size(); i++)
     {
-        auto l_semaphore = reinterpret_cast<DX12Semaphore*>(RenderPassComp->m_Semaphores[i]);
+        auto l_semaphore = reinterpret_cast<DX12Semaphore*>(renderPass->m_Semaphores[i]);
         l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
         if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
         {
-            Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for direct CommandQueue.");
+            Log(Error, renderPass->m_InstanceName, " Can't create fence event for direct CommandQueue.");
             result = false;
         }
 
         l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
         if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
         {
-            Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for compute CommandQueue.");
+            Log(Error, renderPass->m_InstanceName, " Can't create fence event for compute CommandQueue.");
             result = false;
         }
 
         l_semaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
         if (l_semaphore->m_CopyCommandQueueFenceEvent == NULL)
         {
-            Log(Error, RenderPassComp->m_InstanceName, " Can't create fence event for copy CommandQueue.");
+            Log(Error, renderPass->m_InstanceName, " Can't create fence event for copy CommandQueue.");
             result = false;
         }
     }
 
     if (result)
     {
-        Log(Verbose, RenderPassComp->m_InstanceName, " Fence events have been created.");
+        Log(Verbose, renderPass->m_InstanceName, " Fence events have been created.");
     }
 
     return result;
 }
 
-bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
+bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* renderPass)
 {
-    auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(rhs->m_OutputMergerTarget);
-    if (rhs->m_RenderPassDesc.m_UseOutputMerger)
+    auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
+    if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
     {
         auto& l_RTVs = l_outputMergerTarget->m_RTVs;
         if (l_RTVs.size() == 0)
@@ -548,8 +499,8 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
             for (size_t i = 0; i < l_RTVs.size(); i++)
             {
                 auto& l_RTV = l_RTVs[i];
-                l_RTV.m_Desc = GetRTVDesc(rhs->m_RenderPassDesc.m_RenderTargetDesc);
-                l_RTV.m_Handles.resize(rhs->m_RenderPassDesc.m_RenderTargetCount);
+                l_RTV.m_Desc = GetRTVDesc(renderPass->m_RenderPassDesc.m_RenderTargetDesc);
+                l_RTV.m_Handles.resize(renderPass->m_RenderPassDesc.m_RenderTargetCount);
                 for (size_t j = 0; j < l_RTV.m_Handles.size(); j++)
                 {
                     auto l_handle = m_RTVDescHeapAccessor.GetNewHandle();
@@ -569,7 +520,7 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
         }
     }
 
-    if (rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+    if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
     {
         auto& l_DSVs = l_outputMergerTarget->m_DSVs;
         if (l_DSVs.size() == 0)
@@ -577,7 +528,7 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
             l_DSVs.resize(GetSwapChainImageCount());
             for (size_t i = 0; i < l_DSVs.size(); i++)
             {
-                l_DSVs[i].m_Desc = GetDSVDesc(rhs->m_RenderPassDesc.m_RenderTargetDesc, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
+                l_DSVs[i].m_Desc = GetDSVDesc(renderPass->m_RenderPassDesc.m_RenderTargetDesc, renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
                 l_DSVs[i].m_Handle = D3D12_CPU_DESCRIPTOR_HANDLE{ m_DSVDescHeapAccessor.GetNewHandle().m_CPUHandle };
             }
         }
@@ -595,14 +546,14 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rhs)
 
 bool DX12RenderingServer::BeginFrame()
 {
-    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-    GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+    // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
+    // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
+    // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
 
     return true;
 }
 
-bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
+bool DX12RenderingServer::PrepareRayTracing(CommandListComponent* commandList)
 {
     auto l_currentFrame = GetCurrentFrame();
     auto l_instanceDescList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
@@ -627,7 +578,7 @@ bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
     auto l_TLASBuffer = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[l_currentFrame]);
     auto l_scratchBuffer = reinterpret_cast<DX12DeviceMemory*>(m_ScratchBufferComponent->m_DeviceMemories[l_currentFrame]);
     auto l_instanceBuffer = reinterpret_cast<DX12DeviceMemory*>(m_RaytracingInstanceBufferComponent->m_DeviceMemories[l_currentFrame]);
-    auto l_commandList = reinterpret_cast<DX12CommandList*>(commandList);
+    auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
     
     // Transition instance buffer for reading
     CD3DX12_RESOURCE_BARRIER instanceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -635,7 +586,7 @@ bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
     );
-    l_commandList->m_DirectCommandList->ResourceBarrier(1, &instanceBarrier);
+    l_commandList->ResourceBarrier(1, &instanceBarrier);
     
     // Setup TLAS build description - always full rebuild for stability
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC tlasDesc = {};
@@ -649,11 +600,11 @@ bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
     tlasDesc.ScratchAccelerationStructureData = l_scratchBuffer->m_DefaultHeapBuffer->GetGPUVirtualAddress();
     
     // Build the TLAS
-    l_commandList->m_DirectCommandList->BuildRaytracingAccelerationStructure(&tlasDesc, 0, nullptr);
+    l_commandList->BuildRaytracingAccelerationStructure(&tlasDesc, 0, nullptr);
     
     // Add UAV barrier for TLAS completion
     CD3DX12_RESOURCE_BARRIER tlasBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_TLASBuffer->m_DefaultHeapBuffer.Get());
-    l_commandList->m_DirectCommandList->ResourceBarrier(1, &tlasBarrier);
+    l_commandList->ResourceBarrier(1, &tlasBarrier);
     
     // Transition instance buffer back to writable state
     CD3DX12_RESOURCE_BARRIER instanceBarrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -661,7 +612,7 @@ bool DX12RenderingServer::PrepareRayTracing(ICommandList* commandList)
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
         D3D12_RESOURCE_STATE_UNORDERED_ACCESS
     );
-    l_commandList->m_DirectCommandList->ResourceBarrier(1, &instanceBarrierBack);
+    l_commandList->ResourceBarrier(1, &instanceBarrierBack);
     
     return true;
 }

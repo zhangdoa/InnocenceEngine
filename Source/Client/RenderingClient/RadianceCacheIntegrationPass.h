@@ -3,13 +3,14 @@
 
 namespace Inno
 {
-	class RadianceCacheIntegrationPass : IRenderPass
+	class RadianceCacheIntegrationPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(RadianceCacheIntegrationPass)
 
 		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
+		bool Update() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 

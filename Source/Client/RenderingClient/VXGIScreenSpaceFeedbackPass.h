@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent *m_output;
 	};
 
-	class VXGIScreenSpaceFeedbackPass : IRenderPass
+	class VXGIScreenSpaceFeedbackPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIScreenSpaceFeedbackPass)

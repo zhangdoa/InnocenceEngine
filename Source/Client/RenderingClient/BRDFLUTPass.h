@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class BRDFLUTPass : IRenderPass
+	class BRDFLUTPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(BRDFLUTPass)

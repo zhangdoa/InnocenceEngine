@@ -41,24 +41,6 @@ ComPtr<ID3D12CommandQueue> DX12RenderingServer::GetGlobalCommandQueue(D3D12_COMM
 	}
 }
 
-ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::GetGlobalCommandList(D3D12_COMMAND_LIST_TYPE commandListType)
-{
-	auto l_currentFrame = GetCurrentFrame();	
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(m_GlobalCommandLists[l_currentFrame]);
-	switch (commandListType)
-	{
-	case D3D12_COMMAND_LIST_TYPE_DIRECT:
-		return l_commandList->m_DirectCommandList;
-	case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-		return l_commandList->m_ComputeCommandList;
-	case D3D12_COMMAND_LIST_TYPE_COPY:
-		return l_commandList->m_CopyCommandList;
-	case D3D12_COMMAND_LIST_TYPE_BUNDLE:
-	default:
-		throw std::runtime_error("Invalid command list type");
-	}
-}
-
 DX12DescriptorHeapAccessor& DX12RenderingServer::GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility
 	, Accessibility resourceAccessibility, TextureUsage textureUsage, bool isShaderVisible)
 {

@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class SSAOPass : IRenderPass
+	class SSAOPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(SSAOPass)

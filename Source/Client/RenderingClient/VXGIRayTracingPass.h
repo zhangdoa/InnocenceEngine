@@ -10,7 +10,7 @@ namespace Inno
 		GPUResourceComponent *m_output;
 	};
 
-	class VXGIRayTracingPass : IRenderPass
+	class VXGIRayTracingPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIRayTracingPass)

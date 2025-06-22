@@ -110,6 +110,9 @@ bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("SunShadowGeometryProcessPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
 	m_ObjectStatus = ObjectStatus::Created;
 	
 	return true;
@@ -121,6 +124,7 @@ bool SunShadowGeometryProcessPass::Initialize()
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
 	l_renderingServer->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -153,10 +157,10 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
 	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
@@ -164,18 +168,18 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_CSMCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::CSM);
 	auto l_materialCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_transformCBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, l_CSMCBuffer, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_materialCBuffer, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, nullptr, 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 6);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_CSMCBuffer, 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 6);
 
 	// Use the indirect draw command buffer from SunShadowCullingPass
 	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(SunShadowCullingPass::Get().GetResult());
-	l_renderingServer->ExecuteIndirect(m_RenderPassComp, l_indirectDrawCommandBuffer);
+	l_renderingServer->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -190,10 +194,10 @@ RenderPassComponent* SunShadowGeometryProcessPass::GetRenderPassComp()
 GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 {
 	if (!m_RenderPassComp)
-		return nullptr;
+		return false;
 	
 	if (!m_RenderPassComp->m_OutputMergerTarget)
-		return nullptr;
+		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();

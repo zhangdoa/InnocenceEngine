@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent* m_input;
 	};
 
-	class PostTAAPass : IRenderPass
+	class PostTAAPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(PostTAAPass)

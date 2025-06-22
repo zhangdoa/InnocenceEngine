@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent *m_input;
 	};
 
-	class FinalBlendPass : IRenderPass
+	class FinalBlendPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(FinalBlendPass)

@@ -34,13 +34,6 @@ namespace Inno
 		VkRect2D m_Scissor = {};
 	};
 
-	class VKCommandList : public ICommandList
-	{
-	public:
-		VkCommandBuffer m_GraphicsCommandBuffer;
-		VkCommandBuffer m_ComputeCommandBuffer;
-	};
-
 	class VKSemaphore : public ISemaphore
 	{
 	public:

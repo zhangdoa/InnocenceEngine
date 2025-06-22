@@ -99,6 +99,12 @@ bool RadianceCacheReprojectionPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("RadianceCacheReprojectionPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("RadianceCacheReprojectionPass/Compute/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -110,22 +116,12 @@ bool RadianceCacheReprojectionPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
-}
-
-bool RadianceCacheReprojectionPass::Update()
-{
-	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	auto l_currentFrameResult = GetCurrentFrameResult();
-	auto l_renderingServer = g_Engine->getRenderingServer();
-	l_renderingServer->Clear(l_currentFrameResult);
-
-    return true;
 }
 
 bool RadianceCacheReprojectionPass::Terminate()
@@ -171,23 +167,35 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// Use graphics command list to transition resources to shader resource state
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(l_readTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(l_probePosition, m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(l_probeNormal, m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(l_writeTexture, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->Clear(m_CommandListComp_Graphics, l_writeTexture);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_readTexture, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_probePosition, 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_probeNormal, 6);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_writeTexture, 7);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_readTexture, 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_probePosition, 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_probeNormal, 6);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_writeTexture, 7);
 
 	auto dispatch_x = (l_writeTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto dispatch_y = (l_writeTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
 
-	l_renderingServer->Dispatch(m_RenderPassComp, dispatch_x, dispatch_y, 1);
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -210,7 +218,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 
 	m_RadianceCache_Even = l_renderingServer->AddTextureComponent("Radiance Cache Result (Even)/");
 	m_RadianceCache_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_RadianceCache_Even->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_RadianceCache_Even->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	l_renderingServer->Initialize(m_RadianceCache_Even);
 

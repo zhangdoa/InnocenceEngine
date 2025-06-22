@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class LightPass : public IRenderPass
+	class RadianceCacheFilterHorizontalPass : public IRenderPass
 	{
 	public:
-		INNO_CLASS_SINGLETON(LightPass)
+		INNO_CLASS_SINGLETON(RadianceCacheFilterHorizontalPass)
 
 		bool Setup(ISystemConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
@@ -16,18 +16,15 @@ namespace Inno
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
 
-		TextureComponent* GetLuminanceResult();
-		TextureComponent* GetIlluminanceResult();
+		TextureComponent* GetResult();
 
 	private:
+		const uint32_t TILE_SIZE = 8;
+
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;
-		SamplerComponent* m_SamplerComp_Linear;
-		SamplerComponent* m_SamplerComp_Point;
-
-		TextureComponent* m_LuminanceResult;
-		TextureComponent* m_IlluminanceResult;
+		TextureComponent* m_Result;
 
 		bool RenderTargetsCreationFunc();
 	};

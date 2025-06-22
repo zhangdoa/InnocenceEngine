@@ -113,29 +113,41 @@ ObjectStatus VXGIScreenSpaceFeedbackPass::GetStatus()
 
 bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
+	// Early check - skip if not activated
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_renderingContext = reinterpret_cast<VXGIScreenSpaceFeedbackPassRenderingContext*>(renderingContext);
-	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	// Use the Graphics command list component for VXGI rendering
+	if (!m_CommandListComp_Graphics)
+	{
+		m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent();
+		if (!m_CommandListComp_Graphics) return false;
+	}
+
+	if (!l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0))
+		return false;
+
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+
 	auto l_perFrameGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	if (l_perFrameGPUBufferComp && l_perFrameGPUBufferComp->m_ObjectStatus == ObjectStatus::Activated)
+	{
+		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, l_perFrameGPUBufferComp, 3);
+	}
 
-	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
-
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 3);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1);
+	// TODO: Uncomment and fix resource bindings when dependencies are ready
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0);
+	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
 
-	// l_renderingServer->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	// TODO: Uncomment when ready
+	// l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Graphics, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
-
-	// l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }

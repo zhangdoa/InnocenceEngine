@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class OpaquePass : IRenderPass
+	class OpaquePass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(OpaquePass)

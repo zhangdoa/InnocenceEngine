@@ -4,7 +4,7 @@
 
 namespace Inno
 {
-	class BSDFTestPass : IRenderPass
+	class BSDFTestPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(BSDFTestPass)

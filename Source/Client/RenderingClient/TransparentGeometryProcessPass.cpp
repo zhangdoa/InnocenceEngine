@@ -145,9 +145,9 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 
 	static uint32_t zero = 0;
 	l_renderingServer->Upload(m_atomicCounterGPUBufferComp, &zero);
-	l_renderingServer->Clear(m_RT0);
-	l_renderingServer->Clear(m_RT1);
-	l_renderingServer->Clear(m_HeadPtr);
+	l_renderingServer->Clear(m_CommandListComp_Graphics, m_RT0);
+	l_renderingServer->Clear(m_CommandListComp_Graphics, m_RT1);
+	l_renderingServer->Clear(m_CommandListComp_Graphics, m_HeadPtr);
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
@@ -193,7 +193,7 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 
 	// l_renderingServer->CommandListEnd(m_RenderPassComp);
 
-	return true;
+	return false;
 }
 
 RenderPassComponent* TransparentGeometryProcessPass::GetRenderPassComp()

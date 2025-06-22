@@ -135,6 +135,12 @@ bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("RadianceCacheRaytracingPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
+	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("RadianceCacheRaytracingPass/");
+	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -146,6 +152,8 @@ bool RadianceCacheRaytracingPass::Initialize()
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_renderingServer->Initialize(m_CommandListComp_Compute);
 	l_renderingServer->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -158,6 +166,7 @@ bool RadianceCacheRaytracingPass::Terminate()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	l_renderingServer->Delete(m_SamplerComp);	
+	l_renderingServer->Delete(m_CommandListComp_Compute);
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_ShaderProgramComp);
 
@@ -184,27 +193,38 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// Use graphics command list to transition resources to shader resource state
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(LightPass::Get().GetIlluminanceResult(), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(l_result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_renderingServer->GetTLASBuffer(), 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, LightPass::Get().GetIlluminanceResult(), 6);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), 7);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, l_result, 8);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 9);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 10);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
+	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_renderingServer->GetTLASBuffer(), 1);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 2);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 3);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 4);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 5);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, LightPass::Get().GetIlluminanceResult(), 6);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), 7);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_result, 8);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 9);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 10);
+	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
 
 	auto dispatch_x = (l_result->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;  // Round up
 	auto dispatch_y = (l_result->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;  // Round up
 
-	l_renderingServer->DispatchRays(m_RenderPassComp, dispatch_x, dispatch_y, 1);
-	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	l_renderingServer->DispatchRays(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
+	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

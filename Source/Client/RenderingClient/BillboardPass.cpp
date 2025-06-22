@@ -62,6 +62,11 @@ bool BillboardPass::Setup(ISystemConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("BillboardPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
+	m_ObjectStatus = ObjectStatus::Created;
+
 	return true;
 }
 
@@ -72,6 +77,9 @@ bool BillboardPass::Initialize()
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
 	l_renderingServer->Initialize(m_SamplerComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -101,36 +109,9 @@ bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 	auto l_BillboardGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Billboard);
 
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	// m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResource = m_SamplerComp;
+	// @TODO: Use indirect draw command
 
-	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
-
-	// auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
-
-	// auto& l_billboardPassDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetBillboardPassDrawCallInfo();
-	// auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
-
-	// for (uint32_t i = 0; i < l_drawCallCount; i++)
-	// {
-	// 	auto l_iconTexture = l_billboardPassDrawCallInfo[i].iconTexture;
-	// 	auto l_offset = l_billboardPassDrawCallInfo[i].meshConstantBufferOffset;
-	// 	auto l_instanceCount = l_billboardPassDrawCallInfo[i].instanceCount;
-
-	// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_BillboardGPUBufferComp, 1, l_offset, l_instanceCount);
-
-	// 	l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
-
-	// 	l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_mesh, l_instanceCount);
-
-	// 	l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_iconTexture, 2);
-	// }
-
-	// l_renderingServer->CommandListEnd(m_RenderPassComp);
-
-	return true;
+	return false;
 }
 
 RenderPassComponent* BillboardPass::GetRenderPassComp()

@@ -103,6 +103,9 @@ bool AnimationPass::Setup(ISystemConfig* systemConfig)
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
+	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("AnimationPass/Graphics/");
+	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
+
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -115,6 +118,7 @@ bool AnimationPass::Initialize()
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
 	l_renderingServer->Initialize(m_SamplerComp);
+	l_renderingServer->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -152,52 +156,52 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
 	// if (l_AnimationDrawCallInfo.size())
 	// {
-	// 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
+	// 	l_renderingServer->CommandListBegin(m_CommandListComp_Graphics, m_RenderPassComp, 0);
+	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 	// 	// Don't clean render targets since they are from previous pass
 
 	// 	for (auto i : l_AnimationDrawCallInfo)
 	// 	{
-	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
-	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
+	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
+	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
 
 	// 		if (i.drawCallInfo.mesh->m_ObjectStatus == ObjectStatus::Activated)
 	// 		{
-	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
-	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
+	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
+	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
 
 	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
+	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
 	// 			}
 
-	// 			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, i.drawCallInfo.mesh);
+	// 			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, m_CommandListComp_Graphics, i.drawCallInfo.mesh);
 
 	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
+	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
 	// 			}
 	// 		}
 	// 	}
 
-	// 	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 	// }
 	// else
 	// {
-	// 	l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// 	l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// 	l_renderingServer->CommandListBegin(m_CommandListComp_Graphics, m_RenderPassComp, 0);
+	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	// 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 	// }
 
-	return true;
+	return false;
 }
 
 RenderPassComponent* AnimationPass::GetRenderPassComp()

@@ -647,9 +647,9 @@ bool PhysXWrapper::createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Ve
 	return PhysXWrapperNS::createPxMesh(index, position, rotation, scale, isDynamic, isConvex, vertices, indices);
 }
 
-bool PhysXWrapper::addForce(ModelComponent* rhs, Vec4 force)
+bool PhysXWrapper::addForce(ModelComponent* model, Vec4 force)
 {
-	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(rhs->m_SimulationProxy);
+	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(model->m_SimulationProxy);
 	l_rigidBody->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
 	return true;
 }

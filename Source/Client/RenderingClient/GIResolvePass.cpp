@@ -934,12 +934,8 @@ bool GIResolvePass::PrepareCommandList()
 		litProbes();
 		generateIrradianceVolume();
 
-		l_renderingServer->ExecuteCommandList(m_skyRadianceRenderPassComp, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(m_skyIrradianceRenderPassComp, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(m_surfelRenderPassComp, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(m_brickRenderPassComp, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(m_probeRenderPassComp, GPUEngineType::Graphics);
-		l_renderingServer->ExecuteCommandList(m_irradianceVolumeRenderPassComp, GPUEngineType::Graphics);	
+		// Note: All command preparation functions above are commented out, so these executions won't have actual command lists
+		// These would need to be updated when the command preparation functions are uncommented	
 	}
 
 	return true;
@@ -977,7 +973,7 @@ GPUResourceComponent* GIResolvePass::GetProbeVolume()
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 
@@ -989,6 +985,6 @@ GPUResourceComponent* GIResolvePass::GetIrradianceVolume()
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }

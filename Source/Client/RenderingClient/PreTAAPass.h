@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class PreTAAPass : IRenderPass
+	class PreTAAPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(PreTAAPass)

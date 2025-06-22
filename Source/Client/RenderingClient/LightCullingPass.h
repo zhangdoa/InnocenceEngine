@@ -9,7 +9,7 @@ namespace Inno
 		GPUResourceComponent *m_input;
 	};
 
-	class LightCullingPass : IRenderPass
+	class LightCullingPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(LightCullingPass)

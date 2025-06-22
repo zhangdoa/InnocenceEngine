@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class TransparentGeometryProcessPass : IRenderPass
+	class TransparentGeometryProcessPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(TransparentGeometryProcessPass)

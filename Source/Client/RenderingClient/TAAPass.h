@@ -10,7 +10,7 @@ namespace Inno
 		GPUResourceComponent* m_motionVector;
 	};
 
-	class TAAPass : IRenderPass
+	class TAAPass : public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(TAAPass)

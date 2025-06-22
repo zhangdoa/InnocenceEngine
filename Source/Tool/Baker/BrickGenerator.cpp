@@ -289,7 +289,7 @@ namespace Inno
 
             l_renderingServer->CommandListEnd(m_RenderPassComp_BrickFactor);
 
-            l_renderingServer->ExecuteCommandList(m_RenderPassComp_BrickFactor, GPUEngineType::Graphics);
+            l_renderingServer->Execute(m_RenderPassComp_BrickFactor, GPUEngineType::Graphics);
 
             return true;
         }

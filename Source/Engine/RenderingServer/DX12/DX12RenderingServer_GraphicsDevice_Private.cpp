@@ -373,16 +373,6 @@ bool DX12RenderingServer::CreateGlobalCommandAllocators()
 
     Log(Success, "Global CommandAllocators have been created.");
 
-    m_GlobalCommandLists.resize(m_swapChainImageCount);
-    for (size_t i = 0; i < m_GlobalCommandLists.size(); i++)
-    {
-        auto l_commandList = static_cast<DX12CommandList*>(AddCommandList());
-        CreateCommandList(l_commandList, i, L"GPUBufferCommandList");
-        m_GlobalCommandLists[i] = l_commandList;
-    }
-
-    Log(Success, "Global CommandLists have been created.");
-
     return true;
 }
 

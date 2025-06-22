@@ -10,7 +10,7 @@ namespace Inno
 		uint32_t m_resolution;
 	};
 
-	class VXGIConvertPass: IRenderPass
+	class VXGIConvertPass: public IRenderPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(VXGIConvertPass)
