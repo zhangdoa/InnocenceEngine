@@ -200,7 +200,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	// Use graphics command list to transition depth buffer from DEPTH_WRITE to NON_PIXEL_SHADER_RESOURCE state
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);

@@ -8,19 +8,6 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12RenderingServer::CommandListBegin(RenderPassComponent* renderPassComp, CommandListComponent* commandList, size_t frameIndex)
-{
-	if (!commandList || !renderPassComp)
-	{
-		Log(Error, "DX12RenderingServer::CommandListBegin: Invalid parameters");
-		return false;
-	}
-		
-	return Open(commandList, commandList->m_Type, renderPassComp->m_PipelineStateObject);;
-}
-
-
-
 bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	if (!renderPass || !commandList)
@@ -29,7 +16,6 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* renderPas
 		return false;
 	}
 	
-	// Cast once for readability
 	auto l_dx12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	if (!l_dx12CommandList)
 	{
@@ -37,7 +23,7 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* renderPas
 		return false;
 	}
 
-	ChangeRenderTargetStates(renderPass, commandList, Accessibility::WriteOnly);
+	ChangeRenderTargetStates(renderPass, commandList, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	SetDescriptorHeaps(renderPass, commandList);
 	SetRenderTargets(renderPass, commandList);
 
@@ -67,7 +53,6 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* renderPass, Co
 	if (renderPass->m_RenderPassDesc.m_RenderTargetCount == 0)
 		return true;
 
-	// Cast once for readability
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	if (!l_commandList)
 	{
@@ -418,93 +403,64 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Comma
 	return false;
 }
 
-bool DX12RenderingServer::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility accessibility)
+bool DX12RenderingServer::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
 	auto* resource = static_cast<ID3D12Resource*>(texture->GetGPUResource(frameIndex));
-	if (!resource)
+
+	auto l_oldState = static_cast<D3D12_RESOURCE_STATES>(texture->GetCurrentState(frameIndex));
+	auto l_newState = static_cast<D3D12_RESOURCE_STATES>(targetAccessibility.CanWrite() ? texture->m_WriteState : texture->m_ReadState);
+	if (targetAccessibility.IsCopySource())
+		l_newState = D3D12_RESOURCE_STATE_COPY_SOURCE;
+	if (targetAccessibility.IsCopyDestination())
+		l_newState = D3D12_RESOURCE_STATE_COPY_DEST;
+
+	if (l_oldState != l_newState)
 	{
-		Log(Error, "No resource found for ", texture->m_InstanceName);
-		return false;
+		auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
+			resource,
+			l_oldState,
+			l_newState);
+
+		l_commandList->ResourceBarrier(1, &l_transition);
+
+		texture->SetCurrentState(frameIndex, static_cast<uint32_t>(l_newState));
 	}
-
-	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
-	auto l_newState = accessibility.CanWrite() ? texture->m_WriteState : texture->m_ReadState;
-
-	if (texture->m_CurrentState == l_newState)
-		return false;
-
-	// Check if the resource states are valid for the command list type
-	auto l_currentState = static_cast<D3D12_RESOURCE_STATES>(texture->m_CurrentState);
-	auto l_targetState = static_cast<D3D12_RESOURCE_STATES>(l_newState);
 	
-	// Compute command lists have restrictions on which resource states they can use
-	if (commandList->m_Type == GPUEngineType::Compute)
-	{
-		// States not allowed on compute command lists
-		const D3D12_RESOURCE_STATES invalidComputeStates = 
-			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER |
-			D3D12_RESOURCE_STATE_INDEX_BUFFER |
-			D3D12_RESOURCE_STATE_RENDER_TARGET |
-			D3D12_RESOURCE_STATE_DEPTH_WRITE |
-			D3D12_RESOURCE_STATE_DEPTH_READ |
-			D3D12_RESOURCE_STATE_STREAM_OUT |
-			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT |
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
-			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-		
-		if ((l_currentState & invalidComputeStates) || (l_targetState & invalidComputeStates))
-		{
-			Log(Warning, "Skipping resource state transition for ", texture->m_InstanceName, 
-				" on compute command list. Current state: 0x", std::hex, (uint32_t)l_currentState, 
-				", target state: 0x", (uint32_t)l_targetState, std::dec, 
-				". Resource state transitions with graphics-specific states should be done on direct command lists.");
-			return false;
-		}
-	}
-
-	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
-		resource, 
-		l_currentState, 
-		l_targetState);
-
-	l_commandList->ResourceBarrier(1, &l_transition);
-
-	// @TODO: State should only be updated after command list execution, not during recording
-	texture->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
 
-bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility accessibility)
+bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
 	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(gpuBuffer->m_DeviceMemories[frameIndex]);
-	if (!l_deviceMemory || !l_deviceMemory->m_DefaultHeapBuffer)
-		return false;
 
-	auto l_newState = accessibility.CanWrite() ? gpuBuffer->m_WriteState : gpuBuffer->m_ReadState;
+	auto l_oldState = static_cast<D3D12_RESOURCE_STATES>(gpuBuffer->GetCurrentState(frameIndex));
+	auto l_newState = static_cast<D3D12_RESOURCE_STATES>(targetAccessibility.CanWrite() ? gpuBuffer->m_WriteState : gpuBuffer->m_ReadState);
+	if (targetAccessibility.IsCopySource())
+		l_newState = D3D12_RESOURCE_STATE_COPY_SOURCE;
+	if (targetAccessibility.IsCopyDestination())
+		l_newState = D3D12_RESOURCE_STATE_COPY_DEST;
+
+	// Only perform transition if states are different
+	if (l_oldState != l_newState)
+	{
+		auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
+			l_deviceMemory->m_DefaultHeapBuffer.Get(),
+			l_oldState,
+			l_newState);
+
+		l_commandList->ResourceBarrier(1, &l_transition);
+
+		gpuBuffer->SetCurrentState(frameIndex, l_newState);
+	}
 	
-	if (gpuBuffer->m_CurrentState == l_newState)
-		return false;
-
-	auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(
-		l_deviceMemory->m_DefaultHeapBuffer.Get(),
-		static_cast<D3D12_RESOURCE_STATES>(gpuBuffer->m_CurrentState),
-		static_cast<D3D12_RESOURCE_STATES>(l_newState));
-
-	// Resource state transitions use the command list that was passed in
-	// The caller is responsible for ensuring proper synchronization between different queue types
-	l_commandList->ResourceBarrier(1, &l_transition);
-
-	// @TODO: State should only be updated after command list execution, not during recording
-	gpuBuffer->m_CurrentState = static_cast<uint32_t>(l_newState);
 	return true;
 }
-
 
 bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
 {
@@ -528,11 +484,11 @@ bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, Comma
 	if (maxDrawCommandCount == 0)
 		return false;
 
-	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadOnly);
+	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadWrite, Accessibility::ReadOnly);
 
 	l_commandList->ExecuteIndirect(l_PSO->m_IndirectCommandSignature.Get(), maxDrawCommandCount, l_deviceMemory->m_DefaultHeapBuffer.Get(), 0, nullptr, 0);
 
-	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadWrite);
+	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadOnly, Accessibility::ReadWrite);
 
 	return true;
 }
@@ -618,25 +574,6 @@ bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListC
 
 	l_commandList->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 
-	return true;
-}
-
-bool DX12RenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
-{
-	if (!renderPass || !commandList)
-	{
-		Log(Error, "Null render pass or command list in CommandListEnd");
-		return false;
-	}
-
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
-
-	if (!Close(commandList, renderPass->m_RenderPassDesc.m_GPUEngineType))
-	{
-		Log(Error, "Failed to close command list for render pass ", renderPass->m_InstanceName);
-		return false;
-	}
-	
 	return true;
 }
 

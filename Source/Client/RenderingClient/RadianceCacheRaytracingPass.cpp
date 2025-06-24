@@ -88,21 +88,21 @@ bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 5;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[6].m_ShaderStage = m_ShaderStage;
 
 	// t6 - previous frame radiance cache
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 6;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_ShaderStage = m_ShaderStage;
 
 	// u0 - radiance cache from current frame
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = m_ShaderStage;
@@ -119,7 +119,7 @@ bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ColorAttachment;	
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;	
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage = m_ShaderStage;
@@ -128,7 +128,7 @@ bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 3;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage = m_ShaderStage;
@@ -195,13 +195,16 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 
 	// Use graphics command list to transition resources to shader resource state
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(LightPass::Get().GetIlluminanceResult(), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(l_result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(LightPass::Get().GetIlluminanceResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	
+	// Transition previous frame result from its current state to ReadOnly
+	l_renderingServer->TryToTransitState(RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	
+	l_renderingServer->TryToTransitState(l_result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -227,6 +230,7 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
+	
 
 	return true;
 }

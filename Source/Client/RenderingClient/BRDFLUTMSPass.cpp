@@ -42,7 +42,6 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_TextureUsage = TextureUsage::ComputeOnly;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
     m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
@@ -50,8 +49,7 @@ bool BRDFLUTMSPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_TextureUsage = TextureUsage::ComputeOnly;	
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_TextureUsage = TextureUsage::ComputeOnly;
     m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;

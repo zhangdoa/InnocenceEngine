@@ -96,10 +96,6 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 	
 	auto l_renderingServer = g_Engine->getRenderingServer();
-
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 	
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);

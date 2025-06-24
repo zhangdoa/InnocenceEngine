@@ -37,6 +37,8 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
+	// @TODO: maybe it's wrong to write like this
+	//m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessFunc = std::bind(&RenderingContextService::GetGPUBufferComponent, g_Engine->Get<RenderingContextService>(), GPUBufferUsageType::PerFrame);
 
 	// t0 - Input
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
@@ -44,6 +46,8 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage = ShaderStage::Compute;
+	// @TODO: need to figure out a proper way to pass it through
+	//m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessFunc = std::bind(&FinalBlendPass::GetContext, this);
 
 	// t1 - BillboardPass
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
@@ -51,6 +55,7 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage = ShaderStage::Compute;
+	//m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessFunc = std::bind(&BillboardPass::GetResult, BillboardPass::Get());
 
 	// t2 - DebugPass
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
@@ -58,6 +63,7 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_TextureUsage = TextureUsage::ColorAttachment;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage = ShaderStage::Compute;
+	//m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessFunc = std::bind(&DebugPass::GetResult, DebugPass::Get());
 
 	// u0 - LuminanceAveragePass
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
@@ -66,6 +72,7 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Compute;
+	//m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessFunc = std::bind(&LuminanceAveragePass::GetResult, LuminanceAveragePass::Get());
 
 	// u1 - Result
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
@@ -73,8 +80,9 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_TextureUsage = TextureUsage::ComputeOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage = ShaderStage::Compute;
+	//m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_ResourceAccessFunc = std::bind(&FinalBlendPass::GetResult, this);
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -143,8 +151,9 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	// Use graphics command list to transition resources
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	// Don't assume source state - let TryToTransitState use actual current state
+	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadWrite, Accessibility::WriteOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -191,7 +200,7 @@ bool FinalBlendPass::RenderTargetsCreationFunc()
 
 	m_Result = l_renderingServer->AddTextureComponent("Final Blend Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	l_renderingServer->Initialize(m_Result);
 

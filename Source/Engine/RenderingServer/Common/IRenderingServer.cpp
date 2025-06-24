@@ -26,6 +26,8 @@ Accessibility Accessibility::Immutable = Accessibility(false, false);
 Accessibility Accessibility::ReadOnly = Accessibility(true, false);
 Accessibility Accessibility::WriteOnly = Accessibility(false, true);
 Accessibility Accessibility::ReadWrite = Accessibility(true, true);
+Accessibility Accessibility::CopySource = Accessibility(true, false, true, false);  // read=true, write=false, copySource=true
+Accessibility Accessibility::CopyDestination = Accessibility(false, true, false, true);  // read=false, write=true, copyDest=true
 
 bool IRenderingServer::InitializePool()
 {
@@ -489,12 +491,6 @@ bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* render
 	return true;
 }
 
-bool IRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
-{
-	// Base implementation does nothing - derived classes must override
-	return true;
-}
-
 bool IRenderingServer::SignalOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType)
 {
 	if (renderPass == nullptr)
@@ -533,28 +529,48 @@ bool IRenderingServer::WaitOnGPU(RenderPassComponent* renderPass, GPUEngineType 
 	return WaitOnGPU(l_semaphore, queueType, semaphoreType);
 }
 
+bool IRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
+{
+	if (!commandList || !renderPass)
+		return false;
+
+	return Open(commandList, commandList->m_Type, renderPass->m_PipelineStateObject);
+}
+
 bool IRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
-	// Base implementation does nothing - derived classes should override
+	if (!renderPass || !commandList)
+	{
+		Log(Error, "Null render pass or command list in CommandListEnd");
+		return false;
+	}
+
+	if (!Close(commandList, renderPass->m_RenderPassDesc.m_GPUEngineType))
+	{
+		Log(Error, "Failed to close command list for render pass ", renderPass->m_InstanceName);
+		return false;
+	}
+	
 	return true;
 }
 
-bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility accessibility)
+bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
 
 	auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
+
 	for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 	{
-		auto& l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
-		TryToTransitState(l_renderTarget, commandList, accessibility);
+		auto l_renderTarget = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[i]);
+		TryToTransitState(l_renderTarget, commandList, sourceAccessibility, targetAccessibility);
 	}
 
 	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 	{
-		auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
-		TryToTransitState(l_depthStencilRenderTarget, commandList, accessibility);
+		auto l_depthStencilRenderTarget = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_DepthStencilOutput);
+		TryToTransitState(l_depthStencilRenderTarget, commandList, sourceAccessibility, targetAccessibility);
 	}
 
 	return true;
@@ -866,7 +882,10 @@ bool IRenderingServer::PrepareGlobalCommands()
 		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
+			// Transition to copy destination, upload, then transition back
+			TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
 			UploadToGPU(l_commandList, i);
+			TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
 			l_mappedMemory->m_NeedUploadToGPU = false;
 		}
 	}
@@ -911,7 +930,8 @@ bool IRenderingServer::PrepareSwapChainCommands()
 	
 	CommandListBegin(m_SwapChainRenderPassComp, l_commandList, l_currentFrame);
 
-	TryToTransitState(reinterpret_cast<TextureComponent*>(l_userPipelineOutput), l_commandList, Accessibility::ReadOnly);
+	// User pipeline output was written to, now we need to read from it
+	TryToTransitState(reinterpret_cast<TextureComponent*>(l_userPipelineOutput), l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	BindRenderPassComponent(m_SwapChainRenderPassComp, l_commandList);
 
 	ClearRenderTargets(m_SwapChainRenderPassComp, l_commandList);
@@ -922,7 +942,8 @@ bool IRenderingServer::PrepareSwapChainCommands()
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRenderPassComp, l_commandList, l_mesh, 1);
-	TryToTransitState(m_SwapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], l_commandList, Accessibility::ReadOnly);
+
+	TryToTransitState(m_SwapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	
 	CommandListEnd(m_SwapChainRenderPassComp, l_commandList);
 

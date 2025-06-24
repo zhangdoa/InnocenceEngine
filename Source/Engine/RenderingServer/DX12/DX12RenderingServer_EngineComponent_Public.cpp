@@ -197,7 +197,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
 //     if (textureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 //     {
 //         l_format = DXGI_FORMAT_R32_TYPELESS; // DXGI_FORMAT_R8_TYPELESS for the stencil
-//         f_DefaultToReadbackHeap(l_DeviceMemory->m_DefaultHeapBuffer, l_DeviceMemory->m_ReadBackHeapBuffer, l_footprints, l_format, l_rhs->m_CurrentState);
+//         f_DefaultToReadbackHeap(l_DeviceMemory->m_DefaultHeapBuffer, l_DeviceMemory->m_ReadBackHeapBuffer, l_footprints, l_format, D3D12_RESOURCE_STATE_COMMON);
 //         auto l_rawResult = f_ReadbackToHostHeap(l_DeviceMemory->m_ReadBackHeapBuffer, l_rhs->m_PixelDataSize, l_pixelCount);
 //         auto l_pixelCount = l_rawResult.size() / 4;
 
@@ -218,7 +218,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
 //     else
 //     {
 //         l_format = l_rhs->m_DX12TextureDesc.Format;
-//         f_DefaultToReadbackHeap(l_DeviceMemory->m_DefaultHeapBuffer, l_DeviceMemory->m_ReadBackHeapBuffer, l_footprints, l_format, l_rhs->m_CurrentState);
+//         f_DefaultToReadbackHeap(l_DeviceMemory->m_DefaultHeapBuffer, l_DeviceMemory->m_ReadBackHeapBuffer, l_footprints, l_format, D3D12_RESOURCE_STATE_COMMON);
 //         auto l_rawResult = f_ReadbackToHostHeap(l_DeviceMemory->m_ReadBackHeapBuffer, l_rhs->m_PixelDataSize, l_pixelCount);
 
 //         l_result.resize(l_pixelCount);
@@ -287,12 +287,6 @@ bool DX12RenderingServer::GenerateMipmap(TextureComponent* texture, CommandListC
         return false;
     }
 
-    // Verify texture is in correct state for compute operations
-    if (texture->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-    {
-        Log(Error, texture->m_InstanceName, " Texture must be in UNORDERED_ACCESS state for mipmap generation. Current state: ", texture->m_CurrentState);
-        return false;
-    }
 
     // Determine if this is a static texture (Sample) or render target (attachment or compute usage)
     bool isStaticTexture = (texture->m_TextureDesc.Usage == TextureUsage::Sample);

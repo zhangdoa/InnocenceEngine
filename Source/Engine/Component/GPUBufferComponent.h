@@ -16,9 +16,21 @@ namespace Inno
 		void* m_InitialData = 0;
 		std::vector<IMappedMemory*> m_MappedMemories;
 		std::vector<IDeviceMemory*> m_DeviceMemories;
+
+		mutable std::vector<uint32_t> m_CurrentState;
 		
-		uint32_t m_ReadState = 0;
-		uint32_t m_WriteState = 0;
-		uint32_t m_CurrentState = 0;
+		uint32_t GetCurrentState(uint32_t frameIndex) const
+		{
+			if (frameIndex < m_CurrentState.size())
+				return m_CurrentState[frameIndex];
+
+			return 0;
+		}
+		
+		void SetCurrentState(uint32_t frameIndex, uint32_t state) const
+		{
+			if (frameIndex < m_CurrentState.size())
+				m_CurrentState[frameIndex] = state;
+		}
 	};
 }

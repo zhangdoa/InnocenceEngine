@@ -103,7 +103,19 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_dx12CommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"MeshInitCommandList");
 	l_commandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12CommandList.Get());
 
+	// Transition buffers to copy destination state, upload, then back to their read states
+	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+
 	UploadToGPU(&l_commandList, mesh);
+
+	// Transition back to read states for normal rendering
+	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 
 	// Create BLAS
 	D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
@@ -198,14 +210,12 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 	texture->m_WriteState = GetTextureWriteState(texture->m_TextureDesc);
 	texture->m_ReadState = GetTextureReadState(texture->m_TextureDesc);
 
-	if (texture->m_TextureDesc.Usage == TextureUsage::Sample)
-		texture->m_CurrentState = texture->m_ReadState;
-	else
-		texture->m_CurrentState = texture->m_WriteState;
+	auto stateFrameCount = texture->m_TextureDesc.IsMultiBuffer ? m_swapChainImageCount : 1;
+	auto l_initialState = static_cast<D3D12_RESOURCE_STATES>(texture->m_TextureDesc.Usage == TextureUsage::Sample ? texture->m_ReadState : texture->m_WriteState);
+	texture->m_CurrentState.resize(stateFrameCount, l_initialState);
 
 	D3D12_CLEAR_VALUE l_clearValue = {};
 	bool useClearValue = false;
-
 	if (texture->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
@@ -227,11 +237,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 		l_clearValue.Color[3] = texture->m_TextureDesc.ClearColor[3];
 		useClearValue = true;
 	}
-
+	
 	uint32_t frameCount = texture->m_TextureDesc.IsMultiBuffer ? GetSwapChainImageCount() : 1;
 	texture->m_GPUResources.resize(frameCount);
-
-	D3D12_RESOURCE_STATES l_initialState = static_cast<D3D12_RESOURCE_STATES>(texture->m_CurrentState);
+	
 	for (uint32_t frame = 0; frame < frameCount; frame++)
 	{
 		ComPtr<ID3D12Resource> defaultHeapBuffer;
@@ -286,9 +295,6 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * texture->m_TextureDesc.Height;
 		l_textureSubResourceData.pData = (unsigned char*)textureData;
 
-		// Determine final state after upload
-		D3D12_RESOURCE_STATES l_finalState = (texture->m_TextureDesc.MipLevels > 1) ?
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS : static_cast<D3D12_RESOURCE_STATES>(texture->m_ReadState);
 		for (auto gpuResource : texture->m_GPUResources)
 		{
 			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
@@ -297,12 +303,10 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 
 			UpdateSubresources(l_dx12UploadCommandList.Get(), l_defaultHeapBuffer, l_uploadHeapBuffer.Get(), 0, 0, l_subresourcesCount, &l_textureSubResourceData);
 
+			auto l_nextState = texture->m_TextureDesc.MipLevels > 1 ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : l_initialState;
 			l_dx12UploadCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_DEST, l_finalState));
+				l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_DEST, l_nextState));
 		}
-
-		// Update current state
-		texture->m_CurrentState = static_cast<uint32_t>(l_finalState);
 
 		// Execute and wait for upload phase
 		Close(&l_uploadCommandList, GPUEngineType::Graphics);
@@ -349,40 +353,33 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 	// Phase 2: Generate mipmaps with compute command list (if needed)
 	if (texture->m_TextureDesc.MipLevels > 1 && textureData)
 	{
-		// Texture should already be in UAV state from upload phase
 		CommandListComponent l_mipmapCommandList = {};
 		l_mipmapCommandList.m_Type = GPUEngineType::Compute;
 		auto l_dx12MipmapCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE), L"TextureMipmapCommandList");
 		l_mipmapCommandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12MipmapCommandList.Get());
 
-		// Generate mipmaps (texture must be in UAV state)
 		GenerateMipmap(texture, &l_mipmapCommandList);
 
-		// Execute and wait for mipmap generation
 		l_dx12MipmapCommandList->Close();
 		Execute(&l_mipmapCommandList, GPUEngineType::Compute);
 		SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
 		auto l_computeSemaphoreValue = GetSemaphoreValue(GPUEngineType::Compute);
 		WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 
-		// Phase 3: Transition texture back to read state for rendering passes
+		// Phase 3: Transition texture back to initial state for rendering passes
 		CommandListComponent l_transitionCommandList = {};
 		l_transitionCommandList.m_Type = GPUEngineType::Graphics;
 		auto l_dx12TransitionCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"TextureTransitionCommandList");
 		l_transitionCommandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12TransitionCommandList.Get());
 
-		// Transition all texture resources back to their read state
 		for (auto gpuResource : texture->m_GPUResources)
 		{
 			auto l_defaultHeapBuffer = static_cast<ID3D12Resource*>(gpuResource);
 			l_dx12TransitionCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				l_defaultHeapBuffer,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-				static_cast<D3D12_RESOURCE_STATES>(texture->m_ReadState)));
+				l_initialState));
 		}
-
-		// Update texture state
-		texture->m_CurrentState = texture->m_ReadState;
 
 		// Execute and wait for transition
 		Close(&l_transitionCommandList, GPUEngineType::Graphics);
@@ -401,7 +398,6 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 
 bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent* shaderProgram)
 {
-	// No need to cast - use base component directly
 #ifdef USE_DXIL
 	if (shaderProgram->m_ShaderFilePaths.m_VSPath != "")
 	{
@@ -575,7 +571,6 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
 		gpuBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
 		gpuBuffer->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		gpuBuffer->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		gpuBuffer->m_CurrentState = gpuBuffer->m_WriteState;
 	}
 	else if (l_isRaytracingAS)
 	{
@@ -598,14 +593,12 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
 
 		gpuBuffer->m_ReadState = static_cast<uint32_t>(l_initialState);
 		gpuBuffer->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		gpuBuffer->m_CurrentState = gpuBuffer->m_ReadState;
 	}
 	else
 	{
 		// Default buffer states for other usage types
-		gpuBuffer->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_COMMON);
+		gpuBuffer->m_ReadState = static_cast<uint32_t>(l_initialState);
 		gpuBuffer->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		gpuBuffer->m_CurrentState = gpuBuffer->m_ReadState;
 	}
 
 	auto l_actualElementCount = l_isRaytracingAS ? 1 : gpuBuffer->m_ElementCount;
@@ -614,6 +607,9 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
 	gpuBuffer->m_TotalSize = l_actualElementCount * gpuBuffer->m_ElementSize;
 	gpuBuffer->m_MappedMemories.resize(l_swapChainImageCount);
 	gpuBuffer->m_DeviceMemories.resize(l_swapChainImageCount);
+	
+	// Initialize state tracking - buffers start in their read state by default
+	gpuBuffer->m_CurrentState.resize(l_swapChainImageCount, gpuBuffer->m_ReadState);
 
 	auto l_uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(gpuBuffer->m_TotalSize);
 	bool l_needDefaultHeap = gpuBuffer->m_GPUAccessibility.CanRead() && !gpuBuffer->m_CPUAccessibility.CanRead();
@@ -664,7 +660,22 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
 			auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(gpuBuffer->m_DeviceMemories[i]);
 			WriteMappedMemory(gpuBuffer, l_mappedMemory, gpuBuffer->m_InitialData, 0, gpuBuffer->m_TotalSize);
 			l_mappedMemory->m_NeedUploadToGPU = false;
+
+			// Transition to copy destination state for upload
+			if (l_deviceMemory->m_DefaultHeapBuffer)
+			{
+				l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+					l_deviceMemory->m_DefaultHeapBuffer.Get(), l_initialState, D3D12_RESOURCE_STATE_COPY_DEST));
+			}
+
 			UploadToGPU(&l_commandList, l_mappedMemory, l_deviceMemory, gpuBuffer);
+
+			// Transition back to initial state
+			if (l_deviceMemory->m_DefaultHeapBuffer)
+			{
+				l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+					l_deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_initialState));
+			}
 		}
 
 		Close(&l_commandList, GPUEngineType::Graphics);
@@ -816,16 +827,8 @@ bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, MeshCom
 	auto indexDefault = m_MeshIndexBuffers_Default[componentUUID];
 	auto indexUpload = m_MeshIndexBuffers_Upload[componentUUID];
 
-	if (mesh->m_ObjectStatus == ObjectStatus::Activated)
-	{
-		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexDefault.Get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
-		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexDefault.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
-	}
-
 	l_DX12CommandList->CopyResource(vertexDefault.Get(), vertexUpload.Get());
 	l_DX12CommandList->CopyResource(indexDefault.Get(), indexUpload.Get());
-	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexDefault.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexDefault.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 
 	return true;
 }
@@ -854,16 +857,8 @@ bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, DX12Map
 		return true;
 
 	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
-	auto l_beforeState = static_cast<D3D12_RESOURCE_STATES>(GPUBufferComponent->m_CurrentState);
-	auto l_afterState = D3D12_RESOURCE_STATE_COPY_DEST;
-	if (GPUBufferComponent->m_ObjectStatus == ObjectStatus::Activated)
-	{
-		l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), l_beforeState, l_afterState));
-	}
-
+	
 	l_DX12CommandList->CopyResource(deviceMemory->m_DefaultHeapBuffer.Get(), mappedMemory->m_UploadHeapBuffer.Get());
-
-	l_DX12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(deviceMemory->m_DefaultHeapBuffer.Get(), l_afterState, l_beforeState));
 
 	return true;
 }
@@ -894,7 +889,6 @@ bool DX12RenderingServer::Copy(CommandListComponent* commandList, TextureCompone
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
-	// Get resources directly from components
 	auto* srcResource = static_cast<ID3D12Resource*>(sourceTexture->GetGPUResource(frameIndex));
 	auto* destResource = static_cast<ID3D12Resource*>(destinationTexture->GetGPUResource(frameIndex));
 
@@ -904,35 +898,7 @@ bool DX12RenderingServer::Copy(CommandListComponent* commandList, TextureCompone
 		return false;
 	}
 
-	// Get current states
-	auto l_srcReadState = sourceTexture->m_ReadState;
-	auto l_destReadState = destinationTexture->m_ReadState;
-
-	// Transition source to copy source state
-	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		srcResource,
-		static_cast<D3D12_RESOURCE_STATES>(sourceTexture->m_CurrentState),
-		D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-	// Transition destination to copy dest state
-	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		destResource,
-		static_cast<D3D12_RESOURCE_STATES>(destinationTexture->m_CurrentState),
-		D3D12_RESOURCE_STATE_COPY_DEST));
-
-	// Copy resource
 	l_commandList->CopyResource(destResource, srcResource);
-
-	// Transition back to original states
-	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		srcResource,
-		D3D12_RESOURCE_STATE_COPY_SOURCE,
-		static_cast<D3D12_RESOURCE_STATES>(sourceTexture->m_CurrentState)));
-
-	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		destResource,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		static_cast<D3D12_RESOURCE_STATES>(destinationTexture->m_CurrentState)));
 
 	return true;
 }
@@ -942,7 +908,6 @@ bool DX12RenderingServer::Clear(CommandListComponent* commandList, TextureCompon
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
-	// Get resource directly from component
 	auto* resource = static_cast<ID3D12Resource*>(texture->GetGPUResource(frameIndex));
 	if (!resource)
 	{
@@ -952,16 +917,6 @@ bool DX12RenderingServer::Clear(CommandListComponent* commandList, TextureCompon
 
 	ID3D12DescriptorHeap* l_heaps[] = { m_CSUDescHeap.Get() };
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
-
-	auto l_currentState = texture->m_CurrentState;
-	if (l_currentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-	{
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			resource,
-			static_cast<D3D12_RESOURCE_STATES>(texture->m_CurrentState),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-		texture->m_CurrentState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-	}
 
 	uint32_t handleIndex = texture->GetHandleIndex(frameIndex, 0);
 	if (texture->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
@@ -983,14 +938,6 @@ bool DX12RenderingServer::Clear(CommandListComponent* commandList, TextureCompon
 			&texture->m_TextureDesc.ClearColor[0],
 			0,
 			NULL);
-	}
-
-	if (l_currentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-	{
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			resource,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			static_cast<D3D12_RESOURCE_STATES>(l_currentState)));
 	}
 
 	return true;

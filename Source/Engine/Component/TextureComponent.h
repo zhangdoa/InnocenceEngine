@@ -9,11 +9,11 @@ namespace Inno
 		static uint32_t GetTypeID() { return 8; };
 		static const char* GetTypeName() { return "TextureComponent"; };
 		TextureDesc m_TextureDesc = {};
-		uint32_t m_ReadState = 0;
-		uint32_t m_WriteState = 0;
-		uint32_t m_CurrentState = 0;
 
 		std::vector<void*> m_GPUResources;
+		
+		// Track current state per frame buffer (dynamic array like m_GPUResources)
+		mutable std::vector<uint32_t> m_CurrentState;
 		
 		inline uint32_t GetHandleIndex(uint32_t frameIndex, uint32_t mipLevel) const
 		{
@@ -28,6 +28,26 @@ namespace Inno
 			if (frameIndex < m_GPUResources.size())
 				return m_GPUResources[frameIndex];
 			return nullptr;
+		}
+		
+		uint32_t GetCurrentState(uint32_t frameIndex) const
+		{
+			if (!m_TextureDesc.IsMultiBuffer)
+				return m_CurrentState[0];
+		
+			if (frameIndex < m_CurrentState.size())
+				return m_CurrentState[frameIndex];
+
+			return 0;
+		}
+		
+		void SetCurrentState(uint32_t frameIndex, uint32_t state) const
+		{
+			if (!m_TextureDesc.IsMultiBuffer)
+				m_CurrentState[0] = state;
+		
+			if (frameIndex < m_CurrentState.size())
+				m_CurrentState[frameIndex] = state;
 		}
 	};
 }

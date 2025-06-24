@@ -28,14 +28,11 @@ namespace Inno
         virtual bool Delete(IOutputMergerTarget* rhs) override;
 
         // In DX12RenderingServer_CommandListAPI.cpp
-        // New dynamic command list API
-        bool CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex) override;
-        bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
         bool BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
         bool ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index = -1) override;
         bool BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount) override;
-        bool TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility accessibility);
-        bool TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility accessibility);
+        bool TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility) override;
+        bool TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility) override;
         
         bool ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand) override;
         void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) override;

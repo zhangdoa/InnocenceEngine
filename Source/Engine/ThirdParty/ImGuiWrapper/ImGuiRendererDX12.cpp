@@ -93,7 +93,7 @@ bool ImGuiRenderPass::Initialize()
 				l_swapChainRenderPassComp->m_OutputMergerTarget && 
 				!l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs.empty())
 			{
-				l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::ReadOnly);
+				l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 			}
 		};
 

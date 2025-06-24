@@ -80,8 +80,8 @@ namespace Inno
 		virtual bool BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList) { return false; }
 		virtual bool ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index = -1) { return false; }
 		virtual bool BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) { return false; }
-		virtual bool TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility accessibility) { return false; }
-		virtual bool TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility accessibility) { return false; }
+		virtual bool TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility) { return false; }
+		virtual bool TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility) { return false; }
 
 		virtual bool ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand) { return false; }
 		virtual void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) {}
@@ -160,7 +160,7 @@ namespace Inno
 
         bool DeleteRenderTargets(RenderPassComponent* renderPass);
 
-		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility accessibility);
+		virtual bool ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility);
 
 		virtual bool InitializePool();
 		virtual bool TerminatePool();

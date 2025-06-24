@@ -212,6 +212,7 @@ bool DX12RenderingServer::AssignSwapChainImages()
     
     // Ensure space for swap chain images
     l_textureComp->m_GPUResources.resize(m_swapChainImageCount);
+    l_textureComp->m_CurrentState.resize(m_swapChainImageCount, D3D12_RESOURCE_STATE_PRESENT);
     
     // Assign swap chain images directly to component
     for (size_t i = 0; i < m_swapChainImageCount; i++)
@@ -227,7 +228,6 @@ bool DX12RenderingServer::AssignSwapChainImages()
     l_textureComp->m_TextureDesc.IsMultiBuffer = true;
     l_textureComp->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_PRESENT);
     l_textureComp->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET);
-    l_textureComp->m_CurrentState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_PRESENT);
     l_textureComp->m_ObjectStatus = ObjectStatus::Activated;
 
     m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
@@ -546,6 +546,9 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rend
 
 bool DX12RenderingServer::BeginFrame()
 {
+    // Reset command allocators for the current frame
+    // Safe to reset because IRenderingServer::Update() ensures GPU synchronization
+    // via WaitOnCPU() calls before calling BeginFrame()
     // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
     // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
     // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
@@ -572,22 +575,29 @@ bool DX12RenderingServer::PrepareRayTracing(CommandListComponent* commandList)
     auto l_mappedMemory = m_RaytracingInstanceBufferComponent->m_MappedMemories[l_currentFrame];
     WriteMappedMemory(m_RaytracingInstanceBufferComponent, l_mappedMemory, &l_instanceDescList->m_Descs[0], 0, l_instanceDescList->m_Descs.size());
     l_mappedMemory->m_NeedUploadToGPU = false;
-    UploadToGPU(commandList, m_RaytracingInstanceBufferComponent);
-    
-    // Get buffer references
-    auto l_TLASBuffer = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[l_currentFrame]);
-    auto l_scratchBuffer = reinterpret_cast<DX12DeviceMemory*>(m_ScratchBufferComponent->m_DeviceMemories[l_currentFrame]);
+
     auto l_instanceBuffer = reinterpret_cast<DX12DeviceMemory*>(m_RaytracingInstanceBufferComponent->m_DeviceMemories[l_currentFrame]);
     auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
     
-    // Transition instance buffer for reading
-    CD3DX12_RESOURCE_BARRIER instanceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
+    auto instanceBarrier_UploadToDefaultHeap = CD3DX12_RESOURCE_BARRIER::Transition(
         l_instanceBuffer->m_DefaultHeapBuffer.Get(),
-        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+        D3D12_RESOURCE_STATE_COPY_DEST
+    );
+    l_commandList->ResourceBarrier(1, &instanceBarrier_UploadToDefaultHeap);    
+    
+    UploadToGPU(commandList, m_RaytracingInstanceBufferComponent);
+
+    auto instanceBarrierTLASBuild = CD3DX12_RESOURCE_BARRIER::Transition(
+        l_instanceBuffer->m_DefaultHeapBuffer.Get(),
+        D3D12_RESOURCE_STATE_COPY_DEST,
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
     );
-    l_commandList->ResourceBarrier(1, &instanceBarrier);
-    
+    l_commandList->ResourceBarrier(1, &instanceBarrierTLASBuild);
+
+    auto l_TLASBuffer = reinterpret_cast<DX12DeviceMemory*>(m_TLASBufferComponent->m_DeviceMemories[l_currentFrame]);
+    auto l_scratchBuffer = reinterpret_cast<DX12DeviceMemory*>(m_ScratchBufferComponent->m_DeviceMemories[l_currentFrame]);
+      
     // Setup TLAS build description - always full rebuild for stability
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC tlasDesc = {};
     tlasDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
@@ -605,15 +615,7 @@ bool DX12RenderingServer::PrepareRayTracing(CommandListComponent* commandList)
     // Add UAV barrier for TLAS completion
     CD3DX12_RESOURCE_BARRIER tlasBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_TLASBuffer->m_DefaultHeapBuffer.Get());
     l_commandList->ResourceBarrier(1, &tlasBarrier);
-    
-    // Transition instance buffer back to writable state
-    CD3DX12_RESOURCE_BARRIER instanceBarrierBack = CD3DX12_RESOURCE_BARRIER::Transition(
-        l_instanceBuffer->m_DefaultHeapBuffer.Get(),
-        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-        D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-    );
-    l_commandList->ResourceBarrier(1, &instanceBarrierBack);
-    
+
     return true;
 }
 

@@ -261,12 +261,12 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	//auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(SSAOPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(SunShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheIntegrationPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(SSAOPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(SunShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheIntegrationPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);

@@ -128,10 +128,10 @@ bool RadianceCacheFilterVerticalPass::PrepareCommandList(IRenderingContext* rend
 
 	// Use graphics command list to transition resources
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(l_horizontalResult, m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbePosition()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal()), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->TryToTransitState(l_horizontalResult, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbePosition()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);

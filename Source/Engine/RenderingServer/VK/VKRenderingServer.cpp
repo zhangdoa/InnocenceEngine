@@ -96,7 +96,7 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass,
 	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
-	ChangeRenderTargetStates(l_rhs, commandList, Accessibility::WriteOnly);
+	ChangeRenderTargetStates(l_rhs, commandList, Accessibility::ReadOnly, Accessibility::WriteOnly);
 
 	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
@@ -138,7 +138,7 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass,
 		vkCmdBindPipeline(l_vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
 
-	ChangeRenderTargetStates(l_rhs, commandList, Accessibility::ReadOnly);
+	ChangeRenderTargetStates(l_rhs, commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 
 	return true;
 }
@@ -394,18 +394,26 @@ bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueT
 	return true;
 }
 
-bool VKRenderingServer::TryToTransitState(TextureComponent *rhs, CommandListComponent *commandList, Accessibility accessibility)
+bool VKRenderingServer::TryToTransitState(TextureComponent *rhs, CommandListComponent *commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_rhs = reinterpret_cast<VKTextureComponent *>(rhs);
-	auto l_newImageLayout = accessibility == Accessibility::ReadOnly ? l_rhs->m_ReadImageLayout : l_rhs->m_WriteImageLayout;
-	if (l_rhs->m_CurrentImageLayout == l_newImageLayout)
+	auto l_currentImageLayout = sourceAccessibility == Accessibility::ReadOnly ? l_rhs->m_ReadImageLayout : l_rhs->m_WriteImageLayout;
+	auto l_newImageLayout = targetAccessibility == Accessibility::ReadOnly ? l_rhs->m_ReadImageLayout : l_rhs->m_WriteImageLayout;
+	if (l_currentImageLayout == l_newImageLayout)
 		return false;
 
 	auto l_commandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 	auto l_shaderStage = ShaderStage::Invalid; // @TODO: Nope this is not correct
-	TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, l_rhs->m_CurrentImageLayout, l_newImageLayout, l_shaderStage);
+	TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, l_currentImageLayout, l_newImageLayout, l_shaderStage);
 	l_rhs->m_CurrentImageLayout = l_newImageLayout;
 	
+	return true;
+}
+
+bool VKRenderingServer::TryToTransitState(GPUBufferComponent *gpuBuffer, CommandListComponent *commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
+{
+	// Vulkan doesn't require explicit buffer state transitions like D3D12
+	// Buffer memory barriers are handled differently
 	return true;
 }
 

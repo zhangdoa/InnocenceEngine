@@ -128,10 +128,13 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	// Use graphics command list to transition resources
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(l_readTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_motionVector), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(l_writeTexture, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	
+	// Transition read texture from its current state to ReadOnly
+	l_renderingServer->TryToTransitState(l_readTexture, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_motionVector), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(l_writeTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -146,6 +149,7 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+
 
 	return true;
 }

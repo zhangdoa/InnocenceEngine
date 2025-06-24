@@ -56,7 +56,7 @@ bool SSAOPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_TextureUsage = TextureUsage::ComputeOnly;
 
 	// s0 - Sampler
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Sampler;
@@ -74,7 +74,7 @@ bool SSAOPass::Setup(ISystemConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_TextureUsage = TextureUsage::ColorAttachment;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[7].m_TextureUsage = TextureUsage::ComputeOnly;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -135,14 +135,11 @@ bool SSAOPass::Setup(ISystemConfig* systemConfig)
 	m_NoiseTexture = l_renderingServer->AddTextureComponent("SSAO_Noise/");
 
 	m_NoiseTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-	m_NoiseTexture->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_NoiseTexture->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 	m_NoiseTexture->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-
 	m_NoiseTexture->m_TextureDesc.Width = l_textureSize;
 	m_NoiseTexture->m_TextureDesc.Height = l_textureSize;
 	m_NoiseTexture->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
-
-	//m_NoiseTexture->m_InitialData = &m_Noise[0];
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -160,7 +157,7 @@ bool SSAOPass::Initialize()
 	l_renderingServer->Initialize(m_SamplerComp);
 	l_renderingServer->Initialize(m_SamplerComp_RandomRot);
 	l_renderingServer->Initialize(m_KernelGPUBuffer);
-	l_renderingServer->Initialize(m_NoiseTexture);
+	l_renderingServer->Initialize(m_NoiseTexture, &m_Noise[0]);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -199,6 +196,9 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
+	if (m_NoiseTexture->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
@@ -206,10 +206,10 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(m_NoiseTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::WriteOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(m_NoiseTexture, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -255,7 +255,7 @@ bool SSAOPass::RenderTargetsCreationFunc()
 
 	m_Result = l_renderingServer->AddTextureComponent("SSAO_Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	l_renderingServer->Initialize(m_Result);
 

@@ -35,15 +35,18 @@ namespace Inno
 		class Accessibility
 		{
 		public:
-			explicit Accessibility(bool read, bool write)
+			explicit Accessibility(bool read, bool write, bool copySource = false, bool copyDest = false)
 				: m_Read(read)
 				, m_Write(write)
+				, m_CopySource(copySource)
+				, m_CopyDestination(copyDest)
 			{
 			}
 
 			bool operator==(const Accessibility& rhs) const
 			{
-				return m_Read == rhs.m_Read && m_Write == rhs.m_Write;
+				return m_Read == rhs.m_Read && m_Write == rhs.m_Write && 
+					   m_CopySource == rhs.m_CopySource && m_CopyDestination == rhs.m_CopyDestination;
 			}
 
 			bool operator!=(const Accessibility& rhs) const
@@ -55,13 +58,19 @@ namespace Inno
 			static Accessibility ReadOnly;
 			static Accessibility WriteOnly;
 			static Accessibility ReadWrite;
+			static Accessibility CopySource;
+			static Accessibility CopyDestination;
 
 			bool CanRead() const { return m_Read; }
 			bool CanWrite() const { return m_Write; }
+			bool IsCopySource() const { return m_CopySource; }
+			bool IsCopyDestination() const { return m_CopyDestination; }
 
 		private:
 			bool m_Read = false;
 			bool m_Write = false;
+			bool m_CopySource = false;
+			bool m_CopyDestination = false;
 		};
 
 		struct DescriptorHandle
@@ -314,16 +323,18 @@ namespace Inno
 			GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
 			ShaderStage m_ShaderStage = ShaderStage::Invalid;
 			Accessibility m_BindingAccessibility = Accessibility::ReadOnly;
-			Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
+			Accessibility m_ResourceAccessibility = Accessibility::ReadOnly; // @TODO: remove this as we can get it from the res getter
 			uint32_t m_DescriptorSetIndex = 0;
 			uint32_t m_DescriptorIndex = 0;
 			uint32_t m_SubresourceCount = 1;
 			bool m_IsRootConstant = false;
-			TextureUsage m_TextureUsage = TextureUsage::Invalid;
-			GPUBufferUsage m_GPUBufferUsage = GPUBufferUsage::None;
+			TextureUsage m_TextureUsage = TextureUsage::Invalid;  // @TODO: remove this as we can get it from the res getter
+			GPUBufferUsage m_GPUBufferUsage = GPUBufferUsage::None;  // @TODO: remove this as we can get it from the res getter
 
-			// Deprecated
+			// @TODO: deprecated, remove this
 			bool m_IndirectBinding = false;
+
+			//std::function<GPUResourceComponent*> m_ResourceAccessFunc;
 		};
 	}
 

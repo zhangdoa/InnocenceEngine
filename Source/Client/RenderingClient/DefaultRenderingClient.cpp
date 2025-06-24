@@ -310,10 +310,6 @@ namespace Inno
 				&& BRDFLUTMSPass::Get().GetStatus() == ObjectStatus::Activated)
 			{
 				auto l_brdfRenderPass = BRDFLUTPass::Get().GetRenderPassComp();
-				auto l_brdfPassGraphicsCommandList = BRDFLUTPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-				l_renderingServer->Execute(l_brdfPassGraphicsCommandList, GPUEngineType::Graphics);
-				l_renderingServer->SignalOnGPU(l_brdfRenderPass, GPUEngineType::Graphics);
-				l_renderingServer->WaitOnGPU(l_brdfRenderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 				auto l_brdfPassComputeCommandList = BRDFLUTPass::Get().GetCommandListComp(GPUEngineType::Compute);
 				l_renderingServer->Execute(l_brdfPassComputeCommandList, GPUEngineType::Compute);
