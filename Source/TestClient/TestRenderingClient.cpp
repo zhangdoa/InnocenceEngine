@@ -7,7 +7,6 @@ using namespace Inno;
 
 struct TestRenderingClient::DrawInstancedResources
 {
-    // Populated in Task 5
 };
 
 TestRenderingClient::TestCase TestRenderingClient::ParseTestCase(const char* name)
@@ -91,10 +90,8 @@ void TestRenderingClient::CountFrameAndTerminateIfDone()
     }
 }
 
-// BareBoot
 bool TestRenderingClient::Setup_BareBoot() { return true; }
 
-// DrawInstanced stubs — implemented in Task 5
 bool TestRenderingClient::Setup_DrawInstanced()          { return true; }
 bool TestRenderingClient::Initialize_DrawInstanced()     { return true; }
 bool TestRenderingClient::PrepareCommands_DrawInstanced() { return true; }
