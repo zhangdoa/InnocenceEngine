@@ -19,7 +19,7 @@ cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /
 cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
 
 # GPU validation — autonomous test, exits 0=pass, 1=GPU error, 2=crash (preferred over Test.exe when rendering is touched)
-cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -test" 2>&1
+powershell.exe -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode" 2>&1
 
 # Shader compilation
 powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1" 2>&1
