@@ -1,7 +1,4 @@
 # Set up CMake options
-set(INNO_LOGIC_CLIENT DefaultLogicClient)
-set(INNO_RENDERING_CLIENT DefaultRenderingClient)
-
 option(INNO_DEBUG OFF)
 option(INNO_RELWITHDEBINFO OFF)
 option(INNO_RELEASE OFF)

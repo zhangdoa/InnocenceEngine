@@ -2,20 +2,9 @@
 #include "Common/ClassTemplate.h"
 #include "Common/LogService.h"
 #include "Interface/ISystem.h"
+#include "Interface/IRenderingClient.h"
+#include "Interface/ILogicClient.h"
 #include <type_traits>
-
-#include "../Client/ClientMetadata.h"
-
-#define PPCAT_NX(A, B) A ## B
-#define PPCAT(A, B) PPCAT_NX(A, B)
-#define STRINGIZE_NX(A) #A
-#define STRINGIZE(A) STRINGIZE_NX(A)
-
-#define INNO_RENDERING_CLIENT_HEADER_PATH ../Client/RenderingClient/INNO_RENDERING_CLIENT.h
-#define INNO_LOGIC_CLIENT_HEADER_PATH ../Client/LogicClient/INNO_LOGIC_CLIENT.h
-
-#include STRINGIZE(INNO_RENDERING_CLIENT_HEADER_PATH)
-#include STRINGIZE(INNO_LOGIC_CLIENT_HEADER_PATH)
 
 namespace Inno
 {
@@ -30,7 +19,7 @@ namespace Inno
 		LogLevel logLevel = LogLevel::Success;
 		bool isHeadless = false;
 		bool isOffscreen = false;
-		bool isTest = false;
+		char testCase[64] = {};
 	};
 
 	class IWindowSystem;
@@ -43,14 +32,12 @@ namespace Inno
 		Engine();
 		~Engine();
 
-		bool Setup(			
-			// Windows: For hInstance
-			// macOS: For window bridge
+		bool Setup(
 			void* appHook,
-			// Windows: For hwnd
-			// macOS: For Metal rendering backend bridge
 			void* extraHook,
-			char* pScmdline);
+			char* pScmdline,
+			std::unique_ptr<IRenderingClient> renderingClient,
+			std::unique_ptr<ILogicClient> logicClient);
 		bool Initialize();
 		bool Update();
 		bool Terminate();

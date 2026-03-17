@@ -46,8 +46,6 @@
 #include "Platform/HeadlessWindow/HeadlessWindowSystem.h"
 #include "RenderingServer/Headless/HeadlessRenderingServer.h"
 
-#include "../Client/TestClient/TestClient.h"
-
 namespace Inno
 {
 	Engine* g_Engine = nullptr;
@@ -310,8 +308,16 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	auto l_testArgPos = arg.find("-test");
 	if (l_testArgPos != std::string::npos)
 	{
-		l_result.isTest = true;
-		Log(Success, "Launch in test mode: TestClient will drive termination.");
+		std::string l_remainder = arg.substr(l_testArgPos + 5);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			auto l_end = l_remainder.find(' ', l_start);
+			std::string l_caseName = l_remainder.substr(l_start,
+				l_end == std::string::npos ? std::string::npos : l_end - l_start);
+			strncpy(l_result.testCase, l_caseName.c_str(), sizeof(l_result.testCase) - 1);
+			Log(Success, "Test case: ", l_result.testCase);
+		}
 	}
 
 	return l_result;
@@ -412,36 +418,23 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	return true;
 }
 
-bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
+bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
+	std::unique_ptr<IRenderingClient> renderingClient,
+	std::unique_ptr<ILogicClient> logicClient)
 {
 	// Create all services (Essential + Additional Systems)
 	if (!CreateServices(appHook, extraHook, pScmdline))
 		return false;
 
-	// Skip LogicClient and RenderingClient only in true headless mode
-	if (!m_pImpl->m_initConfig.isHeadless)
+	m_pImpl->m_RenderingClient = std::move(renderingClient);
+	m_pImpl->m_LogicClient = std::move(logicClient);
+
+	if (m_pImpl->m_LogicClient)
 	{
-		if (m_pImpl->m_initConfig.isTest)
-			m_pImpl->m_RenderingClient = std::make_unique<TestClient>();
-		else
-			m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
-		if (!m_pImpl->m_RenderingClient.get())
-		{
-			Log(Error, "Failed to create Rendering Client.");
-			return false;
-		}
-
-		m_pImpl->m_LogicClient = std::make_unique<INNO_LOGIC_CLIENT>();
-		if (!m_pImpl->m_LogicClient.get())
-		{
-			Log(Error, "Failed to create Logic Client.");
-			return false;
-		}
-
 		if (m_pImpl->m_initConfig.isOffscreen)
 		{
 			m_pImpl->m_applicationName = "OffscreenEngine";
-			Log(Success, "Offscreen mode: Created LogicClient and RenderingClient for testing.");
+			Log(Success, "Offscreen mode: LogicClient and RenderingClient injected for testing.");
 		}
 		else
 		{
@@ -451,7 +444,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	else
 	{
 		m_pImpl->m_applicationName = "HeadlessEngine";
-		Log(Success, "Headless mode: Skipping LogicClient and RenderingClient.");
+		Log(Success, "No clients injected: running headless.");
 	}
 
 	SystemSetup(HIDService);
@@ -547,12 +540,14 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-			if (!m_pImpl->m_RenderingClient->Setup())
-			{
-				Log(Error, "Rendering Client can't be setup!");
-				return false;
+			if (m_pImpl->m_RenderingClient) {
+				if (!m_pImpl->m_RenderingClient->Setup())
+				{
+					Log(Error, "Rendering Client can't be setup!");
+					return false;
+				}
 			}
-			
+
 			SystemSetup(GUISystem);
 
 			return true;
@@ -615,10 +610,12 @@ bool Engine::Initialize()
 
 		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-			if (!m_pImpl->m_RenderingClient->Initialize())
-			{
-				Log(Error, "Rendering Client can't be initialized!");
-				return false;
+			if (m_pImpl->m_RenderingClient) {
+				if (!m_pImpl->m_RenderingClient->Initialize())
+				{
+					Log(Error, "Rendering Client can't be initialized!");
+					return false;
+				}
 			}
 
 			SystemInit(GUISystem);
