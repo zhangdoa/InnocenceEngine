@@ -1,12 +1,17 @@
 #include "TestRenderingClient.h"
 #include "../Engine/Engine.h"
 #include "../Engine/Interface/IWindowSystem.h"
+#include "../Engine/RenderingServer/IRenderingServer.h"
 #include "../Engine/Services/SceneService.h"
+#include "../Engine/Services/RenderingConfigurationService.h"
 
 using namespace Inno;
 
 struct TestRenderingClient::DrawInstancedResources
 {
+    RenderPassComponent*    RenderPass    = nullptr;
+    ShaderProgramComponent* ShaderProgram = nullptr;
+    CommandListComponent*   CommandList   = nullptr;
 };
 
 TestRenderingClient::TestCase TestRenderingClient::ParseTestCase(const char* name)
@@ -92,12 +97,75 @@ void TestRenderingClient::CountFrameAndTerminateIfDone()
 
 bool TestRenderingClient::Setup_BareBoot() { return true; }
 
-bool TestRenderingClient::Setup_DrawInstanced()          { return true; }
-bool TestRenderingClient::Initialize_DrawInstanced()     { return true; }
-bool TestRenderingClient::PrepareCommands_DrawInstanced() { return true; }
+bool TestRenderingClient::Setup_DrawInstanced()
+{
+    auto l_rs = g_Engine->getRenderingServer();
+
+    m_DrawInstanced = new DrawInstancedResources();
+
+    m_DrawInstanced->ShaderProgram = l_rs->AddShaderProgramComponent("TestDrawInstanced/");
+    m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_VSPath = "drawInstanced.vert/";
+    m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_PSPath = "drawInstanced.frag/";
+
+    m_DrawInstanced->RenderPass = l_rs->AddRenderPassComponent("TestDrawInstanced/");
+
+    auto l_desc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
+    l_desc.m_RenderTargetCount = 1;
+    l_desc.m_UseDepthBuffer    = false;
+    l_desc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_PrimitiveTopology = PrimitiveTopology::Point;
+
+    m_DrawInstanced->RenderPass->m_RenderPassDesc = l_desc;
+    m_DrawInstanced->RenderPass->m_ShaderProgram  = m_DrawInstanced->ShaderProgram;
+
+    m_DrawInstanced->CommandList = l_rs->AddCommandListComponent("TestDrawInstanced/Graphics/");
+    m_DrawInstanced->CommandList->m_Type = GPUEngineType::Graphics;
+
+    return true;
+}
+
+bool TestRenderingClient::Initialize_DrawInstanced()
+{
+    auto l_rs = g_Engine->getRenderingServer();
+    l_rs->Initialize(m_DrawInstanced->ShaderProgram);
+    l_rs->Initialize(m_DrawInstanced->RenderPass);
+    l_rs->Initialize(m_DrawInstanced->CommandList);
+    return true;
+}
+
+bool TestRenderingClient::PrepareCommands_DrawInstanced()
+{
+    auto l_rs = g_Engine->getRenderingServer();
+    auto l_rp = m_DrawInstanced->RenderPass;
+    auto l_cl = m_DrawInstanced->CommandList;
+
+    l_rs->CommandListBegin(l_rp, l_cl, l_rs->GetCurrentFrame());
+    l_rs->BindRenderPassComponent(l_rp, l_cl);
+    l_rs->ClearRenderTargets(l_rp, l_cl);
+    l_rs->DrawInstanced(l_rp, l_cl, 3);
+    l_rs->CommandListEnd(l_rp, l_cl);
+
+    return true;
+}
+
 bool TestRenderingClient::ExecuteCommands_DrawInstanced()
 {
+    auto l_rs = g_Engine->getRenderingServer();
+    auto l_rp = m_DrawInstanced->RenderPass;
+    auto l_cl = m_DrawInstanced->CommandList;
+
+    l_rs->Execute(l_cl, GPUEngineType::Graphics);
+    l_rs->SignalOnGPU(l_rp, GPUEngineType::Graphics);
+
     CountFrameAndTerminateIfDone();
     return true;
 }
-bool TestRenderingClient::Terminate_DrawInstanced() { return true; }
+
+bool TestRenderingClient::Terminate_DrawInstanced()
+{
+    auto l_rs = g_Engine->getRenderingServer();
+    l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+    l_rs->Delete(m_DrawInstanced->CommandList);
+    l_rs->Delete(m_DrawInstanced->RenderPass);
+    l_rs->Delete(m_DrawInstanced->ShaderProgram);
+    return true;
+}

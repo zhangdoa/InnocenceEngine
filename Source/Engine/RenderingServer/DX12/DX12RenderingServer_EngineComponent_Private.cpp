@@ -190,10 +190,7 @@ bool DX12RenderingServer::CreateCBV(GPUBufferComponent* gpuBuffer)
 bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassComp)
 {
 	if (RenderPassComp->m_ResourceBindingLayoutDescs.empty())
-	{
-		Log(Verbose, "Skipping creating RootSignature for ", RenderPassComp->m_InstanceName);
-		return true;
-	}
+		Log(Verbose, "Creating empty RootSignature for ", RenderPassComp->m_InstanceName);
 
 	auto l_maxBindingCount = RenderPassComp->m_ResourceBindingLayoutDescs.size();
 	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters;
