@@ -688,10 +688,17 @@ bool IRenderingServer::InitializeImpl(RenderPassComponent* renderPass)
 
 bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* renderPass)
 {
-	Delete(renderPass->m_OutputMergerTarget);
-	renderPass->m_OutputMergerTarget = nullptr;
+	if (renderPass->m_OutputMergerTarget)
+	{
+		Delete(renderPass->m_OutputMergerTarget);
+		renderPass->m_OutputMergerTarget = nullptr;
+	}
 
-	Delete(renderPass->m_PipelineStateObject);
+	if (renderPass->m_PipelineStateObject)
+	{
+		Delete(renderPass->m_PipelineStateObject);
+		renderPass->m_PipelineStateObject = nullptr;
+	}
 
 	return true;
 }
