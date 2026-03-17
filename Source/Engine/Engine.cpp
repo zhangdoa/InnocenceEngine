@@ -318,6 +318,10 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 			strncpy(l_result.testCase, l_caseName.c_str(), sizeof(l_result.testCase) - 1);
 			Log(Success, "Test case: ", l_result.testCase);
 		}
+		else
+		{
+			Log(Warning, "'-test' flag found but no test case name provided. Ignoring.");
+		}
 	}
 
 	return l_result;
