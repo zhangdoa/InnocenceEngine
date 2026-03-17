@@ -125,6 +125,7 @@ namespace Inno
 		// Debug use only
 		virtual bool BeginCapture() { return false; }
 		virtual bool EndCapture() { return false; }
+		virtual bool HasGPUError() const { return false; }
 
 		// Raytracing-related APIs
 		virtual bool DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) { return false; }

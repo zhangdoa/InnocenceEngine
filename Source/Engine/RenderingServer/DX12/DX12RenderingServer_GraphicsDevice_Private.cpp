@@ -18,6 +18,8 @@ using namespace Inno;
 
 using namespace DX12Helper;
 
+static std::atomic<bool> g_GPUErrorDetected{false};
+
 #ifdef _WIN32
 // Helper function to capture and format callstack
 static std::string CaptureCallstack(UINT framesToSkip = 1, UINT maxFrames = 10)
@@ -73,6 +75,7 @@ static void CALLBACK D3D12DebugMessageCallback(
     case D3D12_MESSAGE_SEVERITY_CORRUPTION:
     case D3D12_MESSAGE_SEVERITY_ERROR:
         {
+            g_GPUErrorDetected.store(true);
 #ifdef _WIN32
             std::string callstackInfo = CaptureCallstack(2, 15);  // Skip callback frames, capture up to 15 frames
             Log(Error, "D3D12 ERROR: ", pDescription, callstackInfo.c_str());
@@ -801,4 +804,9 @@ bool DX12RenderingServer::CreateSwapChain()
     Log(Success, "Swap chain has been created.");
 
     return true;
+}
+
+bool DX12RenderingServer::HasGPUError() const
+{
+    return g_GPUErrorDetected.load();
 }

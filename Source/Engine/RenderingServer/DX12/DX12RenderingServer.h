@@ -57,6 +57,7 @@ namespace Inno
         // In DX12RenderingServer_GraphicsDevice_Protected.cpp
         bool BeginCapture() override;
         bool EndCapture() override;
+        bool HasGPUError() const override;
 
         // In DX12RenderingServer_APISpecific.cpp
         ComPtr<ID3D12Device8> GetDevice();
