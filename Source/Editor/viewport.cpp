@@ -27,7 +27,7 @@ Viewport::Viewport(QWidget* parent)
 
     m_pEngine = std::make_unique<Engine>();
 
-    m_pEngine->Setup(hInstance, &m_HWND, const_cast<char*>(l_args));
+    m_pEngine->Setup(hInstance, &m_HWND, const_cast<char*>(l_args), nullptr, nullptr);
     m_pEngine->Initialize();
 
     auto l_engine = [&]() {

@@ -1,0 +1,11 @@
+add_library(TestRenderingClient TestRenderingClient.h TestRenderingClient.cpp)
+set_target_properties(TestRenderingClient PROPERTIES FOLDER TestClient)
+target_link_libraries(TestRenderingClient Engine)
+
+add_library(TestLogicClient TestLogicClient.h TestLogicClient.cpp)
+set_target_properties(TestLogicClient PROPERTIES FOLDER TestClient)
+target_link_libraries(TestLogicClient Engine)
+
+add_library(TestClientFactory TestClientFactory.cpp)
+set_target_properties(TestClientFactory PROPERTIES FOLDER TestClient)
+target_link_libraries(TestClientFactory TestRenderingClient TestLogicClient)
