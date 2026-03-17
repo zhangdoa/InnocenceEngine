@@ -5,6 +5,7 @@
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
 #include "../../RenderingServer/IRenderingServer.h"
+#include "../../Interface/IClientFactory.h"
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 #include <dbghelp.h>
@@ -115,7 +116,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
     {
         std::unique_ptr<Engine> m_pEngine = std::make_unique<Engine>();
 
-        if (!m_pEngine->Setup(hInstance, nullptr, pScmdline))
+        bool l_isHeadless = (pScmdline && strstr(pScmdline, "headless") != nullptr);
+
+        if (!m_pEngine->Setup(
+            hInstance, nullptr, pScmdline,
+            l_isHeadless ? nullptr : Inno::CreateRenderingClient(),
+            l_isHeadless ? nullptr : Inno::CreateLogicClient()))
             return 2;
 
         if (!m_pEngine->Initialize())
