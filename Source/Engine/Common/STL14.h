@@ -10,6 +10,7 @@
 #include <locale>
 #include <codecvt>
 
+#include <memory>
 #include <utility>
 #include <array>
 #include <queue>
