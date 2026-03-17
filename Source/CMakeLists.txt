@@ -59,3 +59,4 @@ endif(INNO_BUILD_EDITOR)
 
 target_link_libraries(Engine ${INNO_RENDERING_CLIENT})
 target_link_libraries(Engine ${INNO_LOGIC_CLIENT})
+target_link_libraries(Engine TestClient)

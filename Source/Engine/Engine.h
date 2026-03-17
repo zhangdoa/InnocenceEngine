@@ -30,6 +30,7 @@ namespace Inno
 		LogLevel logLevel = LogLevel::Success;
 		bool isHeadless = false;
 		bool isOffscreen = false;
+		bool isTest = false;
 	};
 
 	class IWindowSystem;

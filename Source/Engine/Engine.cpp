@@ -46,6 +46,8 @@
 #include "Platform/HeadlessWindow/HeadlessWindowSystem.h"
 #include "RenderingServer/Headless/HeadlessRenderingServer.h"
 
+#include "../Client/TestClient/TestClient.h"
+
 namespace Inno
 {
 	Engine* g_Engine = nullptr;
@@ -305,6 +307,13 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "Launch in offscreen mode, no windowing but real rendering server for testing.");
 	}
 
+	auto l_testArgPos = arg.find("-test");
+	if (l_testArgPos != std::string::npos)
+	{
+		l_result.isTest = true;
+		Log(Success, "Launch in test mode: TestClient will drive termination.");
+	}
+
 	return l_result;
 }
 
@@ -412,7 +421,10 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline)
 	// Skip LogicClient and RenderingClient only in true headless mode
 	if (!m_pImpl->m_initConfig.isHeadless)
 	{
-		m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
+		if (m_pImpl->m_initConfig.isTest)
+			m_pImpl->m_RenderingClient = std::make_unique<TestClient>();
+		else
+			m_pImpl->m_RenderingClient = std::make_unique<INNO_RENDERING_CLIENT>();
 		if (!m_pImpl->m_RenderingClient.get())
 		{
 			Log(Error, "Failed to create Rendering Client.");
