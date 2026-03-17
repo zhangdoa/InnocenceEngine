@@ -4,6 +4,7 @@
 
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
+#include "../../RenderingServer/IRenderingServer.h"
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 #include <dbghelp.h>
@@ -98,33 +99,39 @@ LONG WINAPI UnhandledExceptionHandler(EXCEPTION_POINTERS* exceptionInfo)
     }
 
     Log(Error, errorMsg);
-    
-    return EXCEPTION_EXECUTE_HANDLER;
+
+    ExitProcess(2);
+    return EXCEPTION_EXECUTE_HANDLER; // unreachable, satisfies return type
 }
 #endif
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-    // Set up global exception handler to catch access violations in debug builds
     SetUnhandledExceptionFilter(UnhandledExceptionHandler);
 #endif
-    
-    std::unique_ptr<Engine> m_pEngine = std::make_unique<Engine>();
 
-    if (!m_pEngine->Setup(hInstance, nullptr, pScmdline)) 
-	{
+    try
+    {
+        std::unique_ptr<Engine> m_pEngine = std::make_unique<Engine>();
+
+        if (!m_pEngine->Setup(hInstance, nullptr, pScmdline))
+            return 2;
+
+        if (!m_pEngine->Initialize())
+            return 2;
+
+        m_pEngine->Run();
+
+        m_pEngine->Terminate();
+
+        if (m_pEngine->getRenderingServer()->HasGPUError())
+            return 1;
+
         return 0;
     }
-
-    if (!m_pEngine->Initialize()) 
-	{
-        return 0;
+    catch (...)
+    {
+        return 2;
     }
-
-    m_pEngine->Run();
-
-    m_pEngine->Terminate();
-
-    return 0;
 }
