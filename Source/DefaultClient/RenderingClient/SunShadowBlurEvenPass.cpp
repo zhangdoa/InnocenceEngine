@@ -1,7 +1,7 @@
 #include "SunShadowBlurEvenPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurOddPass.h"
@@ -106,7 +106,7 @@ bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingConte
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
-	auto l_perFrameGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

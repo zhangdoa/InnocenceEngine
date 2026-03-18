@@ -1,6 +1,7 @@
 #include "LightCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "TiledFrustumGenerationPass.h"
@@ -195,7 +196,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
 
 	// Use graphics command list to transition depth buffer from DEPTH_WRITE to NON_PIXEL_SHADER_RESOURCE state

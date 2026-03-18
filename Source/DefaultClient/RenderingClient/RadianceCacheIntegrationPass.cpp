@@ -1,7 +1,7 @@
 #include "RadianceCacheIntegrationPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
 
 #include "RadianceCacheReprojectionPass.h"
@@ -119,7 +119,7 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 	// Use filtered radiance cache instead of raw raytracing result
 	auto l_readTexture = RadianceCacheFilterVerticalPass::Get().GetResult();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources to shader resource state
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);

@@ -1,7 +1,7 @@
 #include "VXGIScreenSpaceFeedbackPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "VXGIRenderer.h"
 #include "OpaquePass.h"
@@ -132,7 +132,7 @@ bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderin
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	auto l_perFrameGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	if (l_perFrameGPUBufferComp && l_perFrameGPUBufferComp->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, l_perFrameGPUBufferComp, 3);

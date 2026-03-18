@@ -1,6 +1,7 @@
 #include "GIResolvePass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Common/IOService.h"
@@ -671,7 +672,7 @@ bool GIResolvePass::generateSkyRadiance()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// l_renderingServer->CommandListBegin(m_skyRadianceRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_skyRadianceRenderPassComp);
@@ -714,7 +715,7 @@ bool GIResolvePass::litSurfels()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
@@ -804,7 +805,7 @@ bool GIResolvePass::litProbes()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
@@ -851,7 +852,7 @@ bool GIResolvePass::generateIrradianceVolume()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
@@ -904,11 +905,11 @@ bool GIResolvePass::PrepareCommandList()
 
 	if (m_GIDataLoaded)
 	{
-		auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+		auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 		auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
-		auto l_cameraConstantBuffer = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer();
+		auto l_cameraConstantBuffer = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 
-		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer();
+		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 		l_PerFrameConstantBuffer.posWSNormalizer = m_irradianceVolumeRange;
 
 		GIConstantBuffer l_GIConstantBuffer;

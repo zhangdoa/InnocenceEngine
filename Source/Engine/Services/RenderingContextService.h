@@ -15,8 +15,6 @@ namespace Inno
 {
 	enum class GPUBufferUsageType
 	{
-		PerFrame,
-		PerFramePrev,
 		GPUModelData,
 		Transform,
 		TransformPrev,
@@ -50,8 +48,6 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		GPUBufferComponent* GetGPUBufferComponent(GPUBufferUsageType usageType);
-
-		const PerFrameConstantBuffer& GetPerFrameConstantBuffer();
 
 		const std::vector<GPUModelData>& GetGPUModelData();
 		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();

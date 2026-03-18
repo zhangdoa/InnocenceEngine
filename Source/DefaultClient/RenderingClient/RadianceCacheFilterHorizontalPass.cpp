@@ -1,7 +1,7 @@
 #include "RadianceCacheFilterHorizontalPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "RadianceCacheReprojectionPass.h"
 
@@ -123,7 +123,7 @@ bool RadianceCacheFilterHorizontalPass::PrepareCommandList(IRenderingContext* re
 		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);

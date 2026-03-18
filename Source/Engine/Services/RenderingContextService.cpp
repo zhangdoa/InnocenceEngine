@@ -31,8 +31,6 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<PerFrameConstantBuffer> m_perFrameCBs;
-
 		std::vector<CSMConstantBuffer> m_CSMCBVector;
 
 		std::vector<PointLightConstantBuffer> m_pointLightCBVector;
@@ -55,8 +53,6 @@ namespace Inno
 		std::vector<DebugPassDrawCallInfo> m_debugPassDrawCallInfoVector;
 		std::vector<TransformConstantBuffer> m_debugPassPerObjectCB;
 
-		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
-		GPUBufferComponent* m_PerFrameCBufferPrevGPUBufferComp;
 		GPUBufferComponent* m_GPUModelDataBufferComp;
 		GPUBufferComponent* m_TransformBufferComp;
 		GPUBufferComponent* m_TransformPrevBufferComp;
@@ -75,51 +71,16 @@ namespace Inno
 		bool Update();
 		bool Terminate();
 
-		float RadicalInverse(uint32_t n, uint32_t base);
-
-		bool UpdatePerFrameConstantBuffer();
+		bool UpdateCSMCBVector();
 		bool UpdateLightData();
 		bool UpdateDrawCalls();
 		bool UpdateBillboardPassData();
 		bool UpdateDebuggerPassData();
 		bool UploadGPUBuffers();
 
-		GPUBufferComponent* GetCurrentFramePerFrameBuffer();
-		GPUBufferComponent* GetPreviousFramePerFrameBuffer();
-		
 		GPUBufferComponent* GetCurrentFrameTransformBuffer();
 		GPUBufferComponent* GetPreviousFrameTransformBuffer();
 	};
-}
-
-float RenderingContextServiceImpl::RadicalInverse(uint32_t n, uint32_t base)
-{
-	float val = 0.0f;
-	float invBase = 1.0f / base;
-	float invBi = invBase;
-
-	while (n > 0)
-	{
-		uint32_t d_i = (n % base);
-		val += d_i * invBi;
-		n /= base;
-		invBi *= invBase;
-	}
-	return val;
-}
-
-GPUBufferComponent* RenderingContextServiceImpl::GetCurrentFramePerFrameBuffer()
-{
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
-	auto l_isOddFrame = l_frameCount % 2 == 1;
-	return l_isOddFrame ? m_PerFrameCBufferGPUBufferComp : m_PerFrameCBufferPrevGPUBufferComp;
-}
-
-GPUBufferComponent* RenderingContextServiceImpl::GetPreviousFramePerFrameBuffer()
-{
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
-	auto l_isOddFrame = l_frameCount % 2 == 1;
-	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
 }
 
 GPUBufferComponent* RenderingContextServiceImpl::GetCurrentFrameTransformBuffer()
@@ -141,8 +102,6 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
-	m_PerFrameCBufferPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBufferPrev/");
 	m_GPUModelDataBufferComp = l_renderingServer->AddGPUBufferComponent("GPUModelDataBuffer/");
 	m_TransformBufferComp = l_renderingServer->AddGPUBufferComponent("TransformBuffer/");
 	m_TransformPrevBufferComp = l_renderingServer->AddGPUBufferComponent("TransformPrevBuffer/");
@@ -175,23 +134,9 @@ bool RenderingContextServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		m_perFrameCBs.resize(g_Engine->getRenderingServer()->GetSwapChainImageCount());
-
 		auto l_renderingServer = g_Engine->getRenderingServer();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
-
-		m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
-		m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
-		m_PerFrameCBufferGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
-
-		l_renderingServer->Initialize(m_PerFrameCBufferGPUBufferComp);
-
-		m_PerFrameCBufferPrevGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
-		m_PerFrameCBufferPrevGPUBufferComp->m_ElementCount = 1;
-		m_PerFrameCBufferPrevGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
-
-		l_renderingServer->Initialize(m_PerFrameCBufferPrevGPUBufferComp);
 
 		m_GPUModelDataBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_GPUModelDataBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
@@ -259,61 +204,11 @@ bool RenderingContextServiceImpl::Initialize()
 	}
 }
 
-bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
+bool RenderingContextServiceImpl::UpdateCSMCBVector()
 {
-	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
-	if (l_camera == nullptr)
-		return false;
-
-	auto l_p = l_camera->m_projectionMatrix;
-
-	PerFrameConstantBuffer l_perFrameCB = {};
-	l_perFrameCB.frameIndex = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
-	l_perFrameCB.modelCount = static_cast<uint32_t>(m_gpuModelDataVector.size());
-	l_perFrameCB.p_original = l_p;
-	l_perFrameCB.p_jittered = l_p;
-
-	auto l_renderingConfigurationService = g_Engine->Get<RenderingConfigurationService>();
-	auto l_renderingConfig = l_renderingConfigurationService->GetRenderingConfig();
-	auto l_screenResolution = l_renderingConfigurationService->GetScreenResolution();
-	if (l_renderingConfig.useTAA)
-	{
-		l_perFrameCB.p_jittered.m02 = (RadicalInverse(l_perFrameCB.frameIndex, 3) * 2.0f - 1.0f) / l_screenResolution.x;
-		l_perFrameCB.p_jittered.m12 = (RadicalInverse(l_perFrameCB.frameIndex, 4) * 2.0f - 1.0f) / l_screenResolution.y;
-	}
-
-	l_perFrameCB.radianceCacheHaltonJitter = Vec2(RadicalInverse(l_perFrameCB.frameIndex, 3) * 8.0f, RadicalInverse(l_perFrameCB.frameIndex, 5) * 8.0f);
-
-	auto r = Math::getInvertRotationMatrix(l_camera->m_Transform.m_rot);
-	auto t = Math::getInvertTranslationMatrix(Vec4(l_camera->m_Transform.m_pos, 1.0f));
-
-	l_perFrameCB.camera_posWS = l_camera->m_Transform.m_pos;
-	l_perFrameCB.v = r * t;
-
-	l_perFrameCB.zNear = l_camera->m_zNear;
-	l_perFrameCB.zFar = l_camera->m_zFar;
-
-	l_perFrameCB.p_inv = l_p.inverse();
-	l_perFrameCB.v_inv = l_perFrameCB.v.inverse();
-	l_perFrameCB.viewportSize.x = (float)l_screenResolution.x;
-	l_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
-	l_perFrameCB.minLogLuminance = -10.0f;
-	l_perFrameCB.maxLogLuminance = 16.0f;
-	l_perFrameCB.aperture = l_camera->m_aperture;
-	l_perFrameCB.shutterTime = l_camera->m_shutterTime;
-	l_perFrameCB.ISO = l_camera->m_ISO;
-
 	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
 	if (l_sun == nullptr)
 		return false;
-
-	l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun->m_Transform.m_rot);
-	l_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
-
-	static uint32_t currentCascade = 0;
-	auto l_renderingCapability = l_renderingConfigurationService->GetRenderingCapability();
-	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
-	l_perFrameCB.activeCascade = currentCascade;
 
 	auto& l_LitRegion_WorldSpace = l_sun->m_LitRegion_WorldSpace;
 	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
@@ -336,8 +231,6 @@ bool RenderingContextServiceImpl::UpdatePerFrameConstantBuffer()
 			m_CSMCBVector.emplace_back(l_CSMCB);
 		}
 	}
-
-	m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()] = l_perFrameCB;
 
 	return true;
 }
@@ -598,9 +491,6 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
-	l_renderingServer->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()]);
-
 	if (m_gpuModelDataVector.size() > 0)
 	{
 		l_renderingServer->Upload(m_GPUModelDataBufferComp, m_gpuModelDataVector, 0, m_gpuModelDataVector.size());
@@ -644,7 +534,7 @@ bool RenderingContextServiceImpl::Update()
 	{
 		std::lock_guard<std::shared_mutex> l_lock(m_Mutex);
 
-		UpdatePerFrameConstantBuffer();
+		UpdateCSMCBVector();
 
 		UpdateLightData();
 
@@ -669,8 +559,6 @@ bool RenderingContextServiceImpl::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Delete(m_PerFrameCBufferGPUBufferComp);
-	l_renderingServer->Delete(m_PerFrameCBufferPrevGPUBufferComp);
 	l_renderingServer->Delete(m_GPUModelDataBufferComp);
 	l_renderingServer->Delete(m_MaterialGPUBufferComp);
 	l_renderingServer->Delete(m_PointLightGPUBufferComp);
@@ -720,10 +608,6 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 
 	switch (usageType)
 	{
-	case GPUBufferUsageType::PerFrame: l_result = m_Impl->GetCurrentFramePerFrameBuffer();
-		break;
-	case GPUBufferUsageType::PerFramePrev: l_result = m_Impl->GetPreviousFramePerFrameBuffer();
-		break;
 	case GPUBufferUsageType::GPUModelData: l_result = m_Impl->m_GPUModelDataBufferComp;
 		break;
 	case GPUBufferUsageType::Transform: l_result = m_Impl->GetCurrentFrameTransformBuffer();
@@ -749,12 +633,6 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 	}
 
 	return l_result;
-}
-
-const PerFrameConstantBuffer& RenderingContextService::GetPerFrameConstantBuffer()
-{
-	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()];
 }
 
 const std::vector<GPUModelData>& RenderingContextService::GetGPUModelData()

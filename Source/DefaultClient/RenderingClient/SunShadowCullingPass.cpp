@@ -1,6 +1,7 @@
 #include "SunShadowCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
@@ -121,7 +122,7 @@ bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContex
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
 	// Bind resources for compute shader
-	auto l_perFrameCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_perFrameCBuffer = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_gpuModelDataBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_materialBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
 

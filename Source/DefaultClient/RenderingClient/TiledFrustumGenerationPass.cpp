@@ -1,7 +1,7 @@
 #include "TiledFrustumGenerationPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -113,7 +113,7 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);

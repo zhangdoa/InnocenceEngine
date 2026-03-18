@@ -1,7 +1,7 @@
 #include "LuminanceHistogramPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -118,7 +118,7 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / 16);
 	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / 16);
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);

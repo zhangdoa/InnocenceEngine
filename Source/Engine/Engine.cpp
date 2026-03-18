@@ -16,6 +16,7 @@
 #include "Services/HIDService.h"
 #include "Services/RenderingConfigurationService.h"
 #include "Services/TemplateAssetService.h"
+#include "Services/PerFrameDataService.h"
 #include "Services/RenderingContextService.h"
 #include "Services/AnimationService.h"
 #include "Services/GUISystem.h"
@@ -363,6 +364,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		Get<RenderingConfigurationService>();
 		Get<TemplateAssetService>();
+		Get<PerFrameDataService>();
 		Get<RenderingContextService>();
 		Get<AnimationService>();
 		Get<GUISystem>();
@@ -505,6 +507,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 			// Only update rendering-related services if not headless
 			if (!m_pImpl->m_initConfig.isHeadless) {
+				Get<PerFrameDataService>()->Update();
 				Get<RenderingContextService>()->Update();
 				Get<AnimationService>()->Update();
 				if (m_pImpl->m_RenderingClient) {
@@ -539,6 +542,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	// Only setup rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
+		SystemSetup(PerFrameDataService);
 		SystemSetup(RenderingContextService);
 		SystemSetup(AnimationService);
 
@@ -609,6 +613,7 @@ bool Engine::Initialize()
 	// Only initialize rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		SystemInit(TemplateAssetService);
+		SystemInit(PerFrameDataService);
 		SystemInit(RenderingContextService);
 		SystemInit(AnimationService);
 
@@ -705,6 +710,7 @@ bool Engine::Terminate()
 
 		SystemTerm(AnimationService);
 		SystemTerm(RenderingContextService);
+		SystemTerm(PerFrameDataService);
 		SystemTerm(TemplateAssetService);
 	}
 	

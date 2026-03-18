@@ -1,6 +1,7 @@
 #include "SurfelGITestPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
 
@@ -116,7 +117,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	if (l_probes.size() > 0)
 	{
-		auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+		auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 		auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
 
 		m_probeSphereMeshData.clear();

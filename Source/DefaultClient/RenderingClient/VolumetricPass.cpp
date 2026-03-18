@@ -1,6 +1,7 @@
 #include "VolumetricPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "OpaquePass.h"
@@ -408,7 +409,7 @@ bool VolumetricPass::froxelization()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
@@ -454,7 +455,7 @@ bool VolumetricPass::irraidanceInjection()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
 	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
 	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
@@ -522,7 +523,7 @@ bool VolumetricPass::rayMarching()
 		m_isPassA = true;
 	}
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
@@ -571,7 +572,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
 

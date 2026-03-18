@@ -2,6 +2,7 @@
 #include "OpaqueCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
@@ -148,8 +149,8 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	auto l_perFrameCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
-	auto l_perFrameCBufferPrev = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::PerFramePrev);
+	auto l_perFrameCBuffer = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
+	auto l_perFrameCBufferPrev = g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
 	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
 	auto l_gpuModelDataCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
 	auto l_materialCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);

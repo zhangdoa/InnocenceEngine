@@ -1,7 +1,7 @@
 #include "VXGIVisualizationPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "VXGIRenderer.h"
 
@@ -116,7 +116,7 @@ bool VXGIVisualizationPass::PrepareCommandList(IRenderingContext* renderingConte
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	if (l_PerFrameCBufferGPUBufferComp && l_PerFrameCBufferGPUBufferComp->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_PerFrameCBufferGPUBufferComp, 1);

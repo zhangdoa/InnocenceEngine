@@ -1,7 +1,7 @@
 #include "TransparentBlendPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include "TransparentGeometryProcessPass.h"
 
@@ -114,7 +114,7 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 	// 	l_canvas = l_renderingContext->m_output;
 	// }
 
-	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PerFrame);
+	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
