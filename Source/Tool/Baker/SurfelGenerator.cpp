@@ -1,6 +1,7 @@
 #include "SurfelGenerator.h"
 
 #include "../../Engine/Common/MathHelper.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
@@ -122,7 +123,7 @@ namespace Inno
         {
             Log(Success, "Start to capture surfels...");
 
-            auto l_perFrameConstantBuffer = g_Engine->Get<RenderingContextService>()->GetPerFrameConstantBuffer();
+            auto l_perFrameConstantBuffer = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 
             auto l_p = Math::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_perFrameConstantBuffer.zNear, l_perFrameConstantBuffer.zFar);
 
