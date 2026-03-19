@@ -7,6 +7,7 @@
 #include "Common/Task.h"
 #include "Services/EntityManager.h"
 #include "Services/ComponentManager.h"
+#include "Services/EntityRegistry.h"
 #include "Services/LightSystem.h"
 #include "Services/CameraSystem.h"
 #include "Services/SceneService.h"
@@ -423,6 +424,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	// Additional Systems (ISystem-based, with dependency resolution)
 	Get<EntityManager>();
 	Get<ComponentManager>();
+	Get<EntityRegistry>();
 	Get<AssetService>();
 	Get<SceneService>();
 	Get<PhysicsSimulationService>();
@@ -474,6 +476,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 
 	SystemSetup(EntityManager);
+	SystemSetup(EntityRegistry);
 
 	SystemSetup(AssetService);
 	SystemSetup(SceneService);
@@ -507,6 +510,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			Get<LightSystem>()->Update();
 
 			SystemUpdate(EntityManager);
+			SystemUpdate(EntityRegistry);
 
 			// Culling
 			// Get<PhysicsSimulationService>()->Update();
@@ -618,6 +622,7 @@ bool Engine::Initialize()
 	m_pImpl->m_WindowSystem->Initialize();
 
 	SystemInit(EntityManager);
+	SystemInit(EntityRegistry);
 
 	SystemInit(SceneService);
 	SystemInit(PhysicsSimulationService);
@@ -749,6 +754,8 @@ bool Engine::Terminate()
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);
+
+	SystemTerm(EntityRegistry);
 
 	if (!Get<EntityManager>()->Terminate())
 	{
