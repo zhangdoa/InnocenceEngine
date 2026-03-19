@@ -2,7 +2,6 @@
 
 #include "../../Common/LogService.h"
 #include "../../Common/IOService.h"
-#include "../../Services/RenderingContextService.h"
 
 #include "../../Engine.h"
 using namespace Inno;

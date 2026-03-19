@@ -35,7 +35,6 @@
 #include "../../Services/SceneService.h"
 #include "../../Services/AssetService.h"
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Services/RenderingContextService.h"
 #include "../../RayTracer/RayTracer.h"
 
 #include "../../Engine.h"

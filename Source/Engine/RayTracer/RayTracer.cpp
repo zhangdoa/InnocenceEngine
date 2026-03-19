@@ -6,7 +6,6 @@
 #include "../Services/ComponentManager.h"
 #include "../Services/AssetService.h"
 #include "../Services/RenderingConfigurationService.h"
-#include "../Services/RenderingContextService.h"
 
 #include "../Engine.h"
 using namespace Inno;

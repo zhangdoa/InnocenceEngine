@@ -22,7 +22,6 @@
 #include "Services/AnimationDrawCallService.h"
 #include "Services/BillboardDrawCallService.h"
 #include "Services/DebugDrawCallService.h"
-#include "Services/RenderingContextService.h"
 #include "Services/AnimationService.h"
 #include "Services/GUISystem.h"
 
@@ -375,7 +374,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<AnimationDrawCallService>();
 		Get<BillboardDrawCallService>();
 		Get<DebugDrawCallService>();
-		Get<RenderingContextService>();
 		Get<AnimationService>();
 		Get<GUISystem>();
 	}
@@ -523,8 +521,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				Get<AnimationDrawCallService>()->Update();
 				Get<BillboardDrawCallService>()->Update();
 				Get<DebugDrawCallService>()->Update();
-				Get<RenderingContextService>()->Update();
-				Get<AnimationService>()->Update();
+					Get<AnimationService>()->Update();
 				if (m_pImpl->m_RenderingClient) {
 					m_pImpl->m_RenderingClient->Update();
 				}
@@ -563,7 +560,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		SystemSetup(AnimationDrawCallService);
 		SystemSetup(BillboardDrawCallService);
 		SystemSetup(DebugDrawCallService);
-		SystemSetup(RenderingContextService);
 		SystemSetup(AnimationService);
 
 		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
@@ -639,7 +635,6 @@ bool Engine::Initialize()
 		SystemInit(AnimationDrawCallService);
 		SystemInit(BillboardDrawCallService);
 		SystemInit(DebugDrawCallService);
-		SystemInit(RenderingContextService);
 		SystemInit(AnimationService);
 
 		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
@@ -734,7 +729,6 @@ bool Engine::Terminate()
 		l_DefaultRenderingClientTerminationTask->Wait();
 
 		SystemTerm(AnimationService);
-		SystemTerm(RenderingContextService);
 		SystemTerm(DebugDrawCallService);
 		SystemTerm(BillboardDrawCallService);
 		SystemTerm(AnimationDrawCallService);

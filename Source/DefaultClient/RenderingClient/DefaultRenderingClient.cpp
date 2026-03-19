@@ -36,7 +36,6 @@
 #include "BSDFTestPass.h"
 
 #include "../../Engine/Services/HIDService.h"
-#include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Common/Task.h"

@@ -10,7 +10,6 @@
 #include "../../Common/LogService.h"
 #include "../../Common/TaskScheduler.h"
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Services/RenderingContextService.h"
 
 #include "../../Engine.h"
 using namespace Inno;

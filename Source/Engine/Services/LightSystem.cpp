@@ -7,7 +7,6 @@
 #include "CameraSystem.h"
 #include "PhysicsSimulationService.h"
 #include "RenderingConfigurationService.h"
-#include "RenderingContextService.h"
 #include "../Engine.h"
 
 using namespace Inno;

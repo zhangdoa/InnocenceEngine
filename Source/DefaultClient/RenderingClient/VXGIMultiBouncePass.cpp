@@ -1,7 +1,6 @@
 #include "VXGIMultiBouncePass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
 
 #include "VXGIRenderer.h"
 #include "VXGIConvertPass.h"

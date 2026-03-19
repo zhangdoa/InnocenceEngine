@@ -4,7 +4,6 @@
 #include "../Common/Randomizer.h"
 #include "../Common/MathHelper.h"
 #include "RenderingConfigurationService.h"
-#include "RenderingContextService.h"
 #include "ComponentManager.h"
 
 #include "../Engine.h"

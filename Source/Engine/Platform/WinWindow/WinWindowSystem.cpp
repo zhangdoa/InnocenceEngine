@@ -3,7 +3,6 @@
 #include "../../Common/LogService.h"
 #include "../../Services/HIDService.h"
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Services/RenderingContextService.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
 #include "VKWindowSurface/WinVKWindowSurface.h"

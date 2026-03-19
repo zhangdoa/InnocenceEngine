@@ -25,7 +25,6 @@ using namespace VKHelper;
 #include "../../Common/ObjectPool.h"
 
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Services/RenderingContextService.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/EntityManager.h"
 

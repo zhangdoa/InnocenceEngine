@@ -5,7 +5,6 @@
 #include "../../Common/TaskScheduler.h"
 
 #include "../../Services/ComponentManager.h"
-#include "../../Services/RenderingContextService.h"
 #include "../../Services/AnimationService.h"
 #include "../../Services/AssetService.h"
 #include "../../Services/EntityManager.h"

@@ -9,7 +9,6 @@
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
 #include "ComponentManager.h"
-#include "RenderingContextService.h"
 #include "TemplateAssetService.h"
 #include "SceneService.h"
 #include "PhysicsSimulationService.h"

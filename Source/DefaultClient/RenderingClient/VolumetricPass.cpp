@@ -4,7 +4,6 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Services/DrawCallService.h"
-#include "../../Engine/Services/RenderingContextService.h"
 
 #include "OpaquePass.h"
 #include "PreTAAPass.h"

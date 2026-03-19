@@ -3,7 +3,6 @@
 #include "../../../Common/LogService.h"
 #include "../../../Common/TaskScheduler.h"
 #include "../../../Services/RenderingConfigurationService.h"
-#include "../../../Services/RenderingContextService.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"

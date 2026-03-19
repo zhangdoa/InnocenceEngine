@@ -1,7 +1,6 @@
 #include "BRDFLUTMSPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
 
 #include "BRDFLUTPass.h"
 
