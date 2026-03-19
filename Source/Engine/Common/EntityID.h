@@ -1,7 +1,5 @@
 #pragma once
 
-#include "STL14.h"
-
 namespace Inno
 {
     using EntityID = uint32_t;
