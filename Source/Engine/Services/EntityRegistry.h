@@ -1,0 +1,109 @@
+#pragma once
+
+#include "../Common/STL14.h"
+#include "../Common/STL17.h"
+#include "../Common/EntityID.h"
+#include "../Common/ComponentStorage.h"
+#include "../Common/Object.h"
+#include "../Common/ClassTemplate.h"
+#include "../Interface/ISystem.h"
+
+namespace Inno
+{
+    class EntityRegistry : public ISystem
+    {
+    public:
+        INNO_CLASS_CONCRETE_NON_COPYABLE(EntityRegistry);
+
+        bool Setup(ISystemConfig* Config) override;
+        bool Initialize() override;
+        bool Update() override;
+        bool Terminate() override;
+        ObjectStatus GetStatus() override;
+
+        // Entity lifecycle
+        EntityID    Spawn(ObjectLifespan Lifespan, const char* Name = nullptr);
+        void        Destroy(EntityID Entity);
+        bool        IsValid(EntityID Entity) const;
+        const char* GetName(EntityID Entity) const;
+        EntityID    FindByName(const char* Name) const;  // linear scan; editor/load only
+
+        // Component operations (inline templates — no engine API calls here)
+        template<typename T>
+        T& Emplace(EntityID Entity, T Data = {})
+        {
+            auto& l_Storage = Storage<T>();
+            l_Storage.Add(Entity, m_Lifespans[Entity], Data);
+            return *l_Storage.Get(Entity);
+        }
+
+        template<typename T>
+        void Remove(EntityID Entity)
+        {
+            Storage<T>().Remove(Entity);
+        }
+
+        template<typename T>
+        T* Get(EntityID Entity)
+        {
+            return Storage<T>().Get(Entity);
+        }
+
+        template<typename T>
+        const T* Get(EntityID Entity) const
+        {
+            return const_cast<EntityRegistry*>(this)->Storage<T>().Get(Entity);
+        }
+
+        template<typename T>
+        bool Has(EntityID Entity) const
+        {
+            return const_cast<EntityRegistry*>(this)->Storage<T>().Has(Entity);
+        }
+
+        template<typename T>
+        TComponentStorage<T>& Storage()
+        {
+            const auto l_Key = typeid(T).hash_code();
+            const auto l_It  = m_Storages.find(l_Key);
+            if (l_It == m_Storages.end())
+            {
+                auto l_Storage = std::make_unique<TStorageWrapper<T>>();
+                auto* l_Raw    = &l_Storage->m_Storage;
+                m_Storages.emplace(l_Key, std::move(l_Storage));
+                return *l_Raw;
+            }
+            return static_cast<TStorageWrapper<T>*>(l_It->second.get())->m_Storage;
+        }
+
+        void CleanUp(ObjectLifespan Lifespan);
+
+    private:
+        struct IStorageWrapper
+        {
+            virtual ~IStorageWrapper() = default;
+            virtual void CleanUp(ObjectLifespan Lifespan) = 0;
+        };
+
+        template<typename T>
+        struct TStorageWrapper : IStorageWrapper
+        {
+            TComponentStorage<T> m_Storage;
+            void CleanUp(ObjectLifespan Lifespan) override { m_Storage.CleanUp(Lifespan); }
+        };
+
+        // Entity metadata arrays, indexed by EntityID
+        std::vector<bool>            m_Valid;
+        std::vector<ObjectLifespan>  m_Lifespans;
+        std::vector<std::string>     m_Names;
+
+        // Free list for entity slot recycling
+        std::vector<EntityID>        m_FreeList;
+        EntityID                     m_NextID = 1;   // 0 = INVALID_ENTITY
+
+        // Type-erased component storages keyed by type hash
+        std::unordered_map<size_t, std::unique_ptr<IStorageWrapper>> m_Storages;
+
+        ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+    };
+}
