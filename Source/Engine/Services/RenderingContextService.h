@@ -1,23 +1,10 @@
 #pragma once
 #include "../Interface/ISystem.h"
 
-#include "../RenderingServer/IRenderingServer.h"
-
-#include "../Component/MeshComponent.h"
-#include "../Component/TextureComponent.h"
-#include "../Component/MaterialComponent.h"
-
 #include "../Common/GPUDataStructure.h"
-
-#include "AnimationService.h"
 
 namespace Inno
 {
-	enum class GPUBufferUsageType
-	{
-		Billboard
-	};
-
 	struct RenderingContextServiceImpl;
 	class RenderingContextService : public ISystem
 	{
@@ -31,9 +18,6 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		GPUBufferComponent* GetGPUBufferComponent(GPUBufferUsageType usageType);
-
-		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
 		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
 
 	private:
