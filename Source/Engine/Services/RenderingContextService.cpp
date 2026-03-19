@@ -11,17 +11,10 @@ namespace Inno
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		mutable std::shared_mutex m_Mutex;
-
-		std::vector<DebugPassDrawCallInfo> m_debugPassDrawCallInfoVector;
-		std::vector<TransformConstantBuffer> m_debugPassPerObjectCB;
-
 		bool Setup(ISystemConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
-
-		bool UpdateDebuggerPassData();
 	};
 }
 
@@ -46,21 +39,10 @@ bool RenderingContextServiceImpl::Initialize()
 	}
 }
 
-bool RenderingContextServiceImpl::UpdateDebuggerPassData()
-{
-	// @TODO: Implementation
-
-	return true;
-}
-
 bool RenderingContextServiceImpl::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
-		std::lock_guard<std::shared_mutex> l_lock(m_Mutex);
-
-		UpdateDebuggerPassData();
-
 		return true;
 	}
 	else
@@ -104,10 +86,4 @@ bool RenderingContextService::Terminate()
 ObjectStatus RenderingContextService::GetStatus()
 {
 	return m_Impl->m_ObjectStatus;
-}
-
-const std::vector<DebugPassDrawCallInfo>& RenderingContextService::GetDebugPassDrawCallInfo()
-{
-	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_debugPassDrawCallInfoVector;
 }

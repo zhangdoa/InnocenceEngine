@@ -1,8 +1,6 @@
 #pragma once
 #include "../Interface/ISystem.h"
 
-#include "../Common/GPUDataStructure.h"
-
 namespace Inno
 {
 	struct RenderingContextServiceImpl;
@@ -17,8 +15,6 @@ namespace Inno
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
-
-		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
 
 	private:
 		RenderingContextServiceImpl* m_Impl;
