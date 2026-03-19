@@ -2,7 +2,7 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Services/HIDService.h"
@@ -718,8 +718,8 @@ bool GIResolvePass::litSurfels()
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
-	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
+	auto l_CSMGPUBufferComp = g_Engine->Get<LightDataService>()->GetCSMBuffer();
+	auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = std::ceil((double)m_surfelGPUBufferComp->m_ElementCount / (double)(l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide));
@@ -764,7 +764,7 @@ bool GIResolvePass::litBricks()
 
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
-	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
+	auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_brickGPUBufferComp->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
@@ -808,7 +808,7 @@ bool GIResolvePass::litProbes()
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
-	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
+	auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_probeGPUBufferComp->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
@@ -855,7 +855,7 @@ bool GIResolvePass::generateIrradianceVolume()
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
-	auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
+	auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
 
 	auto l_numThreadsX = 64;
 	auto l_numThreadsY = 32;
@@ -906,7 +906,7 @@ bool GIResolvePass::PrepareCommandList()
 	if (m_GIDataLoaded)
 	{
 		auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-		auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
+		auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
 		auto l_cameraConstantBuffer = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 
 		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();

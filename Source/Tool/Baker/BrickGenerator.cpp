@@ -6,6 +6,7 @@
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
+#include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
@@ -265,7 +266,7 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(pos);
 
-            l_renderingServer->Upload(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
             auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
 
@@ -276,7 +277,7 @@ namespace Inno
             l_renderingServer->CommandListBegin(m_RenderPassComp_BrickFactor, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_BrickFactor);
             l_renderingServer->ClearRenderTargets(m_RenderPassComp_BrickFactor);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
 
             for (uint32_t i = 0; i < bricksCount; i++)
             {

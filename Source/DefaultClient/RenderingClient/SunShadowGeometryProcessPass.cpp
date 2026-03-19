@@ -2,6 +2,7 @@
 #include "SunShadowCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
@@ -165,7 +166,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
 	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
 	auto l_gpuModelDataBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-	auto l_CSMCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	auto l_CSMCBuffer = g_Engine->Get<LightDataService>()->GetCSMBuffer();
 	auto l_materialCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 1);

@@ -19,10 +19,6 @@ namespace Inno
 		Transform,
 		TransformPrev,
 		Material,
-		PointLight,
-		SphereLight,
-		CSM,
-		GI,
 		Animation,
 		Billboard
 	};

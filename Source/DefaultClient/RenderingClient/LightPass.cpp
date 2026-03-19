@@ -2,7 +2,7 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/LightDataService.h"
 
 #include "VXGIRenderer.h"
 #include "OpaquePass.h"
@@ -256,10 +256,10 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
-	auto l_SphereLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::SphereLight);
-	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
-	//auto l_GIGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI);
+	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
+	auto l_SphereLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetSphereLightBuffer();
+	auto l_CSMGPUBufferComp = g_Engine->Get<LightDataService>()->GetCSMBuffer();
+	//auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);

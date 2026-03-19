@@ -2,6 +2,7 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
+#include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "OpaquePass.h"
@@ -456,8 +457,8 @@ bool VolumetricPass::irraidanceInjection()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto l_PointLightGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::PointLight);
-	auto l_CSMGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::CSM);
+	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
+	auto l_CSMGPUBufferComp = g_Engine->Get<LightDataService>()->GetCSMBuffer();
 	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
 	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 

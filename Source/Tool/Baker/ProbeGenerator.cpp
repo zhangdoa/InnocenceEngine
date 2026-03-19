@@ -2,6 +2,8 @@
 
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/LightDataService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -160,7 +162,7 @@ namespace Inno
             l_GICameraConstantBuffer[1] = Math::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(l_eyePos);
 
-            l_renderingServer->Upload(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
             Log(Success, "Start to draw probe height map...");
 
@@ -169,7 +171,7 @@ namespace Inno
             l_renderingServer->CommandListBegin(m_RenderPassComp_Probe, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Probe);
             l_renderingServer->ClearRenderTargets(m_RenderPassComp_Probe);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
 
             uint32_t l_offset = 0;
 

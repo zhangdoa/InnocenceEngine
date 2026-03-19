@@ -31,11 +31,6 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<CSMConstantBuffer> m_CSMCBVector;
-
-		std::vector<PointLightConstantBuffer> m_pointLightCBVector;
-		std::vector<SphereLightConstantBuffer> m_sphereLightCBVector;
-
 		std::vector<GPUModelData> m_gpuModelDataVector;
 		std::vector<TransformConstantBuffer> m_transformBufferVector;
 		std::vector<MaterialConstantBuffer> m_materialCBVector;
@@ -57,10 +52,6 @@ namespace Inno
 		GPUBufferComponent* m_TransformBufferComp;
 		GPUBufferComponent* m_TransformPrevBufferComp;
 		GPUBufferComponent* m_MaterialGPUBufferComp;
-		GPUBufferComponent* m_PointLightGPUBufferComp;
-		GPUBufferComponent* m_SphereLightGPUBufferComp;
-		GPUBufferComponent* m_CSMGPUBufferComp;
-		GPUBufferComponent* m_GICBufferGPUBufferComp;
 		GPUBufferComponent* m_animationGPUBufferComp;
 		GPUBufferComponent* m_billboardGPUBufferComp;
 
@@ -71,8 +62,6 @@ namespace Inno
 		bool Update();
 		bool Terminate();
 
-		bool UpdateCSMCBVector();
-		bool UpdateLightData();
 		bool UpdateDrawCalls();
 		bool UpdateBillboardPassData();
 		bool UpdateDebuggerPassData();
@@ -106,10 +95,6 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 	m_TransformBufferComp = l_renderingServer->AddGPUBufferComponent("TransformBuffer/");
 	m_TransformPrevBufferComp = l_renderingServer->AddGPUBufferComponent("TransformPrevBuffer/");
 	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
-	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
-	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
-	m_CSMGPUBufferComp = l_renderingServer->AddGPUBufferComponent("CSMCBuffer/");
-	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
 	m_animationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
 	m_billboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
 
@@ -162,26 +147,6 @@ bool RenderingContextServiceImpl::Initialize()
 
 		l_renderingServer->Initialize(m_MaterialGPUBufferComp);
 
-		m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
-		m_PointLightGPUBufferComp->m_ElementSize = sizeof(PointLightConstantBuffer);
-
-		l_renderingServer->Initialize(m_PointLightGPUBufferComp);
-
-		m_SphereLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxSphereLights;
-		m_SphereLightGPUBufferComp->m_ElementSize = sizeof(SphereLightConstantBuffer);
-
-		l_renderingServer->Initialize(m_SphereLightGPUBufferComp);
-
-		m_CSMGPUBufferComp->m_ElementCount = l_RenderingCapability.maxCSMSplits;
-		m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
-
-		l_renderingServer->Initialize(m_CSMGPUBufferComp);
-
-		m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
-		m_GICBufferGPUBufferComp->m_ElementCount = 1;
-
-		l_renderingServer->Initialize(m_GICBufferGPUBufferComp);
-
 		m_animationGPUBufferComp->m_ElementCount = 512;
 		m_animationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
 
@@ -202,75 +167,6 @@ bool RenderingContextServiceImpl::Initialize()
 		Log(Error, "RenderingContextService is not created!");
 		return false;
 	}
-}
-
-bool RenderingContextServiceImpl::UpdateCSMCBVector()
-{
-	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
-	if (l_sun == nullptr)
-		return false;
-
-	auto& l_LitRegion_WorldSpace = l_sun->m_LitRegion_WorldSpace;
-	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
-	auto& l_ProjectionMatrices = l_sun->m_ProjectionMatrices;
-
-	m_CSMCBVector.clear();
-
-	if (l_LitRegion_WorldSpace.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
-	{
-		for (size_t j = 0; j < l_LitRegion_WorldSpace.size(); j++)
-		{
-			CSMConstantBuffer l_CSMCB;
-
-			l_CSMCB.p = l_ProjectionMatrices[j];
-			l_CSMCB.v = l_ViewMatrices[j];
-
-			l_CSMCB.AABBMax = l_LitRegion_WorldSpace[j].m_boundMax;
-			l_CSMCB.AABBMin = l_LitRegion_WorldSpace[j].m_boundMin;
-
-			m_CSMCBVector.emplace_back(l_CSMCB);
-		}
-	}
-
-	return true;
-}
-
-bool RenderingContextServiceImpl::UpdateLightData()
-{
-	m_pointLightCBVector.clear();
-	m_sphereLightCBVector.clear();
-
-	auto& l_lightComponents = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
-	auto l_lightComponentCount = l_lightComponents.size();
-
-	if (l_lightComponentCount == 0)
-		return false;
-
-	for (size_t i = 0; i < l_lightComponentCount; i++)
-	{
-		auto l_lightComponent = l_lightComponents[i];
-		if (l_lightComponent == nullptr)
-			continue;
-
-		if (l_lightComponent->m_LightType == LightType::Point)
-		{
-			PointLightConstantBuffer l_data;
-			l_data.pos = l_lightComponent->m_Transform.m_pos;
-			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
-			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
-			m_pointLightCBVector.emplace_back(l_data);
-		}
-		else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
-		{
-			SphereLightConstantBuffer l_data;
-			l_data.pos = l_lightComponent->m_Transform.m_pos;
-			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
-			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
-			m_sphereLightCBVector.emplace_back(l_data);
-		}
-	}
-
-	return true;
 }
 
 bool RenderingContextServiceImpl::UpdateDrawCalls()
@@ -504,18 +400,6 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 	{
 		l_renderingServer->Upload(m_MaterialGPUBufferComp, m_materialCBVector, 0, m_materialCBVector.size());
 	}
-	if (m_pointLightCBVector.size() > 0)
-	{
-		l_renderingServer->Upload(m_PointLightGPUBufferComp, m_pointLightCBVector, 0, m_pointLightCBVector.size());
-	}
-	if (m_sphereLightCBVector.size() > 0)
-	{
-		l_renderingServer->Upload(m_SphereLightGPUBufferComp, m_sphereLightCBVector, 0, m_sphereLightCBVector.size());
-	}
-	if (m_CSMCBVector.size() > 0)
-	{
-		l_renderingServer->Upload(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
-	}
 	if (m_animationCBVector.size() > 0)
 	{
 		l_renderingServer->Upload(m_animationGPUBufferComp, m_animationCBVector, 0, m_animationCBVector.size());
@@ -533,10 +417,6 @@ bool RenderingContextServiceImpl::Update()
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
 		std::lock_guard<std::shared_mutex> l_lock(m_Mutex);
-
-		UpdateCSMCBVector();
-
-		UpdateLightData();
 
 		UpdateDrawCalls();
 
@@ -561,10 +441,6 @@ bool RenderingContextServiceImpl::Terminate()
 
 	l_renderingServer->Delete(m_GPUModelDataBufferComp);
 	l_renderingServer->Delete(m_MaterialGPUBufferComp);
-	l_renderingServer->Delete(m_PointLightGPUBufferComp);
-	l_renderingServer->Delete(m_SphereLightGPUBufferComp);
-	l_renderingServer->Delete(m_CSMGPUBufferComp);
-	l_renderingServer->Delete(m_GICBufferGPUBufferComp);
 	l_renderingServer->Delete(m_animationGPUBufferComp);
 	l_renderingServer->Delete(m_billboardGPUBufferComp);
 
@@ -615,14 +491,6 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 	case GPUBufferUsageType::TransformPrev: l_result = m_Impl->GetPreviousFrameTransformBuffer();
 		break;
 	case GPUBufferUsageType::Material: l_result = m_Impl->m_MaterialGPUBufferComp;
-		break;
-	case GPUBufferUsageType::PointLight: l_result = m_Impl->m_PointLightGPUBufferComp;
-		break;
-	case GPUBufferUsageType::SphereLight: l_result = m_Impl->m_SphereLightGPUBufferComp;
-		break;
-	case GPUBufferUsageType::CSM: l_result = m_Impl->m_CSMGPUBufferComp;
-		break;
-	case GPUBufferUsageType::GI:l_result = m_Impl->m_GICBufferGPUBufferComp;
 		break;
 	case GPUBufferUsageType::Animation: l_result = m_Impl->m_animationGPUBufferComp;
 		break;

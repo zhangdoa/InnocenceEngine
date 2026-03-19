@@ -3,6 +3,8 @@
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/LightDataService.h"
+#include "../../Engine/Services/RenderingContextService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -178,7 +180,7 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = l_t;
 
-            l_renderingServer->Upload(g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+            l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
             auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
             auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
@@ -187,7 +189,7 @@ namespace Inno
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Surfel);
             l_renderingServer->ClearRenderTargets(m_RenderPassComp_Surfel);
             l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Pixel, m_SamplerComp_Surfel, 8);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GI), 0);
+            l_renderingServer->BindGPUResource(m_RenderPassComp_Surfel, ShaderStage::Geometry, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
 
             uint32_t l_offset = 0;
 
