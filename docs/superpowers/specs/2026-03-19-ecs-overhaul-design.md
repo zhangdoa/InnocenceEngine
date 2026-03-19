@@ -10,7 +10,7 @@
 
 **Entity** — an opaque `uint32_t` identifier. Nothing more. It groups components that belong together. It is not a game actor, not a scene node, not a class instance.
 
-**Component** — a plain data struct (POD). No methods beyond default constructors. No engine API calls. No pointers to other components. Inter-entity relations are a system concern, not a component concern.
+**Component** — a plain data struct (POD). No methods beyond default constructors. No engine API calls. No pointers to other components. Inter-entity relations use `EntityID`, not raw pointers.
 
 **System** — a pure operation on one or more component pools. It reads and writes component data. It owns no component fields itself beyond what it needs to produce its outputs.
 
@@ -70,7 +70,11 @@ class ComponentStorage
 - `All()` — linear scan of packed dense array, fully cache-friendly
 - `m_sparse` is fixed-size `MAX_ENTITIES` — allocated once, no rehashing
 
+**Memory footprint:** Each `ComponentStorage<T>` allocates `uint32_t m_sparse[MAX_ENTITIES]` = 256 KB per component type regardless of how many entities carry that component. With ~14 component types in the canonical list this is ~3.5 MB of sparse index arrays — an acceptable constant cost for O(1) lookup with no rehashing.
+
 **Lifespan tracking:** Each slot in `m_dense` carries a parallel `m_lifespans[i]` array (`ObjectLifespan` enum). `CleanUp(lifespan)` removes all matching entries in one pass.
+
+**Thread-safety contract:** `ComponentStorage<T>` is not thread-safe. All reads and writes occur on the main engine thread during the ECS update phase. Asset loading that previously called `TComponentFactory::Load` on a background thread is restructured: the background thread loads raw data into a staging buffer, then the main thread calls `EntityRegistry::Emplace<T>` during its next update cycle. The `ThreadSafeVector` / `ThreadSafeUnorderedMap` in the old `TComponentFactory` is eliminated — synchronization happens at the staging-buffer boundary, not inside component storage.
 
 ---
 
@@ -96,6 +100,7 @@ public:
     void        Destroy(EntityID entity);
     bool        IsValid(EntityID entity) const;
     const char* GetName(EntityID entity) const;
+    EntityID    FindByName(const char* name) const;      // linear scan; editor/scene-load use only
 
     // Component operations
     template<typename T> T&   Emplace(EntityID entity, T data = {});
@@ -107,6 +112,8 @@ public:
     template<typename T> ComponentStorage<T>& Storage();
 
     // Scene transition
+    // Destroys all entities with matching lifespan, then removes all their components.
+    // Components are removed first (before entity slots are freed) to prevent dangling EntityID reads.
     void CleanUp(ObjectLifespan lifespan);
 };
 ```
@@ -114,6 +121,8 @@ public:
 **Entity metadata** (name, lifespan, validity) is stored in parallel flat arrays indexed by EntityID, not on the entity itself.
 
 **`ComponentStorage<T>` registration** is implicit — `Storage<T>()` creates the storage on first call, no `RegisterType` boilerplate required.
+
+**`FindByName`** performs a linear scan over the name array. It is only called from scene loading and editor code, never from hot paths.
 
 **Migration from ComponentManager:**
 
@@ -124,14 +133,19 @@ public:
 | `Get<ComponentManager>()->FindByUUID<T>(uuid)` | `Get<EntityRegistry>()->Get<T>(entityID)` |
 | `Get<ComponentManager>()->GetAll<T>()` | `Get<EntityRegistry>()->Storage<T>().All()` |
 | `Get<ComponentManager>()->CleanUp(lifespan)` | `Get<EntityRegistry>()->CleanUp(lifespan)` |
+| `Get<ComponentManager>()->Load<T>(path)` | `AssetService` loads asset data → main thread calls `Emplace<T>(entityID, data)` |
 | `Get<EntityManager>()->Spawn(...)` | `Get<EntityRegistry>()->Spawn(lifespan, name)` |
 | `Get<EntityManager>()->Find(name)` | `Get<EntityRegistry>()->FindByName(name)` |
+
+**Asset loading migration detail:** `TComponentFactory<T>::Load` deduplicates by filename and caches the result. After migration, `AssetService` retains its own asset cache keyed by file path, but the live component data lives in `ComponentStorage<T>` rather than the factory pool. `AssetService::Load<T>` returns a populated `T` value; the caller is responsible for calling `EntityRegistry::Emplace<T>` on the appropriate entity.
 
 ---
 
 ## Phase 2 — Component POD Redesign
 
 Every existing component struct is stripped to data only. No virtual methods, no engine API calls, no `m_ObjectStatus`, no `m_Serializable`, no `m_UUID` (lifecycle is managed by the registry, not the component).
+
+**Phase 2 dependency note:** `LightComponent`'s CSM runtime fields (`m_ViewMatrices`, `m_ProjectionMatrices`, etc.) are not removed in Phase 2. They are removed in Phase 4 once `LightDataService` is rewritten to compute them internally. Phase 2 only strips the `Object` base class fields and engine API methods from `LightComponent`, leaving the CSM data fields in place.
 
 ### Transform (split into two)
 
@@ -160,9 +174,9 @@ struct WorldTransformComponent            // written only by TransformService
 | `MeshComponent` | vertexBufferHandle, indexBufferHandle, indexCount, vertexStride, localAABB | GPU handles only |
 | `MaterialComponent` | materialAttributes, textureIndices[N] | No texture pointers |
 | `TextureComponent` | GPU handle, dimensions, format | |
-| `LightComponent` | type, color, intensity, range, colorTemperature | CSM data removed entirely |
-| `CameraComponent` | fov, zNear, zFar, aspectRatio, projectionMatrix, viewMatrix | Computed fields written by CameraSystem |
-| `SkeletonComponent` | bone data | GPU upload methods removed |
+| `LightComponent` | type, color, intensity, range, colorTemperature | CSM matrix fields remain until Phase 4 |
+| `CameraComponent` | fov, zNear, zFar, aspectRatio, widthScale, heightScale, aperture, shutterTime, ISO, frustum, projectionMatrix, viewMatrix | frustum/projection/view written by CameraSystem; aperture/shutterTime/ISO feed per-frame exposure |
+| `SkeletonComponent` | boneCount, boneOffsetMatrices[], m_meshEntity (EntityID of the entity owning the MeshComponent) | GPU upload methods removed; inter-entity link uses EntityID not pointer |
 | `AnimationComponent` | clip + keyframe data | Playback logic removed |
 | `AnimationStateComponent` | **New** — currentClip, playbackTime, looping, blendWeight | Written by AnimationSimulationService |
 | `RigidBodyComponent` | **New** — mass, velocity, angularVelocity, restitution, isKinematic | |
@@ -170,8 +184,10 @@ struct WorldTransformComponent            // written only by TransformService
 | `VisibilityComponent` | **New** — visibilityMask flags | Replaces ObjectStatus on renderables |
 
 **Deleted:**
-- `ModelComponent` — dissolved; an entity with MeshComponent + MaterialComponent IS a renderable
+- `ModelComponent` — dissolved; an entity with MeshComponent + MaterialComponent IS a renderable. Physics state (`m_SimulationProxy`, `m_CollisionPrimitives`) moves to `RigidBodyComponent` + `CollisionShapeComponent`.
 - `DrawCallComponent` — same
+
+**`SkeletonComponent.m_meshEntity`:** The current `SkeletonComponent` holds a raw `MeshComponent*`. This is replaced with `EntityID m_meshEntity` — the entity that owns the `MeshComponent` for this skeleton. Systems that need to correlate skeleton and mesh data look up `registry.Get<MeshComponent>(skeletonComp->m_meshEntity)`.
 
 ---
 
@@ -198,7 +214,12 @@ struct HierarchyNode
 void     SetParent(EntityID child, EntityID parent);
 void     ClearParent(EntityID child);
 EntityID GetParent(EntityID child) const;
+EntityID GetFirstChild(EntityID parent) const;
+EntityID GetNextSibling(EntityID entity) const;
+// Child enumeration: walk firstChild → nextSibling → nextSibling until INVALID_ENTITY
 ```
+
+`GetFirstChild` and `GetNextSibling` expose the linked-list structure for scene serialization and editor tree-view traversal. `SceneQueryService` uses these to reconstruct `SceneHierarchyMap` without `HierarchyGraph` needing to maintain a separate children-list index.
 
 ### TransformService::Update()
 
@@ -227,25 +248,32 @@ Cost: reparent = O(1) + dirty flag. Static scenes = zero sort cost after load. D
 ## Phase 4 — System Cleanup
 
 ### CSM consolidation
-- `LightSystem` → `LightSimulationService`: keeps only color temperature conversion + attenuation radius derivation. All CSM matrix data deleted.
+- `LightSystem` → `LightSimulationService`: keeps only color temperature conversion + attenuation radius derivation. All CSM matrix data deleted from `LightComponent` in this phase (not Phase 2).
 - `CameraSystem`: removes `GenerateCSMSplitFactors` / `SplitVertices`. The cascade split vertices written to `CameraComponent` are removed — `LightDataService` computes CSM data directly from `LightComponent` + `CameraComponent` projection parameters.
-- `LightDataService`: absorbs the full shadow cascade pipeline.
+- `LightDataService`: absorbs the full shadow cascade pipeline. `GetCSMBuffer()` continues to exist; the buffer is now populated by `LightDataService` internally rather than read from component fields.
 
 ### CullingService (extracted from PhysicsSimulationService)
-- Inputs: `WorldTransformComponent` + `BoundingBoxComponent` pools, active camera frustum
+- Inputs: `WorldTransformComponent` + `BoundingBoxComponent` pools, active camera frustum (read from `CameraComponent::m_frustum`, which `CameraSystem` keeps up to date)
 - Output: `std::vector<EntityID>` visible list
 - `PhysicsSimulationService` is left with only PhysX tick + force application
+- `PhysicsSimulationService::AddForce` signature changes from `AddForce(ModelComponent*)` to `AddForce(EntityID entity, Vec3 force)` — it reads `RigidBodyComponent` from the registry internally
+
+### BVHService migration
+- `BVHService` currently stores `ModelComponent*` in every `BVHNode`. After Phase 2 deletes `ModelComponent`, `BVHNode` stores `EntityID` instead.
+- BVH build reads `BoundingBoxComponent::m_worldAABB` (written by a pre-culling pass each frame) rather than `ModelComponent::m_MeshCustomMat4s`.
+- This migration is part of Phase 5 (alongside `CullingService` extraction).
 
 ### AnimationSimulationService (split from AnimationService)
 - Pure time-step simulation: advances `AnimationStateComponent` each frame
 - `AnimationService` → `AnimationResourceService`: skeleton + animation GPU buffer allocation and upload only
 
 ### DrawCallService query change
-- Currently iterates `ModelComponent` pool
+- Currently iterates `ModelComponent` pool, reads `ModelComponent::m_Transform` (a `TTransform`)
 - After Phase 2: iterates `EntityRegistry::Storage<MeshComponent>()`, cross-references `MaterialComponent` and `WorldTransformComponent` to build GPU draw calls
+- `WorldTransformComponent::m_worldMatrix` (already a `Mat4`) is uploaded directly into the existing double-buffered `TransformConstantBuffer`. The double-buffer scheme and `GetCurrentFrameTransformBuffer()` / `GetPreviousFrameTransformBuffer()` / `GetMaterialBuffer()` output interface are preserved unchanged.
 
 ### SceneService
-- `getSceneHierarchyMap()` extracted to `SceneQueryService` (editor-facing)
+- `getSceneHierarchyMap()` extracted to `SceneQueryService` (editor-facing). `SceneQueryService` reconstructs the hierarchy map by walking `HierarchyGraph::GetFirstChild` / `GetNextSibling` on all root entities.
 - Core `SceneService` keeps only load/save lifecycle
 
 ---
@@ -253,10 +281,10 @@ Cost: reparent = O(1) + dirty flag. Static scenes = zero sort cost after load. D
 ## Implementation Order
 
 1. **EntityRegistry + ComponentStorage** — storage foundation, no behavior changes
-2. **Component POD redesign** — strip behavior, delete ModelComponent/DrawCallComponent
+2. **Component POD redesign** — strip behavior, delete ModelComponent/DrawCallComponent (LightComponent CSM fields stay)
 3. **TransformService + HierarchyGraph** — new system, connect to GPU transform upload
-4. **CSM consolidation** — clean up LightSystem + CameraSystem coupling
-5. **CullingService extraction** — split from PhysicsSimulationService
+4. **CSM consolidation** — clean up LightSystem + CameraSystem coupling; remove LightComponent CSM fields
+5. **CullingService extraction + BVHService migration** — split from PhysicsSimulationService; BVHNode → EntityID
 6. **AnimationSimulationService split** — clean AnimationService boundary
 
 Each phase is independently buildable and GPU-gate verifiable.
