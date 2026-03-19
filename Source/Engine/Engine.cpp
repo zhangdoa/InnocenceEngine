@@ -19,6 +19,7 @@
 #include "Services/PerFrameDataService.h"
 #include "Services/LightDataService.h"
 #include "Services/DrawCallService.h"
+#include "Services/AnimationDrawCallService.h"
 #include "Services/RenderingContextService.h"
 #include "Services/AnimationService.h"
 #include "Services/GUISystem.h"
@@ -369,6 +370,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<PerFrameDataService>();
 		Get<LightDataService>();
 		Get<DrawCallService>();
+		Get<AnimationDrawCallService>();
 		Get<RenderingContextService>();
 		Get<AnimationService>();
 		Get<GUISystem>();
@@ -514,6 +516,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				Get<PerFrameDataService>()->Update();
 				Get<LightDataService>()->Update();
 				Get<DrawCallService>()->Update();
+				Get<AnimationDrawCallService>()->Update();
 				Get<RenderingContextService>()->Update();
 				Get<AnimationService>()->Update();
 				if (m_pImpl->m_RenderingClient) {
@@ -551,6 +554,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		SystemSetup(PerFrameDataService);
 		SystemSetup(LightDataService);
 		SystemSetup(DrawCallService);
+		SystemSetup(AnimationDrawCallService);
 		SystemSetup(RenderingContextService);
 		SystemSetup(AnimationService);
 
@@ -624,6 +628,7 @@ bool Engine::Initialize()
 		SystemInit(PerFrameDataService);
 		SystemInit(LightDataService);
 		SystemInit(DrawCallService);
+		SystemInit(AnimationDrawCallService);
 		SystemInit(RenderingContextService);
 		SystemInit(AnimationService);
 
@@ -720,6 +725,7 @@ bool Engine::Terminate()
 
 		SystemTerm(AnimationService);
 		SystemTerm(RenderingContextService);
+		SystemTerm(AnimationDrawCallService);
 		SystemTerm(DrawCallService);
 		SystemTerm(LightDataService);
 		SystemTerm(PerFrameDataService);

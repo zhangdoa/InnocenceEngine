@@ -2,7 +2,7 @@
 #include "OpaquePass.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/DrawCallService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/AnimationDrawCallService.h"
 #include "../../Engine/Services/AnimationService.h"
 
 #include "../../Engine/Engine.h"
@@ -150,9 +150,9 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
-	auto l_AnimationGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Animation);
+	auto l_AnimationGPUBufferComp = g_Engine->Get<AnimationDrawCallService>()->GetAnimationBuffer();
 
-	auto& l_AnimationDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetAnimationDrawCallInfo();
+	auto& l_AnimationDrawCallInfo = g_Engine->Get<AnimationDrawCallService>()->GetAnimationDrawCallInfo();
 	// m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
 	// if (l_AnimationDrawCallInfo.size())

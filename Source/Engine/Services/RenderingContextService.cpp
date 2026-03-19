@@ -31,9 +31,6 @@ namespace Inno
 
 		mutable std::shared_mutex m_Mutex;
 
-		std::vector<AnimationDrawCallInfo> m_animationDrawCallInfoVector;
-		std::vector<AnimationConstantBuffer> m_animationCBVector;
-
 		std::vector<TransformConstantBuffer> m_directionalLightPerObjectCB;
 		std::vector<TransformConstantBuffer> m_pointLightPerObjectCB;
 		std::vector<TransformConstantBuffer> m_sphereLightPerObjectCB;
@@ -44,7 +41,6 @@ namespace Inno
 		std::vector<DebugPassDrawCallInfo> m_debugPassDrawCallInfoVector;
 		std::vector<TransformConstantBuffer> m_debugPassPerObjectCB;
 
-		GPUBufferComponent* m_animationGPUBufferComp;
 		GPUBufferComponent* m_billboardGPUBufferComp;
 
 		std::function<void()> f_sceneLoadingFinishedCallback;
@@ -64,7 +60,6 @@ bool RenderingContextServiceImpl::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	m_animationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
 	m_billboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
 
 	f_sceneLoadingFinishedCallback = [&]()
@@ -91,11 +86,6 @@ bool RenderingContextServiceImpl::Initialize()
 		auto l_renderingServer = g_Engine->getRenderingServer();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
-
-		m_animationGPUBufferComp->m_ElementCount = 512;
-		m_animationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
-
-		l_renderingServer->Initialize(m_animationGPUBufferComp);
 
 		m_billboardGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_billboardGPUBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
@@ -191,10 +181,6 @@ bool RenderingContextServiceImpl::UploadGPUBuffers()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	if (m_animationCBVector.size() > 0)
-	{
-		l_renderingServer->Upload(m_animationGPUBufferComp, m_animationCBVector, 0, m_animationCBVector.size());
-	}
 	if (m_billboardPassPerObjectCB.size() > 0)
 	{
 		l_renderingServer->Upload(m_billboardGPUBufferComp, m_billboardPassPerObjectCB, 0, m_billboardPassPerObjectCB.size());
@@ -228,7 +214,6 @@ bool RenderingContextServiceImpl::Terminate()
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	l_renderingServer->Delete(m_animationGPUBufferComp);
 	l_renderingServer->Delete(m_billboardGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
@@ -271,8 +256,6 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 
 	switch (usageType)
 	{
-	case GPUBufferUsageType::Animation: l_result = m_Impl->m_animationGPUBufferComp;
-		break;
 	case GPUBufferUsageType::Billboard: l_result = m_Impl->m_billboardGPUBufferComp;
 		break;
 	default:
@@ -280,12 +263,6 @@ GPUBufferComponent* RenderingContextService::GetGPUBufferComponent(GPUBufferUsag
 	}
 
 	return l_result;
-}
-
-const std::vector<AnimationDrawCallInfo>& RenderingContextService::GetAnimationDrawCallInfo()
-{
-	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_animationDrawCallInfoVector;
 }
 
 const std::vector<BillboardPassDrawCallInfo>& RenderingContextService::GetBillboardPassDrawCallInfo()

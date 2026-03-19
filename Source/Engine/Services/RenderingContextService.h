@@ -15,15 +15,7 @@ namespace Inno
 {
 	enum class GPUBufferUsageType
 	{
-		Animation,
 		Billboard
-	};
-
-	struct AnimationDrawCallInfo
-	{
-		AnimationInstance animationInstance;
-		uint32_t modelDataIndex;
-		uint32_t animationConstantBufferIndex;
 	};
 
 	struct RenderingContextServiceImpl;
@@ -43,7 +35,6 @@ namespace Inno
 
 		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
 		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
-		const std::vector<AnimationDrawCallInfo>& GetAnimationDrawCallInfo();
 
 	private:
 		RenderingContextServiceImpl* m_Impl;
