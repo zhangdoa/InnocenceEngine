@@ -422,8 +422,6 @@ bool VolumetricPass::froxelization()
 	// l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[0], 3);
 	// l_renderingServer->BindGPUResource(m_froxelizationRenderPassComp, ShaderStage::Pixel, m_froxelizationRenderPassComp->m_RenderTargets[1], 4);
 
-	// auto &l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	// auto l_drawCallCount = l_drawCallInfo.size();
 
 	// for (uint32_t i = 0; i < l_drawCallCount; i++)
 	// {
@@ -460,7 +458,6 @@ bool VolumetricPass::irraidanceInjection()
 	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
 	auto l_CSMGPUBufferComp = g_Engine->Get<LightDataService>()->GetCSMBuffer();
 	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
-	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
@@ -526,7 +523,6 @@ bool VolumetricPass::rayMarching()
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for VolumetricPass
-	// auto l_dispatchParamsGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
@@ -587,8 +583,6 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 	// l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0);
 	// l_renderingServer->BindGPUResource(m_visualizationRenderPassComp, ShaderStage::Pixel, input, 3);
 
-	// auto &l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	// auto l_drawCallCount = l_drawCallInfo.size();
 
 	// for (uint32_t i = 0; i < l_drawCallCount; i++)
 	// {

@@ -37,9 +37,6 @@ bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ShaderStage = ShaderStage::Compute;
-	// @TODO: maybe it's wrong to write like this
-	//m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_ResourceAccessFunc = std::bind(&RenderingContextService::GetGPUBufferComponent, g_Engine->Get<RenderingContextService>(), GPUBufferUsageType::PerFrame);
-
 	// t0 - Input
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;

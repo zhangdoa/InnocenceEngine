@@ -165,8 +165,6 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
 	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
 
-	// auto& l_drawCallInfo = g_Engine->Get<RenderingContextService>()->GetDrawCallInfo();
-	// auto l_drawCallCount = l_drawCallInfo.size();
 
 	// for (uint32_t i = 0; i < l_drawCallCount; i++)
 	// {
