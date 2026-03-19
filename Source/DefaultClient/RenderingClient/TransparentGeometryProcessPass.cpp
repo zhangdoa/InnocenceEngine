@@ -1,7 +1,7 @@
 #include "TransparentGeometryProcessPass.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/DrawCallService.h"
 
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
@@ -151,8 +151,8 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	l_renderingServer->Clear(m_CommandListComp_Graphics, m_HeadPtr);
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
+	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
 	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);

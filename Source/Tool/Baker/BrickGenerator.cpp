@@ -7,7 +7,7 @@
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
 #include "../../Engine/Services/LightDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -268,7 +268,7 @@ namespace Inno
 
             l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
+            auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
 
             auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Cube);
 
@@ -448,7 +448,7 @@ namespace Inno
                 l_bricksCubePerObjectConstantBuffer[i].UUID = (float)i + 1.0f;
             }
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
+            auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
             l_renderingServer->Upload(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
             // assign bricks to probe by the depth test result

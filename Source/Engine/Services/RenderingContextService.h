@@ -15,10 +15,6 @@ namespace Inno
 {
 	enum class GPUBufferUsageType
 	{
-		GPUModelData,
-		Transform,
-		TransformPrev,
-		Material,
 		Animation,
 		Billboard
 	};
@@ -45,7 +41,6 @@ namespace Inno
 
 		GPUBufferComponent* GetGPUBufferComponent(GPUBufferUsageType usageType);
 
-		const std::vector<GPUModelData>& GetGPUModelData();
 		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
 		const std::vector<DebugPassDrawCallInfo>& GetDebugPassDrawCallInfo();
 		const std::vector<AnimationDrawCallInfo>& GetAnimationDrawCallInfo();

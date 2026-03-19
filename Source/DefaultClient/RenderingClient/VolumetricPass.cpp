@@ -3,6 +3,7 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/LightDataService.h"
+#include "../../Engine/Services/DrawCallService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 
 #include "OpaquePass.h"
@@ -411,8 +412,8 @@ bool VolumetricPass::froxelization()
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
+	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
 	// l_renderingServer->CommandListBegin(m_froxelizationCommandListComp, m_froxelizationRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_froxelizationRenderPassComp, m_froxelizationCommandListComp);
@@ -574,8 +575,8 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
+	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
 	l_renderingServer->CommandListBegin(m_visualizationRenderPassComp, m_visualizationCommandListComp, 0);
 	l_renderingServer->BindRenderPassComponent(m_visualizationRenderPassComp, m_visualizationCommandListComp);

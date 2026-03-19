@@ -4,6 +4,7 @@
 #include "CameraSystem.h"
 #include "ComponentManager.h"
 #include "RenderingConfigurationService.h"
+#include "DrawCallService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -116,7 +117,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 
 	PerFrameConstantBuffer l_perFrameCB = {};
 	l_perFrameCB.frameIndex = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
-	l_perFrameCB.modelCount = 0;
+	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
 	l_perFrameCB.p_original = l_p;
 	l_perFrameCB.p_jittered = l_p;
 

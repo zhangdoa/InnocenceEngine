@@ -1,6 +1,7 @@
 #include "AnimationPass.h"
 #include "OpaquePass.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
+#include "../../Engine/Services/DrawCallService.h"
 #include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/AnimationService.h"
 
@@ -147,8 +148,8 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
-	auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-	auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
+	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 	auto l_AnimationGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Animation);
 
 	auto& l_AnimationDrawCallInfo = g_Engine->Get<RenderingContextService>()->GetAnimationDrawCallInfo();

@@ -4,7 +4,7 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/LightDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -182,8 +182,8 @@ namespace Inno
 
             l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
-            auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+            auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
+            auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
             l_renderingServer->CommandListBegin(m_RenderPassComp_Surfel, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Surfel);

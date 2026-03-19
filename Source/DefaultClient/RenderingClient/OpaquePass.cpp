@@ -3,7 +3,7 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -143,7 +143,7 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_renderingServer = g_Engine->getRenderingServer();
-	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
+	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -151,9 +151,9 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_perFrameCBuffer = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_perFrameCBufferPrev = g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
-	auto l_transformCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Transform);
-	auto l_gpuModelDataCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::GPUModelData);
-	auto l_materialCBuffer = l_renderingContextService->GetGPUBufferComponent(GPUBufferUsageType::Material);
+	auto l_transformCBuffer = l_drawCallService->GetCurrentFrameTransformBuffer();
+	auto l_gpuModelDataCBuffer = l_drawCallService->GetGPUModelDataBuffer();
+	auto l_materialCBuffer = l_drawCallService->GetMaterialBuffer();
 
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBuffer, 1);
 	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBufferPrev, 2);

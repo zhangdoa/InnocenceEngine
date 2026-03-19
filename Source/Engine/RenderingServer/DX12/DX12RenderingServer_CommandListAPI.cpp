@@ -1,7 +1,7 @@
 #include "DX12RenderingServer.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Services/RenderingContextService.h"
+#include "../../Services/DrawCallService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Texture.h"
 
@@ -476,10 +476,8 @@ bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, Comma
 
 	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
-	// Get actual model count from RenderingContextService instead of buffer capacity
-	auto l_renderingContextService = g_Engine->Get<RenderingContextService>();
-	auto& l_gpuModelData = l_renderingContextService->GetGPUModelData();
-	UINT maxDrawCommandCount = static_cast<UINT>(l_gpuModelData.size());
+	auto l_modelCount = (uint32_t)g_Engine->Get<DrawCallService>()->GetGPUModelData().size();
+	UINT maxDrawCommandCount = static_cast<UINT>(l_modelCount);
 	
 	if (maxDrawCommandCount == 0)
 		return false;

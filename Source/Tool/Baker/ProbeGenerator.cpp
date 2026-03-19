@@ -3,7 +3,7 @@
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/LightDataService.h"
-#include "../../Engine/Services/RenderingContextService.h"
+#include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -131,8 +131,8 @@ namespace Inno
 
             Log(Success, "There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
-            auto l_MaterialGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Material);
+            auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
+            auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
             l_renderingServer->Upload(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
             l_renderingServer->Upload(l_MaterialGPUBufferComp, Config::Get().m_staticMeshMaterialConstantBuffer, 0, Config::Get().m_staticMeshMaterialConstantBuffer.size());
@@ -166,7 +166,7 @@ namespace Inno
 
             Log(Success, "Start to draw probe height map...");
 
-            auto l_MeshGPUBufferComp = g_Engine->Get<RenderingContextService>()->GetGPUBufferComponent(GPUBufferUsageType::Transform);
+            auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
 
             l_renderingServer->CommandListBegin(m_RenderPassComp_Probe, 0);
             l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Probe);
