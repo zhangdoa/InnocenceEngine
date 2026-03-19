@@ -1,6 +1,7 @@
 #include "LightDataService.h"
 
 #include "../Common/LogService.h"
+#include "../Common/GPUDataStructure.h"
 #include "ComponentManager.h"
 #include "RenderingConfigurationService.h"
 #include "../Component/LightComponent.h"
