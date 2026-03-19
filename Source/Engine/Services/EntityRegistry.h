@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include "../Common/STL14.h"
 #include "../Common/STL17.h"
 #include "../Common/EntityID.h"
@@ -35,7 +34,7 @@ namespace Inno
         {
             assert(IsValid(Entity) && "EntityRegistry::Emplace - entity is not valid");
             auto& l_Storage = Storage<T>();
-            l_Storage.Add(Entity, m_Lifespans[Entity], Data);
+            l_Storage.Add(Entity, m_Lifespans[Entity], std::move(Data));
             return *l_Storage.Get(Entity);
         }
 

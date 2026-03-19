@@ -32,6 +32,9 @@ bool EntityRegistry::Terminate()
     m_Storages.clear();
     m_FreeList.clear();
     m_Valid.assign(MAX_ENTITIES, false);
+    m_Lifespans.assign(MAX_ENTITIES, ObjectLifespan::Invalid);
+    m_Names.assign(MAX_ENTITIES, {});
+    m_NextID = 1;
     m_ObjectStatus = ObjectStatus::Terminated;
     Log(Success, "EntityRegistry: Terminated.");
     return true;
