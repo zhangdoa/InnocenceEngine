@@ -12,7 +12,7 @@ namespace Inno
     public:
         ComponentStorage()
         {
-            m_sparse.assign(MAX_ENTITIES, k_invalid);
+            m_sparse.fill(k_invalid);
         }
 
         void Add(EntityID entity, ObjectLifespan lifespan, const T& data = {})
@@ -89,6 +89,8 @@ namespace Inno
             return m_dense[m_sparse[entity]];
         }
 
+        // Returns a reference to the packed dense array for cache-friendly sequential iteration.
+        // C++17: returns std::vector<T>& instead of std::span<T> (std::span is C++20).
         const std::vector<T>& All() const             { return m_dense; }
         std::vector<T>&       All()                   { return m_dense; }
         const std::vector<EntityID>& AllOwners() const { return m_owners; }
@@ -110,6 +112,6 @@ namespace Inno
         std::vector<T>              m_dense;
         std::vector<EntityID>       m_owners;
         std::vector<ObjectLifespan> m_lifespans;
-        std::vector<uint32_t>       m_sparse;
+        std::array<uint32_t, MAX_ENTITIES> m_sparse;
     };
 }
