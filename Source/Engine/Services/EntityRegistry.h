@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include "../Common/STL14.h"
 #include "../Common/STL17.h"
 #include "../Common/EntityID.h"
@@ -32,6 +33,7 @@ namespace Inno
         template<typename T>
         T& Emplace(EntityID Entity, T Data = {})
         {
+            assert(IsValid(Entity) && "EntityRegistry::Emplace - entity is not valid");
             auto& l_Storage = Storage<T>();
             l_Storage.Add(Entity, m_Lifespans[Entity], Data);
             return *l_Storage.Get(Entity);
@@ -52,13 +54,19 @@ namespace Inno
         template<typename T>
         const T* Get(EntityID Entity) const
         {
-            return const_cast<EntityRegistry*>(this)->Storage<T>().Get(Entity);
+            auto* l_Storage = FindStorage<T>();
+            if (!l_Storage)
+                return nullptr;
+            return l_Storage->Get(Entity);
         }
 
         template<typename T>
         bool Has(EntityID Entity) const
         {
-            return const_cast<EntityRegistry*>(this)->Storage<T>().Has(Entity);
+            auto* l_Storage = FindStorage<T>();
+            if (!l_Storage)
+                return false;
+            return l_Storage->Has(Entity);
         }
 
         template<typename T>
@@ -83,6 +91,7 @@ namespace Inno
         {
             virtual ~IStorageWrapper() = default;
             virtual void CleanUp(ObjectLifespan Lifespan) = 0;
+            virtual void Remove(EntityID Entity) = 0;
         };
 
         template<typename T>
@@ -90,7 +99,18 @@ namespace Inno
         {
             TComponentStorage<T> m_Storage;
             void CleanUp(ObjectLifespan Lifespan) override { m_Storage.CleanUp(Lifespan); }
+            void Remove(EntityID Entity) override          { m_Storage.Remove(Entity); }
         };
+
+        template<typename T>
+        TComponentStorage<T>* FindStorage() const
+        {
+            const auto l_Key = typeid(T).hash_code();
+            const auto l_It  = m_Storages.find(l_Key);
+            if (l_It == m_Storages.end())
+                return nullptr;
+            return &static_cast<TStorageWrapper<T>*>(l_It->second.get())->m_Storage;
+        }
 
         // Entity metadata arrays, indexed by EntityID
         std::vector<bool>            m_Valid;

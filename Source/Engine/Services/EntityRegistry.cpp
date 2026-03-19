@@ -71,9 +71,13 @@ void EntityRegistry::Destroy(EntityID Entity)
     if (!IsValid(Entity))
         return;
 
-    m_Valid[Entity]     = false;
-    m_Lifespans[Entity] = ObjectLifespan::Invalid;
-    m_Names[Entity]     = {};
+    // Remove all components for this entity before freeing the slot
+    for (auto& [l_Key, l_Wrapper] : m_Storages)
+        l_Wrapper->Remove(Entity);
+
+    m_Valid[Entity]      = false;
+    m_Lifespans[Entity]  = ObjectLifespan::Invalid;
+    m_Names[Entity]      = {};
     m_FreeList.push_back(Entity);
 }
 
