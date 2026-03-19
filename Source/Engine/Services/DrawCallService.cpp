@@ -1,11 +1,9 @@
 #include "DrawCallService.h"
 
 #include "../Common/LogService.h"
-#include "../Common/GPUDataStructure.h"
 #include "ComponentManager.h"
 #include "RenderingConfigurationService.h"
 #include "../Component/ModelComponent.h"
-#include "../Component/DrawCallComponent.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/TextureComponent.h"
