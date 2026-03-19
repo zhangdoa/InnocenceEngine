@@ -4,7 +4,6 @@
 #include "CameraSystem.h"
 #include "ComponentManager.h"
 #include "RenderingConfigurationService.h"
-#include "LightSystem.h"
 
 #include "../Engine.h"
 using namespace Inno;
