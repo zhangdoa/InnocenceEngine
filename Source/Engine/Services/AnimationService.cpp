@@ -6,8 +6,7 @@
 #include "../Common/Timer.h"
 #include "../Common/TaskScheduler.h"
 
-#include "EntityManager.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -22,12 +21,15 @@ namespace Inno
 		AnimationData getAnimationData(const char* animationName);
 		void simulateAnimation();
 
-		ThreadSafeUnorderedMap<uint64_t, AnimationInstance> m_animationInstanceMap;
-		ThreadSafeUnorderedMap<std::string, AnimationData> m_animationDataInfosLUT;
-		ThreadSafeQueue<AnimationComponent*> m_uninitializedAnimations;
+		ThreadSafeUnorderedMap<EntityID, AnimationInstance> m_AnimationInstanceMap;
+		ThreadSafeUnorderedMap<std::string, AnimationData> m_AnimationDataInfosLUT;
+		ThreadSafeQueue<AnimationComponent*> m_UninitializedAnimations;
 
-		int64_t m_previousTime = 0;
-		int64_t m_currentTime = 0;
+		int64_t m_PreviousTime = 0;
+		int64_t m_CurrentTime = 0;
+
+		uint32_t m_SkeletonCount = 0;
+		uint32_t m_AnimationCount = 0;
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 	};
@@ -35,8 +37,8 @@ namespace Inno
 
 AnimationServiceImpl::AnimationServiceImpl()
 {
-	m_previousTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
-	m_currentTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
+	m_PreviousTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
+	m_CurrentTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 }
 
 void AnimationServiceImpl::initializeAnimation(AnimationComponent* rhs)
@@ -58,13 +60,13 @@ void AnimationServiceImpl::initializeAnimation(AnimationComponent* rhs)
 	l_info.ADC = rhs;
 	l_info.keyData = l_keyData;
 
-	m_animationDataInfosLUT.emplace(rhs->m_InstanceName.c_str(), l_info);
+	m_AnimationDataInfosLUT.emplace(rhs->m_InstanceName.c_str(), l_info);
 }
 
 AnimationData AnimationServiceImpl::getAnimationData(const char* animationName)
 {
-	auto l_result = m_animationDataInfosLUT.find(animationName);
-	if (l_result != m_animationDataInfosLUT.end())
+	auto l_result = m_AnimationDataInfosLUT.find(animationName);
+	if (l_result != m_AnimationDataInfosLUT.end())
 	{
 		return l_result->second;
 	}
@@ -76,13 +78,13 @@ AnimationData AnimationServiceImpl::getAnimationData(const char* animationName)
 
 void AnimationServiceImpl::simulateAnimation()
 {
-	m_currentTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
+	m_CurrentTime = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 
-	float l_tickTime = float(m_currentTime - m_previousTime) / 1000.0f;
+	float l_tickTime = float(m_CurrentTime - m_PreviousTime) / 1000.0f;
 
-	if (m_animationInstanceMap.size())
+	if (m_AnimationInstanceMap.size())
 	{
-		for (auto& i : m_animationInstanceMap)
+		for (auto& i : m_AnimationInstanceMap)
 		{
 			if (!i.second.isFinished)
 			{
@@ -104,18 +106,15 @@ void AnimationServiceImpl::simulateAnimation()
 			}
 		}
 
-		m_animationInstanceMap.erase_if([](auto it) { return it.second.isFinished; });
+		m_AnimationInstanceMap.erase_if([](auto it) { return it.second.isFinished; });
 	}
 
-	m_previousTime = m_currentTime;
+	m_PreviousTime = m_CurrentTime;
 }
 
 bool AnimationService::Setup(ISystemConfig* systemConfig)
-{	
+{
 	m_Impl = new AnimationServiceImpl();
-
-	g_Engine->Get<ComponentManager>()->RegisterType<SkeletonComponent>(2048, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<AnimationComponent>(16384, this);
 
 	m_Impl->m_ObjectStatus = ObjectStatus::Created;
 
@@ -133,10 +132,10 @@ bool AnimationService::Update()
 {
 	m_Impl->simulateAnimation();
 
-	while (m_Impl->m_uninitializedAnimations.size() > 0)
+	while (m_Impl->m_UninitializedAnimations.size() > 0)
 	{
 		AnimationComponent* l_Animations;
-		m_Impl->m_uninitializedAnimations.tryPop(l_Animations);
+		m_Impl->m_UninitializedAnimations.tryPop(l_Animations);
 
 		if (l_Animations)
 		{
@@ -160,28 +159,18 @@ ObjectStatus AnimationService::GetStatus()
 
 SkeletonComponent* AnimationService::AddSkeletonComponent()
 {
-	static std::atomic<uint32_t> skeletonCount = 0;
-	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
-	auto l_SDC = g_Engine->Get<ComponentManager>()->Spawn<SkeletonComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
-	// TODO Phase2-migrate: l_SDC->m_Owner = l_parentEntity;
-	// TODO Phase2-migrate: l_SDC->m_Serializable = false;
-	// TODO Phase2-migrate: l_SDC->m_ObjectStatus = ObjectStatus::Created;
-	// TODO Phase2-migrate: l_SDC->m_ObjectLifespan = ObjectLifespan::Persistence;
-	skeletonCount++;
-	return l_SDC;
+	auto l_Entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(m_Impl->m_SkeletonCount) + "/").c_str());
+	auto& l_SDC = g_Engine->Get<EntityRegistry>()->Emplace<SkeletonComponent>(l_Entity);
+	m_Impl->m_SkeletonCount++;
+	return &l_SDC;
 }
 
 AnimationComponent* AnimationService::AddAnimationComponent()
 {
-	static std::atomic<uint32_t> animationCount = 0;
-	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
-	auto l_ADC = g_Engine->Get<ComponentManager>()->Spawn<AnimationComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
-	l_ADC->m_Owner = l_parentEntity;
-	l_ADC->m_Serializable = false;
-	l_ADC->m_ObjectStatus = ObjectStatus::Created;
-	l_ADC->m_ObjectLifespan = ObjectLifespan::Persistence;
-	animationCount++;
-	return l_ADC;
+	auto l_Entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, ("Animation_" + std::to_string(m_Impl->m_AnimationCount) + "/").c_str());
+	auto& l_ADC = g_Engine->Get<EntityRegistry>()->Emplace<AnimationComponent>(l_Entity);
+	m_Impl->m_AnimationCount++;
+	return &l_ADC;
 }
 
 bool AnimationService::InitializeSkeletonComponent(SkeletonComponent* rhs)
@@ -193,25 +182,25 @@ bool AnimationService::InitializeSkeletonComponent(SkeletonComponent* rhs)
 
 bool AnimationService::InitializeAnimationComponent(AnimationComponent* rhs)
 {
-	m_Impl->m_uninitializedAnimations.push(rhs);
+	m_Impl->m_UninitializedAnimations.push(rhs);
 
 	return true;
 }
 
-bool AnimationService::PlayAnimation(ModelComponent* model, const char* animationName, bool isLooping)
+bool AnimationService::PlayAnimation(EntityID Entity, const char* AnimationName, bool IsLooping)
 {
-	auto l_animationData = m_Impl->getAnimationData(animationName);
+	auto l_AnimationData = m_Impl->getAnimationData(AnimationName);
 
-	if (l_animationData.ADC != nullptr)
+	if (l_AnimationData.ADC != nullptr)
 	{
-		AnimationInstance l_instance;
+		AnimationInstance l_Instance;
 
-		l_instance.animationData = l_animationData;
-		l_instance.currentTime = 0.0f;
-		l_instance.isLooping = isLooping;
-		l_instance.isFinished = false;
+		l_Instance.animationData = l_AnimationData;
+		l_Instance.currentTime = 0.0f;
+		l_Instance.isLooping = IsLooping;
+		l_Instance.isFinished = false;
 
-		m_Impl->m_animationInstanceMap.emplace(model->m_UUID, l_instance);
+		m_Impl->m_AnimationInstanceMap.emplace(Entity, l_Instance);
 
 		return true;
 	}
@@ -219,12 +208,12 @@ bool AnimationService::PlayAnimation(ModelComponent* model, const char* animatio
 	return false;
 }
 
-bool AnimationService::StopAnimation(ModelComponent* model, const char* animationName)
+bool AnimationService::StopAnimation(EntityID Entity)
 {
-	auto l_result = m_Impl->m_animationInstanceMap.find(model->m_UUID);
-	if (l_result != m_Impl->m_animationInstanceMap.end())
+	auto l_Result = m_Impl->m_AnimationInstanceMap.find(Entity);
+	if (l_Result != m_Impl->m_AnimationInstanceMap.end())
 	{
-		m_Impl->m_animationInstanceMap.erase(l_result->first);
+		m_Impl->m_AnimationInstanceMap.erase(l_Result->first);
 
 		return true;
 	}
@@ -232,10 +221,10 @@ bool AnimationService::StopAnimation(ModelComponent* model, const char* animatio
 	return false;
 }
 
-AnimationInstance AnimationService::GetAnimationInstance(uint64_t UUID)
+AnimationInstance AnimationService::GetAnimationInstance(EntityID Entity)
 {
-	auto l_result = m_Impl->m_animationInstanceMap.find(UUID);
-	if (l_result != m_Impl->m_animationInstanceMap.end())
+	auto l_result = m_Impl->m_AnimationInstanceMap.find(Entity);
+	if (l_result != m_Impl->m_AnimationInstanceMap.end())
 	{
 		return l_result->second;
 	}

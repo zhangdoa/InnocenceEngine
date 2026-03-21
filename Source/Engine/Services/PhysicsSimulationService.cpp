@@ -3,12 +3,14 @@
 #include "../Common/MathHelper.h"
 #include "../Common/LogService.h"
 #include "../Common/DoubleBuffer.h"
-#include "EntityManager.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
 #include "SceneService.h"
 #include "AssetService.h"
 #include "BVHService.h"
 #include "../RenderingServer/IRenderingServer.h"
+#include "../Component/TransformComponent.h"
+#include "../Component/RigidBodyComponent.h"
+#include "../Component/CollisionShapeComponent.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "../ThirdParty/PhysXWrapper/PhysXWrapper.h"
@@ -21,12 +23,11 @@ namespace Inno
 {
 	struct PhysicsSimulationServiceImpl
 	{
-        bool Setup();
-        void CreateRootComponent();
+		bool Setup();
+		void CreateRootComponent();
 		bool Update();
 
-		// CollisionComponent removed - using ModelComponent collision data now
-		void CreatePhysXActor(ModelComponent* ModelComponent);
+		void CreatePhysXActor(EntityID Entity);
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -51,8 +52,7 @@ namespace Inno
 		SceneBoundary m_TotalSceneBoundary;
 		SceneBoundary m_StaticSceneBoundary;
 
-		Entity* m_RootModelComponentEntity = 0;
-		ModelComponent* m_RootModelComponent = 0;
+		EntityID m_RootEntity = INVALID_ENTITY;
 		std::vector<CullingResult> m_CullingResults;
 		mutable std::shared_mutex m_CullingResultsMutex;
 
@@ -115,8 +115,9 @@ bool PhysicsSimulationServiceImpl::Update()
 	return true;
 }
 
-void PhysicsSimulationServiceImpl::CreatePhysXActor(ModelComponent* ModelComponent)
+void PhysicsSimulationServiceImpl::CreatePhysXActor(EntityID Entity)
 {
+	// TODO Phase2-migrate: PhysX actor binding deferred — physics simulation not yet using EntityRegistry components
 #if defined INNO_PLATFORM_WIN
 #endif
 }
@@ -125,9 +126,6 @@ bool PhysicsSimulationService::Setup(ISystemConfig* systemConfig)
 {
 	m_Impl = new PhysicsSimulationServiceImpl();
 	
-	// @TODO: Better not to hardcode the pool size.
-	// CollisionComponent removed - using ModelComponent collision data now
-	// g_Engine->Get<ComponentManager>()->RegisterType<CollisionComponent>(m_Impl->m_MaxComponentCount, this);
 
 	return m_Impl->Setup();
 }
@@ -191,19 +189,25 @@ AABB PhysicsSimulationService::GetTotalSceneAABB()
 	return m_Impl->m_TotalSceneBoundary.m_AABB;
 }
 
-bool PhysicsSimulationService::AddForce(ModelComponent* modelComponent, Vec4 force)
+bool PhysicsSimulationService::AddForce(EntityID Entity, Vec4 Force)
 {
 #if defined INNO_PLATFORM_WIN
 #endif
 	return true;
 }
 
-bool PhysicsSimulationService::CreateCollisionComponent(const MeshComponent& component)
+bool PhysicsSimulationService::CreateCollisionComponent(EntityID Entity)
 {
-	return true;
-}
+	auto* l_Registry = g_Engine->Get<EntityRegistry>();
 
-bool PhysicsSimulationService::CreateCollisionComponent(const ModelComponent& component)
-{
+	if (!l_Registry->Has<TransformComponent>(Entity))
+		l_Registry->Emplace<TransformComponent>(Entity);
+
+	if (!l_Registry->Has<RigidBodyComponent>(Entity))
+		l_Registry->Emplace<RigidBodyComponent>(Entity);
+
+	if (!l_Registry->Has<CollisionShapeComponent>(Entity))
+		l_Registry->Emplace<CollisionShapeComponent>(Entity);
+
 	return true;
 }

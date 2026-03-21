@@ -36,12 +36,14 @@ namespace Inno
             m_entity = *l_entity;
             m_modelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(*l_entity);
 
+            // TODO Phase2-migrate: PlayAnimation now takes EntityID instead of ModelComponent*
             std::function<void()> f_idle = [&]() {
-                g_Engine->Get<AnimationService>()->PlayAnimation(m_modelComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+                // TODO Phase2-migrate: g_Engine->Get<AnimationService>()->PlayAnimation(entityID, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
             };
 
+            // TODO Phase2-migrate: PlayAnimation now takes EntityID instead of ModelComponent*
             std::function<void()> f_run = [&]() {
-                g_Engine->Get<AnimationService>()->PlayAnimation(m_modelComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+                // TODO Phase2-migrate: g_Engine->Get<AnimationService>()->PlayAnimation(entityID, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
             };
 
             m_states.emplace("Idle", f_idle);
@@ -64,7 +66,8 @@ namespace Inno
             auto l_func = m_states.find(m_currentState);
             if (l_func != m_states.end())
             {
-                g_Engine->Get<AnimationService>()->StopAnimation(m_modelComponent, "");
+                // TODO Phase2-migrate: StopAnimation now takes EntityID instead of ModelComponent*
+                // g_Engine->Get<AnimationService>()->StopAnimation(entityID);
                 l_func->second();
                 m_isStateChanged = false;
 

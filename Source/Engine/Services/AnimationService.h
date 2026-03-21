@@ -5,8 +5,8 @@
 
 #include "../Component/SkeletonComponent.h"
 #include "../Component/AnimationComponent.h"
-#include "../Component/ModelComponent.h"
-	
+#include "../Common/EntityID.h"
+
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
@@ -44,10 +44,10 @@ namespace Inno
 		bool InitializeSkeletonComponent(SkeletonComponent* rhs);
 		bool InitializeAnimationComponent(AnimationComponent* rhs);
 
-		bool PlayAnimation(ModelComponent* model, const char* animationName, bool isLooping);
-		bool StopAnimation(ModelComponent* model, const char* animationName);
+		bool PlayAnimation(EntityID Entity, const char* AnimationName, bool IsLooping);
+		bool StopAnimation(EntityID Entity);
 
-		AnimationInstance GetAnimationInstance(uint64_t UUID);
+		AnimationInstance GetAnimationInstance(EntityID Entity);
 
 	private:
 		AnimationServiceImpl* m_Impl;

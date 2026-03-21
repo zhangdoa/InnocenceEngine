@@ -204,7 +204,8 @@ namespace Inno
             // TODO Phase2-migrate: auto l_force = Math::getDirection(Direction::Backward, m_playerCameraComponent->m_Transform.m_rot);
             auto l_force = Vec4(0.0f, 0.0f, -1.0f, 0.0f); // TODO Phase2-migrate placeholder
             l_force = l_force * 10.0f;
-            g_Engine->Get<PhysicsSimulationService>()->AddForce(m_playerModelComponent, l_force);
+            // TODO Phase2-migrate: AddForce now takes EntityID instead of ModelComponent*
+            // g_Engine->Get<PhysicsSimulationService>()->AddForce(m_playerEntityID, l_force);
         };
 
         f_switchCamera = [&]() {

@@ -1,6 +1,6 @@
 #pragma once
 #include "../Interface/ISystem.h"
-#include "../Component/ModelComponent.h"
+#include "../Common/EntityID.h"
 #include "../Common/GPUDataStructure.h"
 #include "CullingResult.h"
 
@@ -19,8 +19,7 @@ namespace Inno
 
 		ObjectStatus GetStatus();
 
-		bool CreateCollisionComponent(const MeshComponent& component);
-		bool CreateCollisionComponent(const ModelComponent& component);
+		bool CreateCollisionComponent(EntityID Entity);
 
 		void RunCulling();
 		const std::vector<CullingResult>& GetCullingResult();
@@ -28,7 +27,7 @@ namespace Inno
 		AABB GetStaticSceneAABB();
 		AABB GetTotalSceneAABB();
 
-		bool AddForce(ModelComponent* modelComponent, Vec4 force);
+		bool AddForce(EntityID Entity, Vec4 Force);
 
 	private:
 		PhysicsSimulationServiceImpl* m_Impl;
