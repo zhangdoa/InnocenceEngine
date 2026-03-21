@@ -1,5 +1,6 @@
 #include "DebugDrawCallService.h"
 
+#include "../Engine.h"
 #include "../Common/LogService.h"
 
 using namespace Inno;

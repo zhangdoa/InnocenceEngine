@@ -89,6 +89,7 @@ extern void RunObjectPoolUnitTests();
 extern void RunArrayUnitTests();
 extern void RunAtomicUnitTests();
 extern void RunRingBufferUnitTests();
+extern void RunEntityRegistryUnitTests();
 
 extern void RunStringConversionPerformanceTests();
 extern void RunContainerPerformanceTests();
@@ -106,7 +107,8 @@ void TestRunner::RunUnitTests()
 	RunArrayUnitTests();
 	RunAtomicUnitTests();
 	RunRingBufferUnitTests();
-	
+	RunEntityRegistryUnitTests();
+
 	Log(Success, "========== UNIT TESTS COMPLETE ==========\n");
 }
 

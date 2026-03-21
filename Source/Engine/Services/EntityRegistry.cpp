@@ -1,5 +1,6 @@
 #include "EntityRegistry.h"
 
+#include "../Engine.h"
 #include "../Common/LogService.h"
 
 using namespace Inno;
