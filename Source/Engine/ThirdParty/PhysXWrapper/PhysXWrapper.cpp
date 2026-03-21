@@ -159,7 +159,6 @@ bool PhysXWrapperNS::Setup()
 				{
 					l_Transform->m_LocalPos = Vec3(t.p.x, t.p.y, t.p.z);
 					l_Transform->m_LocalRot = Vec4(t.q.x, t.q.y, t.q.z, t.q.w);
-					l_Transform->m_Dirty = true;
 				}
 			}
 		});

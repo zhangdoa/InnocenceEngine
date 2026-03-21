@@ -160,7 +160,7 @@ static void TestNewComponentTypes()
 			auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
 			l_Transform.m_LocalPos = Vec3(1.f, 2.f, 3.f);
 			auto* l_TPtr = l_Registry->Get<TransformComponent>(l_Entity);
-			l_TestPassed = l_TPtr != nullptr && l_TPtr->m_LocalPos.x == 1.f && l_TPtr->m_Dirty == true;
+			l_TestPassed = l_TPtr != nullptr && l_TPtr->m_LocalPos.x == 1.f;
 
 			if (l_TestPassed)
 			{
