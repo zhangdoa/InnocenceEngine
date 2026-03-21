@@ -1,18 +1,14 @@
 #pragma once
-#include "../Common/Object.h"
 #include "../Common/MathHelper.h"
 
 namespace Inno
 {
 	enum class LightType { Directional, Point, Spot, Sphere, Disk, Tube, Rectangle };
 
-	class LightComponent : public Component
+	struct LightComponent
 	{
-	public:
 		static uint32_t GetTypeID() { return 3; };
 		static const char* GetTypeName() { return "LightComponent"; };
-
-		Transform m_Transform = {};
 
 		// Unitless: use clamped range from 0.0 to 1.0
 		// CIE 1931 RGB color space

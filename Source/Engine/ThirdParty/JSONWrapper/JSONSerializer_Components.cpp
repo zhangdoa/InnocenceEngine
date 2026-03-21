@@ -77,9 +77,6 @@ void JSONWrapper::to_json(json& j, const LightComponent& component)
     json shape;
     to_json(shape, component.m_Shape);
 
-    json transform;
-    to_json(transform, component.m_Transform);
-
     j = json
     {
         {"ComponentType", component.GetTypeID()},
@@ -89,7 +86,7 @@ void JSONWrapper::to_json(json& j, const LightComponent& component)
         {"ColorTemperature", component.m_ColorTemperature},
         {"LuminousFlux", component.m_LuminousFlux},
         {"UseColorTemperature", component.m_UseColorTemperature},
-        {"Transform", transform},
+        // TODO Phase2-migrate: {"Transform", transform},
     };
 }
 
@@ -424,7 +421,7 @@ bool JSONWrapper::Load(const char* fileName, LightComponent& component)
     if (!Load(fileName, j))
         return false;
 
-    from_json(j["Transform"], component.m_Transform);
+    // TODO Phase2-migrate: from_json(j["Transform"], component.m_Transform);
     from_json(j["RGBColor"], component.m_RGBColor);
     from_json(j["Shape"], component.m_Shape);
 

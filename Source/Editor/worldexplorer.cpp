@@ -262,7 +262,7 @@ void WorldExplorer::addModelComponent()
 
 void WorldExplorer::addLightComponent()
 {
-    addComponent<LightComponent>();
+    // TODO Phase2-migrate: addComponent<LightComponent>();
 }
 
 void WorldExplorer::addCameraComponent()

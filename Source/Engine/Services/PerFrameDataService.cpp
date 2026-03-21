@@ -155,7 +155,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	if (l_sun == nullptr)
 		return false;
 
-	l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun->m_Transform.m_rot);
+	// TODO Phase2-migrate: l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun->m_Transform.m_rot);
 	l_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;

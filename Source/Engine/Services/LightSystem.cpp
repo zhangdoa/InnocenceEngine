@@ -63,7 +63,8 @@ void LightSystemImpl::UpdateCSMData(LightComponent* rhs)
 	if (l_cameraComponent == nullptr)
 		return;
 
-	auto l_rotationMatrix = Math::toRotationMatrix(rhs->m_Transform.m_rot);
+	// TODO Phase2-migrate: auto l_rotationMatrix = Math::toRotationMatrix(rhs->m_Transform.m_rot);
+	auto l_rotationMatrix = Mat4();
 	auto l_rotationMatrix_inverse = l_rotationMatrix.inverse();
 
 	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;

@@ -1,4 +1,4 @@
-#include "../../Engine/Services/EntityManager.h"
+﻿#include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"
@@ -401,12 +401,12 @@ namespace Inno
 		{
 			for (uint32_t j = 0; j < l_matrixDim; j++)
 			{
-				m_pointLightComponents[i * l_matrixDim + j]->m_Transform.m_pos =
-					m_player->m_playerCameraComponent->m_Transform.m_pos +
-					Vec4(
-						(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(m_generator) / 2.0f) + (i * l_breadthInterval), l_randomPosDelta(m_generator) * 32.0f,
-						(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
-						0.0f);
+				// TODO Phase2-migrate: m_pointLightComponents[i * l_matrixDim + j]->m_Transform.m_pos =
+				//     m_player->m_playerCameraComponent->m_Transform.m_pos +
+				//     Vec4(
+				//         (-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(m_generator) / 2.0f) + (i * l_breadthInterval), l_randomPosDelta(m_generator) * 32.0f,
+				//         (j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
+				//         0.0f);
 			}
 		}
 

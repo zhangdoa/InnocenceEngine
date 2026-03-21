@@ -105,7 +105,7 @@ bool LightDataServiceImpl::UpdateLightData()
 		if (l_lightComponent->m_LightType == LightType::Point)
 		{
 			PointLightConstantBuffer l_data;
-			l_data.pos = l_lightComponent->m_Transform.m_pos;
+			// TODO Phase2-migrate: l_data.pos = l_lightComponent->m_Transform.m_pos;
 			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
 			m_PointLightCBVector.emplace_back(l_data);
@@ -113,7 +113,7 @@ bool LightDataServiceImpl::UpdateLightData()
 		else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
 		{
 			SphereLightConstantBuffer l_data;
-			l_data.pos = l_lightComponent->m_Transform.m_pos;
+			// TODO Phase2-migrate: l_data.pos = l_lightComponent->m_Transform.m_pos;
 			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
 			m_SphereLightCBVector.emplace_back(l_data);

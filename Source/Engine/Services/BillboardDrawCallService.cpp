@@ -111,7 +111,8 @@ bool BillboardDrawCallServiceImpl::UpdateBillboardPassData()
 			continue;
 
 		TransformConstantBuffer l_transformCB;
-		l_transformCB.m = Math::toTranslationMatrix(Vec4(i->m_Transform.m_pos, 1.0f));
+		// TODO Phase2-migrate: l_transformCB.m = Math::toTranslationMatrix(Vec4(i->m_Transform.m_pos, 1.0f));
+		l_transformCB.m = Mat4();
 
 		switch (i->m_LightType)
 		{
