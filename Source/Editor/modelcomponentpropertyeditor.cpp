@@ -168,7 +168,8 @@ void ModelComponentPropertyEditor::RefreshDrawCallList()
             if (drawCall->m_MaterialComponent != 0)
             {
                 auto material = componentManager->FindByUUID<MaterialComponent>(drawCall->m_MaterialComponent);
-                materialItem->setText(material ? material->m_InstanceName.c_str() : "Unknown Material");
+                // TODO Phase2-migrate: materialItem->setText(material ? material->m_InstanceName.c_str() : "Unknown Material");
+                materialItem->setText(material ? "MaterialComponent" : "Unknown Material");
             }
             else
             {

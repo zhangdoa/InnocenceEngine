@@ -362,7 +362,7 @@ void IRenderingServer::Initialize(MaterialComponent* material)
 
 	// Queue material for deferred initialization
 	m_uninitializedMaterials.push(material);
-	Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
+	// TODO Phase2-migrate: Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(ShaderProgramComponent* shaderProgram)
@@ -650,7 +650,6 @@ bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedM
 bool IRenderingServer::InitializeImpl(MaterialComponent* material)
 {
 	material->m_GPUResourceType = GPUResourceType::Material;
-	material->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -794,7 +793,7 @@ bool IRenderingServer::InitializeComponents()
 		if (!l_component)
 			continue;
 
-		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
+		// TODO Phase2-migrate: Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			m_initializedMaterials.emplace(l_component);
 		else

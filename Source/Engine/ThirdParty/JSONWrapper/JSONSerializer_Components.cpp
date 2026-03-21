@@ -313,8 +313,8 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
         component.m_TextureComponents.reserve(l_j.size());
         for (auto& i : l_j)
         {
-            auto l_textureComponent = g_Engine->Get<ComponentManager>()->Load<TextureComponent>(i["Name"].get<std::string>().c_str(), component.m_Owner);
-            component.m_TextureComponents.emplace_back(l_textureComponent);
+            // TODO Phase2-migrate: auto l_textureComponent = g_Engine->Get<ComponentManager>()->Load<TextureComponent>(i["Name"].get<std::string>().c_str(), component.m_Owner);
+            // TODO Phase2-migrate: component.m_TextureComponents.emplace_back(l_textureComponent);
         }
     }
 

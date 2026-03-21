@@ -145,7 +145,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 				continue;
 
 			auto l_material = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(l_materialID);
-			if (!l_material || l_material->m_ObjectStatus != ObjectStatus::Activated)
+			if (!l_material)
 				continue;
 
 			GPUModelData l_gpuModelData = {};

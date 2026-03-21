@@ -110,8 +110,8 @@ void AssimpImporter::ProcessAssimpNode(const aiNode* node, const aiScene* scene,
 			if (l_mesh->mMaterialIndex < scene->mNumMaterials)
 			{
 				auto l_materialComponent = AssimpMaterialProcessor::CreateMaterialComponent(scene->mMaterials[l_mesh->mMaterialIndex], baseName);
-				if (l_materialComponent)
-					l_drawCallComponent->m_MaterialComponent = l_materialComponent->m_UUID;
+				// TODO Phase2-migrate: if (l_materialComponent) l_drawCallComponent->m_MaterialComponent = l_materialComponent->m_UUID;
+				(void)l_materialComponent;
 			}
 
 			AssetService::Save(*l_drawCallComponent);

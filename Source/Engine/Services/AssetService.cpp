@@ -190,7 +190,8 @@ bool AssetService::Save(const MaterialComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	// TODO Phase2-migrate: auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	auto filePath = GetAssetFilePath("MaterialComponent");
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
 

@@ -125,7 +125,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 m_defaultMaterial->m_TextureComponents[3] = m_basicRoughnessTexture->m_UUID;
                 m_defaultMaterial->m_TextureComponents[4] = m_basicAOTexture->m_UUID;
                 m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
-                m_defaultMaterial->m_ObjectStatus = ObjectStatus::Created;
+                // TODO Phase2-migrate: m_defaultMaterial->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*m_defaultMaterial);
 
                 g_Engine->getRenderingServer()->Initialize(m_defaultMaterial);
