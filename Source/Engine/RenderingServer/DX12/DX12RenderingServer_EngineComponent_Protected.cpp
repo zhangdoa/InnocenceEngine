@@ -13,7 +13,7 @@
 #include "../../Engine.h"
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/EntityRegistry.h"
-#include "../../Component/TransformComponent.h"
+#include "../../Component/WorldTransformComponent.h"
 #include "../../Component/MeshComponent.h"
 
 using namespace Inno;
@@ -701,8 +701,8 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
 
 bool DX12RenderingServer::InitializeImpl(EntityID Entity)
 {
-	auto* l_transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(Entity);
-	Mat4 transformMatrix = l_transform ? l_transform->m_WorldMatrix : Mat4{};
+	auto* l_world = g_Engine->Get<EntityRegistry>()->Get<WorldTransformComponent>(Entity);
+	Mat4 transformMatrix = l_world ? l_world->m_WorldMatrix : Mat4{};
 
 	auto* l_mesh = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(Entity);
 	if (!l_mesh)

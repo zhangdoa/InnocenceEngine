@@ -5,7 +5,7 @@
 #include "RenderingConfigurationService.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
-#include "../Component/TransformComponent.h"
+#include "../Component/WorldTransformComponent.h"
 #include "../Component/VisibilityComponent.h"
 #include "../Engine.h"
 
@@ -168,12 +168,12 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 
 		m_GPUModelDataVector.emplace_back(l_gpuModelData);
 
-		auto* l_transform = l_registry->Get<TransformComponent>(l_Entity);
+		auto* l_world = l_registry->Get<WorldTransformComponent>(l_Entity);
 		TransformConstantBuffer l_transformCB = {};
-		if (l_transform)
+		if (l_world)
 		{
-			l_transformCB.m = l_transform->m_WorldMatrix;
-			l_transformCB.normalMat = l_transform->m_WorldMatrix.inverse().transpose();
+			l_transformCB.m = l_world->m_WorldMatrix;
+			l_transformCB.normalMat = l_world->m_WorldRotationMatrix;
 		}
 		m_TransformBufferVector.emplace_back(l_transformCB);
 
