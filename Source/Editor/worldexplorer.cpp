@@ -229,14 +229,12 @@ T* WorldExplorer::addComponent()
 
 void WorldExplorer::addLightComponent()
 {
-    // TODO Phase2-migrate: addComponent<LightComponent>();
+    Log(Warning, "WorldExplorer: addLightComponent not yet migrated to EntityRegistry.");
 }
 
 void WorldExplorer::addCameraComponent()
 {
-    // TODO Phase2-migrate: auto l_camera = addComponent<CameraComponent>();
-    // TODO Phase2-migrate: static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_camera);
-    // TODO Phase2-migrate: static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_camera);
+    Log(Warning, "WorldExplorer: addCameraComponent not yet migrated to EntityRegistry.");
 }
 
 void WorldExplorer::destroyComponent(Component *component)

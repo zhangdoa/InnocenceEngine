@@ -170,7 +170,10 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 		return false;
 	auto& l_sun = l_LightStorage.All()[0];
 
-	// TODO Phase2-migrate: l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun.m_Transform.m_rot);
+	EntityID l_SunEntityID = l_LightStorage.AllOwners()[0];
+	auto* l_SunTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_SunEntityID);
+	if (l_SunTransform)
+		l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_SunTransform->m_LocalRot);
 	l_perFrameCB.sun_illuminance = l_sun.m_RGBColor * l_sun.m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;

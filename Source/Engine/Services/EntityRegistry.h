@@ -34,7 +34,7 @@ namespace Inno
         template<typename T>
         T& Emplace(EntityID Entity, T Data = {})
         {
-            assert(IsValid(Entity) && "EntityRegistry::Emplace - entity is not valid");
+            assert(IsValid(Entity));
             auto& l_Storage = Storage<T>();
             l_Storage.Add(Entity, m_Lifespans[Entity], std::move(Data));
             return *l_Storage.Get(Entity);

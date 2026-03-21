@@ -321,12 +321,12 @@ namespace Inno
 		ThreadSafeUnorderedMap<EntityID, T*> m_ComponentLUT;
 		std::unordered_map<uint64_t, T*> m_ComponentLUTByUUID;
 		struct PlainStructInfo
-	{
-		uint64_t m_UUID;
-		ObjectLifespan m_Lifespan;
-		EntityID m_Owner;
-	};
-	std::unordered_map<T*, PlainStructInfo> m_ComponentUUIDs;
+		{
+			uint64_t m_UUID;
+			ObjectLifespan m_Lifespan;
+			EntityID m_Owner;
+		};
+		std::unordered_map<T*, PlainStructInfo> m_ComponentUUIDs;
 		std::unordered_map<std::string, uint64_t> m_LoadedComponents;
 	};
 

@@ -11,6 +11,7 @@
 #include "../../Common/TaskScheduler.h"
 #include "../../Component/MeshComponent.h"
 #include "../../Component/RigidBodyComponent.h"
+#include "../../Component/TransformComponent.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/HIDService.h"
@@ -141,23 +142,25 @@ bool PhysXWrapperNS::Setup()
 			gScene->simulate(g_Engine->getTickTime() / 1000.0f);
 			gScene->fetchResults(true);
 
-			for (auto i : PhysXActors)
+			auto& l_RBStorage = g_Engine->Get<EntityRegistry>()->Storage<RigidBodyComponent>();
+			auto& l_RBComponents = l_RBStorage.All();
+			const auto& l_Owners = l_RBStorage.AllOwners();
+
+			for (size_t i = 0; i < l_RBComponents.size(); i++)
 			{
-				if (!i.isDynamic)
+				const auto& l_RB = l_RBComponents[i];
+				if (!l_RB.m_SimulationProxy)
 					continue;
-				auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i.m_PxRigidActor);
-				if (!l_rigidBody->userData)
-					continue;
-
-				PxTransform t = i.m_PxRigidActor->getGlobalPose();
-				PxVec3 p = t.p;
-				PxQuat q = t.q;
-
-				// @TODO: Add back the transform component update logic
-				// auto l_collisionComponent = reinterpret_cast<CollisionComponent*>(l_rigidBody->userData);
-				// auto l_transform = &l_collisionComponent->m_Transform;
-				// l_transform->m_pos = Vec4(p.x, p.y, p.z, 1.0f);
-				// l_transform->m_rot = Vec4(q.x, q.y, q.z, q.w);
+				auto l_actor = reinterpret_cast<PxRigidDynamic*>(l_RB.m_SimulationProxy);
+				PxTransform t = l_actor->getGlobalPose();
+				EntityID l_EntityID = l_Owners[i];
+				auto* l_Transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID);
+				if (l_Transform)
+				{
+					l_Transform->m_LocalPos = Vec3(t.p.x, t.p.y, t.p.z);
+					l_Transform->m_LocalRot = Vec4(t.q.x, t.q.y, t.q.z, t.q.w);
+					l_Transform->m_Dirty = true;
+				}
 			}
 		});
 
