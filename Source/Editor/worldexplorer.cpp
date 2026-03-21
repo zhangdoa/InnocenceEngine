@@ -267,9 +267,9 @@ void WorldExplorer::addLightComponent()
 
 void WorldExplorer::addCameraComponent()
 {
-    auto l_camera = addComponent<CameraComponent>();
-    static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_camera);
-    static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_camera);
+    // TODO Phase2-migrate: auto l_camera = addComponent<CameraComponent>();
+    // TODO Phase2-migrate: static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_camera);
+    // TODO Phase2-migrate: static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_camera);
 }
 
 void WorldExplorer::destroyComponent(Component *component)

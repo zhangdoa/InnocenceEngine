@@ -1,32 +1,28 @@
 #pragma once
-#include "../Common/Object.h"
 #include "../Common/MathHelper.h"
 #include "../Interface/ISystem.h"
 
 namespace Inno
 {
-	class CameraComponent : public Component
+	struct CameraComponent
 	{
-	public:		
 		static uint32_t GetTypeID() { return 4; };
 		static const char* GetTypeName() { return "CameraComponent"; };
 
-		Transform m_Transform;
-		
-		Mat4 m_projectionMatrix = {};
-		Frustum m_frustum = {};
-		Ray m_rayOfEye = {};
+		Mat4 m_ProjectionMatrix = {};
+		Frustum m_Frustum = {};
+		Ray m_RayOfEye = {};
 		float m_FOVX = 90.0f;
-		float m_widthScale = 16.0f;
-		float m_heightScale = 9.0f;
-		float m_zNear = 0.001f;
-		float m_zFar = 1000.0f;
-		float m_WHRatio = m_widthScale / m_heightScale;
-		float m_aperture = 2.2f;
-		float m_shutterTime = 1.0f / 2000.0f;
+		float m_WidthScale = 16.0f;
+		float m_HeightScale = 9.0f;
+		float m_ZNear = 0.001f;
+		float m_ZFar = 1000.0f;
+		float m_WHRatio = 16.0f / 9.0f;
+		float m_Aperture = 2.2f;
+		float m_ShutterTime = 1.0f / 2000.0f;
 		float m_ISO = 100.0f;
 
-		std::vector<Vertex> m_splitFrustumVerticesWS;
+		std::vector<Vertex> m_SplitFrustumVerticesWS;
 	};
 
 	class ICameraSystem : public ISystem

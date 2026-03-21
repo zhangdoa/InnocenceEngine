@@ -113,7 +113,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	if (l_camera == nullptr)
 		return false;
 
-	auto l_p = l_camera->m_projectionMatrix;
+	auto l_p = l_camera->m_ProjectionMatrix;
 
 	PerFrameConstantBuffer l_perFrameCB = {};
 	l_perFrameCB.frameIndex = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
@@ -132,14 +132,16 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 
 	l_perFrameCB.radianceCacheHaltonJitter = Vec2(RadicalInverse(l_perFrameCB.frameIndex, 3) * 8.0f, RadicalInverse(l_perFrameCB.frameIndex, 5) * 8.0f);
 
-	auto r = Math::getInvertRotationMatrix(l_camera->m_Transform.m_rot);
-	auto t = Math::getInvertTranslationMatrix(Vec4(l_camera->m_Transform.m_pos, 1.0f));
+	// TODO Phase2-migrate: auto r = Math::getInvertRotationMatrix(l_camera->m_Transform.m_rot);
+	// TODO Phase2-migrate: auto t = Math::getInvertTranslationMatrix(Vec4(l_camera->m_Transform.m_pos, 1.0f));
+	auto r = Mat4(); // TODO Phase2-migrate placeholder
+	auto t = Mat4(); // TODO Phase2-migrate placeholder
 
-	l_perFrameCB.camera_posWS = l_camera->m_Transform.m_pos;
+	// TODO Phase2-migrate: l_perFrameCB.camera_posWS = l_camera->m_Transform.m_pos;
 	l_perFrameCB.v = r * t;
 
-	l_perFrameCB.zNear = l_camera->m_zNear;
-	l_perFrameCB.zFar = l_camera->m_zFar;
+	l_perFrameCB.zNear = l_camera->m_ZNear;
+	l_perFrameCB.zFar = l_camera->m_ZFar;
 
 	l_perFrameCB.p_inv = l_p.inverse();
 	l_perFrameCB.v_inv = l_perFrameCB.v.inverse();
@@ -147,8 +149,8 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	l_perFrameCB.viewportSize.y = (float)l_screenResolution.y;
 	l_perFrameCB.minLogLuminance = -10.0f;
 	l_perFrameCB.maxLogLuminance = 16.0f;
-	l_perFrameCB.aperture = l_camera->m_aperture;
-	l_perFrameCB.shutterTime = l_camera->m_shutterTime;
+	l_perFrameCB.aperture = l_camera->m_Aperture;
+	l_perFrameCB.shutterTime = l_camera->m_ShutterTime;
 	l_perFrameCB.ISO = l_camera->m_ISO;
 
 	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);

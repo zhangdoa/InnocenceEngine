@@ -67,7 +67,7 @@ void LightSystemImpl::UpdateCSMData(LightComponent* rhs)
 	auto l_rotationMatrix = Mat4();
 	auto l_rotationMatrix_inverse = l_rotationMatrix.inverse();
 
-	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_splitFrustumVerticesWS;
+	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_SplitFrustumVerticesWS;
 
 	// calculate AABBs in light space and generate the matrices
 	for (size_t i = 0; i < 4; i++)

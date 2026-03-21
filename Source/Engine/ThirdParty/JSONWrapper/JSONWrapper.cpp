@@ -111,10 +111,8 @@ bool JSONWrapper::SaveScene(const char* fileName)
 	
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>())
 	{
-		if (i->m_Serializable)
-		{
-			SaveComponentAndAddReference(topLevel, i);
-		}
+		// TODO Phase2-migrate: if (i->m_Serializable)
+		// TODO Phase2-migrate: SaveComponentAndAddReference(topLevel, i);
 	}
 
 	Save(fileName, topLevel);

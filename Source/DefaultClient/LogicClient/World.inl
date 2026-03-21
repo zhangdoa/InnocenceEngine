@@ -449,7 +449,7 @@ namespace Inno
 				m_player = new Player();
 			m_player->Setup();
 
-			m_posOffset = m_player->m_playerCameraComponent->m_Transform.m_pos;
+			// TODO Phase2-migrate: m_posOffset = m_player->m_playerCameraComponent->m_Transform.m_pos;
 			m_posOffset.z -= 75.0f;
 
 			m_posOffset = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -584,9 +584,11 @@ namespace Inno
 			return Vec4();
 		}
 		
-		auto pCamera = l_activeCamera->m_projectionMatrix;
-		auto rCamera = Math::getInvertRotationMatrix(l_activeCamera->m_Transform.m_rot);
-		auto tCamera = Math::getInvertTranslationMatrix(l_activeCamera->m_Transform.m_pos);
+		auto pCamera = l_activeCamera->m_ProjectionMatrix;
+		// TODO Phase2-migrate: auto rCamera = Math::getInvertRotationMatrix(l_activeCamera->m_Transform.m_rot);
+		// TODO Phase2-migrate: auto tCamera = Math::getInvertTranslationMatrix(l_activeCamera->m_Transform.m_pos);
+		auto rCamera = Mat4(); // TODO Phase2-migrate placeholder
+		auto tCamera = Mat4(); // TODO Phase2-migrate placeholder
 		
 		l_ndcSpace = pCamera.inverse() * l_ndcSpace;
 		l_ndcSpace.z = -1.0f;

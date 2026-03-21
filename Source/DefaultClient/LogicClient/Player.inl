@@ -112,10 +112,10 @@ namespace Inno
             m_debugCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
 
             m_debugCameraComponent->m_FOVX = m_playerCameraComponent->m_FOVX;
-            m_debugCameraComponent->m_zNear = m_playerCameraComponent->m_zNear;
-            m_debugCameraComponent->m_zFar = m_playerCameraComponent->m_zFar;
-            m_debugCameraComponent->m_widthScale = m_playerCameraComponent->m_widthScale;
-            m_debugCameraComponent->m_heightScale = m_playerCameraComponent->m_heightScale;
+            m_debugCameraComponent->m_ZNear = m_playerCameraComponent->m_ZNear;
+            m_debugCameraComponent->m_ZFar = m_playerCameraComponent->m_ZFar;
+            m_debugCameraComponent->m_WidthScale = m_playerCameraComponent->m_WidthScale;
+            m_debugCameraComponent->m_HeightScale = m_playerCameraComponent->m_HeightScale;
         }
 
         m_activeCameraComponent = m_playerCameraComponent;
@@ -124,7 +124,7 @@ namespace Inno
 
         m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
         m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        m_cameraPlayerDistance = m_playerCameraComponent->m_Transform.m_pos - m_playerModelComponent->m_Transform.m_pos;
+        // TODO Phase2-migrate: m_cameraPlayerDistance = m_playerCameraComponent->m_Transform.m_pos - m_playerModelComponent->m_Transform.m_pos;
         m_initialMoveSpeed = 0.05f;
         m_moveSpeed = m_initialMoveSpeed;
         m_rotateSpeed = 10.0f;
@@ -201,7 +201,8 @@ namespace Inno
         f_rotateAroundRightAxis = std::bind(&Player::RotateAroundRightAxis, this, std::placeholders::_1);
 
         f_addForce = [&]() {
-            auto l_force = Math::getDirection(Direction::Backward, m_playerCameraComponent->m_Transform.m_rot);
+            // TODO Phase2-migrate: auto l_force = Math::getDirection(Direction::Backward, m_playerCameraComponent->m_Transform.m_rot);
+            auto l_force = Vec4(0.0f, 0.0f, -1.0f, 0.0f); // TODO Phase2-migrate placeholder
             l_force = l_force * 10.0f;
             g_Engine->Get<PhysicsSimulationService>()->AddForce(m_playerModelComponent, l_force);
         };
@@ -260,9 +261,9 @@ namespace Inno
     {
         if (m_canMove)
         {
-            auto l_dir = Math::getDirection(direction, cameraComponent->m_Transform.m_rot);
-            auto l_currentPos = cameraComponent->m_Transform.m_pos;
-            cameraComponent->m_Transform.m_pos = Math::moveTo<float>(l_currentPos, l_dir, length);
+            // TODO Phase2-migrate: auto l_dir = Math::getDirection(direction, cameraComponent->m_Transform.m_rot);
+            // TODO Phase2-migrate: auto l_currentPos = cameraComponent->m_Transform.m_pos;
+            // TODO Phase2-migrate: cameraComponent->m_Transform.m_pos = Math::moveTo<float>(l_currentPos, l_dir, length);
         }
     }
 
@@ -287,7 +288,7 @@ namespace Inno
             m_canSlerp = false;
 
             m_playerModelComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_playerModelComponent->m_Transform.m_rot);
-            m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_activeCameraComponent->m_Transform.m_rot);
+            // TODO Phase2-migrate: m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_activeCameraComponent->m_Transform.m_rot);
 
             m_canSlerp = true;
         }
@@ -299,11 +300,12 @@ namespace Inno
         {
             m_canSlerp = false;
 
-            auto l_right = Math::getDirection(Direction::Right, m_activeCameraComponent->m_Transform.m_rot);
+            // TODO Phase2-migrate: auto l_right = Math::getDirection(Direction::Right, m_activeCameraComponent->m_Transform.m_rot);
+            auto l_right = Vec4(1.0f, 0.0f, 0.0f, 0.0f); // TODO Phase2-migrate placeholder
             m_targetCameraRotX = Math::getQuatRotator(
                 l_right,
                 ((offset * m_rotateSpeed) / 180.0f) * PI<float>);
-            m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotX.quatMul(m_activeCameraComponent->m_Transform.m_rot);
+            // TODO Phase2-migrate: m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotX.quatMul(m_activeCameraComponent->m_Transform.m_rot);
 
             m_canSlerp = true;
         }
@@ -325,7 +327,7 @@ namespace Inno
             m_cameraPlayerDistance.w = 1.0f;
             auto l_gp = l_t + (Math::toRotationMatrix(l_r) * m_cameraPlayerDistance).xyz();
 
-            m_playerCameraComponent->m_Transform.m_pos = Vec4(l_gp.x, l_gp.y, l_gp.z, 1.0f);
+            // TODO Phase2-migrate: m_playerCameraComponent->m_Transform.m_pos = Vec4(l_gp.x, l_gp.y, l_gp.z, 1.0f);
         }
 
         return true;

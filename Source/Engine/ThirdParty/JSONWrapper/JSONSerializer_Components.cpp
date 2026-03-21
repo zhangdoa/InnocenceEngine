@@ -92,21 +92,20 @@ void JSONWrapper::to_json(json& j, const LightComponent& component)
 
 void JSONWrapper::to_json(json& j, const CameraComponent& component)
 {
-    json transform;
-    to_json(transform, component.m_Transform);
+    // TODO Phase2-migrate: json transform; to_json(transform, component.m_Transform);
 
     j = json
     {
         {"ComponentType", component.GetTypeID()},
         {"FOVX", component.m_FOVX},
-        {"WidthScale", component.m_widthScale},
-        {"HeightScale", component.m_heightScale},
-        {"zNear", component.m_zNear},
-        {"zFar", component.m_zFar},
-        {"Aperture", component.m_aperture},
-        {"ShutterTime", component.m_shutterTime},
+        {"WidthScale", component.m_WidthScale},
+        {"HeightScale", component.m_HeightScale},
+        {"zNear", component.m_ZNear},
+        {"zFar", component.m_ZFar},
+        {"Aperture", component.m_Aperture},
+        {"ShutterTime", component.m_ShutterTime},
         {"ISO", component.m_ISO},
-        {"Transform", transform},
+        // TODO Phase2-migrate: {"Transform", transform},
     };
 }
 
@@ -440,14 +439,14 @@ bool JSONWrapper::Load(const char* fileName, CameraComponent& component)
     if (!Load(fileName, j))
         return false;
 
-    from_json(j["Transform"], component.m_Transform);
+    // TODO Phase2-migrate: from_json(j["Transform"], component.m_Transform);
     component.m_FOVX = j["FOVX"];
-    component.m_widthScale = j["WidthScale"];
-    component.m_heightScale = j["HeightScale"];
-    component.m_zNear = j["zNear"];
-    component.m_zFar = j["zFar"];
-    component.m_aperture = j["Aperture"];
-    component.m_shutterTime = j["ShutterTime"];
+    component.m_WidthScale = j["WidthScale"];
+    component.m_HeightScale = j["HeightScale"];
+    component.m_ZNear = j["zNear"];
+    component.m_ZFar = j["zFar"];
+    component.m_Aperture = j["Aperture"];
+    component.m_ShutterTime = j["ShutterTime"];
     component.m_ISO = j["ISO"];
 
     return true;

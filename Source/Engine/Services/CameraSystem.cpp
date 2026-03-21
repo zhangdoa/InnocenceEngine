@@ -33,8 +33,8 @@ void CameraSystemNS::GenerateCSMSplitFactors(float lambda)
 	m_CSMSplitFactors.clear();
     m_CSMSplitFactors.reserve(m_MaxCSMCount);
 
-	auto near = m_MainCamera->m_zNear;
-	auto far = m_MainCamera->m_zFar;
+	auto near = m_MainCamera->m_ZNear;
+	auto far = m_MainCamera->m_ZFar;
     for (int i = 1; i <= m_MaxCSMCount; i++)
     {
         float logSplit = near * std::pow((far / near), (float)i / (float)m_MaxCSMCount);
@@ -48,7 +48,7 @@ void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 {
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
-	cameraComponent->m_projectionMatrix = Math::GeneratePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+	cameraComponent->m_ProjectionMatrix = Math::GeneratePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_ZNear, cameraComponent->m_ZFar);
 }
 
 void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, const std::vector<float> &splitFactors, std::vector<Vertex> &splitVertices)
@@ -109,22 +109,24 @@ void CameraSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, 
 void CameraSystemNS::GenerateFrustum(CameraComponent* cameraComponent)
 {
 	// get frustum vertices in view space
-	auto l_pCamera = cameraComponent->m_projectionMatrix;
+	auto l_pCamera = cameraComponent->m_ProjectionMatrix;
 	auto l_frustumVerticesVS = Math::GenerateFrustumInViewSpace(l_pCamera);
 
-	auto l_rCamera = Math::toRotationMatrix(cameraComponent->m_Transform.m_rot);
-	auto l_tCamera = Math::toTranslationMatrix(Vec4(cameraComponent->m_Transform.m_pos, 1.0f));
+	// TODO Phase2-migrate: auto l_rCamera = Math::toRotationMatrix(cameraComponent->m_Transform.m_rot);
+	// TODO Phase2-migrate: auto l_tCamera = Math::toTranslationMatrix(Vec4(cameraComponent->m_Transform.m_pos, 1.0f));
+	auto l_rCamera = Mat4(); // TODO Phase2-migrate placeholder
+	auto l_tCamera = Mat4(); // TODO Phase2-migrate placeholder
 	auto l_frustumVerticesWS = Math::ViewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
-	cameraComponent->m_frustum = Math::ToFrustum(&l_frustumVerticesWS[0]);
+	cameraComponent->m_Frustum = Math::ToFrustum(&l_frustumVerticesWS[0]);
 
-	cameraComponent->m_splitFrustumVerticesWS.resize(m_CSMSplitFactors.size() * 8);
-	SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, cameraComponent->m_splitFrustumVerticesWS);
+	cameraComponent->m_SplitFrustumVerticesWS.resize(m_CSMSplitFactors.size() * 8);
+	SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, cameraComponent->m_SplitFrustumVerticesWS);
 }
 
 void CameraSystemNS::GenerateRayOfEye(CameraComponent* cameraComponent)
 {
-	cameraComponent->m_rayOfEye.m_origin = cameraComponent->m_Transform.m_pos;
-	cameraComponent->m_rayOfEye.m_direction = Math::getDirection(Direction::Backward, cameraComponent->m_Transform.m_rot);
+	// TODO Phase2-migrate: cameraComponent->m_RayOfEye.m_origin = cameraComponent->m_Transform.m_pos;
+	// TODO Phase2-migrate: cameraComponent->m_RayOfEye.m_direction = Math::getDirection(Direction::Backward, cameraComponent->m_Transform.m_rot);
 }
 
 using namespace CameraSystemNS;
@@ -152,7 +154,7 @@ bool CameraSystem::Update()
 
 	for (auto i : l_components)
 	{
-		i->m_WHRatio = i->m_widthScale / i->m_heightScale;
+		i->m_WHRatio = i->m_WidthScale / i->m_HeightScale;
 		GenerateProjectionMatrix(i);
 		GenerateRayOfEye(i);
 		GenerateFrustum(i);

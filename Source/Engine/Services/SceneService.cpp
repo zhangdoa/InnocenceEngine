@@ -248,7 +248,7 @@ const SceneHierarchyMap& SceneService::getSceneHierarchyMap()
 	{
 		AddComponentToSceneHierarchyMap<ModelComponent>();
 		// TODO Phase2-migrate: AddComponentToSceneHierarchyMap<LightComponent>();
-		AddComponentToSceneHierarchyMap<CameraComponent>();
+		// TODO Phase2-migrate: AddComponentToSceneHierarchyMap<CameraComponent>();
 
 		m_needUpdate = false;
 	}
