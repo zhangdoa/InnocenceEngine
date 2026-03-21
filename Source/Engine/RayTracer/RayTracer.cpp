@@ -8,6 +8,7 @@
 #include "../Services/RenderingConfigurationService.h"
 
 #include "../Engine.h"
+#include "../RenderingServer/IRenderingServer.h"
 using namespace Inno;
 ;
 

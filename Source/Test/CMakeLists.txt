@@ -9,6 +9,7 @@ set(TEST_SOURCES
     UnitTests/ArrayTests.cpp
     UnitTests/AtomicTests.cpp
     UnitTests/RingBufferTests.cpp
+    UnitTests/EntityRegistryTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp

@@ -1,7 +1,6 @@
 #include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
-#include "../../Engine/Services/RenderingContextService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/RayTracer/RayTracer.h"

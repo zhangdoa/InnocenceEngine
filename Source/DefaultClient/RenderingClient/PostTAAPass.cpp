@@ -3,6 +3,7 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/RenderingServer/IRenderingServer.h"
 
 using namespace Inno;
 
