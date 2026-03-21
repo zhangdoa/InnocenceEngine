@@ -7,6 +7,7 @@
 #include "Common/Task.h"
 #include "Services/ComponentManager.h"
 #include "Services/EntityRegistry.h"
+#include "Services/TransformService.h"
 #include "Services/LightSystem.h"
 #include "Services/CameraSystem.h"
 #include "Services/SceneService.h"
@@ -474,6 +475,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 
 	SystemSetup(EntityRegistry);
+	SystemSetup(TransformService);
 
 	SystemSetup(AssetService);
 	SystemSetup(SceneService);
@@ -507,6 +509,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			Get<LightSystem>()->Update();
 
 			SystemUpdate(EntityRegistry);
+
+			Get<TransformService>()->Update();
 
 			// Culling
 			// Get<PhysicsSimulationService>()->Update();
@@ -618,6 +622,7 @@ bool Engine::Initialize()
 	m_pImpl->m_WindowSystem->Initialize();
 
 	SystemInit(EntityRegistry);
+	SystemInit(TransformService);
 
 	SystemInit(SceneService);
 	SystemInit(PhysicsSimulationService);
@@ -749,6 +754,7 @@ bool Engine::Terminate()
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);
+	SystemTerm(TransformService);
 
 	SystemTerm(EntityRegistry);
 
