@@ -141,7 +141,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 				continue;
 
 			auto l_mesh = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(l_meshID);
-			if (!l_mesh || l_mesh->m_ObjectStatus != ObjectStatus::Activated)
+			if (!l_mesh)
 				continue;
 
 			auto l_material = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(l_materialID);

@@ -163,7 +163,8 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	auto l_workingDir = "../Data/Components/";
 	std::filesystem::create_directories(l_workingDir);
 
-	std::string l_baseName = component.m_InstanceName.c_str();
+	// TODO Phase2-migrate: std::string l_baseName = component.m_InstanceName.c_str();
+	std::string l_baseName;
 	auto l_binaryFileName = l_baseName + ".innobin";
 	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
 
@@ -179,8 +180,9 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, vertices);
 	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, indices);
 	l_binaryFile.close();
-	
-	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+
+	// TODO Phase2-migrate: auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
+	auto filePath = std::string();
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
 

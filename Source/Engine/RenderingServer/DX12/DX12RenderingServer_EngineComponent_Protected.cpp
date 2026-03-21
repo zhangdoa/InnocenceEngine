@@ -19,7 +19,8 @@ using namespace DX12Helper;
 
 bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	auto componentUUID = mesh->m_UUID;
+	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
+	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 
 	// vertices
 	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * vertices.size());
@@ -28,22 +29,22 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_defaultHeapBuffer_VB = CreateDefaultHeapBuffer(&l_verticesResourceDesc);
 	if (!l_defaultHeapBuffer_VB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Default Heap!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Default Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
+	// TODO Phase2-migrate: SetObjectName(mesh, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
 #endif //  INNO_DEBUG
 	m_MeshVertexBuffers_Default[componentUUID] = l_defaultHeapBuffer_VB;
 
 	auto l_uploadHeapBuffer_VB = CreateUploadHeapBuffer(&l_verticesResourceDesc);
 	if (!l_uploadHeapBuffer_VB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Upload Heap!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Upload Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_uploadHeapBuffer_VB, "UploadHeap_VB");
+	// TODO Phase2-migrate: SetObjectName(mesh, l_uploadHeapBuffer_VB, "UploadHeap_VB");
 #endif //  INNO_DEBUG
 	m_MeshVertexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_VB;
 
@@ -51,7 +52,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	mesh->m_VertexBufferView.m_SizeInBytes = l_verticesDataSize;
 	mesh->m_VertexBufferView.m_StrideInBytes = sizeof(Vertex);
 
-	Log(Verbose, mesh->m_InstanceName, " Vertex Buffer is initialized.");
+	// TODO Phase2-migrate: Log(Verbose, mesh->m_InstanceName, " Vertex Buffer is initialized.");
 
 	// indices
 	auto l_indicesDataSize = uint32_t(sizeof(Index) * indices.size());
@@ -60,22 +61,22 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_defaultHeapBuffer_IB = CreateDefaultHeapBuffer(&l_indicesResourceDesc);
 	if (!l_defaultHeapBuffer_IB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create index buffer on Default Heap!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create index buffer on Default Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
+	// TODO Phase2-migrate: SetObjectName(mesh, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
 #endif //  INNO_DEBUG
 	m_MeshIndexBuffers_Default[componentUUID] = l_defaultHeapBuffer_IB;
 
 	auto l_uploadHeapBuffer_IB = CreateUploadHeapBuffer(&l_indicesResourceDesc);
 	if (!l_uploadHeapBuffer_IB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create index buffer on Upload Heap!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create index buffer on Upload Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_uploadHeapBuffer_IB, "UploadHeap_IB");
+	// TODO Phase2-migrate: SetObjectName(mesh, l_uploadHeapBuffer_IB, "UploadHeap_IB");
 #endif //  INNO_DEBUG
 	m_MeshIndexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_IB;
 
@@ -83,7 +84,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	mesh->m_IndexBufferView.m_SizeInBytes = l_indicesDataSize;
 	mesh->m_IndexBufferView.m_StrideInBytes = sizeof(Index);
 
-	Log(Verbose, mesh->m_InstanceName, " Index Buffer is initialized.");
+	// TODO Phase2-migrate: Log(Verbose, mesh->m_InstanceName, " Index Buffer is initialized.");
 
 	// Flip y texture coordinate
 	for (auto& i : vertices)
@@ -141,7 +142,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0)
 	{
-		Log(Error, mesh->m_InstanceName, " Failed to get prebuild info for BLAS!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " Failed to get prebuild info for BLAS!");
 		return false;
 	}
 
@@ -149,11 +150,11 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_BLAS = CreateDefaultHeapBuffer(&blasResourceDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 	if (!l_BLAS)
 	{
-		Log(Error, mesh->m_InstanceName, " Failed to create BLAS buffer!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " Failed to create BLAS buffer!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_BLAS, "BLAS");
+	// TODO Phase2-migrate: SetObjectName(mesh, l_BLAS, "BLAS");
 #endif // INNO_DEBUG
 	m_MeshBLAS[componentUUID] = l_BLAS;
 
@@ -161,11 +162,11 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_scratchBuffer = CreateDefaultHeapBuffer(&scratchResourceDesc);
 	if (!l_scratchBuffer)
 	{
-		Log(Error, mesh->m_InstanceName, " Failed to create scratch buffer for BLAS!");
+		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " Failed to create scratch buffer for BLAS!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_scratchBuffer, "ScratchBuffer_BLAS");
+	// TODO Phase2-migrate: SetObjectName(mesh, l_scratchBuffer, "ScratchBuffer_BLAS");
 #endif // INNO_DEBUG
 	m_MeshScratchBuffers[componentUUID] = l_scratchBuffer;
 
@@ -196,9 +197,8 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_semaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
 	WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
 
-	Log(Verbose, mesh->m_InstanceName, " BLAS is initialized.");
-
-	mesh->m_ObjectStatus = ObjectStatus::Activated;
+	// TODO Phase2-migrate: Log(Verbose, mesh->m_InstanceName, " BLAS is initialized.");
+	// TODO Phase2-migrate: mesh->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -710,14 +710,15 @@ bool DX12RenderingServer::InitializeImpl(ModelComponent* model)
 		for (const auto& drawCallUUID : model->m_DrawCallComponents)
 		{
 			auto drawCallComp = g_Engine->Get<ComponentManager>()->FindByUUID<DrawCallComponent>(drawCallUUID);
-			if (!drawCallComp || !drawCallComp->m_MeshComponent || drawCallComp->m_ObjectStatus != ObjectStatus::Activated)
+			if (!drawCallComp || !drawCallComp->m_MeshComponent)
 				return false;
 
 			auto meshComp = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(drawCallComp->m_MeshComponent);
-			if (!meshComp || meshComp->m_ObjectStatus != ObjectStatus::Activated)
+			if (!meshComp)
 				return false;
 
-			auto blasIt = m_MeshBLAS.find(meshComp->m_UUID);
+			// TODO Phase2-migrate: auto blasIt = m_MeshBLAS.find(meshComp->m_UUID);
+			auto blasIt = m_MeshBLAS.find(reinterpret_cast<uint64_t>(meshComp));
 			if (blasIt == m_MeshBLAS.end())
 				return false;
 
@@ -739,8 +740,8 @@ bool DX12RenderingServer::InitializeImpl(ModelComponent* model)
 			instanceDesc.Transform[2][2] = transformMatrix.m22;
 			instanceDesc.Transform[2][3] = transformMatrix.m23; // Translation Z
 
-			// Use MeshComponent UUID for unique instance identification
-			instanceDesc.InstanceID = static_cast<UINT>(meshComp->m_UUID);
+			// TODO Phase2-migrate: instanceDesc.InstanceID = static_cast<UINT>(meshComp->m_UUID);
+			instanceDesc.InstanceID = static_cast<UINT>(reinterpret_cast<uint64_t>(meshComp));
 			instanceDesc.InstanceMask = 0xFF;
 			instanceDesc.InstanceContributionToHitGroupIndex = 0;
 			instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -818,8 +819,8 @@ bool DX12RenderingServer::InitializeImpl(CommandListComponent* commandList)
 
 bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh)
 {
-	auto componentUUID = mesh->m_UUID;
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
+	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
 	auto vertexDefault = m_MeshVertexBuffers_Default[componentUUID];

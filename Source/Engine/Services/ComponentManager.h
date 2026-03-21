@@ -40,35 +40,38 @@ namespace Inno
 			if (m_ComponentPointers.empty())
 				return true;
 
-			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str());
+			Log(Verbose, "Removing all ", typeid(T).name(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str());
 
 			// Mark matching components for destruction and set their pointers to nullptr
 			m_ComponentPointers.for_each([this, objectLifespan](T*& component)
 				{
-					if (component && component->m_ObjectLifespan == objectLifespan)
+					if constexpr (std::is_base_of_v<Component, T>)
 					{
-						// Remove from lookup tables first
-						m_ComponentLUT.erase(component->m_Owner);
-						m_ComponentLUTByUUID.erase(component->m_UUID);
-
-						// Remove from loaded components map by finding matching UUID
-						for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
+						if (component && component->m_ObjectLifespan == objectLifespan)
 						{
-							if (it->second == component->m_UUID)
+							// Remove from lookup tables first
+							m_ComponentLUT.erase(component->m_Owner);
+							m_ComponentLUTByUUID.erase(component->m_UUID);
+
+							// Remove from loaded components map by finding matching UUID
+							for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
 							{
-								it = m_LoadedComponents.erase(it);
+								if (it->second == component->m_UUID)
+								{
+									it = m_LoadedComponents.erase(it);
+								}
+								else
+								{
+									++it;
+								}
 							}
-							else
-							{
-								++it;
-							}
+
+							// Destroy the component
+							DestroyComponent(component);
+
+							// Set pointer to nullptr so it gets removed from vector
+							component = nullptr;
 						}
-
-						// Destroy the component
-						DestroyComponent(component);
-
-						// Set pointer to nullptr so it gets removed from vector
-						component = nullptr;
 					}
 				});
 
@@ -77,7 +80,7 @@ namespace Inno
 				return component == nullptr;
 				});
 
-			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
+			Log(Verbose, "Removing all ", typeid(T).name(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
 			return true;
 		}
 
@@ -85,31 +88,35 @@ namespace Inno
 		{
 			if (!owner)
 			{
-				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), " by Entity: nullptr!");
+				Log(Error, typeid(T).name(), " Can't spawn ", typeid(T).name(), " by Entity: nullptr!");
 				return nullptr;
 			}
 
 			auto l_Component = static_cast<TObjectPool<T>*>(m_ComponentPool)->Spawn();
 			if (!l_Component)
 			{
-				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), "!");
+				Log(Error, typeid(T).name(), " Can't spawn ", typeid(T).name(), "!");
 				return nullptr;
 			}
 
-			l_Component->m_UUID = Randomizer::GenerateUUID();
-			l_Component->m_ObjectStatus = ObjectStatus::Created;
-			l_Component->m_Serializable = serializable;
-			l_Component->m_ObjectLifespan = objectLifespan;
-			l_Component->m_Owner = owner;
+			if constexpr (std::is_base_of_v<Component, T>)
+			{
+				l_Component->m_UUID = Randomizer::GenerateUUID();
+				l_Component->m_ObjectStatus = ObjectStatus::Created;
+				l_Component->m_Serializable = serializable;
+				l_Component->m_ObjectLifespan = objectLifespan;
+				l_Component->m_Owner = owner;
 
-			l_Component->m_InstanceName = ObjectName((std::string(owner->m_InstanceName.c_str())
-				+ "." + std::string(T::GetTypeName()) + "/").c_str());
+				l_Component->m_InstanceName = ObjectName((std::string(owner->m_InstanceName.c_str())
+					+ "." + std::string(typeid(T).name()) + "/").c_str());
+
+				m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
+
+				Log(Verbose, "Component ", l_Component->m_InstanceName.c_str(), " has been created.");
+			}
 
 			m_ComponentPointers.emplace_back(l_Component);
 			m_ComponentLUT.emplace(owner, l_Component);
-			m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
-
-			Log(Verbose, "Component ", l_Component->m_InstanceName.c_str(), " has been created.");
 
 			return l_Component;
 		}
@@ -119,29 +126,33 @@ namespace Inno
 			if (!DestroyComponent(component))
 				return;
 
-			// Remove from loaded components map by finding matching UUID
-			for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
+			if constexpr (std::is_base_of_v<Component, T>)
 			{
-				if (it->second == component->m_UUID)
+				// Remove from loaded components map by finding matching UUID
+				for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
 				{
-					it = m_LoadedComponents.erase(it);
+					if (it->second == component->m_UUID)
+					{
+						it = m_LoadedComponents.erase(it);
+					}
+					else
+					{
+						++it;
+					}
 				}
-				else
-				{
-					++it;
-				}
+
+				m_ComponentLUTByUUID.erase(component->m_UUID);
+				m_ComponentLUT.erase(component->m_Owner);
 			}
 
 			m_ComponentPointers.eraseByValue(component);
-			m_ComponentLUT.erase(component->m_Owner);
-			m_ComponentLUTByUUID.erase(component->m_UUID);
 		}
 
 		T* Find(Entity* owner)
 		{
 			if (!owner)
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by Entity: nullptr!");
+				Log(Error, typeid(T).name(), " Can't find ", typeid(T).name(), " by Entity: nullptr!");
 				return nullptr;
 			}
 
@@ -152,7 +163,7 @@ namespace Inno
 			}
 			else
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by Entity: ", owner->m_InstanceName.c_str(), "!");
+				Log(Error, typeid(T).name(), " Can't find ", typeid(T).name(), " by Entity: ", owner->m_InstanceName.c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -166,7 +177,7 @@ namespace Inno
 			}
 			else
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by UUID: ", std::to_string(uuid).c_str(), "!");
+				Log(Error, typeid(T).name(), " Can't find ", typeid(T).name(), " by UUID: ", std::to_string(uuid).c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -175,7 +186,7 @@ namespace Inno
 		{
 			if (index >= m_ComponentPointers.size())
 			{
-				Log(Error, T::GetTypeName(), " Can't get ", T::GetTypeName(), " by index: ", std::to_string(index).c_str(), "!");
+				Log(Error, typeid(T).name(), " Can't get ", typeid(T).name(), " by index: ", std::to_string(index).c_str(), "!");
 				return nullptr;
 			}
 
@@ -204,11 +215,14 @@ namespace Inno
 				return 0;
 			}
 
-			l_result = component.m_UUID;
+			if constexpr (std::is_base_of_v<Component, T>)
+			{
+				l_result = component.m_UUID;
 
-			m_ComponentLUT.emplace(entity, l_componentPtr);
-			m_ComponentLUTByUUID.emplace(l_result, l_componentPtr);
-			m_LoadedComponents.emplace(l_filePath, l_result);
+				m_ComponentLUT.emplace(entity, l_componentPtr);
+				m_ComponentLUTByUUID.emplace(l_result, l_componentPtr);
+				m_LoadedComponents.emplace(l_filePath, l_result);
+			}
 
 			return l_result;
 		}
@@ -218,11 +232,13 @@ namespace Inno
 		{
 			if (!component)
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't destroy ", T::GetTypeName(), " by nullptr!");
+				Log(Error, typeid(T).name(), "ComponentFactory: Can't destroy ", typeid(T).name(), " by nullptr!");
 				return false;
 			}
 
-			component->m_ObjectStatus = ObjectStatus::Terminated;
+			if constexpr (std::is_base_of_v<Component, T>)
+				component->m_ObjectStatus = ObjectStatus::Terminated;
+
 			static_cast<TObjectPool<T>*>(m_ComponentPool)->Destroy(component);
 
 			return true;

@@ -134,7 +134,8 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             auto loadOrCreateMesh = [&](const char* name, MeshShape shape, MeshComponent*& meshPtr) {
                 auto entity = entityManager->Spawn(false, ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
 
-                auto l_componentName = std::string(name) + "." + MeshComponent::GetTypeName();
+                // TODO Phase2-migrate: auto l_componentName = std::string(name) + "." + MeshComponent::GetTypeName();
+                auto l_componentName = std::string(name) + ".MeshComponent";
                 auto loadedMesh = componentManager->Load<MeshComponent>(l_componentName.c_str(), entity);
 
                 if (loadedMesh)
@@ -144,7 +145,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 }
                 meshPtr = componentManager->Spawn<MeshComponent>(entity, true, ObjectLifespan::Persistence);
                 GenerateMesh(shape, meshPtr);
-                meshPtr->m_ObjectStatus = ObjectStatus::Created;
+                // TODO Phase2-migrate: meshPtr->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
 
                 g_Engine->getRenderingServer()->Initialize(meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);

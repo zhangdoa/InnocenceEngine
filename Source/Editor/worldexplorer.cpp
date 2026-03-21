@@ -299,22 +299,16 @@ void WorldExplorer::destroyComponent(Component *component)
     {
         g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<CameraComponent*>(component));
     }
-    else if (componentType == MeshComponent::GetTypeID())
-    {
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MeshComponent*>(component));
-    }
-    else if (componentType == MaterialComponent::GetTypeID())
-    {
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component));
-    }
+    // TODO Phase2-migrate: else if (componentType == MeshComponent::GetTypeID())
+    // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MeshComponent*>(component)); }
+    // TODO Phase2-migrate: else if (componentType == MaterialComponent::GetTypeID())
+    // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component)); }
     else if (componentType == TextureComponent::GetTypeID())
     {
         g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
     }
-    else if (componentType == SkeletonComponent::GetTypeID())
-    {
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component));
-    }
+    // TODO Phase2-migrate: else if (componentType == SkeletonComponent::GetTypeID())
+    // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component)); }
     else if (componentType == AnimationComponent::GetTypeID())
     {
         g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<AnimationComponent*>(component));

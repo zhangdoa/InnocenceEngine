@@ -57,7 +57,8 @@ bool DX12RenderingServer::Add(IOutputMergerTarget*& rhs)
 
 bool DX12RenderingServer::Delete(MeshComponent* mesh)
 {
-	auto componentUUID = mesh->m_UUID;
+	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
+	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 
 	auto vertexUploadIt = m_MeshVertexBuffers_Upload.find(componentUUID);
 	if (vertexUploadIt != m_MeshVertexBuffers_Upload.end()) {

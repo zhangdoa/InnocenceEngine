@@ -7,12 +7,8 @@ namespace Inno
 {
 	enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
 	
-	class MaterialComponent : public GPUResourceComponent
+	struct MaterialComponent : public GPUResourceComponent
 	{
-	public:
-		static uint32_t GetTypeID() { return 7; };
-		static const char* GetTypeName() { return "MaterialComponent"; };
-
 		MaterialAttributes m_materialAttributes = {};
 		std::vector<uint64_t> m_TextureComponents;
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;

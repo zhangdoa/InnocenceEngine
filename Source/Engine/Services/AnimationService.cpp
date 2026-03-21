@@ -163,10 +163,10 @@ SkeletonComponent* AnimationService::AddSkeletonComponent()
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	auto l_SDC = g_Engine->Get<ComponentManager>()->Spawn<SkeletonComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
-	l_SDC->m_Owner = l_parentEntity;
-	l_SDC->m_Serializable = false;
-	l_SDC->m_ObjectStatus = ObjectStatus::Created;
-	l_SDC->m_ObjectLifespan = ObjectLifespan::Persistence;
+	// TODO Phase2-migrate: l_SDC->m_Owner = l_parentEntity;
+	// TODO Phase2-migrate: l_SDC->m_Serializable = false;
+	// TODO Phase2-migrate: l_SDC->m_ObjectStatus = ObjectStatus::Created;
+	// TODO Phase2-migrate: l_SDC->m_ObjectLifespan = ObjectLifespan::Persistence;
 	skeletonCount++;
 	return l_SDC;
 }
@@ -186,7 +186,7 @@ AnimationComponent* AnimationService::AddAnimationComponent()
 
 bool AnimationService::InitializeSkeletonComponent(SkeletonComponent* rhs)
 {
-	rhs->m_ObjectStatus = ObjectStatus::Activated;
+	// TODO Phase2-migrate: rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }

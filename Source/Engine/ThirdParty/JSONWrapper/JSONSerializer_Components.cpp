@@ -50,7 +50,8 @@ void JSONWrapper::to_json(json& j, const DrawCallComponent& component)
         if (meshComponent)
         {
             json meshJson;
-            meshJson["Name"] = meshComponent->m_InstanceName.c_str();
+            // TODO Phase2-migrate: meshJson["Name"] = meshComponent->m_InstanceName.c_str();
+            meshJson["Name"] = "";
             j["MeshComponent"] = meshJson;
         }
     }
@@ -61,7 +62,8 @@ void JSONWrapper::to_json(json& j, const DrawCallComponent& component)
         if (materialComponent)
         {
             json materialJson;
-            materialJson["Name"] = materialComponent->m_InstanceName.c_str();
+            // TODO Phase2-migrate: materialJson["Name"] = materialComponent->m_InstanceName.c_str();
+            materialJson["Name"] = "";
             j["MaterialComponent"] = materialJson;
         }
     }
@@ -115,7 +117,7 @@ void JSONWrapper::to_json(json& j, const MeshComponent& component)
 {
     j = json
     {
-        {"ComponentType", component.GetTypeID()},
+        // TODO Phase2-migrate: {"ComponentType", component.GetTypeID()},
         {"MeshShape", MeshShape::Customized}
     };
 
@@ -126,7 +128,7 @@ void JSONWrapper::to_json(json& j, const MaterialComponent& component)
 {
     j = json
     {
-        {"ComponentType", component.GetTypeID()},
+        // TODO Phase2-migrate: {"ComponentType", component.GetTypeID()},
         {"ShaderModel", component.m_ShaderModel},
         {"Albedo", {
             {"R", component.m_materialAttributes.AlbedoR},

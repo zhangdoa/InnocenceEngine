@@ -1,5 +1,4 @@
 #pragma once
-#include "../Common/Object.h"
 #include "../Common/Array.h"
 #include "../Common/MathHelper.h"
 
@@ -12,12 +11,8 @@ namespace Inno
 		Mat4 m_LocalToBoneSpace;
 	};
 
-	class SkeletonComponent : public Component
+	struct SkeletonComponent
 	{
-	public:
-		static uint32_t GetTypeID() { return 9; };
-		static const char* GetTypeName() { return "SkeletonComponent"; };
-
 		Array<Bone> m_BoneList;
 		MeshComponent* m_Mesh;
 	};

@@ -157,7 +157,8 @@ void ModelComponentPropertyEditor::RefreshDrawCallList()
             if (drawCall->m_MeshComponent != 0)
             {
                 auto mesh = componentManager->FindByUUID<MeshComponent>(drawCall->m_MeshComponent);
-                meshItem->setText(mesh ? mesh->m_InstanceName.c_str() : "Unknown Mesh");
+                // TODO Phase2-migrate: meshItem->setText(mesh ? mesh->m_InstanceName.c_str() : "Unknown Mesh");
+                meshItem->setText(mesh ? "Mesh" : "Unknown Mesh");
             }
             else
             {
@@ -374,7 +375,8 @@ void ModelComponentPropertyEditor::tableItemClicked(int row, int column)
         if (mesh)
         {
             // Open mesh editor or show properties
-            QMessageBox::information(this, "Mesh Info", QString("Mesh: %1").arg(mesh->m_InstanceName.c_str()));
+            // TODO Phase2-migrate: QMessageBox::information(this, "Mesh Info", QString("Mesh: %1").arg(mesh->m_InstanceName.c_str()));
+            QMessageBox::information(this, "Mesh Info", "Mesh");
         }
     }
     else if (column == 1 && drawCall->m_MaterialComponent != 0) // Material column

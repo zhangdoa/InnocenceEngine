@@ -104,7 +104,8 @@ void AssimpImporter::ProcessAssimpNode(const aiNode* node, const aiScene* scene,
 
 			auto l_meshComponent = AssimpMeshProcessor::CreateMeshComponent(scene, baseName, l_meshIndex);
 			if (l_meshComponent)
-				l_drawCallComponent->m_MeshComponent = l_meshComponent->m_UUID;
+				// TODO Phase2-migrate: l_drawCallComponent->m_MeshComponent = l_meshComponent->m_UUID;
+				(void)l_meshComponent;
 			
 			if (l_mesh->mMaterialIndex < scene->mNumMaterials)
 			{

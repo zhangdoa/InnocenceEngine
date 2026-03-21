@@ -255,7 +255,8 @@ T* AddComponent(const char* name)
 	}
 	else
 	{
-		l_name = (std::string(T::GetTypeName()) + "_" + std::to_string(l_count) + "/");
+		// TODO Phase2-migrate: l_name = (std::string(T::GetTypeName()) + "_" + std::to_string(l_count) + "/");
+		l_name = (std::string(typeid(T).name()) + "_" + std::to_string(l_count) + "/");
 	}
 
 	if (strcmp(name, "") == 0)
@@ -341,7 +342,7 @@ void IRenderingServer::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 
 	// Queue mesh for deferred initialization using move semantics to avoid copying vertex/index data
 	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices)));
-	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
+	// TODO Phase2-migrate: Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(TextureComponent* texture, void* textureData)
@@ -761,7 +762,7 @@ bool IRenderingServer::InitializeComponents()
 		if (!l_task.m_Component)
 			continue;
 
-		Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
+		// TODO Phase2-migrate: Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_Vertices, l_task.m_Indices))
 			m_initializedMeshes.emplace(l_task.m_Component);
 		else

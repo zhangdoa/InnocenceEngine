@@ -23,7 +23,8 @@ using namespace VKHelper;
 template <typename U, typename T>
 bool VKRenderingServer::SetObjectName(U* owner, const T& rhs, VkObjectType objectType, const char* objectTypeSuffix)
 {
-	auto l_Name = std::string(owner->m_InstanceName.c_str());
+	// TODO Phase2-migrate: auto l_Name = std::string(owner->m_InstanceName.c_str());
+	std::string l_Name;
 	l_Name += "_";
 	l_Name += objectTypeSuffix;
 
@@ -64,7 +65,7 @@ bool VKRenderingServer::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &
 	SetObjectName(l_rhs, l_rhs->m_IBO, VK_OBJECT_TYPE_BUFFER, "IB");
 #endif //  INNO_DEBUG
 
-	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+	// TODO Phase2-migrate: l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMeshes.emplace(l_rhs);
 

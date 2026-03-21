@@ -26,7 +26,7 @@ bool DebugPass::Setup(ISystemConfig *systemConfig)
 		m_debugCameraFrustumMeshComps[i] = l_renderingServer->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
 		g_Engine->Get<TemplateAssetService>()->GenerateMesh(MeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
 		//m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
-		m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
+		// TODO Phase2-migrate: m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
 	}
 	
 	m_debugSphereMeshGPUBufferComp = l_renderingServer->AddGPUBufferComponent("DebugSphereMeshGPUBuffer/");

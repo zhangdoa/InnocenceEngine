@@ -1,5 +1,4 @@
 #pragma once
-#include "../Common/Object.h"
 #include "../Common/GraphicsPrimitive.h"
 #include "../Common/Array.h"
 #include "../Common/MathHelper.h"
@@ -21,17 +20,13 @@ namespace Inno
 		}
 	};
 
-	class MeshComponent : public Component
+	struct MeshComponent
 	{
-	public:
-		static uint32_t GetTypeID() { return 6; };
-		static const char* GetTypeName() { return "MeshComponent"; };
-
 		void* m_MappedMemory_VB = nullptr;
 		void* m_MappedMemory_IB = nullptr;
 		GPUBufferView m_VertexBufferView;
 		GPUBufferView m_IndexBufferView;
-		
+
 		// Bounding box calculated from vertex data
 		AABB m_AABB;
 
