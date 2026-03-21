@@ -7,7 +7,9 @@
 #include "../../Services/ComponentManager.h"
 #include "../../Services/AnimationService.h"
 #include "../../Services/AssetService.h"
+// TODO Phase2-migrate: EntityManager.h still needed for ModelComponent path and SaveScene
 #include "../../Services/EntityManager.h"
+#include "../../Services/EntityRegistry.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -16,12 +18,13 @@ namespace Inno
 {
 	namespace JSONWrapper
 	{
+		// TODO Phase2-migrate: SaveComponentAndAddReference uses m_Owner->m_UUID (Entity*) — remove when Entity is deleted
 		template<typename T>
 		inline bool SaveComponentAndAddReference(json& topLevel, T* component)
 		{
-			std::string componentFileName = std::string(component->m_InstanceName.c_str());			
+			std::string componentFileName = std::string(component->m_InstanceName.c_str());
 			AssetService::Save(*component);
-			
+
 			auto l_result = std::find_if(
 				topLevel["Entities"].begin(),
 				topLevel["Entities"].end(),
@@ -84,6 +87,7 @@ bool JSONWrapper::SaveScene(const char* fileName)
 	
 	topLevel["Name"] = sceneName;
 
+	// TODO Phase2-migrate: SaveScene still uses EntityManager::GetEntities — replace with EntityRegistry iteration
 	for (auto i : g_Engine->Get<EntityManager>()->GetEntities())
 	{
 		if (i->m_Serializable)
@@ -95,6 +99,7 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		}
 	}
 
+	// TODO Phase2-migrate: ModelComponent still inherits Component — move to EntityRegistry when migrated
 	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>())
 	{
 		if (i->m_Serializable)
@@ -102,18 +107,8 @@ bool JSONWrapper::SaveScene(const char* fileName)
 			SaveComponentAndAddReference(topLevel, i);
 		}
 	}
-	
-	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<LightComponent>())
-	{
-		// TODO Phase2-migrate: if (i->m_Serializable)
-		// TODO Phase2-migrate: SaveComponentAndAddReference(topLevel, i);
-	}
-	
-	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<CameraComponent>())
-	{
-		// TODO Phase2-migrate: if (i->m_Serializable)
-		// TODO Phase2-migrate: SaveComponentAndAddReference(topLevel, i);
-	}
+
+	// TODO Phase2-migrate: LightComponent/CameraComponent are plain structs — serialize via EntityRegistry when Entity migration is complete
 
 	Save(fileName, topLevel);
 	Log(Success, "Scene ", fileName, " has been saved.");
@@ -130,30 +125,38 @@ bool JSONWrapper::LoadScene(const char* fileName)
 
 	for (auto i : j["Entities"])
 	{
-		std::string l_entityName = i["Name"];
-		l_entityName += "/";
-		auto l_entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, l_entityName.c_str());
+		std::string l_EntityName = i["Name"];
+		l_EntityName += "/";
+
+		// TODO Phase2-migrate: EntityManager::Spawn still needed for ModelComponent path (takes Entity*)
+		auto l_Entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, l_EntityName.c_str());
+		auto l_EntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
 		for (auto k : i["Components"])
 		{
-			uint32_t componentTypeID = k["Type"];
-			std::string l_componentName = k["Name"];
+			uint32_t l_ComponentTypeID = k["Type"];
+			std::string l_ComponentName = k["Name"];
 
-			if (componentTypeID == ModelComponent::GetTypeID())
+			if (l_ComponentTypeID == ModelComponent::GetTypeID())
 			{
-				g_Engine->Get<ComponentManager>()->Load<ModelComponent>(l_componentName.c_str(), l_entity);
+				// TODO Phase2-migrate: ModelComponent still inherits Component
+				g_Engine->Get<ComponentManager>()->Load<ModelComponent>(l_ComponentName.c_str(), l_Entity);
 			}
-			else if (componentTypeID == LightComponent::GetTypeID())
+			else if (l_ComponentTypeID == LightComponent::GetTypeID())
 			{
-				g_Engine->Get<ComponentManager>()->Load<LightComponent>(l_componentName.c_str(), l_entity);
+				auto& l_Light = g_Engine->Get<EntityRegistry>()->Emplace<LightComponent>(l_EntityID);
+				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
+				AssetService::Load(l_FilePath.c_str(), l_Light);
 			}
-			else if (componentTypeID == CameraComponent::GetTypeID())
+			else if (l_ComponentTypeID == CameraComponent::GetTypeID())
 			{
-				g_Engine->Get<ComponentManager>()->Load<CameraComponent>(l_componentName.c_str(), l_entity);
+				auto& l_Camera = g_Engine->Get<EntityRegistry>()->Emplace<CameraComponent>(l_EntityID);
+				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
+				AssetService::Load(l_FilePath.c_str(), l_Camera);
 			}
 			else
 			{
-				Log(Error, "Unknown ComponentTypeID: ", componentTypeID);
+				Log(Error, "Unknown ComponentTypeID: ", l_ComponentTypeID);
 			}
 		}
 	}

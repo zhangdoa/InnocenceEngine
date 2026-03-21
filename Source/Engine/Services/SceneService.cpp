@@ -3,6 +3,7 @@
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
 #include "ComponentManager.h"
+#include "EntityRegistry.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -61,11 +62,12 @@ bool SceneService::LoadSync(const char* fileName)
 
 bool SceneService::Setup(ISystemConfig* systemConfig)
 {
-	f_SceneLoadingStartedCallback = [&]() 
+	f_SceneLoadingStartedCallback = [&]()
 	{
 		Log(Verbose, "Resetting scene hierarchy map...");
 
 		m_SceneHierarchyMap.clear();
+		g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
 		g_Engine->Get<ComponentManager>()->CleanUp(ObjectLifespan::Scene);
 
 		Log(Success, "Scene hierarchy map has been reset.");
@@ -137,37 +139,27 @@ std::string SceneService::GetCurrentSceneName()
 		return "Untitled";
 	}
 	
-	std::string l_currentSceneName = m_currentScene;
-	
-	// Remove .InnoScene extension if present
-	size_t extensionPos = l_currentSceneName.find(".InnoScene");
-	if (extensionPos != std::string::npos)
+	std::string l_SceneName = m_currentScene;
+
+	auto l_ExtensionPos = l_SceneName.find(".InnoScene");
+	if (l_ExtensionPos != std::string::npos)
 	{
-		l_currentSceneName = l_currentSceneName.substr(0, extensionPos);
+		l_SceneName = l_SceneName.substr(0, l_ExtensionPos);
 	}
-	
-	// Extract filename from path (look for last // or /)
-	size_t lastSlashPos = l_currentSceneName.rfind("//");
-	if (lastSlashPos == std::string::npos)
+
+	auto l_LastSlashPos = l_SceneName.rfind("//");
+	if (l_LastSlashPos != std::string::npos)
 	{
-		lastSlashPos = l_currentSceneName.rfind("/");
+		l_SceneName = l_SceneName.substr(l_LastSlashPos + 2);
 	}
-	if (lastSlashPos == std::string::npos)
+	else
 	{
-		lastSlashPos = l_currentSceneName.rfind("\\");
+		l_LastSlashPos = l_SceneName.rfind('/');
+		if (l_LastSlashPos != std::string::npos)
+			l_SceneName = l_SceneName.substr(l_LastSlashPos + 1);
 	}
-	
-	if (lastSlashPos != std::string::npos && lastSlashPos + 1 < l_currentSceneName.length())
-	{
-		l_currentSceneName = l_currentSceneName.substr(lastSlashPos + 1);
-	}
-	else if (lastSlashPos != std::string::npos && lastSlashPos + 2 < l_currentSceneName.length())
-	{
-		// Handle double slash case
-		l_currentSceneName = l_currentSceneName.substr(lastSlashPos + 2);
-	}
-	
-	return l_currentSceneName.empty() ? "Untitled" : l_currentSceneName;
+
+	return l_SceneName.empty() ? "Untitled" : l_SceneName;
 }
 
 bool SceneService::Load(const char* fileName, bool AsyncLoad)

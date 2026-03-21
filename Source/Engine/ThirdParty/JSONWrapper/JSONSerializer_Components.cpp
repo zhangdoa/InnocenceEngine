@@ -1,5 +1,5 @@
 #include "JSONWrapper.h"
-#include "../../Services/EntityManager.h"
+#include "../../Services/EntityRegistry.h"
 #include "../../Services/ComponentManager.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/PhysicsSimulationService.h"
@@ -44,28 +44,19 @@ void JSONWrapper::to_json(json& j, const DrawCallComponent& component)
         {"ComponentType", component.GetTypeID()}
     };
 
+    // TODO Phase2-migrate: MeshComponent/MaterialComponent are plain structs, UUID lookup removed
     if (component.m_MeshComponent != 0)
     {
-        auto meshComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(component.m_MeshComponent);
-        if (meshComponent)
-        {
-            json meshJson;
-            // TODO Phase2-migrate: meshJson["Name"] = meshComponent->m_InstanceName.c_str();
-            meshJson["Name"] = "";
-            j["MeshComponent"] = meshJson;
-        }
+        json meshJson;
+        meshJson["Name"] = "";
+        j["MeshComponent"] = meshJson;
     }
 
     if (component.m_MaterialComponent != 0)
     {
-        auto materialComponent = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(component.m_MaterialComponent);
-        if (materialComponent)
-        {
-            json materialJson;
-            // TODO Phase2-migrate: materialJson["Name"] = materialComponent->m_InstanceName.c_str();
-            materialJson["Name"] = "";
-            j["MaterialComponent"] = materialJson;
-        }
+        json materialJson;
+        materialJson["Name"] = "";
+        j["MaterialComponent"] = materialJson;
     }
 }
 
@@ -86,14 +77,11 @@ void JSONWrapper::to_json(json& j, const LightComponent& component)
         {"ColorTemperature", component.m_ColorTemperature},
         {"LuminousFlux", component.m_LuminousFlux},
         {"UseColorTemperature", component.m_UseColorTemperature},
-        // TODO Phase2-migrate: {"Transform", transform},
     };
 }
 
 void JSONWrapper::to_json(json& j, const CameraComponent& component)
 {
-    // TODO Phase2-migrate: json transform; to_json(transform, component.m_Transform);
-
     j = json
     {
         {"ComponentType", component.GetTypeID()},
@@ -105,7 +93,6 @@ void JSONWrapper::to_json(json& j, const CameraComponent& component)
         {"Aperture", component.m_Aperture},
         {"ShutterTime", component.m_ShutterTime},
         {"ISO", component.m_ISO},
-        // TODO Phase2-migrate: {"Transform", transform},
     };
 }
 
@@ -113,7 +100,6 @@ void JSONWrapper::to_json(json& j, const MeshComponent& component)
 {
     j = json
     {
-        // TODO Phase2-migrate: {"ComponentType", component.GetTypeID()},
         {"MeshShape", MeshShape::Customized}
     };
 
@@ -124,7 +110,6 @@ void JSONWrapper::to_json(json& j, const MaterialComponent& component)
 {
     j = json
     {
-        // TODO Phase2-migrate: {"ComponentType", component.GetTypeID()},
         {"ShaderModel", component.m_ShaderModel},
         {"Albedo", {
             {"R", component.m_materialAttributes.AlbedoR},
@@ -303,15 +288,11 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
     if (!Load(fileName, j))
         return false;
 
+    // TODO Phase2-migrate: TextureComponent still inherits Component, restore loading when migrated
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
         component.m_TextureComponents.reserve(l_j.size());
-        for (auto& i : l_j)
-        {
-            // TODO Phase2-migrate: auto l_textureComponent = g_Engine->Get<ComponentManager>()->Load<TextureComponent>(i["Name"].get<std::string>().c_str(), component.m_Owner);
-            // TODO Phase2-migrate: component.m_TextureComponents.emplace_back(l_textureComponent);
-        }
     }
 
     component.m_materialAttributes.AlbedoR = j["Albedo"]["R"];
@@ -420,12 +401,10 @@ bool JSONWrapper::Load(const char* fileName, LightComponent& component)
     if (!Load(fileName, j))
         return false;
 
-    // TODO Phase2-migrate: from_json(j["Transform"], component.m_Transform);
     from_json(j["RGBColor"], component.m_RGBColor);
     from_json(j["Shape"], component.m_Shape);
 
-    int lightTypeValue = j["LightType"].get<int>();
-    component.m_LightType = static_cast<LightType>(lightTypeValue);
+    component.m_LightType = LightType(j["LightType"]);
     component.m_ColorTemperature = j["ColorTemperature"];
     component.m_LuminousFlux = j["LuminousFlux"];
     component.m_UseColorTemperature = j["UseColorTemperature"];
@@ -439,7 +418,6 @@ bool JSONWrapper::Load(const char* fileName, CameraComponent& component)
     if (!Load(fileName, j))
         return false;
 
-    // TODO Phase2-migrate: from_json(j["Transform"], component.m_Transform);
     component.m_FOVX = j["FOVX"];
     component.m_WidthScale = j["WidthScale"];
     component.m_HeightScale = j["HeightScale"];
