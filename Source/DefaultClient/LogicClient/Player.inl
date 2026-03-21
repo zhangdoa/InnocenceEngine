@@ -1,5 +1,10 @@
 #include "../../Engine/Services/PhysicsSimulationService.h"
 #include "../../Engine/Services/HIDService.h"
+#include "../../Engine/Services/EntityRegistry.h"
+#include "../../Engine/Services/ComponentManager.h"
+#include "../../Engine/Component/TransformComponent.h"
+#include "../../Engine/Component/CameraComponent.h"
+#include "../../Engine/Component/ModelComponent.h"
 
 #include "../../Engine/Engine.h"
 using namespace Inno;
@@ -11,337 +16,356 @@ using namespace Inno;
 
 namespace Inno
 {
-    class Player
-    {
-    public:
-        bool Setup();
-        bool Initialize();
-        bool Update(float seed);
-        bool Terminate();
-        void OnSceneLoadingFinished();
+	class Player
+	{
+	public:
+		bool Setup();
+		bool Initialize();
+		bool Update(float seed);
+		bool Terminate();
+		void OnSceneLoadingFinished();
 
-        ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-        Entity* m_playerCharacterEntity = nullptr;
-        ModelComponent* m_playerModelComponent = nullptr;
+		EntityID m_PlayerCharacterEntity = INVALID_ENTITY;
+		// TODO Phase2-migrate: remove ModelComponent* when ModelComponent is deleted (Task 13)
+		ModelComponent* m_PlayerModelComponent = nullptr;
 
-        Entity* m_playerCameraEntity = nullptr;
-        CameraComponent* m_playerCameraComponent = nullptr;
+		EntityID m_PlayerCameraEntity = INVALID_ENTITY;
+		CameraComponent* m_PlayerCameraComponent = nullptr;
 
-        Entity* m_debugCameraEntity = nullptr;
-        CameraComponent* m_debugCameraComponent = nullptr;
+		EntityID m_DebugCameraEntity = INVALID_ENTITY;
+		CameraComponent* m_DebugCameraComponent = nullptr;
 
-        CameraComponent* m_activeCameraComponent = nullptr;
+		CameraComponent* m_ActiveCameraComponent = nullptr;
 
-        AnimationController* m_animationController = nullptr;
+		AnimationController* m_AnimationController = nullptr;
 
-        std::function<void()> f_switchCamera;
+		std::function<void()> f_switchCamera;
 
-        std::function<void()> f_moveForward;
-        std::function<void()> f_moveBackward;
-        std::function<void()> f_moveLeft;
-        std::function<void()> f_moveRight;
-        std::function<void()> f_move;
-        std::function<void()> f_stop;
+		std::function<void()> f_moveForward;
+		std::function<void()> f_moveBackward;
+		std::function<void()> f_moveLeft;
+		std::function<void()> f_moveRight;
+		std::function<void()> f_move;
+		std::function<void()> f_stop;
 
-        std::function<void()> f_allowMove;
-        std::function<void()> f_forbidMove;
+		std::function<void()> f_allowMove;
+		std::function<void()> f_forbidMove;
 
-        std::function<void()> f_speedUp;
-        std::function<void()> f_speedDown;
+		std::function<void()> f_speedUp;
+		std::function<void()> f_speedDown;
 
-        std::function<void(float)> f_rotateAroundPositiveYAxis;
-        std::function<void(float)> f_rotateAroundRightAxis;
+		std::function<void(float)> f_rotateAroundPositiveYAxis;
+		std::function<void(float)> f_rotateAroundRightAxis;
 
-        std::function<void()> f_addForce;
+		std::function<void()> f_addForce;
 
-        float m_initialMoveSpeed = 0;
-        float m_moveSpeed = 0;
-        float m_rotateSpeed = 0;
-        bool m_canMove = false;
-        bool m_canSlerp = false;
+		float m_InitialMoveSpeed = 0;
+		float m_MoveSpeed = 0;
+		float m_RotateSpeed = 0;
+		bool m_CanMove = false;
+		bool m_CanSlerp = false;
 
 #ifdef EDITOR_MODE
-        bool m_smoothInterp = false;
-        bool m_isTP = false;
+		bool m_SmoothInterp = false;
+		bool m_IsTP = false;
 #else
-        bool m_smoothInterp = true;
-        bool m_isTP = true;
+		bool m_SmoothInterp = true;
+		bool m_IsTP = true;
 #endif
 
-        bool m_isEventsRegistered = false;
-        void Move(CameraComponent* cameraComponent, Direction direction, float length);
-        void Move(ModelComponent* modelComponent, Direction direction, float length);
-        void RotateAroundPositiveYAxis(float offset);
-        void RotateAroundRightAxis(float offset);
+		bool m_IsEventsRegistered = false;
+		void MoveCamera(EntityID CameraEntity, Direction direction, float length);
+		void MoveModel(ModelComponent* modelComponent, Direction direction, float length);
+		void RotateAroundPositiveYAxis(float offset);
+		void RotateAroundRightAxis(float offset);
 
-        Vec4 m_targetCameraRotX;
-        Vec4 m_targetCameraRotY;
-        Vec4 m_cameraPlayerDistance;
-    };
+		Vec4 m_TargetCameraRotX;
+		Vec4 m_TargetCameraRotY;
+		Vec4 m_CameraPlayerDistance;
+	};
 
-    bool Player::Setup()
-    {
-        auto l_playerCharacterEntity = g_Engine->Get<EntityManager>()->Find("Player Character");
-        if (l_playerCharacterEntity.has_value())
-        {
-            m_playerCharacterEntity = *l_playerCharacterEntity;
-            m_playerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(m_playerCharacterEntity);
-        }
-        else
-        {
-            m_playerCharacterEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Player Character/");
-            m_playerModelComponent = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(m_playerCharacterEntity, false, ObjectLifespan::Scene); 
-        }
+	bool Player::Setup()
+	{
+		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
-        auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("Main Camera");
-        if (l_playerCameraEntity.has_value())
-        {
-            m_playerCameraEntity = *l_playerCameraEntity;
-            m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Find<CameraComponent>(m_playerCameraEntity);
-        }
-        else
-        {
-            m_playerCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, "Main Camera/");
-            m_playerCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_playerCameraEntity, false, ObjectLifespan::Scene);
-        }
+		auto l_PlayerCharacterEntity = l_Registry->FindByName("Player Character");
+		if (l_PlayerCharacterEntity != INVALID_ENTITY)
+		{
+			m_PlayerCharacterEntity = l_PlayerCharacterEntity;
+			// TODO Phase2-migrate: remove ComponentManager usage when ModelComponent is deleted (Task 13)
+			m_PlayerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(g_Engine->Get<EntityManager>()->Find("Player Character").value_or(nullptr));
+		}
+		else
+		{
+			m_PlayerCharacterEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Player Character/");
+			// TODO Phase2-migrate: ModelComponent still uses ComponentManager (Task 13)
+		}
 
-        if (!m_debugCameraEntity)
-        {
-            m_debugCameraEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, "Debug Camera/");
-            m_debugCameraComponent = g_Engine->Get<ComponentManager>()->Spawn<CameraComponent>(m_debugCameraEntity, false, ObjectLifespan::Persistence);
+		auto l_PlayerCameraEntity = l_Registry->FindByName("Main Camera");
+		if (l_PlayerCameraEntity != INVALID_ENTITY)
+		{
+			m_PlayerCameraEntity = l_PlayerCameraEntity;
+			m_PlayerCameraComponent = l_Registry->Get<CameraComponent>(m_PlayerCameraEntity);
+		}
+		else
+		{
+			m_PlayerCameraEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Main Camera/");
+			auto& l_Camera = l_Registry->Emplace<CameraComponent>(m_PlayerCameraEntity);
+			l_Registry->Emplace<TransformComponent>(m_PlayerCameraEntity);
+			m_PlayerCameraComponent = &l_Camera;
+		}
 
-            m_debugCameraComponent->m_FOVX = m_playerCameraComponent->m_FOVX;
-            m_debugCameraComponent->m_ZNear = m_playerCameraComponent->m_ZNear;
-            m_debugCameraComponent->m_ZFar = m_playerCameraComponent->m_ZFar;
-            m_debugCameraComponent->m_WidthScale = m_playerCameraComponent->m_WidthScale;
-            m_debugCameraComponent->m_HeightScale = m_playerCameraComponent->m_HeightScale;
-        }
+		if (m_DebugCameraEntity == INVALID_ENTITY)
+		{
+			m_DebugCameraEntity = l_Registry->Spawn(ObjectLifespan::Persistence, "Debug Camera/");
+			auto& l_DebugCamera = l_Registry->Emplace<CameraComponent>(m_DebugCameraEntity);
+			l_Registry->Emplace<TransformComponent>(m_DebugCameraEntity);
+			m_DebugCameraComponent = &l_DebugCamera;
 
-        m_activeCameraComponent = m_playerCameraComponent;
-        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(m_playerCameraComponent);
-        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
+			m_DebugCameraComponent->m_FOVX = m_PlayerCameraComponent->m_FOVX;
+			m_DebugCameraComponent->m_ZNear = m_PlayerCameraComponent->m_ZNear;
+			m_DebugCameraComponent->m_ZFar = m_PlayerCameraComponent->m_ZFar;
+			m_DebugCameraComponent->m_WidthScale = m_PlayerCameraComponent->m_WidthScale;
+			m_DebugCameraComponent->m_HeightScale = m_PlayerCameraComponent->m_HeightScale;
+		}
 
-        m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        // TODO Phase2-migrate: m_cameraPlayerDistance = m_playerCameraComponent->m_Transform.m_pos - m_playerModelComponent->m_Transform.m_pos;
-        m_initialMoveSpeed = 0.05f;
-        m_moveSpeed = m_initialMoveSpeed;
-        m_rotateSpeed = 10.0f;
+		m_ActiveCameraComponent = m_PlayerCameraComponent;
+		static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(m_PlayerCameraComponent);
+		static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_ActiveCameraComponent);
 
-        if (!m_animationController)
-            m_animationController = new AnimationController();
-        m_animationController->Setup();
+		m_TargetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		m_TargetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		// TODO Phase2-migrate: compute camera-player distance from TransformComponents
+		m_InitialMoveSpeed = 0.05f;
+		m_MoveSpeed = m_InitialMoveSpeed;
+		m_RotateSpeed = 10.0f;
 
-        if(m_isEventsRegistered)
-            return true;
+		if (!m_AnimationController)
+			m_AnimationController = new AnimationController();
+		m_AnimationController->Setup();
 
-        // -z actually so Direction::Backward
-        f_moveForward = [&]() {
-            auto l_tickTime = g_Engine->getTickTime();
-            auto l_moveSpeed = m_moveSpeed * l_tickTime;
+		if(m_IsEventsRegistered)
+			return true;
 
-            if (m_activeCameraComponent == m_playerCameraComponent)
-            {
-                Move(m_playerModelComponent, Direction::Backward, l_moveSpeed);
-            }
-            if (!m_isTP)
-            {
-                Move(m_activeCameraComponent, Direction::Backward, l_moveSpeed);
-            }
-        };
-        // +z actually so Direction::Backward
-        f_moveBackward = [&]() {
-            auto l_tickTime = g_Engine->getTickTime();
-            auto l_moveSpeed = m_moveSpeed * l_tickTime;            
-            if (m_activeCameraComponent == m_playerCameraComponent)
-            {
-                Move(m_playerModelComponent, Direction::Forward, l_moveSpeed);
-            }
-            if (!m_isTP)
-            {
-                Move(m_activeCameraComponent, Direction::Forward, l_moveSpeed);
-            }
-        };
-        f_moveLeft = [&]() {
-            auto l_tickTime = g_Engine->getTickTime();
-            auto l_moveSpeed = m_moveSpeed * l_tickTime;             
-            if (m_activeCameraComponent == m_playerCameraComponent)
-            {
-                Move(m_playerModelComponent, Direction::Left, l_moveSpeed);
-            }
-            if (!m_isTP)
-            {
-                Move(m_activeCameraComponent, Direction::Left, l_moveSpeed);
-            }
-        };
-        f_moveRight = [&]() {
-            auto l_tickTime = g_Engine->getTickTime();
-            auto l_moveSpeed = m_moveSpeed * l_tickTime;   
-            if (m_activeCameraComponent == m_playerCameraComponent)
-            {
-                Move(m_playerModelComponent, Direction::Right, l_moveSpeed);
-            }
-            if (!m_isTP)
-            {
-                Move(m_activeCameraComponent, Direction::Right, l_moveSpeed);
-            }
-        };
+		// -z actually so Direction::Backward
+		f_moveForward = [&]() {
+			auto l_TickTime = g_Engine->getTickTime();
+			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
 
-        f_move = [&]() { m_animationController->ChangeState("Run"); };
-        f_stop = [&]() { m_animationController->ChangeState("Idle"); };
+			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
+			{
+				MoveModel(m_PlayerModelComponent, Direction::Backward, l_MoveSpd);
+			}
+			if (!m_IsTP)
+			{
+				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+			}
+		};
+		// +z actually so Direction::Backward
+		f_moveBackward = [&]() {
+			auto l_TickTime = g_Engine->getTickTime();
+			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
+			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
+			{
+				MoveModel(m_PlayerModelComponent, Direction::Forward, l_MoveSpd);
+			}
+			if (!m_IsTP)
+			{
+				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+			}
+		};
+		f_moveLeft = [&]() {
+			auto l_TickTime = g_Engine->getTickTime();
+			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
+			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
+			{
+				MoveModel(m_PlayerModelComponent, Direction::Left, l_MoveSpd);
+			}
+			if (!m_IsTP)
+			{
+				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+			}
+		};
+		f_moveRight = [&]() {
+			auto l_TickTime = g_Engine->getTickTime();
+			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
+			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
+			{
+				MoveModel(m_PlayerModelComponent, Direction::Right, l_MoveSpd);
+			}
+			if (!m_IsTP)
+			{
+				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+			}
+		};
 
-        f_speedUp = [&]() { m_moveSpeed = m_initialMoveSpeed * 10.0f; };
-        f_speedDown = [&]() { m_moveSpeed = m_initialMoveSpeed; };
+		f_move = [&]() { m_AnimationController->ChangeState("Run"); };
+		f_stop = [&]() { m_AnimationController->ChangeState("Idle"); };
 
-        f_allowMove = [&]() { m_canMove = true; };
-        f_forbidMove = [&]() { m_canMove = false; };
+		f_speedUp = [&]() { m_MoveSpeed = m_InitialMoveSpeed * 10.0f; };
+		f_speedDown = [&]() { m_MoveSpeed = m_InitialMoveSpeed; };
 
-        f_rotateAroundPositiveYAxis = std::bind(&Player::RotateAroundPositiveYAxis, this, std::placeholders::_1);
-        f_rotateAroundRightAxis = std::bind(&Player::RotateAroundRightAxis, this, std::placeholders::_1);
+		f_allowMove = [&]() { m_CanMove = true; };
+		f_forbidMove = [&]() { m_CanMove = false; };
 
-        f_addForce = [&]() {
-            // TODO Phase2-migrate: auto l_force = Math::getDirection(Direction::Backward, m_playerCameraComponent->m_Transform.m_rot);
-            auto l_force = Vec4(0.0f, 0.0f, -1.0f, 0.0f); // TODO Phase2-migrate placeholder
-            l_force = l_force * 10.0f;
-            // TODO Phase2-migrate: AddForce now takes EntityID instead of ModelComponent*
-            // g_Engine->Get<PhysicsSimulationService>()->AddForce(m_playerEntityID, l_force);
-        };
+		f_rotateAroundPositiveYAxis = std::bind(&Player::RotateAroundPositiveYAxis, this, std::placeholders::_1);
+		f_rotateAroundRightAxis = std::bind(&Player::RotateAroundRightAxis, this, std::placeholders::_1);
 
-        f_switchCamera = [&]() {
-            if (m_activeCameraComponent == m_playerCameraComponent)
-            {
-                m_activeCameraComponent = m_debugCameraComponent;
-            }
-            else
-            {
-                m_activeCameraComponent = m_playerCameraComponent;
-            }
+		f_addForce = [&]() {
+			// TODO Phase2-migrate: get camera TransformComponent for direction
+			auto l_Force = Vec4(0.0f, 0.0f, -1.0f, 0.0f);
+			l_Force = l_Force * 10.0f;
+			g_Engine->Get<PhysicsSimulationService>()->AddForce(m_PlayerCharacterEntity, l_Force);
+		};
 
-            static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
-        };
+		f_switchCamera = [&]() {
+			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
+			{
+				m_ActiveCameraComponent = m_DebugCameraComponent;
+			}
+			else
+			{
+				m_ActiveCameraComponent = m_PlayerCameraComponent;
+			}
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
+			static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_ActiveCameraComponent);
+		};
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
-        g_Engine->Get<HIDService>()->AddMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
-        g_Engine->Get<HIDService>()->AddMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundRightAxis });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
 
-        g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_O, true }, ButtonEvent{ EventLifeTime::OneShot, &f_switchCamera });
-        
-        m_isEventsRegistered = true;
-        
-        return true;
-    }
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
+		g_Engine->Get<HIDService>()->AddMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
+		g_Engine->Get<HIDService>()->AddMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundRightAxis });
 
-    bool Player::Initialize()
-    {
-        return true;
-    }
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_O, true }, ButtonEvent{ EventLifeTime::OneShot, &f_switchCamera });
 
-    void Player::Move(CameraComponent* cameraComponent, Direction direction, float length)
-    {
-        if (m_canMove)
-        {
-            // TODO Phase2-migrate: auto l_dir = Math::getDirection(direction, cameraComponent->m_Transform.m_rot);
-            // TODO Phase2-migrate: auto l_currentPos = cameraComponent->m_Transform.m_pos;
-            // TODO Phase2-migrate: cameraComponent->m_Transform.m_pos = Math::moveTo<float>(l_currentPos, l_dir, length);
-        }
-    }
+		m_IsEventsRegistered = true;
 
-    void Player::Move(ModelComponent* modelComponent, Direction direction, float length)
-    {
-        if (m_canMove)
-        {
-            auto l_dir = Math::getDirection(direction, modelComponent->m_Transform.m_rot);
-            auto l_currentPos = modelComponent->m_Transform.m_pos;
-            modelComponent->m_Transform.m_pos = Math::moveTo<float>(l_currentPos, l_dir, length);
-        }
-    }
+		return true;
+	}
 
-    void Player::RotateAroundPositiveYAxis(float offset)
-    {
-        if (m_canMove)
-        {
-            m_targetCameraRotY = Math::getQuatRotator(
-                Vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                ((-offset * m_rotateSpeed) / 180.0f) * PI<float>);
+	bool Player::Initialize()
+	{
+		return true;
+	}
 
-            m_canSlerp = false;
+	void Player::MoveCamera(EntityID CameraEntity, Direction direction, float length)
+	{
+		if (m_CanMove)
+		{
+			auto* l_Transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(CameraEntity);
+			if (l_Transform)
+			{
+				auto l_Dir = Math::getDirection(direction, l_Transform->m_LocalRot);
+				l_Transform->m_LocalPos = Math::moveTo<float>(Vec4(l_Transform->m_LocalPos, 1.0f), l_Dir, length).xyz();
+			}
+		}
+	}
 
-            m_playerModelComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_playerModelComponent->m_Transform.m_rot);
-            // TODO Phase2-migrate: m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotY.quatMul(m_activeCameraComponent->m_Transform.m_rot);
+	void Player::MoveModel(ModelComponent* modelComponent, Direction direction, float length)
+	{
+		if (m_CanMove)
+		{
+			if (!modelComponent)
+				return;
+			auto l_Dir = Math::getDirection(direction, modelComponent->m_Transform.m_rot);
+			auto l_CurrentPos = modelComponent->m_Transform.m_pos;
+			modelComponent->m_Transform.m_pos = Math::moveTo<float>(l_CurrentPos, l_Dir, length);
+		}
+	}
 
-            m_canSlerp = true;
-        }
-    }
+	void Player::RotateAroundPositiveYAxis(float offset)
+	{
+		if (m_CanMove)
+		{
+			m_TargetCameraRotY = Math::getQuatRotator(
+				Vec4(0.0f, 1.0f, 0.0f, 0.0f),
+				((-offset * m_RotateSpeed) / 180.0f) * PI<float>);
 
-    void Player::RotateAroundRightAxis(float offset)
-    {
-        if (m_canMove)
-        {
-            m_canSlerp = false;
+			m_CanSlerp = false;
 
-            // TODO Phase2-migrate: auto l_right = Math::getDirection(Direction::Right, m_activeCameraComponent->m_Transform.m_rot);
-            auto l_right = Vec4(1.0f, 0.0f, 0.0f, 0.0f); // TODO Phase2-migrate placeholder
-            m_targetCameraRotX = Math::getQuatRotator(
-                l_right,
-                ((offset * m_rotateSpeed) / 180.0f) * PI<float>);
-            // TODO Phase2-migrate: m_activeCameraComponent->m_Transform.m_rot = m_targetCameraRotX.quatMul(m_activeCameraComponent->m_Transform.m_rot);
+			if (m_PlayerModelComponent)
+			{
+				m_PlayerModelComponent->m_Transform.m_rot = m_TargetCameraRotY.quatMul(m_PlayerModelComponent->m_Transform.m_rot);
+			}
+			// TODO Phase2-migrate: rotate active camera TransformComponent
 
-            m_canSlerp = true;
-        }
-    }
+			m_CanSlerp = true;
+		}
+	}
 
-    bool Player::Update(float seed)
-    {
-        if (m_animationController)
-        {
-            m_animationController->Simulate();
-        }
+	void Player::RotateAroundRightAxis(float offset)
+	{
+		if (m_CanMove)
+		{
+			m_CanSlerp = false;
 
-        if (m_isTP)
-        {
-            auto l_t = m_playerModelComponent->m_Transform.m_pos;
-            auto l_r = m_playerModelComponent->m_Transform.m_rot;
-            
-            auto l_lp = m_cameraPlayerDistance;
-            m_cameraPlayerDistance.w = 1.0f;
-            auto l_gp = l_t + (Math::toRotationMatrix(l_r) * m_cameraPlayerDistance).xyz();
+			// TODO Phase2-migrate: get right direction from active camera TransformComponent
+			auto l_Right = Vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			m_TargetCameraRotX = Math::getQuatRotator(
+				l_Right,
+				((offset * m_RotateSpeed) / 180.0f) * PI<float>);
+			// TODO Phase2-migrate: rotate active camera TransformComponent
 
-            // TODO Phase2-migrate: m_playerCameraComponent->m_Transform.m_pos = Vec4(l_gp.x, l_gp.y, l_gp.z, 1.0f);
-        }
+			m_CanSlerp = true;
+		}
+	}
 
-        return true;
-    }
+	bool Player::Update(float seed)
+	{
+		if (m_AnimationController)
+		{
+			m_AnimationController->Simulate();
+		}
 
-    bool Player::Terminate()
-    {
-        if (m_animationController)
-        {
-            delete m_animationController;
-            return true;
-        }
+		if (m_IsTP && m_PlayerModelComponent)
+		{
+			auto l_T = m_PlayerModelComponent->m_Transform.m_pos;
+			auto l_R = m_PlayerModelComponent->m_Transform.m_rot;
 
-        return false;
-    }
+			auto l_LP = m_CameraPlayerDistance;
+			m_CameraPlayerDistance.w = 1.0f;
+			auto l_GP = l_T + (Math::toRotationMatrix(l_R) * m_CameraPlayerDistance).xyz();
+
+			auto* l_CameraTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(m_PlayerCameraEntity);
+			if (l_CameraTransform)
+			{
+				l_CameraTransform->m_LocalPos = Vec3(l_GP.x, l_GP.y, l_GP.z);
+			}
+		}
+
+		return true;
+	}
+
+	bool Player::Terminate()
+	{
+		if (m_AnimationController)
+		{
+			delete m_AnimationController;
+			return true;
+		}
+
+		return false;
+	}
 }
