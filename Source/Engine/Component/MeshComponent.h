@@ -22,6 +22,9 @@ namespace Inno
 
 	struct MeshComponent
 	{
+		static uint32_t GetTypeID() { return 6; };
+		static const char* GetTypeName() { return "MeshComponent"; };
+
 		void* m_MappedMemory_VB = nullptr;
 		void* m_MappedMemory_IB = nullptr;
 		GPUBufferView m_VertexBufferView;

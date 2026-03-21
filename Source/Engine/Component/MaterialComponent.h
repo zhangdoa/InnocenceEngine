@@ -8,6 +8,9 @@ namespace Inno
 
 	struct MaterialComponent
 	{
+		static uint32_t GetTypeID() { return 7; };
+		static const char* GetTypeName() { return "MaterialComponent"; };
+
 		GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
 		Accessibility m_CPUAccessibility = Accessibility::WriteOnly;
 		Accessibility m_GPUAccessibility = Accessibility::ReadOnly;

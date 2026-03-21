@@ -13,6 +13,9 @@ namespace Inno
 
 	struct SkeletonComponent
 	{
+		static uint32_t GetTypeID() { return 9; };
+		static const char* GetTypeName() { return "SkeletonComponent"; };
+
 		Array<Bone> m_BoneList;
 		MeshComponent* m_Mesh;
 	};
