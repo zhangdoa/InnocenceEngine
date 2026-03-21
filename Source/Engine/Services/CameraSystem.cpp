@@ -6,7 +6,6 @@
 #include "../Common/MathHelper.h"
 #include "RenderingConfigurationService.h"
 #include "EntityRegistry.h"
-#include "ComponentManager.h" // TODO Phase2-migrate: bridge for not-yet-migrated consumers (JSONWrapper, PerFrameDataService, Baker, RayTracer — Tasks 10-12)
 
 #include "../Engine.h"
 
@@ -138,7 +137,6 @@ using namespace CameraSystemNS;
 
 bool CameraSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->Get<ComponentManager>()->RegisterType<CameraComponent>(m_MaxComponentCount, this); // TODO Phase2-migrate: bridge — remove when all consumers use EntityRegistry
 	return true;
 }
 

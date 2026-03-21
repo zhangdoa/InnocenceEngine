@@ -18,7 +18,6 @@ using namespace VKHelper;
 
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
-#include "../../Services/EntityManager.h"
 
 template <typename U, typename T>
 bool VKRenderingServer::SetObjectName(U* owner, const T& rhs, VkObjectType objectType, const char* objectTypeSuffix)

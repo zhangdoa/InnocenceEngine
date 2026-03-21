@@ -12,8 +12,7 @@
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/GUISystem.h"
 #include "../../Services/SceneService.h"
-#include "../../Services/EntityManager.h"
-#include "../../Services/ComponentManager.h"
+#include "../../Services/EntityRegistry.h"
 
 #include "../../Engine.h"
 #include "../IRenderingServer.h"
@@ -31,17 +30,6 @@ Accessibility Accessibility::CopyDestination = Accessibility(false, true, false,
 
 bool IRenderingServer::InitializePool()
 {
-	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
-
-	g_Engine->Get<ComponentManager>()->RegisterType<MeshComponent>(l_renderingCapability.maxMeshes, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<TextureComponent>(l_renderingCapability.maxTextures, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<MaterialComponent>(l_renderingCapability.maxMaterials, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<RenderPassComponent>(128, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<ShaderProgramComponent>(256, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<SamplerComponent>(256, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<GPUBufferComponent>(l_renderingCapability.maxBuffers, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<CommandListComponent>(256, this);
-
 	return true;
 }
 
@@ -265,15 +253,9 @@ T* AddComponent(const char* name)
 		return nullptr;
 	}
 
-	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str());
-	auto l_component = g_Engine->Get<ComponentManager>()->Spawn<T>(l_parentEntity, false, ObjectLifespan::Persistence);
-	if (!l_component)
-	{
-		Log(Error, "Failed to allocate component from the pool.");
-		return nullptr;
-	}
-
-	return l_component;
+	auto l_EntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, l_name.c_str());
+	auto& l_Component = g_Engine->Get<EntityRegistry>()->Emplace<T>(l_EntityID);
+	return &l_Component;
 }
 
 MeshComponent* IRenderingServer::AddMeshComponent(const char* name)

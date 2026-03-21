@@ -8,7 +8,6 @@
 #include "../../Engine/Services/HIDService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Common/Array.h"
-#include "../../Engine/Services/ComponentManager.h"
 
 #include "GIDataLoader.h"
 #include "SunShadowBlurEvenPass.h"

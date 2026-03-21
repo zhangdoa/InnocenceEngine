@@ -3,7 +3,7 @@
 #include "../Common/TaskScheduler.h"
 #include "../Common/LogService.h"
 
-#include "../Services/ComponentManager.h"
+#include "../Services/CameraSystem.h"
 #include "../Services/AssetService.h"
 #include "../Services/RenderingConfigurationService.h"
 
@@ -302,7 +302,7 @@ bool ExecuteRayTracing()
 {
 	Log(Verbose, "Start ray tracing...");
 
-	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
+	auto l_camera = g_Engine->Get<CameraSystem>()->GetMainCamera();
 	// TODO Phase2-migrate: auto l_lookfrom = Vec4(l_camera->m_Transform.m_pos, 1.0f);
 	// TODO Phase2-migrate: auto l_lookat = l_lookfrom + Math::getDirection(Direction::Backward, l_camera->m_Transform.m_rot);
 	// TODO Phase2-migrate: auto l_up = Math::getDirection(Direction::Up, l_camera->m_Transform.m_rot);
@@ -313,14 +313,7 @@ bool ExecuteRayTracing()
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_Aperture, 1000.0f);
 
-	auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
-
 	std::vector<Hitable*> l_hitableListVector;
-	l_hitableListVector.reserve(l_modelComponents.size());
-
-	for (auto l_modelComponent : l_modelComponents)
-	{
-	}
 
 	auto l_hitable = new HitableSphere();
 	l_hitable->m_Material = new Lambertian();

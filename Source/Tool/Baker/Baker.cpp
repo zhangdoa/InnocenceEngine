@@ -4,8 +4,8 @@
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Services/SceneService.h"
-#include "../../Engine/Services/EntityManager.h"
-#include "../../Engine/Services/ComponentManager.h"
+#include "../../Engine/Services/EntityRegistry.h"
+#include "../../Engine/Services/CameraSystem.h"
 
 #include "../../Engine/Engine.h"
 
@@ -37,12 +37,13 @@ void Baker::Setup()
 void Baker::BakeProbeCache(const char* sceneName)
 {
 	g_Engine->Get<SceneService>()->Load(sceneName, false);
-	auto l_playerCameraEntity = g_Engine->Get<EntityManager>()->Find("playerCharacterCamera");
-	if (l_playerCameraEntity.has_value())
+	auto l_playerCameraEntityID = g_Engine->Get<EntityRegistry>()->FindByName("playerCharacterCamera");
+	if (l_playerCameraEntityID != INVALID_ENTITY)
 	{
-		auto l_playerCameraComponent = g_Engine->Get<ComponentManager>()->Find<CameraComponent>(l_playerCameraEntity.value());
-        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetMainCamera(l_playerCameraComponent);
-        static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->SetActiveCamera(l_playerCameraComponent);
+		auto* l_playerCameraComponent = g_Engine->Get<EntityRegistry>()->Get<CameraComponent>(l_playerCameraEntityID);
+		auto* l_CameraSystem = g_Engine->Get<CameraSystem>();
+		l_CameraSystem->SetMainCamera(l_playerCameraComponent);
+		l_CameraSystem->SetActiveCamera(l_playerCameraComponent);
 	}
 
 	g_Engine->Update();

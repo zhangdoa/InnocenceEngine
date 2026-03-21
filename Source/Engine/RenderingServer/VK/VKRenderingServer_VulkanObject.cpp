@@ -26,7 +26,6 @@ using namespace VKHelper;
 
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
-#include "../../Services/EntityManager.h"
 
 namespace Inno
 {

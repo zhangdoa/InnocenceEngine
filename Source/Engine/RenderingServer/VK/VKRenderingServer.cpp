@@ -16,7 +16,6 @@ using namespace VKHelper;
 
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
-#include "../../Services/EntityManager.h"
 
 bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
 {

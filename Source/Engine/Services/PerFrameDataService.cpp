@@ -2,7 +2,8 @@
 
 #include "../Common/LogService.h"
 #include "CameraSystem.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
+#include "../Component/TransformComponent.h"
 #include "RenderingConfigurationService.h"
 #include "DrawCallService.h"
 
@@ -109,7 +110,7 @@ bool PerFrameDataServiceImpl::Initialize()
 
 bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 {
-	auto l_camera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
+	auto l_camera = g_Engine->Get<CameraSystem>()->GetActiveCamera();
 	if (l_camera == nullptr)
 		return false;
 
@@ -132,12 +133,23 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 
 	l_perFrameCB.radianceCacheHaltonJitter = Vec2(RadicalInverse(l_perFrameCB.frameIndex, 3) * 8.0f, RadicalInverse(l_perFrameCB.frameIndex, 5) * 8.0f);
 
-	// TODO Phase2-migrate: auto r = Math::getInvertRotationMatrix(l_camera->m_Transform.m_rot);
-	// TODO Phase2-migrate: auto t = Math::getInvertTranslationMatrix(Vec4(l_camera->m_Transform.m_pos, 1.0f));
-	auto r = Mat4(); // TODO Phase2-migrate placeholder
-	auto t = Mat4(); // TODO Phase2-migrate placeholder
+	auto& l_CameraStorage = g_Engine->Get<EntityRegistry>()->Storage<CameraComponent>();
+	const auto& l_CameraAll = l_CameraStorage.All();
+	const auto& l_CameraOwners = l_CameraStorage.AllOwners();
+	EntityID l_CameraEntityID = INVALID_ENTITY;
+	for (size_t ci = 0; ci < l_CameraAll.size(); ci++)
+	{
+		if (&l_CameraAll[ci] == l_camera)
+		{
+			l_CameraEntityID = l_CameraOwners[ci];
+			break;
+		}
+	}
+	auto* l_CameraTransform = l_CameraEntityID != INVALID_ENTITY ? g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_CameraEntityID) : nullptr;
+	auto r = l_CameraTransform ? Math::getInvertRotationMatrix(l_CameraTransform->m_LocalRot) : Mat4();
+	auto t = l_CameraTransform ? Math::getInvertTranslationMatrix(Vec4(l_CameraTransform->m_LocalPos, 1.0f)) : Mat4();
 
-	// TODO Phase2-migrate: l_perFrameCB.camera_posWS = l_camera->m_Transform.m_pos;
+	if (l_CameraTransform) l_perFrameCB.camera_posWS = l_CameraTransform->m_LocalPos;
 	l_perFrameCB.v = r * t;
 
 	l_perFrameCB.zNear = l_camera->m_ZNear;
@@ -153,12 +165,13 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	l_perFrameCB.shutterTime = l_camera->m_ShutterTime;
 	l_perFrameCB.ISO = l_camera->m_ISO;
 
-	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
-	if (l_sun == nullptr)
+	auto& l_LightStorage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
+	if (l_LightStorage.All().empty())
 		return false;
+	auto& l_sun = l_LightStorage.All()[0];
 
-	// TODO Phase2-migrate: l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun->m_Transform.m_rot);
-	l_perFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
+	// TODO Phase2-migrate: l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_sun.m_Transform.m_rot);
+	l_perFrameCB.sun_illuminance = l_sun.m_RGBColor * l_sun.m_LuminousFlux;
 
 	static uint32_t currentCascade = 0;
 	auto l_renderingCapability = l_renderingConfigurationService->GetRenderingCapability();

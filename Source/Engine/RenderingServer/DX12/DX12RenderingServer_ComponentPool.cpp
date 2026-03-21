@@ -2,7 +2,6 @@
 
 #include "../../Common/Randomizer.h"
 #include "../../Services/RenderingConfigurationService.h"
-#include "../../Services/EntityManager.h"
 
 #include "../../Engine.h"
 

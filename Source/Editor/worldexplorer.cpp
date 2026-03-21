@@ -3,8 +3,9 @@
 #include "../Engine/Engine.h"
 #include "../Engine/Common/ComponentHeaders.h"
 #include "../Engine/Services/SceneService.h"
-#include "../Engine/Services/EntityManager.h"
-#include "../Engine/Services/ComponentManager.h"
+#include "../Engine/Services/EntityRegistry.h"
+#include "../Engine/Services/CameraSystem.h"
+#include "../Engine/Services/ComponentManager.h" // TODO Phase2-migrate: Task 13 — keep until ModelComponent, DrawCallComponent, TextureComponent are migrated
 #include <QHeaderView>
 
 using namespace Inno;
@@ -55,9 +56,10 @@ void WorldExplorer::buildTree()
             QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
             l_entityItem->setText(0, i.first->m_InstanceName.c_str());
-            // Data slot 0 is ComponentType (-1 as the entity), slot 1 is the component ptr
+            // Data slot 0 is ComponentType (-1 as the entity), slot 1 is the EntityID as uint32_t
+            auto l_entityID = g_Engine->Get<EntityRegistry>()->FindByName(i.first->m_InstanceName.c_str());
             l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
-            l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)i.first));
+            l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((uint32_t)l_entityID));
 
             addChild(m_rootItem, l_entityItem);
 
@@ -141,47 +143,15 @@ void WorldExplorer::endRename()
 
     if (l_componentType != -1)
     {
-        // Renaming a component
+        // Renaming a component — component items still store void* Component* (old system, Task 13 scope)
         auto l_componentPtr = reinterpret_cast<Component*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
         l_componentPtr->m_InstanceName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
     }
     else
     {
-        // Renaming an entity - also update all child components
-        auto l_entityPtr = reinterpret_cast<Entity*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
-        std::string newEntityName = m_currentEditingItem->text(0).toStdString();
-        l_entityPtr->m_InstanceName = (newEntityName + "/").c_str();
-        
-        // Update all child components with the new entity name
-        for (int i = 0; i < m_currentEditingItem->childCount(); i++)
-        {
-            auto l_childItem = m_currentEditingItem->child(i);
-            auto l_componentPtr = reinterpret_cast<Component*>(l_childItem->data(1, Qt::UserRole).value<void*>());
-            
-            // Extract component type name from the current component name
-            std::string currentComponentName = l_componentPtr->m_InstanceName.c_str();
-            
-            // Find the first dot to separate entity name from component type
-            size_t firstDotPos = currentComponentName.find('.');
-            
-            if (firstDotPos != std::string::npos)
-            {
-                // Get the component type part (everything from the dot onwards: ".ComponentType/")
-                std::string componentTypePart = currentComponentName.substr(firstDotPos);
-                
-                // Create new component name: EntityName + .ComponentType/
-                std::string newComponentName = newEntityName + componentTypePart;
-                l_componentPtr->m_InstanceName = (newComponentName + "/").c_str();
-                
-                // Update the tree widget display text (remove trailing slash for display)
-                std::string displayName = newComponentName;
-                if (!displayName.empty() && displayName.back() == '/')
-                {
-                    displayName.pop_back();
-                }
-                l_childItem->setText(0, displayName.c_str());
-            }
-        }
+        // TODO Phase2-migrate: EntityRegistry has no SetName API; entity rename is display-only until SetName is added
+        // Entity items store EntityID as uint32_t in slot 1 — no direct name mutation possible here
+        Log(Warning, "WorldExplorer: entity rename is display-only; EntityRegistry::SetName not yet implemented.");
     }
 
     m_currentEditingItem->setFlags(m_currentEditingItem->flags() & ~Qt::ItemIsEditable);
@@ -190,13 +160,15 @@ void WorldExplorer::endRename()
 
 void WorldExplorer::addEntity()
 {
-    auto l_entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, "NewEntity/");
+    auto l_entityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, "NewEntity/");
 
     QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
-    l_entityItem->setText(0, l_entity->m_InstanceName.c_str());
+    std::string l_displayName = g_Engine->Get<EntityRegistry>()->GetName(l_entityID);
+    if (!l_displayName.empty() && l_displayName.back() == '/') l_displayName.pop_back();
+    l_entityItem->setText(0, l_displayName.c_str());
     l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
-    l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_entity));
+    l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((uint32_t)l_entityID));
 
     addChild(m_rootItem, l_entityItem);
     this->setCurrentItem(l_entityItem);
@@ -211,16 +183,16 @@ void WorldExplorer::deleteEntity()
     {
         item = l_items[0];
 
-        auto l_entityPtr = reinterpret_cast<Entity*>(item->data(1, Qt::UserRole).value<void*>());
-
         for (int i = 0; i < item->childCount(); i++)
         {
             auto l_childItem = item->child(i);
             auto l_componentPtr = reinterpret_cast<Component*>(l_childItem->data(1, Qt::UserRole).value<void*>());
+            // Select the child item so destroyComponent reads the right type and entityID from selectedItems()
+            setCurrentItem(l_childItem);
             destroyComponent(l_componentPtr);
         }
 
-        g_Engine->Get<EntityManager>()->Destroy(l_entityPtr);
+        g_Engine->Get<EntityRegistry>()->Destroy((EntityID)item->data(1, Qt::UserRole).toUInt());
 
         item->parent()->removeChild(item);
     }
@@ -229,6 +201,7 @@ void WorldExplorer::deleteEntity()
 template<class T>
 T* WorldExplorer::addComponent()
 {
+    // TODO Phase2-migrate: Task 13 — ModelComponent still uses ComponentManager; migrate to EntityRegistry::Emplace<T> when ModelComponent is deleted
     auto l_items = selectedItems();
     QTreeWidgetItem* item;
     if (l_items.count() != 0)
@@ -240,7 +213,7 @@ T* WorldExplorer::addComponent()
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_InstanceName.c_str());
+        l_componentItem->setText(0, T::GetTypeName());
         l_componentItem->setData(0, Qt::UserRole, QVariant(T::GetTypeID()));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -279,25 +252,26 @@ void WorldExplorer::destroyComponent(Component *component)
         return;
     }
 
-    // Get the component type from the tree widget item data
     auto l_items = this->selectedItems();
     if (l_items.count() == 0)
         return;
-        
+
     auto item = l_items[0];
     auto componentType = item->data(0, Qt::UserRole).toInt();
-    
+    auto l_entityID = (EntityID)item->parent()->data(1, Qt::UserRole).toUInt();
+
     if (componentType == ModelComponent::GetTypeID())
     {
+        // TODO Phase2-migrate: Task 13 — migrate to EntityRegistry::Remove<ModelComponent> when ModelComponent is deleted
         g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<ModelComponent*>(component));
     }
     else if (componentType == LightComponent::GetTypeID())
     {
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<LightComponent*>(component));
+        g_Engine->Get<EntityRegistry>()->Remove<LightComponent>(l_entityID);
     }
     else if (componentType == CameraComponent::GetTypeID())
     {
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<CameraComponent*>(component));
+        g_Engine->Get<EntityRegistry>()->Remove<CameraComponent>(l_entityID);
     }
     // TODO Phase2-migrate: else if (componentType == MeshComponent::GetTypeID())
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MeshComponent*>(component)); }
@@ -305,16 +279,18 @@ void WorldExplorer::destroyComponent(Component *component)
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component)); }
     else if (componentType == TextureComponent::GetTypeID())
     {
+        // TODO Phase2-migrate: Task 13 — TextureComponent is GPU-resource managed; migrate when Task 13 clarifies ownership
         g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
     }
     // TODO Phase2-migrate: else if (componentType == SkeletonComponent::GetTypeID())
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component)); }
     else if (componentType == AnimationComponent::GetTypeID())
     {
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<AnimationComponent*>(component));
+        g_Engine->Get<EntityRegistry>()->Remove<AnimationComponent>(l_entityID);
     }
     else if (componentType == DrawCallComponent::GetTypeID())
     {
+        // TODO Phase2-migrate: Task 13 — migrate to EntityRegistry::Remove<DrawCallComponent> when DrawCallComponent is deleted
         g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<DrawCallComponent*>(component));
     }
     else

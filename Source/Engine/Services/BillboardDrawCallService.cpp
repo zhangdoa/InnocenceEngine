@@ -2,7 +2,7 @@
 
 #include "../Common/LogService.h"
 #include "../Common/GPUDataStructure.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
 #include "SceneService.h"
 #include "TemplateAssetService.h"
 #include "RenderingConfigurationService.h"
@@ -87,7 +87,7 @@ bool BillboardDrawCallServiceImpl::Initialize()
 
 bool BillboardDrawCallServiceImpl::UpdateBillboardPassData()
 {
-	auto& l_lightComponents = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
+	auto& l_lightComponents = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>().All();
 
 	auto l_totalBillboardDrawCallCount = l_lightComponents.size();
 	if (l_totalBillboardDrawCallCount == 0)
@@ -105,16 +105,13 @@ bool BillboardDrawCallServiceImpl::UpdateBillboardPassData()
 	m_PointLightPerObjectCB.clear();
 	m_SphereLightPerObjectCB.clear();
 
-	for (auto i : l_lightComponents)
+	for (const auto& i : l_lightComponents)
 	{
-		if (i == nullptr)
-			continue;
-
 		TransformConstantBuffer l_transformCB;
-		// TODO Phase2-migrate: l_transformCB.m = Math::toTranslationMatrix(Vec4(i->m_Transform.m_pos, 1.0f));
+		// TODO Phase2-migrate: l_transformCB.m = Math::toTranslationMatrix(Vec4(i.m_Transform.m_pos, 1.0f));
 		l_transformCB.m = Mat4();
 
-		switch (i->m_LightType)
+		switch (i.m_LightType)
 		{
 		case LightType::Directional:
 			m_DirectionalLightPerObjectCB.emplace_back(l_transformCB);

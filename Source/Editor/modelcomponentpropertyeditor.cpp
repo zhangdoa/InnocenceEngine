@@ -146,7 +146,7 @@ void ModelComponentPropertyEditor::RefreshDrawCallList()
     for (size_t i = 0; i < drawCallCount; i++)
     {
         auto drawCallId = m_component->m_DrawCallComponents[i];
-        auto componentManager = g_Engine->Get<ComponentManager>();
+        auto componentManager = g_Engine->Get<ComponentManager>(); // TODO Phase2-migrate: Task 13
         auto drawCall = componentManager->FindByUUID<DrawCallComponent>(drawCallId);
         
         if (drawCall)
@@ -288,7 +288,7 @@ void ModelComponentPropertyEditor::onFileSelected(const QString& filePath)
 
 void ModelComponentPropertyEditor::CreateDrawCall(const QString& assetPath, bool isMesh)
 {
-    auto componentManager = g_Engine->Get<ComponentManager>();
+    auto componentManager = g_Engine->Get<ComponentManager>(); // TODO Phase2-migrate: Task 13
     QFileInfo fileInfo(assetPath);
     QString componentName = fileInfo.completeBaseName();
     
@@ -363,7 +363,7 @@ void ModelComponentPropertyEditor::tableItemClicked(int row, int column)
     if (!item)
         return;
 
-    auto componentManager = g_Engine->Get<ComponentManager>();
+    auto componentManager = g_Engine->Get<ComponentManager>(); // TODO Phase2-migrate: Task 13
     auto drawCallId = item->data(Qt::UserRole).value<qulonglong>();
     auto drawCall = componentManager->FindByUUID<DrawCallComponent>(drawCallId);
     
