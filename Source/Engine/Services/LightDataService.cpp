@@ -2,9 +2,11 @@
 
 #include "../Common/LogService.h"
 #include "../Common/GPUDataStructure.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
 #include "RenderingConfigurationService.h"
+#include "LightSystem.h"
 #include "../Component/LightComponent.h"
+#include "../Component/TransformComponent.h"
 #include "../Engine.h"
 
 using namespace Inno;
@@ -90,32 +92,35 @@ bool LightDataServiceImpl::UpdateLightData()
 	m_PointLightCBVector.clear();
 	m_SphereLightCBVector.clear();
 
-	auto& l_lightComponents = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
-	auto l_lightComponentCount = l_lightComponents.size();
+	auto& l_Storage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
+	const auto& l_Lights = l_Storage.All();
+	const auto& l_Owners = l_Storage.AllOwners();
 
-	if (l_lightComponentCount == 0)
+	if (l_Lights.empty())
 		return false;
 
-	for (size_t i = 0; i < l_lightComponentCount; i++)
+	for (size_t i = 0; i < l_Lights.size(); i++)
 	{
-		auto l_lightComponent = l_lightComponents[i];
-		if (l_lightComponent == nullptr)
-			continue;
+		const LightComponent& l_Light = l_Lights[i];
+		EntityID l_EntityID = l_Owners[i];
+		auto* l_Transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID);
 
-		if (l_lightComponent->m_LightType == LightType::Point)
+		if (l_Light.m_LightType == LightType::Point)
 		{
 			PointLightConstantBuffer l_data;
-			// TODO Phase2-migrate: l_data.pos = l_lightComponent->m_Transform.m_pos;
-			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
-			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
+			if (l_Transform)
+				l_data.pos = l_Transform->m_LocalPos;
+			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
+			l_data.luminance.w = l_Light.m_Shape.x;
 			m_PointLightCBVector.emplace_back(l_data);
 		}
-		else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
+		else if (l_Light.m_LightType == LightType::Sphere)
 		{
 			SphereLightConstantBuffer l_data;
-			// TODO Phase2-migrate: l_data.pos = l_lightComponent->m_Transform.m_pos;
-			l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
-			l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
+			if (l_Transform)
+				l_data.pos = l_Transform->m_LocalPos;
+			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
+			l_data.luminance.w = l_Light.m_Shape.x;
 			m_SphereLightCBVector.emplace_back(l_data);
 		}
 	}
@@ -125,24 +130,51 @@ bool LightDataServiceImpl::UpdateLightData()
 
 bool LightDataServiceImpl::UpdateCSMData()
 {
-	auto l_sun = g_Engine->Get<ComponentManager>()->Get<LightComponent>(0);
-	if (l_sun == nullptr)
+	auto& l_Storage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
+	const auto& l_Lights = l_Storage.All();
+	const auto& l_Owners = l_Storage.AllOwners();
+
+	if (l_Lights.empty())
 		return false;
 
-	auto& l_LitRegion_WorldSpace = l_sun->m_LitRegion_WorldSpace;
-	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
-	auto& l_ProjectionMatrices = l_sun->m_ProjectionMatrices;
+	EntityID l_SunEntityID = INVALID_ENTITY;
+	for (size_t i = 0; i < l_Lights.size(); i++)
+	{
+		if (l_Lights[i].m_LightType == LightType::Directional)
+		{
+			l_SunEntityID = l_Owners[i];
+			break;
+		}
+	}
+	if (l_SunEntityID == INVALID_ENTITY)
+		return false;
+
+	auto* l_LightSystem = g_Engine->Get<LightSystem>();
+	auto& l_LitRegionWorldSpaceMap = l_LightSystem->GetLitRegionWorldSpace();
+	auto& l_ViewMatricesMap = l_LightSystem->GetViewMatrices();
+	auto& l_ProjectionMatricesMap = l_LightSystem->GetProjectionMatrices();
+
+	auto l_ItWorld = l_LitRegionWorldSpaceMap.find(l_SunEntityID);
+	auto l_ItView = l_ViewMatricesMap.find(l_SunEntityID);
+	auto l_ItProj = l_ProjectionMatricesMap.find(l_SunEntityID);
+
+	if (l_ItWorld == l_LitRegionWorldSpaceMap.end() || l_ItView == l_ViewMatricesMap.end() || l_ItProj == l_ProjectionMatricesMap.end())
+		return false;
+
+	auto& l_LitRegion_WorldSpace = l_ItWorld->second;
+	auto& l_ViewMats = l_ItView->second;
+	auto& l_ProjectionMats = l_ItProj->second;
 
 	m_CSMCBVector.clear();
 
-	if (l_LitRegion_WorldSpace.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
+	if (l_LitRegion_WorldSpace.size() > 0 && l_ViewMats.size() > 0 && l_ProjectionMats.size() > 0)
 	{
 		for (size_t j = 0; j < l_LitRegion_WorldSpace.size(); j++)
 		{
 			CSMConstantBuffer l_CSMCB;
 
-			l_CSMCB.p = l_ProjectionMatrices[j];
-			l_CSMCB.v = l_ViewMatrices[j];
+			l_CSMCB.p = l_ProjectionMats[j];
+			l_CSMCB.v = l_ViewMats[j];
 
 			l_CSMCB.AABBMax = l_LitRegion_WorldSpace[j].m_boundMax;
 			l_CSMCB.AABBMin = l_LitRegion_WorldSpace[j].m_boundMin;

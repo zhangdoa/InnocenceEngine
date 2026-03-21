@@ -33,10 +33,5 @@ namespace Inno
 		float m_LuminousFlux = 1.0f;
 
 		bool m_UseColorTemperature = true;
-
-		std::vector<AABB> m_LitRegion_WorldSpace;
-		std::vector<AABB> m_LitRegion_LightSpace;
-		std::vector<Mat4> m_ViewMatrices;
-		std::vector<Mat4> m_ProjectionMatrices;
 	};
 }

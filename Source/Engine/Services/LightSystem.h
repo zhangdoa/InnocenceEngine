@@ -1,5 +1,7 @@
 #pragma once
 #include "../Interface/ISystem.h"
+#include "../Common/Math.h"
+#include "../Common/EntityID.h"
 
 namespace Inno
 {
@@ -15,6 +17,11 @@ namespace Inno
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
+
+		const std::unordered_map<EntityID, std::vector<Math::AABB>>& GetLitRegionWorldSpace() const;
+		const std::unordered_map<EntityID, std::vector<Math::AABB>>& GetLitRegionLightSpace() const;
+		const std::unordered_map<EntityID, std::vector<Math::Mat4>>& GetViewMatrices() const;
+		const std::unordered_map<EntityID, std::vector<Math::Mat4>>& GetProjectionMatrices() const;
 
 	private:
 		LightSystemImpl* m_Impl;

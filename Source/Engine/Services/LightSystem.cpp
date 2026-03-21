@@ -1,9 +1,11 @@
 #include "LightSystem.h"
 #include "../Component/LightComponent.h"
+#include "../Component/TransformComponent.h"
 #include "../Common/Randomizer.h"
 #include "../Common/LogService.h"
 #include "../Common/MathHelper.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
+#include "ComponentManager.h" // TODO Phase2-migrate: bridge for not-yet-migrated consumers (JSONWrapper, PerFrameDataService, BillboardDrawCallService, Baker — Tasks 10-12)
 #include "CameraSystem.h"
 #include "PhysicsSimulationService.h"
 #include "RenderingConfigurationService.h"
@@ -19,11 +21,16 @@ namespace Inno
 
 		AABB SnapAABBToShadowMap(const AABB& rhs, float shadowMapResolution);
 		void AlignMatrixToTexels(Mat4& matrix, float shadowMapResolution);
-		void UpdateCSMData(LightComponent* rhs);
-		void UpdateColorTemperature(LightComponent* rhs);
-		void UpdateAttenuationRadius(LightComponent* rhs);
+		void UpdateCSMData(EntityID EntityID, const LightComponent& Light);
+		void UpdateColorTemperature(LightComponent& Light);
+		void UpdateAttenuationRadius(LightComponent& Light);
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+
+		std::unordered_map<EntityID, std::vector<AABB>> m_LitRegionWorldSpace;
+		std::unordered_map<EntityID, std::vector<AABB>> m_LitRegionLightSpace;
+		std::unordered_map<EntityID, std::vector<Mat4>> m_ViewMatrices;
+		std::unordered_map<EntityID, std::vector<Mat4>> m_ProjectionMatrices;
 	};
 }
 
@@ -42,7 +49,7 @@ AABB LightSystemImpl::SnapAABBToShadowMap(const AABB &rhs, float shadowMapResolu
     snappedAABB.m_extend = rhs.m_extend; // Keep same size
     snappedAABB.m_boundMin = snappedAABB.m_center - snappedAABB.m_extend * 0.5f;
     snappedAABB.m_boundMax = snappedAABB.m_center + snappedAABB.m_extend * 0.5f;
-    
+
     return snappedAABB;
 }
 
@@ -52,83 +59,76 @@ void LightSystemImpl::AlignMatrixToTexels(Mat4& matrix, float shadowMapResolutio
     matrix.m31 = floor(matrix.m31 * shadowMapResolution) / shadowMapResolution;
 }
 
-void LightSystemImpl::UpdateCSMData(LightComponent* rhs)
-{	
-	rhs->m_ViewMatrices.clear();
-	rhs->m_ProjectionMatrices.clear();
-	rhs->m_LitRegion_WorldSpace.clear();
-	rhs->m_LitRegion_LightSpace.clear();
+void LightSystemImpl::UpdateCSMData(EntityID EntityID, const LightComponent& Light)
+{
+	auto& l_ViewMatrices = m_ViewMatrices[EntityID];
+	auto& l_ProjectionMatrices = m_ProjectionMatrices[EntityID];
+	auto& l_LitRegionWorldSpace = m_LitRegionWorldSpace[EntityID];
+	auto& l_LitRegionLightSpace = m_LitRegionLightSpace[EntityID];
 
-	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetMainCamera();
+	l_ViewMatrices.clear();
+	l_ProjectionMatrices.clear();
+	l_LitRegionWorldSpace.clear();
+	l_LitRegionLightSpace.clear();
+
+	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->Get<CameraSystem>())->GetMainCamera();
 	if (l_cameraComponent == nullptr)
 		return;
 
-	// TODO Phase2-migrate: auto l_rotationMatrix = Math::toRotationMatrix(rhs->m_Transform.m_rot);
-	auto l_rotationMatrix = Mat4();
+	auto* l_Transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(EntityID);
+	if (!l_Transform)
+	{
+		Log(Warning, "LightSystem: light entity has no TransformComponent, skipping CSM update.");
+		return;
+	}
+	auto l_rotationMatrix = Math::toRotationMatrix(l_Transform->m_LocalRot);
 	auto l_rotationMatrix_inverse = l_rotationMatrix.inverse();
 
 	auto& l_splitFrustumVerticesWS = l_cameraComponent->m_SplitFrustumVerticesWS;
 
-	// calculate AABBs in light space and generate the matrices
 	for (size_t i = 0; i < 4; i++)
 	{
 		AABB l_AABB_worldSpace = Math::GenerateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
-		rhs->m_LitRegion_WorldSpace.emplace_back(l_AABB_worldSpace);
+		l_LitRegionWorldSpace.emplace_back(l_AABB_worldSpace);
 
-		// Rotating AABB to light space to be an OBB then generate a new AABB there
-		// is the same as directly extending the AABB to cover its bounding sphere and then rotate only the center.
 		AABB l_AABB_lightSpace = Math::ExtendAABBToBoundingSphere(l_AABB_worldSpace);
 		l_AABB_lightSpace = Math::RotateAABBToNewSpace(l_AABB_lightSpace, l_rotationMatrix_inverse);
 
 		auto l_shadowMapResolution = static_cast<float>(g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution);
 		l_AABB_lightSpace = SnapAABBToShadowMap(l_AABB_lightSpace, l_shadowMapResolution);
-		rhs->m_LitRegion_LightSpace.emplace_back(l_AABB_lightSpace);
+		l_LitRegionLightSpace.emplace_back(l_AABB_lightSpace);
 
 		AlignMatrixToTexels(l_rotationMatrix_inverse, l_shadowMapResolution);
-		rhs->m_ViewMatrices.emplace_back(l_rotationMatrix_inverse);
-		
-		// This should be infinite by concept.
-		// const float l_zCompensation = 65536.0f;
-		// l_AABB_lightSpace.m_boundMin.z -= l_zCompensation;
-		// l_AABB_lightSpace.m_boundMax.z += l_zCompensation;
+		l_ViewMatrices.emplace_back(l_rotationMatrix_inverse);
+
 		auto l_projectionMatrix = Math::GenerateOrthographicMatrix(
 			l_AABB_lightSpace.m_boundMin.x, l_AABB_lightSpace.m_boundMax.x
 		, l_AABB_lightSpace.m_boundMin.y, l_AABB_lightSpace.m_boundMax.y
 		, l_AABB_lightSpace.m_boundMax.z, l_AABB_lightSpace.m_boundMin.z);
-		rhs->m_ProjectionMatrices.emplace_back(l_projectionMatrix);
+		l_ProjectionMatrices.emplace_back(l_projectionMatrix);
 	}
 }
 
-void LightSystemImpl::UpdateColorTemperature(LightComponent* rhs)
+void LightSystemImpl::UpdateColorTemperature(LightComponent& Light)
 {
-	if (!rhs->m_UseColorTemperature)
+	if (!Light.m_UseColorTemperature)
 		return;
 
-	rhs->m_RGBColor = Math::ColorTemperatureToRGB(rhs->m_ColorTemperature);
+	Light.m_RGBColor = Math::ColorTemperatureToRGB(Light.m_ColorTemperature);
 }
 
-void LightSystemImpl::UpdateAttenuationRadius(LightComponent* rhs)
+void LightSystemImpl::UpdateAttenuationRadius(LightComponent& Light)
 {
-	auto l_RGBColor = rhs->m_RGBColor.normalize();
-	// "Real-Time Rendering", 4th Edition, p.278
-	// https://en.wikipedia.org/wiki/Relative_luminance
-	// weight with respect to CIE photometric curve
+	auto l_RGBColor = Light.m_RGBColor.normalize();
 	auto l_relativeLuminanceRatio = (0.2126f * l_RGBColor.x + 0.7152f * l_RGBColor.y + 0.0722f * l_RGBColor.z);
-
-	// Luminance (nt) is illuminance (lx) per solid angle, while luminous intensity (cd) is luminous flux (lm) per solid angle, thus for one area unit (m^2), the ratio of nt/lx is same as cd/lm
-	// For omni-isotropic light, after the integration per solid angle, the luminous flux (lm) is 4 pi times the luminous intensity (cd)
-	auto l_weightedLuminousFlux = rhs->m_LuminousFlux * l_relativeLuminanceRatio;
-
-	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
-	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
-	// 3. apply inverse square attenuation law with a low threshold of eye sensitivity at 0.03 lx, in ideal situation, lx could convert back to lm with respect to a sphere surface area 4 * PI * r^2
-	rhs->m_Shape.x = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+	auto l_weightedLuminousFlux = Light.m_LuminousFlux * l_relativeLuminanceRatio;
+	Light.m_Shape.x = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 }
 
 bool LightSystem::Setup(ISystemConfig* systemConfig)
 {
 	m_Impl = new LightSystemImpl();
-	g_Engine->Get<ComponentManager>()->RegisterType<LightComponent>(m_Impl->m_MaxComponentCount, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<LightComponent>(m_Impl->m_MaxComponentCount, this); // TODO Phase2-migrate: bridge — remove when all consumers use EntityRegistry
 	m_Impl->m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -143,18 +143,23 @@ bool LightSystem::Initialize()
 bool LightSystem::Update()
 {
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-	auto l_components = g_Engine->Get<ComponentManager>()->GetAll<LightComponent>();
-	for (auto i : l_components)
+	auto& l_Storage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
+	auto& l_Lights = l_Storage.All();
+	const auto& l_Owners = l_Storage.AllOwners();
+
+	for (size_t i = 0; i < l_Lights.size(); i++)
 	{
-		m_Impl->UpdateColorTemperature(i);
-		switch (i->m_LightType)
+		LightComponent& l_Light = l_Lights[i];
+		EntityID l_EntityID = l_Owners[i];
+
+		m_Impl->UpdateColorTemperature(l_Light);
+		switch (l_Light.m_LightType)
 		{
 		case LightType::Directional:
-			// @TODO: Better to limit the directional light count
-			m_Impl->UpdateCSMData(i);
+			m_Impl->UpdateCSMData(l_EntityID, l_Light);
 			break;
 		case LightType::Point:
-			m_Impl->UpdateAttenuationRadius(i);
+			m_Impl->UpdateAttenuationRadius(l_Light);
 			break;
 		case LightType::Spot:
 			break;
@@ -175,6 +180,11 @@ bool LightSystem::Update()
 
 bool LightSystem::Terminate()
 {
+	m_Impl->m_LitRegionWorldSpace.clear();
+	m_Impl->m_LitRegionLightSpace.clear();
+	m_Impl->m_ViewMatrices.clear();
+	m_Impl->m_ProjectionMatrices.clear();
+
 	delete m_Impl;
 	return true;
 }
@@ -182,4 +192,24 @@ bool LightSystem::Terminate()
 ObjectStatus LightSystem::GetStatus()
 {
 	return m_Impl->m_ObjectStatus;
+}
+
+const std::unordered_map<EntityID, std::vector<Math::AABB>>& LightSystem::GetLitRegionWorldSpace() const
+{
+	return m_Impl->m_LitRegionWorldSpace;
+}
+
+const std::unordered_map<EntityID, std::vector<Math::AABB>>& LightSystem::GetLitRegionLightSpace() const
+{
+	return m_Impl->m_LitRegionLightSpace;
+}
+
+const std::unordered_map<EntityID, std::vector<Math::Mat4>>& LightSystem::GetViewMatrices() const
+{
+	return m_Impl->m_ViewMatrices;
+}
+
+const std::unordered_map<EntityID, std::vector<Math::Mat4>>& LightSystem::GetProjectionMatrices() const
+{
+	return m_Impl->m_ProjectionMatrices;
 }
