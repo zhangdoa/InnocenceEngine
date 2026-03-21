@@ -1,6 +1,9 @@
 #include "../Common/TestRunner.h"
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/EntityRegistry.h"
+#include "../../Engine/Component/TransformComponent.h"
+#include "../../Engine/Component/VisibilityComponent.h"
+#include "../../Engine/Component/RigidBodyComponent.h"
 
 using namespace Inno;
 
@@ -140,6 +143,42 @@ void TestEntityRegistryFreeListRecycle()
 	TestRunner::EndTest(l_TestPassed);
 }
 
+static void TestNewComponentTypes()
+{
+	auto* l_Registry = g_Engine->Get<EntityRegistry>();
+
+	auto l_Entity = l_Registry->Spawn(ObjectLifespan::Frame, "component_type_test");
+
+	// TransformComponent
+	auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
+	l_Transform.m_LocalPos = Vec3(1.f, 2.f, 3.f);
+	auto* l_TPtr = l_Registry->Get<TransformComponent>(l_Entity);
+	assert(l_TPtr != nullptr && "TransformComponent should be retrievable");
+	assert(l_TPtr->m_LocalPos.x == 1.f && "TransformComponent position x should be 1");
+	assert(l_TPtr->m_Dirty == true && "TransformComponent should start dirty");
+
+	// VisibilityComponent
+	l_Registry->Emplace<VisibilityComponent>(l_Entity);
+	auto* l_Vis = l_Registry->Get<VisibilityComponent>(l_Entity);
+	assert(l_Vis != nullptr && "VisibilityComponent should be retrievable");
+	assert(l_Vis->m_Visible == true && "VisibilityComponent should default to visible");
+
+	// RigidBodyComponent
+	l_Registry->Emplace<RigidBodyComponent>(l_Entity);
+	assert(l_Registry->Has<RigidBodyComponent>(l_Entity) && "Entity should have RigidBodyComponent");
+
+	// All three coexist
+	assert(l_Registry->Has<TransformComponent>(l_Entity));
+	assert(l_Registry->Has<VisibilityComponent>(l_Entity));
+	assert(l_Registry->Has<RigidBodyComponent>(l_Entity));
+
+	// CleanUp removes Frame-lifespan entities and their components
+	l_Registry->CleanUp(ObjectLifespan::Frame);
+	assert(!l_Registry->IsValid(l_Entity) && "Entity should be invalid after CleanUp");
+
+	Log(Success, "EntityRegistry new component types -- PASSED");
+}
+
 void RunEntityRegistryUnitTests()
 {
 	TestRunner::StartTestSuite("EntityRegistry Unit Tests");
@@ -149,6 +188,7 @@ void RunEntityRegistryUnitTests()
 	TestEntityRegistryComponentHasRemove();
 	TestEntityRegistryCleanUp();
 	TestEntityRegistryFreeListRecycle();
+	TestNewComponentTypes();
 
 	TestRunner::EndTestSuite();
 }
