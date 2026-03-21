@@ -1,6 +1,3 @@
-// TODO Phase2-migrate: TextureComponent still inherits from Component/GPUResourceComponent,
-// so it cannot be emplaced in EntityRegistry yet. Keep using ComponentManager/EntityManager
-// until TextureComponent is stripped to a plain struct.
 #include "AssimpTextureProcessor.h"
 
 #include "../../Common/LogService.h"
@@ -9,7 +6,7 @@
 #include "../../Common/IOService.h"
 #include "../../Services/AssetService.h"
 #include "../../Services/ComponentManager.h"
-#include "../../Services/EntityManager.h"
+#include "../../Services/EntityRegistry.h"
 #include "../../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../../Engine.h"
 
@@ -26,9 +23,9 @@ TextureComponent* AssimpTextureProcessor::CreateTextureComponent(const char* Fil
 	}
 
 	auto l_Name = std::string(BaseName) + "." + std::string(FileName) + "/";
-	auto l_TempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, l_Name.c_str());
+	auto l_TempEntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Frame, l_Name.c_str());
 
-	auto l_TextureComponent = g_Engine->Get<ComponentManager>()->Spawn<TextureComponent>(l_TempEntity, true, ObjectLifespan::Scene);
+	auto l_TextureComponent = g_Engine->Get<ComponentManager>()->Spawn<TextureComponent>(l_TempEntityID, true, ObjectLifespan::Scene);
 
 	l_TextureComponent->m_TextureDesc.Sampler = Sampler;
 	l_TextureComponent->m_TextureDesc.Usage = Usage;
@@ -38,13 +35,13 @@ TextureComponent* AssimpTextureProcessor::CreateTextureComponent(const char* Fil
 	if (!l_TextureData)
 	{
 		Log(Error, "Failed to load texture data: ", FileName);
-		g_Engine->Get<EntityManager>()->Destroy(l_TempEntity);
+		g_Engine->Get<EntityRegistry>()->Destroy(l_TempEntityID);
 		return nullptr;
 	}
 
 	bool l_Result = AssetService::Save(*l_TextureComponent, l_TextureData);
 
-	g_Engine->Get<EntityManager>()->Destroy(l_TempEntity);
+	g_Engine->Get<EntityRegistry>()->Destroy(l_TempEntityID);
 
 	if (l_Result)
 	{

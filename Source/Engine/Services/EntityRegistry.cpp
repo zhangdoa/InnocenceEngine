@@ -109,6 +109,24 @@ EntityID EntityRegistry::FindByName(const char* Name) const
     return INVALID_ENTITY;
 }
 
+std::vector<EntityID> EntityRegistry::GetAllEntityIDs(ObjectLifespan Lifespan) const
+{
+    std::vector<EntityID> l_Result;
+    for (EntityID l_Id = 1; l_Id < m_NextID; ++l_Id)
+    {
+        if (m_Valid[l_Id] && m_Lifespans[l_Id] == Lifespan)
+            l_Result.push_back(l_Id);
+    }
+    return l_Result;
+}
+
+ObjectLifespan EntityRegistry::GetLifespan(EntityID Entity) const
+{
+    if (!IsValid(Entity))
+        return ObjectLifespan::Invalid;
+    return m_Lifespans[Entity];
+}
+
 void EntityRegistry::CleanUp(ObjectLifespan Lifespan)
 {
     // Step 1: Remove all components for matching entities (before freeing slots)

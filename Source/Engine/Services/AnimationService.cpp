@@ -46,7 +46,6 @@ void AnimationServiceImpl::initializeAnimation(AnimationComponent* rhs)
 	std::string l_name = rhs->m_InstanceName.c_str();
 
 	auto l_keyData = g_Engine->getRenderingServer()->AddGPUBufferComponent((l_name + "_KeyData").c_str());
-	l_keyData->m_Owner = rhs->m_Owner;
 	l_keyData->m_ElementCount = rhs->m_KeyData.capacity();
 	l_keyData->m_ElementSize = sizeof(KeyData);
 	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;

@@ -1,12 +1,14 @@
 #pragma once
 #include "../Common/IOService.h"
 #include "../Common/Object.h"
+#include "../Common/EntityID.h"
 #include "../Common/ObjectPool.h"
 #include "../Common/ThreadSafeVector.h"
 #include "../Common/ThreadSafeUnorderedMap.h"
 #include "../Common/Randomizer.h"
 #include "../Interface/ISystem.h"
 #include "../Services/AssetService.h"
+#include "../Services/EntityRegistry.h"
 #include "../Engine.h"
 
 namespace Inno
@@ -106,11 +108,11 @@ namespace Inno
 			return true;
 		}
 
-		T* Spawn(Entity* owner, bool serializable, ObjectLifespan objectLifespan)
+		T* Spawn(EntityID owner, bool serializable, ObjectLifespan objectLifespan)
 		{
-			if (!owner)
+			if (owner == INVALID_ENTITY)
 			{
-				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), " by Entity: nullptr!");
+				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), " by invalid EntityID!");
 				return nullptr;
 			}
 
@@ -129,7 +131,8 @@ namespace Inno
 				l_Component->m_ObjectLifespan = objectLifespan;
 				l_Component->m_Owner = owner;
 
-				l_Component->m_InstanceName = ObjectName((std::string(owner->m_InstanceName.c_str())
+				auto l_OwnerName = g_Engine->Get<EntityRegistry>()->GetName(owner);
+				l_Component->m_InstanceName = ObjectName((std::string(l_OwnerName ? l_OwnerName : "")
 					+ "." + std::string(T::GetTypeName()) + "/").c_str());
 
 				m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
@@ -191,11 +194,11 @@ namespace Inno
 			m_ComponentPointers.eraseByValue(component);
 		}
 
-		T* Find(Entity* owner)
+		T* Find(EntityID owner)
 		{
-			if (!owner)
+			if (owner == INVALID_ENTITY)
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by Entity: nullptr!");
+				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by invalid EntityID!");
 				return nullptr;
 			}
 
@@ -206,7 +209,7 @@ namespace Inno
 			}
 			else
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by Entity: ", owner->m_InstanceName.c_str(), "!");
+				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by EntityID: ", std::to_string(owner).c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -241,7 +244,7 @@ namespace Inno
 			return m_ComponentPointers.getRawData();
 		}
 
-		uint64_t Load(const char* componentName, Entity* entity)
+		uint64_t Load(const char* componentName, EntityID entity)
 		{
 			uint64_t l_result = 0;
 			std::string l_filePath = AssetService::GetAssetFilePath(componentName);
@@ -250,7 +253,7 @@ namespace Inno
 
 			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
-			auto l_componentPtr = Spawn(entity, true, entity->m_ObjectLifespan);
+			auto l_componentPtr = Spawn(entity, true, g_Engine->Get<EntityRegistry>()->GetLifespan(entity));
 			if (!l_componentPtr)
 				return 0;
 
@@ -315,13 +318,13 @@ namespace Inno
 
 		TObjectPool<T>* m_ComponentPool;
 		ThreadSafeVector<T*> m_ComponentPointers;
-		ThreadSafeUnorderedMap<Entity*, T*> m_ComponentLUT;
+		ThreadSafeUnorderedMap<EntityID, T*> m_ComponentLUT;
 		std::unordered_map<uint64_t, T*> m_ComponentLUTByUUID;
 		struct PlainStructInfo
 	{
 		uint64_t m_UUID;
 		ObjectLifespan m_Lifespan;
-		Entity* m_Owner;
+		EntityID m_Owner;
 	};
 	std::unordered_map<T*, PlainStructInfo> m_ComponentUUIDs;
 		std::unordered_map<std::string, uint64_t> m_LoadedComponents;
@@ -383,7 +386,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		T* Spawn(Entity* owner, bool serializable, ObjectLifespan objectLifespan)
+		T* Spawn(EntityID owner, bool serializable, ObjectLifespan objectLifespan)
 		{
 			return GetComponentFactory<T>()->Spawn(owner, serializable, objectLifespan);
 		}
@@ -395,7 +398,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		T* Find(Entity* entity)
+		T* Find(EntityID entity)
 		{
 			return GetComponentFactory<T>()->Find(entity);
 		}
@@ -430,7 +433,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		uint64_t Load(const char* componentName, Entity* entity)
+		uint64_t Load(const char* componentName, EntityID entity)
 		{
 			return GetComponentFactory<T>()->Load(componentName, entity);
 		}

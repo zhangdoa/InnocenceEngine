@@ -1,18 +1,8 @@
 #include "JSONWrapper.h"
-#include "../../Services/EntityManager.h"
 #include "../../Services/ComponentManager.h"
 
 #include "../../Engine.h"
 using namespace Inno;
-
-void JSONWrapper::to_json(json& j, const Entity& p)
-{
-	j = json
-	{
-		{"UUID", p.m_UUID},
-		{"Name", p.m_InstanceName.c_str()},
-	};
-}
 
 void JSONWrapper::to_json(json& j, const Vec4& p)
 {

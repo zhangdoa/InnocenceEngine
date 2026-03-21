@@ -27,6 +27,8 @@ namespace Inno
         bool        IsValid(EntityID Entity) const;
         const char* GetName(EntityID Entity) const;
         EntityID    FindByName(const char* Name) const;  // linear scan; editor/load only
+        std::vector<EntityID> GetAllEntityIDs(ObjectLifespan Lifespan) const;
+        ObjectLifespan GetLifespan(EntityID Entity) const;
 
         // Component operations (inline templates — no engine API calls here)
         template<typename T>

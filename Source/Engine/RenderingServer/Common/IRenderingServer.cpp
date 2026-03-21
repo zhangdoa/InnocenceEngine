@@ -13,8 +13,7 @@
 #include "../../Services/GUISystem.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/EntityRegistry.h"
-#include "../../Services/EntityManager.h" // TODO Phase2-migrate: Task 14 — keep until GPU-resource components use EntityRegistry
-#include "../../Services/ComponentManager.h" // TODO Phase2-migrate: Task 14 — keep until GPU-resource components are stripped to plain structs
+#include "../../Services/ComponentManager.h"
 #include "../../Component/TextureComponent.h"
 #include "../../Component/MeshComponent.h"
 #include "../../Component/MaterialComponent.h"
@@ -269,9 +268,7 @@ T* AddComponent(const char* name)
 		return nullptr;
 	}
 
-	// TODO Phase2-migrate: Task 14 — use EntityRegistry::Emplace once GPU-resource components are stripped to plain structs
-	// (TComponentStorage uses std::vector which doesn't provide stable pointers; components with Component base must use object-pool storage)
-	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str());
+	auto l_parentEntity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, l_name.c_str());
 	auto l_component = g_Engine->Get<ComponentManager>()->Spawn<T>(l_parentEntity, false, ObjectLifespan::Persistence);
 	if (!l_component)
 	{

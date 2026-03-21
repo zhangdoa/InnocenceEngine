@@ -7,47 +7,11 @@
 #include "../../Services/ComponentManager.h"
 #include "../../Services/AnimationService.h"
 #include "../../Services/AssetService.h"
-// TODO Phase2-migrate: EntityManager.h still needed for SaveScene entity enumeration
-#include "../../Services/EntityManager.h"
 #include "../../Services/EntityRegistry.h"
 
 #include "../../Engine.h"
 using namespace Inno;
 
-namespace Inno
-{
-	namespace JSONWrapper
-	{
-		// TODO Phase2-migrate: SaveComponentAndAddReference uses m_Owner->m_UUID (Entity*) — remove when Entity is deleted
-		template<typename T>
-		inline bool SaveComponentAndAddReference(json& topLevel, T* component)
-		{
-			std::string componentFileName = std::string(component->m_InstanceName.c_str());
-			AssetService::Save(*component);
-
-			auto l_result = std::find_if(
-				topLevel["Entities"].begin(),
-				topLevel["Entities"].end(),
-				[&](auto val) -> bool {
-					return val["UUID"] == component->m_Owner->m_UUID;
-				});
-
-			if (l_result != topLevel["Entities"].end())
-			{
-				json componentRef;
-				componentRef["Type"] = T::GetTypeID();
-				componentRef["Name"] = componentFileName;
-				l_result.value()["Components"].emplace_back(componentRef);
-				return true;
-			}
-			else
-			{
-				Log(Warning, "Entity UUID ", component->m_Owner->m_UUID, " is invalid.");
-				return false;
-			}
-		}
-	}
-}
 
 bool JSONWrapper::Load(const char* fileName, json& data)
 {
@@ -87,19 +51,15 @@ bool JSONWrapper::SaveScene(const char* fileName)
 	
 	topLevel["Name"] = sceneName;
 
-	// TODO Phase2-migrate: SaveScene still uses EntityManager::GetEntities — replace with EntityRegistry iteration
-	for (auto i : g_Engine->Get<EntityManager>()->GetEntities())
+	auto l_EntityIDs = g_Engine->Get<EntityRegistry>()->GetAllEntityIDs(ObjectLifespan::Scene);
+	for (auto l_EntityID : l_EntityIDs)
 	{
-		if (i->m_Serializable)
-		{
-			json entityJson;
-			to_json(entityJson, *i);
-			entityJson["Components"] = json::array();
-			topLevel["Entities"].emplace_back(entityJson);
-		}
+		json entityJson;
+		entityJson["ID"] = l_EntityID;
+		entityJson["Name"] = g_Engine->Get<EntityRegistry>()->GetName(l_EntityID);
+		entityJson["Components"] = json::array();
+		topLevel["Entities"].emplace_back(entityJson);
 	}
-
-	// TODO Phase2-migrate: LightComponent/CameraComponent are plain structs — serialize via EntityRegistry when Entity migration is complete
 
 	Save(fileName, topLevel);
 	Log(Success, "Scene ", fileName, " has been saved.");
@@ -119,7 +79,6 @@ bool JSONWrapper::LoadScene(const char* fileName)
 		std::string l_EntityName = i["Name"];
 		l_EntityName += "/";
 
-		auto l_Entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, l_EntityName.c_str());
 		auto l_EntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
 		for (auto k : i["Components"])

@@ -3,7 +3,7 @@
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
 #include "../Services/ComponentManager.h"
-#include "../Services/EntityManager.h"
+#include "../Services/EntityRegistry.h"
 #include "../Common/IOService.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../Engine.h"
@@ -74,12 +74,11 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto entityManager = g_Engine->Get<EntityManager>();
             auto componentManager = g_Engine->Get<ComponentManager>();
             auto ioService = g_Engine->Get<IOService>();
 
             auto loadOrCreateTexture = [&](const char* name, const char* texturePath, TextureComponent*& texturePtr) -> bool {
-                auto entity = entityManager->Spawn(false, ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
+                auto entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
                 auto l_componentName = std::string(name) + "." + TextureComponent::GetTypeName();
 
                 auto loadedTexture = componentManager->Load<TextureComponent>(l_componentName.c_str(), entity);
@@ -108,7 +107,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             if (!loadOrCreateTexture("BasicRoughnessTexture", "../Res/Textures/basic_roughness.png", m_basicRoughnessTexture)) return false;
             if (!loadOrCreateTexture("BasicAOTexture", "../Res/Textures/basic_ao.png", m_basicAOTexture)) return false;
 
-            auto defaultMaterialEntity = entityManager->Spawn(false, ObjectLifespan::Persistence, "DefaultMaterial/");
+            auto defaultMaterialEntity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, "DefaultMaterial/");
 
             auto loadedMaterial = componentManager->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", defaultMaterialEntity);
             if (loadedMaterial)
@@ -132,7 +131,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             }
 
             auto loadOrCreateMesh = [&](const char* name, MeshShape shape, MeshComponent*& meshPtr) {
-                auto entity = entityManager->Spawn(false, ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
+                auto entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
 
                 // TODO Phase2-migrate: auto l_componentName = std::string(name) + "." + MeshComponent::GetTypeName();
                 auto l_componentName = std::string(name) + ".MeshComponent";

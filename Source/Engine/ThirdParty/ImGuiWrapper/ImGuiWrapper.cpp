@@ -33,6 +33,7 @@
 #include "../../Common/TaskScheduler.h"
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/SceneService.h"
+#include "../../Services/EntityRegistry.h"
 #include "../../Services/AssetService.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../RayTracer/RayTracer.h"
@@ -317,11 +318,12 @@ void ImGuiWrapperNS::showWorldExplorer()
 	{
 		auto l_sceneHierarchyMap = g_Engine->Get<SceneService>()->getSceneHierarchyMap();
 
+		auto l_registry = g_Engine->Get<EntityRegistry>();
 		for (auto& i : l_sceneHierarchyMap)
 		{
-			if (i.first->m_Serializable)
+			if (l_registry->IsValid(i.first))
 			{
-				if (ImGui::TreeNode(i.first->m_InstanceName.c_str()))
+				if (ImGui::TreeNode(l_registry->GetName(i.first)))
 				{
 					for (auto& j : i.second)
 					{

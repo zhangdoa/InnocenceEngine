@@ -1,11 +1,12 @@
 #pragma once
 #include "../Interface/ISystem.h"
+#include "../Common/EntityID.h"
 
 namespace Inno
 {
 	using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 	using ComponentPair = std::pair<uint32_t, Component*>;
-	using SceneHierarchyMap = std::unordered_map<Entity*, std::set<ComponentPair>>;
+	using SceneHierarchyMap = std::unordered_map<EntityID, std::set<ComponentPair>>;
 	class SceneService : public ISystem
 	{
 	public:

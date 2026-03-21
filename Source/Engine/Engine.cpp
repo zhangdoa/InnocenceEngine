@@ -5,7 +5,6 @@
 #include "Common/TaskScheduler.h"
 #include "Common/IOService.h"
 #include "Common/Task.h"
-#include "Services/EntityManager.h"
 #include "Services/ComponentManager.h"
 #include "Services/EntityRegistry.h"
 #include "Services/LightSystem.h"
@@ -422,7 +421,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 #endif
 
 	// Additional Systems (ISystem-based, with dependency resolution)
-	Get<EntityManager>();
 	Get<ComponentManager>();
 	Get<EntityRegistry>();
 	Get<AssetService>();
@@ -475,7 +473,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		return false;
 	}
 
-	SystemSetup(EntityManager);
 	SystemSetup(EntityRegistry);
 
 	SystemSetup(AssetService);
@@ -509,7 +506,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			Get<CameraSystem>()->Update();
 			Get<LightSystem>()->Update();
 
-			SystemUpdate(EntityManager);
 			SystemUpdate(EntityRegistry);
 
 			// Culling
@@ -621,7 +617,6 @@ bool Engine::Initialize()
 	SystemInit(HIDService);
 	m_pImpl->m_WindowSystem->Initialize();
 
-	SystemInit(EntityManager);
 	SystemInit(EntityRegistry);
 
 	SystemInit(SceneService);
@@ -756,12 +751,6 @@ bool Engine::Terminate()
 	SystemTerm(SceneService);
 
 	SystemTerm(EntityRegistry);
-
-	if (!Get<EntityManager>()->Terminate())
-	{
-		Log(Error, "EntityManager can't be terminated!");
-		return false;
-	}
 
 	if (!m_pImpl->m_WindowSystem->Terminate())
 	{

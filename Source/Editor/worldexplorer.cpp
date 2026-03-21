@@ -49,17 +49,16 @@ void WorldExplorer::buildTree()
 
     auto l_sceneHierarchyMap = g_Engine->Get<SceneService>()->getSceneHierarchyMap();
 
+    auto l_registry = g_Engine->Get<EntityRegistry>();
     for (auto& i : l_sceneHierarchyMap)
     {
-        if (i.first->m_Serializable)
+        if (l_registry->IsValid(i.first))
         {
             QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
-            l_entityItem->setText(0, i.first->m_InstanceName.c_str());
-            // Data slot 0 is ComponentType (-1 as the entity), slot 1 is the EntityID as uint32_t
-            auto l_entityID = g_Engine->Get<EntityRegistry>()->FindByName(i.first->m_InstanceName.c_str());
+            l_entityItem->setText(0, l_registry->GetName(i.first));
             l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
-            l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((uint32_t)l_entityID));
+            l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((uint32_t)i.first));
 
             addChild(m_rootItem, l_entityItem);
 

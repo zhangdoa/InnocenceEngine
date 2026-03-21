@@ -1,6 +1,7 @@
 #pragma once
 #include "FixedSizeString.h"
 #include "Config.h"
+#include "EntityID.h"
 
 namespace Inno
 {
@@ -55,6 +56,6 @@ namespace Inno
 		Component() = default;
 		~Component() = default;
 
-		Entity* m_Owner = 0;
+		EntityID m_Owner = INVALID_ENTITY;
 	};
 }

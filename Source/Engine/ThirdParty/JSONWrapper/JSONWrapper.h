@@ -16,8 +16,6 @@ namespace Inno
 		void to_json(json& j, const Mat4& p);
 		void to_json(json& j, const Transform& p);
 
-		void to_json(json& j, const Entity& p);
-
 		void to_json(json& j, const MeshComponent& p);
 		void to_json(json& j, const MaterialComponent& p);
 		void to_json(json& j, const TextureComponent& p);
@@ -29,7 +27,6 @@ namespace Inno
 		void from_json(const json& j, Mat4& p);
 		void from_json(const json& j, Transform& p);
 
-		void from_json(const json& j, Entity& p);
 		void from_json(const json& j, RenderPassComponent& p);
 
 		bool SaveScene(const char* fileName);

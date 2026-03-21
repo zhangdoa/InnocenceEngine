@@ -1,6 +1,6 @@
 #include "../../Engine/Services/EntityRegistry.h"
-#include "../../Engine/Services/EntityManager.h"
 #include "../../Engine/Services/ComponentManager.h"
+#include "../../Engine/Services/CameraSystem.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/AssetService.h"
@@ -483,7 +483,7 @@ namespace Inno
 		auto l_w = 1.0f;
 		Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
 
-		auto l_activeCamera = static_cast<ICameraSystem*>(g_Engine->Get<ComponentManager>()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
+		auto l_activeCamera = g_Engine->Get<CameraSystem>()->GetActiveCamera();
 		if (l_activeCamera == nullptr)
 		{
 			return Vec4();
