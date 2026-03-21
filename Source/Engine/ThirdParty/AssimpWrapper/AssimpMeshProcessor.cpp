@@ -7,41 +7,36 @@
 #include "../../Common/MathHelper.h"
 #include "../../Common/Randomizer.h"
 #include "../../Services/AssetService.h"
-#include "../../Services/ComponentManager.h"
-#include "../../Services/EntityManager.h"
+
 #include "../../Engine.h"
 
 using namespace Inno;
 
-MeshComponent* AssimpMeshProcessor::CreateMeshComponent(const aiScene* scene, const char* baseName, uint32_t meshIndex)
+bool AssimpMeshProcessor::CreateMeshComponent(const aiScene* Scene, const char* BaseName, uint32_t MeshIndex, MeshComponent& OutMesh)
 {
-	auto l_mesh = scene->mMeshes[meshIndex];
+	auto l_Mesh = Scene->mMeshes[MeshIndex];
 
-	Log(Verbose, "Creating MeshComponent for: ", l_mesh->mName.C_Str());
+	Log(Verbose, "Creating MeshComponent for: ", l_Mesh->mName.C_Str());
 
-	std::vector<Vertex> l_vertices;
-	std::vector<Index> l_indices;
+	std::vector<Vertex> l_Vertices;
+	std::vector<Index> l_Indices;
 
-	size_t l_indicesCount = ConvertMeshData(l_mesh, l_vertices, l_indices);
+	ConvertMeshData(l_Mesh, l_Vertices, l_Indices);
 
-	auto l_name = std::string(baseName) + "." + std::to_string(meshIndex) + "/";
-	auto l_tempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, l_name.c_str());
+	OutMesh = {};
+	bool l_Result = AssetService::Save(OutMesh, l_Vertices, l_Indices);
 
-	auto l_meshComponent = g_Engine->Get<ComponentManager>()->Spawn<MeshComponent>(l_tempEntity, true, ObjectLifespan::Frame);
-	bool result = AssetService::Save(*l_meshComponent, l_vertices, l_indices);
-
-	g_Engine->Get<EntityManager>()->Destroy(l_tempEntity);
-
-	if (result)
+	auto l_Name = std::string(BaseName) + "." + std::to_string(MeshIndex) + "/";
+	if (l_Result)
 	{
-		Log(Success, "Created and saved MeshComponent: ", l_name.c_str());
-		return l_meshComponent;
+		Log(Success, "Created and saved MeshComponent: ", l_Name.c_str());
 	}
 	else
 	{
-		Log(Error, "Failed to save MeshComponent: ", l_name.c_str());
-		return nullptr;
+		Log(Error, "Failed to save MeshComponent: ", l_Name.c_str());
 	}
+
+	return l_Result;
 }
 
 size_t AssimpMeshProcessor::ConvertMeshData(const aiMesh* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)

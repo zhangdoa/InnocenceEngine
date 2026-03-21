@@ -14,29 +14,27 @@
 #include "../../Common/MathHelper.h"
 #include "../../Common/Randomizer.h"
 #include "../../Services/AssetService.h"
-#include "../../Services/ComponentManager.h"
-#include "../../Services/EntityManager.h"
 #include "../../Engine.h"
 
 using namespace Inno;
 
-bool AssimpImporter::Import(const char* fileName)
+bool AssimpImporter::Import(const char* FileName)
 {
-	auto l_exportFileName = g_Engine->Get<IOService>()->getFileName(fileName);
-	if (!g_Engine->Get<IOService>()->isFileExist(fileName))
+	auto l_ExportFileName = g_Engine->Get<IOService>()->getFileName(FileName);
+	if (!g_Engine->Get<IOService>()->isFileExist(FileName))
 	{
-		Log(Error, "", fileName, " doesn't exist!");
+		Log(Error, "", FileName, " doesn't exist!");
 		return false;
 	}
 
-	Log(Verbose, "Converting ", fileName, "...");
+	Log(Verbose, "Converting ", FileName, "...");
 #if defined INNO_DEBUG
-	std::string l_logFilePath = "AssimpLog_" + l_exportFileName + ".txt";
-	Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
+	std::string l_LogFilePath = "AssimpLog_" + l_ExportFileName + ".txt";
+	Assimp::DefaultLogger::create(l_LogFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
-	
-	Assimp::Importer l_importer;
-	const aiScene* l_scene = l_importer.ReadFile(fileName,
+
+	Assimp::Importer l_Importer;
+	const aiScene* l_Scene = l_Importer.ReadFile(FileName,
 		aiProcess_Triangulate
 		| aiProcess_GenSmoothNormals
 		| aiProcess_CalcTangentSpace
@@ -48,85 +46,64 @@ bool AssimpImporter::Import(const char* fileName)
 		| aiProcess_OptimizeGraph
 	);
 
-	if (!l_scene)
+	if (!l_Scene)
 	{
-		Log(Error, "Can't load file ", fileName, "!");
+		Log(Error, "Can't load file ", FileName, "!");
 		return false;
 	}
 
-	if (l_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_scene->mRootNode)
+	if (l_Scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_Scene->mRootNode)
 	{
-		Log(Error, "", l_importer.GetErrorString());
+		Log(Error, "", l_Importer.GetErrorString());
 		return false;
 	}
 
-	nlohmann::json j;
-	ProcessAssimpScene(j, l_scene, l_exportFileName.c_str());
+	nlohmann::json l_Json;
+	ProcessAssimpScene(l_Json, l_Scene, l_ExportFileName.c_str());
 
-	Log(Success, fileName, " has been imported.");
+	Log(Success, FileName, " has been imported.");
 	return true;
 }
 
-void AssimpImporter::ProcessAssimpScene(nlohmann::json& j, const aiScene* scene, const char* exportName)
+void AssimpImporter::ProcessAssimpScene(nlohmann::json& J, const aiScene* Scene, const char* ExportName)
 {
-	Log(Verbose, "Creating model component for: ", exportName);
+	Log(Verbose, "Processing scene: ", ExportName);
 
-	auto l_tempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, exportName);
+	ProcessAssimpNode(Scene->mRootNode, Scene, ExportName);
 
-	auto l_modelComponent = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(l_tempEntity, true, ObjectLifespan::Frame);
-	l_modelComponent->m_UUID = Randomizer::GenerateUUID();
-	l_modelComponent->m_ObjectStatus = ObjectStatus::Created;
-
-	ProcessAssimpNode(scene->mRootNode, scene, exportName, l_modelComponent);
-
-	AssetService::Save(*l_modelComponent);
-
-	g_Engine->Get<EntityManager>()->Destroy(l_tempEntity);
-
-	Log(Success, "Model conversion complete: ", exportName);
+	Log(Success, "Model conversion complete: ", ExportName);
 }
 
-void AssimpImporter::ProcessAssimpNode(const aiNode* node, const aiScene* scene, const char* baseName, ModelComponent* modelComponent)
+// AssimpWrapper is an offline asset converter (Baker tool).
+// Components are populated from Assimp data and saved to disk by the processors.
+// EntityRegistry entity creation happens at runtime load time in AssetService (Task 10).
+void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene, const char* BaseName)
 {
-	if (node->mNumMeshes)
+	if (Node->mNumMeshes)
 	{
-		for (uint32_t i = 0; i < node->mNumMeshes; i++)
+		for (uint32_t i = 0; i < Node->mNumMeshes; i++)
 		{
-			auto l_meshIndex = node->mMeshes[i];
-			auto l_mesh = scene->mMeshes[l_meshIndex];
+			auto l_MeshIndex = Node->mMeshes[i];
+			auto l_AiMesh = Scene->mMeshes[l_MeshIndex];
 
-			Log(Verbose, "Processing mesh: ", l_mesh->mName.C_Str());
+			Log(Verbose, "Processing mesh: ", l_AiMesh->mName.C_Str());
 
-			auto l_name = std::string(baseName) + "." + std::to_string(l_meshIndex) + "/";
-			auto l_tempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, l_name.c_str());
+			MeshComponent l_Mesh = {};
+			AssimpMeshProcessor::CreateMeshComponent(Scene, BaseName, l_MeshIndex, l_Mesh);
 
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(l_tempEntity, true, ObjectLifespan::Frame);
-
-			auto l_meshComponent = AssimpMeshProcessor::CreateMeshComponent(scene, baseName, l_meshIndex);
-			if (l_meshComponent)
-				// TODO Phase2-migrate: l_drawCallComponent->m_MeshComponent = l_meshComponent->m_UUID;
-				(void)l_meshComponent;
-			
-			if (l_mesh->mMaterialIndex < scene->mNumMaterials)
+			if (l_AiMesh->mMaterialIndex < Scene->mNumMaterials)
 			{
-				auto l_materialComponent = AssimpMaterialProcessor::CreateMaterialComponent(scene->mMaterials[l_mesh->mMaterialIndex], baseName);
-				// TODO Phase2-migrate: if (l_materialComponent) l_drawCallComponent->m_MaterialComponent = l_materialComponent->m_UUID;
-				(void)l_materialComponent;
+				MaterialComponent l_Material = {};
+				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_AiMesh->mMaterialIndex], BaseName, l_Material);
 			}
-
-			AssetService::Save(*l_drawCallComponent);
-			
-			g_Engine->Get<EntityManager>()->Destroy(l_tempEntity);
-			
-			modelComponent->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
 		}
 	}
 
-	if (node->mNumChildren)
+	if (Node->mNumChildren)
 	{
-		for (uint32_t i = 0; i < node->mNumChildren; i++)
+		for (uint32_t i = 0; i < Node->mNumChildren; i++)
 		{
-			ProcessAssimpNode(node->mChildren[i], scene, baseName, modelComponent);
+			ProcessAssimpNode(Node->mChildren[i], Scene, BaseName);
 		}
 	}
 }

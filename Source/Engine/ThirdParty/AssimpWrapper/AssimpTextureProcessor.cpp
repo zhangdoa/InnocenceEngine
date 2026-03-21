@@ -1,3 +1,6 @@
+// TODO Phase2-migrate: TextureComponent still inherits from Component/GPUResourceComponent,
+// so it cannot be emplaced in EntityRegistry yet. Keep using ComponentManager/EntityManager
+// until TextureComponent is stripped to a plain struct.
 #include "AssimpTextureProcessor.h"
 
 #include "../../Common/LogService.h"
@@ -12,45 +15,45 @@
 
 using namespace Inno;
 
-TextureComponent* AssimpTextureProcessor::CreateTextureComponent(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex, const char* baseName)
+TextureComponent* AssimpTextureProcessor::CreateTextureComponent(const char* FileName, TextureSampler Sampler, TextureUsage Usage, bool IsSRGB, uint32_t TextureSlotIndex, const char* BaseName)
 {
-	Log(Verbose, "Creating TextureComponent for: ", fileName);
-	
-	if (!g_Engine->Get<IOService>()->isFileExist(fileName))
+	Log(Verbose, "Creating TextureComponent for: ", FileName);
+
+	if (!g_Engine->Get<IOService>()->isFileExist(FileName))
 	{
-		Log(Warning, "Texture file not found: ", fileName);
-		return nullptr;
-	}
-	
-	auto l_name = std::string(baseName) + "." + std::string(fileName) + "/";
-	auto l_tempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, l_name.c_str());
-
-	auto l_textureComponent = g_Engine->Get<ComponentManager>()->Spawn<TextureComponent>(l_tempEntity, true, ObjectLifespan::Scene);
-
-	l_textureComponent->m_TextureDesc.Sampler = sampler;
-	l_textureComponent->m_TextureDesc.Usage = usage;
-	l_textureComponent->m_TextureDesc.IsSRGB = IsSRGB;
-
-	void* l_textureData = STBWrapper::Load(fileName, *l_textureComponent);	
-	if (!l_textureData)
-	{
-		Log(Error, "Failed to load texture data: ", fileName);
-		g_Engine->Get<EntityManager>()->Destroy(l_tempEntity);
+		Log(Warning, "Texture file not found: ", FileName);
 		return nullptr;
 	}
 
-	bool result = AssetService::Save(*l_textureComponent, l_textureData);
+	auto l_Name = std::string(BaseName) + "." + std::string(FileName) + "/";
+	auto l_TempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, l_Name.c_str());
 
-	g_Engine->Get<EntityManager>()->Destroy(l_tempEntity);
-	
-	if (result)
+	auto l_TextureComponent = g_Engine->Get<ComponentManager>()->Spawn<TextureComponent>(l_TempEntity, true, ObjectLifespan::Scene);
+
+	l_TextureComponent->m_TextureDesc.Sampler = Sampler;
+	l_TextureComponent->m_TextureDesc.Usage = Usage;
+	l_TextureComponent->m_TextureDesc.IsSRGB = IsSRGB;
+
+	void* l_TextureData = STBWrapper::Load(FileName, *l_TextureComponent);
+	if (!l_TextureData)
 	{
-		Log(Success, "Created and saved TextureComponent: ", fileName);
-		return l_textureComponent;
+		Log(Error, "Failed to load texture data: ", FileName);
+		g_Engine->Get<EntityManager>()->Destroy(l_TempEntity);
+		return nullptr;
+	}
+
+	bool l_Result = AssetService::Save(*l_TextureComponent, l_TextureData);
+
+	g_Engine->Get<EntityManager>()->Destroy(l_TempEntity);
+
+	if (l_Result)
+	{
+		Log(Success, "Created and saved TextureComponent: ", FileName);
+		return l_TextureComponent;
 	}
 	else
 	{
-		Log(Error, "Failed to save TextureComponent: ", fileName);
+		Log(Error, "Failed to save TextureComponent: ", FileName);
 		return nullptr;
 	}
 }

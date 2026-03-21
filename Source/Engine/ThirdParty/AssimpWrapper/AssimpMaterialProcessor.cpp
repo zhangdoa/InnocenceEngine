@@ -6,40 +6,33 @@
 #include "../../Common/MathHelper.h"
 #include "../../Common/Randomizer.h"
 #include "../../Services/AssetService.h"
-#include "../../Services/ComponentManager.h"
-#include "../../Services/EntityManager.h"
 #include "../../Engine.h"
 
 using namespace Inno;
 
-MaterialComponent* AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* material, const char* baseName)
+bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, const char* BaseName, MaterialComponent& OutMaterial)
 {
-	auto l_materialName = material->GetName().C_Str();
-	Log(Verbose, "Creating MaterialComponent for: ", l_materialName);
+	auto l_MaterialName = Material->GetName().C_Str();
+	Log(Verbose, "Creating MaterialComponent for: ", l_MaterialName);
 
-	auto l_name = std::string(baseName) + "." + std::string(l_materialName) + "/";
-	auto l_tempEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Frame, l_name.c_str());
+	OutMaterial = {};
 
-	auto l_materialComponent = g_Engine->Get<ComponentManager>()->Spawn<MaterialComponent>(l_tempEntity, true, ObjectLifespan::Frame);
+	ProcessMaterialProperties(Material, &OutMaterial);
 
-	ProcessMaterialProperties(material, l_materialComponent);
+	ProcessMaterialTextures(Material, BaseName, &OutMaterial);
 
-	ProcessMaterialTextures(material, baseName, l_materialComponent);
+	bool l_Result = AssetService::Save(OutMaterial);
 
-	bool result = AssetService::Save(*l_materialComponent);
-
-	g_Engine->Get<EntityManager>()->Destroy(l_tempEntity);
-
-	if (result)
+	if (l_Result)
 	{
-		Log(Success, "Created and saved MaterialComponent: ", l_materialName);
-		return l_materialComponent;
+		Log(Success, "Created and saved MaterialComponent: ", l_MaterialName);
 	}
 	else
 	{
-		Log(Error, "Failed to save MaterialComponent: ", l_materialName);
-		return nullptr;
+		Log(Error, "Failed to save MaterialComponent: ", l_MaterialName);
 	}
+
+	return l_Result;
 }
 
 void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* material, MaterialComponent* materialComponent)

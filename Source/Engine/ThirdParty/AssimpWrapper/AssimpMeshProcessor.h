@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Common/ComponentHeaders.h"
 #include "nlohmann/json.hpp"
-#include <vector>
+#include "../../Common/STL14.h"
 
 struct aiMesh;
 struct aiScene;
@@ -10,13 +10,10 @@ namespace Inno
 {
 	namespace AssimpMeshProcessor
 	{
-		// Create and save MeshComponent directly - returns pointer for linking
-		MeshComponent* CreateMeshComponent(const aiScene* scene, const char* exportName, uint32_t meshIndex);
-		
-		// Convert Assimp mesh data to our format
-		size_t ConvertMeshData(const aiMesh* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices);
-		
-		// Process bones if present
-		void ProcessAssimpBone(nlohmann::json& j, const aiMesh* mesh);
+		bool CreateMeshComponent(const aiScene* Scene, const char* BaseName, uint32_t MeshIndex, MeshComponent& OutMesh);
+
+		size_t ConvertMeshData(const aiMesh* Mesh, std::vector<Vertex>& Vertices, std::vector<Index>& Indices);
+
+		void ProcessAssimpBone(nlohmann::json& J, const aiMesh* Mesh);
 	}
 }
