@@ -1,12 +1,12 @@
 #include "DrawCallService.h"
 
 #include "../Common/LogService.h"
-#include "ComponentManager.h"
+#include "EntityRegistry.h"
 #include "RenderingConfigurationService.h"
-#include "../Component/ModelComponent.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
-#include "../Component/TextureComponent.h"
+#include "../Component/TransformComponent.h"
+#include "../Component/VisibilityComponent.h"
 #include "../Engine.h"
 
 using namespace Inno;
@@ -116,101 +116,91 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	m_TransformBufferVector.clear();
 	m_MaterialCBVector.clear();
 
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
+	const auto& l_Meshes = l_MeshStorage.All();
+	const auto& l_Owners = l_MeshStorage.AllOwners();
+
 	uint32_t l_drawCallIndex = 0;
-	auto& l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
-	for (auto l_modelComponent : l_modelComponents)
+	for (size_t i = 0; i < l_Meshes.size(); i++)
 	{
-		if (!l_modelComponent || l_modelComponent->m_ObjectStatus != ObjectStatus::Activated)
+		EntityID l_Entity = l_Owners[i];
+		const MeshComponent& l_mesh = l_Meshes[i];
+
+		auto* l_material = l_registry->Get<MaterialComponent>(l_Entity);
+		if (!l_material)
 			continue;
 
-		for (auto l_drawCallComponentID : l_modelComponent->m_DrawCallComponents)
+		auto* l_vis = l_registry->Get<VisibilityComponent>(l_Entity);
+		if (l_vis && !l_vis->m_Visible)
+			continue;
+
+		GPUModelData l_gpuModelData = {};
+
+		l_gpuModelData.m_VertexBufferAddress = l_mesh.m_VertexBufferView.m_BufferLocation;
+		l_gpuModelData.m_IndexBufferAddress = l_mesh.m_IndexBufferView.m_BufferLocation;
+
+		if (l_mesh.m_VertexBufferView.m_StrideInBytes == 0)
 		{
-			if (!l_drawCallComponentID)
-				continue;
-
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->FindByUUID<DrawCallComponent>(l_drawCallComponentID);
-			if (!l_drawCallComponent || l_drawCallComponent->m_ObjectStatus != ObjectStatus::Activated)
-				continue;
-
-			auto l_meshID = l_drawCallComponent->m_MeshComponent;
-			if (!l_meshID)
-				continue;
-
-			auto l_materialID = l_drawCallComponent->m_MaterialComponent;
-			if (!l_materialID)
-				continue;
-
-			auto l_mesh = g_Engine->Get<ComponentManager>()->FindByUUID<MeshComponent>(l_meshID);
-			if (!l_mesh)
-				continue;
-
-			auto l_material = g_Engine->Get<ComponentManager>()->FindByUUID<MaterialComponent>(l_materialID);
-			if (!l_material)
-				continue;
-
-			GPUModelData l_gpuModelData = {};
-
-			l_gpuModelData.m_VertexBufferAddress = l_mesh->m_VertexBufferView.m_BufferLocation;
-			l_gpuModelData.m_IndexBufferAddress = l_mesh->m_IndexBufferView.m_BufferLocation;
-
-			if (l_mesh->m_VertexBufferView.m_StrideInBytes == 0)
-			{
-				Log(Error, "Vertex stride is zero - cannot calculate vertex count");
-				l_gpuModelData.m_VertexCount = 0;
-			}
-			else
-			{
-				l_gpuModelData.m_VertexCount = l_mesh->m_VertexBufferView.m_SizeInBytes / l_mesh->m_VertexBufferView.m_StrideInBytes;
-			}
-			l_gpuModelData.m_IndexCount = l_mesh->GetIndexCount();
-			l_gpuModelData.m_VertexStride = l_mesh->m_VertexBufferView.m_StrideInBytes;
-			l_gpuModelData.m_IndexStride = l_mesh->m_IndexBufferView.m_StrideInBytes;
-
-			l_gpuModelData.m_MaterialIndex = l_drawCallIndex;
-			l_gpuModelData.m_UUID = (float)l_modelComponent->m_UUID;
-
-			l_gpuModelData.m_VisibilityMask = static_cast<uint32_t>(VisibilityMask::MainCamera);
-			l_gpuModelData.m_MeshUsage = static_cast<uint32_t>(MeshUsage::Static);
-
-			l_gpuModelData.m_BoundingBoxMin = Vec4(l_modelComponent->m_AABB.m_boundMin.x, l_modelComponent->m_AABB.m_boundMin.y, l_modelComponent->m_AABB.m_boundMin.z, 1.0f);
-			l_gpuModelData.m_BoundingBoxMax = Vec4(l_modelComponent->m_AABB.m_boundMax.x, l_modelComponent->m_AABB.m_boundMax.y, l_modelComponent->m_AABB.m_boundMax.z, 1.0f);
-
-			l_gpuModelData.m_InstanceCount = 1;
-			l_gpuModelData.m_FirstInstance = 0;
-
-			m_GPUModelDataVector.emplace_back(l_gpuModelData);
-
-			TransformConstantBuffer l_transformCB = {};
-			l_transformCB.m = l_modelComponent->m_Transform.GetMatrix();
-			l_transformCB.normalMat = l_modelComponent->m_Transform.GetRotationMatrix();
-			m_TransformBufferVector.emplace_back(l_transformCB);
-
-			MaterialConstantBuffer l_materialCB = {};
-			l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
-
-			auto l_renderingServer = g_Engine->getRenderingServer();
-			for (size_t i = 0; i < MaxTextureSlotCount; i++)
-			{
-				l_materialCB.m_TextureIndices[i] = INVALID_TEXTURE_INDEX;
-			}
-
-			for (size_t i = 0; i < l_material->m_TextureComponents.size(); i++)
-			{
-				auto l_textureID = l_material->m_TextureComponents[i];
-				if (!l_textureID)
-					continue;
-
-				auto l_texture = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(l_textureID);
-				if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
-					continue;
-
-				auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
-				l_materialCB.m_TextureIndices[i] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
-			}
-
-			m_MaterialCBVector.emplace_back(l_materialCB);
-			l_drawCallIndex++;
+			Log(Error, "Vertex stride is zero - cannot calculate vertex count");
+			l_gpuModelData.m_VertexCount = 0;
 		}
+		else
+		{
+			l_gpuModelData.m_VertexCount = l_mesh.m_VertexBufferView.m_SizeInBytes / l_mesh.m_VertexBufferView.m_StrideInBytes;
+		}
+		l_gpuModelData.m_IndexCount = l_mesh.GetIndexCount();
+		l_gpuModelData.m_VertexStride = l_mesh.m_VertexBufferView.m_StrideInBytes;
+		l_gpuModelData.m_IndexStride = l_mesh.m_IndexBufferView.m_StrideInBytes;
+
+		l_gpuModelData.m_MaterialIndex = l_drawCallIndex;
+		l_gpuModelData.m_UUID = static_cast<float>(l_Entity);
+
+		l_gpuModelData.m_VisibilityMask = static_cast<uint32_t>(VisibilityMask::MainCamera);
+		l_gpuModelData.m_MeshUsage = static_cast<uint32_t>(MeshUsage::Static);
+
+		const AABB& l_aabb = l_vis ? l_vis->m_AABB : l_mesh.m_AABB;
+		l_gpuModelData.m_BoundingBoxMin = Vec4(l_aabb.m_boundMin.x, l_aabb.m_boundMin.y, l_aabb.m_boundMin.z, 1.0f);
+		l_gpuModelData.m_BoundingBoxMax = Vec4(l_aabb.m_boundMax.x, l_aabb.m_boundMax.y, l_aabb.m_boundMax.z, 1.0f);
+
+		l_gpuModelData.m_InstanceCount = 1;
+		l_gpuModelData.m_FirstInstance = 0;
+
+		m_GPUModelDataVector.emplace_back(l_gpuModelData);
+
+		auto* l_transform = l_registry->Get<TransformComponent>(l_Entity);
+		TransformConstantBuffer l_transformCB = {};
+		if (l_transform)
+		{
+			l_transformCB.m = l_transform->m_WorldMatrix;
+			l_transformCB.normalMat = l_transform->m_WorldMatrix.inverse().transpose();
+		}
+		m_TransformBufferVector.emplace_back(l_transformCB);
+
+		MaterialConstantBuffer l_materialCB = {};
+		l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
+
+		for (size_t j = 0; j < MaxTextureSlotCount; j++)
+		{
+			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
+		}
+
+		for (size_t j = 0; j < l_material->m_TextureComponents.size(); j++)
+		{
+			auto l_textureID = l_material->m_TextureComponents[j];
+			if (!l_textureID)
+				continue;
+
+			// TODO Phase2-migrate: TextureComponent not yet in EntityRegistry - will migrate in Task 9
+			// auto* l_texture = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(l_textureID);
+			// if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
+			// 	continue;
+			// auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
+			// l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+		}
+
+		m_MaterialCBVector.emplace_back(l_materialCB);
+		l_drawCallIndex++;
 	}
 
 	return true;
