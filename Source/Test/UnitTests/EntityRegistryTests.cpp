@@ -145,38 +145,49 @@ void TestEntityRegistryFreeListRecycle()
 
 static void TestNewComponentTypes()
 {
+	TestRunner::StartTest("EntityRegistry New Component Types");
+
 	auto* l_Registry = g_Engine->Get<EntityRegistry>();
+	bool l_TestPassed = l_Registry != nullptr;
 
-	auto l_Entity = l_Registry->Spawn(ObjectLifespan::Frame, "component_type_test");
+	if (l_TestPassed)
+	{
+		EntityID l_Entity = l_Registry->Spawn(ObjectLifespan::Frame, "component_type_test");
+		l_TestPassed = l_Entity != INVALID_ENTITY;
 
-	// TransformComponent
-	auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
-	l_Transform.m_LocalPos = Vec3(1.f, 2.f, 3.f);
-	auto* l_TPtr = l_Registry->Get<TransformComponent>(l_Entity);
-	assert(l_TPtr != nullptr && "TransformComponent should be retrievable");
-	assert(l_TPtr->m_LocalPos.x == 1.f && "TransformComponent position x should be 1");
-	assert(l_TPtr->m_Dirty == true && "TransformComponent should start dirty");
+		if (l_TestPassed)
+		{
+			auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
+			l_Transform.m_LocalPos = Vec3(1.f, 2.f, 3.f);
+			auto* l_TPtr = l_Registry->Get<TransformComponent>(l_Entity);
+			l_TestPassed = l_TPtr != nullptr && l_TPtr->m_LocalPos.x == 1.f && l_TPtr->m_Dirty == true;
 
-	// VisibilityComponent
-	l_Registry->Emplace<VisibilityComponent>(l_Entity);
-	auto* l_Vis = l_Registry->Get<VisibilityComponent>(l_Entity);
-	assert(l_Vis != nullptr && "VisibilityComponent should be retrievable");
-	assert(l_Vis->m_Visible == true && "VisibilityComponent should default to visible");
+			if (l_TestPassed)
+			{
+				l_Registry->Emplace<VisibilityComponent>(l_Entity);
+				auto* l_Vis = l_Registry->Get<VisibilityComponent>(l_Entity);
+				l_TestPassed = l_Vis != nullptr && l_Vis->m_Visible == true;
+			}
 
-	// RigidBodyComponent
-	l_Registry->Emplace<RigidBodyComponent>(l_Entity);
-	assert(l_Registry->Has<RigidBodyComponent>(l_Entity) && "Entity should have RigidBodyComponent");
+			if (l_TestPassed)
+			{
+				l_Registry->Emplace<RigidBodyComponent>(l_Entity);
+				l_TestPassed = l_Registry->Has<RigidBodyComponent>(l_Entity);
+			}
 
-	// All three coexist
-	assert(l_Registry->Has<TransformComponent>(l_Entity));
-	assert(l_Registry->Has<VisibilityComponent>(l_Entity));
-	assert(l_Registry->Has<RigidBodyComponent>(l_Entity));
+			if (l_TestPassed)
+			{
+				l_TestPassed = l_Registry->Has<TransformComponent>(l_Entity)
+				            && l_Registry->Has<VisibilityComponent>(l_Entity)
+				            && l_Registry->Has<RigidBodyComponent>(l_Entity);
+			}
 
-	// CleanUp removes Frame-lifespan entities and their components
-	l_Registry->CleanUp(ObjectLifespan::Frame);
-	assert(!l_Registry->IsValid(l_Entity) && "Entity should be invalid after CleanUp");
+			l_Registry->CleanUp(ObjectLifespan::Frame);
+			l_TestPassed = l_TestPassed && !l_Registry->IsValid(l_Entity);
+		}
+	}
 
-	Log(Success, "EntityRegistry new component types -- PASSED");
+	TestRunner::EndTest(l_TestPassed);
 }
 
 void RunEntityRegistryUnitTests()
