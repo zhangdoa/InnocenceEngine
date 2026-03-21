@@ -175,11 +175,11 @@ bool DebugPass::AddBVHNode(const BVHNode& node)
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
 	static bool drawIntermediateBB = false;
-	if(node.ModelComponent == nullptr && !drawIntermediateBB)
+	if(node.m_Entity == INVALID_ENTITY && !drawIntermediateBB)
 		return true;
 
 	auto l_cubeMeshData = AddAABB(node.m_AABB);
-	l_cubeMeshData.materialID = node.ModelComponent == nullptr ? 3 : 5;
+	l_cubeMeshData.materialID = node.m_Entity == INVALID_ENTITY ? 3 : 5;
 
 	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
 

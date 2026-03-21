@@ -11,8 +11,8 @@
 #include "../Component/ShaderProgramComponent.h"
 #include "../Component/SamplerComponent.h"
 #include "../Component/GPUBufferComponent.h"
-#include "../Component/ModelComponent.h"
 #include "../Component/CommandListComponent.h"
+#include "../Common/EntityID.h"
 
 namespace Inno
 {
@@ -53,7 +53,7 @@ namespace Inno
 		virtual	bool Delete(ISemaphore* rhs) = 0;
 		virtual	bool Delete(IOutputMergerTarget* rhs) = 0;
 
-		void Initialize(ModelComponent* model);
+		void Initialize(EntityID Entity);
 		void Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices);
 		void Initialize(TextureComponent* texture, void* textureData = nullptr);
 		void Initialize(MaterialComponent* material);
@@ -156,7 +156,7 @@ namespace Inno
 		virtual	bool InitializeImpl(ShaderProgramComponent* shaderProgram) { return false; }
 		virtual bool InitializeImpl(SamplerComponent* sampler) { return false; }
 		virtual bool InitializeImpl(GPUBufferComponent* gpuBuffer) { return false; }
-		virtual bool InitializeImpl(ModelComponent* model) { return false; }
+		virtual bool InitializeImpl(EntityID Entity) { return false; }
 		virtual bool InitializeImpl(CommandListComponent* commandList) { return false; }
 
         bool DeleteRenderTargets(RenderPassComponent* renderPass);
@@ -239,14 +239,14 @@ namespace Inno
 		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
 		ThreadSafeQueue<GPUBufferComponent*> m_uninitializedGPUBuffers;
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
-		ThreadSafeQueue<ModelComponent*> m_uninitializedModels;
+		ThreadSafeQueue<EntityID> m_uninitializedEntities;
 
 		std::unordered_set<MeshComponent*> m_initializedMeshes;
 		std::unordered_set<TextureComponent*> m_initializedTextures;
 		std::unordered_set<MaterialComponent*> m_initializedMaterials;
 		std::unordered_set<GPUBufferComponent*> m_initializedGPUBuffers;
 		std::vector<RenderPassComponent*> m_initializedRenderPasses;
-		std::unordered_set<ModelComponent*> m_initializedModels;
+		std::unordered_set<EntityID> m_initializedEntities;
 	
         GPUBufferComponent* m_TLASBufferComponent = nullptr;
 		GPUBufferComponent* m_ScratchBufferComponent = nullptr;

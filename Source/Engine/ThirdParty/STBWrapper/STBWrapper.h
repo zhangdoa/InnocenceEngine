@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Component/ModelComponent.h"
+#include "../../Component/TextureComponent.h"
 
 namespace Inno
 {

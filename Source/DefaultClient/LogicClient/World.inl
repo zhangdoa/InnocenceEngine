@@ -47,21 +47,11 @@ namespace Inno
 
 		Player* m_player = nullptr;
 
-		// TODO Phase2-migrate: ModelComponent* vectors will be removed when ModelComponent is deleted (Task 13)
 		std::vector<EntityID> m_ReferenceSphereEntities;
-		std::vector<ModelComponent*> m_referenceSphereModelComponents;
-
 		std::vector<EntityID> m_OpaqueSphereEntities;
-		std::vector<ModelComponent*> m_opaqueSphereModelComponents;
-
 		std::vector<EntityID> m_TransparentCubeEntities;
-		std::vector<ModelComponent*> m_transparentCubeModelComponents;
-
 		std::vector<EntityID> m_VolumetricCubeEntities;
-		std::vector<ModelComponent*> m_volumetricCubeModelComponents;
-
 		std::vector<EntityID> m_OcclusionCubeEntities;
-		std::vector<ModelComponent*> m_occlusionCubeModelComponents;
 
 		std::vector<EntityID> m_PointLightEntities;
 
@@ -85,56 +75,34 @@ namespace Inno
 		float l_breadthInterval = 4.0f;
 		auto l_containerSize = m_matrixDim * m_matrixDim;
 
-		m_referenceSphereModelComponents.clear();
 		m_ReferenceSphereEntities.clear();
-
-		m_referenceSphereModelComponents.reserve(l_containerSize);
 		m_ReferenceSphereEntities.reserve(l_containerSize);
 
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_referenceSphereModelComponents.emplace_back();
 			auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
 			m_ReferenceSphereEntities.emplace_back(l_Registry->Spawn(ObjectLifespan::Scene, l_entityName.c_str()));
-		}
-
-		// TODO Phase2-migrate: ModelComponent/DrawCallComponent still use ComponentManager (Task 13)
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			auto l_OwnerEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, ("MaterialReferenceSphere_MC_" + std::to_string(i) + "/").c_str());
-			m_referenceSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(l_OwnerEntity, false, ObjectLifespan::Scene);
-			m_referenceSphereModelComponents[i]->m_Transform.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(l_OwnerEntity, true, ObjectLifespan::Scene);
-			if (l_drawCallComponent)
-			{
-				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitSphereMesh.MeshComponent", l_OwnerEntity);
-				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", l_OwnerEntity);
-				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
-					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
-				m_referenceSphereModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
-			}
 		}
 
 		for (uint32_t i = 0; i < m_matrixDim; i++)
 		{
 			for (uint32_t j = 0; j < m_matrixDim; j++)
 			{
-				m_referenceSphereModelComponents[i * m_matrixDim + j]->m_Transform.m_pos =
-					m_posOffset +
+				auto l_Entity = m_ReferenceSphereEntities[i * m_matrixDim + j];
+				auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
+				l_Transform.m_LocalScale = Vec3(1.0f, 1.0f, 1.0f);
+				auto l_pos = m_posOffset +
 					Vec4(
 						(-(m_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 						2.0f,
 						(j * l_breadthInterval) - 2.0f * (m_matrixDim - 1),
 						0.0f);
+				l_Transform.m_LocalPos = Vec3(l_pos.x, l_pos.y, l_pos.z);
+				// TODO: load mesh and material via AssetService once AssetService is migrated
+				g_Engine->getRenderingServer()->Initialize(l_Entity);
 			}
-		}
-
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			g_Engine->getRenderingServer()->Initialize(m_referenceSphereModelComponents[i]);
 		}
 
 		return true;
@@ -146,36 +114,15 @@ namespace Inno
 		float l_breadthInterval = 42.0f;
 		auto l_containerSize = matrixDim * matrixDim;
 
-		m_occlusionCubeModelComponents.clear();
 		m_OcclusionCubeEntities.clear();
-
-		m_occlusionCubeModelComponents.reserve(l_containerSize);
 		m_OcclusionCubeEntities.reserve(l_containerSize);
 
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_occlusionCubeModelComponents.emplace_back();
 			auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
 			m_OcclusionCubeEntities.emplace_back(l_Registry->Spawn(ObjectLifespan::Scene, l_entityName.c_str()));
-		}
-
-		// TODO Phase2-migrate: ModelComponent/DrawCallComponent still use ComponentManager (Task 13)
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			auto l_OwnerEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, ("OcclusionCube_MC_" + std::to_string(i) + "/").c_str());
-			m_occlusionCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(l_OwnerEntity, false, ObjectLifespan::Scene);
-
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(l_OwnerEntity, true, ObjectLifespan::Scene);
-			if (l_drawCallComponent)
-			{
-				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitCubeMesh.MeshComponent", l_OwnerEntity);
-				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", l_OwnerEntity);
-				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
-					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
-				m_occlusionCubeModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
-			}
 		}
 
 		std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
@@ -190,31 +137,26 @@ namespace Inno
 		{
 			for (uint32_t j = 0; j < matrixDim; j++)
 			{
-				auto l_currentComponent = m_occlusionCubeModelComponents[i * matrixDim + j];
+				auto l_Entity = m_OcclusionCubeEntities[i * matrixDim + j];
+				auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
 
 				auto l_heightOffset = l_halfMatrixDim * 3.0f - std::abs((float)i - l_halfMatrixDim) - std::abs((float)j - l_halfMatrixDim);
 				l_heightOffset *= 4.0f;
-				l_currentComponent->m_Transform.m_scale =
-					Vec4(l_randomWidthDelta(m_generator), l_heightOffset, l_randomDepthDelta(m_generator), 1.0f);
+				l_Transform.m_LocalScale = Vec3(l_randomWidthDelta(m_generator), l_heightOffset, l_randomDepthDelta(m_generator));
 
-				l_currentComponent->m_Transform.m_pos =
-					m_posOffset +
+				auto l_pos = m_posOffset +
 					Vec4(
 						(i * l_breadthInterval) - l_offset,
-						l_currentComponent->m_Transform.m_scale.y / 2.0f,
+						l_Transform.m_LocalScale.y / 2.0f,
 						(j * l_breadthInterval) - l_offset,
 						0.0f);
-
-				l_currentComponent->m_Transform.m_rot =
-					Math::calcRotatedLocalRotator(l_currentComponent->m_Transform.m_rot,
-						Vec4(0.0f, 1.0f, 0.0f, 0.0f),
-						l_randomRotDelta(m_generator));
+				l_Transform.m_LocalPos = Vec3(l_pos.x, l_pos.y, l_pos.z);
+				l_Transform.m_LocalRot = Math::calcRotatedLocalRotator(l_Transform.m_LocalRot,
+					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
+					l_randomRotDelta(m_generator));
+				// TODO: load mesh and material via AssetService once AssetService is migrated
+				g_Engine->getRenderingServer()->Initialize(l_Entity);
 			}
-		}
-
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			g_Engine->getRenderingServer()->Initialize(m_occlusionCubeModelComponents[i]);
 		}
 
 		return true;
@@ -225,37 +167,15 @@ namespace Inno
 		float l_breadthInterval = 4.0f;
 		auto l_containerSize = m_matrixDim * m_matrixDim;
 
-		m_opaqueSphereModelComponents.clear();
 		m_OpaqueSphereEntities.clear();
-
-		m_opaqueSphereModelComponents.reserve(l_containerSize);
 		m_OpaqueSphereEntities.reserve(l_containerSize);
 
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_opaqueSphereModelComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
 			m_OpaqueSphereEntities.emplace_back(l_Registry->Spawn(ObjectLifespan::Scene, l_entityName.c_str()));
-		}
-
-		// TODO Phase2-migrate: ModelComponent/DrawCallComponent still use ComponentManager (Task 13)
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			auto l_OwnerEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, ("PhysicsTestOpaqueObject_MC_" + std::to_string(i) + "/").c_str());
-			m_opaqueSphereModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(l_OwnerEntity, false, ObjectLifespan::Scene);
-			m_opaqueSphereModelComponents[i]->m_Transform.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(l_OwnerEntity, true, ObjectLifespan::Scene);
-			if (l_drawCallComponent)
-			{
-				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitSphereMesh.MeshComponent", l_OwnerEntity);
-				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", l_OwnerEntity);
-				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
-					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
-				m_opaqueSphereModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
-			}
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
@@ -265,25 +185,22 @@ namespace Inno
 		{
 			for (uint32_t j = 0; j < m_matrixDim; j++)
 			{
-				auto l_currentComponent = m_opaqueSphereModelComponents[i * m_matrixDim + j];
-				l_currentComponent->m_Transform.m_pos =
-					m_posOffset +
+				auto l_Entity = m_OpaqueSphereEntities[i * m_matrixDim + j];
+				auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
+				l_Transform.m_LocalScale = Vec3(1.0f, 1.0f, 1.0f);
+				auto l_pos = m_posOffset +
 					Vec4(
 						(-(m_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 						l_randomPosDelta(m_generator) * 50.0f,
 						(j * l_breadthInterval) - 2.0f * (m_matrixDim - 1),
 						0.0f);
-
-				l_currentComponent->m_Transform.m_rot =
-					Math::calcRotatedLocalRotator(l_currentComponent->m_Transform.m_rot,
-						Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
-						l_randomRotDelta(m_generator));
+				l_Transform.m_LocalPos = Vec3(l_pos.x, l_pos.y, l_pos.z);
+				l_Transform.m_LocalRot = Math::calcRotatedLocalRotator(l_Transform.m_LocalRot,
+					Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
+					l_randomRotDelta(m_generator));
+				// TODO: load mesh and material via AssetService once AssetService is migrated
+				g_Engine->getRenderingServer()->Initialize(l_Entity);
 			}
-		}
-
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			g_Engine->getRenderingServer()->Initialize(m_opaqueSphereModelComponents[i]);
 		}
 
 		return true;
@@ -294,43 +211,25 @@ namespace Inno
 		float l_breadthInterval = 4.0f;
 		uint32_t l_containerSize = 8;
 
-		m_transparentCubeModelComponents.clear();
 		m_TransparentCubeEntities.clear();
-
-		m_transparentCubeModelComponents.reserve(l_containerSize);
 		m_TransparentCubeEntities.reserve(l_containerSize);
 
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_transparentCubeModelComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestTransparentCube_" + std::to_string(i) + "/");
 			m_TransparentCubeEntities.emplace_back(l_Registry->Spawn(ObjectLifespan::Scene, l_entityName.c_str()));
 		}
 
-		// TODO Phase2-migrate: ModelComponent/DrawCallComponent still use ComponentManager (Task 13)
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			auto l_OwnerEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, ("PhysicsTestTransparentCube_MC_" + std::to_string(i) + "/").c_str());
-			m_transparentCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(l_OwnerEntity, false, ObjectLifespan::Scene);
-			m_transparentCubeModelComponents[i]->m_Transform.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
-
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(l_OwnerEntity, true, ObjectLifespan::Scene);
-			if (l_drawCallComponent)
-			{
-				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitCubeMesh.MeshComponent", l_OwnerEntity);
-				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", l_OwnerEntity);
-				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
-					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
-				m_transparentCubeModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
-			}
-		}
-
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			m_transparentCubeModelComponents[i]->m_Transform.m_pos = Vec4(0.0f, 2.0f * i, -(i * l_breadthInterval) - 4.0f, 1.0f);
-			g_Engine->getRenderingServer()->Initialize(m_transparentCubeModelComponents[i]);
+			auto l_Entity = m_TransparentCubeEntities[i];
+			auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
+			l_Transform.m_LocalScale = Vec3(1.0f * i, 1.0f * i, 0.5f);
+			l_Transform.m_LocalPos = Vec3(0.0f, 2.0f * i, -(i * l_breadthInterval) - 4.0f);
+			// TODO: load mesh and material via AssetService once AssetService is migrated
+			g_Engine->getRenderingServer()->Initialize(l_Entity);
 		}
 
 		return true;
@@ -340,45 +239,27 @@ namespace Inno
 	{
 		uint32_t l_containerSize = 8;
 
-		m_volumetricCubeModelComponents.clear();
 		m_VolumetricCubeEntities.clear();
-
-		m_volumetricCubeModelComponents.reserve(l_containerSize);
 		m_VolumetricCubeEntities.reserve(l_containerSize);
 
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_volumetricCubeModelComponents.emplace_back();
 			auto l_entityName = std::string("PhysicsTestVolumetricCube_" + std::to_string(i) + "/");
 			m_VolumetricCubeEntities.emplace_back(l_Registry->Spawn(ObjectLifespan::Scene, l_entityName.c_str()));
-		}
-
-		// TODO Phase2-migrate: ModelComponent/DrawCallComponent still use ComponentManager (Task 13)
-		for (uint32_t i = 0; i < l_containerSize; i++)
-		{
-			auto l_OwnerEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Scene, ("PhysicsTestVolumetricCube_MC_" + std::to_string(i) + "/").c_str());
-			m_volumetricCubeModelComponents[i] = g_Engine->Get<ComponentManager>()->Spawn<ModelComponent>(l_OwnerEntity, false, ObjectLifespan::Scene);
-			m_volumetricCubeModelComponents[i]->m_Transform.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
-
-			auto l_drawCallComponent = g_Engine->Get<ComponentManager>()->Spawn<DrawCallComponent>(l_OwnerEntity, true, ObjectLifespan::Scene);
-			if (l_drawCallComponent)
-			{
-				l_drawCallComponent->m_MeshComponent = g_Engine->Get<ComponentManager>()->Load<MeshComponent>("UnitCubeMesh.MeshComponent", l_OwnerEntity);
-				l_drawCallComponent->m_MaterialComponent = g_Engine->Get<ComponentManager>()->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", l_OwnerEntity);
-				if (l_drawCallComponent->m_MeshComponent && l_drawCallComponent->m_MaterialComponent)
-					l_drawCallComponent->m_ObjectStatus = ObjectStatus::Activated;
-				m_volumetricCubeModelComponents[i]->m_DrawCallComponents.emplace_back(l_drawCallComponent->m_UUID);
-			}
 		}
 
 		std::uniform_real_distribution<float> l_randomPosDelta(-40.0f, 40.0f);
 
 		for (uint32_t i = 0; i < l_containerSize; i++)
 		{
-			m_volumetricCubeModelComponents[i]->m_Transform.m_pos = Vec4(l_randomPosDelta(m_generator), 2.0f, l_randomPosDelta(m_generator), 1.0f);
-			g_Engine->getRenderingServer()->Initialize(m_volumetricCubeModelComponents[i]);
+			auto l_Entity = m_VolumetricCubeEntities[i];
+			auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
+			l_Transform.m_LocalScale = Vec3(4.0f, 4.0f, 4.0f);
+			l_Transform.m_LocalPos = Vec3(l_randomPosDelta(m_generator), 2.0f, l_randomPosDelta(m_generator));
+			// TODO: load mesh and material via AssetService once AssetService is migrated
+			g_Engine->getRenderingServer()->Initialize(l_Entity);
 		}
 
 		return true;
@@ -624,53 +505,6 @@ namespace Inno
 
 	void WorldSystem::updateSpheres()
 	{
-		for (uint32_t i = 0; i < m_opaqueSphereModelComponents.size(); i += 4)
-		{
-			auto l_albedoFactor1 = (sin(m_seed / 2.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor2 = (sin(m_seed / 3.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor3 = (sin(m_seed / 5.0f + i) + 1.0f) / 2.0f;
-
-			auto l_albedo1 = Vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
-			auto l_albedo2 = Vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
-			auto l_albedo3 = Vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
-			auto l_albedo4 = Vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
-
-			auto l_MRATFactor1 = ((sin(m_seed / 4.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor2 = ((sin(m_seed / 5.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor3 = ((sin(m_seed / 6.0f + i) + 1.0f) / 2.001f);
-
-			// updateMaterial(m_opaqueSphereModelComponents[i]->m_Model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
-			// updateMaterial(m_opaqueSphereModelComponents[i + 1]->m_Model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
-			// updateMaterial(m_opaqueSphereModelComponents[i + 2]->m_Model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 0.0f, 0.0f));
-			// updateMaterial(m_opaqueSphereModelComponents[i + 3]->m_Model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
-		}
-
-		for (uint32_t i = 0; i < m_transparentCubeModelComponents.size(); i++)
-		{
-			auto l_albedo = Math::HSVtoRGB(Vec4((sin(m_seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-			l_albedo.w = sin(m_seed / 6.0f + i) * 0.5f + 0.5f;
-			auto l_MRAT = Vec4(0.0f, sin(m_seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(m_seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-			//updateMaterial(m_transparentCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Transparent);
-		}
-
-		for (uint32_t i = 0; i < m_volumetricCubeModelComponents.size(); i++)
-		{
-			auto l_albedo = Math::HSVtoRGB(Vec4((sin(m_seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-			l_albedo.w = clamp((float)sin(m_seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
-			auto l_MRAT = Vec4(clamp((float)sin(m_seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
-			//updateMaterial(m_volumetricCubeModelComponents[i]->m_Model, l_albedo, l_MRAT, ShaderModel::Volumetric);
-		}
-
-		if (m_referenceSphereModelComponents.size() == 0)
-			return;
-
-		for (uint32_t i = 0; i < m_matrixDim; i++)
-		{
-			for (uint32_t j = 0; j < m_matrixDim; j++)
-			{
-				auto l_MRAT = Vec4((float)i / (float)(m_matrixDim - 1), (float)j / (float)(m_matrixDim - 1), 0.0f, 1.0f);
-				//updateMaterial(m_referenceSphereModelComponents[i * m_matrixDim + j]->m_Model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
-			}
-		}
+		// TODO: material updates via EntityRegistry MaterialComponent once mesh/material loading is migrated
 	}
 }

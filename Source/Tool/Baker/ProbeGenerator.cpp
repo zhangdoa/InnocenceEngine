@@ -77,56 +77,13 @@ namespace Inno
         bool ProbeGenerator::gatherStaticMeshData()
         {
             auto l_renderingServer = g_Engine->getRenderingServer();
-            
+
             Log(Success, "Gathering static meshes...");
 
             uint32_t l_index = 0;
 
-            auto l_modelComponents = g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>();
-            for (auto modelComponent : l_modelComponents)
-            {
-                if (modelComponent->m_ObjectStatus == ObjectStatus::Activated && modelComponent->m_meshUsage == MeshUsage::Static)
-                {
-                    auto l_globalTm = Math::toTransformationMatrix(modelComponent->m_Transform);
-
-                    for (uint64_t j = 0; j < modelComponent->m_Model->renderableSets.m_count; j++)
-                    {
-                        auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(modelComponent->m_Model->renderableSets.m_startOffset + j);
-
-                        if (l_renderableSet->material->m_ShaderModel == ShaderModel::Opaque)
-                        {
-                            DrawCallInfo l_staticPerObjectConstantBuffer;
-
-                            l_staticPerObjectConstantBuffer.mesh = l_renderableSet->mesh;
-                            l_staticPerObjectConstantBuffer.material = l_renderableSet->material;
-
-                            PerObjectConstantBuffer l_meshConstantBuffer;
-
-                            l_meshConstantBuffer.m = Math::toTransformationMatrix(modelComponent->m_Transform);
-                            l_meshConstantBuffer.m_prev = l_meshConstantBuffer.m; // @TODO: Need previous frame transform
-                            l_meshConstantBuffer.normalMat = Math::toRotationMatrix(modelComponent->m_Transform.m_rot);
-                            l_meshConstantBuffer.UUID = (float)modelComponent->m_UUID;
-
-                            MaterialConstantBuffer l_materialConstantBuffer;
-
-                            for (size_t i = 0; i < 8; i++)
-                            {
-                                uint32_t l_writeMask = l_renderableSet->material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
-                                l_writeMask = l_writeMask << i;
-                                l_materialConstantBuffer.textureSlotMask |= l_writeMask;
-                            }
-
-                            l_materialConstantBuffer.materialAttributes = l_renderableSet->material->m_materialAttributes;
-
-                            Config::Get().m_staticMeshDrawCallInfo.emplace_back(l_staticPerObjectConstantBuffer);
-                            Config::Get().m_staticMeshPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
-                            Config::Get().m_staticMeshMaterialConstantBuffer.emplace_back(l_materialConstantBuffer);
-                            l_index++;
-                        }
-                    }
-                }
-            }
-
+            // TODO Phase2-migrate: iterate EntityRegistry::Storage<MeshComponent> and build draw calls
+            // once TransformComponent, MeshComponent, and MaterialComponent are fully wired to the baker pipeline
             Config::Get().m_staticMeshDrawCallCount = l_index;
 
             Log(Success, "There are ", Config::Get().m_staticMeshDrawCallCount, " static meshes in current scene.");

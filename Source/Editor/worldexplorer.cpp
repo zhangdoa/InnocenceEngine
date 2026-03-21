@@ -5,7 +5,7 @@
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/EntityRegistry.h"
 #include "../Engine/Services/CameraSystem.h"
-#include "../Engine/Services/ComponentManager.h" // TODO Phase2-migrate: Task 13 — keep until ModelComponent, DrawCallComponent, TextureComponent are migrated
+#include "../Engine/Services/ComponentManager.h" // TODO Phase2-migrate: Task 14 — keep until TextureComponent and AnimationComponent are migrated
 #include <QHeaderView>
 
 using namespace Inno;
@@ -201,7 +201,7 @@ void WorldExplorer::deleteEntity()
 template<class T>
 T* WorldExplorer::addComponent()
 {
-    // TODO Phase2-migrate: Task 13 — ModelComponent still uses ComponentManager; migrate to EntityRegistry::Emplace<T> when ModelComponent is deleted
+    // TODO Phase2-migrate: Task 14 — migrate addComponent to EntityRegistry::Emplace<T> when ComponentManager is deleted
     auto l_items = selectedItems();
     QTreeWidgetItem* item;
     if (l_items.count() != 0)
@@ -226,11 +226,6 @@ T* WorldExplorer::addComponent()
     }
 
     return nullptr;
-}
-
-void WorldExplorer::addModelComponent()
-{
-    addComponent<ModelComponent>();
 }
 
 void WorldExplorer::addLightComponent()
@@ -260,12 +255,7 @@ void WorldExplorer::destroyComponent(Component *component)
     auto componentType = item->data(0, Qt::UserRole).toInt();
     auto l_entityID = (EntityID)item->parent()->data(1, Qt::UserRole).toUInt();
 
-    if (componentType == ModelComponent::GetTypeID())
-    {
-        // TODO Phase2-migrate: Task 13 — migrate to EntityRegistry::Remove<ModelComponent> when ModelComponent is deleted
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<ModelComponent*>(component));
-    }
-    else if (componentType == LightComponent::GetTypeID())
+    if (componentType == LightComponent::GetTypeID())
     {
         g_Engine->Get<EntityRegistry>()->Remove<LightComponent>(l_entityID);
     }
@@ -287,11 +277,6 @@ void WorldExplorer::destroyComponent(Component *component)
     else if (componentType == AnimationComponent::GetTypeID())
     {
         g_Engine->Get<EntityRegistry>()->Remove<AnimationComponent>(l_entityID);
-    }
-    else if (componentType == DrawCallComponent::GetTypeID())
-    {
-        // TODO Phase2-migrate: Task 13 — migrate to EntityRegistry::Remove<DrawCallComponent> when DrawCallComponent is deleted
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<DrawCallComponent*>(component));
     }
     else
     {
@@ -348,7 +333,6 @@ void WorldExplorer::showContextMenu(QTreeWidgetItem* item, const QPoint& globalP
             menu.addAction("Rename", this, SLOT(startRename()));
 
             auto addCompoentMenu = menu.addMenu("Add Component");
-            addCompoentMenu->addAction("Add ModelComponent", this, SLOT(addModelComponent()));
             addCompoentMenu->addAction("Add LightComponent", this, SLOT(addLightComponent()));
             addCompoentMenu->addAction("Add CameraComponent", this, SLOT(addCameraComponent()));
 

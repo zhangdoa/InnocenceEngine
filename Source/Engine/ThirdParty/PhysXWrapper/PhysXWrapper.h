@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Common/MathHelper.h"
-#include "../../Component/ModelComponent.h"
+#include "../../Common/EntityID.h"
+#include "../../Common/GraphicsPrimitive.h"
 
 namespace Inno
 {
@@ -23,8 +24,7 @@ namespace Inno
 		bool createPxBox(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic);
 		bool createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Vec4 scale, bool isDynamic, bool isConvex, std::vector<Vertex>& vertices, std::vector<Index>& indices);
 
-		// Updated to use ModelComponent instead of CollisionComponent
-		bool addForce(ModelComponent* model, Vec4 force);
+		bool addForce(EntityID Entity, Vec4 force);
 
 	private:
 		PhysXWrapper() {};

@@ -685,7 +685,7 @@ bool DX12RenderingServer::OnSceneLoadingStart()
         l_descList->m_Descs.clear();
     }
 
-    m_initializedModels.clear();
+    m_initializedEntities.clear();
     
     Log(Verbose, "Raytracing instance descriptions have been cleared.");
 

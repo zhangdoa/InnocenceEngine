@@ -1,5 +1,7 @@
 #include "BVHService.h"
 #include "PhysicsSimulationService.h"
+#include "EntityRegistry.h"
+#include "../Component/MeshComponent.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -136,8 +138,9 @@ void BVHServiceImpl::Update()
 
     for (auto& i : m_Nodes)
     {
-        // AABB now stored directly in ModelComponent
-        i.m_AABB = i.ModelComponent->m_AABB;
+        auto* l_mesh = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(i.m_Entity);
+        if (l_mesh)
+            i.m_AABB = l_mesh->m_AABB;
     }
 
     m_RootNode.m_AABB = g_Engine->Get<PhysicsSimulationService>()->GetStaticSceneAABB();
@@ -162,11 +165,12 @@ void BVHService::Update()
     m_Impl->Update();
 }
 
-void BVHService::AddNode(ModelComponent* ModelComponent)
+void BVHService::AddNode(EntityID Entity)
 {
     BVHNode l_BVHNode;
-    l_BVHNode.ModelComponent = ModelComponent;
-    l_BVHNode.m_AABB = ModelComponent->m_AABB;
+    l_BVHNode.m_Entity = Entity;
+    auto* l_mesh = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(Entity);
+    l_BVHNode.m_AABB = l_mesh ? l_mesh->m_AABB : AABB{};
 
     m_Impl->m_Nodes.emplace_back(l_BVHNode);
 

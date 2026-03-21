@@ -13,6 +13,11 @@
 #include "../../Services/GUISystem.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/EntityRegistry.h"
+#include "../../Services/EntityManager.h" // TODO Phase2-migrate: Task 14 — keep until GPU-resource components use EntityRegistry
+#include "../../Services/ComponentManager.h" // TODO Phase2-migrate: Task 14 — keep until GPU-resource components are stripped to plain structs
+#include "../../Component/TextureComponent.h"
+#include "../../Component/MeshComponent.h"
+#include "../../Component/MaterialComponent.h"
 
 #include "../../Engine.h"
 #include "../IRenderingServer.h"
@@ -30,6 +35,18 @@ Accessibility Accessibility::CopyDestination = Accessibility(false, true, false,
 
 bool IRenderingServer::InitializePool()
 {
+	// TODO Phase2-migrate: Task 14 — restore EntityRegistry-based storage for GPU components when they are stripped to plain structs
+	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
+
+	g_Engine->Get<ComponentManager>()->RegisterType<MeshComponent>(l_renderingCapability.maxMeshes, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<TextureComponent>(l_renderingCapability.maxTextures, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<MaterialComponent>(l_renderingCapability.maxMaterials, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<RenderPassComponent>(128, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<ShaderProgramComponent>(256, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<SamplerComponent>(256, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<GPUBufferComponent>(l_renderingCapability.maxBuffers, this);
+	g_Engine->Get<ComponentManager>()->RegisterType<CommandListComponent>(256, this);
+
 	return true;
 }
 
@@ -243,8 +260,7 @@ T* AddComponent(const char* name)
 	}
 	else
 	{
-		// TODO Phase2-migrate: l_name = (std::string(T::GetTypeName()) + "_" + std::to_string(l_count) + "/");
-		l_name = (std::string(typeid(T).name()) + "_" + std::to_string(l_count) + "/");
+		l_name = (std::string(T::GetTypeName()) + "_" + std::to_string(l_count) + "/");
 	}
 
 	if (strcmp(name, "") == 0)
@@ -253,9 +269,17 @@ T* AddComponent(const char* name)
 		return nullptr;
 	}
 
-	auto l_EntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, l_name.c_str());
-	auto& l_Component = g_Engine->Get<EntityRegistry>()->Emplace<T>(l_EntityID);
-	return &l_Component;
+	// TODO Phase2-migrate: Task 14 — use EntityRegistry::Emplace once GPU-resource components are stripped to plain structs
+	// (TComponentStorage uses std::vector which doesn't provide stable pointers; components with Component base must use object-pool storage)
+	auto l_parentEntity = g_Engine->Get<EntityManager>()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str());
+	auto l_component = g_Engine->Get<ComponentManager>()->Spawn<T>(l_parentEntity, false, ObjectLifespan::Persistence);
+	if (!l_component)
+	{
+		Log(Error, "Failed to allocate component from the pool.");
+		return nullptr;
+	}
+
+	return l_component;
 }
 
 MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
@@ -298,14 +322,13 @@ CommandListComponent* IRenderingServer::AddCommandListComponent(const char* name
 	return AddComponent<CommandListComponent>(name);
 }
 
-void IRenderingServer::Initialize(ModelComponent* model)
+void IRenderingServer::Initialize(EntityID Entity)
 {
-	if (std::find(m_initializedModels.begin(), m_initializedModels.end(), model) != m_initializedModels.end())
+	if (m_initializedEntities.count(Entity))
 		return;
 
-	// Queue model for deferred initialization
-	m_uninitializedModels.push(model);
-	Log(Verbose, "ModelComponent ", model->m_InstanceName, " queued for deferred initialization");
+	m_uninitializedEntities.push(Entity);
+	Log(Verbose, "Entity ", Entity, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
@@ -814,20 +837,20 @@ bool IRenderingServer::InitializeComponents()
 			m_uninitializedRenderPasses.push(std::move(l_component));
 	}
 
-	// Process queued model components
-	while (m_uninitializedModels.size() > 0)
+	// Process queued entity initializations
+	while (m_uninitializedEntities.size() > 0)
 	{
-		ModelComponent* l_component;
-		m_uninitializedModels.tryPop(l_component);
+		EntityID l_entity;
+		m_uninitializedEntities.tryPop(l_entity);
 
-		if (!l_component)
+		if (l_entity == INVALID_ENTITY)
 			continue;
 
-		Log(Verbose, "Processing deferred model initialization for: ", l_component->m_InstanceName);
-		if (InitializeImpl(l_component))
-			m_initializedModels.emplace(l_component);
+		Log(Verbose, "Processing deferred entity initialization for: ", l_entity);
+		if (InitializeImpl(l_entity))
+			m_initializedEntities.emplace(l_entity);
 		else
-			m_uninitializedModels.push(std::move(l_component));
+			m_uninitializedEntities.push(std::move(l_entity));
 	}
 
 	return true;

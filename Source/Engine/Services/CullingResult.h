@@ -1,12 +1,12 @@
 #pragma once
-#include "../Component/ModelComponent.h"
+#include "../Common/EntityID.h"
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
 {
     struct CullingResult
     {
-        ModelComponent* m_ModelComponent = nullptr;
+        EntityID m_ModelEntity = INVALID_ENTITY;
         VisibilityMask m_VisibilityMask = VisibilityMask::Invalid;
     };
 }

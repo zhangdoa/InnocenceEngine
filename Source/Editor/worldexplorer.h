@@ -28,7 +28,6 @@ private slots:
 	void addEntity();
 	void deleteEntity();
 
-	void addModelComponent();
     void addLightComponent();
     void addCameraComponent();
 

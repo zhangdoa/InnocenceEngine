@@ -4,7 +4,6 @@
 #include "../../Engine/Services/CameraSystem.h"
 #include "../../Engine/Component/TransformComponent.h"
 #include "../../Engine/Component/CameraComponent.h"
-#include "../../Engine/Component/ModelComponent.h"
 
 #include "../../Engine/Engine.h"
 using namespace Inno;
@@ -28,8 +27,6 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 		EntityID m_PlayerCharacterEntity = INVALID_ENTITY;
-		// TODO Phase2-migrate: remove ModelComponent* when ModelComponent is deleted (Task 13)
-		ModelComponent* m_PlayerModelComponent = nullptr;
 
 		EntityID m_PlayerCameraEntity = INVALID_ENTITY;
 		CameraComponent* m_PlayerCameraComponent = nullptr;
@@ -77,7 +74,7 @@ namespace Inno
 
 		bool m_IsEventsRegistered = false;
 		void MoveCamera(EntityID CameraEntity, Direction direction, float length);
-		void MoveModel(ModelComponent* modelComponent, Direction direction, float length);
+		void MoveModel(EntityID Entity, Direction direction, float length);
 		void RotateAroundPositiveYAxis(float offset);
 		void RotateAroundRightAxis(float offset);
 
@@ -94,13 +91,10 @@ namespace Inno
 		if (l_PlayerCharacterEntity != INVALID_ENTITY)
 		{
 			m_PlayerCharacterEntity = l_PlayerCharacterEntity;
-			// TODO Phase2-migrate: remove ComponentManager usage when ModelComponent is deleted (Task 13)
-			m_PlayerModelComponent = g_Engine->Get<ComponentManager>()->Find<ModelComponent>(g_Engine->Get<EntityManager>()->Find("Player Character").value_or(nullptr));
 		}
 		else
 		{
 			m_PlayerCharacterEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Player Character/");
-			// TODO Phase2-migrate: ModelComponent still uses ComponentManager (Task 13)
 		}
 
 		auto l_PlayerCameraEntity = l_Registry->FindByName("Main Camera");
@@ -156,7 +150,7 @@ namespace Inno
 
 			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
 			{
-				MoveModel(m_PlayerModelComponent, Direction::Backward, l_MoveSpd);
+				MoveModel(m_PlayerCharacterEntity, Direction::Backward, l_MoveSpd);
 			}
 			if (!m_IsTP)
 			{
@@ -169,7 +163,7 @@ namespace Inno
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
 			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
 			{
-				MoveModel(m_PlayerModelComponent, Direction::Forward, l_MoveSpd);
+				MoveModel(m_PlayerCharacterEntity, Direction::Forward, l_MoveSpd);
 			}
 			if (!m_IsTP)
 			{
@@ -181,7 +175,7 @@ namespace Inno
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
 			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
 			{
-				MoveModel(m_PlayerModelComponent, Direction::Left, l_MoveSpd);
+				MoveModel(m_PlayerCharacterEntity, Direction::Left, l_MoveSpd);
 			}
 			if (!m_IsTP)
 			{
@@ -193,7 +187,7 @@ namespace Inno
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
 			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
 			{
-				MoveModel(m_PlayerModelComponent, Direction::Right, l_MoveSpd);
+				MoveModel(m_PlayerCharacterEntity, Direction::Right, l_MoveSpd);
 			}
 			if (!m_IsTP)
 			{
@@ -283,15 +277,17 @@ namespace Inno
 		}
 	}
 
-	void Player::MoveModel(ModelComponent* modelComponent, Direction direction, float length)
+	void Player::MoveModel(EntityID Entity, Direction direction, float length)
 	{
 		if (m_CanMove)
 		{
-			if (!modelComponent)
+			if (Entity == INVALID_ENTITY)
 				return;
-			auto l_Dir = Math::getDirection(direction, modelComponent->m_Transform.m_rot);
-			auto l_CurrentPos = modelComponent->m_Transform.m_pos;
-			modelComponent->m_Transform.m_pos = Math::moveTo<float>(l_CurrentPos, l_Dir, length);
+			auto* l_transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(Entity);
+			if (!l_transform)
+				return;
+			auto l_Dir = Math::getDirection(direction, Vec4(l_transform->m_LocalRot.x, l_transform->m_LocalRot.y, l_transform->m_LocalRot.z, l_transform->m_LocalRot.w));
+			l_transform->m_LocalPos = Math::moveTo<float>(Vec4(l_transform->m_LocalPos, 1.0f), l_Dir, length).xyz();
 		}
 	}
 
@@ -305,9 +301,10 @@ namespace Inno
 
 			m_CanSlerp = false;
 
-			if (m_PlayerModelComponent)
+			auto* l_playerTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(m_PlayerCharacterEntity);
+			if (l_playerTransform)
 			{
-				m_PlayerModelComponent->m_Transform.m_rot = m_TargetCameraRotY.quatMul(m_PlayerModelComponent->m_Transform.m_rot);
+				l_playerTransform->m_LocalRot = m_TargetCameraRotY.quatMul(l_playerTransform->m_LocalRot);
 			}
 			// TODO Phase2-migrate: rotate active camera TransformComponent
 
@@ -339,10 +336,11 @@ namespace Inno
 			m_AnimationController->Simulate();
 		}
 
-		if (m_IsTP && m_PlayerModelComponent)
+		auto* l_playerTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(m_PlayerCharacterEntity);
+		if (m_IsTP && l_playerTransform)
 		{
-			auto l_T = m_PlayerModelComponent->m_Transform.m_pos;
-			auto l_R = m_PlayerModelComponent->m_Transform.m_rot;
+			auto l_T = Vec4(l_playerTransform->m_LocalPos, 1.0f);
+			auto l_R = l_playerTransform->m_LocalRot;
 
 			auto l_LP = m_CameraPlayerDistance;
 			m_CameraPlayerDistance.w = 1.0f;

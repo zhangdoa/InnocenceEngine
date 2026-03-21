@@ -35,11 +35,7 @@ void PropertyEditor::editComponent(int componentType, void* componentPtr)
 {
     remove();
 
-    if (componentType == ModelComponent::GetTypeID())
-    {
-        m_modelComponentPropertyEditor->edit(componentPtr);
-    }
-    else if (componentType == LightComponent::GetTypeID())
+    if (componentType == LightComponent::GetTypeID())
     {
         m_lightComponentPropertyEditor->edit(componentPtr);
     }

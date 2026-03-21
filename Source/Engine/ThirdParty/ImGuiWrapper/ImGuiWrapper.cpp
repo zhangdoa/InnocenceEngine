@@ -48,7 +48,6 @@ namespace ImGuiWrapperNS
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
 
 	void showWorldExplorer();
-	void showModelComponentPropertyEditor(void* rhs);
 	void showLightComponentPropertyEditor(void* rhs);
 	void showConcurrencyProfiler();
 
@@ -347,10 +346,6 @@ void ImGuiWrapperNS::showWorldExplorer()
 			{
 			// Transform editing no longer available
 			}
-			else if (selectedComponentType == 2)
-			{
-				showModelComponentPropertyEditor(selectedComponent);
-			}
 			else if (selectedComponentType == 3)
 			{
 				showLightComponentPropertyEditor(selectedComponent);
@@ -358,93 +353,6 @@ void ImGuiWrapperNS::showWorldExplorer()
 		}
 	}
 	ImGui::End();
-}
-
-void ImGuiWrapperNS::showModelComponentPropertyEditor(void* rhs)
-{
-	auto l_rhs = reinterpret_cast<ModelComponent*>(rhs);
-
-	static char modelFileName[128];
-	ImGui::InputText("Model file name", modelFileName, IM_ARRAYSIZE(modelFileName));
-
-	if (ImGui::Button("Save"))
-	{
-		//l_rhs->m_modelFileName = modelFileName;
-	}
-
-	static MaterialComponent* selectedComponent = nullptr;
-
-	// {
-	// 	ImGui::BeginChild("Children MaterialComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
-	// 	{
-	// 		for (uint64_t j = 0; j < l_rhs->m_Model->renderableSets.m_count; j++)
-	// 		{
-	// 			auto l_renderableSet = g_Engine->Get<AssetService>()->GetRenderableSet(l_rhs->m_Model->renderableSets.m_startOffset + j);
-
-	// 			if (ImGui::Selectable(l_renderableSet->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_renderableSet->material))
-	// 			{
-	// 				selectedComponent = l_renderableSet->material;
-	// 			}
-	// 		}
-	// 	}
-	// 	ImGui::EndChild();
-	// }
-
-	ImGui::SameLine();
-
-	{
-		if (selectedComponent)
-		{
-			ImGui::BeginChild("MaterialComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			{
-				auto l_material = &selectedComponent->m_materialAttributes;
-
-				static float float_min = 0.0f;
-				static float float_max = 1.0f;
-
-				static ImVec4 albedo = ImColor(l_material->AlbedoR, l_material->AlbedoG, l_material->AlbedoB, l_material->Alpha);
-
-				if (ImGui::ColorPicker4("Albedo color", (float*)&albedo, ImGuiColorEditFlags_DisplayRGB))
-				{
-					l_material->AlbedoR = albedo.x;
-					l_material->AlbedoG = albedo.y;
-					l_material->AlbedoB = albedo.z;
-					l_material->Alpha = albedo.w;
-				}
-
-				const ImVec2 small_slider_size(18, 180);
-
-				auto tt = ImGui::GetCursorPos().x;
-				static float metallic = l_material->Metallic;
-				if (ImGui::DragFloat("Metallic", &metallic, 0.01f, float_min, float_max))
-				{
-					l_material->Metallic = metallic;
-				}
-
-				static float roughness = l_material->Roughness;
-				if (ImGui::DragFloat("Roughness", &roughness, 0.01f, float_min, float_max))
-				{
-					l_material->Roughness = roughness;
-				}
-
-				static float ao = l_material->AO;
-				if (ImGui::DragFloat("Ambient Occlusion", &ao, 0.01f, float_min, float_max))
-				{
-					l_material->AO = ao;
-				}
-
-				if (selectedComponent->m_ShaderModel == ShaderModel::Transparent)
-				{
-					static float thickness = l_material->Thickness;
-					if (ImGui::DragFloat("Thickness", &thickness, 0.01f, float_min, float_max))
-					{
-						l_material->Thickness = thickness;
-					}
-				}
-			}
-			ImGui::EndChild();
-		}
-	}
 }
 
 void ImGuiWrapperNS::showLightComponentPropertyEditor(void* rhs)

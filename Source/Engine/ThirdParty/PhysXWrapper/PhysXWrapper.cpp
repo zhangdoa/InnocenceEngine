@@ -10,7 +10,8 @@
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
 #include "../../Component/MeshComponent.h"
-#include "../../Component/ModelComponent.h"
+#include "../../Component/RigidBodyComponent.h"
+#include "../../Services/EntityRegistry.h"
 #include "../../Services/SceneService.h"
 #include "../../Services/HIDService.h"
 
@@ -647,9 +648,12 @@ bool PhysXWrapper::createPxMesh(uint64_t index, Vec4 position, Vec4 rotation, Ve
 	return PhysXWrapperNS::createPxMesh(index, position, rotation, scale, isDynamic, isConvex, vertices, indices);
 }
 
-bool PhysXWrapper::addForce(ModelComponent* model, Vec4 force)
+bool PhysXWrapper::addForce(EntityID Entity, Vec4 force)
 {
-	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(model->m_SimulationProxy);
-	l_rigidBody->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
+	auto* l_rigidBody = g_Engine->Get<EntityRegistry>()->Get<RigidBodyComponent>(Entity);
+	if (!l_rigidBody || !l_rigidBody->m_SimulationProxy)
+		return false;
+	auto l_actor = reinterpret_cast<PxRigidDynamic*>(l_rigidBody->m_SimulationProxy);
+	l_actor->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
 	return true;
 }

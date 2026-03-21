@@ -8,7 +8,6 @@
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
-#include "ComponentManager.h"
 #include "TemplateAssetService.h"
 #include "SceneService.h"
 #include "PhysicsSimulationService.h"
@@ -25,9 +24,6 @@ using namespace AssetServiceNS;
 
 bool AssetService::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->Get<ComponentManager>()->RegisterType<ModelComponent>(32768, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<DrawCallComponent>(65536, this);
-
 	m_ObjectStatus = ObjectStatus::Created;
 
 	return true;
@@ -85,16 +81,6 @@ bool AssetService::LoadScene(const char* fileName)
 	return JSONWrapper::LoadScene(fileName);
 }
 
-bool AssetService::Load(const char* fileName, ModelComponent& component)
-{
-	return JSONWrapper::Load(fileName, component);
-}
-
-bool AssetService::Load(const char* fileName, DrawCallComponent& component)
-{
-	return JSONWrapper::Load(fileName, component);
-}
-
 bool AssetService::Load(const char* fileName, MeshComponent& component)
 {
 	return JSONWrapper::Load(fileName, component);
@@ -133,22 +119,6 @@ bool AssetService::Load(const char* fileName, LightComponent& component)
 bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
 	return STBWrapper::Save(fileName, textureDesc, textureData);
-}
-
-bool AssetService::Save(const ModelComponent& component)
-{
-	json j;
-	JSONWrapper::to_json(j, component);
-	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
-	return JSONWrapper::Save(filePath.c_str(), j);
-}
-
-bool AssetService::Save(const DrawCallComponent& component)
-{
-	json j;
-	JSONWrapper::to_json(j, component);
-	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
-	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
 bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& vertices, std::vector<Index>& indices)

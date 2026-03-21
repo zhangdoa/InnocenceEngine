@@ -7,7 +7,7 @@
 #include "../../Services/ComponentManager.h"
 #include "../../Services/AnimationService.h"
 #include "../../Services/AssetService.h"
-// TODO Phase2-migrate: EntityManager.h still needed for ModelComponent path and SaveScene
+// TODO Phase2-migrate: EntityManager.h still needed for SaveScene entity enumeration
 #include "../../Services/EntityManager.h"
 #include "../../Services/EntityRegistry.h"
 
@@ -99,15 +99,6 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		}
 	}
 
-	// TODO Phase2-migrate: ModelComponent still inherits Component — move to EntityRegistry when migrated
-	for (auto i : g_Engine->Get<ComponentManager>()->GetAll<ModelComponent>())
-	{
-		if (i->m_Serializable)
-		{
-			SaveComponentAndAddReference(topLevel, i);
-		}
-	}
-
 	// TODO Phase2-migrate: LightComponent/CameraComponent are plain structs — serialize via EntityRegistry when Entity migration is complete
 
 	Save(fileName, topLevel);
@@ -128,7 +119,6 @@ bool JSONWrapper::LoadScene(const char* fileName)
 		std::string l_EntityName = i["Name"];
 		l_EntityName += "/";
 
-		// TODO Phase2-migrate: EntityManager::Spawn still needed for ModelComponent path (takes Entity*)
 		auto l_Entity = g_Engine->Get<EntityManager>()->Spawn(true, ObjectLifespan::Scene, l_EntityName.c_str());
 		auto l_EntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
@@ -137,10 +127,10 @@ bool JSONWrapper::LoadScene(const char* fileName)
 			uint32_t l_ComponentTypeID = k["Type"];
 			std::string l_ComponentName = k["Name"];
 
-			if (l_ComponentTypeID == ModelComponent::GetTypeID())
+			if (l_ComponentTypeID == 2 || l_ComponentTypeID == 200)
 			{
-				// TODO Phase2-migrate: ModelComponent still inherits Component
-				g_Engine->Get<ComponentManager>()->Load<ModelComponent>(l_ComponentName.c_str(), l_Entity);
+				// ModelComponent (2) and DrawCallComponent (200) are deleted — skip deprecated scene data
+				Log(Warning, "Skipping deprecated component type ", l_ComponentTypeID, " in scene file.");
 			}
 			else if (l_ComponentTypeID == LightComponent::GetTypeID())
 			{
