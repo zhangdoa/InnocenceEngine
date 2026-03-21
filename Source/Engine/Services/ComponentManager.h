@@ -76,10 +76,11 @@ namespace Inno
 					else
 					{
 						auto uuidIt = m_ComponentUUIDs.find(component);
-						if (uuidIt != m_ComponentUUIDs.end())
+						if (uuidIt != m_ComponentUUIDs.end() && uuidIt->second.m_Lifespan == objectLifespan)
 						{
-							uint64_t uuid = uuidIt->second;
+							uint64_t uuid = uuidIt->second.m_UUID;
 							m_ComponentLUTByUUID.erase(uuid);
+							m_ComponentLUT.erase(uuidIt->second.m_Owner);
 							m_ComponentUUIDs.erase(uuidIt);
 
 							for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
@@ -138,7 +139,7 @@ namespace Inno
 			else
 			{
 				uint64_t l_UUID = Randomizer::GenerateUUID();
-				m_ComponentUUIDs.emplace(l_Component, l_UUID);
+				m_ComponentUUIDs.emplace(l_Component, PlainStructInfo{ l_UUID, objectLifespan, owner });
 				m_ComponentLUTByUUID.emplace(l_UUID, l_Component);
 			}
 
@@ -171,7 +172,7 @@ namespace Inno
 				auto uuidIt = m_ComponentUUIDs.find(component);
 				if (uuidIt != m_ComponentUUIDs.end())
 				{
-					uint64_t uuid = uuidIt->second;
+					uint64_t uuid = uuidIt->second.m_UUID;
 
 					for (auto it = m_LoadedComponents.begin(); it != m_LoadedComponents.end(); )
 					{
@@ -182,7 +183,7 @@ namespace Inno
 					}
 
 					m_ComponentLUTByUUID.erase(uuid);
-					m_ComponentLUT.erase(component->m_Owner);
+					m_ComponentLUT.erase(uuidIt->second.m_Owner);
 					m_ComponentUUIDs.erase(uuidIt);
 				}
 			}
@@ -268,7 +269,7 @@ namespace Inno
 			{
 				auto uuidIt = m_ComponentUUIDs.find(l_componentPtr);
 				if (uuidIt != m_ComponentUUIDs.end())
-					l_result = uuidIt->second;
+					l_result = uuidIt->second.m_UUID;
 			}
 
 			m_LoadedComponents.emplace(l_filePath, l_result);
@@ -316,7 +317,13 @@ namespace Inno
 		ThreadSafeVector<T*> m_ComponentPointers;
 		ThreadSafeUnorderedMap<Entity*, T*> m_ComponentLUT;
 		std::unordered_map<uint64_t, T*> m_ComponentLUTByUUID;
-		std::unordered_map<T*, uint64_t> m_ComponentUUIDs;
+		struct PlainStructInfo
+	{
+		uint64_t m_UUID;
+		ObjectLifespan m_Lifespan;
+		Entity* m_Owner;
+	};
+	std::unordered_map<T*, PlainStructInfo> m_ComponentUUIDs;
 		std::unordered_map<std::string, uint64_t> m_LoadedComponents;
 	};
 
