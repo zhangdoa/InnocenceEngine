@@ -15,7 +15,7 @@ namespace Inno
         bool Terminate() override;
         ObjectStatus GetStatus() override;
 
-        bool GetValidationPassed() const { return m_ValidationPassed; }
+        bool GetValidationPassed() const override { return m_ValidationPassed; }
 
     private:
         enum class TestCase { Unknown, BareBoot, DrawInstanced, PixelReadback };
