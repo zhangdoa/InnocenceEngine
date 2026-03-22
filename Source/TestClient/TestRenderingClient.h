@@ -1,5 +1,6 @@
 #pragma once
 #include "../Engine/Interface/IRenderingClient.h"
+#include "../Engine/RenderingServer/IRenderingServer.h"
 
 namespace Inno
 {
@@ -14,8 +15,10 @@ namespace Inno
         bool Terminate() override;
         ObjectStatus GetStatus() override;
 
+        bool GetValidationPassed() const { return m_ValidationPassed; }
+
     private:
-        enum class TestCase { BareBoot, DrawInstanced, Unknown };
+        enum class TestCase { Unknown, BareBoot, DrawInstanced, PixelReadback };
         static TestCase ParseTestCase(const char* name);
 
         bool Setup_BareBoot();
@@ -25,9 +28,16 @@ namespace Inno
         bool ExecuteCommands_DrawInstanced();
         bool Terminate_DrawInstanced();
 
+        bool Setup_PixelReadback();
+        bool Initialize_PixelReadback();
+        bool ExecuteCommands_PixelReadback();
+        void ValidatePixelReadback(TextureComponent* rt, const std::vector<Vec4>& pixels);
+
         void CountFrameAndTerminateIfDone();
         static constexpr uint32_t k_TargetFrames = 10;
         uint32_t m_FramesAfterLoad = 0;
+
+        bool m_ValidationPassed = true;
 
         TestCase m_TestCase = TestCase::Unknown;
         ObjectStatus m_ObjectStatus = ObjectStatus::Created;
