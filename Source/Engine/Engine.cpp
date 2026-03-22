@@ -377,7 +377,8 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<DebugDrawCallService>();
 		Get<AnimationSimulationService>();
 		Get<AnimationResourceService>();
-		Get<GUIService>();
+		if (!m_pImpl->m_initConfig.isOffscreen)
+			Get<GUIService>();
 	}
 
 	// Create GraphicsService based on headless mode (offscreen uses real rendering server)
@@ -578,7 +579,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				}
 			}
 
-			SystemSetup(GUIService);
+			if (!m_pImpl->m_initConfig.isOffscreen)
+				SystemSetup(GUIService);
 
 			return true;
 			});
@@ -655,7 +657,8 @@ bool Engine::Initialize()
 				}
 			}
 
-			SystemInit(GUIService);
+			if (!m_pImpl->m_initConfig.isOffscreen)
+				SystemInit(GUIService);
 
 			return true;
 			});
@@ -724,7 +727,8 @@ bool Engine::Terminate()
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-			SystemTerm(GUIService);
+			if (!m_pImpl->m_initConfig.isOffscreen)
+				SystemTerm(GUIService);
 
 			if (m_pImpl->m_RenderingClient && !m_pImpl->m_RenderingClient->Terminate())
 			{
