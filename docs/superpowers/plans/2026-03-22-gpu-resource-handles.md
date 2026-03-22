@@ -392,7 +392,7 @@ static T* AllocateGPUHandle(TObjectPool<T>* pool,
 }
 ```
 
-Then update the 8 `AddXComponent` implementations:
+Then replace all 8 `AddXComponent` implementations (replace each existing one-liner that delegated to `AddComponent<T>`):
 
 ```cpp
 MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
@@ -407,7 +407,42 @@ TextureComponent* IRenderingServer::AddTextureComponent(const char* name)
                              m_GPUHandlePools.TextureLUT,
                              m_GPUHandlePools.TexturePointers, name);
 }
-// ... repeat for all 8 types
+MaterialComponent* IRenderingServer::AddMaterialComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.Materials,
+                             m_GPUHandlePools.MaterialLUT,
+                             m_GPUHandlePools.MaterialPointers, name);
+}
+RenderPassComponent* IRenderingServer::AddRenderPassComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.RenderPasses,
+                             m_GPUHandlePools.RenderPassLUT,
+                             m_GPUHandlePools.RenderPassPointers, name);
+}
+ShaderProgramComponent* IRenderingServer::AddShaderProgramComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.ShaderPrograms,
+                             m_GPUHandlePools.ShaderProgramLUT,
+                             m_GPUHandlePools.ShaderProgramPointers, name);
+}
+SamplerComponent* IRenderingServer::AddSamplerComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.Samplers,
+                             m_GPUHandlePools.SamplerLUT,
+                             m_GPUHandlePools.SamplerPointers, name);
+}
+GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.GPUBuffers,
+                             m_GPUHandlePools.GPUBufferLUT,
+                             m_GPUHandlePools.GPUBufferPointers, name);
+}
+CommandListComponent* IRenderingServer::AddCommandListComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.CommandLists,
+                             m_GPUHandlePools.CommandListLUT,
+                             m_GPUHandlePools.CommandListPointers, name);
+}
 ```
 
 - [ ] **Step 5: Implement the Find* methods**
@@ -432,24 +467,49 @@ MaterialComponent* IRenderingServer::FindMaterialByName(const char* name)
 
 - [ ] **Step 6: Update Delete() to clean up the LUT and pointer list**
 
-The existing `Delete(MeshComponent*)` etc. virtual methods on DX12RenderingServer free GPU resources. After that, the base class Delete should also remove from the pool + LUT + pointer list.
+**Wiring pattern:** IRenderingServer's `Delete(T*)` methods are currently pure virtual (`= 0`). The DX12 override handles GPU resource teardown. Add pool/LUT cleanup by making the base class `Delete(T*)` non-pure with a default that calls a new virtual `DeleteImpl(T*)`:
 
-Add a non-virtual `ReleaseGPUHandle<T>` helper in IRenderingServer.cpp that the virtual Delete overrides can call at their end (or call from the base class after the virtual work is done). Check how the existing virtual Delete implementations are structured in `DX12RenderingServer_ComponentPool.cpp` before implementing this.
+```
+// IRenderingServer.h: Change "= 0" to non-pure with pool cleanup
+// virtual bool Delete(MeshComponent* mesh) = 0;   ← old
+//
+// Pattern: base class calls ReleaseFromPool, then calls virtual DeleteImpl
+```
 
-Pattern:
+Concrete approach: in IRenderingServer.h, change `Delete(T*)` overloads from `= 0` to non-virtual wrappers that call (a) `virtual bool DeleteImpl(T*)` (DX12 overrides this for GPU teardown) then (b) `ReleaseFromPool(T*)` (pool cleanup).
+
+Read `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp` to confirm the current DX12 Delete override structure before writing the wrapper. If changing from pure virtual to non-virtual + virtual DeleteImpl is too invasive for this task's scope, alternatively: add a `protected` non-virtual `ReleaseFromPool<T>` helper that each DX12 Delete override calls explicitly at the END of its function body, after GPU teardown.
+
+**The simpler approach (preferred):** keep `Delete(T*)` virtual as-is in the DX12 overrides, and add a `protected` helper in `IRenderingServer.cpp`:
+
 ```cpp
 template <typename T>
-static void ReleaseGPUHandle(TObjectPool<T>* pool,
-                              ThreadSafeUnorderedMap<std::string, T*>& lut,
-                              ThreadSafeVector<T*>& pointers,
-                              T* ptr)
+static void ReleaseFromPool(TObjectPool<T>* pool,
+                             ThreadSafeUnorderedMap<std::string, T*>& lut,
+                             ThreadSafeVector<T*>& pointers,
+                             T* ptr)
 {
     if (!ptr) return;
-    lut.erase(ptr->m_InstanceName.c_str());
-    pointers.eraseByValue(ptr);
+    lut.erase(std::string(ptr->m_InstanceName.c_str()));
+    pointers.eraseByValue(ptr);  // ThreadSafeVector::eraseByValue confirmed exists at line 116 of ThreadSafeVector.h
     pool->Destroy(ptr);
 }
 ```
+
+Then in each DX12 Delete override in `DX12RenderingServer_ComponentPool.cpp`, add a call to `ReleaseFromPool` at the end, using the `m_GPUHandlePools` fields from the base class:
+
+```cpp
+// Example for DX12RenderingServer::Delete(MeshComponent* mesh):
+// ... existing DX12 GPU teardown ...
+ReleaseFromPool(m_GPUHandlePools.Meshes,
+                m_GPUHandlePools.MeshLUT,
+                m_GPUHandlePools.MeshPointers, mesh);
+return true;
+```
+
+Add this pattern to all 8 Delete overrides (Mesh, Texture, Material, RenderPass, ShaderProgram, Sampler, GPUBuffer, CommandList).
+
+> **Advisory:** `SceneService::AddComponentToSceneHierarchyMap<T>()` calls `ComponentManager::GetAll<T>()` but only via commented-out `TODO Phase2-migrate` calls — no live GetAll callers exist for GPU resource types. No additional action needed.
 
 - [ ] **Step 7: Remove the ComponentManager include and all remaining ComponentManager references from IRenderingServer.cpp**
 
@@ -554,7 +614,9 @@ Look at how `m_TextureComponents` is written during serialization and how `FindB
 
 - [ ] **Step 3: Update deserialization (FindByUUID → FindTextureByName)**
 
-Before:
+From Step 2 you will have seen the actual variable name used for the texture ID in the local code (around line 78 of JSONSerializer_Components.cpp). In the pattern below, `textureComponentID` is a placeholder — use whatever the file actually calls it.
+
+Before (approximate):
 ```cpp
 auto textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(textureComponentID);
 ```
@@ -564,7 +626,7 @@ After:
 auto textureComponent = g_Engine->getRenderingServer()->FindTextureByName(textureComponentID.c_str());
 ```
 
-The `textureComponentID` variable changes from `uint64_t` to `std::string` — update the JSON key read accordingly (it was reading a number, now reads a string).
+The variable's type changes from `uint64_t` to `std::string` — update the JSON key read that populates it (was reading a number, now reads a string).
 
 - [ ] **Step 4: Update serialization write path if UUIDs are written**
 
@@ -667,10 +729,10 @@ git commit -m "refactor: replace ComponentManager usage in worldexplorer, SceneS
 - [ ] **Step 1: Verify no remaining ComponentManager includes**
 
 ```
-grep -r "ComponentManager" Source/ --include="*.h" --include="*.cpp" -l
+powershell.exe -Command "Get-ChildItem -Path 'C:\GitRepo\InnocenceEngine\Source' -Recurse -Include '*.h','*.cpp' | Select-String 'ComponentManager' | Select-Object -ExpandProperty Filename | Sort-Object -Unique" 2>&1
 ```
 
-Expected: zero results (or only the file itself). If any remain, fix them before continuing.
+Expected: zero results (or only `ComponentManager.h` itself). If any other file is listed, fix that file before continuing. Note: build outputs and generated files in the `Build/` directory are not scanned here — the full rebuild in Step 5 will catch any remaining references from generated unity builds or precompiled headers.
 
 - [ ] **Step 2: Delete ComponentManager.h**
 
