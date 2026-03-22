@@ -253,11 +253,8 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
 
 void TestRenderingClient::ValidatePixelReadback(TextureComponent* rt, const std::vector<Vec4>& pixels)
 {
-    const uint32_t l_w    = rt->m_TextureDesc.Width;
-    const uint32_t l_h    = rt->m_TextureDesc.Height;
-    const uint32_t l_cx   = l_w / 2;
-    const uint32_t l_cy   = l_h / 2;
-    const uint32_t l_half = 16;
+    const uint32_t l_w = rt->m_TextureDesc.Width;
+    const uint32_t l_h = rt->m_TextureDesc.Height;
 
     if (pixels.size() < static_cast<size_t>(l_w) * l_h)
     {
@@ -267,18 +264,37 @@ void TestRenderingClient::ValidatePixelReadback(TextureComponent* rt, const std:
         return;
     }
 
-    for (uint32_t y = l_cy - l_half; y < l_cy + l_half; ++y)
+    // drawInstanced.vert uses SV_InstanceID (1 vertex/instance) with PointList topology.
+    // 3 instances produce 3 points at NDC: (-0.5,-0.5), (0,0.5), (0.5,-0.5).
+    // Screen mapping for 256x256 viewport: (w/4, 3h/4), (w/2, h/4), (3w/4, 3h/4).
+    struct Point { uint32_t x, y; };
+    const Point l_pts[3] = {
+        { l_w / 4,     l_h * 3 / 4 },
+        { l_w / 2,     l_h / 4     },
+        { l_w * 3 / 4, l_h * 3 / 4 },
+    };
+
+    const uint32_t l_radius = 3;
+
+    for (const auto& l_pt : l_pts)
     {
-        for (uint32_t x = l_cx - l_half; x < l_cx + l_half; ++x)
+        bool l_found = false;
+        for (uint32_t y = l_pt.y - l_radius; y <= l_pt.y + l_radius && !l_found; ++y)
         {
-            const auto& l_p = pixels[y * l_w + x];
-            if (l_p.x < 0.9f || l_p.y > 0.1f || l_p.z > 0.1f)
+            for (uint32_t x = l_pt.x - l_radius; x <= l_pt.x + l_radius && !l_found; ++x)
             {
-                Log(Error, "Pixel (", x, ",", y, ") expected red, got (",
-                    l_p.x, ",", l_p.y, ",", l_p.z, ",", l_p.w, ")");
-                m_ValidationPassed = false;
-                return;
+                const auto& l_p = pixels[y * l_w + x];
+                if (l_p.x > 0.9f && l_p.y < 0.1f && l_p.z < 0.1f)
+                    l_found = true;
             }
+        }
+        if (!l_found)
+        {
+            const auto& l_p = pixels[l_pt.y * l_w + l_pt.x];
+            Log(Error, "Expected red pixel near (", l_pt.x, ",", l_pt.y, "), got (",
+                l_p.x, ",", l_p.y, ",", l_p.z, ",", l_p.w, ")");
+            m_ValidationPassed = false;
+            return;
         }
     }
 }
