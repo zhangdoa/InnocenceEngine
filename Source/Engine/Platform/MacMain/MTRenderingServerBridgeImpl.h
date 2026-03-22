@@ -1,25 +1,25 @@
 //
-//  MTRenderingServerBridgeImpl.h
+//  MTGraphicsServiceBridgeImpl.h
 //  Main
 //
 //  Created by zhangdoa on 14/04/2019.
 //  Copyright © 2019 InnocenceEngine. All rights reserved.
 //
 
-#ifndef MTRenderingServerBridgeImpl_h
-#define MTRenderingServerBridgeImpl_h
+#ifndef MTGraphicsServiceBridgeImpl_h
+#define MTGraphicsServiceBridgeImpl_h
 
-#import "../../RenderingServer/MT/MTRenderingServerBridge.h"
+#import "../../Services/MT/MTGraphicsServiceBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
 namespace Inno
 {
-	class MTRenderingServerBridgeImpl : public MTRenderingServerBridge
+	class MTGraphicsServiceBridgeImpl : public MTGraphicsServiceBridge
 	{
 	public:
-		explicit MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
-		~MTRenderingServerBridgeImpl();
+		explicit MTGraphicsServiceBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
+		~MTGraphicsServiceBridgeImpl();
 
 		bool Setup() override;
 		bool Initialize() override;
@@ -41,4 +41,4 @@ namespace Inno
 		MetalDelegate* m_metalDelegate = nullptr;
 	};
 }
-#endif /* MTRenderingServerBridgeImpl_h */
+#endif /* MTGraphicsServiceBridgeImpl_h */

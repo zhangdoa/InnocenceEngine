@@ -2,8 +2,8 @@
 
 #include "../ImGui/imgui_impl_dx12.cpp"
 
-#include "../../RenderingServer/DX12/DX12GraphicsService.h"
-#include "../../RenderingServer/DX12/DX12Helper_Common.h"
+#include "../../Services/DX12/DX12GraphicsService.h"
+#include "../../Services/DX12/DX12Helper_Common.h"
 
 #include "../../Interface/IRenderPass.h"
 
@@ -41,9 +41,9 @@ namespace ImGuiRendererDX12NS
 using namespace ImGuiRendererDX12NS;
 bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("ImGuiRenderPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("ImGuiRenderPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Graphics;
@@ -58,7 +58,7 @@ bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 
 	// No resource binding layout descriptors needed for ImGui.
 	
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("ImGuiRenderPass/Graphics");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("ImGuiRenderPass/Graphics");
 	
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -66,8 +66,8 @@ bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 
 bool ImGuiRenderPass::Initialize()
 {
-	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
-	l_renderingServer->Initialize(m_RenderPassComp);
+	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	l_graphicsService->Initialize(m_RenderPassComp);
 
 	// The actual rendering is called by the rendering server
 	m_RenderPassComp->m_CustomCommandsFunc = [&](CommandListComponent* cmdList)
@@ -78,9 +78,9 @@ bool ImGuiRenderPass::Initialize()
 				return;
 			}
 
-			auto l_renderingServer = g_Engine->getGraphicsService();
-			auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
-			auto l_currentFrame =l_renderingServer->GetCurrentFrame();
+			auto l_graphicsService = g_Engine->getGraphicsService();
+			auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
+			auto l_currentFrame =l_graphicsService->GetCurrentFrame();
 
 			auto dx12CmdList = cmdList;
 			auto commandList = reinterpret_cast<ID3D12GraphicsCommandList*>(dx12CmdList->m_CommandList);
@@ -92,11 +92,11 @@ bool ImGuiRenderPass::Initialize()
 				l_swapChainRenderPassComp->m_OutputMergerTarget && 
 				!l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs.empty())
 			{
-				l_renderingServer->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
+				l_graphicsService->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 			}
 		};
 
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
@@ -104,9 +104,9 @@ bool ImGuiRenderPass::Initialize()
 
 bool ImGuiRenderPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_CommandListComp_Graphics);
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
@@ -125,11 +125,11 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 		return true;
 	}
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);	
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);	
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }
@@ -141,10 +141,10 @@ RenderPassComponent* ImGuiRenderPass::GetRenderPassComp()
 
 bool ImGuiRenderPass::RenderTargetsReservationFunc()
 {
-	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());	
+	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());	
 
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
-		l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTarget);
+		l_graphicsService->Add(m_RenderPassComp->m_OutputMergerTarget);
 
 	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
 	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
@@ -154,8 +154,8 @@ bool ImGuiRenderPass::RenderTargetsReservationFunc()
 
 bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
-	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
+	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_graphicsService->GetSwapChainRenderPassComponent());
 	
 	// Skip render target creation in offscreen mode or if swap chain is not available
 	if (g_Engine->getInitConfig().isOffscreen || !l_swapChainRenderPassComp || 
@@ -191,11 +191,11 @@ bool ImGuiRendererDX12::Initialize()
 		return true;
 	}
 
-	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
-	auto l_device = l_renderingServer->GetDevice().Get();
-	auto& l_descHeapAccessor = l_renderingServer->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
+	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_device = l_graphicsService->GetDevice().Get();
+	auto& l_descHeapAccessor = l_graphicsService->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
 	auto l_newHandle = l_descHeapAccessor.GetNewHandle();
-	auto l_swapChainCount = l_renderingServer->GetSwapChainImageCount();
+	auto l_swapChainCount = l_graphicsService->GetSwapChainImageCount();
 
 	ImGui_ImplDX12_Init(l_device, l_swapChainCount,
 		DXGI_FORMAT_R8G8B8A8_UNORM, l_descHeapAccessor.GetHeap().Get(),
@@ -236,8 +236,8 @@ bool ImGuiRendererDX12::Prepare()
 
 bool ImGuiRendererDX12::ExecuteCommands()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
-	auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
 
 	// Skip ImGui execution in offscreen mode or if swap chain is not available
 	if (g_Engine->getInitConfig().isOffscreen || !l_swapChainRenderPassComp)
@@ -247,18 +247,18 @@ bool ImGuiRendererDX12::ExecuteCommands()
 	}
 
 	// Let the swap chain rendering finish.
-	l_renderingServer->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_graphicsService->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	if (m_RenderPass->PrepareCommandList(nullptr)) 
 	{ 
 		auto l_commandList = m_RenderPass->GetCommandListComp(GPUEngineType::Graphics);
 		if (l_commandList) {
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Graphics); 
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Graphics); 
 		}
 	}
-	l_renderingServer->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
+	l_graphicsService->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
 
 	// Let the ImGui rendering finish.
-	l_renderingServer->WaitOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_graphicsService->WaitOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 	return true;
 }
 

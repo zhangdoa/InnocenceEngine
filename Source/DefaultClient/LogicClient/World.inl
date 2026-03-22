@@ -10,7 +10,7 @@
 #include "../../Engine/Component/CameraComponent.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IGraphicsService.h"
+#include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
 

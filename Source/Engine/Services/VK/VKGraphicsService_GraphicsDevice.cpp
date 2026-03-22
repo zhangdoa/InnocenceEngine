@@ -1,4 +1,4 @@
-#include "VKRenderingServer.h"
+#include "VKGraphicsService.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -37,11 +37,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 		l_logLevel = LogLevel::Error;
 	}
 
-	g_Engine->Get<LogService>()->Print(l_logLevel, "VKRenderingServer: Validation Layer: ", pCallbackData->pMessage);
+	g_Engine->Get<LogService>()->Print(l_logLevel, "VKGraphicsService: Validation Layer: ", pCallbackData->pMessage);
 	return VK_FALSE;
 }
 
-bool VKRenderingServer::CreateHardwareResources()
+bool VKGraphicsService::CreateHardwareResources()
 {
     bool l_result = true;
 
@@ -63,18 +63,18 @@ bool VKRenderingServer::CreateHardwareResources()
     return l_result;
 }
 
-bool VKRenderingServer::ReleaseHardwareResources()
+bool VKGraphicsService::ReleaseHardwareResources()
 {
 	return true;
 }
 
-bool VKRenderingServer::GetSwapChainImages()
+bool VKGraphicsService::GetSwapChainImages()
 {
     // Currently handled in CreateSwapChain
     return true;
 }
 
-bool VKRenderingServer::AssignSwapChainImages()
+bool VKGraphicsService::AssignSwapChainImages()
 {
 	if (!m_SwapChainRenderPassComp->m_OutputMergerTarget)
 		Add(m_SwapChainRenderPassComp->m_OutputMergerTarget);
@@ -105,12 +105,12 @@ bool VKRenderingServer::AssignSwapChainImages()
     return true;
 }
 
-bool VKRenderingServer::ReleaseSwapChainImages()
+bool VKGraphicsService::ReleaseSwapChainImages()
 {
    return true;
 }
 
-std::vector<const char *> VKRenderingServer::GetRequiredExtensions()
+std::vector<const char *> VKGraphicsService::GetRequiredExtensions()
 {
 #if defined INNO_PLATFORM_WIN
 	std::vector<const char *> l_extensions = {"VK_KHR_surface", "VK_KHR_win32_surface"};
@@ -129,7 +129,7 @@ std::vector<const char *> VKRenderingServer::GetRequiredExtensions()
 	return l_extensions;
 }
 
-bool VKRenderingServer::CreateVkInstance()
+bool VKGraphicsService::CreateVkInstance()
 {
 	// check support for validation layer
 	if (m_enableValidationLayers && !CheckValidationLayerSupport(m_validationLayers))
@@ -180,7 +180,7 @@ bool VKRenderingServer::CreateVkInstance()
 	return true;
 }
 
-bool VKRenderingServer::CreateDebugCallback()
+bool VKGraphicsService::CreateDebugCallback()
 {
 	if (m_enableValidationLayers)
 	{
@@ -206,7 +206,7 @@ bool VKRenderingServer::CreateDebugCallback()
 	}
 }
 
-bool VKRenderingServer::CreatePhysicalDevice()
+bool VKGraphicsService::CreatePhysicalDevice()
 {
 	// check if there is any suitable physical GPU
 	uint32_t l_deviceCount = 0;
@@ -243,7 +243,7 @@ bool VKRenderingServer::CreatePhysicalDevice()
 	return true;
 }
 
-bool VKRenderingServer::CreateLogicalDevice()
+bool VKGraphicsService::CreateLogicalDevice()
 {
 	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 
@@ -328,7 +328,7 @@ bool VKRenderingServer::CreateLogicalDevice()
 	return true;
 }
 
-bool VKRenderingServer::CreateTextureSamplers()
+bool VKGraphicsService::CreateTextureSamplers()
 {
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -356,7 +356,7 @@ bool VKRenderingServer::CreateTextureSamplers()
 	return true;
 }
 
-bool VKRenderingServer::CreateVertexInputAttributions()
+bool VKGraphicsService::CreateVertexInputAttributions()
 {
 	m_vertexBindingDescription = {};
 	m_vertexBindingDescription.binding = 0;
@@ -398,7 +398,7 @@ bool VKRenderingServer::CreateVertexInputAttributions()
 	return true;
 }
 
-bool VKRenderingServer::CreateMaterialDescriptorPool()
+bool VKGraphicsService::CreateMaterialDescriptorPool()
 {
 	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -448,12 +448,12 @@ bool VKRenderingServer::CreateMaterialDescriptorPool()
 	return true;
 }
 
-bool VKRenderingServer::CreateGlobalCommandPool()
+bool VKGraphicsService::CreateGlobalCommandPool()
 {
 	return CreateCommandPool(m_windowSurface, GPUEngineType::Graphics, m_globalCommandPool);
 }
 
-bool VKRenderingServer::CreateSwapChain()
+bool VKGraphicsService::CreateSwapChain()
 {
 	// choose device supported formats, modes and maximum back buffers
 	auto l_swapChainSupport = QuerySwapChainSupport(m_physicalDevice, m_windowSurface);
@@ -539,7 +539,7 @@ bool VKRenderingServer::CreateSwapChain()
 	return true;
 }
 
-bool VKRenderingServer::CreateSyncPrimitives()
+bool VKGraphicsService::CreateSyncPrimitives()
 {
 	VkFenceCreateInfo l_fenceInfo = {};
 	l_fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;

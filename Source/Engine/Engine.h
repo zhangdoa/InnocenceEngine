@@ -10,12 +10,12 @@ namespace Inno
 {
 	enum EngineMode { Host, Slave };
 
-	enum RenderingServer { DX12, VK, MT };
+	enum GraphicsService { DX12, VK, MT };
 
 	struct InitConfig
 	{
 		EngineMode engineMode = EngineMode::Host;
-		RenderingServer renderingServer = RenderingServer::DX12;
+		GraphicsService graphicsService = GraphicsService::DX12;
 		LogLevel logLevel = LogLevel::Success;
 		bool isHeadless = false;
 		bool isOffscreen = false;
@@ -84,7 +84,7 @@ namespace Inno
 		
 		// Platform-specific system creation helpers
 		IWindowService* CreateWindowSystem(bool isHeadless);
-		IGraphicsService* CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType);
+		IGraphicsService* CreateGraphicsService(bool isHeadless, GraphicsService graphicsServiceType);
 
 		EngineImpl* m_pImpl;
 
@@ -96,7 +96,7 @@ namespace Inno
 	template<typename T>
 	T* Engine::GetSystemWithDependencies()
 	{
-		// Special handling for WindowSystem and RenderingServer - redirect to public methods
+		// Special handling for WindowSystem and GraphicsService - redirect to public methods
 		if constexpr (std::is_same_v<T, IWindowService>) {
 			return reinterpret_cast<T*>(getWindowService());
 		}

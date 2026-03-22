@@ -1,4 +1,4 @@
-#include "VKRenderingServer.h"
+#include "VKGraphicsService.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 
@@ -17,7 +17,7 @@ using namespace VKHelper;
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
 
-bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
+bool VKGraphicsService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
 {
 	if (queueType == GPUEngineType::Graphics)
 	{
@@ -31,13 +31,13 @@ bool VKRenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueTy
 	return true;
 }
 
-std::optional<uint32_t> VKRenderingServer::GetIndex(TextureComponent* texture, Accessibility bindingAccessibility)
+std::optional<uint32_t> VKGraphicsService::GetIndex(TextureComponent* texture, Accessibility bindingAccessibility)
 {
 	// Vulkan texture indexing not implemented yet
 	return std::nullopt;
 }
 
-bool VKRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
+bool VKGraphicsService::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
 	
@@ -88,7 +88,7 @@ bool VKRenderingServer::CommandListBegin(RenderPassComponent* renderPass, Comman
 	return true;
 }
 
-bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
+bool VKGraphicsService::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
 	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
@@ -141,12 +141,12 @@ bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass,
 	return true;
 }
 
-bool VKRenderingServer::ClearRenderTargets(RenderPassComponent *rhs, CommandListComponent* commandList, size_t index)
+bool VKGraphicsService::ClearRenderTargets(RenderPassComponent *rhs, CommandListComponent* commandList, size_t index)
 {
 	return true;
 }
 
-bool VKRenderingServer::BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
+bool VKGraphicsService::BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	if (resource == nullptr)
 	{
@@ -259,11 +259,11 @@ bool VKRenderingServer::BindGPUResource(RenderPassComponent* renderPass, Command
 	return true;
 }
 
-void VKRenderingServer::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
+void VKGraphicsService::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
 {
 }
 
-bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount)
+bool VKGraphicsService::DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<VKRenderPassComponent*>(renderPass);
 	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
@@ -279,7 +279,7 @@ bool VKRenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, Co
 	return true;
 }
 
-bool VKRenderingServer::DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount)
+bool VKGraphicsService::DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<VKRenderPassComponent*>(renderPass);
 	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
@@ -289,19 +289,19 @@ bool VKRenderingServer::DrawInstanced(RenderPassComponent* renderPass, CommandLi
 	return true;
 }
 
-bool VKRenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
+bool VKGraphicsService::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
 {
 	// Vulkan ExecuteIndirect not implemented yet
 	// TODO: Implement vkCmdDrawIndirect functionality
 	return true;
 }
 
-bool VKRenderingServer::UnbindGPUResource(RenderPassComponent *renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
+bool VKGraphicsService::UnbindGPUResource(RenderPassComponent *renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
+bool VKGraphicsService::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent*>(renderPass);
 	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
@@ -321,7 +321,7 @@ bool VKRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandL
 	return true;
 }
 
-bool VKRenderingServer::Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType)
+bool VKGraphicsService::Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType)
 {
 	if (!commandList)
 		return false;
@@ -360,7 +360,7 @@ bool VKRenderingServer::Execute(CommandListComponent* commandList, GPUEngineType
 	return true;
 }
 
-bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool VKGraphicsService::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	if (rhs->m_RenderPassDesc.m_GPUEngineType != semaphoreType)
 	{
@@ -392,7 +392,7 @@ bool VKRenderingServer::WaitOnGPU(RenderPassComponent *rhs, GPUEngineType queueT
 	return true;
 }
 
-bool VKRenderingServer::TryToTransitState(TextureComponent *rhs, CommandListComponent *commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
+bool VKGraphicsService::TryToTransitState(TextureComponent *rhs, CommandListComponent *commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_rhs = reinterpret_cast<VKTextureComponent *>(rhs);
 	auto l_currentImageLayout = sourceAccessibility == Accessibility::ReadOnly ? l_rhs->m_ReadImageLayout : l_rhs->m_WriteImageLayout;
@@ -408,14 +408,14 @@ bool VKRenderingServer::TryToTransitState(TextureComponent *rhs, CommandListComp
 	return true;
 }
 
-bool VKRenderingServer::TryToTransitState(GPUBufferComponent *gpuBuffer, CommandListComponent *commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
+bool VKGraphicsService::TryToTransitState(GPUBufferComponent *gpuBuffer, CommandListComponent *commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	// Vulkan doesn't require explicit buffer state transitions like D3D12
 	// Buffer memory barriers are handled differently
 	return true;
 }
 
-bool VKRenderingServer::PresentImpl()
+bool VKGraphicsService::PresentImpl()
 {
 	// acquire an image from swap chain
 	thread_local uint32_t imageIndex;
@@ -492,12 +492,12 @@ bool VKRenderingServer::PresentImpl()
 	return true;
 }
 
-bool Inno::VKRenderingServer::EndFrame()
+bool Inno::VKGraphicsService::EndFrame()
 {
     return false;
 }
 
-bool VKRenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool VKGraphicsService::Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	auto l_vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList->m_CommandList);
 
@@ -506,44 +506,44 @@ bool VKRenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListCom
 	return true;
 }
 
-Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 VKGraphicsService::ReadRenderTargetSample(RenderPassComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassComponent *canvas, TextureComponent *TextureComp)
+std::vector<Vec4> VKGraphicsService::ReadTextureBackToCPU(RenderPassComponent *canvas, TextureComponent *TextureComp)
 {
 	return std::vector<Vec4>();
 }
 
-bool VKRenderingServer::GenerateMipmap(TextureComponent *rhs, CommandListComponent* commandList)
+bool VKGraphicsService::GenerateMipmap(TextureComponent *rhs, CommandListComponent* commandList)
 {
 	// Currently Vulkan GenerateMipmap is not implemented but accepts command list parameter
 	// for API compatibility with DX12 implementation
 	return true;
 }
 
-bool VKRenderingServer::BeginCapture()
+bool VKGraphicsService::BeginCapture()
 {
     return true;
 }
 
-bool VKRenderingServer::EndCapture()
+bool VKGraphicsService::EndCapture()
 {
 	return true;
 }
 
-bool VKRenderingServer::ResizeImpl()
+bool VKGraphicsService::ResizeImpl()
 {
 	return true;
 }
 
-void *VKRenderingServer::GetVkInstance()
+void *VKGraphicsService::GetVkInstance()
 {
 	return m_instance;
 }
 
-void *VKRenderingServer::GetVkSurface()
+void *VKGraphicsService::GetVkSurface()
 {
 	return &m_windowSurface;
 }

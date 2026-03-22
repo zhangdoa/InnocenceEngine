@@ -6,7 +6,7 @@
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
-#include "../../../RenderingServer/VK/VKRenderingServer.h"
+#include "../../../Services/VK/VKGraphicsService.h"
 
 #include "../../../Engine.h"
 
@@ -27,9 +27,9 @@ bool WinVKWindowSurface::Initialize()
 	l_createInfo.hinstance = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationInstance();
 	l_createInfo.hwnd = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle();
 
-	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_Engine->getGraphicsService());
-	auto l_VkInstance = reinterpret_cast<VkInstance>(l_renderingServer->GetVkInstance());
-	auto l_VkSurface = reinterpret_cast<VkSurfaceKHR*>(l_renderingServer->GetVkSurface());
+	auto l_graphicsService = reinterpret_cast<VKGraphicsService*>(g_Engine->getGraphicsService());
+	auto l_VkInstance = reinterpret_cast<VkInstance>(l_graphicsService->GetVkInstance());
+	auto l_VkSurface = reinterpret_cast<VkSurfaceKHR*>(l_graphicsService->GetVkSurface());
 
 	if (vkCreateWin32SurfaceKHR(l_VkInstance, &l_createInfo, NULL, l_VkSurface) != VK_SUCCESS)
 	{

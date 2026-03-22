@@ -13,13 +13,13 @@ using namespace Inno;
 
 bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("FinalBlendPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("FinalBlendPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("FinalBlendPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("FinalBlendPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -83,10 +83,10 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("FinalBlendPass/Graphics/");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("FinalBlendPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("FinalBlendPass/Compute/");
+	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("FinalBlendPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -96,12 +96,12 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 bool FinalBlendPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);
-	l_renderingServer->Initialize(m_CommandListComp_Compute);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);
+	l_graphicsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -110,13 +110,13 @@ bool FinalBlendPass::Initialize()
 
 bool FinalBlendPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_Result);
-	l_renderingServer->Delete(m_CommandListComp_Compute);
-	l_renderingServer->Delete(m_CommandListComp_Graphics);
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_Result);
+	l_graphicsService->Delete(m_CommandListComp_Compute);
+	l_graphicsService->Delete(m_CommandListComp_Graphics);
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -140,35 +140,35 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (l_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;	
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	// Don't assume source state - let TryToTransitState use actual current state
-	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadWrite, Accessibility::WriteOnly);
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadWrite, Accessibility::WriteOnly);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0], 2);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0], 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_luminanceAverage, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 5);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 1);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, BillboardPass::Get().GetRenderPassComp()->m_RenderTargets[0], 2);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, DebugPass::Get().GetRenderPassComp()->m_RenderTargets[0], 3);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_luminanceAverage, 4);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 5);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;	
 
@@ -187,19 +187,19 @@ GPUResourceComponent* FinalBlendPass::GetResult()
 
 bool FinalBlendPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	if (m_Result)
-		l_renderingServer->Delete(m_Result);
+		l_graphicsService->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_Result = l_renderingServer->AddTextureComponent("Final Blend Pass Result/");
+	m_Result = l_graphicsService->AddTextureComponent("Final Blend Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
-	l_renderingServer->Initialize(m_Result);
+	l_graphicsService->Initialize(m_Result);
 
 	return true;
 }

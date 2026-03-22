@@ -1,6 +1,6 @@
 #pragma once
 #include "RenderPassComponent.h"
-#include "../RenderingServer/VK/VKHeaders.h"
+#include "../Services/VK/VKHeaders.h"
 #include "VKTextureComponent.h"
 
 namespace Inno

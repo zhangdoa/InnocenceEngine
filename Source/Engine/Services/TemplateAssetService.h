@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "../Interface/IService.h"
 
-#include "../RenderingServer/IGraphicsService.h"
+#include "../Services/IGraphicsService.h"
 
 #include "../Component/MeshComponent.h"
 #include "../Component/TextureComponent.h"

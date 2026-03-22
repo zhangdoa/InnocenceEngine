@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class HeadlessRenderingServer : public IGraphicsService
+	class HeadlessGraphicsService : public IGraphicsService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(HeadlessRenderingServer);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(HeadlessGraphicsService);
 
 		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;

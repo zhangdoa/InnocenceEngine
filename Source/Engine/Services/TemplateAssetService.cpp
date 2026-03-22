@@ -72,16 +72,16 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto renderingServer = g_Engine->getGraphicsService();
+            auto graphicsService = g_Engine->getGraphicsService();
 
             auto loadOrCreateTexture = [&](const char* name, const char* texturePath, TextureComponent*& texturePtr) -> bool {
                 auto l_componentName = std::string(name) + "." + TextureComponent::GetTypeName();
 
-                texturePtr = renderingServer->FindTextureByName(l_componentName.c_str());
+                texturePtr = graphicsService->FindTextureByName(l_componentName.c_str());
                 if (texturePtr)
                     return true;
 
-                texturePtr = renderingServer->AddTextureComponent(l_componentName.c_str());
+                texturePtr = graphicsService->AddTextureComponent(l_componentName.c_str());
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
                 if (AssetService::Load(l_filePath.c_str(), *texturePtr))
                     return true;
@@ -94,7 +94,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 texturePtr->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*texturePtr, m_textureData[texturePtr]);
 
-                renderingServer->Initialize(texturePtr, m_textureData[texturePtr]);
+                graphicsService->Initialize(texturePtr, m_textureData[texturePtr]);
                 return true;
                 };
 
@@ -105,10 +105,10 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             if (!loadOrCreateTexture("BasicAOTexture", "../Res/Textures/basic_ao.png", m_basicAOTexture)) return false;
 
             auto l_materialName = std::string("DefaultMaterial.MaterialComponent");
-            m_defaultMaterial = renderingServer->FindMaterialByName(l_materialName.c_str());
+            m_defaultMaterial = graphicsService->FindMaterialByName(l_materialName.c_str());
             if (!m_defaultMaterial)
             {
-                m_defaultMaterial = renderingServer->AddMaterialComponent(l_materialName.c_str());
+                m_defaultMaterial = graphicsService->AddMaterialComponent(l_materialName.c_str());
                 auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
                 if (!AssetService::Load(l_filePath.c_str(), *m_defaultMaterial))
                 {
@@ -121,18 +121,18 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                     m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
                     AssetService::Save(*m_defaultMaterial);
 
-                    renderingServer->Initialize(m_defaultMaterial);
+                    graphicsService->Initialize(m_defaultMaterial);
                 }
             }
 
             auto loadOrCreateMesh = [&](const char* name, MeshShape shape, MeshComponent*& meshPtr) {
                 auto l_componentName = std::string(name) + ".MeshComponent";
 
-                meshPtr = renderingServer->FindMeshByName(l_componentName.c_str());
+                meshPtr = graphicsService->FindMeshByName(l_componentName.c_str());
                 if (meshPtr)
                     return;
 
-                meshPtr = renderingServer->AddMeshComponent(l_componentName.c_str());
+                meshPtr = graphicsService->AddMeshComponent(l_componentName.c_str());
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
                 if (AssetService::Load(l_filePath.c_str(), *meshPtr))
                     return;
@@ -140,7 +140,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 GenerateMesh(shape, meshPtr);
                 AssetService::Save(*meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
 
-                renderingServer->Initialize(meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
+                graphicsService->Initialize(meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
                 };
 
             loadOrCreateMesh("UnitTriangleMesh", MeshShape::Triangle, m_unitTriangleMesh);
@@ -174,30 +174,30 @@ bool TemplateAssetServiceImpl::UnloadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Termination Task", ITask::Type::Once, 2);
     auto l_DefaultAssetTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
-            l_renderingServer->Delete(m_basicNormalTexture);
-            l_renderingServer->Delete(m_basicAlbedoTexture);
-            l_renderingServer->Delete(m_basicMetallicTexture);
-            l_renderingServer->Delete(m_basicRoughnessTexture);
-            l_renderingServer->Delete(m_basicAOTexture);
+            l_graphicsService->Delete(m_basicNormalTexture);
+            l_graphicsService->Delete(m_basicAlbedoTexture);
+            l_graphicsService->Delete(m_basicMetallicTexture);
+            l_graphicsService->Delete(m_basicRoughnessTexture);
+            l_graphicsService->Delete(m_basicAOTexture);
 
-            l_renderingServer->Delete(m_defaultMaterial);
+            l_graphicsService->Delete(m_defaultMaterial);
 
-            l_renderingServer->Delete(m_iconTemplate_DirectionalLight);
-            l_renderingServer->Delete(m_iconTemplate_PointLight);
-            l_renderingServer->Delete(m_iconTemplate_SphereLight);
+            l_graphicsService->Delete(m_iconTemplate_DirectionalLight);
+            l_graphicsService->Delete(m_iconTemplate_PointLight);
+            l_graphicsService->Delete(m_iconTemplate_SphereLight);
 
-            l_renderingServer->Delete(m_unitTriangleMesh);
-            l_renderingServer->Delete(m_unitSquareMesh);
-            l_renderingServer->Delete(m_unitPentagonMesh);
-            l_renderingServer->Delete(m_unitHexagonMesh);
-            l_renderingServer->Delete(m_unitTetrahedronMesh);
-            l_renderingServer->Delete(m_unitCubeMesh);
-            l_renderingServer->Delete(m_unitOctahedronMesh);
-            l_renderingServer->Delete(m_unitDodecahedronMesh);
-            l_renderingServer->Delete(m_unitIcosahedronMesh);
-            l_renderingServer->Delete(m_unitSphereMesh);
+            l_graphicsService->Delete(m_unitTriangleMesh);
+            l_graphicsService->Delete(m_unitSquareMesh);
+            l_graphicsService->Delete(m_unitPentagonMesh);
+            l_graphicsService->Delete(m_unitHexagonMesh);
+            l_graphicsService->Delete(m_unitTetrahedronMesh);
+            l_graphicsService->Delete(m_unitCubeMesh);
+            l_graphicsService->Delete(m_unitOctahedronMesh);
+            l_graphicsService->Delete(m_unitDodecahedronMesh);
+            l_graphicsService->Delete(m_unitIcosahedronMesh);
+            l_graphicsService->Delete(m_unitSphereMesh);
         });
 
     l_DefaultAssetTerminationTask->Activate();

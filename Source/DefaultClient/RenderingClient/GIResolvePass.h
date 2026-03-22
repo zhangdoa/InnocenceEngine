@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../../Engine/RenderingServer/IGraphicsService.h"
+#include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
 namespace GIResolvePass

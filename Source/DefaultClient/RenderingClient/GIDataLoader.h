@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../../Engine/RenderingServer/IGraphicsService.h"
+#include "../../Engine/Services/IGraphicsService.h"
 #include "../../Engine/Common/GPUDataStructure.h"
 
 using namespace Inno;

@@ -1,4 +1,4 @@
-#include "VKRenderingServer.h"
+#include "VKGraphicsService.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 
@@ -20,7 +20,7 @@ using namespace VKHelper;
 #include "../../Services/TemplateAssetService.h"
 
 template <typename U, typename T>
-bool VKRenderingServer::SetObjectName(U* owner, const T& rhs, VkObjectType objectType, const char* objectTypeSuffix)
+bool VKGraphicsService::SetObjectName(U* owner, const T& rhs, VkObjectType objectType, const char* objectTypeSuffix)
 {
 	// TODO Phase2-migrate: auto l_Name = std::string(owner->m_InstanceName.c_str());
 	std::string l_Name;
@@ -43,7 +43,7 @@ bool VKRenderingServer::SetObjectName(U* owner, const T& rhs, VkObjectType objec
 	return true;
 }
 
-bool VKRenderingServer::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &vertices, std::vector<Index> &indices)
+bool VKGraphicsService::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &vertices, std::vector<Index> &indices)
 {
 	auto l_rhs = reinterpret_cast<VKMeshComponent *>(rhs);
 
@@ -71,7 +71,7 @@ bool VKRenderingServer::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &
 	return true;
 }
 
-bool VKRenderingServer::InitializeImpl(TextureComponent *rhs, void *textureData)
+bool VKGraphicsService::InitializeImpl(TextureComponent *rhs, void *textureData)
 {
 	auto l_rhs = reinterpret_cast<VKTextureComponent *>(rhs);
 	l_rhs->m_VKTextureDesc = GetVKTextureDesc(rhs->m_TextureDesc);
@@ -138,7 +138,7 @@ bool VKRenderingServer::InitializeImpl(TextureComponent *rhs, void *textureData)
 	return true;
 }
 
-bool VKRenderingServer::InitializeImpl(RenderPassComponent *rhs)
+bool VKGraphicsService::InitializeImpl(RenderPassComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassComponent *>(rhs);
 
@@ -197,7 +197,7 @@ bool VKRenderingServer::InitializeImpl(RenderPassComponent *rhs)
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeImpl(ShaderProgramComponent *rhs)
+bool VKGraphicsService::InitializeImpl(ShaderProgramComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKShaderProgramComponent *>(rhs);
 
@@ -263,7 +263,7 @@ bool VKRenderingServer::InitializeImpl(ShaderProgramComponent *rhs)
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeImpl(SamplerComponent *rhs)
+bool VKGraphicsService::InitializeImpl(SamplerComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKSamplerComponent *>(rhs);
 
@@ -302,7 +302,7 @@ bool VKRenderingServer::InitializeImpl(SamplerComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::InitializeImpl(GPUBufferComponent *rhs)
+bool VKGraphicsService::InitializeImpl(GPUBufferComponent *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKGPUBufferComponent *>(rhs);
 
@@ -341,7 +341,7 @@ bool VKRenderingServer::InitializeImpl(GPUBufferComponent *rhs)
 }
 
 // @TODO: The command list should be passed as a parameter.
-bool VKRenderingServer::UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
+bool VKGraphicsService::UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
 {
 	auto l_rhs = reinterpret_cast<VKGPUBufferComponent*>(gpuBuffer);
 	if (!l_rhs->m_DeviceLocalMemory)
@@ -353,7 +353,7 @@ bool VKRenderingServer::UploadToGPU(CommandListComponent* commandList, GPUBuffer
 	return true;
 }
 
-bool VKRenderingServer::CreateImageView(VKTextureComponent *VKTextureComp)
+bool VKGraphicsService::CreateImageView(VKTextureComponent *VKTextureComp)
 {
 	VkImageViewCreateInfo l_viewCInfo = {};
 	l_viewCInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -393,7 +393,7 @@ bool VKRenderingServer::CreateImageView(VKTextureComponent *VKTextureComp)
 	return true;
 }
 
-bool VKRenderingServer::ReserveFramebuffer(VKRenderPassComponent* VKRenderPassComp)
+bool VKGraphicsService::ReserveFramebuffer(VKRenderPassComponent* VKRenderPassComp)
 {
 	// @TODO: reconsider how to implement multi-frame support properly
 	auto l_framebufferCount = GetSwapChainImageCount();
@@ -405,7 +405,7 @@ bool VKRenderingServer::ReserveFramebuffer(VKRenderPassComponent* VKRenderPassCo
 	return true;
 }
 
-bool VKRenderingServer::CreateDescriptorSetLayoutBindings(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateDescriptorSetLayoutBindings(VKRenderPassComponent *VKRenderPassComp)
 {
 	std::sort(VKRenderPassComp->m_ResourceBindingLayoutDescs.begin(), VKRenderPassComp->m_ResourceBindingLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
 		return A.m_DescriptorIndex < B.m_DescriptorIndex;
@@ -514,7 +514,7 @@ bool VKRenderingServer::CreateDescriptorSetLayoutBindings(VKRenderPassComponent 
 	return true;
 }
 
-bool VKRenderingServer::CreateDescriptorPool(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateDescriptorPool(VKRenderPassComponent *VKRenderPassComp)
 {
 	// Currently support less than 10 descriptor types actually
 	std::array<uint32_t, 10> l_descriptorTypeCount = {};
@@ -550,7 +550,7 @@ bool VKRenderingServer::CreateDescriptorPool(VKRenderPassComponent *VKRenderPass
 	return l_result;
 }
 
-bool VKRenderingServer::CreateDescriptorSetLayout(const VkDescriptorSetLayout& dummyEmptyDescriptorLayout, VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateDescriptorSetLayout(const VkDescriptorSetLayout& dummyEmptyDescriptorLayout, VKRenderPassComponent *VKRenderPassComp)
 {
 	bool l_result = true;
 	if (VKRenderPassComp->m_ResourceBindingLayoutDescs.size())
@@ -585,7 +585,7 @@ bool VKRenderingServer::CreateDescriptorSetLayout(const VkDescriptorSetLayout& d
 	return true;
 }
 
-bool VKRenderingServer::CreateDescriptorSets(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateDescriptorSets(VKRenderPassComponent *VKRenderPassComp)
 {
 	bool l_result = true;
 	for (size_t i = 0; i < VKRenderPassComp->m_DescriptorSetLayouts.size(); i++)
@@ -596,7 +596,7 @@ bool VKRenderingServer::CreateDescriptorSets(VKRenderPassComponent *VKRenderPass
     return l_result;
 }
 
-bool VKRenderingServer::CreateRenderPass(VKRenderPassComponent *VKRenderPassComp, VkFormat* overrideFormat)
+bool VKGraphicsService::CreateRenderPass(VKRenderPassComponent *VKRenderPassComp, VkFormat* overrideFormat)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
 
@@ -734,7 +734,7 @@ bool VKRenderingServer::CreateRenderPass(VKRenderPassComponent *VKRenderPassComp
 	return true;
 }
 
-bool VKRenderingServer::CreateViewportAndScissor(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateViewportAndScissor(VKRenderPassComponent *VKRenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
 
@@ -752,7 +752,7 @@ bool VKRenderingServer::CreateViewportAndScissor(VKRenderPassComponent *VKRender
 	return true;
 }
 
-bool VKRenderingServer::CreateFramebuffers(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateFramebuffers(VKRenderPassComponent *VKRenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
 
@@ -815,7 +815,7 @@ bool VKRenderingServer::CreateFramebuffers(VKRenderPassComponent *VKRenderPassCo
 	return true;
 }
 
-bool VKRenderingServer::CreatePipelineLayout(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreatePipelineLayout(VKRenderPassComponent *VKRenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
 
@@ -844,7 +844,7 @@ bool VKRenderingServer::CreatePipelineLayout(VKRenderPassComponent *VKRenderPass
 	return true;
 }
 
-bool VKRenderingServer::CreateGraphicsPipelines(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateGraphicsPipelines(VKRenderPassComponent *VKRenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
 	size_t colorAttachmentCount = VKRenderPassComp->m_RenderPassDesc.m_UseMultiFrames ? 1 : VKRenderPassComp->m_RenderPassDesc.m_RenderTargetCount;
@@ -910,7 +910,7 @@ bool VKRenderingServer::CreateGraphicsPipelines(VKRenderPassComponent *VKRenderP
 	return true;
 }
 
-bool VKRenderingServer::CreateComputePipelines(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateComputePipelines(VKRenderPassComponent *VKRenderPassComp)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRenderPassComp->m_PipelineStateObject);
 
@@ -937,7 +937,7 @@ bool VKRenderingServer::CreateComputePipelines(VKRenderPassComponent *VKRenderPa
 	return true;
 }
 
-bool VKRenderingServer::CreateCommandBuffers(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateCommandBuffers(VKRenderPassComponent *VKRenderPassComp)
 {
 	// In the new architecture, command buffers are allocated dynamically when CommandListBegin is called
 	// This function now only needs to ensure the command pools are ready
@@ -960,7 +960,7 @@ bool VKRenderingServer::CreateCommandBuffers(VKRenderPassComponent *VKRenderPass
 	return true;
 }
 
-bool VKRenderingServer::CreateSyncPrimitives(VKRenderPassComponent *VKRenderPassComp)
+bool VKGraphicsService::CreateSyncPrimitives(VKRenderPassComponent *VKRenderPassComp)
 {
 	VkSemaphoreTypeCreateInfo l_timelineCreateInfo = {};
 	l_timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
@@ -1007,7 +1007,7 @@ bool VKRenderingServer::CreateSyncPrimitives(VKRenderPassComponent *VKRenderPass
 	return true;
 }
 
-bool VKRenderingServer::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject *PSO)
+bool VKGraphicsService::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject *PSO)
 {
 	PSO->m_ViewportStateCInfo = {};
 	PSO->m_ViewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1019,7 +1019,7 @@ bool VKRenderingServer::GenerateViewportState(ViewportDesc viewportDesc, VKPipel
 	return true;
 }
 
-bool VKRenderingServer::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject *PSO)
+bool VKGraphicsService::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject *PSO)
 {
 	PSO->m_InputAssemblyStateCInfo = {};
 	PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1092,7 +1092,7 @@ bool VKRenderingServer::GenerateRasterizerState(RasterizerDesc rasterizerDesc, V
 	return true;
 }
 
-bool VKRenderingServer::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject *PSO)
+bool VKGraphicsService::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject *PSO)
 {	
 	PSO->m_DepthStencilStateCInfo = {};
 	PSO->m_DepthStencilStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -1124,7 +1124,7 @@ bool VKRenderingServer::GenerateDepthStencilState(DepthStencilDesc depthStencilD
 	return true;
 }
 
-bool VKRenderingServer::GenerateBlendState(BlendDesc blendDesc, size_t colorBlendAttachmentCount, VKPipelineStateObject *PSO)
+bool VKGraphicsService::GenerateBlendState(BlendDesc blendDesc, size_t colorBlendAttachmentCount, VKPipelineStateObject *PSO)
 {
 	PSO->m_ColorBlendStateCInfo = {};
 	PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;

@@ -40,9 +40,9 @@ namespace Inno
 
 bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_BillboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
+	m_BillboardGPUBufferComp = l_graphicsService->AddGPUBufferComponent("BillboardCBuffer/");
 
 	f_SceneLoadingFinishedCallback = [&]()
 		{
@@ -64,7 +64,7 @@ bool BillboardDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -72,7 +72,7 @@ bool BillboardDrawCallServiceImpl::Initialize()
 		m_BillboardGPUBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 		m_BillboardGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
-		l_renderingServer->Initialize(m_BillboardGPUBufferComp);
+		l_graphicsService->Initialize(m_BillboardGPUBufferComp);
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "BillboardDrawCallService has been initialized.");
@@ -157,11 +157,11 @@ bool BillboardDrawCallServiceImpl::Update()
 
 		UpdateBillboardPassData();
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		if (m_BillboardPassPerObjectCB.size() > 0)
 		{
-			l_renderingServer->Upload(m_BillboardGPUBufferComp, m_BillboardPassPerObjectCB, 0, m_BillboardPassPerObjectCB.size());
+			l_graphicsService->Upload(m_BillboardGPUBufferComp, m_BillboardPassPerObjectCB, 0, m_BillboardPassPerObjectCB.size());
 		}
 
 		return true;
@@ -175,9 +175,9 @@ bool BillboardDrawCallServiceImpl::Update()
 
 bool BillboardDrawCallServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_BillboardGPUBufferComp);
+	l_graphicsService->Delete(m_BillboardGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "BillboardDrawCallService has been terminated.");

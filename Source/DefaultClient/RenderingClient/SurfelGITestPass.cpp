@@ -18,9 +18,9 @@ using namespace Inno;
 
 bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_probeSphereMeshGPUBufferComp = l_renderingServer->AddGPUBufferComponent("ProbeSphereMeshGPUBuffer/");
+	m_probeSphereMeshGPUBufferComp = l_graphicsService->AddGPUBufferComponent("ProbeSphereMeshGPUBuffer/");
 	m_probeSphereMeshGPUBufferComp->m_ElementCount = 4096;
 	m_probeSphereMeshGPUBufferComp->m_ElementSize = sizeof(ProbeMeshData);
 	m_probeSphereMeshGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -28,12 +28,12 @@ bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 	m_probeSphereMeshData.reserve(4096);
 
 	////
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SurfelGITestPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SurfelGITestPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "GIResolveTestProbePass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "GIResolveTestProbePass.frag/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SurfelGITestPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SurfelGITestPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -81,7 +81,7 @@ bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("SurfelGITestPass/");
+	m_SamplerComp = l_graphicsService->AddSamplerComponent("SurfelGITestPass/");
 	
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -90,14 +90,14 @@ bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 
 bool SurfelGITestPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	//m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
-	l_renderingServer->Initialize(m_probeSphereMeshGPUBufferComp);
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_SamplerComp);
+	l_graphicsService->Initialize(m_probeSphereMeshGPUBufferComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -111,7 +111,7 @@ ObjectStatus SurfelGITestPass::GetStatus()
 
 bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_probes = GIDataLoader::GetProbes();
 
@@ -208,26 +208,26 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		auto l_sphere = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
 
-		l_renderingServer->Upload(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
+		l_graphicsService->Upload(m_probeSphereMeshGPUBufferComp, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 
-		// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-		// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-		// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+		// l_graphicsService->CommandListBegin(m_RenderPassComp, 0);
+		// l_graphicsService->BindRenderPassComponent(m_RenderPassComp);
+		// l_graphicsService->ClearRenderTargets(m_RenderPassComp);
 
-		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
+		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 4);
 
-		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
-		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_GIGPUBufferComp, 1);
-		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_probeSphereMeshGPUBufferComp, 2);
-		// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
+		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_GIGPUBufferComp, 1);
+		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_probeSphereMeshGPUBufferComp, 2);
+		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
 
-		// l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_probeSphereMeshData.size());
+		// l_graphicsService->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_probeSphereMeshData.size());
 
-		// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
+		// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
 
-		// l_renderingServer->CommandListEnd(m_RenderPassComp);
+		// l_graphicsService->CommandListEnd(m_RenderPassComp);
 
-		// l_renderingServer->Execute(m_RenderPassComp, GPUEngineType::Graphics);
+		// l_graphicsService->Execute(m_RenderPassComp, GPUEngineType::Graphics);
 
 		
 	}
@@ -237,9 +237,9 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 bool SurfelGITestPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 

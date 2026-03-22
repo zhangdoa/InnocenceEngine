@@ -100,7 +100,7 @@ bool GIDataLoader::loadGIData()
 
 bool GIDataLoader::Setup()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	f_sceneLoadingFinishedCallback = []()
 	{
@@ -114,7 +114,7 @@ bool GIDataLoader::Setup()
 	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
 
 	////
-	m_testSampleCubemap = l_renderingServer->AddTextureComponent("TestSampleCubemap/");
+	m_testSampleCubemap = l_graphicsService->AddTextureComponent("TestSampleCubemap/");
 
 	std::vector<Vec4> l_faceColors = {
 	Vec4(1.0f, 0.0f, 0.0f, 1.0f),
@@ -159,7 +159,7 @@ bool GIDataLoader::Setup()
 		}
 	}
 
-	m_testSample3DTexture = l_renderingServer->AddTextureComponent("TestSample3D/");
+	m_testSample3DTexture = l_graphicsService->AddTextureComponent("TestSample3D/");
 
 	m_testSample3DTexture->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSample3DTexture->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
@@ -176,10 +176,10 @@ bool GIDataLoader::Setup()
 
 bool GIDataLoader::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	
-	l_renderingServer->Initialize(m_testSampleCubemap);
-	l_renderingServer->Initialize(m_testSample3DTexture);
+	l_graphicsService->Initialize(m_testSampleCubemap);
+	l_graphicsService->Initialize(m_testSample3DTexture);
 
 	return true;
 }

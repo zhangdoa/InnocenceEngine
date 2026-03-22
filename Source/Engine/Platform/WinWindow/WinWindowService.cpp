@@ -22,14 +22,14 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 
 	m_ApplicationName = g_Engine->GetApplicationName().c_str();
 	m_InitConfig = g_Engine->getInitConfig();
-	switch (m_InitConfig.renderingServer)
+	switch (m_InitConfig.graphicsService)
 	{
-	case RenderingServer::DX12:
+	case GraphicsService::DX12:
 #if defined INNO_PLATFORM_WIN
 		m_WindowSurface = new WinDXWindowSurface();
 #endif
 		break;
-	case RenderingServer::VK:
+	case GraphicsService::VK:
 #if defined INNO_RENDERER_VULKAN
 		m_WindowSurface = new WinVKWindowSurface();
 #endif

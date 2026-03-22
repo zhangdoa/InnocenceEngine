@@ -1,0 +1,7 @@
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(VKGraphicsService ${HEADERS} ${SOURCES})
+set_property(TARGET VKGraphicsService PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(VKGraphicsService PROPERTIES FOLDER Engine/GraphicsService)
+target_include_directories(VKGraphicsService PUBLIC "${INNO_GITSUBMODULE_DIRECTORIES}/Vulkan-Headers/include/")
+target_link_libraries(VKGraphicsService ${Vulkan_LIBRARIES})

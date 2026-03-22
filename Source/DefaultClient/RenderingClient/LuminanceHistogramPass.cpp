@@ -9,7 +9,7 @@ using namespace Inno;
 
 bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -17,11 +17,11 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("LuminanceHistogramPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("LuminanceHistogramPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceHistogramPass.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("LuminanceHistogramPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("LuminanceHistogramPass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -47,13 +47,13 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("LuminanceHistogramPass/Compute/");
+	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("LuminanceHistogramPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("LuminanceHistogramPass/Graphics/");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("LuminanceHistogramPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_luminanceHistogram = l_renderingServer->AddGPUBufferComponent("LuminanceHistogramGPUBuffer/");
+	m_luminanceHistogram = l_graphicsService->AddGPUBufferComponent("LuminanceHistogramGPUBuffer/");
 	m_luminanceHistogram->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceHistogram->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceHistogram->m_ElementCount = 256;
@@ -66,13 +66,13 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceHistogramPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Compute);
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);	
-	l_renderingServer->Initialize(m_luminanceHistogram);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);	
+	l_graphicsService->Initialize(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -81,13 +81,13 @@ bool LuminanceHistogramPass::Initialize()
 
 bool LuminanceHistogramPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_luminanceHistogram);
-	l_renderingServer->Delete(m_CommandListComp_Compute);
-	l_renderingServer->Delete(m_CommandListComp_Graphics);
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_luminanceHistogram);
+	l_graphicsService->Delete(m_CommandListComp_Compute);
+	l_graphicsService->Delete(m_CommandListComp_Graphics);
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -111,7 +111,7 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 	if (m_luminanceHistogram->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
@@ -120,20 +120,20 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_luminanceHistogram, 2);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_luminanceHistogram, 2);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
+	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

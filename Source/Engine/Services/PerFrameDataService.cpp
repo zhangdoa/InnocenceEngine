@@ -68,10 +68,10 @@ GPUBufferComponent* PerFrameDataServiceImpl::GetPreviousFramePerFrameBuffer()
 
 bool PerFrameDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
-	m_PerFrameCBufferPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBufferPrev/");
+	m_PerFrameCBufferGPUBufferComp = l_graphicsService->AddGPUBufferComponent("PerFrameCBuffer/");
+	m_PerFrameCBufferPrevGPUBufferComp = l_graphicsService->AddGPUBufferComponent("PerFrameCBufferPrev/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -83,19 +83,19 @@ bool PerFrameDataServiceImpl::Initialize()
 	{
 		m_perFrameCBs.resize(g_Engine->getGraphicsService()->GetSwapChainImageCount());
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 		m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
 		m_PerFrameCBufferGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
 
-		l_renderingServer->Initialize(m_PerFrameCBufferGPUBufferComp);
+		l_graphicsService->Initialize(m_PerFrameCBufferGPUBufferComp);
 
 		m_PerFrameCBufferPrevGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 		m_PerFrameCBufferPrevGPUBufferComp->m_ElementCount = 1;
 		m_PerFrameCBufferPrevGPUBufferComp->m_ElementSize = sizeof(PerFrameConstantBuffer);
 
-		l_renderingServer->Initialize(m_PerFrameCBufferPrevGPUBufferComp);
+		l_graphicsService->Initialize(m_PerFrameCBufferPrevGPUBufferComp);
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "PerFrameDataService has been initialized.");
@@ -194,9 +194,9 @@ bool PerFrameDataServiceImpl::Update()
 
 		UpdatePerFrameConstantBuffer();
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 		auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
-		l_renderingServer->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[l_renderingServer->GetCurrentFrame()]);
+		l_graphicsService->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[l_graphicsService->GetCurrentFrame()]);
 
 		return true;
 	}
@@ -209,10 +209,10 @@ bool PerFrameDataServiceImpl::Update()
 
 bool PerFrameDataServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_PerFrameCBufferGPUBufferComp);
-	l_renderingServer->Delete(m_PerFrameCBufferPrevGPUBufferComp);
+	l_graphicsService->Delete(m_PerFrameCBufferGPUBufferComp);
+	l_graphicsService->Delete(m_PerFrameCBufferPrevGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "PerFrameDataService has been terminated.");

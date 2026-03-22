@@ -11,19 +11,19 @@ using namespace Inno;
 
 bool OpaquePass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("OpaquePass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("OpaquePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "opaqueGeometryProcessPass.frag/";
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("OpaquePass/");
+	m_SamplerComp = l_graphicsService->AddSamplerComponent("OpaquePass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("OpaquePass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("OpaquePass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -97,7 +97,7 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("OpaquePass/Graphics/");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("OpaquePass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 	
 	m_ObjectStatus = ObjectStatus::Created;
@@ -107,12 +107,12 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 bool OpaquePass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);
-	l_renderingServer->Initialize(m_SamplerComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);
+	l_graphicsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -121,11 +121,11 @@ bool OpaquePass::Initialize()
 
 bool OpaquePass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_SamplerComp);	
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_SamplerComp);	
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -142,12 +142,12 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_perFrameCBuffer = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_perFrameCBufferPrev = g_Engine->Get<PerFrameDataService>()->GetPreviousFrameBuffer();
@@ -155,18 +155,18 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_gpuModelDataCBuffer = l_drawCallService->GetGPUModelDataBuffer();
 	auto l_materialCBuffer = l_drawCallService->GetMaterialBuffer();
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBufferPrev, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 3);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataCBuffer, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 6);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 7);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBuffer, 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex | ShaderStage::Pixel, l_perFrameCBufferPrev, 2);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 3);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataCBuffer, 4);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 5);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 6);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 7);
 
 	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(OpaqueCullingPass::Get().GetResult());
-	l_renderingServer->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
+	l_graphicsService->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
 	
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	
@@ -186,8 +186,8 @@ GPUResourceComponent* OpaquePass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return nullptr;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();	
-	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
+	auto l_graphicsService = g_Engine->getGraphicsService();	
+	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[2];
 }

@@ -1,4 +1,4 @@
-#include "VKRenderingServer.h"
+#include "VKGraphicsService.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 
@@ -9,7 +9,7 @@
 
 using namespace Inno;
 
-bool VKRenderingServer::InitializePool()
+bool VKGraphicsService::InitializePool()
 {
 	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -19,7 +19,7 @@ bool VKRenderingServer::InitializePool()
 	return true;
 }
 
-bool VKRenderingServer::TerminatePool()
+bool VKGraphicsService::TerminatePool()
 {
 	delete m_PSOPool;
 	delete m_SemaphorePool;
@@ -27,57 +27,57 @@ bool VKRenderingServer::TerminatePool()
 	return true;
 }
 
-IPipelineStateObject* VKRenderingServer::AddPipelineStateObject()
+IPipelineStateObject* VKGraphicsService::AddPipelineStateObject()
 {
 	return m_PSOPool->Spawn();
 }
 
-ISemaphore* VKRenderingServer::AddSemaphore()
+ISemaphore* VKGraphicsService::AddSemaphore()
 {
 	return m_SemaphorePool->Spawn();
 }
 
-bool VKRenderingServer::Add(IOutputMergerTarget*& rhs)
+bool VKGraphicsService::Add(IOutputMergerTarget*& rhs)
 {
 	return false;
 }
 
-bool VKRenderingServer::Delete(MeshComponent *rhs)
+bool VKGraphicsService::Delete(MeshComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(TextureComponent *rhs)
+bool VKGraphicsService::Delete(TextureComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(MaterialComponent *rhs)
+bool VKGraphicsService::Delete(MaterialComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(RenderPassComponent *rhs)
+bool VKGraphicsService::Delete(RenderPassComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(ShaderProgramComponent *rhs)
+bool VKGraphicsService::Delete(ShaderProgramComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(SamplerComponent *rhs)
+bool VKGraphicsService::Delete(SamplerComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(GPUBufferComponent *rhs)
+bool VKGraphicsService::Delete(GPUBufferComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::Delete(IPipelineStateObject *rhs)
+bool VKGraphicsService::Delete(IPipelineStateObject *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKPipelineStateObject*>(rhs);
 	
@@ -86,7 +86,7 @@ bool VKRenderingServer::Delete(IPipelineStateObject *rhs)
 	return true;
 }
 
-bool VKRenderingServer::Delete(CommandListComponent *rhs)
+bool VKGraphicsService::Delete(CommandListComponent *rhs)
 {
 	if (!rhs || rhs->m_CommandList == 0)
 		return true;
@@ -107,7 +107,7 @@ bool VKRenderingServer::Delete(CommandListComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::Delete(ISemaphore *rhs)
+bool VKGraphicsService::Delete(ISemaphore *rhs)
 {
 	auto l_rhs = reinterpret_cast<VKSemaphore*>(rhs);
 	
@@ -116,7 +116,7 @@ bool VKRenderingServer::Delete(ISemaphore *rhs)
 	return true;
 }
 
-bool VKRenderingServer::Delete(IOutputMergerTarget* rhs)
+bool VKGraphicsService::Delete(IOutputMergerTarget* rhs)
 {
 	return true;
 }

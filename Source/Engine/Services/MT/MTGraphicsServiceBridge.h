@@ -1,16 +1,16 @@
-#ifndef MTRenderingServerBridge_h
-#define MTRenderingServerBridge_h
+#ifndef MTGraphicsServiceBridge_h
+#define MTGraphicsServiceBridge_h
 
 #include "../../Component/MTMeshComponent.h"
 #include "../../Component/MTTextureComponent.h"
 
 namespace Inno
 {
-	class MTRenderingServerBridge
+	class MTGraphicsServiceBridge
 	{
 	public:
-		MTRenderingServerBridge() {};
-		virtual ~MTRenderingServerBridge() {};
+		MTGraphicsServiceBridge() {};
+		virtual ~MTGraphicsServiceBridge() {};
 
 		virtual bool Setup() = 0;
 		virtual bool Initialize() = 0;

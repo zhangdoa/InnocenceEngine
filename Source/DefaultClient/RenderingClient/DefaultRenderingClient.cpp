@@ -162,9 +162,9 @@ namespace Inno
 				return m_Canvas;
 			};
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
-		l_renderingServer->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
+		l_graphicsService->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 
 		m_ObjectStatus = ObjectStatus::Created;
 
@@ -173,7 +173,7 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Initialize()
 	{
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		// GIDataLoader::Initialize();
 		BRDFLUTPass::Get().Initialize();
@@ -229,7 +229,7 @@ namespace Inno
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		if (m_ExecuteOneShotCommands)
 		{
@@ -300,7 +300,7 @@ namespace Inno
 	bool DefaultRenderingClientImpl::ExecuteCommands(IRenderingConfig* renderingConfig)
 	{
 		auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 		GPUResourceComponent* l_canvas;
 		RenderPassComponent* l_canvasOwner;
 		if (m_ExecuteOneShotCommands)
@@ -311,20 +311,20 @@ namespace Inno
 				auto l_brdfRenderPass = BRDFLUTPass::Get().GetRenderPassComp();
 
 				auto l_brdfPassComputeCommandList = BRDFLUTPass::Get().GetCommandListComp(GPUEngineType::Compute);
-				l_renderingServer->Execute(l_brdfPassComputeCommandList, GPUEngineType::Compute);
+				l_graphicsService->Execute(l_brdfPassComputeCommandList, GPUEngineType::Compute);
 
-				l_renderingServer->SignalOnGPU(l_brdfRenderPass, GPUEngineType::Compute);
-				l_renderingServer->WaitOnGPU(l_brdfRenderPass, GPUEngineType::Compute, GPUEngineType::Compute);
+				l_graphicsService->SignalOnGPU(l_brdfRenderPass, GPUEngineType::Compute);
+				l_graphicsService->WaitOnGPU(l_brdfRenderPass, GPUEngineType::Compute, GPUEngineType::Compute);
 
 				auto l_brdfMSCommandList = BRDFLUTMSPass::Get().GetCommandListComp(GPUEngineType::Compute);
-				l_renderingServer->Execute(l_brdfMSCommandList, GPUEngineType::Compute);
+				l_graphicsService->Execute(l_brdfMSCommandList, GPUEngineType::Compute);
 				auto l_brdfMSRenderPass = BRDFLUTMSPass::Get().GetRenderPassComp();
-				l_renderingServer->SignalOnGPU(l_brdfMSRenderPass, GPUEngineType::Compute);
+				l_graphicsService->SignalOnGPU(l_brdfMSRenderPass, GPUEngineType::Compute);
 
-				auto l_graphicsSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
-				auto l_computeSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Compute);
-				l_renderingServer->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
-				l_renderingServer->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
+				auto l_graphicsSemaphoreValue = l_graphicsService->GetSemaphoreValue(GPUEngineType::Graphics);
+				auto l_computeSemaphoreValue = l_graphicsService->GetSemaphoreValue(GPUEngineType::Compute);
+				l_graphicsService->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
+				l_graphicsService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 				m_ExecuteOneShotCommands = false;
 			}
 		}
@@ -332,295 +332,295 @@ namespace Inno
 		if (SunShadowCullingPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			auto l_commandList = SunShadowCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Compute);
 			auto l_renderPass = SunShadowCullingPass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (SunShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(SunShadowCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(SunShadowCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_commandList = SunShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Graphics);
 			auto l_renderPass = SunShadowGeometryProcessPass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 		}
 
 		if (OpaqueCullingPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			auto l_commandList = OpaqueCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Compute);
 			auto l_renderPass = OpaqueCullingPass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (OpaquePass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(OpaqueCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(OpaqueCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_commandList = OpaquePass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Graphics);
 			auto l_renderPass = OpaquePass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 		}
 
 		if (RadianceCacheReprojectionPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
 			auto l_renderPass = RadianceCacheReprojectionPass::Get().GetRenderPassComp();
 
 			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheReprojectionPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheReprojectionPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (RadianceCacheRaytracingPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(RadianceCacheReprojectionPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(RadianceCacheReprojectionPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = RadianceCacheRaytracingPass::Get().GetRenderPassComp();
 
 			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheRaytracingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Execute compute command list for actual work
-			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			auto l_computeCommandList = RadianceCacheRaytracingPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (RadianceCacheFilterHorizontalPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(RadianceCacheRaytracingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(RadianceCacheRaytracingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = RadianceCacheFilterHorizontalPass::Get().GetRenderPassComp();
 
 			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (RadianceCacheFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(RadianceCacheFilterHorizontalPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(RadianceCacheFilterHorizontalPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = RadianceCacheFilterVerticalPass::Get().GetRenderPassComp();
 
 			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (RadianceCacheIntegrationPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(RadianceCacheFilterVerticalPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(RadianceCacheFilterVerticalPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = RadianceCacheIntegrationPass::Get().GetRenderPassComp();
 
 			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = RadianceCacheIntegrationPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Execute compute command list for actual work
 			auto l_computeCommandList = RadianceCacheIntegrationPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (SSAOPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
 			auto l_renderPass = SSAOPass::Get().GetRenderPassComp();
 
 			auto l_graphicsCommandList = SSAOPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			auto l_computeCommandList = SSAOPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (TiledFrustumGenerationPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			auto l_commandList = TiledFrustumGenerationPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Compute);
 			auto l_renderPass = TiledFrustumGenerationPass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (LightCullingPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(TiledFrustumGenerationPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
-			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(TiledFrustumGenerationPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 
 			auto l_renderPass = LightCullingPass::Get().GetRenderPassComp();
 
 			// Execute graphics command list for resource transitions
 			auto l_graphicsCommandList = LightCullingPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Execute compute command list for actual work
 			auto l_computeCommandList = LightCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_renderingServer->WaitOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_renderingServer->WaitOnGPU(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			
 			auto l_renderPass = LightPass::Get().GetRenderPassComp();
 			
 			auto l_graphicsCommandList = LightPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 			
 			auto l_computeCommandList = LightPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (SkyPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			auto l_commandList = SkyPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Compute);
 			auto l_renderPass = SkyPass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (PreTAAPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(LightPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_renderingServer->WaitOnGPU(SkyPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(LightPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(SkyPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = PreTAAPass::Get().GetRenderPassComp();
 
 			auto l_graphicsCommandList = PreTAAPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			auto l_computeCommandList = PreTAAPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (TAAPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(PreTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = TAAPass::Get().GetRenderPassComp();
 
 			auto l_graphicsCommandList = TAAPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			auto l_computeCommandList = TAAPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (PostTAAPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = PostTAAPass::Get().GetRenderPassComp();
 
 			auto l_graphicsCommandList = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			auto l_computeCommandList = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (LuminanceHistogramPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = LuminanceHistogramPass::Get().GetRenderPassComp();
 
 			auto l_graphicsCommandList = LuminanceHistogramPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			auto l_computeCommandList = LuminanceHistogramPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (LuminanceAveragePass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(LuminanceHistogramPass::Get().GetRenderPassComp(), GPUEngineType::Compute, GPUEngineType::Compute);
 			auto l_commandList = LuminanceAveragePass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_commandList, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_commandList, GPUEngineType::Compute);
 			auto l_renderPass = LuminanceAveragePass::Get().GetRenderPassComp();
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (FinalBlendPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_renderingServer->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_renderingServer->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_graphicsService->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = FinalBlendPass::Get().GetRenderPassComp();
 
 			auto l_graphicsCommandList = FinalBlendPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_renderingServer->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_renderingServer->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			auto l_computeCommandList = FinalBlendPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_renderingServer->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_renderingServer->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (m_saveScreenCapture)
 		{
 			auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-			auto l_textureData = l_renderingServer->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
+			auto l_textureData = l_graphicsService->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
 			g_Engine->Get<AssetService>()->Save("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
 			m_saveScreenCapture = false;
 		}
@@ -630,11 +630,11 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Terminate()
 	{
-		auto l_renderingServer = g_Engine->getGraphicsService();
-		auto l_graphicsSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
-		auto l_computeSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Compute);
-		l_renderingServer->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
-		l_renderingServer->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
+		auto l_graphicsService = g_Engine->getGraphicsService();
+		auto l_graphicsSemaphoreValue = l_graphicsService->GetSemaphoreValue(GPUEngineType::Graphics);
+		auto l_computeSemaphoreValue = l_graphicsService->GetSemaphoreValue(GPUEngineType::Compute);
+		l_graphicsService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
+		l_graphicsService->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
 
 		FinalBlendPass::Get().Terminate();
 

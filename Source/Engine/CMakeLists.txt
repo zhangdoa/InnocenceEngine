@@ -1,7 +1,6 @@
 ﻿add_subdirectory("Common")
 add_subdirectory("ThirdParty")
 add_subdirectory("Services")
-add_subdirectory("RenderingServer")
 add_subdirectory("RayTracer")
 
 file(GLOB HEADERS "*.h")
@@ -12,22 +11,22 @@ set_target_properties(Engine PROPERTIES FOLDER Engine)
 target_link_libraries(Engine Common)
 target_link_libraries(Engine Services)
 target_link_libraries(Engine RayTracer)
-target_link_libraries(Engine RenderingServerCommon)
+target_link_libraries(Engine GraphicsServiceCommon)
 
 # Always link headless systems (platform-agnostic)
 target_link_libraries(Engine HeadlessWindowService)
-target_link_libraries(Engine HeadlessRenderingServer)
+target_link_libraries(Engine HeadlessGraphicsService)
 
 if (INNO_RENDERER_DIRECTX)
 target_link_libraries(Engine DX12GraphicsService)
 endif (INNO_RENDERER_DIRECTX)
 
 if (INNO_RENDERER_VULKAN)
-target_link_libraries(Engine VKRenderingServer)
+target_link_libraries(Engine VKGraphicsService)
 endif (INNO_RENDERER_VULKAN)
 
 if (INNO_RENDERER_METAL)
-target_link_libraries(Engine MTRenderingServer)
+target_link_libraries(Engine MTGraphicsService)
 endif (INNO_RENDERER_METAL)
 
 if (INNO_PLATFORM_WIN)

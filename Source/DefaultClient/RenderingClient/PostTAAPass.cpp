@@ -3,19 +3,19 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IGraphicsService.h"
+#include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
 
 bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("PostTAAPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("PostTAAPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("PostTAAPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("PostTAAPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -44,10 +44,10 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("PostTAAPass/Graphics/");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("PostTAAPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("PostTAAPass/Compute/");
+	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("PostTAAPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -57,12 +57,12 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 
 bool PostTAAPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);
-	l_renderingServer->Initialize(m_CommandListComp_Compute);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);
+	l_graphicsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -71,13 +71,13 @@ bool PostTAAPass::Initialize()
 
 bool PostTAAPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_Result);
-	l_renderingServer->Delete(m_CommandListComp_Compute);
-	l_renderingServer->Delete(m_CommandListComp_Graphics);	
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_Result);
+	l_graphicsService->Delete(m_CommandListComp_Compute);
+	l_graphicsService->Delete(m_CommandListComp_Graphics);	
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -97,30 +97,30 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	// Use graphics command list to transition resources
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_renderingServer->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(l_renderingContext->m_input), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_graphicsService->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
+	l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -139,18 +139,18 @@ GPUResourceComponent* PostTAAPass::GetResult()
 
 bool PostTAAPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	if (m_Result)
-		l_renderingServer->Delete(m_Result);
+		l_graphicsService->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_Result = l_renderingServer->AddTextureComponent("Post-TAA Pass Result/");
+	m_Result = l_graphicsService->AddTextureComponent("Post-TAA Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_renderingServer->Initialize(m_Result);
+	l_graphicsService->Initialize(m_Result);
 
 	return true;
 }

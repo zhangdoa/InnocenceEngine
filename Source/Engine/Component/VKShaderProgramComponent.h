@@ -1,6 +1,6 @@
 #pragma once
 #include "ShaderProgramComponent.h"
-#include "../RenderingServer/VK/VKHeaders.h"
+#include "../Services/VK/VKHeaders.h"
 
 namespace Inno
 {

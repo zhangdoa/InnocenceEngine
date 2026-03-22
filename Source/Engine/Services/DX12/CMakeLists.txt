@@ -1,7 +1,7 @@
 ﻿file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(DX12GraphicsService ${HEADERS} ${SOURCES})
-set_target_properties(DX12GraphicsService PROPERTIES FOLDER Engine/RenderingServer)
+set_target_properties(DX12GraphicsService PROPERTIES FOLDER Engine/GraphicsService)
 target_include_directories(DX12GraphicsService PUBLIC "${INNO_GITSUBMODULE_DIRECTORIES}/DirectX-Headers/include")
 
 find_library(D3D12_LIB d3d12)

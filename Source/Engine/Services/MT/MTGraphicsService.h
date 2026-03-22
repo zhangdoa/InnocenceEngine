@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include "../IGraphicsService.h"
-#include "MTRenderingServerBridge.h"
+#include "MTGraphicsServiceBridge.h"
 
 namespace Inno
 {
-	class MTRenderingServer : public IGraphicsService
+	class MTGraphicsService : public IGraphicsService
 	{
 	public:
 		// Inherited via IGraphicsService
@@ -61,6 +61,6 @@ namespace Inno
 		bool BeginCapture() override;
 		bool EndCapture() override;
 
-		void setBridge(MTRenderingServerBridge* bridge);
+		void setBridge(MTGraphicsServiceBridge* bridge);
 	};
 }

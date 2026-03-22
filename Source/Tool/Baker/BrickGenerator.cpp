@@ -23,17 +23,17 @@ namespace Inno
     {
         void BrickGenerator::setup()
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
-            m_SPC_BrickFactor = l_renderingServer->AddShaderProgramComponent("GIBakeBrickFactorPass/");
+            m_SPC_BrickFactor = l_graphicsService->AddShaderProgramComponent("GIBakeBrickFactorPass/");
 
             m_SPC_BrickFactor->m_ShaderFilePaths.m_VSPath = "GIBakeBrickFactorPass.vert/";
             m_SPC_BrickFactor->m_ShaderFilePaths.m_GSPath = "GIBakeBrickFactorPass.geom/";
             m_SPC_BrickFactor->m_ShaderFilePaths.m_PSPath = "GIBakeBrickFactorPass.frag/";
 
-            l_renderingServer->Initialize(m_SPC_BrickFactor);
+            l_graphicsService->Initialize(m_SPC_BrickFactor);
 
-            m_RenderPassComp_BrickFactor = l_renderingServer->AddRenderPassComponent("GIBakeBrickFactorPass/");
+            m_RenderPassComp_BrickFactor = l_graphicsService->AddRenderPassComponent("GIBakeBrickFactorPass/");
 
             auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
             l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -72,7 +72,7 @@ namespace Inno
 
             m_RenderPassComp_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 
-            l_renderingServer->Initialize(m_RenderPassComp_BrickFactor);
+            l_graphicsService->Initialize(m_RenderPassComp_BrickFactor);
         }
 
         bool BrickGenerator::generateBrickCaches(std::vector<Surfel>& surfelCaches)
@@ -254,7 +254,7 @@ namespace Inno
 
         bool BrickGenerator::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, const std::vector<Mat4>& v)
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
             std::vector<Mat4> l_GICameraConstantBuffer(8);
             l_GICameraConstantBuffer[0] = p;
@@ -264,7 +264,7 @@ namespace Inno
             }
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(pos);
 
-            l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
+            l_graphicsService->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
             auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
 
@@ -272,36 +272,36 @@ namespace Inno
 
             uint32_t l_offset = 0;
 
-            l_renderingServer->CommandListBegin(m_RenderPassComp_BrickFactor, 0);
-            l_renderingServer->BindRenderPassComponent(m_RenderPassComp_BrickFactor);
-            l_renderingServer->ClearRenderTargets(m_RenderPassComp_BrickFactor);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
+            l_graphicsService->CommandListBegin(m_RenderPassComp_BrickFactor, 0);
+            l_graphicsService->BindRenderPassComponent(m_RenderPassComp_BrickFactor);
+            l_graphicsService->ClearRenderTargets(m_RenderPassComp_BrickFactor);
+            l_graphicsService->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Geometry, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
 
             for (uint32_t i = 0; i < bricksCount; i++)
             {
-                l_renderingServer->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
+                l_graphicsService->BindGPUResource(m_RenderPassComp_BrickFactor, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
 
-                l_renderingServer->DrawIndexedInstanced(m_RenderPassComp_BrickFactor, l_mesh);
+                l_graphicsService->DrawIndexedInstanced(m_RenderPassComp_BrickFactor, l_mesh);
 
                 l_offset++;
             }
 
-            l_renderingServer->CommandListEnd(m_RenderPassComp_BrickFactor);
+            l_graphicsService->CommandListEnd(m_RenderPassComp_BrickFactor);
 
-            l_renderingServer->Execute(m_RenderPassComp_BrickFactor, GPUEngineType::Graphics);
+            l_graphicsService->Execute(m_RenderPassComp_BrickFactor, GPUEngineType::Graphics);
 
             return true;
         }
 
         bool BrickGenerator::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks)
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
             static int l_index = 0;
 
-            auto l_brickIDResults = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_BrickFactor, m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture);
+            auto l_brickIDResults = l_graphicsService->ReadTextureBackToCPU(m_RenderPassComp_BrickFactor, m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture);
 
-            auto l_TextureComp = l_renderingServer->AddTextureComponent();
+            auto l_TextureComp = l_graphicsService->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_BrickFactor->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_InitialData = l_brickIDResults.data();
             g_Engine->Get<AssetService>()->Save(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TextureComp);
@@ -407,7 +407,7 @@ namespace Inno
 
         bool BrickGenerator::assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes)
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
             
             Log(Success, "Start to generate brick factor and assign to probes...");
 
@@ -447,7 +447,7 @@ namespace Inno
             }
 
             auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
-            l_renderingServer->Upload(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
+            l_graphicsService->Upload(l_MeshGPUBufferComp, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
             // assign bricks to probe by the depth test result
             auto l_probesCount = probes.size();

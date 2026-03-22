@@ -4,7 +4,7 @@
 
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
-#include "../../RenderingServer/IGraphicsService.h"
+#include "../../Services/IGraphicsService.h"
 #include "../../Interface/IClientFactory.h"
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)

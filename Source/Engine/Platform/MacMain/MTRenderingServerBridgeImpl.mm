@@ -1,5 +1,5 @@
 //
-//  MTRenderingServerBridgeImpl.mm
+//  MTGraphicsServiceBridgeImpl.mm
 //  Main
 //
 //  Created by zhangdoa on 14/04/2019.
@@ -7,10 +7,10 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "MTRenderingServerBridgeImpl.h"
+#import "MTGraphicsServiceBridgeImpl.h"
 
 using namespace Inno;
-bool MTRenderingServerBridgeImpl::Setup() {
+bool MTGraphicsServiceBridgeImpl::Setup() {
     [m_metalDelegate createDevice];
 
     [m_metalDelegate createView:[m_macWindowDelegate getFrame]];
@@ -18,7 +18,7 @@ bool MTRenderingServerBridgeImpl::Setup() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::Initialize() {
+bool MTGraphicsServiceBridgeImpl::Initialize() {
     [m_metalDelegate createLibrary];
 
     [m_metalDelegate createPipeline];
@@ -27,41 +27,41 @@ bool MTRenderingServerBridgeImpl::Initialize() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::Update() {
+bool MTGraphicsServiceBridgeImpl::Update() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::render() {
+bool MTGraphicsServiceBridgeImpl::render() {
     [m_metalDelegate render];
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::present() {
+bool MTGraphicsServiceBridgeImpl::present() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::Terminate() {
+bool MTGraphicsServiceBridgeImpl::Terminate() {
     return true;
 }
 
-ObjectStatus MTRenderingServerBridgeImpl::GetStatus() {
+ObjectStatus MTGraphicsServiceBridgeImpl::GetStatus() {
     return m_ObjectStatus;
 }
 
-bool MTRenderingServerBridgeImpl::resize() {
+bool MTGraphicsServiceBridgeImpl::resize() {
     return true;
 }
 
-MTRenderingServerBridgeImpl::MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate *metalDelegate) {
+MTGraphicsServiceBridgeImpl::MTGraphicsServiceBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate *metalDelegate) {
     m_macWindowDelegate = macWindowDelegate;
     m_metalDelegate = metalDelegate;
 }
 
 
-MTRenderingServerBridgeImpl::~MTRenderingServerBridgeImpl() {
+MTGraphicsServiceBridgeImpl::~MTGraphicsServiceBridgeImpl() {
 }
 
-bool MTRenderingServerBridgeImpl::initializeMTMeshComponent(MTMeshComponent *rhs) {
+bool MTGraphicsServiceBridgeImpl::initializeMTMeshComponent(MTMeshComponent *rhs) {
     if (rhs->m_ObjectStatus == ObjectStatus::Activated)
     {
         return true;
@@ -73,6 +73,6 @@ bool MTRenderingServerBridgeImpl::initializeMTMeshComponent(MTMeshComponent *rhs
     }
 }
 
-bool MTRenderingServerBridgeImpl::initializeMTTextureComponent(MTTextureComponent *rhs) {
+bool MTGraphicsServiceBridgeImpl::initializeMTTextureComponent(MTTextureComponent *rhs) {
         return true;
 }

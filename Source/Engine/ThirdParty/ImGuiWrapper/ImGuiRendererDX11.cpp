@@ -2,7 +2,7 @@
 
 #include "../ImGui/imgui_impl_dx11.cpp"
 
-#include "../../RenderingServer/DX11/DX11RenderingServer.h"
+#include "../../Services/DX11/DX11GraphicsService.h"
 #include "../../Component/DX11RenderPassComponent.h"
 
 #include "../../Engine.h"
@@ -24,9 +24,9 @@ bool ImGuiRendererDX11::Setup(IServiceConfig* systemConfig)
 
 bool ImGuiRendererDX11::Initialize()
 {
-	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_Engine->getGraphicsService());
-	auto l_device = reinterpret_cast<ID3D11Device*>(l_renderingServer->GetDevice());
-	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
+	auto l_graphicsService = reinterpret_cast<DX11GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_device = reinterpret_cast<ID3D11Device*>(l_graphicsService->GetDevice());
+	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_graphicsService->GetDeviceContext());
 
 	ImGui_ImplDX11_Init(l_device, l_deviceContext);
 	Log(Success, "ImGuiRendererDX11 has been initialized.");
@@ -43,8 +43,8 @@ bool ImGuiRendererDX11::NewFrame()
 bool ImGuiRendererDX11::Prepare()
 {
 	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<DX11RenderPassComponent*>(g_Engine->getGraphicsService()->GetUserPipelineOutput());
-	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_Engine->getGraphicsService());
-	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
+	auto l_graphicsService = reinterpret_cast<DX11GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_graphicsService->GetDeviceContext());
 
 	l_deviceContext->OMSetRenderTargets(1, &l_userPipelineOutputRenderPassComp->m_RTVs[l_userPipelineOutputRenderPassComp->m_CurrentFrame], NULL);
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

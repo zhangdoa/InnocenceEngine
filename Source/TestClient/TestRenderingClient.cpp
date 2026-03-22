@@ -1,7 +1,7 @@
 ﻿#include "TestRenderingClient.h"
 #include "../Engine/Engine.h"
 #include "../Engine/Interface/IWindowService.h"
-#include "../Engine/RenderingServer/IGraphicsService.h"
+#include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 

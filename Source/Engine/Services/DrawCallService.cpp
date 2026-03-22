@@ -56,12 +56,12 @@ GPUBufferComponent* DrawCallServiceImpl::GetPreviousFrameTransformBuffer()
 
 bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_GPUModelDataBufferComp = l_renderingServer->AddGPUBufferComponent("GPUModelDataBuffer/");
-	m_TransformBufferComp = l_renderingServer->AddGPUBufferComponent("TransformBuffer/");
-	m_TransformPrevBufferComp = l_renderingServer->AddGPUBufferComponent("TransformPrevBuffer/");
-	m_MaterialGPUBufferComp = l_renderingServer->AddGPUBufferComponent("MaterialCBuffer/");
+	m_GPUModelDataBufferComp = l_graphicsService->AddGPUBufferComponent("GPUModelDataBuffer/");
+	m_TransformBufferComp = l_graphicsService->AddGPUBufferComponent("TransformBuffer/");
+	m_TransformPrevBufferComp = l_graphicsService->AddGPUBufferComponent("TransformPrevBuffer/");
+	m_MaterialGPUBufferComp = l_graphicsService->AddGPUBufferComponent("MaterialCBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -71,7 +71,7 @@ bool DrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -79,25 +79,25 @@ bool DrawCallServiceImpl::Initialize()
 		m_GPUModelDataBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_GPUModelDataBufferComp->m_ElementSize = sizeof(GPUModelData);
 
-		l_renderingServer->Initialize(m_GPUModelDataBufferComp);
+		l_graphicsService->Initialize(m_GPUModelDataBufferComp);
 
 		m_TransformBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_TransformBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_TransformBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
-		l_renderingServer->Initialize(m_TransformBufferComp);
+		l_graphicsService->Initialize(m_TransformBufferComp);
 
 		m_TransformPrevBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_TransformPrevBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_TransformPrevBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
-		l_renderingServer->Initialize(m_TransformPrevBufferComp);
+		l_graphicsService->Initialize(m_TransformPrevBufferComp);
 
 		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
 		m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
 
-		l_renderingServer->Initialize(m_MaterialGPUBufferComp);
+		l_graphicsService->Initialize(m_MaterialGPUBufferComp);
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "DrawCallService has been initialized.");
@@ -194,7 +194,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 			// TODO Phase2-migrate: TextureComponent not yet in EntityRegistry - will migrate in Task 9
 			// if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
 			// 	continue;
-			// auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);
+			// auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);
 			// l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
 		}
 
@@ -213,20 +213,20 @@ bool DrawCallServiceImpl::Update()
 
 		UpdateDrawCalls();
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		if (m_GPUModelDataVector.size() > 0)
 		{
-			l_renderingServer->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, m_GPUModelDataVector.size());
+			l_graphicsService->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, m_GPUModelDataVector.size());
 		}
 		if (m_TransformBufferVector.size() > 0)
 		{
 			auto l_currentFrameTransformBuffer = GetCurrentFrameTransformBuffer();
-			l_renderingServer->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, m_TransformBufferVector.size());
+			l_graphicsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, m_TransformBufferVector.size());
 		}
 		if (m_MaterialCBVector.size() > 0)
 		{
-			l_renderingServer->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, m_MaterialCBVector.size());
+			l_graphicsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, m_MaterialCBVector.size());
 		}
 
 		return true;
@@ -240,12 +240,12 @@ bool DrawCallServiceImpl::Update()
 
 bool DrawCallServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_GPUModelDataBufferComp);
-	l_renderingServer->Delete(m_TransformBufferComp);
-	l_renderingServer->Delete(m_TransformPrevBufferComp);
-	l_renderingServer->Delete(m_MaterialGPUBufferComp);
+	l_graphicsService->Delete(m_GPUModelDataBufferComp);
+	l_graphicsService->Delete(m_TransformBufferComp);
+	l_graphicsService->Delete(m_TransformPrevBufferComp);
+	l_graphicsService->Delete(m_MaterialGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "DrawCallService has been terminated.");

@@ -80,19 +80,19 @@ bool ImGuiWrapper::Setup()
 	ImGuiWrapperNS::m_isParity = false;
 #endif
 
-	switch (l_initConfig.renderingServer)
+	switch (l_initConfig.graphicsService)
 	{
-	case RenderingServer::DX12:
+	case GraphicsService::DX12:
 #if defined INNO_RENDERER_DIRECTX
 		m_rendererImpl = new ImGuiRendererDX12();
 #endif
 		break;
-	case RenderingServer::VK:
+	case GraphicsService::VK:
 #if defined INNO_RENDERER_VULKAN
 		m_rendererImpl = new ImGuiRendererVK();
 #endif
 		break;
-	case RenderingServer::MT:
+	case GraphicsService::MT:
 #if defined INNO_RENDERER_METAL
 		ImGuiWrapperNS::m_isParity = false;
 #endif

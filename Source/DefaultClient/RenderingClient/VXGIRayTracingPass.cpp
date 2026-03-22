@@ -6,7 +6,7 @@
 #include "VXGIConvertPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IGraphicsService.h"
+#include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
 
@@ -15,12 +15,12 @@ using namespace Inno;
 
 bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
-	m_TextureComp = l_renderingServer->AddTextureComponent("VoxelRayTracingVolume/");
+	m_TextureComp = l_graphicsService->AddTextureComponent("VoxelRayTracingVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
@@ -30,11 +30,11 @@ bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_TextureComp->m_TextureDesc.MipLevels = 4;
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelRayTracingPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("VoxelRayTracingPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelRayTracingPass.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VoxelRayTracingPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("VoxelRayTracingPass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -88,7 +88,7 @@ bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("VoxelRayTracingPass/");
+	m_SamplerComp = l_graphicsService->AddSamplerComponent("VoxelRayTracingPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -127,14 +127,14 @@ bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 		}
 	}
 
-	m_RaySBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("VoxelRayTracingRaySBuffer/");
+	m_RaySBufferGPUBufferComp = l_graphicsService->AddGPUBufferComponent("VoxelRayTracingRaySBuffer/");
 	m_RaySBufferGPUBufferComp->m_ElementCount = l_VXGIRenderingConfig->m_maxRay * l_VXGIRenderingConfig->m_maxRay;
 	m_RaySBufferGPUBufferComp->m_ElementSize = sizeof(Vec4);
 	m_RaySBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_RaySBufferGPUBufferComp->m_InitialData = &m_Ray[0];
 
 	////
-	m_ProbeIndexSBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("VoxelRayTracingProbeIndexSBuffer/");
+	m_ProbeIndexSBufferGPUBufferComp = l_graphicsService->AddGPUBufferComponent("VoxelRayTracingProbeIndexSBuffer/");
 	m_ProbeIndexSBufferGPUBufferComp->m_ElementCount = l_VXGIRenderingConfig->m_maxProbe * l_VXGIRenderingConfig->m_maxProbe * l_VXGIRenderingConfig->m_maxProbe;
 	m_ProbeIndexSBufferGPUBufferComp->m_ElementSize = sizeof(TVec4<uint32_t>);
 	m_ProbeIndexSBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -146,15 +146,15 @@ bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIRayTracingPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_SamplerComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_SamplerComp);
 
-	l_renderingServer->Initialize(m_RaySBufferGPUBufferComp);
-	l_renderingServer->Initialize(m_ProbeIndexSBufferGPUBufferComp);
-	l_renderingServer->Initialize(m_TextureComp);
+	l_graphicsService->Initialize(m_RaySBufferGPUBufferComp);
+	l_graphicsService->Initialize(m_ProbeIndexSBufferGPUBufferComp);
+	l_graphicsService->Initialize(m_TextureComp);
 		
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -163,9 +163,9 @@ bool VXGIRayTracingPass::Initialize()
 
 bool VXGIRayTracingPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -179,7 +179,7 @@ ObjectStatus VXGIRayTracingPass::GetStatus()
 
 bool VXGIRayTracingPass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_renderingContext = reinterpret_cast<VXGIRayTracingPassRenderingContext*>(renderingContext);
 	
 	auto l_tick = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
@@ -195,29 +195,29 @@ bool VXGIRayTracingPass::PrepareCommandList(IRenderingContext* renderingContext)
 		m_ProbeIndex.emplace_back(l_sample);
 	}
 
-	l_renderingServer->Upload(m_ProbeIndexSBufferGPUBufferComp, m_ProbeIndex);
+	l_graphicsService->Upload(m_ProbeIndexSBufferGPUBufferComp, m_ProbeIndex);
 
-	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// l_graphicsService->CommandListBegin(m_RenderPassComp, 0);
+	// l_graphicsService->BindRenderPassComponent(m_RenderPassComp);
+	// l_graphicsService->ClearRenderTargets(m_RenderPassComp);
 
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 3);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RaySBufferGPUBufferComp, 5);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_ProbeIndexSBufferGPUBufferComp, 6);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 3);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RaySBufferGPUBufferComp, 5);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_ProbeIndexSBufferGPUBufferComp, 6);
 
-	// l_renderingServer->Dispatch(m_RenderPassComp, 8, 8, 8);
+	// l_graphicsService->Dispatch(m_RenderPassComp, 8, 8, 8);
 
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RaySBufferGPUBufferComp, 5);
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_ProbeIndexSBufferGPUBufferComp, 6);
+	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIConvertPass::Get().GetNormalVolume(), 1);
+	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
+	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RaySBufferGPUBufferComp, 5);
+	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_ProbeIndexSBufferGPUBufferComp, 6);
 
-	// l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// l_graphicsService->CommandListEnd(m_RenderPassComp);
 
 	return false;
 }

@@ -11,7 +11,7 @@ using namespace Inno;
 
 bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -20,11 +20,11 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("LuminanceAveragePass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("LuminanceAveragePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("LuminanceAveragePass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("LuminanceAveragePass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -51,10 +51,10 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("LuminanceAveragePass/");
+	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("LuminanceAveragePass/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_luminanceAverage = l_renderingServer->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
+	m_luminanceAverage = l_graphicsService->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceAverage->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceAverage->m_ElementCount = m_MaxResultToKeep;
@@ -67,13 +67,13 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Compute);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Compute);
 
-	l_renderingServer->Initialize(m_luminanceAverage);
+	l_graphicsService->Initialize(m_luminanceAverage);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -88,12 +88,12 @@ bool LuminanceAveragePass::Update()
 
 bool LuminanceAveragePass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_luminanceAverage);
-	l_renderingServer->Delete(m_CommandListComp_Compute);
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_luminanceAverage);
+	l_graphicsService->Delete(m_CommandListComp_Compute);
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -116,21 +116,21 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 	if (m_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_luminanceAverage, 2);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_luminanceAverage, 2);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, 1, 1, 1);
+	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, 1, 1, 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

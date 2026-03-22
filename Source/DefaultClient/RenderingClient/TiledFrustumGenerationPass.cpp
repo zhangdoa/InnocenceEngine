@@ -9,12 +9,12 @@ using namespace Inno;
 
 bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TiledFrustumGenerationPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";
 
-	m_DispatchParamsGPUBufferComp = l_renderingServer->AddGPUBufferComponent("TiledFrustumDispatchParams/");
+	m_DispatchParamsGPUBufferComp = l_graphicsService->AddGPUBufferComponent("TiledFrustumDispatchParams/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -22,7 +22,7 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&TiledFrustumGenerationPass::RenderTargetsCreationFunc, this);
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("TiledFrustumGenerationPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("TiledFrustumGenerationPass/");
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	// b0 - PerFrameCBuffer
@@ -45,7 +45,7 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("TiledFrustumGenerationPass/Compute/");
+	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("TiledFrustumGenerationPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -55,16 +55,16 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 
 bool TiledFrustumGenerationPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 	m_DispatchParamsGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 
-	l_renderingServer->Initialize(m_DispatchParamsGPUBufferComp);
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Compute);
+	l_graphicsService->Initialize(m_DispatchParamsGPUBufferComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -73,25 +73,25 @@ bool TiledFrustumGenerationPass::Initialize()
 
 bool TiledFrustumGenerationPass::Update()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	DispatchParamsConstantBuffer l_tiledFrustumWorkload;
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;
 	l_tiledFrustumWorkload.numThreads = m_numThreads;
 
-	l_renderingServer->Upload(m_DispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
+	l_graphicsService->Upload(m_DispatchParamsGPUBufferComp, &l_tiledFrustumWorkload, 0, 1);
 
 	return true;
 }
 
 bool TiledFrustumGenerationPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_TiledFrustum);
-	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_TiledFrustum);
+	l_graphicsService->Delete(m_DispatchParamsGPUBufferComp);
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -111,20 +111,20 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	if (m_TiledFrustum->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_TiledFrustum, 2);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_TiledFrustum, 2);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 	
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
@@ -142,7 +142,7 @@ GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 
 bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
@@ -158,14 +158,14 @@ bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 	auto l_elementCount = m_numThreads.x * m_numThreads.y;
 
 	if (m_TiledFrustum)
-		l_renderingServer->Delete(m_TiledFrustum);
+		l_graphicsService->Delete(m_TiledFrustum);
 
-	m_TiledFrustum = l_renderingServer->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
+	m_TiledFrustum = l_graphicsService->AddGPUBufferComponent("TiledFrustumGPUBuffer/");
 	m_TiledFrustum->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_TiledFrustum->m_ElementCount = l_elementCount;
 	m_TiledFrustum->m_ElementSize = 64; // 4 planes to make a frustum, float3 normal + float distance for each plane
 
-	l_renderingServer->Initialize(m_TiledFrustum);
+	l_graphicsService->Initialize(m_TiledFrustum);
 
 	return true;
 }

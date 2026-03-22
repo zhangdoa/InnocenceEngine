@@ -39,18 +39,18 @@
 
 // Rendering servers
 #if defined INNO_RENDERER_DIRECTX
-#include "RenderingServer/DX12/DX12GraphicsService.h"
+#include "Services/DX12/DX12GraphicsService.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
-#include "RenderingServer/VK/VKRenderingServer.h"
+#include "Services/VK/VKGraphicsService.h"
 #endif
 #if defined INNO_RENDERER_METAL
-#include "RenderingServer/MT/MTRenderingServer.h"
+#include "Services/MT/MTGraphicsService.h"
 #endif
 
 // Headless stubs
 #include "Platform/HeadlessWindow/HeadlessWindowService.h"
-#include "RenderingServer/Headless/HeadlessRenderingServer.h"
+#include "Services/Headless/HeadlessGraphicsService.h"
 
 namespace Inno
 {
@@ -77,30 +77,30 @@ IWindowService* Engine::CreateWindowSystem(bool isHeadless)
 #endif
 }
 
-IGraphicsService* Engine::CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType)
+IGraphicsService* Engine::CreateGraphicsService(bool isHeadless, GraphicsService graphicsServiceType)
 {
 	if (isHeadless) {
-		return new HeadlessRenderingServer();
+		return new HeadlessGraphicsService();
 	}
 	
-	switch (renderingServerType) {
-	case RenderingServer::DX12:
+	switch (graphicsServiceType) {
+	case GraphicsService::DX12:
 #if defined INNO_RENDERER_DIRECTX
 		return new DX12GraphicsService();
 #else
 		Log(Error, "DirectX 12 renderer not available on this platform.");
 		return nullptr;
 #endif
-	case RenderingServer::VK:
+	case GraphicsService::VK:
 #if defined INNO_RENDERER_VULKAN
-		return new VKRenderingServer();
+		return new VKGraphicsService();
 #else
 		Log(Error, "Vulkan renderer not available on this platform.");
 		return nullptr;
 #endif
-	case RenderingServer::MT:
+	case GraphicsService::MT:
 #if defined INNO_RENDERER_METAL
-		return new MTRenderingServer();
+		return new MTGraphicsService();
 #else
 		Log(Error, "Metal renderer not available on this platform.");
 		return nullptr;
@@ -151,7 +151,7 @@ namespace Inno
 		InitConfig m_initConfig;
 
 		std::unique_ptr<IWindowService> m_WindowSystem;
-		std::unique_ptr<IGraphicsService> m_RenderingServer;
+		std::unique_ptr<IGraphicsService> m_GraphicsService;
 
 		std::unique_ptr<IRenderingClient> m_RenderingClient;
 		std::unique_ptr<ILogicClient> m_LogicClient;
@@ -228,21 +228,21 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
-	auto l_renderingServerArgPos = arg.find("renderer");
+	auto l_graphicsServiceArgPos = arg.find("renderer");
 
-	if (l_renderingServerArgPos == std::string::npos)
+	if (l_graphicsServiceArgPos == std::string::npos)
 	{
 		Log(Error, "No rendering backend argument found.");
 	}
 	else
 	{
-		std::string l_rendererArguments = arg.substr(l_renderingServerArgPos + 9);
+		std::string l_rendererArguments = arg.substr(l_graphicsServiceArgPos + 9);
 		l_rendererArguments = l_rendererArguments.substr(0, 1);
 
 		if (l_rendererArguments == "0")
 		{
 #if defined INNO_RENDERER_DIRECTX
-			l_result.renderingServer = RenderingServer::DX12;
+			l_result.graphicsService = GraphicsService::DX12;
 #else
 			Log(Warning, "DirectX 12 is not supported on current platform.");
 #endif
@@ -250,7 +250,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "1")
 		{
 #if defined INNO_RENDERER_VULKAN
-			l_result.renderingServer = RenderingServer::VK;
+			l_result.graphicsService = GraphicsService::VK;
 #else
 			Log(Warning, "Vulkan is not supported on current platform.");
 #endif
@@ -258,7 +258,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "2")
 		{
 #if defined INNO_RENDERER_METAL
-			l_result.renderingServer = RenderingServer::MT;
+			l_result.graphicsService = GraphicsService::MT;
 #else
 			Log(Warning, "Metal is not supported on current platform.");
 #endif
@@ -380,31 +380,31 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<GUIService>();
 	}
 
-	// Create RenderingServer based on headless mode (offscreen uses real rendering server)
+	// Create GraphicsService based on headless mode (offscreen uses real rendering server)
 	if (m_pImpl->m_initConfig.isHeadless) {
-		m_pImpl->m_RenderingServer = std::make_unique<HeadlessRenderingServer>();
+		m_pImpl->m_GraphicsService = std::make_unique<HeadlessGraphicsService>();
 	} else {
 		// For both windowed and offscreen modes, create real rendering server
-		switch (m_pImpl->m_initConfig.renderingServer) {
-		case RenderingServer::DX12:
+		switch (m_pImpl->m_initConfig.graphicsService) {
+		case GraphicsService::DX12:
 #if defined INNO_RENDERER_DIRECTX
-			m_pImpl->m_RenderingServer = std::make_unique<DX12GraphicsService>();
+			m_pImpl->m_GraphicsService = std::make_unique<DX12GraphicsService>();
 #endif
 			break;
-		case RenderingServer::VK:
+		case GraphicsService::VK:
 #if defined INNO_RENDERER_VULKAN
-			m_pImpl->m_RenderingServer = std::make_unique<VKRenderingServer>();
+			m_pImpl->m_GraphicsService = std::make_unique<VKGraphicsService>();
 #endif
 			break;
-		case RenderingServer::MT:
+		case GraphicsService::MT:
 #if defined INNO_RENDERER_METAL
-			m_pImpl->m_RenderingServer = std::make_unique<MTRenderingServer>();
+			m_pImpl->m_GraphicsService = std::make_unique<MTGraphicsService>();
 #endif
 			break;
 		}
 	}
 
-	if (!m_pImpl->m_RenderingServer.get()) {
+	if (!m_pImpl->m_GraphicsService.get()) {
 		Log(Error, "Failed to create Rendering Server.");
 		return false;
 	}
@@ -416,9 +416,9 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		auto l_windowSystemBridge = reinterpret_cast<MacWindowServiceBridge*>(appHook);
 		l_windowSystem->setBridge(l_windowSystemBridge);
 
-		auto l_renderingServer = reinterpret_cast<MTRenderingServer*>(m_pImpl->m_RenderingServer.get());
-		auto l_renderingServerBridge = reinterpret_cast<MTRenderingServerBridge*>(extraHook);
-		l_renderingServer->setBridge(l_renderingServerBridge);
+		auto l_graphicsService = reinterpret_cast<MTGraphicsService*>(m_pImpl->m_GraphicsService.get());
+		auto l_graphicsServiceBridge = reinterpret_cast<MTGraphicsServiceBridge*>(extraHook);
+		l_graphicsService->setBridge(l_graphicsServiceBridge);
 	}
 #endif
 
@@ -486,13 +486,13 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	SystemSetup(TemplateAssetService);
 
-	if (!m_pImpl->m_RenderingServer->Setup(nullptr))
+	if (!m_pImpl->m_GraphicsService->Setup(nullptr))
 	{
 		Log(Error, "Rendering Server can't be setup!");
 		return false;
 	}
 
-	m_pImpl->m_RenderingServer->SetUploadHeapPreparationCallback([&]()
+	m_pImpl->m_GraphicsService->SetUploadHeapPreparationCallback([&]()
 		{
 			SystemUpdate(SceneService);
 			
@@ -535,7 +535,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			return true;
 		});
 
-	m_pImpl->m_RenderingServer->SetCommandPreparationCallback([&]()
+	m_pImpl->m_GraphicsService->SetCommandPreparationCallback([&]()
 		{
 			if (Get<SceneService>()->IsLoading())
 				return true;
@@ -546,7 +546,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			return true;
 		});
 
-	m_pImpl->m_RenderingServer->SetCommandExecutionCallback([&]()
+	m_pImpl->m_GraphicsService->SetCommandExecutionCallback([&]()
 		{
 			if (Get<SceneService>()->IsLoading())
 				return true;
@@ -603,7 +603,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
-			m_pImpl->m_RenderingServer->Update();
+			m_pImpl->m_GraphicsService->Update();
 
 			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch();
 
@@ -631,7 +631,7 @@ bool Engine::Initialize()
 
 	SystemInit(LightSimulationService);
 	SystemInit(CameraService);
-	m_pImpl->m_RenderingServer->Initialize();
+	m_pImpl->m_GraphicsService->Initialize();
 
 	// Only initialize rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
@@ -747,9 +747,9 @@ bool Engine::Terminate()
 		SystemTerm(TemplateAssetService);
 	}
 	
-	if (!m_pImpl->m_RenderingServer->Terminate())
+	if (!m_pImpl->m_GraphicsService->Terminate())
 	{
-		Log(Error, "RenderingServer can't be terminated!");
+		Log(Error, "GraphicsService can't be terminated!");
 		return false;
 	}
 
@@ -803,7 +803,7 @@ InitConfig Engine::getInitConfig()
 
 IGraphicsService* Engine::getGraphicsService()
 {
-	return m_pImpl->m_RenderingServer.get();
+	return m_pImpl->m_GraphicsService.get();
 }
 
 IWindowService* Engine::getWindowService()

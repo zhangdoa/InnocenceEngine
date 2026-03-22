@@ -3,7 +3,7 @@
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
 #include "../Engine/Interface/IWindowService.h"
-#include "../Engine/RenderingServer/IGraphicsService.h"
+#include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 
 using namespace Inno;

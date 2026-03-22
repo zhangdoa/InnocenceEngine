@@ -22,7 +22,7 @@ namespace Inno
     {
         void ProbeGenerator::setup()
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
             auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -34,14 +34,14 @@ namespace Inno
             l_RenderPassDesc.m_UseDepthBuffer = true;
             l_RenderPassDesc.m_UseStencilBuffer = true;
 
-            m_SPC_Probe = l_renderingServer->AddShaderProgramComponent("GIBakeProbePass/");
+            m_SPC_Probe = l_graphicsService->AddShaderProgramComponent("GIBakeProbePass/");
 
             m_SPC_Probe->m_ShaderFilePaths.m_VSPath = "GIBakeProbePass.vert/";
             m_SPC_Probe->m_ShaderFilePaths.m_PSPath = "GIBakeProbePass.frag/";
 
-            l_renderingServer->Initialize(m_SPC_Probe);
+            l_graphicsService->Initialize(m_SPC_Probe);
 
-            m_RenderPassComp_Probe = l_renderingServer->AddRenderPassComponent("GIBakeProbePass/");
+            m_RenderPassComp_Probe = l_graphicsService->AddRenderPassComponent("GIBakeProbePass/");
 
             m_RenderPassComp_Probe->m_RenderPassDesc = l_RenderPassDesc;
             m_RenderPassComp_Probe->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
@@ -71,12 +71,12 @@ namespace Inno
 
             m_RenderPassComp_Probe->m_ShaderProgram = m_SPC_Probe;
 
-            l_renderingServer->Initialize(m_RenderPassComp_Probe);
+            l_graphicsService->Initialize(m_RenderPassComp_Probe);
         }
 
         bool ProbeGenerator::gatherStaticMeshData()
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
             Log(Success, "Gathering static meshes...");
 
@@ -91,15 +91,15 @@ namespace Inno
             auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
             auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
-            l_renderingServer->Upload(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
-            l_renderingServer->Upload(l_MaterialGPUBufferComp, Config::Get().m_staticMeshMaterialConstantBuffer, 0, Config::Get().m_staticMeshMaterialConstantBuffer.size());
+            l_graphicsService->Upload(l_MeshGPUBufferComp, Config::Get().m_staticMeshPerObjectConstantBuffer, 0, Config::Get().m_staticMeshPerObjectConstantBuffer.size());
+            l_graphicsService->Upload(l_MaterialGPUBufferComp, Config::Get().m_staticMeshMaterialConstantBuffer, 0, Config::Get().m_staticMeshMaterialConstantBuffer.size());
 
             return true;
         }
 
         bool ProbeGenerator::generateProbeCaches(std::vector<Probe>& probes)
         {
-            auto l_renderingServer = g_Engine->getGraphicsService();
+            auto l_graphicsService = g_Engine->getGraphicsService();
 
             Log(Success, "Generate probe caches...");
 
@@ -119,16 +119,16 @@ namespace Inno
             l_GICameraConstantBuffer[1] = Math::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
             l_GICameraConstantBuffer[7] = Math::getInvertTranslationMatrix(l_eyePos);
 
-            l_renderingServer->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
+            l_graphicsService->Upload(g_Engine->Get<LightDataService>()->GetGIBuffer(), l_GICameraConstantBuffer);
 
             Log(Success, "Start to draw probe height map...");
 
             auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetCurrentFrameTransformBuffer();
 
-            l_renderingServer->CommandListBegin(m_RenderPassComp_Probe, 0);
-            l_renderingServer->BindRenderPassComponent(m_RenderPassComp_Probe);
-            l_renderingServer->ClearRenderTargets(m_RenderPassComp_Probe);
-            l_renderingServer->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
+            l_graphicsService->CommandListBegin(m_RenderPassComp_Probe, 0);
+            l_graphicsService->BindRenderPassComponent(m_RenderPassComp_Probe);
+            l_graphicsService->ClearRenderTargets(m_RenderPassComp_Probe);
+            l_graphicsService->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, g_Engine->Get<LightDataService>()->GetGIBuffer(), 0);
 
             uint32_t l_offset = 0;
 
@@ -138,27 +138,27 @@ namespace Inno
 
                 if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
                 {
-                    l_renderingServer->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
+                    l_graphicsService->BindGPUResource(m_RenderPassComp_Probe, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
 
-                    l_renderingServer->DrawIndexedInstanced(m_RenderPassComp_Probe, l_staticPerObjectConstantBuffer.mesh);
+                    l_graphicsService->DrawIndexedInstanced(m_RenderPassComp_Probe, l_staticPerObjectConstantBuffer.mesh);
                 }
 
                 l_offset++;
             }
 
-            l_renderingServer->CommandListEnd(m_RenderPassComp_Probe);
+            l_graphicsService->CommandListEnd(m_RenderPassComp_Probe);
 
-            l_renderingServer->Execute(m_RenderPassComp_Probe, GPUEngineType::Graphics);
-            l_renderingServer->WaitOnGPU(m_RenderPassComp_Probe, GPUEngineType::Graphics, GPUEngineType::Graphics);
-            l_renderingServer->WaitOnCPU(GPUEngineType::Graphics);
+            l_graphicsService->Execute(m_RenderPassComp_Probe, GPUEngineType::Graphics);
+            l_graphicsService->WaitOnGPU(m_RenderPassComp_Probe, GPUEngineType::Graphics, GPUEngineType::Graphics);
+            l_graphicsService->WaitOnCPU(GPUEngineType::Graphics);
 
             Log(Success, "Start to generate probe location...");
 
             // Read back results and generate probes
-            auto l_probePosTextureResults = l_renderingServer->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture);
+            auto l_probePosTextureResults = l_graphicsService->ReadTextureBackToCPU(m_RenderPassComp_Probe, m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture);
 
             //#ifdef DEBUG_
-            auto l_TextureComp = l_renderingServer->AddTextureComponent();
+            auto l_TextureComp = l_graphicsService->AddTextureComponent();
             l_TextureComp->m_TextureDesc = m_RenderPassComp_Probe->m_RenderTargets[0].m_Texture->m_TextureDesc;
             l_TextureComp->m_InitialData = l_probePosTextureResults.data();
             g_Engine->Get<AssetService>()->Save("..//Res//Intermediate//ProbePosTexture", l_TextureComp);

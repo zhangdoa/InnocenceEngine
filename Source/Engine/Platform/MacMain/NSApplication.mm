@@ -11,12 +11,12 @@
 
 #import "../ApplicationEntry/ApplicationEntry.h"
 #import "MacWindowServiceBridgeImpl.h"
-#import "MTRenderingServerBridgeImpl.h"
+#import "MTGraphicsServiceBridgeImpl.h"
 
 using namespace Inno;
 @implementation NSApplication
 MacWindowServiceBridgeImpl* m_macWindowSystemBridge;
-MTRenderingServerBridgeImpl* m_metalRenderingServerBridge;
+MTGraphicsServiceBridgeImpl* m_metalGraphicsServiceBridge;
 MacWindowDelegate* m_macWindowDelegate;
 MetalDelegate* m_metalDelegate;
 
@@ -32,11 +32,11 @@ MetalDelegate* m_metalDelegate;
     m_metalDelegate = [MetalDelegate alloc];
 
     m_macWindowSystemBridge = new MacWindowServiceBridgeImpl(m_macWindowDelegate, m_metalDelegate);
-    m_metalRenderingServerBridge = new MTRenderingServerBridgeImpl(m_macWindowDelegate, m_metalDelegate);
+    m_metalGraphicsServiceBridge = new MTGraphicsServiceBridgeImpl(m_macWindowDelegate, m_metalDelegate);
 
     //Start the engine C++ module
     const char* l_args = "-renderer 4 -mode 0 -loglevel 1";
-    if (!Inno::ApplicationEntry::Setup(m_macWindowSystemBridge, m_metalRenderingServerBridge, (char*)l_args))
+    if (!Inno::ApplicationEntry::Setup(m_macWindowSystemBridge, m_metalGraphicsServiceBridge, (char*)l_args))
     {
         return;
     }
@@ -49,7 +49,7 @@ MetalDelegate* m_metalDelegate;
 
     Inno::ApplicationEntry::Terminate();
 
-    delete m_metalRenderingServerBridge;
+    delete m_metalGraphicsServiceBridge;
     delete m_macWindowSystemBridge;
 }
 

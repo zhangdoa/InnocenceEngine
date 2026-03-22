@@ -1,4 +1,4 @@
-#include "VKRenderingServer.h"
+#include "VKGraphicsService.h"
 #include "../../Component/VKMeshComponent.h"
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKMaterialComponent.h"
@@ -36,7 +36,7 @@ namespace Inno
 } // namespace Inno
 
 // @TODO: Maybe store the function pointers rather than querying them every time.
-VkResult VKRenderingServer::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
+VkResult VKGraphicsService::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
 {
 	auto l_func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
 	if (l_func != nullptr)
@@ -49,7 +49,7 @@ VkResult VKRenderingServer::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMesse
 	}
 }
 
-void VKRenderingServer::DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator)
+void VKGraphicsService::DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator)
 {
 	auto l_func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (l_func != nullptr)
@@ -58,7 +58,7 @@ void VKRenderingServer::DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT c
 	}
 }
 
-VkResult VKRenderingServer::SetDebugUtilsObjectNameEXT(const VkDebugUtilsObjectNameInfoEXT* pNameInfo)
+VkResult VKGraphicsService::SetDebugUtilsObjectNameEXT(const VkDebugUtilsObjectNameInfoEXT* pNameInfo)
 {
 	auto l_func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT");
 	if (l_func != nullptr)
@@ -71,7 +71,7 @@ VkResult VKRenderingServer::SetDebugUtilsObjectNameEXT(const VkDebugUtilsObjectN
 	}
 }
 
-bool VKRenderingServer::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers)
+bool VKGraphicsService::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers)
 {
 	uint32_t l_layerCount;
 	vkEnumerateInstanceLayerProperties(&l_layerCount, nullptr);
@@ -101,7 +101,7 @@ bool VKRenderingServer::CheckValidationLayerSupport(const std::vector<const char
 	return true;
 }
 
-bool VKRenderingServer::CheckDeviceExtensionSupport(const std::vector<const char*>& deviceExtensions)
+bool VKGraphicsService::CheckDeviceExtensionSupport(const std::vector<const char*>& deviceExtensions)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(m_physicalDevice, nullptr, &extensionCount, nullptr);
@@ -119,7 +119,7 @@ bool VKRenderingServer::CheckDeviceExtensionSupport(const std::vector<const char
 	return requiredExtensions.empty();
 }
 
-QueueFamilyIndices VKRenderingServer::FindQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface)
+QueueFamilyIndices VKGraphicsService::FindQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface)
 {
 	QueueFamilyIndices indices;
 
@@ -166,7 +166,7 @@ QueueFamilyIndices VKRenderingServer::FindQueueFamilies(VkPhysicalDevice physica
 	return indices;
 }
 
-VkSurfaceFormatKHR VKRenderingServer::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR VKGraphicsService::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
 	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
 	{
@@ -184,7 +184,7 @@ VkSurfaceFormatKHR VKRenderingServer::ChooseSwapSurfaceFormat(const std::vector<
 	return availableFormats[0];
 }
 
-VkPresentModeKHR VKRenderingServer::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR VKGraphicsService::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
 	VkPresentModeKHR l_bestMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -203,7 +203,7 @@ VkPresentModeKHR VKRenderingServer::ChooseSwapPresentMode(const std::vector<VkPr
 	return l_bestMode;
 }
 
-VkExtent2D VKRenderingServer::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D VKGraphicsService::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
@@ -224,7 +224,7 @@ VkExtent2D VKRenderingServer::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& c
 	}
 }
 
-SwapChainSupportDetails VKRenderingServer::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface)
+SwapChainSupportDetails VKGraphicsService::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface)
 {
 	SwapChainSupportDetails l_details;
 
@@ -251,7 +251,7 @@ SwapChainSupportDetails VKRenderingServer::QuerySwapChainSupport(VkPhysicalDevic
 	return l_details;
 }
 
-bool VKRenderingServer::IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions)
+bool VKGraphicsService::IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions)
 {
 	QueueFamilyIndices indices = FindQueueFamilies(physicalDevice, windowSurface);
 
@@ -267,7 +267,7 @@ bool VKRenderingServer::IsDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurf
 	return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-bool VKRenderingServer::CreateHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+bool VKGraphicsService::CreateHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
 	VkBufferCreateInfo l_stagingBufferCInfo = {};
 	l_stagingBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -278,7 +278,7 @@ bool VKRenderingServer::CreateHostStagingBuffer(size_t bufferSize, VkBufferUsage
 	return CreateBuffer(l_stagingBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
 }
 
-bool VKRenderingServer::CreateDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+bool VKGraphicsService::CreateDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
 	VkBufferCreateInfo l_localBufferCInfo = {};
 	l_localBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -289,7 +289,7 @@ bool VKRenderingServer::CreateDeviceLocalBuffer(size_t bufferSize, VkBufferUsage
 	return CreateBuffer(l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);
 }
 
-bool VKRenderingServer::CopyHostMemoryToDeviceMemory(void* hostMemory, size_t bufferSize, VkDeviceMemory& deviceMemory)
+bool VKGraphicsService::CopyHostMemoryToDeviceMemory(void* hostMemory, size_t bufferSize, VkDeviceMemory& deviceMemory)
 {
 	void* l_mappedMemory;
 	vkMapMemory(m_device, deviceMemory, 0, bufferSize, 0, &l_mappedMemory);
@@ -299,7 +299,7 @@ bool VKRenderingServer::CopyHostMemoryToDeviceMemory(void* hostMemory, size_t bu
 	return true;
 }
 
-bool VKRenderingServer::InitializeDeviceLocalBuffer(void* hostMemory, size_t bufferSize, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+bool VKGraphicsService::InitializeDeviceLocalBuffer(void* hostMemory, size_t bufferSize, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
@@ -316,7 +316,7 @@ bool VKRenderingServer::InitializeDeviceLocalBuffer(void* hostMemory, size_t buf
 	return true;
 }
 
-VkCommandBuffer VKRenderingServer::OpenTemporaryCommandBuffer(VkCommandPool commandPool)
+VkCommandBuffer VKGraphicsService::OpenTemporaryCommandBuffer(VkCommandPool commandPool)
 {
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -336,7 +336,7 @@ VkCommandBuffer VKRenderingServer::OpenTemporaryCommandBuffer(VkCommandPool comm
 	return commandBuffer;
 }
 
-void VKRenderingServer::CloseTemporaryCommandBuffer(VkCommandPool commandPool, VkQueue commandQueue, VkCommandBuffer commandBuffer)
+void VKGraphicsService::CloseTemporaryCommandBuffer(VkCommandPool commandPool, VkQueue commandQueue, VkCommandBuffer commandBuffer)
 {
 	vkEndCommandBuffer(commandBuffer);
 
@@ -351,7 +351,7 @@ void VKRenderingServer::CloseTemporaryCommandBuffer(VkCommandPool commandPool, V
 	vkFreeCommandBuffers(m_device, commandPool, 1, &commandBuffer);
 }
 
-uint32_t VKRenderingServer::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t VKGraphicsService::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
@@ -367,7 +367,7 @@ uint32_t VKRenderingServer::FindMemoryType(uint32_t typeFilter, VkMemoryProperty
 	return 0;
 }
 
-bool VKRenderingServer::CreateCommandPool(VkSurfaceKHR windowSurface, GPUEngineType GPUEngineType, VkCommandPool& commandPool)
+bool VKGraphicsService::CreateCommandPool(VkSurfaceKHR windowSurface, GPUEngineType GPUEngineType, VkCommandPool& commandPool)
 {
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice, windowSurface);
 
@@ -389,7 +389,7 @@ bool VKRenderingServer::CreateCommandPool(VkSurfaceKHR windowSurface, GPUEngineT
 	return true;
 }
 
-bool VKRenderingServer::CreateBuffer(const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+bool VKGraphicsService::CreateBuffer(const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
 	if (vkCreateBuffer(m_device, &bufferCInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
@@ -416,7 +416,7 @@ bool VKRenderingServer::CreateBuffer(const VkBufferCreateInfo& bufferCInfo, VkMe
 	return true;
 }
 
-bool VKRenderingServer::CopyBuffer(VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+bool VKGraphicsService::CopyBuffer(VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
 	VkCommandBuffer commandBuffer = OpenTemporaryCommandBuffer(commandPool);
 
@@ -429,7 +429,7 @@ bool VKRenderingServer::CopyBuffer(VkCommandPool commandPool, VkQueue commandQue
 	return true;
 }
 
-bool VKRenderingServer::CreateImage(const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+bool VKGraphicsService::CreateImage(const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
 {
 	if (vkCreateImage(m_device, &imageCInfo, nullptr, &image) != VK_SUCCESS)
 	{
@@ -456,7 +456,7 @@ bool VKRenderingServer::CreateImage(const VkImageCreateInfo& imageCInfo, VkMemor
 	return true;
 }
 
-bool VKRenderingServer::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout, ShaderStage shaderStage)
+bool VKGraphicsService::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout, ShaderStage shaderStage)
 {
 	VkImageMemoryBarrier l_barrier = {};
 	l_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -487,7 +487,7 @@ bool VKRenderingServer::TransitImageLayout(VkCommandBuffer commandBuffer, VkImag
 	return true;
 }
 
-bool VKRenderingServer::CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height)
+bool VKGraphicsService::CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height)
 {
 	VkBufferImageCopy l_region = {};
 	l_region.bufferOffset = 0;
@@ -508,7 +508,7 @@ bool VKRenderingServer::CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffe
 	return true;
 }
 
-bool VKRenderingServer::CreateDescriptorPool(VkDescriptorPoolSize *poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool &poolHandle)
+bool VKGraphicsService::CreateDescriptorPool(VkDescriptorPoolSize *poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool &poolHandle)
 {
 	VkDescriptorPoolCreateInfo l_poolCInfo = {};
 	l_poolCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -527,7 +527,7 @@ bool VKRenderingServer::CreateDescriptorPool(VkDescriptorPoolSize *poolSize, uin
 	return true;
 }
 
-bool VKRenderingServer::CreateDescriptorSetLayout(VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
+bool VKGraphicsService::CreateDescriptorSetLayout(VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
 {
 	VkDescriptorSetLayoutCreateInfo l_layoutCInfo = {};
 	l_layoutCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -545,7 +545,7 @@ bool VKRenderingServer::CreateDescriptorSetLayout(VkDescriptorSetLayoutBinding *
 	return true;
 }
 
-bool VKRenderingServer::CreateDescriptorSets(VkDescriptorPool pool, const VkDescriptorSetLayout *setLayout, VkDescriptorSet &setHandle, uint32_t count)
+bool VKGraphicsService::CreateDescriptorSets(VkDescriptorPool pool, const VkDescriptorSetLayout *setLayout, VkDescriptorSet &setHandle, uint32_t count)
 {
 	VkDescriptorSetAllocateInfo l_allocCInfo = {};
 	l_allocCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -563,7 +563,7 @@ bool VKRenderingServer::CreateDescriptorSets(VkDescriptorPool pool, const VkDesc
 	return true;
 }
 
-bool VKRenderingServer::UpdateDescriptorSet(VkWriteDescriptorSet *writeDescriptorSets, uint32_t writeDescriptorSetsCount)
+bool VKGraphicsService::UpdateDescriptorSet(VkWriteDescriptorSet *writeDescriptorSets, uint32_t writeDescriptorSetsCount)
 {
 	vkUpdateDescriptorSets(
 		m_device,
@@ -576,7 +576,7 @@ bool VKRenderingServer::UpdateDescriptorSet(VkWriteDescriptorSet *writeDescripto
 	return true;
 }
 
-VkWriteDescriptorSet VKRenderingServer::GetWriteDescriptorSet(uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
+VkWriteDescriptorSet VKGraphicsService::GetWriteDescriptorSet(uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
 {
 	VkWriteDescriptorSet l_result = {};
 	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -589,7 +589,7 @@ VkWriteDescriptorSet VKRenderingServer::GetWriteDescriptorSet(uint32_t dstBindin
 	return l_result;
 }
 
-VkWriteDescriptorSet VKRenderingServer::GetWriteDescriptorSet(const VkDescriptorImageInfo &imageInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
+VkWriteDescriptorSet VKGraphicsService::GetWriteDescriptorSet(const VkDescriptorImageInfo &imageInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
 {
 	VkWriteDescriptorSet l_result = {};
 	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -603,7 +603,7 @@ VkWriteDescriptorSet VKRenderingServer::GetWriteDescriptorSet(const VkDescriptor
 	return l_result;
 }
 
-VkWriteDescriptorSet VKRenderingServer::GetWriteDescriptorSet(const VkDescriptorBufferInfo &bufferInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
+VkWriteDescriptorSet VKGraphicsService::GetWriteDescriptorSet(const VkDescriptorBufferInfo &bufferInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
 {
 	VkWriteDescriptorSet l_result = {};
 	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -617,7 +617,7 @@ VkWriteDescriptorSet VKRenderingServer::GetWriteDescriptorSet(const VkDescriptor
 	return l_result;
 }
 
-bool VKRenderingServer::CreateShaderModule(VkShaderModule &vkShaderModule, const ShaderFilePath &shaderFilePath)
+bool VKGraphicsService::CreateShaderModule(VkShaderModule &vkShaderModule, const ShaderFilePath &shaderFilePath)
 {
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
 	auto l_shaderContent = g_Engine->Get<IOService>()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);

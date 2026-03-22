@@ -103,7 +103,7 @@ bool IGraphicsService::Setup(IServiceConfig* systemConfig)
 
 	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&m_SceneLoadingStartedCallback, 0);
 
-	Log(Success, "RenderingServer Setup finished.");
+	Log(Success, "GraphicsService Setup finished.");
 	return true;
 }
 
@@ -111,7 +111,7 @@ bool IGraphicsService::Initialize()
 {
 	if (m_ObjectStatus != ObjectStatus::Created)
 	{
-		Log(Error, "RenderingServer is not in Created state.");
+		Log(Error, "GraphicsService is not in Created state.");
 		return false;
 	}
 
@@ -128,7 +128,7 @@ bool IGraphicsService::Initialize()
 	m_CopySemaphoreValues.resize(m_swapChainImageCount, 0);
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "RenderingServer has been initialized.");
+	Log(Success, "GraphicsService has been initialized.");
 
 	return true;
 }
@@ -252,9 +252,9 @@ bool IGraphicsService::Terminate()
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	if (l_result)
-		Log(Success, "RenderingServer has been terminated.");
+		Log(Success, "GraphicsService has been terminated.");
 	else
-		Log(Error, "Failed to terminate RenderingServer.");
+		Log(Error, "Failed to terminate GraphicsService.");
 
 	return l_result;
 }

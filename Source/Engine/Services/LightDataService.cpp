@@ -66,12 +66,12 @@ namespace Inno
 
 bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
-	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
-	m_CSMGPUBufferComp = l_renderingServer->AddGPUBufferComponent("CSMCBuffer/");
-	m_GICBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("GICBuffer/");
+	m_PointLightGPUBufferComp = l_graphicsService->AddGPUBufferComponent("PointLightCBuffer/");
+	m_SphereLightGPUBufferComp = l_graphicsService->AddGPUBufferComponent("SphereLightCBuffer/");
+	m_CSMGPUBufferComp = l_graphicsService->AddGPUBufferComponent("CSMCBuffer/");
+	m_GICBufferGPUBufferComp = l_graphicsService->AddGPUBufferComponent("GICBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -81,28 +81,28 @@ bool LightDataServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
 		m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
 		m_PointLightGPUBufferComp->m_ElementSize = sizeof(PointLightConstantBuffer);
 
-		l_renderingServer->Initialize(m_PointLightGPUBufferComp);
+		l_graphicsService->Initialize(m_PointLightGPUBufferComp);
 
 		m_SphereLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxSphereLights;
 		m_SphereLightGPUBufferComp->m_ElementSize = sizeof(SphereLightConstantBuffer);
 
-		l_renderingServer->Initialize(m_SphereLightGPUBufferComp);
+		l_graphicsService->Initialize(m_SphereLightGPUBufferComp);
 
 		m_CSMGPUBufferComp->m_ElementCount = l_RenderingCapability.maxCSMSplits;
 		m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
 
-		l_renderingServer->Initialize(m_CSMGPUBufferComp);
+		l_graphicsService->Initialize(m_CSMGPUBufferComp);
 
 		m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
 		m_GICBufferGPUBufferComp->m_ElementCount = 1;
 
-		l_renderingServer->Initialize(m_GICBufferGPUBufferComp);
+		l_graphicsService->Initialize(m_GICBufferGPUBufferComp);
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "LightDataService has been initialized.");
@@ -279,19 +279,19 @@ bool LightDataServiceImpl::Update()
 		UpdateLightData();
 		UpdateCSMData();
 
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		if (m_PointLightCBVector.size() > 0)
 		{
-			l_renderingServer->Upload(m_PointLightGPUBufferComp, m_PointLightCBVector, 0, m_PointLightCBVector.size());
+			l_graphicsService->Upload(m_PointLightGPUBufferComp, m_PointLightCBVector, 0, m_PointLightCBVector.size());
 		}
 		if (m_SphereLightCBVector.size() > 0)
 		{
-			l_renderingServer->Upload(m_SphereLightGPUBufferComp, m_SphereLightCBVector, 0, m_SphereLightCBVector.size());
+			l_graphicsService->Upload(m_SphereLightGPUBufferComp, m_SphereLightCBVector, 0, m_SphereLightCBVector.size());
 		}
 		if (m_CSMCBVector.size() > 0)
 		{
-			l_renderingServer->Upload(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
+			l_graphicsService->Upload(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
 		}
 
 		return true;
@@ -305,12 +305,12 @@ bool LightDataServiceImpl::Update()
 
 bool LightDataServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_PointLightGPUBufferComp);
-	l_renderingServer->Delete(m_SphereLightGPUBufferComp);
-	l_renderingServer->Delete(m_CSMGPUBufferComp);
-	l_renderingServer->Delete(m_GICBufferGPUBufferComp);
+	l_graphicsService->Delete(m_PointLightGPUBufferComp);
+	l_graphicsService->Delete(m_SphereLightGPUBufferComp);
+	l_graphicsService->Delete(m_CSMGPUBufferComp);
+	l_graphicsService->Delete(m_GICBufferGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "LightDataService has been terminated.");

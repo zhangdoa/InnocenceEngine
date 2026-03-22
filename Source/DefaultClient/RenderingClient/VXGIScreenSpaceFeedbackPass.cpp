@@ -16,19 +16,19 @@ using namespace Inno;
 
 bool VXGIScreenSpaceFeedbackPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelScreenSpaceFeedbackPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("VoxelScreenSpaceFeedbackPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "voxelScreenSpaceFeedBackPass.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VoxelScreenSpaceFeedbackPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("VoxelScreenSpaceFeedbackPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_TextureComp = l_renderingServer->AddTextureComponent("VoxelScreenSpaceFeedbackVolume/");
+	m_TextureComp = l_graphicsService->AddTextureComponent("VoxelScreenSpaceFeedbackVolume/");
 	m_TextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_TextureComp->m_TextureDesc.Width = l_VXGIRenderingConfig->m_voxelizationResolution;
@@ -84,11 +84,11 @@ bool VXGIScreenSpaceFeedbackPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIScreenSpaceFeedbackPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_TextureComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_TextureComp);
 	
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -97,9 +97,9 @@ bool VXGIScreenSpaceFeedbackPass::Initialize()
 
 bool VXGIScreenSpaceFeedbackPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -117,37 +117,37 @@ bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderin
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	// Use the Graphics command list component for VXGI rendering
 	if (!m_CommandListComp_Graphics)
 	{
-		m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent();
+		m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent();
 		if (!m_CommandListComp_Graphics) return false;
 	}
 
-	if (!l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0))
+	if (!l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0))
 		return false;
 
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	if (l_perFrameGPUBufferComp && l_perFrameGPUBufferComp->m_ObjectStatus == ObjectStatus::Activated)
 	{
-		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, l_perFrameGPUBufferComp, 3);
+		l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, l_perFrameGPUBufferComp, 3);
 	}
 
 	// TODO: Uncomment and fix resource bindings when dependencies are ready
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[0], 0);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Compute, LightPass::Get().GetIlluminanceResult(), 1);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_output, 2);
 
 	// TODO: Uncomment when ready
-	// l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Graphics, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	// l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Graphics, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }

@@ -10,15 +10,15 @@ using namespace Inno;
 
 bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SunShadowCullingPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SunShadowCullingPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowCulling.comp/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SunShadowCullingPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SunShadowCullingPass/");
 
-	m_IndirectDrawCommandBuffer = l_renderingServer->AddGPUBufferComponent("SunShadowCullingPass/IndirectDrawCommandBuffer/");
+	m_IndirectDrawCommandBuffer = l_graphicsService->AddGPUBufferComponent("SunShadowCullingPass/IndirectDrawCommandBuffer/");
 	m_IndirectDrawCommandBuffer->m_Usage = GPUBufferUsage::IndirectDraw;
 	m_IndirectDrawCommandBuffer->m_ElementCount = 512;
 
@@ -62,7 +62,7 @@ bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_renderingServer->AddCommandListComponent("SunShadowCullingPass/Compute/");
+	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("SunShadowCullingPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -72,12 +72,12 @@ bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowCullingPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Compute);
-	l_renderingServer->Initialize(m_IndirectDrawCommandBuffer);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_graphicsService->Initialize(m_IndirectDrawCommandBuffer);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -86,11 +86,11 @@ bool SunShadowCullingPass::Initialize()
 
 bool SunShadowCullingPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_IndirectDrawCommandBuffer);
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_IndirectDrawCommandBuffer);
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -116,20 +116,20 @@ bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContex
 	if (l_modelCount == 0)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
 	// Bind resources for compute shader
 	auto l_perFrameCBuffer = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_gpuModelDataBuffer = l_drawCallService->GetGPUModelDataBuffer();
 	auto l_materialBuffer = l_drawCallService->GetMaterialBuffer();
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_perFrameCBuffer, 0);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_gpuModelDataBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_materialBuffer, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IndirectDrawCommandBuffer, 3);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_perFrameCBuffer, 0);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_gpuModelDataBuffer, 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_materialBuffer, 2);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IndirectDrawCommandBuffer, 3);
 
 	// Dispatch culling compute shader
 	// Calculate thread groups based on model count
@@ -139,9 +139,9 @@ bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContex
 	// Ensure we dispatch at least 1 thread group
 	l_threadGroups = std::max(l_threadGroups, 1u);
 
-	l_renderingServer->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, l_threadGroups, 1, 1);
+	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, l_threadGroups, 1, 1);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

@@ -15,17 +15,17 @@ using namespace Inno;
 
 bool VXGIGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VXGIGeometryProcessPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("VXGIGeometryProcessPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "voxelGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "voxelGeometryProcessPass.geom/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "voxelGeometryProcessPass.frag/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("VXGIGeometryProcessPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("VXGIGeometryProcessPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -108,12 +108,12 @@ bool VXGIGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("VXGIGeometryProcessPass/");
+	m_SamplerComp = l_graphicsService->AddSamplerComponent("VXGIGeometryProcessPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_result = l_renderingServer->AddGPUBufferComponent("VoxelGeometryProcessSBuffer/");
+	m_result = l_graphicsService->AddGPUBufferComponent("VoxelGeometryProcessSBuffer/");
 	m_result->m_ElementCount = l_VXGIRenderingConfig->m_voxelizationResolution * l_VXGIRenderingConfig->m_voxelizationResolution * l_VXGIRenderingConfig->m_voxelizationResolution * 2;
 	m_result->m_ElementSize = sizeof(uint32_t);
 	m_result->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -125,13 +125,13 @@ bool VXGIGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIGeometryProcessPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_SamplerComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_SamplerComp);
 
-	l_renderingServer->Initialize(m_result);
+	l_graphicsService->Initialize(m_result);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -140,9 +140,9 @@ bool VXGIGeometryProcessPass::Initialize()
 
 bool VXGIGeometryProcessPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -156,21 +156,21 @@ ObjectStatus VXGIGeometryProcessPass::GetStatus()
 
 bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
-	// l_renderingServer->CommandListBegin(m_RenderPassComp, 0);
-	// l_renderingServer->BindRenderPassComponent(m_RenderPassComp);
-	// l_renderingServer->ClearRenderTargets(m_RenderPassComp);
+	// l_graphicsService->CommandListBegin(m_RenderPassComp, 0);
+	// l_graphicsService->BindRenderPassComponent(m_RenderPassComp);
+	// l_graphicsService->ClearRenderTargets(m_RenderPassComp);
 
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
-	// l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 10);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Geometry, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, VXGIRenderer::Get().GetVoxelizationCBuffer(), 3);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
+	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_SamplerComp, 10);
 
 
 	// for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -183,30 +183,30 @@ bool VXGIGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingCon
 	// 		{
 	// 			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
 
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0], 5);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1], 6);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2], 7);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3], 8);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4], 9);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0], 5);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1], 6);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2], 7);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3], 8);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4], 9);
 
-	// 				l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
+	// 				l_graphicsService->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
 
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0], 5);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1], 6);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2], 7);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3], 8);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4], 9);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0], 5);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1], 6);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2], 7);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3], 8);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4], 9);
 	// 			}
 	// 		}
 	// 	}
 	// }
 
-	// l_renderingServer->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
+	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_result, 4);
 
-	// l_renderingServer->CommandListEnd(m_RenderPassComp);
+	// l_graphicsService->CommandListEnd(m_RenderPassComp);
 
 	return false;
 }

@@ -26,9 +26,9 @@ namespace Inno
 
 bool AnimationDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_AnimationGPUBufferComp = l_renderingServer->AddGPUBufferComponent("AnimationCBuffer/");
+	m_AnimationGPUBufferComp = l_graphicsService->AddGPUBufferComponent("AnimationCBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -38,12 +38,12 @@ bool AnimationDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getGraphicsService();
+		auto l_graphicsService = g_Engine->getGraphicsService();
 
 		m_AnimationGPUBufferComp->m_ElementCount = 512;
 		m_AnimationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
 
-		l_renderingServer->Initialize(m_AnimationGPUBufferComp);
+		l_graphicsService->Initialize(m_AnimationGPUBufferComp);
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "AnimationDrawCallService has been initialized.");
@@ -72,8 +72,8 @@ bool AnimationDrawCallServiceImpl::Update()
 
 		if (m_AnimationCBVector.size() > 0)
 		{
-			auto l_renderingServer = g_Engine->getGraphicsService();
-			l_renderingServer->Upload(m_AnimationGPUBufferComp, m_AnimationCBVector, 0, m_AnimationCBVector.size());
+			auto l_graphicsService = g_Engine->getGraphicsService();
+			l_graphicsService->Upload(m_AnimationGPUBufferComp, m_AnimationCBVector, 0, m_AnimationCBVector.size());
 		}
 
 		return true;
@@ -87,9 +87,9 @@ bool AnimationDrawCallServiceImpl::Update()
 
 bool AnimationDrawCallServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_AnimationGPUBufferComp);
+	l_graphicsService->Delete(m_AnimationGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "AnimationDrawCallService has been terminated.");

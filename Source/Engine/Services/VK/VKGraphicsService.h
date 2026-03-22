@@ -14,10 +14,10 @@
 
 namespace Inno
 {
-	class VKRenderingServer : public IGraphicsService
+	class VKGraphicsService : public IGraphicsService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(VKRenderingServer);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(VKGraphicsService);
 
 		// Inherited via IGraphicsService
 		IPipelineStateObject* AddPipelineStateObject() override;

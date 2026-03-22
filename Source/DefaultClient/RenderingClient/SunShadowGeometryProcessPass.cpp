@@ -12,22 +12,22 @@ using namespace Inno;
 
 bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	m_shadowMapResolution = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution;
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag/";
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("SunShadowGeometryProcessPass/");
+	m_SamplerComp = l_graphicsService->AddSamplerComponent("SunShadowGeometryProcessPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("SunShadowGeometryProcessPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
@@ -111,7 +111,7 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("SunShadowGeometryProcessPass/Graphics/");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("SunShadowGeometryProcessPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -121,12 +121,12 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowGeometryProcessPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);
-	l_renderingServer->Initialize(m_SamplerComp);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);
+	l_graphicsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -135,11 +135,11 @@ bool SunShadowGeometryProcessPass::Initialize()
 
 bool SunShadowGeometryProcessPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_SamplerComp);	
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_SamplerComp);	
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -156,12 +156,12 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_renderingServer->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 	auto l_transformCBuffer = l_drawCallService->GetCurrentFrameTransformBuffer();
@@ -169,18 +169,18 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_CSMCBuffer = g_Engine->Get<LightDataService>()->GetCSMBuffer();
 	auto l_materialCBuffer = l_drawCallService->GetMaterialBuffer();
 
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 1);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_CSMCBuffer, 2);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 4);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 5);
-	l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 6);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 1);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_CSMCBuffer, 2);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 4);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 5);
+	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 6);
 
 	// Use the indirect draw command buffer from SunShadowCullingPass
 	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(SunShadowCullingPass::Get().GetResult());
-	l_renderingServer->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
+	l_graphicsService->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
 
-	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -200,8 +200,8 @@ GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_renderingServer = g_Engine->getGraphicsService();	
-	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
+	auto l_graphicsService = g_Engine->getGraphicsService();	
+	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
 }

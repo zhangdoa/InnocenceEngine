@@ -10,14 +10,14 @@ using namespace Inno;
 
 bool AnimationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("AnimationPass/");
+	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("AnimationPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
 
-	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("AnimationPass/");
+	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("AnimationPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -98,12 +98,12 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_renderingServer->AddSamplerComponent("AnimationPass/");
+	m_SamplerComp = l_graphicsService->AddSamplerComponent("AnimationPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_CommandListComp_Graphics = l_renderingServer->AddCommandListComponent("AnimationPass/Graphics/");
+	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("AnimationPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -113,12 +113,12 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Initialize(m_ShaderProgramComp);
-	l_renderingServer->Initialize(m_RenderPassComp);
-	l_renderingServer->Initialize(m_SamplerComp);
-	l_renderingServer->Initialize(m_CommandListComp_Graphics);
+	l_graphicsService->Initialize(m_ShaderProgramComp);
+	l_graphicsService->Initialize(m_RenderPassComp);
+	l_graphicsService->Initialize(m_SamplerComp);
+	l_graphicsService->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -127,11 +127,11 @@ bool AnimationPass::Initialize()
 
 bool AnimationPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_renderingServer->Delete(m_SamplerComp);
-	l_renderingServer->Delete(m_RenderPassComp);
-	l_renderingServer->Delete(m_ShaderProgramComp);
+	l_graphicsService->Delete(m_SamplerComp);
+	l_graphicsService->Delete(m_RenderPassComp);
+	l_graphicsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -145,7 +145,7 @@ ObjectStatus AnimationPass::GetStatus()
 
 bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
@@ -156,49 +156,49 @@ bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResource = m_SamplerComp;
 	// if (l_AnimationDrawCallInfo.size())
 	// {
-	// 	l_renderingServer->CommandListBegin(m_CommandListComp_Graphics, m_RenderPassComp, 0);
-	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	// 	l_graphicsService->CommandListBegin(m_CommandListComp_Graphics, m_RenderPassComp, 0);
+	// 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 	// 	// Don't clean render targets since they are from previous pass
 
 	// 	for (auto i : l_AnimationDrawCallInfo)
 	// 	{
-	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
-	// 		l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
+	// 		l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_AnimationGPUBufferComp, 9, i.animationConstantBufferIndex, 1);
+	// 		l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, i.animationInstance.animationData.keyData, 10);
 
 	// 		if (i.drawCallInfo.mesh->m_ObjectStatus == ObjectStatus::Activated)
 	// 		{
-	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
-	// 			l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
+	// 			l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
+	// 			l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, i.drawCallInfo.m_PerObjectConstantBufferIndex, 1);
 
 	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
-	// 				l_renderingServer->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
+	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
 	// 			}
 
-	// 			l_renderingServer->DrawIndexedInstanced(m_RenderPassComp, m_CommandListComp_Graphics, i.drawCallInfo.mesh);
+	// 			l_graphicsService->DrawIndexedInstanced(m_RenderPassComp, m_CommandListComp_Graphics, i.drawCallInfo.mesh);
 
 	// 			if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
-	// 				l_renderingServer->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[0], 3);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[1], 4);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[2], 5);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[3], 6);
+	// 				l_graphicsService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4], 7);
 	// 			}
 	// 		}
 	// 	}
 
-	// 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	// 	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 	// }
 	// else
 	// {
-	// 	l_renderingServer->CommandListBegin(m_CommandListComp_Graphics, m_RenderPassComp, 0);
-	// 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	// 	l_renderingServer->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	// 	l_graphicsService->CommandListBegin(m_CommandListComp_Graphics, m_RenderPassComp, 0);
+	// 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	// 	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 	// }
 
 	return false;
@@ -211,9 +211,9 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 
 bool AnimationPass::RenderTargetsReservationFunc()
 {
-	auto l_renderingServer = g_Engine->getGraphicsService();
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
-		l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTarget);
+		l_graphicsService->Add(m_RenderPassComp->m_OutputMergerTarget);
 
 	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
 	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);

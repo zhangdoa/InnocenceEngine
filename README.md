@@ -70,16 +70,16 @@ TObjectPool<MyPOD>::Destruct(l_pool);
 - Client-as-plugin rendering architecture — implement `IRenderingClient` to define your own pipeline from first draw call to swap chain presentation.
 
 ```cpp
-auto l_renderingServer = g_Engine->getRenderingServer();
+auto l_graphicsService = g_Engine->getGraphicsService();
 
-l_renderingServer->CommandListBegin(m_RPDC, 0);
-l_renderingServer->BindRenderPassDataComponent(m_RPDC);
-l_renderingServer->CleanRenderTargets(m_RPDC);
-l_renderingServer->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 17);
-l_renderingServer->DrawIndexedInstanced(m_RPDC, m_quadMesh);
-l_renderingServer->CommandListEnd(m_RPDC);
-l_renderingServer->ExecuteCommandList(m_RPDC);
-l_renderingServer->WaitForFrame(m_RPDC);
+l_graphicsService->CommandListBegin(m_RPDC, 0);
+l_graphicsService->BindRenderPassDataComponent(m_RPDC);
+l_graphicsService->CleanRenderTargets(m_RPDC);
+l_graphicsService->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 17);
+l_graphicsService->DrawIndexedInstanced(m_RPDC, m_quadMesh);
+l_graphicsService->CommandListEnd(m_RPDC);
+l_graphicsService->ExecuteCommandList(m_RPDC);
+l_graphicsService->WaitForFrame(m_RPDC);
 ```
 
 - Physically-based lighting with photometry interface — colour temperature, luminous flux, and real-world light measurements.
