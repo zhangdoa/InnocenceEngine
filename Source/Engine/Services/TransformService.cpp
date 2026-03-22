@@ -39,18 +39,15 @@ bool TransformService::Update()
 	auto& l_TransformStorage = l_Registry->Storage<TransformComponent>();
 	const auto& l_Owners = l_TransformStorage.AllOwners();
 
-	// Ensure every entity with TransformComponent has a WorldTransformComponent.
 	for (EntityID l_Entity : l_Owners)
 	{
 		if (!l_Registry->Has<WorldTransformComponent>(l_Entity))
 			l_Registry->Emplace<WorldTransformComponent>(l_Entity);
 	}
 
-	// Rebuild topological order when entity count changes or hierarchy is modified.
 	if (m_HierarchyDirty || l_Owners.size() != m_TraversalOrder.size())
 		RebuildTraversalOrder(l_Owners);
 
-	// Propagate transforms in topological order (parents before children).
 	for (EntityID l_Entity : m_TraversalOrder)
 	{
 		auto* l_Local = l_Registry->Get<TransformComponent>(l_Entity);
@@ -101,7 +98,7 @@ ObjectStatus TransformService::GetStatus()
 
 void TransformService::SetParent(EntityID l_Child, EntityID l_Parent)
 {
-	if (l_Child == INVALID_ENTITY || l_Child >= MAX_ENTITIES)
+	if (l_Child == INVALID_ENTITY || l_Child >= MAX_ENTITIES || l_Child == l_Parent)
 		return;
 
 	// Detach from current parent.
@@ -132,6 +129,10 @@ void TransformService::SetParent(EntityID l_Child, EntityID l_Parent)
 		m_Nodes[l_Child].m_NextSibling = m_Nodes[l_Parent].m_FirstChild;
 		m_Nodes[l_Parent].m_FirstChild = l_Child;
 		m_Nodes[l_Child].m_Depth       = m_Nodes[l_Parent].m_Depth + 1;
+	}
+	else
+	{
+		m_Nodes[l_Child].m_Depth = 0;
 	}
 
 	m_HierarchyDirty = true;
@@ -168,7 +169,6 @@ void TransformService::RebuildTraversalOrder(const std::vector<EntityID>& l_AllO
 	m_TraversalOrder.clear();
 	m_TraversalOrder.reserve(l_AllOwners.size());
 
-	// BFS from roots — roots are entities with no parent in the HierarchyGraph.
 	std::vector<EntityID> l_Queue;
 	l_Queue.reserve(l_AllOwners.size());
 

@@ -31,8 +31,6 @@ namespace Inno
 		EntityID GetNextSibling(EntityID Entity) const;
 
 	private:
-		// Sparse array indexed by EntityID — O(1) parent/child lookup.
-		// Allocated once at Setup; 65536 * 16 bytes = 1 MB.
 		std::vector<HierarchyNode> m_Nodes;
 		std::vector<EntityID>      m_TraversalOrder;
 		bool                       m_HierarchyDirty = true;
