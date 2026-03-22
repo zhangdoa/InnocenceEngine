@@ -21,7 +21,6 @@ using namespace DX12Helper;
 
 bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
 	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 
 	// vertices
@@ -31,30 +30,28 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_defaultHeapBuffer_VB = CreateDefaultHeapBuffer(&l_verticesResourceDesc);
 	if (!l_defaultHeapBuffer_VB)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Default Heap!");
+		Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Default Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	// TODO Phase2-migrate: SetObjectName(mesh, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
-#endif //  INNO_DEBUG
+	SetObjectName(mesh, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
+#endif
 	m_MeshVertexBuffers_Default[componentUUID] = l_defaultHeapBuffer_VB;
 
 	auto l_uploadHeapBuffer_VB = CreateUploadHeapBuffer(&l_verticesResourceDesc);
 	if (!l_uploadHeapBuffer_VB)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Upload Heap!");
+		Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Upload Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	// TODO Phase2-migrate: SetObjectName(mesh, l_uploadHeapBuffer_VB, "UploadHeap_VB");
-#endif //  INNO_DEBUG
+	SetObjectName(mesh, l_uploadHeapBuffer_VB, "UploadHeap_VB");
+#endif
 	m_MeshVertexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_VB;
 
 	mesh->m_VertexBufferView.m_BufferLocation = l_defaultHeapBuffer_VB->GetGPUVirtualAddress();
 	mesh->m_VertexBufferView.m_SizeInBytes = l_verticesDataSize;
 	mesh->m_VertexBufferView.m_StrideInBytes = sizeof(Vertex);
-
-	// TODO Phase2-migrate: Log(Verbose, mesh->m_InstanceName, " Vertex Buffer is initialized.");
 
 	// indices
 	auto l_indicesDataSize = uint32_t(sizeof(Index) * indices.size());
@@ -63,30 +60,28 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_defaultHeapBuffer_IB = CreateDefaultHeapBuffer(&l_indicesResourceDesc);
 	if (!l_defaultHeapBuffer_IB)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create index buffer on Default Heap!");
+		Log(Error, mesh->m_InstanceName, " can't create index buffer on Default Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	// TODO Phase2-migrate: SetObjectName(mesh, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
-#endif //  INNO_DEBUG
+	SetObjectName(mesh, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
+#endif
 	m_MeshIndexBuffers_Default[componentUUID] = l_defaultHeapBuffer_IB;
 
 	auto l_uploadHeapBuffer_IB = CreateUploadHeapBuffer(&l_indicesResourceDesc);
 	if (!l_uploadHeapBuffer_IB)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " can't create index buffer on Upload Heap!");
+		Log(Error, mesh->m_InstanceName, " can't create index buffer on Upload Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	// TODO Phase2-migrate: SetObjectName(mesh, l_uploadHeapBuffer_IB, "UploadHeap_IB");
-#endif //  INNO_DEBUG
+	SetObjectName(mesh, l_uploadHeapBuffer_IB, "UploadHeap_IB");
+#endif
 	m_MeshIndexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_IB;
 
 	mesh->m_IndexBufferView.m_BufferLocation = l_defaultHeapBuffer_IB->GetGPUVirtualAddress();
 	mesh->m_IndexBufferView.m_SizeInBytes = l_indicesDataSize;
 	mesh->m_IndexBufferView.m_StrideInBytes = sizeof(Index);
-
-	// TODO Phase2-migrate: Log(Verbose, mesh->m_InstanceName, " Index Buffer is initialized.");
 
 	// Flip y texture coordinate
 	for (auto& i : vertices)
@@ -144,7 +139,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " Failed to get prebuild info for BLAS!");
+		Log(Error, mesh->m_InstanceName, " Failed to get prebuild info for BLAS!");
 		return false;
 	}
 
@@ -152,24 +147,24 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_BLAS = CreateDefaultHeapBuffer(&blasResourceDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 	if (!l_BLAS)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " Failed to create BLAS buffer!");
+		Log(Error, mesh->m_InstanceName, " Failed to create BLAS buffer!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	// TODO Phase2-migrate: SetObjectName(mesh, l_BLAS, "BLAS");
-#endif // INNO_DEBUG
+	SetObjectName(mesh, l_BLAS, "BLAS");
+#endif
 	m_MeshBLAS[componentUUID] = l_BLAS;
 
 	auto scratchResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(prebuildInfo.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 	auto l_scratchBuffer = CreateDefaultHeapBuffer(&scratchResourceDesc);
 	if (!l_scratchBuffer)
 	{
-		// TODO Phase2-migrate: Log(Error, mesh->m_InstanceName, " Failed to create scratch buffer for BLAS!");
+		Log(Error, mesh->m_InstanceName, " Failed to create scratch buffer for BLAS!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	// TODO Phase2-migrate: SetObjectName(mesh, l_scratchBuffer, "ScratchBuffer_BLAS");
-#endif // INNO_DEBUG
+	SetObjectName(mesh, l_scratchBuffer, "ScratchBuffer_BLAS");
+#endif
 	m_MeshScratchBuffers[componentUUID] = l_scratchBuffer;
 
 	// Transition index and vertex buffers to NON_PIXEL_SHADER_RESOURCE state for BLAS build.
@@ -199,8 +194,8 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_semaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
 	WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
 
-	// TODO Phase2-migrate: Log(Verbose, mesh->m_InstanceName, " BLAS is initialized.");
-	// TODO Phase2-migrate: mesh->m_ObjectStatus = ObjectStatus::Activated;
+	Log(Verbose, mesh->m_InstanceName, " BLAS is initialized.");
+	mesh->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -706,7 +701,7 @@ bool DX12RenderingServer::InitializeImpl(EntityID Entity)
 
 	auto* l_mesh = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(Entity);
 	if (!l_mesh)
-		return false;
+		return true;
 
 	auto blasIt = m_MeshBLAS.find(reinterpret_cast<uint64_t>(l_mesh));
 	if (blasIt == m_MeshBLAS.end())
@@ -809,7 +804,6 @@ bool DX12RenderingServer::InitializeImpl(CommandListComponent* commandList)
 
 bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh)
 {
-	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
 	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 

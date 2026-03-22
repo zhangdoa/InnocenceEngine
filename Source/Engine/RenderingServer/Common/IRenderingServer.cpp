@@ -373,7 +373,7 @@ void IRenderingServer::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 
 	// Queue mesh for deferred initialization using move semantics to avoid copying vertex/index data
 	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices)));
-	// TODO Phase2-migrate: Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
+	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(TextureComponent* texture, void* textureData)
@@ -393,7 +393,7 @@ void IRenderingServer::Initialize(MaterialComponent* material)
 
 	// Queue material for deferred initialization
 	m_uninitializedMaterials.push(material);
-	// TODO Phase2-migrate: Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
+	Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
 }
 
 void IRenderingServer::Initialize(ShaderProgramComponent* shaderProgram)
@@ -792,7 +792,7 @@ bool IRenderingServer::InitializeComponents()
 		if (!l_task.m_Component)
 			continue;
 
-		// TODO Phase2-migrate: Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
+		Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_Vertices, l_task.m_Indices))
 			m_initializedMeshes.emplace(l_task.m_Component);
 		else
@@ -824,7 +824,7 @@ bool IRenderingServer::InitializeComponents()
 		if (!l_component)
 			continue;
 
-		// TODO Phase2-migrate: Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
+		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
 			m_initializedMaterials.emplace(l_component);
 		else
@@ -872,6 +872,7 @@ bool IRenderingServer::InitializeComponents()
 		if (l_entity == INVALID_ENTITY)
 			continue;
 
+		Log(Verbose, "Processing deferred entity initialization for: ", l_entity);
 		if (InitializeImpl(l_entity))
 			m_initializedEntities.emplace(l_entity);
 		else
