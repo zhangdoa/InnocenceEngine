@@ -272,21 +272,6 @@ namespace Inno
 
         std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
 
-	private:
-		bool InitializeComponents();
-		bool PrepareGlobalCommands();
-		bool ExecuteGlobalCommands();
-		bool PrepareSwapChainCommands();
-		bool ExecuteSwapChainCommands();
-
-		bool ExecuteResize();
-		bool PreResize();
-    	bool PreResize(RenderPassComponent* renderPass);
-		bool PostResize();
-		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass);
-
-		std::atomic_bool m_needResize = false;
-
 		struct GPUHandlePools
 		{
 			TObjectPool<MeshComponent>*          Meshes          = nullptr;
@@ -317,5 +302,20 @@ namespace Inno
 			ThreadSafeVector<CommandListComponent*>   CommandListPointers;
 		};
 		GPUHandlePools m_GPUHandlePools;
+
+	private:
+		bool InitializeComponents();
+		bool PrepareGlobalCommands();
+		bool ExecuteGlobalCommands();
+		bool PrepareSwapChainCommands();
+		bool ExecuteSwapChainCommands();
+
+		bool ExecuteResize();
+		bool PreResize();
+    	bool PreResize(RenderPassComponent* renderPass);
+		bool PostResize();
+		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass);
+
+		std::atomic_bool m_needResize = false;
 	};
 }

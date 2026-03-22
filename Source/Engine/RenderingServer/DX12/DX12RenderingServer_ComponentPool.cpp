@@ -185,6 +185,8 @@ bool DX12RenderingServer::Delete(GPUBufferComponent* gpuBuffer)
 			l_DX12MappedMemory->m_UploadHeapBuffer.Reset();
 	}
 
+	gpuBuffer->m_MappedMemories.clear();
+
 	ReleaseFromPool(m_GPUHandlePools.GPUBuffers,
 	                m_GPUHandlePools.GPUBufferLUT,
 	                m_GPUHandlePools.GPUBufferPointers, gpuBuffer);

@@ -17,7 +17,6 @@
 #include "../../Component/MaterialComponent.h"
 
 #include "../../Engine.h"
-#include "../IRenderingServer.h"
 
 using namespace Inno;
 
@@ -49,13 +48,21 @@ bool IRenderingServer::InitializePool()
 bool IRenderingServer::TerminatePool()
 {
 	TObjectPool<MeshComponent>::Destruct(m_GPUHandlePools.Meshes);
+	m_GPUHandlePools.Meshes = nullptr;
 	TObjectPool<TextureComponent>::Destruct(m_GPUHandlePools.Textures);
+	m_GPUHandlePools.Textures = nullptr;
 	TObjectPool<MaterialComponent>::Destruct(m_GPUHandlePools.Materials);
+	m_GPUHandlePools.Materials = nullptr;
 	TObjectPool<RenderPassComponent>::Destruct(m_GPUHandlePools.RenderPasses);
+	m_GPUHandlePools.RenderPasses = nullptr;
 	TObjectPool<ShaderProgramComponent>::Destruct(m_GPUHandlePools.ShaderPrograms);
+	m_GPUHandlePools.ShaderPrograms = nullptr;
 	TObjectPool<SamplerComponent>::Destruct(m_GPUHandlePools.Samplers);
+	m_GPUHandlePools.Samplers = nullptr;
 	TObjectPool<GPUBufferComponent>::Destruct(m_GPUHandlePools.GPUBuffers);
+	m_GPUHandlePools.GPUBuffers = nullptr;
 	TObjectPool<CommandListComponent>::Destruct(m_GPUHandlePools.CommandLists);
+	m_GPUHandlePools.CommandLists = nullptr;
 	return true;
 }
 
@@ -258,6 +265,12 @@ static T* AllocateGPUHandle(TObjectPool<T>* pool,
                              ThreadSafeVector<T*>& pointers,
                              const char* name)
 {
+	if (!name || name[0] == '\0')
+	{
+		Log(Error, "GPU handle name cannot be empty.");
+		return nullptr;
+	}
+
 	auto l_existing = lut.find(name);
 	if (l_existing != lut.end())
 		return l_existing->second;
