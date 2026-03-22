@@ -21,18 +21,8 @@ namespace Inno
 			return true;
 		}
 
-		template <typename T>
-		bool SetObjectName(Object* owner, ComPtr<T> rhs, const char* objectType)
-		{
-			auto l_Name = std::string(owner->m_InstanceName.c_str());
-			l_Name += "_";
-			l_Name += objectType;
-			auto l_NameW = std::wstring(l_Name.begin(), l_Name.end());
-			return SetObjectName(l_NameW.c_str(), rhs, objectType);
-		}
-
-		template <typename T>
-		bool SetObjectName(GPUResourceComponent* owner, ComPtr<T> rhs, const char* objectType)
+		template <typename TOwner, typename T>
+		bool SetObjectName(TOwner* owner, ComPtr<T> rhs, const char* objectType)
 		{
 			auto l_Name = std::string(owner->m_InstanceName.c_str());
 			l_Name += "_";

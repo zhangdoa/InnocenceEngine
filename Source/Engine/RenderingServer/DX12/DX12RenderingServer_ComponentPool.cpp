@@ -100,15 +100,8 @@ bool DX12RenderingServer::Delete(MeshComponent* mesh)
 
 bool DX12RenderingServer::Delete(TextureComponent* texture)
 {
-	if (!texture)
-	{
-		return false;
-	}
-
-	// TODO Phase2-migrate: switched from m_UUID to pointer key (m_UUID removed from GPUResourceComponent)
 	auto componentUUID = reinterpret_cast<uint64_t>(texture);
 
-	// Clean up texture upload/default buffer if it exists
 	auto uploadIt = m_TextureBuffers_Upload.find(componentUUID);
 	if (uploadIt != m_TextureBuffers_Upload.end()) {
 		if (uploadIt->second) uploadIt->second.Reset();
@@ -121,21 +114,11 @@ bool DX12RenderingServer::Delete(TextureComponent* texture)
 		m_TextureBuffers_Default.erase(defaultIt);
 	}
 
-	// Clear GPU resources safely
-	try {
-		texture->m_GPUResources.clear();
-		texture->m_ReadHandles.clear();
-		texture->m_WriteHandles.clear();
-	}
-	catch (...) {
-		// Handle potential access violations during cleanup
-	}
+	texture->m_GPUResources.clear();
+	texture->m_ReadHandles.clear();
+	texture->m_WriteHandles.clear();
 
-	// Remove from initialized textures with safety check
-	auto textureIt = m_initializedTextures.find(texture);
-	if (textureIt != m_initializedTextures.end()) {
-		m_initializedTextures.erase(textureIt);
-	}
+	m_initializedTextures.erase(texture);
 
 	return true;
 }
