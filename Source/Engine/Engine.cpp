@@ -8,7 +8,7 @@
 #include "Services/ComponentManager.h"
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
-#include "Services/LightSystem.h"
+#include "Services/LightSimulationService.h"
 #include "Services/CameraSystem.h"
 #include "Services/SceneService.h"
 #include "Services/AssetService.h"
@@ -427,7 +427,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<AssetService>();
 	Get<SceneService>();
 	Get<PhysicsSimulationService>();
-	Get<LightSystem>();
+	Get<LightSimulationService>();
 	Get<CameraSystem>();
 
 	return true;
@@ -481,7 +481,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	SystemSetup(SceneService);
 	SystemSetup(PhysicsSimulationService);
 
-	SystemSetup(LightSystem);
+	SystemSetup(LightSimulationService);
 	SystemSetup(CameraSystem);
 
 	SystemSetup(TemplateAssetService);
@@ -506,7 +506,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 			// Update components
 			Get<CameraSystem>()->Update();
-			Get<LightSystem>()->Update();
+			Get<LightSimulationService>()->Update();
 
 			SystemUpdate(EntityRegistry);
 
@@ -627,7 +627,7 @@ bool Engine::Initialize()
 	SystemInit(SceneService);
 	SystemInit(PhysicsSimulationService);
 
-	SystemInit(LightSystem);
+	SystemInit(LightSimulationService);
 	SystemInit(CameraSystem);
 	m_pImpl->m_RenderingServer->Initialize();
 
@@ -750,7 +750,7 @@ bool Engine::Terminate()
 	}
 
 	SystemTerm(CameraSystem);
-	SystemTerm(LightSystem);
+	SystemTerm(LightSimulationService);
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);

@@ -1,15 +1,43 @@
 #include "LightDataService.h"
 
 #include "../Common/LogService.h"
+#include "../Common/MathHelper.h"
 #include "../Common/GPUDataStructure.h"
 #include "EntityRegistry.h"
+#include "CameraSystem.h"
 #include "RenderingConfigurationService.h"
-#include "LightSystem.h"
 #include "../Component/LightComponent.h"
 #include "../Component/TransformComponent.h"
+#include "../Component/CameraComponent.h"
 #include "../Engine.h"
 
 using namespace Inno;
+
+namespace
+{
+	AABB SnapAABBToShadowMap(const AABB& Rhs, float ShadowMapResolution)
+	{
+		Vec4 l_UnitsPerTexel = Rhs.m_extend / ShadowMapResolution;
+		Vec4 l_TexelPerUnit  = l_UnitsPerTexel.reciprocal();
+
+		Vec4 l_SnappedCenter = Rhs.m_center.scale(l_TexelPerUnit) + 0.5f;
+		l_SnappedCenter = Vec4(floor(l_SnappedCenter.x), floor(l_SnappedCenter.y), floor(l_SnappedCenter.z), 1.0f);
+		l_SnappedCenter = l_SnappedCenter.scale(l_UnitsPerTexel);
+
+		AABB l_Result;
+		l_Result.m_center   = l_SnappedCenter;
+		l_Result.m_extend   = Rhs.m_extend;
+		l_Result.m_boundMin = l_Result.m_center - l_Result.m_extend * 0.5f;
+		l_Result.m_boundMax = l_Result.m_center + l_Result.m_extend * 0.5f;
+		return l_Result;
+	}
+
+	void AlignMatrixToTexels(Mat4& Matrix, float ShadowMapResolution)
+	{
+		Matrix.m30 = floor(Matrix.m30 * ShadowMapResolution) / ShadowMapResolution;
+		Matrix.m31 = floor(Matrix.m31 * ShadowMapResolution) / ShadowMapResolution;
+	}
+}
 
 namespace Inno
 {
@@ -17,14 +45,14 @@ namespace Inno
 	{
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		std::vector<PointLightConstantBuffer> m_PointLightCBVector;
+		std::vector<PointLightConstantBuffer>  m_PointLightCBVector;
 		std::vector<SphereLightConstantBuffer> m_SphereLightCBVector;
-		std::vector<CSMConstantBuffer> m_CSMCBVector;
+		std::vector<CSMConstantBuffer>         m_CSMCBVector;
 
-		GPUBufferComponent* m_PointLightGPUBufferComp;
-		GPUBufferComponent* m_SphereLightGPUBufferComp;
-		GPUBufferComponent* m_CSMGPUBufferComp;
-		GPUBufferComponent* m_GICBufferGPUBufferComp;
+		GPUBufferComponent* m_PointLightGPUBufferComp   = nullptr;
+		GPUBufferComponent* m_SphereLightGPUBufferComp  = nullptr;
+		GPUBufferComponent* m_CSMGPUBufferComp          = nullptr;
+		GPUBufferComponent* m_GICBufferGPUBufferComp    = nullptr;
 
 		bool Setup(ISystemConfig* systemConfig);
 		bool Initialize();
@@ -130,9 +158,9 @@ bool LightDataServiceImpl::UpdateLightData()
 
 bool LightDataServiceImpl::UpdateCSMData()
 {
-	auto& l_Storage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
-	const auto& l_Lights = l_Storage.All();
-	const auto& l_Owners = l_Storage.AllOwners();
+	auto& l_LightStorage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
+	const auto& l_Lights  = l_LightStorage.All();
+	const auto& l_LightOwners = l_LightStorage.AllOwners();
 
 	if (l_Lights.empty())
 		return false;
@@ -142,45 +170,101 @@ bool LightDataServiceImpl::UpdateCSMData()
 	{
 		if (l_Lights[i].m_LightType == LightType::Directional)
 		{
-			l_SunEntityID = l_Owners[i];
+			l_SunEntityID = l_LightOwners[i];
 			break;
 		}
 	}
 	if (l_SunEntityID == INVALID_ENTITY)
 		return false;
 
-	auto* l_LightSystem = g_Engine->Get<LightSystem>();
-	auto& l_LitRegionWorldSpaceMap = l_LightSystem->GetLitRegionWorldSpace();
-	auto& l_ViewMatricesMap = l_LightSystem->GetViewMatrices();
-	auto& l_ProjectionMatricesMap = l_LightSystem->GetProjectionMatrices();
-
-	auto l_ItWorld = l_LitRegionWorldSpaceMap.find(l_SunEntityID);
-	auto l_ItView = l_ViewMatricesMap.find(l_SunEntityID);
-	auto l_ItProj = l_ProjectionMatricesMap.find(l_SunEntityID);
-
-	if (l_ItWorld == l_LitRegionWorldSpaceMap.end() || l_ItView == l_ViewMatricesMap.end() || l_ItProj == l_ProjectionMatricesMap.end())
+	auto* l_SunTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_SunEntityID);
+	if (!l_SunTransform)
 		return false;
 
-	auto& l_LitRegion_WorldSpace = l_ItWorld->second;
-	auto& l_ViewMats = l_ItView->second;
-	auto& l_ProjectionMats = l_ItProj->second;
+	auto* l_Camera = static_cast<ICameraSystem*>(g_Engine->Get<CameraSystem>())->GetMainCamera();
+	if (!l_Camera)
+		return false;
+
+	const uint32_t l_MaxCSMCount = 4;
+	const float    l_Lambda      = 0.75f;
+	const float    l_ZNear       = l_Camera->m_ZNear;
+	const float    l_ZFar        = l_Camera->m_ZFar;
+
+	std::array<float, 4> l_SplitFactors;
+	for (int i = 1; i <= (int)l_MaxCSMCount; i++)
+	{
+		float l_Log     = l_ZNear * std::pow(l_ZFar / l_ZNear, (float)i / (float)l_MaxCSMCount);
+		float l_Uniform = l_ZNear + (l_ZFar - l_ZNear) * ((float)i / (float)l_MaxCSMCount);
+		l_SplitFactors[i - 1] = l_Log * l_Lambda + l_Uniform * (1.0f - l_Lambda);
+	}
+
+	const auto& l_FrustumWS = l_Camera->m_FrustumVerticesWS;
+
+	// l_CornerPos layout:
+	//   [0..3]        — near-plane corners (shared across all cascades)
+	//   [4 + i*4 + j] — far-plane corner j of cascade i  (i in [0,3], j in [0,3])
+	std::array<Vec3, 20> l_CornerPos;
+	for (size_t i = 0; i < 4; i++)
+		l_CornerPos[i] = l_FrustumWS[i].m_pos;
+	for (size_t i = 0; i < l_MaxCSMCount; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			auto l_Dir = (l_FrustumWS[j + 4].m_pos - l_FrustumWS[j].m_pos).normalize();
+			l_CornerPos[4 + i * 4 + j] = l_FrustumWS[j].m_pos + l_Dir * l_SplitFactors[i];
+		}
+	}
+
+	auto l_RenderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
+	auto l_ShadowMapRes    = (float)l_RenderingConfig.shadowMapResolution;
+	auto l_RotInv          = Math::toRotationMatrix(l_SunTransform->m_LocalRot).inverse();
 
 	m_CSMCBVector.clear();
-
-	if (l_LitRegion_WorldSpace.size() > 0 && l_ViewMats.size() > 0 && l_ProjectionMats.size() > 0)
+	for (size_t i = 0; i < l_MaxCSMCount; i++)
 	{
-		for (size_t j = 0; j < l_LitRegion_WorldSpace.size(); j++)
+		std::array<Vertex, 8> l_CascadeVerts;
+		if (l_RenderingConfig.CSMFitToScene)
 		{
-			CSMConstantBuffer l_CSMCB;
-
-			l_CSMCB.p = l_ProjectionMats[j];
-			l_CSMCB.v = l_ViewMats[j];
-
-			l_CSMCB.AABBMax = l_LitRegion_WorldSpace[j].m_boundMax;
-			l_CSMCB.AABBMin = l_LitRegion_WorldSpace[j].m_boundMin;
-
-			m_CSMCBVector.emplace_back(l_CSMCB);
+			for (size_t j = 0; j < 4; j++)
+				l_CascadeVerts[j].m_pos = l_CornerPos[j];
+			for (size_t j = 0; j < 4; j++)
+				l_CascadeVerts[j + 4].m_pos = l_CornerPos[4 + i * 4 + j];
 		}
+		else
+		{
+			if (i == 0)
+			{
+				for (size_t j = 0; j < 4; j++)
+					l_CascadeVerts[j].m_pos = l_CornerPos[j];
+			}
+			else
+			{
+				for (size_t j = 0; j < 4; j++)
+					l_CascadeVerts[j].m_pos = l_CornerPos[4 + (i - 1) * 4 + j];
+			}
+			for (size_t j = 0; j < 4; j++)
+				l_CascadeVerts[j + 4].m_pos = l_CornerPos[4 + i * 4 + j];
+		}
+
+		AABB l_AABBWorld = Math::GenerateAABB(&l_CascadeVerts[0], 8);
+		AABB l_AABBLight = Math::ExtendAABBToBoundingSphere(l_AABBWorld);
+		l_AABBLight = Math::RotateAABBToNewSpace(l_AABBLight, l_RotInv);
+		l_AABBLight = SnapAABBToShadowMap(l_AABBLight, l_ShadowMapRes);
+
+		Mat4 l_View = l_RotInv;
+		AlignMatrixToTexels(l_View, l_ShadowMapRes);
+
+		Mat4 l_Proj = Math::GenerateOrthographicMatrix(
+			l_AABBLight.m_boundMin.x, l_AABBLight.m_boundMax.x,
+			l_AABBLight.m_boundMin.y, l_AABBLight.m_boundMax.y,
+			l_AABBLight.m_boundMax.z, l_AABBLight.m_boundMin.z);
+
+		CSMConstantBuffer l_CB;
+		l_CB.v       = l_View;
+		l_CB.p       = l_Proj;
+		l_CB.AABBMax = l_AABBWorld.m_boundMax;
+		l_CB.AABBMin = l_AABBWorld.m_boundMin;
+		m_CSMCBVector.emplace_back(l_CB);
 	}
 
 	return true;
