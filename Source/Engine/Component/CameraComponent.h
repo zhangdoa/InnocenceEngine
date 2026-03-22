@@ -22,7 +22,7 @@ namespace Inno
 		float m_ShutterTime = 1.0f / 2000.0f;
 		float m_ISO = 100.0f;
 
-		std::vector<Vertex> m_SplitFrustumVerticesWS;
+		std::array<Vertex, 8> m_FrustumVerticesWS = {};
 	};
 
 	class ICameraSystem : public ISystem
