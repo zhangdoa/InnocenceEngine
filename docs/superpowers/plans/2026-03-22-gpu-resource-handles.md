@@ -143,7 +143,7 @@ Add `Source/Engine/RenderingServer/DX12/DX12RenderingServer.h` to the git add in
 - [ ] **Step 5: Build to verify TextureComponent, GPUBufferComponent, SamplerComponent still compile**
 
 ```
-cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Build" 2>&1
 ```
 
 Expected: build succeeds. These three types inherit GPUResourceComponent and pick up the new fields automatically.
@@ -515,40 +515,30 @@ MaterialComponent* IRenderingServer::FindMaterialByName(const char* name)
 }
 ```
 
-- [ ] **Step 6: Update Delete() to clean up the LUT and pointer list**
+- [ ] **Step 6: Add ReleaseFromPool to IRenderingServer.h and wire into DX12 Delete overrides**
 
-**Wiring pattern:** IRenderingServer's `Delete(T*)` methods are currently pure virtual (`= 0`). The DX12 override handles GPU resource teardown. Add pool/LUT cleanup by making the base class `Delete(T*)` non-pure with a default that calls a new virtual `DeleteImpl(T*)`:
+`ReleaseFromPool<T>` must be visible to `DX12RenderingServer_ComponentPool.cpp`. A `static` function in `IRenderingServer.cpp` is not visible to any other translation unit — the DX12 `.cpp` would fail to compile with "not declared in this scope". The correct approach: declare it as a `protected` template method in `IRenderingServer.h`, with the body **inline in the header** (required for templates — the compiler needs the definition at every call site).
 
-```
-// IRenderingServer.h: Change "= 0" to non-pure with pool cleanup
-// virtual bool Delete(MeshComponent* mesh) = 0;   ← old
-//
-// Pattern: base class calls ReleaseFromPool, then calls virtual DeleteImpl
-```
-
-Concrete approach: in IRenderingServer.h, change `Delete(T*)` overloads from `= 0` to non-virtual wrappers that call (a) `virtual bool DeleteImpl(T*)` (DX12 overrides this for GPU teardown) then (b) `ReleaseFromPool(T*)` (pool cleanup).
-
-Read `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp` to confirm the current DX12 Delete override structure before writing the wrapper. If changing from pure virtual to non-virtual + virtual DeleteImpl is too invasive for this task's scope, alternatively: add a `protected` non-virtual `ReleaseFromPool<T>` helper that each DX12 Delete override calls explicitly at the END of its function body, after GPU teardown.
-
-**The simpler approach (preferred):** keep `Delete(T*)` virtual as-is in the DX12 overrides, and add a `static` file-scope helper in `IRenderingServer.cpp` (all data is passed by parameter — no member access needed):
-
-**Critical ordering:** the three cleanup operations MUST be in the order below. `pool->Destroy(ptr)` calls `ptr->~T()` then zeroes the slot memory — after that, `ptr->m_InstanceName` is garbage. The LUT erase reads `ptr->m_InstanceName.c_str()` as its key, so it must execute **before** `pool->Destroy`.
+Add to `IRenderingServer.h` in the `protected:` section (after the `GPUHandlePools` struct and pool member):
 
 ```cpp
-template <typename T>
-static void ReleaseFromPool(TObjectPool<T>* pool,
-                             ThreadSafeUnorderedMap<std::string, T*>& lut,
-                             ThreadSafeVector<T*>& pointers,
-                             T* ptr)
-{
-    if (!ptr) return;
-    lut.erase(std::string(ptr->m_InstanceName.c_str()));  // MUST be first: reads ptr->m_InstanceName before it is zeroed
-    pointers.eraseByValue(ptr);                           // ThreadSafeVector::eraseByValue confirmed at ThreadSafeVector.h:116
-    pool->Destroy(ptr);                                   // MUST be last: destructs the object and zeroes the pool slot
-}
+protected:
+    template <typename T>
+    void ReleaseFromPool(TObjectPool<T>* pool,
+                         ThreadSafeUnorderedMap<std::string, T*>& lut,
+                         ThreadSafeVector<T*>& pointers,
+                         T* ptr)
+    {
+        if (!ptr) return;
+        lut.erase(std::string(ptr->m_InstanceName.c_str()));  // MUST be first: reads m_InstanceName before pool->Destroy zeroes the slot
+        pointers.eraseByValue(ptr);                           // ThreadSafeVector::eraseByValue at ThreadSafeVector.h:116
+        pool->Destroy(ptr);                                   // MUST be last: destructs object and zeroes the pool slot
+    }
 ```
 
-Then in each DX12 Delete override in `DX12RenderingServer_ComponentPool.cpp`, add a call to `ReleaseFromPool` **at the very end, after all GPU teardown, just before `return true`**. Do NOT insert it before any error-path `return false`.
+**Critical ordering:** `pool->Destroy(ptr)` calls `ptr->~T()` then zeroes the slot — after that `ptr->m_InstanceName` is garbage. The LUT erase reads `ptr->m_InstanceName.c_str()` as its key, so it MUST execute before `pool->Destroy`.
+
+Then in each DX12 Delete override in `DX12RenderingServer_ComponentPool.cpp`, call `ReleaseFromPool` **at the very end, after all GPU teardown, just before `return true`**. Do NOT insert it before any error-path `return false`.
 
 Concrete before/after for `Delete(MeshComponent*)` (current form at line 57):
 
@@ -596,10 +586,20 @@ The `#include "../../Services/ComponentManager.h"` at line 16 and any remaining 
 - [ ] **Step 8: Build**
 
 ```
-cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Build" 2>&1
 ```
 
 Expected: succeeds. DX12RenderingServer's virtual Delete overrides still compile because they receive the same `T*` pointers.
+
+- [ ] **Step 8b: Run RenderTest to confirm GPU allocation/teardown still works**
+
+This is the most invasive task in the plan — pool allocation replaces ComponentManager for all 8 types. Verify the full rendering pipeline before committing:
+
+```
+powershell.exe -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode" 2>&1
+```
+
+Expected: `0`
 
 - [ ] **Step 9: Commit**
 
@@ -806,11 +806,9 @@ g_Engine->getRenderingServer()->Delete(reinterpret_cast<TextureComponent*>(compo
 
 Remove the `TODO Phase2-migrate` comment — this task resolves it.
 
-- [ ] **Step 3: Remove the ComponentManager include from worldexplorer.cpp**
+- [ ] **Step 3: Skip ComponentManager include removal for now**
 
-After Step 2, worldexplorer.cpp no longer calls ComponentManager. Remove `#include "ComponentManager.h"` (or whatever path it uses — find it by searching the top of the file).
-
-Note: `addComponent<T>()` still references `ComponentManager` via its `TODO` comment and body — that function will be migrated in a later ECS task (Task 14, EntityRegistry). Do NOT remove the include if `addComponent<T>()` still needs it. Check whether `addComponent<T>()` is actually still active (line 211 still uses `ComponentManager::Spawn<T>`). If it is, skip this step and add a note that the include can be removed when Task 14 is done.
+`addComponent<T>()` at line 211 still uses `ComponentManager::Spawn<T>` (it's tagged `TODO Phase2-migrate: Task 14 → EntityRegistry`). The ComponentManager include in worldexplorer.cpp must stay until that task is done. Leave the include in place — this is expected. No action needed.
 
 - [ ] **Step 4: Read SceneService.cpp around the ComponentManager CleanUp call**
 
