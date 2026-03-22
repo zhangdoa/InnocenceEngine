@@ -1,10 +1,8 @@
 #include "AnimationResourceService.h"
 #include "AnimationSimulationService.h"
-
+#include "../RenderingServer/IRenderingServer.h"
 #include "../Common/ThreadSafeQueue.h"
-
 #include "EntityRegistry.h"
-
 #include "../Engine.h"
 using namespace Inno;
 
