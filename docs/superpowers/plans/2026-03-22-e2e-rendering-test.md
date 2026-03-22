@@ -20,7 +20,8 @@
 - Modify: `Source/TestClient/TestRenderingClient.cpp` — add Setup/Initialize/Execute/Terminate for pixel_readback case; call ReadTextureBackToCPU and validate
 
 **Exit code:**
-- Modify: `Source/Engine/Platform/WinMain/WinMain.cpp` (or wherever RenderTest.exe's main is) — return 2 when `!renderingClient->GetValidationPassed()`
+- Modify: `Source/Engine/Interface/IRenderingClient.h` — add `virtual GetValidationPassed()` with default `true`
+- Modify: `Source/Engine/Platform/WinMain/WinMain.cpp` — capture raw ptr before move, check `GetValidationPassed()` after `Terminate()`
 
 ---
 
@@ -76,11 +77,12 @@ auto l_rawResult = f_ReadbackToHostHeap(l_DeviceMemory->m_ReadBackHeapBuffer, l_
 
 Apply this fix to both occurrences (depth/stencil path and color path).
 
-Keep the DepthStencil and Float16 conversion blocks commented out — they're not needed for the test and are untested. Only the non-DepthStencil, non-Float16 path (`l_format = l_rhs->m_DX12TextureDesc.Format` path) needs to be active. Simplify by replacing the outer if/else with just the color path:
+Keep the DepthStencil and Float16 conversion blocks commented out — they're not needed for the test and are untested. Only the non-DepthStencil, non-Float16 path needs to be active. Simplify by replacing the outer if/else with just the color path:
 
 ```cpp
 // Only color (non-depth) path is active; DepthStencil to be re-enabled separately
-l_format = l_rhs->m_DX12TextureDesc.Format;
+// DX12TextureComponent no longer exists; derive format from TextureDesc via DX12Helper
+l_format = DX12Helper::GetTextureFormat(TextureComp->m_TextureDesc);
 f_DefaultToReadbackHeap(l_DeviceMemory->m_DefaultHeapBuffer,
                          l_DeviceMemory->m_ReadBackHeapBuffer,
                          l_footprints, l_format, D3D12_RESOURCE_STATE_COMMON);
@@ -117,9 +119,9 @@ else  // UByte8 / UNORM
 
 Note: check what `TexturePixelDataType` values are defined in GraphicsPrimitive.h before writing this step.
 
-- [ ] **Step 4: Add DX12Helper_Texture.h include if not already present**
+- [ ] **Step 4: Add DX12Helper_Texture.h include**
 
-Check the top of `DX12RenderingServer_EngineComponent_Public.cpp` for existing includes. If `DX12Helper_Texture.h` is not included, add it:
+`DX12Helper_Texture.h` is not included in `DX12RenderingServer_EngineComponent_Public.cpp`. Add it unconditionally at the top with the other DX12Helper includes:
 ```cpp
 #include "DX12Helper_Texture.h"
 ```
@@ -162,14 +164,14 @@ Understand the existing `DrawInstanced` test case structure. The `pixel_readback
 
 - [ ] **Step 2: Update TestRenderingClient.h**
 
-Add `PixelReadback` to the `TestCase` enum. Add `m_ValidationPassed` flag and accessor:
+Add `PixelReadback` to the `TestCase` enum. Add `m_ValidationPassed` flag and accessor (marked `override` — `IRenderingClient` will gain the virtual declaration in Task 3 Step 1, but `TestRenderingClient.h` is modified in this task, so write `override` now):
 
 ```cpp
 enum class TestCase { Unknown, BareBoot, DrawInstanced, PixelReadback };
 
 // ... existing members ...
 
-bool GetValidationPassed() const { return m_ValidationPassed; }
+bool GetValidationPassed() const override { return m_ValidationPassed; }
 
 private:
 bool m_ValidationPassed = true;  // starts true; set false on validation failure
@@ -361,47 +363,73 @@ git commit -m "feat: add pixel_readback test case — render red triangle and va
 ## Task 3: Wire exit code 2 for validation failure
 
 **Files:**
-- Locate and modify the WinMain or main entry point used by RenderTest.exe
+- Modify: `Source/Engine/Interface/IRenderingClient.h` — add `virtual GetValidationPassed()`
+- Modify: `Source/TestClient/TestRenderingClient.h` — add `override` to `GetValidationPassed()` (declared in Task 2 Step 2)
+- Modify: `Source/Engine/Platform/WinMain/WinMain.cpp` — capture raw ptr before move, check after Terminate
 
 The RenderTest.exe currently exits with code 1 on D3D12 debug layer errors (from `HasGPUError()`). Pixel validation failures should exit with code 2.
 
-- [ ] **Step 1: Find the RenderTest.exe entry point**
+`Engine` has no `getRenderingClient()` accessor (confirmed from `Engine.h`). The rendering client is passed into `Engine::Setup()` as a `std::unique_ptr` and ownership is consumed. The correct approach is to capture a raw pointer from the unique_ptr **before** the move, then query it after the engine terminates (the object lives until `m_pEngine` destructs at the end of WinMain's scope).
 
-```
-Source/Engine/Platform/WinMain/
-```
+- [ ] **Step 1: Add `GetValidationPassed()` to `IRenderingClient`**
 
-Look for the file that calls `g_Engine->Run()` and checks `HasGPUError()`. This is the place to add the second check.
-
-- [ ] **Step 2: Read the WinMain file to understand the current exit code logic**
-
-The current logic is roughly:
-```cpp
-int exitCode = 0;
-g_Engine->Run();
-if (g_Engine->getRenderingServer()->HasGPUError())
-    exitCode = 1;
-return exitCode;
-```
-
-- [ ] **Step 3: Add the validation failure check**
-
-The `TestRenderingClient` needs to be accessible from WinMain. Check how it's currently accessed (likely via `g_Engine->getLogicClient()` or a similar accessor that returns the ILogicClient interface). Cast it to `TestRenderingClient*` to call `GetValidationPassed()`.
-
-If the interface doesn't expose `GetValidationPassed()`, add it to `ILogicClient` as a virtual method with default return `true`, overridden in `TestRenderingClient`.
+`Source/Engine/Interface/IRenderingClient.h` — add the virtual method:
 
 ```cpp
-// After g_Engine->Run() completes:
-if (g_Engine->getRenderingServer()->HasGPUError())
-    exitCode = 1;
-else if (auto* l_testClient = dynamic_cast<TestRenderingClient*>(g_Engine->getRenderingClient()))
+class IRenderingClient : public ISystem
 {
-    if (!l_testClient->GetValidationPassed())
-        exitCode = 2;
-}
+public:
+    INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingClient);
+
+    virtual bool PrepareCommands() { return true; }
+    virtual bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) = 0;
+    virtual bool GetValidationPassed() const { return true; }  // override in test clients
+};
 ```
 
-Note: Check the exact accessor name for the rendering client (`getRenderingClient()` may differ). Read `Engine.h` for the correct API.
+- [ ] **Step 2: Add `override` in `TestRenderingClient.h`**
+
+The `GetValidationPassed()` method was added in Task 2 Step 2. Verify it is declared with `override`:
+
+```cpp
+bool GetValidationPassed() const override { return m_ValidationPassed; }
+```
+
+- [ ] **Step 3: Fix WinMain to capture raw ptr and check after engine run**
+
+Read `Source/Engine/Platform/WinMain/WinMain.cpp`. The current call site passes the unique_ptr directly as a temporary:
+
+```cpp
+Inno::CreateRenderingClient()   // passed as rvalue directly to Setup()
+```
+
+Change this to capture a raw pointer first:
+
+```cpp
+auto l_renderingClient = Inno::CreateRenderingClient();
+IRenderingClient* l_renderingClientPtr = l_renderingClient.get();
+
+if (!m_pEngine->Setup(
+    hInstance, nullptr, pScmdline,
+    std::move(l_renderingClient),
+    l_isHeadless ? nullptr : Inno::CreateLogicClient()))
+    return 2;
+
+if (!m_pEngine->Initialize())
+    return 2;
+
+m_pEngine->Run();
+m_pEngine->Terminate();
+
+// l_renderingClientPtr is still valid — Engine owns the unique_ptr and hasn't destructed yet
+if (m_pEngine->getRenderingServer()->HasGPUError())
+    return 1;
+if (l_renderingClientPtr && !l_renderingClientPtr->GetValidationPassed())
+    return 2;
+return 0;
+```
+
+Note: preserve the headless guard — if `l_isHeadless`, `l_renderingClient` is null and `l_renderingClientPtr` is null; the `l_renderingClientPtr &&` guard handles this safely.
 
 - [ ] **Step 4: Build**
 

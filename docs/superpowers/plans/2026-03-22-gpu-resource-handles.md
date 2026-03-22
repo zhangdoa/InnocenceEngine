@@ -336,24 +336,21 @@ bool IRenderingServer::InitializePool()
 
 - [ ] **Step 3: Rewrite TerminatePool()**
 
-Add pool destruction (TObjectPool::Create allocates on heap; check if it needs explicit delete or if the pool class handles it — use `TObjectPool<T>::Destroy(pool)` if that API exists, or just `delete pool`). Check `Source/Engine/Common/ObjectPool.h` for the destroy API:
+Add pool destruction. The correct static API is `TObjectPool<T>::Destruct(pool)` (confirmed at `ObjectPool.h:152`). `Destruct` frees the heap allocation made by `TObjectPool<T>::Create()`. Do NOT use `Destroy` — that is the instance method for returning individual elements to the pool, not for tearing down the pool itself.
 
 ```cpp
 bool IRenderingServer::TerminatePool()
 {
-    TObjectPool<MeshComponent>::Destroy(m_GPUHandlePools.Meshes);
-    TObjectPool<TextureComponent>::Destroy(m_GPUHandlePools.Textures);
-    TObjectPool<MaterialComponent>::Destroy(m_GPUHandlePools.Materials);
-    TObjectPool<RenderPassComponent>::Destroy(m_GPUHandlePools.RenderPasses);
-    TObjectPool<ShaderProgramComponent>::Destroy(m_GPUHandlePools.ShaderPrograms);
-    TObjectPool<SamplerComponent>::Destroy(m_GPUHandlePools.Samplers);
-    TObjectPool<GPUBufferComponent>::Destroy(m_GPUHandlePools.GPUBuffers);
-    TObjectPool<CommandListComponent>::Destroy(m_GPUHandlePools.CommandLists);
+    TObjectPool<MeshComponent>::Destruct(m_GPUHandlePools.Meshes);
+    TObjectPool<TextureComponent>::Destruct(m_GPUHandlePools.Textures);
+    TObjectPool<MaterialComponent>::Destruct(m_GPUHandlePools.Materials);
+    TObjectPool<RenderPassComponent>::Destruct(m_GPUHandlePools.RenderPasses);
+    TObjectPool<ShaderProgramComponent>::Destruct(m_GPUHandlePools.ShaderPrograms);
+    TObjectPool<SamplerComponent>::Destruct(m_GPUHandlePools.Samplers);
+    TObjectPool<GPUBufferComponent>::Destruct(m_GPUHandlePools.GPUBuffers);
+    TObjectPool<CommandListComponent>::Destruct(m_GPUHandlePools.CommandLists);
     return true;
 }
-```
-
-> Check `Source/Engine/Common/ObjectPool.h` for the exact Destroy API signature before writing this step.
 
 - [ ] **Step 4: Replace the AddComponent<T> free function with a pool-backed helper**
 
@@ -480,7 +477,9 @@ Concrete approach: in IRenderingServer.h, change `Delete(T*)` overloads from `= 
 
 Read `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp` to confirm the current DX12 Delete override structure before writing the wrapper. If changing from pure virtual to non-virtual + virtual DeleteImpl is too invasive for this task's scope, alternatively: add a `protected` non-virtual `ReleaseFromPool<T>` helper that each DX12 Delete override calls explicitly at the END of its function body, after GPU teardown.
 
-**The simpler approach (preferred):** keep `Delete(T*)` virtual as-is in the DX12 overrides, and add a `protected` helper in `IRenderingServer.cpp`:
+**The simpler approach (preferred):** keep `Delete(T*)` virtual as-is in the DX12 overrides, and add a `static` file-scope helper in `IRenderingServer.cpp` (all data is passed by parameter — no member access needed):
+
+**Critical ordering:** the three cleanup operations MUST be in the order below. `pool->Destroy(ptr)` calls `ptr->~T()` then zeroes the slot memory — after that, `ptr->m_InstanceName` is garbage. The LUT erase reads `ptr->m_InstanceName.c_str()` as its key, so it must execute **before** `pool->Destroy`.
 
 ```cpp
 template <typename T>
@@ -490,9 +489,9 @@ static void ReleaseFromPool(TObjectPool<T>* pool,
                              T* ptr)
 {
     if (!ptr) return;
-    lut.erase(std::string(ptr->m_InstanceName.c_str()));
-    pointers.eraseByValue(ptr);  // ThreadSafeVector::eraseByValue confirmed exists at line 116 of ThreadSafeVector.h
-    pool->Destroy(ptr);
+    lut.erase(std::string(ptr->m_InstanceName.c_str()));  // MUST be first: reads ptr->m_InstanceName before it is zeroed
+    pointers.eraseByValue(ptr);                           // ThreadSafeVector::eraseByValue confirmed at ThreadSafeVector.h:116
+    pool->Destroy(ptr);                                   // MUST be last: destructs the object and zeroes the pool slot
 }
 ```
 
