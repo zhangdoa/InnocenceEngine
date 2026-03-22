@@ -23,6 +23,10 @@
 - `Source/Engine/RenderingServer/IRenderingServer.h` — add pool + LUT + pointer-list fields for 8 types
 - `Source/Engine/RenderingServer/Common/IRenderingServer.cpp` — rewrite `InitializePool()` + `TerminatePool()`, replace `AddComponent<T>` free func with pool-backed implementation; add `FindTextureByName()` helper
 
+**Modified DX12 rendering server (UUID key migration):**
+- `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp` — `Delete(TextureComponent*)`: replace `texture->m_UUID` key with `reinterpret_cast<uint64_t>(texture)` (same pattern as mesh at line 60)
+- `Source/Engine/RenderingServer/DX12/DX12RenderingServer_EngineComponent_Protected.cpp` — `Initialize(TextureComponent*, ...)`: replace `texture->m_UUID` at lines 265 and 293 with same pointer-cast key
+
 **Modified consumers:**
 - `Source/Engine/Services/TemplateAssetService.cpp` — Spawn<T> → AddXComponent; FindByUUID → FindXByName via IRenderingServer
 - `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp` — FindByUUID<TextureComponent> → FindTextureByName; read/write path strings
@@ -43,6 +47,8 @@
 
 **Files:**
 - Modify: `Source/Engine/Component/GPUResourceComponent.h`
+- Modify: `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp`
+- Modify: `Source/Engine/RenderingServer/DX12/DX12RenderingServer_EngineComponent_Protected.cpp`
 
 GPUResourceComponent currently inherits `Component` → `Object`. After this task it is a standalone struct.
 Fields dropped: `m_UUID`, `m_Serializable`, `m_ObjectLifespan`, `m_Owner` (these come from Object/Component).
@@ -91,7 +97,38 @@ namespace Inno
 }
 ```
 
-- [ ] **Step 4: Build to verify TextureComponent, GPUBufferComponent, SamplerComponent still compile**
+- [ ] **Step 4: Migrate DX12 texture buffer map keys from m_UUID to pointer**
+
+Stripping `m_UUID` from `GPUResourceComponent` breaks `DX12RenderingServer`'s texture buffer maps, which are still keyed by `texture->m_UUID`. Migrate them to use `reinterpret_cast<uint64_t>(texture)` as the key — matching the existing mesh pattern at `DX12RenderingServer_ComponentPool.cpp:60` (marked `TODO Phase2-migrate`).
+
+**In `DX12RenderingServer_ComponentPool.cpp` — `Delete(TextureComponent*)`:**
+```cpp
+// Before:
+auto componentUUID = texture->m_UUID;
+
+// After:
+// TODO Phase2-migrate: switched from m_UUID to pointer key (m_UUID removed from GPUResourceComponent)
+auto componentUUID = reinterpret_cast<uint64_t>(texture);
+```
+
+**In `DX12RenderingServer_EngineComponent_Protected.cpp` — `Initialize(TextureComponent*, ...)` lines 265 and 293:**
+```cpp
+// Before (line 265):
+m_TextureBuffers_Default[texture->m_UUID] = defaultHeapBuffer;
+
+// After:
+m_TextureBuffers_Default[reinterpret_cast<uint64_t>(texture)] = defaultHeapBuffer;
+
+// Before (line 293):
+m_TextureBuffers_Upload[texture->m_UUID] = l_uploadHeapBuffer;
+
+// After:
+m_TextureBuffers_Upload[reinterpret_cast<uint64_t>(texture)] = l_uploadHeapBuffer;
+```
+
+Both `m_TextureBuffers_Default` and `m_TextureBuffers_Upload` are `std::unordered_map<uint64_t, ComPtr<ID3D12Resource>>` — the pointer cast is a safe, stable key since the texture's pool slot address does not change between Initialize and Delete.
+
+- [ ] **Step 5: Build to verify TextureComponent, GPUBufferComponent, SamplerComponent still compile**
 
 ```
 cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
@@ -99,11 +136,13 @@ cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /
 
 Expected: build succeeds. These three types inherit GPUResourceComponent and pick up the new fields automatically.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add Source/Engine/Component/GPUResourceComponent.h
-git commit -m "refactor: strip Component base from GPUResourceComponent, inline ObjectStatus/InstanceName"
+git add Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp
+git add Source/Engine/RenderingServer/DX12/DX12RenderingServer_EngineComponent_Protected.cpp
+git commit -m "refactor: strip Component base from GPUResourceComponent, inline ObjectStatus/InstanceName; migrate DX12 texture buffer map keys from m_UUID to pointer"
 ```
 
 ---
