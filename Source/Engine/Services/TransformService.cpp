@@ -100,6 +100,8 @@ void TransformService::SetParent(EntityID l_Child, EntityID l_Parent)
 {
 	if (l_Child == INVALID_ENTITY || l_Child >= MAX_ENTITIES || l_Child == l_Parent)
 		return;
+	if (m_Nodes[l_Child].m_Parent == l_Parent)
+		return;
 
 	// Detach from current parent.
 	EntityID l_OldParent = m_Nodes[l_Child].m_Parent;

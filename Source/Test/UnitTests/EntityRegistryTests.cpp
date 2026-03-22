@@ -213,7 +213,6 @@ static void TestTransformPropagation()
 		l_TransformService->SetParent(l_Child, l_Root);
 		l_TransformService->Update();
 
-		// Root world position: toTranslationMatrix stores x at m03, y at m13, z at m23
 		auto* l_RootWorld = l_Registry->Get<WorldTransformComponent>(l_Root);
 		l_TestPassed = l_RootWorld != nullptr;
 		if (l_TestPassed)
