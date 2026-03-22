@@ -311,6 +311,12 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "Launch in offscreen mode, no windowing but real rendering server for testing.");
 	}
 
+	if (arg.find("audit") != std::string::npos)
+	{
+		l_result.isAudit = true;
+		Log(Success, "Audit mode: will dump all pass outputs on frame 5.");
+	}
+
 	auto l_testArgPos = arg.find("-test");
 	if (l_testArgPos != std::string::npos)
 	{

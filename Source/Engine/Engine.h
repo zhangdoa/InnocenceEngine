@@ -19,6 +19,7 @@ namespace Inno
 		LogLevel logLevel = LogLevel::Success;
 		bool isHeadless = false;
 		bool isOffscreen = false;
+		bool isAudit = false;
 		char testCase[64] = {};
 	};
 

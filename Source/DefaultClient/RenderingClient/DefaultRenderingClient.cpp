@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "DefaultRenderingClient.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
@@ -82,6 +82,8 @@ namespace Inno
 		VXGIRendererSystemConfig m_VXGIRendererSystemConfig = {};
 
 		bool m_ExecuteOneShotCommands = true;
+
+		void AuditDump();
 
 	private:
 		ObjectStatus m_ObjectStatus;
@@ -503,7 +505,8 @@ namespace Inno
 			l_graphicsService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			l_graphicsService->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_graphicsService->WaitOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_graphicsService->WaitOnGPU(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			if (RadianceCacheIntegrationPass::Get().GetStatus() == ObjectStatus::Activated)
+				l_graphicsService->WaitOnGPU(RadianceCacheIntegrationPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			
 			auto l_renderPass = LightPass::Get().GetRenderPassComp();
 			
@@ -625,7 +628,70 @@ namespace Inno
 			m_saveScreenCapture = false;
 		}
 
+		if (g_Engine->getInitConfig().isAudit)
+		{
+			static uint32_t s_AuditFrame = 0;
+			if (++s_AuditFrame == 5)
+				AuditDump();
+		}
+
 		return true;
+	}
+
+	void DefaultRenderingClientImpl::AuditDump()
+	{
+		auto l_rs = g_Engine->getGraphicsService();
+
+		l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+		l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+
+		auto Dump = [&](const char* filename, RenderPassComponent* rp, TextureComponent* tc)
+		{
+			if (!tc) { Log(Warning, "AuditDump: null TextureComponent for ", filename); return; }
+			auto l_pixels = l_rs->ReadTextureBackToCPU(rp, tc);
+			if (l_pixels.empty()) { Log(Error, "AuditDump: empty readback for ", filename); return; }
+			TextureDesc l_desc = tc->m_TextureDesc;
+			l_desc.PixelDataType = TexturePixelDataType::Float32;
+			g_Engine->Get<AssetService>()->Save(filename, l_desc, l_pixels.data());
+			Log(Success, "AuditDump: saved ", filename);
+		};
+
+		auto DumpRP = [&](const char* filename, RenderPassComponent* rp, uint32_t colorIndex = 0)
+		{
+			if (!rp || !rp->m_OutputMergerTarget) { Log(Warning, "AuditDump: null RenderPassComp for ", filename); return; }
+			if (colorIndex >= rp->m_OutputMergerTarget->m_ColorOutputs.size()) { Log(Warning, "AuditDump: RT index ", colorIndex, " out of range for ", filename); return; }
+			Dump(filename, rp, rp->m_OutputMergerTarget->m_ColorOutputs[colorIndex]);
+		};
+
+		// 1-2: BRDF LUTs
+		Dump("audit_01_BRDFLUTPass.hdr",   BRDFLUTPass::Get().GetRenderPassComp(),   static_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()));
+		Dump("audit_02_BRDFLUTMSPass.hdr",  BRDFLUTMSPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()));
+
+		// 3: Shadow map
+		DumpRP("audit_03_SunShadow_RT0.hdr", SunShadowGeometryProcessPass::Get().GetRenderPassComp(), 0);
+
+		// 4: Opaque G-buffer
+		DumpRP("audit_04a_Opaque_RT0.hdr", OpaquePass::Get().GetRenderPassComp(), 0);
+		DumpRP("audit_04b_Opaque_RT1.hdr", OpaquePass::Get().GetRenderPassComp(), 1);
+		DumpRP("audit_04c_Opaque_RT2.hdr", OpaquePass::Get().GetRenderPassComp(), 2);
+
+		// 5: SSAO
+		Dump("audit_05_SSAO.hdr", SSAOPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(SSAOPass::Get().GetResult()));
+
+		// 8: Light
+		Dump("audit_08a_Light_Luminance.hdr",   LightPass::Get().GetRenderPassComp(), LightPass::Get().GetLuminanceResult());
+		Dump("audit_08b_Light_Illuminance.hdr",  LightPass::Get().GetRenderPassComp(), LightPass::Get().GetIlluminanceResult());
+
+		// 9: Sky
+		Dump("audit_09_Sky.hdr",     SkyPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(SkyPass::Get().GetResult()));
+
+		// 10: TAA
+		Dump("audit_10_TAAPass.hdr",  TAAPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(TAAPass::Get().GetResult()));
+
+		// 11: Final blend
+		Dump("audit_11_FinalBlend.hdr", FinalBlendPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult()));
+
+		Log(Success, "AuditDump complete. Check Bin/*.hdr");
 	}
 
 	bool DefaultRenderingClientImpl::Terminate()
