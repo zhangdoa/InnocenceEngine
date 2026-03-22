@@ -24,6 +24,7 @@
 - `Source/Engine/RenderingServer/Common/IRenderingServer.cpp` — rewrite `InitializePool()` + `TerminatePool()`, replace `AddComponent<T>` free func with pool-backed implementation; add `FindTextureByName()` helper
 
 **Modified DX12 rendering server (UUID key migration):**
+- `Source/Engine/RenderingServer/DX12/DX12RenderingServer.h` — update stale `// Key: Component m_UUID` comment to `// Key: Component pointer (as uint64_t)`
 - `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp` — `Delete(TextureComponent*)`: replace `texture->m_UUID` key with `reinterpret_cast<uint64_t>(texture)` (same pattern as mesh at line 60)
 - `Source/Engine/RenderingServer/DX12/DX12RenderingServer_EngineComponent_Protected.cpp` — `Initialize(TextureComponent*, ...)`: replace `texture->m_UUID` at lines 265 and 293 with same pointer-cast key
 
@@ -128,6 +129,17 @@ m_TextureBuffers_Upload[reinterpret_cast<uint64_t>(texture)] = l_uploadHeapBuffe
 
 Both `m_TextureBuffers_Default` and `m_TextureBuffers_Upload` are `std::unordered_map<uint64_t, ComPtr<ID3D12Resource>>` — the pointer cast is a safe, stable key since the texture's pool slot address does not change between Initialize and Delete.
 
+Also update the stale comment at `DX12RenderingServer.h:231`:
+```cpp
+// Before:
+// Key: Component m_UUID, Value: DX12 GPU resources
+
+// After:
+// Key: Component pointer (as uint64_t), Value: DX12 GPU resources
+```
+
+Add `Source/Engine/RenderingServer/DX12/DX12RenderingServer.h` to the git add in Step 6.
+
 - [ ] **Step 5: Build to verify TextureComponent, GPUBufferComponent, SamplerComponent still compile**
 
 ```
@@ -142,6 +154,7 @@ Expected: build succeeds. These three types inherit GPUResourceComponent and pic
 git add Source/Engine/Component/GPUResourceComponent.h
 git add Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp
 git add Source/Engine/RenderingServer/DX12/DX12RenderingServer_EngineComponent_Protected.cpp
+git add Source/Engine/RenderingServer/DX12/DX12RenderingServer.h
 git commit -m "refactor: strip Component base from GPUResourceComponent, inline ObjectStatus/InstanceName; migrate DX12 texture buffer map keys from m_UUID to pointer"
 ```
 
