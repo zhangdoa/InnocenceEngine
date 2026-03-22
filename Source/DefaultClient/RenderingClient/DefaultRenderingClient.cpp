@@ -689,7 +689,18 @@ namespace Inno
 		Dump("audit_10_TAAPass.hdr",  TAAPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(TAAPass::Get().GetResult()));
 
 		// 11: Final blend
-		Dump("audit_11_FinalBlend.hdr", FinalBlendPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult()));
+		// PrepareSwapChainCommands (which runs before ExecuteCommands) speculatively
+		// transitions FinalBlend result to SRV in the state tracker. At AuditDump time
+		// the actual GPU state is UAV (compute wrote, swap chain hasn't executed yet).
+		// Temporarily correct the tracker, dump, then restore so the swap chain CL works.
+		{
+			auto* l_fbTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+			auto l_fbIdx = l_fbTex->m_TextureDesc.IsMultiBuffer ? l_rs->GetCurrentFrame() : 0u;
+			auto l_savedState = l_fbTex->GetCurrentState(l_fbIdx);
+			l_fbTex->SetCurrentState(l_fbIdx, l_fbTex->m_WriteState);
+			Dump("audit_11_FinalBlend.hdr", FinalBlendPass::Get().GetRenderPassComp(), l_fbTex);
+			l_fbTex->SetCurrentState(l_fbIdx, l_savedState);
+		}
 
 		Log(Success, "AuditDump complete. Check Bin/*.hdr");
 	}

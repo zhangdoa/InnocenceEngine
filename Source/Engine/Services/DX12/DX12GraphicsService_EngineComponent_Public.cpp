@@ -83,7 +83,7 @@ std::vector<Vec4> DX12GraphicsService::ReadTextureBackToCPU(RenderPassComponent*
     DXGI_FORMAT l_format = DX12Helper::GetTextureFormat(textureDesc);
 
     {
-        auto l_beforeState = DX12Helper::GetTextureWriteState(textureDesc);
+        auto l_beforeState = static_cast<D3D12_RESOURCE_STATES>(TextureComp->GetCurrentState(l_frameIndex));
         // Use a dedicated allocator so this temporary CL does not share the global
         // per-frame allocator, which has already been used by PrepareGlobalCommands.
         // Sharing would leave the allocator in a state that makes the next frame's
