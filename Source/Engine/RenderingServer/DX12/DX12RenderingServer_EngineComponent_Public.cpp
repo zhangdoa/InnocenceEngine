@@ -83,8 +83,9 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
     DXGI_FORMAT l_format = DX12Helper::GetTextureFormat(textureDesc);
 
     {
+        auto l_beforeState = DX12Helper::GetTextureWriteState(textureDesc);
         auto l_dx12CommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"ReadTextureBackToCPU_Transition");
-        l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE));
+        l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, l_beforeState, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
         for (uint32_t i = 0; i < l_subresourceCount; ++i)
         {
@@ -102,7 +103,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
             l_dx12CommandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
         }
 
-        l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON));
+        l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, l_beforeState));
         l_dx12CommandList->Close();
 
         CommandListComponent l_commandListComp = {};
@@ -137,8 +138,14 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
         break;
     }
 
+    if (l_pixelCount == 0)
+    {
+        Log(Error, TextureComp, " unsupported sampler type for readback: ", (uint32_t)textureDesc.Sampler);
+        return {};
+    }
+
     uint32_t l_pixelDataSize = DX12Helper::GetTexturePixelDataSize(textureDesc);
-    std::vector<unsigned char> l_rawResult(l_pixelCount * l_pixelDataSize);
+    std::vector<unsigned char> l_rawResult(l_bufferSize);
 
     CD3DX12_RANGE l_readRange(0, l_rawResult.size());
     void* l_pData = nullptr;
@@ -152,29 +159,68 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
     l_readBackHeapBuffer->Unmap(0, nullptr);
 
     std::vector<Vec4> l_result(l_pixelCount);
-    if (textureDesc.PixelDataType == TexturePixelDataType::Float32)
+    size_t l_subresourceOffset = 0;
+    for (uint32_t sub = 0; sub < l_subresourceCount; ++sub)
     {
-        for (size_t i = 0; i < l_pixelCount; ++i)
+        uint32_t l_rowPitch  = l_footprints[sub].Footprint.RowPitch;
+        uint32_t l_subWidth  = l_footprints[sub].Footprint.Width;
+        uint32_t l_subHeight = l_footprints[sub].Footprint.Height;
+        uint32_t l_subDepth  = l_footprints[sub].Footprint.Depth;
+
+        for (uint32_t z = 0; z < l_subDepth; ++z)
         {
-            const unsigned char* pixelData = &l_rawResult[i * 16];
-            float r, g, b, a;
-            memcpy(&r, pixelData + 0,  4);
-            memcpy(&g, pixelData + 4,  4);
-            memcpy(&b, pixelData + 8,  4);
-            memcpy(&a, pixelData + 12, 4);
-            l_result[i] = Vec4(r, g, b, a);
+            for (uint32_t row = 0; row < l_subHeight; ++row)
+            {
+                const unsigned char* l_srcRow = l_rawResult.data() + l_subresourceOffset + (z * l_subHeight + row) * l_rowPitch;
+                for (uint32_t col = 0; col < l_subWidth; ++col)
+                {
+                    const unsigned char* l_PixelData = l_srcRow + col * l_pixelDataSize;
+
+                    size_t l_dstIndex = 0;
+                    switch (textureDesc.Sampler)
+                    {
+                    case TextureSampler::Sampler1D:
+                        l_dstIndex = col;
+                        break;
+                    case TextureSampler::Sampler2D:
+                        l_dstIndex = row * textureDesc.Width + col;
+                        break;
+                    case TextureSampler::Sampler3D:
+                        l_dstIndex = (z * textureDesc.Height + row) * textureDesc.Width + col;
+                        break;
+                    case TextureSampler::Sampler1DArray:
+                        l_dstIndex = sub * textureDesc.Width + col;
+                        break;
+                    case TextureSampler::Sampler2DArray:
+                        l_dstIndex = (sub * textureDesc.Height + row) * textureDesc.Width + col;
+                        break;
+                    case TextureSampler::SamplerCubemap:
+                        l_dstIndex = (sub * textureDesc.Height + row) * textureDesc.Width + col;
+                        break;
+                    default:
+                        break;
+                    }
+
+                    if (textureDesc.PixelDataType == TexturePixelDataType::Float32)
+                    {
+                        float r, g, b, a;
+                        memcpy(&r, l_PixelData + 0,  4);
+                        memcpy(&g, l_PixelData + 4,  4);
+                        memcpy(&b, l_PixelData + 8,  4);
+                        memcpy(&a, l_PixelData + 12, 4);
+                        l_result[l_dstIndex] = Vec4(r, g, b, a);
+                    }
+                    else
+                    {
+                        l_result[l_dstIndex] = Vec4(l_PixelData[0] / 255.0f,
+                                                    l_PixelData[1] / 255.0f,
+                                                    l_PixelData[2] / 255.0f,
+                                                    l_PixelData[3] / 255.0f);
+                    }
+                }
+            }
         }
-    }
-    else
-    {
-        for (size_t i = 0; i < l_pixelCount; ++i)
-        {
-            const unsigned char* pixelData = &l_rawResult[i * 4];
-            l_result[i] = Vec4(pixelData[0] / 255.0f,
-                               pixelData[1] / 255.0f,
-                               pixelData[2] / 255.0f,
-                               pixelData[3] / 255.0f);
-        }
+        l_subresourceOffset += l_rowPitch * l_subHeight * l_subDepth;
     }
 
     return l_result;
