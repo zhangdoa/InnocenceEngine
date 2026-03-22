@@ -1,5 +1,5 @@
 set(TEST_SOURCES
-    Test.cpp
+    TestSuite.cpp
     # Common test infrastructure
     Common/TestRunner.cpp
     Common/TestTimer.cpp
@@ -22,10 +22,10 @@ set(TEST_SOURCES
     ConcurrencyTests/TaskSystemTests.cpp
 )
 
-add_executable(Test ${TEST_SOURCES})
-target_link_libraries(Test Engine)
-set_target_properties(Test PROPERTIES FOLDER Test)
+add_executable(TestSuite ${TEST_SOURCES})
+target_link_libraries(TestSuite Engine)
+set_target_properties(TestSuite PROPERTIES FOLDER TestSuite)
 
 if (INNO_PLATFORM_LINUX)
-target_link_libraries(Test -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)
+target_link_libraries(TestSuite -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)
 endif (INNO_PLATFORM_LINUX)
