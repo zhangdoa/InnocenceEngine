@@ -12,18 +12,21 @@
 
 ## Build & Test Commands
 ```
-# Build
-cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo" 2>&1
+# Build — use the tracked script, never improvise a build command
+powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scripts/BuildWin.ps1"
 
-# Runtime test (headless)
-cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
+# Check build result
+tail -5 C:/GitRepo/InnocenceEngine/Build/msbuild_out.txt
+grep -i "error" C:/GitRepo/InnocenceEngine/Build/msbuild_out.txt | grep -v ZERO_CHECK
 
-# GPU validation — autonomous test, exits 0=pass, 1=GPU error, 2=crash (preferred over Test.exe when rendering is touched)
-powershell.exe -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode" 2>&1
+# GPU validation — autonomous test, exits 0=pass, 1=GPU error, 2=crash
+powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode"
 
 # Shader compilation
-powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1" 2>&1
+powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
 ```
+
+**Why Scripts/BuildWin.ps1:** `cmd.exe /c msbuild` from git bash swallows output. Inline PowerShell `-Command` breaks on bash `$` expansion. `/t:Main` on the `.sln` targets a folder, not a project. The script lives in `Scripts/` (tracked) so it survives `git clean` and Build directory wipes.
 
 ## Workflow
 **Implementation → Build → Runtime test → Shader test (if shaders changed) → Peer review → User approval**
@@ -49,6 +52,13 @@ Every step is mandatory. Any build error, Test.exe crash, D3D12 validation error
 - Minimal cognitive complexity — code must be readable, not just correct
 - No explanatory comments — only comment when the code itself is not obvious
 - Validate everything — build and runtime test before any commit
+- Services own operation domains, not component types — a FooComponent does not imply a FooSystem; multiple services may operate on the same component type independently
+
+## Workspace Hygiene
+- Never produce scratch files in the repo root or any tracked directory
+- Transient output (build logs, test captures) goes to `Build/` (gitignored) only
+- Scripts belong in `Scripts/` (tracked) — never in `Build/`
+- "Go ahead" means implement — do not ask follow-up questions
 
 ## Forbidden
 - Direct STL includes — use engine wrappers (`STL14.h`, `STL17.h`)
