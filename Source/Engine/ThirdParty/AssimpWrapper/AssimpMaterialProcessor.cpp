@@ -6,6 +6,7 @@
 #include "../../Common/MathHelper.h"
 #include "../../Common/Randomizer.h"
 #include "../../Services/AssetService.h"
+#include "../../Services/ComponentManager.h"
 #include "../../Engine.h"
 
 using namespace Inno;
@@ -173,7 +174,7 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 
 			auto l_textureComponent = AssimpTextureProcessor::CreateTextureComponent(l_localPath, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
 			if (l_textureComponent)
-				materialComponent->m_TextureComponents.emplace_back(l_textureComponent->m_UUID);
+				materialComponent->m_TextureComponents.emplace_back(g_Engine->Get<ComponentManager>()->GetUUID<TextureComponent>(l_textureComponent));
 		}
 	}
 }

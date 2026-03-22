@@ -228,7 +228,7 @@ namespace Inno
         ID3D12PipelineState* m_2DMipmapPSO = nullptr;
         ID3D12PipelineState* m_3DMipmapPSO = nullptr;
 
-        // Key: Component m_UUID, Value: DX12 GPU resources
+        // Key: Component pointer (as uint64_t), Value: DX12 GPU resources
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshVertexBuffers_Upload;
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshVertexBuffers_Default;
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshIndexBuffers_Upload;

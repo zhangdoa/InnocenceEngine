@@ -262,7 +262,7 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 #endif
 
 		texture->m_GPUResources[frame] = defaultHeapBuffer.Get();
-		m_TextureBuffers_Default[texture->m_UUID] = defaultHeapBuffer;
+		m_TextureBuffers_Default[reinterpret_cast<uint64_t>(texture)] = defaultHeapBuffer;
 		defaultHeapBuffer.Detach();
 	}
 
@@ -290,7 +290,7 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 		SetObjectName(texture, l_uploadHeapBuffer, "UploadHeap_Texture");
 #endif
 
-		m_TextureBuffers_Upload[texture->m_UUID] = l_uploadHeapBuffer;
+		m_TextureBuffers_Upload[reinterpret_cast<uint64_t>(texture)] = l_uploadHeapBuffer;
 
 		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 		l_textureSubResourceData.RowPitch = texture->m_TextureDesc.Width * GetTexturePixelDataSize(texture->m_TextureDesc);

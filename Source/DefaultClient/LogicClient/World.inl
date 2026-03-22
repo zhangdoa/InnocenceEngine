@@ -10,6 +10,7 @@
 #include "../../Engine/Component/CameraComponent.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/RenderingServer/IRenderingServer.h"
 
 using namespace Inno;
 

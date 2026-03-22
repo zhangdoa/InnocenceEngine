@@ -194,6 +194,17 @@ namespace Inno
 			m_ComponentPointers.eraseByValue(component);
 		}
 
+		uint64_t GetUUID(T* component)
+		{
+			if constexpr (std::is_base_of_v<Component, T>)
+				return component->m_UUID;
+			else
+			{
+				auto it = m_ComponentUUIDs.find(component);
+				return it != m_ComponentUUIDs.end() ? it->second.m_UUID : 0;
+			}
+		}
+
 		T* Find(EntityID owner)
 		{
 			if (owner == INVALID_ENTITY)
@@ -395,6 +406,12 @@ namespace Inno
 		void Destroy(T* component)
 		{
 			GetComponentFactory<T>()->Destroy(component);
+		}
+
+		template<typename T>
+		uint64_t GetUUID(T* component)
+		{
+			return GetComponentFactory<T>()->GetUUID(component);
 		}
 
 		template<typename T>
