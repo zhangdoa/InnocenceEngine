@@ -189,6 +189,8 @@ bool LightDataServiceImpl::UpdateCSMData()
 	const float    l_Lambda      = 0.75f;
 	const float    l_ZNear       = l_Camera->m_ZNear;
 	const float    l_ZFar        = l_Camera->m_ZFar;
+	if (l_ZFar <= l_ZNear)
+		return false;
 
 	std::array<float, 4> l_SplitFactors;
 	for (int i = 1; i <= (int)l_MaxCSMCount; i++)
