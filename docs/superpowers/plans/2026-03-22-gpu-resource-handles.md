@@ -70,7 +70,7 @@ Confirm current content: `class GPUResourceComponent : public Component { ... }`
 Source/Engine/Common/Object.h
 ```
 
-`ObjectStatus` and `ObjectName` (a typedef over `FixedSizeString<64>`) are defined in `Object.h`.
+`ObjectStatus` and `ObjectName` (a typedef over `FixedSizeString<128>`) are defined in `Object.h`.
 
 - [ ] **Step 3: Rewrite GPUResourceComponent.h**
 
@@ -585,7 +585,7 @@ Apply the same pattern to all 8 overrides. The pool/LUT names per type:
 | GPUBufferComponent | `GPUBuffers` | `GPUBufferLUT` | `GPUBufferPointers` |
 | CommandListComponent | `CommandLists` | `CommandListLUT` | `CommandListPointers` |
 
-(Verify the exact field names match what you declared in `GPUResourcePools` in Step 2.)
+(Verify the exact field names match what you declared in `GPUHandlePools` in Step 2.)
 
 > **Advisory:** `SceneService::AddComponentToSceneHierarchyMap<T>()` calls `ComponentManager::GetAll<T>()` but only via commented-out `TODO Phase2-migrate` calls — no live GetAll callers exist for GPU resource types. No additional action needed.
 
@@ -779,28 +779,23 @@ git commit -m "refactor: MaterialComponent.m_TextureComponents switches from UUI
 - Modify: `Source/Editor/worldexplorer.cpp`
 - Modify: `Source/Engine/Services/SceneService.cpp`
 
-- [ ] **Step 1: Read worldexplorer.cpp around the ComponentManager usage (lines 200–275)**
+- [ ] **Step 1: Read worldexplorer.cpp lines 200–280**
 
-There are `TODO Phase2-migrate` comments here. The active usage is `Spawn<TextureComponent>` (line 211) and `Destroy(reinterpret_cast<TextureComponent*>(...))` (line 270).
+There are two ComponentManager usages to understand:
 
-- [ ] **Step 2: Replace worldexplorer Spawn → AddTextureComponent**
+1. `addComponent<T>()` (line 200–228): Generic template tagged `TODO Phase2-migrate: Task 14 — migrate to EntityRegistry::Emplace<T>`. This migration is for ECS gameplay types, not GPU resources — **leave this function unchanged**. It is not called for TextureComponent from any live code path.
 
-Before:
+2. `destroyComponent()` (line 267–271): The TextureComponent branch is a **live, uncommented** call:
+   ```cpp
+   g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
+   ```
+   This is the only active ComponentManager call in worldexplorer and the only change needed.
+
+- [ ] **Step 2: Replace the TextureComponent Destroy in destroyComponent()**
+
+Before (line 270):
 ```cpp
-auto l_componentPtr = g_Engine->Get<ComponentManager>()->Spawn<T>(l_entityPtr, true, ObjectLifespan::Scene);
-```
-
-After:
-```cpp
-auto l_componentPtr = g_Engine->getRenderingServer()->AddTextureComponent(l_name.c_str());
-```
-
-Note: for non-Texture types that are commented out in worldexplorer, remove the TODO comments (they're now resolved).
-
-- [ ] **Step 3: Replace worldexplorer Destroy → Delete**
-
-Before:
-```cpp
+// TODO Phase2-migrate: Task 13 — TextureComponent is GPU-resource managed; migrate when Task 13 clarifies ownership
 g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
 ```
 
@@ -809,15 +804,21 @@ After:
 g_Engine->getRenderingServer()->Delete(reinterpret_cast<TextureComponent*>(component));
 ```
 
-- [ ] **Step 4: Remove the ComponentManager include from worldexplorer.cpp**
+Remove the `TODO Phase2-migrate` comment — this task resolves it.
 
-- [ ] **Step 5: Read SceneService.cpp around the ComponentManager CleanUp call**
+- [ ] **Step 3: Remove the ComponentManager include from worldexplorer.cpp**
+
+After Step 2, worldexplorer.cpp no longer calls ComponentManager. Remove `#include "ComponentManager.h"` (or whatever path it uses — find it by searching the top of the file).
+
+Note: `addComponent<T>()` still references `ComponentManager` via its `TODO` comment and body — that function will be migrated in a later ECS task (Task 14, EntityRegistry). Do NOT remove the include if `addComponent<T>()` still needs it. Check whether `addComponent<T>()` is actually still active (line 211 still uses `ComponentManager::Spawn<T>`). If it is, skip this step and add a note that the include can be removed when Task 14 is done.
+
+- [ ] **Step 4: Read SceneService.cpp around the ComponentManager CleanUp call**
 
 The call `g_Engine->Get<ComponentManager>()->CleanUp(ObjectLifespan::Scene)` is a no-op for GPU resources (all Persistence). Remove the call and the ComponentManager include.
 
 Also delete the dead `AddComponentToSceneHierarchyMap<T>()` function body (lines ~218–235). All call sites are commented-out `TODO Phase2-migrate` blocks, so the template is never instantiated and doesn't compile — but it still references `ComponentManager::GetAll<T>()`, which will be gone in Task 7. Delete the entire template definition (or convert to a `static_assert(false)` stub). Deleting it is cleaner since it has no active callers.
 
-- [ ] **Step 6: Clean up DrawCallService.cpp**
+- [ ] **Step 5: Clean up DrawCallService.cpp**
 
 Open `Source/Engine/Services/DrawCallService.cpp`. Line 195 has a dead commented-out line:
 ```cpp
@@ -825,14 +826,14 @@ Open `Source/Engine/Services/DrawCallService.cpp`. Line 195 has a dead commented
 ```
 Delete this line entirely. If `DrawCallService.cpp` has a `#include "ComponentManager.h"` (check line ~4), remove that include too.
 
-- [ ] **Step 7: Build and run tests**
+- [ ] **Step 6: Build and run tests**
 
 ```
 cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
 cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
 ```
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add Source/Editor/worldexplorer.cpp
