@@ -872,7 +872,6 @@ bool IRenderingServer::InitializeComponents()
 		if (l_entity == INVALID_ENTITY)
 			continue;
 
-		Log(Verbose, "Processing deferred entity initialization for: ", l_entity);
 		if (InitializeImpl(l_entity))
 			m_initializedEntities.emplace(l_entity);
 		else
