@@ -4,6 +4,7 @@
 #include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
+#include "../Engine/Services/AssetService.h"
 
 using namespace Inno;
 
@@ -241,6 +242,9 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
         else
         {
             ValidatePixelReadback(l_renderTarget, l_pixels);
+            TextureDesc l_saveDesc = l_renderTarget->m_TextureDesc;
+            l_saveDesc.PixelDataType = TexturePixelDataType::Float32;
+            g_Engine->Get<AssetService>()->Save("RenderTest_PixelReadback.hdr", l_saveDesc, l_pixels.data());
         }
 
         Log(Success, "TestRenderingClient (pixel_readback): completed. Validation: ",

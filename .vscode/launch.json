@@ -48,10 +48,11 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Bin/RelWithDebInfo/RenderTest.exe",
-            "args": ["-mode 0", "-renderer 0", "-loglevel 0", "-offscreen", "-test draw_instanced"],
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-test", "draw_instanced"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
+            "preLaunchTask": "Build RenderTest",
             "externalConsole": false
         },
         {
@@ -59,10 +60,11 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Bin/RelWithDebInfo/RenderTest.exe",
-            "args": ["-mode 0", "-renderer 0", "-loglevel 0", "-offscreen", "-test pixel_readback"],
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-test", "pixel_readback"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
+            "preLaunchTask": "Build RenderTest",
             "externalConsole": false
         },
         {

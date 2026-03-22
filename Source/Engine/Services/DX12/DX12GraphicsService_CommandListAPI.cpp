@@ -753,24 +753,23 @@ bool DX12GraphicsService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 		
 		if (m_directCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			//Log(Verbose, "Waiting for DirectCommandQueueFence: ", semaphoreValue);
+			// SetEventOnCompletion signals the event immediately if the fence has already reached
+			// semaphoreValue.  With an auto-reset event the signal is only consumed by
+			// WaitForSingleObject, so the inner double-check must be removed: skipping the wait
+			// would leave the event in the signaled state, causing the next WaitForSingleObject
+			// call to return immediately before the GPU has finished its work.
 			m_directCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			
-			// Double-check to avoid race condition where GPU completes between check and SetEventOnCompletion
-			if (m_directCommandQueueFence->GetCompletedValue() < semaphoreValue)
+			DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
+			if (waitResult == WAIT_TIMEOUT)
 			{
-				DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
-				if (waitResult == WAIT_TIMEOUT)
-				{
-					//Log(Error, "DirectCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue, 
-					//	", Completed value: ", m_directCommandQueueFence->GetCompletedValue());
-					return false;
-				}
-				else if (waitResult != WAIT_OBJECT_0)
-				{
-					//Log(Error, "DirectCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
-					return false;
-				}
+				Log(Error, "DirectCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue,
+					", Completed value: ", m_directCommandQueueFence->GetCompletedValue());
+				return false;
+			}
+			else if (waitResult != WAIT_OBJECT_0)
+			{
+				Log(Error, "DirectCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
+				return false;
 			}
 		}
 	}
@@ -784,24 +783,18 @@ bool DX12GraphicsService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 		
 		if (m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			//Log(Verbose, "Waiting for ComputeCommandQueueFence: ", semaphoreValue);
 			m_computeCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			
-			// Double-check to avoid race condition
-			if (m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
+			DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
+			if (waitResult == WAIT_TIMEOUT)
 			{
-				DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
-				if (waitResult == WAIT_TIMEOUT)
-				{
-					Log(Error, "ComputeCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue, 
-						", Completed value: ", m_computeCommandQueueFence->GetCompletedValue());
-					return false;
-				}
-				else if (waitResult != WAIT_OBJECT_0)
-				{
-					Log(Error, "ComputeCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
-					return false;
-				}
+				Log(Error, "ComputeCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue,
+					", Completed value: ", m_computeCommandQueueFence->GetCompletedValue());
+				return false;
+			}
+			else if (waitResult != WAIT_OBJECT_0)
+			{
+				Log(Error, "ComputeCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
+				return false;
 			}
 		}
 	}
@@ -815,24 +808,18 @@ bool DX12GraphicsService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 		
 		if (m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
 		{
-			//Log(Verbose, "Waiting for CopyCommandQueueFence: ", semaphoreValue);
 			m_copyCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			
-			// Double-check to avoid race condition
-			if (m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
+			DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
+			if (waitResult == WAIT_TIMEOUT)
 			{
-				DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000); // 30 second timeout
-				if (waitResult == WAIT_TIMEOUT)
-				{
-					Log(Error, "CopyCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue, 
-						", Completed value: ", m_copyCommandQueueFence->GetCompletedValue());
-					return false;
-				}
-				else if (waitResult != WAIT_OBJECT_0)
-				{
-					Log(Error, "CopyCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
-					return false;
-				}
+				Log(Error, "CopyCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue,
+					", Completed value: ", m_copyCommandQueueFence->GetCompletedValue());
+				return false;
+			}
+			else if (waitResult != WAIT_OBJECT_0)
+			{
+				Log(Error, "CopyCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
+				return false;
 			}
 		}
 	}

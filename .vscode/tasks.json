@@ -88,6 +88,24 @@
             "problemMatcher": ["$msCompile"]
         },
         {
+            "label": "Build RenderTest",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile", "-NonInteractive",
+                "-Command",
+                "msbuild.exe '${workspaceFolder}/Build/Source/Engine/Platform/WinMain/RenderTest.vcxproj' /p:Configuration=RelWithDebInfo /m /nologo /v:minimal"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$msCompile"]
+        },
+        {
             "label": "Test: TestSuite",
             "type": "shell",
             "command": "${workspaceFolder}/Bin/RelWithDebInfo/TestSuite.exe",

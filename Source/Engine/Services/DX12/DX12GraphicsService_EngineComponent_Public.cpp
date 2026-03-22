@@ -84,7 +84,18 @@ std::vector<Vec4> DX12GraphicsService::ReadTextureBackToCPU(RenderPassComponent*
 
     {
         auto l_beforeState = DX12Helper::GetTextureWriteState(textureDesc);
-        auto l_dx12CommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT), L"ReadTextureBackToCPU_Transition");
+        // Use a dedicated allocator so this temporary CL does not share the global
+        // per-frame allocator, which has already been used by PrepareGlobalCommands.
+        // Sharing would leave the allocator in a state that makes the next frame's
+        // Open() (Reset) fail silently, causing EXECUTECOMMANDLISTS_FAILEDCOMMANDLIST.
+        ComPtr<ID3D12CommandAllocator> l_tempAllocator;
+        auto l_allocResult = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&l_tempAllocator));
+        if (FAILED(l_allocResult))
+        {
+            Log(Error, TextureComp, " failed to create temporary command allocator for readback");
+            return {};
+        }
+        auto l_dx12CommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_tempAllocator, L"ReadTextureBackToCPU_Transition");
         l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_defaultHeapBuffer, l_beforeState, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
         for (uint32_t i = 0; i < l_subresourceCount; ++i)
