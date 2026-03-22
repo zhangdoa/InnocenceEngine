@@ -118,12 +118,11 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             {
                 m_defaultMaterial = componentManager->Spawn<MaterialComponent>(defaultMaterialEntity, true, ObjectLifespan::Persistence);
                 m_defaultMaterial->m_TextureComponents.resize(5);
-                auto* componentManager = g_Engine->Get<ComponentManager>();
-                m_defaultMaterial->m_TextureComponents[0] = componentManager->GetUUID<TextureComponent>(m_basicNormalTexture);
-                m_defaultMaterial->m_TextureComponents[1] = componentManager->GetUUID<TextureComponent>(m_basicAlbedoTexture);
-                m_defaultMaterial->m_TextureComponents[2] = componentManager->GetUUID<TextureComponent>(m_basicMetallicTexture);
-                m_defaultMaterial->m_TextureComponents[3] = componentManager->GetUUID<TextureComponent>(m_basicRoughnessTexture);
-                m_defaultMaterial->m_TextureComponents[4] = componentManager->GetUUID<TextureComponent>(m_basicAOTexture);
+                m_defaultMaterial->m_TextureComponents[0] = reinterpret_cast<uint64_t>(m_basicNormalTexture);
+                m_defaultMaterial->m_TextureComponents[1] = reinterpret_cast<uint64_t>(m_basicAlbedoTexture);
+                m_defaultMaterial->m_TextureComponents[2] = reinterpret_cast<uint64_t>(m_basicMetallicTexture);
+                m_defaultMaterial->m_TextureComponents[3] = reinterpret_cast<uint64_t>(m_basicRoughnessTexture);
+                m_defaultMaterial->m_TextureComponents[4] = reinterpret_cast<uint64_t>(m_basicAOTexture);
                 m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
                 // TODO Phase2-migrate: m_defaultMaterial->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*m_defaultMaterial);
