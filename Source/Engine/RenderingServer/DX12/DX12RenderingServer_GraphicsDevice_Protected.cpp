@@ -315,7 +315,7 @@ bool DX12RenderingServer::CreateGraphicsPipelineStateObject(RenderPassComponent*
     PSO->m_GraphicsPSODesc.SampleMask = UINT_MAX;
     PSO->m_GraphicsPSODesc.PrimitiveTopologyType = PSO->m_PrimitiveTopologyType;
     PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
-    if (!PSO->m_RootSignature.Get())
+    if (!PSO->m_RootSignature.Get() || !RenderPassComp->m_ShaderProgram)
     {
         Log(Verbose, "Skipping creating Graphics PSO for ", RenderPassComp->m_InstanceName);
         return true;
