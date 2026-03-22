@@ -2,8 +2,6 @@
 
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
-#include "../Services/ComponentManager.h"
-#include "../Services/EntityRegistry.h"
 #include "../Common/IOService.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../Engine.h"
@@ -74,21 +72,20 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto componentManager = g_Engine->Get<ComponentManager>();
-            auto ioService = g_Engine->Get<IOService>();
+            auto renderingServer = g_Engine->getRenderingServer();
 
             auto loadOrCreateTexture = [&](const char* name, const char* texturePath, TextureComponent*& texturePtr) -> bool {
-                auto entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
                 auto l_componentName = std::string(name) + "." + TextureComponent::GetTypeName();
 
-                auto loadedTexture = componentManager->Load<TextureComponent>(l_componentName.c_str(), entity);
-                if (loadedTexture)
-                {
-                    texturePtr = componentManager->FindByUUID<TextureComponent>(loadedTexture);
-                    return texturePtr != nullptr;
-                }
+                texturePtr = renderingServer->FindTextureByName(l_componentName.c_str());
+                if (texturePtr)
+                    return true;
 
-                texturePtr = componentManager->Spawn<TextureComponent>(entity, true, ObjectLifespan::Persistence);
+                texturePtr = renderingServer->AddTextureComponent(l_componentName.c_str());
+                auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
+                if (AssetService::Load(l_filePath.c_str(), *texturePtr))
+                    return true;
+
                 m_textureData[texturePtr] = STBWrapper::Load(texturePath, *texturePtr);
                 if (!m_textureData[texturePtr])
                     return false;
@@ -97,7 +94,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 texturePtr->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*texturePtr, m_textureData[texturePtr]);
 
-                g_Engine->getRenderingServer()->Initialize(texturePtr, m_textureData[texturePtr]);
+                renderingServer->Initialize(texturePtr, m_textureData[texturePtr]);
                 return true;
                 };
 
@@ -107,47 +104,43 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             if (!loadOrCreateTexture("BasicRoughnessTexture", "../Res/Textures/basic_roughness.png", m_basicRoughnessTexture)) return false;
             if (!loadOrCreateTexture("BasicAOTexture", "../Res/Textures/basic_ao.png", m_basicAOTexture)) return false;
 
-            auto defaultMaterialEntity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, "DefaultMaterial/");
-
-            auto loadedMaterial = componentManager->Load<MaterialComponent>("DefaultMaterial.MaterialComponent", defaultMaterialEntity);
-            if (loadedMaterial)
+            auto l_materialName = std::string("DefaultMaterial.MaterialComponent");
+            m_defaultMaterial = renderingServer->FindMaterialByName(l_materialName.c_str());
+            if (!m_defaultMaterial)
             {
-                m_defaultMaterial = componentManager->FindByUUID<MaterialComponent>(loadedMaterial);
-            }
-            else
-            {
-                m_defaultMaterial = componentManager->Spawn<MaterialComponent>(defaultMaterialEntity, true, ObjectLifespan::Persistence);
-                m_defaultMaterial->m_TextureComponents.resize(5);
-                m_defaultMaterial->m_TextureComponents[0] = reinterpret_cast<uint64_t>(m_basicNormalTexture);
-                m_defaultMaterial->m_TextureComponents[1] = reinterpret_cast<uint64_t>(m_basicAlbedoTexture);
-                m_defaultMaterial->m_TextureComponents[2] = reinterpret_cast<uint64_t>(m_basicMetallicTexture);
-                m_defaultMaterial->m_TextureComponents[3] = reinterpret_cast<uint64_t>(m_basicRoughnessTexture);
-                m_defaultMaterial->m_TextureComponents[4] = reinterpret_cast<uint64_t>(m_basicAOTexture);
-                m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
-                // TODO Phase2-migrate: m_defaultMaterial->m_ObjectStatus = ObjectStatus::Created;
-                AssetService::Save(*m_defaultMaterial);
+                m_defaultMaterial = renderingServer->AddMaterialComponent(l_materialName.c_str());
+                auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
+                if (!AssetService::Load(l_filePath.c_str(), *m_defaultMaterial))
+                {
+                    m_defaultMaterial->m_TextureComponents.resize(5);
+                    m_defaultMaterial->m_TextureComponents[0] = reinterpret_cast<uint64_t>(m_basicNormalTexture);
+                    m_defaultMaterial->m_TextureComponents[1] = reinterpret_cast<uint64_t>(m_basicAlbedoTexture);
+                    m_defaultMaterial->m_TextureComponents[2] = reinterpret_cast<uint64_t>(m_basicMetallicTexture);
+                    m_defaultMaterial->m_TextureComponents[3] = reinterpret_cast<uint64_t>(m_basicRoughnessTexture);
+                    m_defaultMaterial->m_TextureComponents[4] = reinterpret_cast<uint64_t>(m_basicAOTexture);
+                    m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
+                    AssetService::Save(*m_defaultMaterial);
 
-                g_Engine->getRenderingServer()->Initialize(m_defaultMaterial);
+                    renderingServer->Initialize(m_defaultMaterial);
+                }
             }
 
             auto loadOrCreateMesh = [&](const char* name, MeshShape shape, MeshComponent*& meshPtr) {
-                auto entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
-
-                // TODO Phase2-migrate: auto l_componentName = std::string(name) + "." + MeshComponent::GetTypeName();
                 auto l_componentName = std::string(name) + ".MeshComponent";
-                auto loadedMesh = componentManager->Load<MeshComponent>(l_componentName.c_str(), entity);
 
-                if (loadedMesh)
-                {
-                    meshPtr = componentManager->FindByUUID<MeshComponent>(loadedMesh);
+                meshPtr = renderingServer->FindMeshByName(l_componentName.c_str());
+                if (meshPtr)
                     return;
-                }
-                meshPtr = componentManager->Spawn<MeshComponent>(entity, true, ObjectLifespan::Persistence);
+
+                meshPtr = renderingServer->AddMeshComponent(l_componentName.c_str());
+                auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
+                if (AssetService::Load(l_filePath.c_str(), *meshPtr))
+                    return;
+
                 GenerateMesh(shape, meshPtr);
-                // TODO Phase2-migrate: meshPtr->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
 
-                g_Engine->getRenderingServer()->Initialize(meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
+                renderingServer->Initialize(meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
                 };
 
             loadOrCreateMesh("UnitTriangleMesh", MeshShape::Triangle, m_unitTriangleMesh);
@@ -161,14 +154,11 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             loadOrCreateMesh("UnitIcosahedronMesh", MeshShape::Icosahedron, m_unitIcosahedronMesh);
             loadOrCreateMesh("UnitSphereMesh", MeshShape::Sphere, m_unitSphereMesh);
 
-            m_terrainMesh = nullptr; // TODO: Implement terrain generation in the future
+            m_terrainMesh = nullptr;
 
             if (!loadOrCreateTexture("DirectionalLightIcon", "../Res/Textures/WorldEditorIcons_DirectionalLight.png", m_iconTemplate_DirectionalLight)) return false;
             if (!loadOrCreateTexture("PointLightIcon", "../Res/Textures/WorldEditorIcons_PointLight.png", m_iconTemplate_PointLight)) return false;
             if (!loadOrCreateTexture("SphereLightIcon", "../Res/Textures/WorldEditorIcons_SphereLight.png", m_iconTemplate_SphereLight)) return false;
-
-            // All components are now initialized during the load/create process above
-            // No additional rendering server initialization needed here
 
             return true;
         });
