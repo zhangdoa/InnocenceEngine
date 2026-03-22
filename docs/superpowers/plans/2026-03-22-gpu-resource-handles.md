@@ -309,6 +309,7 @@ git commit -m "refactor: strip Component base from RenderPass/ShaderProgram/Comm
 **Files:**
 - Modify: `Source/Engine/RenderingServer/IRenderingServer.h`
 - Modify: `Source/Engine/RenderingServer/Common/IRenderingServer.cpp`
+- Modify: `Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp` — add `ReleaseFromPool` calls to all 8 Delete overrides (Step 6)
 
 This is the core mechanical change. `InitializePool()` creates 8 `TObjectPool<T>*` directly. The `AddComponent<T>` free function is replaced by direct pool + LUT management. `TerminatePool()` destroys all pools.
 
@@ -547,18 +548,44 @@ static void ReleaseFromPool(TObjectPool<T>* pool,
 }
 ```
 
-Then in each DX12 Delete override in `DX12RenderingServer_ComponentPool.cpp`, add a call to `ReleaseFromPool` at the end, using the `m_GPUHandlePools` fields from the base class:
+Then in each DX12 Delete override in `DX12RenderingServer_ComponentPool.cpp`, add a call to `ReleaseFromPool` **at the very end, after all GPU teardown, just before `return true`**. Do NOT insert it before any error-path `return false`.
+
+Concrete before/after for `Delete(MeshComponent*)` (current form at line 57):
 
 ```cpp
-// Example for DX12RenderingServer::Delete(MeshComponent* mesh):
-// ... existing DX12 GPU teardown ...
-ReleaseFromPool(m_GPUHandlePools.Meshes,
-                m_GPUHandlePools.MeshLUT,
-                m_GPUHandlePools.MeshPointers, mesh);
-return true;
+// BEFORE (current):
+bool DX12RenderingServer::Delete(MeshComponent* mesh)
+{
+    auto componentUUID = reinterpret_cast<uint64_t>(mesh);
+    // ... ComPtr cleanup for vertex/index/BLAS/scratch buffers ...
+    return true;
+}
+
+// AFTER (add the ReleaseFromPool call immediately before return true):
+bool DX12RenderingServer::Delete(MeshComponent* mesh)
+{
+    auto componentUUID = reinterpret_cast<uint64_t>(mesh);
+    // ... ComPtr cleanup for vertex/index/BLAS/scratch buffers (unchanged) ...
+    ReleaseFromPool(m_GPUHandlePools.Meshes,
+                    m_GPUHandlePools.MeshLUT,
+                    m_GPUHandlePools.MeshPointers, mesh);
+    return true;
+}
 ```
 
-Add this pattern to all 8 Delete overrides (Mesh, Texture, Material, RenderPass, ShaderProgram, Sampler, GPUBuffer, CommandList).
+Apply the same pattern to all 8 overrides. The pool/LUT names per type:
+| Type | Pool field | LUT field | Pointer list field |
+|------|------------|-----------|-------------------|
+| MeshComponent | `Meshes` | `MeshLUT` | `MeshPointers` |
+| TextureComponent | `Textures` | `TextureLUT` | `TexturePointers` |
+| MaterialComponent | `Materials` | `MaterialLUT` | `MaterialPointers` |
+| RenderPassComponent | `RenderPasses` | `RenderPassLUT` | `RenderPassPointers` |
+| ShaderProgramComponent | `ShaderPrograms` | `ShaderProgramLUT` | `ShaderProgramPointers` |
+| SamplerComponent | `Samplers` | `SamplerLUT` | `SamplerPointers` |
+| GPUBufferComponent | `GPUBuffers` | `GPUBufferLUT` | `GPUBufferPointers` |
+| CommandListComponent | `CommandLists` | `CommandListLUT` | `CommandListPointers` |
+
+(Verify the exact field names match what you declared in `GPUResourcePools` in Step 2.)
 
 > **Advisory:** `SceneService::AddComponentToSceneHierarchyMap<T>()` calls `ComponentManager::GetAll<T>()` but only via commented-out `TODO Phase2-migrate` calls — no live GetAll callers exist for GPU resource types. No additional action needed.
 
@@ -579,6 +606,7 @@ Expected: succeeds. DX12RenderingServer's virtual Delete overrides still compile
 ```bash
 git add Source/Engine/RenderingServer/IRenderingServer.h
 git add Source/Engine/RenderingServer/Common/IRenderingServer.cpp
+git add Source/Engine/RenderingServer/DX12/DX12RenderingServer_ComponentPool.cpp
 git commit -m "refactor: move GPU handle pool ownership from ComponentManager into IRenderingServer"
 ```
 
@@ -743,6 +771,8 @@ g_Engine->getRenderingServer()->Delete(reinterpret_cast<TextureComponent*>(compo
 - [ ] **Step 5: Read SceneService.cpp around the ComponentManager CleanUp call**
 
 The call `g_Engine->Get<ComponentManager>()->CleanUp(ObjectLifespan::Scene)` is a no-op for GPU resources (all Persistence). Remove the call and the ComponentManager include.
+
+Also delete the dead `AddComponentToSceneHierarchyMap<T>()` function body (lines ~218–235). All call sites are commented-out `TODO Phase2-migrate` blocks, so the template is never instantiated and doesn't compile — but it still references `ComponentManager::GetAll<T>()`, which will be gone in Task 7. Delete the entire template definition (or convert to a `static_assert(false)` stub). Deleting it is cleaner since it has no active callers.
 
 - [ ] **Step 6: Clean up DrawCallService.cpp**
 
