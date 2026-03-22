@@ -11,5 +11,6 @@ namespace Inno
 
 		virtual bool PrepareCommands() { return true; }
 		virtual bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) = 0;
+		virtual bool GetValidationPassed() const { return true; }
 	};
 }

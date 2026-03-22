@@ -118,9 +118,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
         bool l_isHeadless = (pScmdline && strstr(pScmdline, "headless") != nullptr);
 
+        std::unique_ptr<IRenderingClient> l_renderingClient = l_isHeadless ? nullptr : Inno::CreateRenderingClient();
+        IRenderingClient* l_renderingClientPtr = l_renderingClient.get();
+
         if (!m_pEngine->Setup(
             hInstance, nullptr, pScmdline,
-            l_isHeadless ? nullptr : Inno::CreateRenderingClient(),
+            std::move(l_renderingClient),
             l_isHeadless ? nullptr : Inno::CreateLogicClient()))
             return 2;
 
@@ -133,6 +136,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
         if (m_pEngine->getRenderingServer()->HasGPUError())
             return 1;
+
+        if (l_renderingClientPtr && !l_renderingClientPtr->GetValidationPassed())
+            return 2;
 
         return 0;
     }
