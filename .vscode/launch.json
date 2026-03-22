@@ -33,10 +33,33 @@
             "externalConsole": false
         },        
         {
-            "name": "(Windows) Launch Test",
+            "name": "(Windows) TestSuite",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Test.exe",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/TestSuite.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) RenderTest: draw_instanced",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/RenderTest.exe",
+            "args": ["-mode 0", "-renderer 0", "-loglevel 0", "-offscreen", "-test draw_instanced"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) RenderTest: pixel_readback",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/RenderTest.exe",
+            "args": ["-mode 0", "-renderer 0", "-loglevel 0", "-offscreen", "-test pixel_readback"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],

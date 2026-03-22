@@ -25,6 +25,26 @@
             "problemMatcher": []
         },
         {
+            "label": "Build",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile", "-NonInteractive",
+                "-File", "${workspaceFolder}/Scripts/BuildWin.ps1"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$msCompile"]
+        },
+        {
             "label": "CMake: Build Engine",
             "type": "shell",
             "command": "cmake",
@@ -36,7 +56,7 @@
             ],
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             },
             "dependsOn": "CMake: Configure",
             "presentation": {
@@ -45,9 +65,7 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "problemMatcher": [
-                "$msCompile"
-            ]
+            "problemMatcher": ["$msCompile"]
         },
         {
             "label": "CMake: Build Editor",
@@ -67,23 +85,79 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "problemMatcher": [
-                "$msCompile"
-            ]
+            "problemMatcher": ["$msCompile"]
         },
         {
-            "label": "Run Test.exe",
+            "label": "Test: TestSuite",
             "type": "shell",
-            "command": "${workspaceFolder}/Bin/RelWithDebInfo/Test.exe",
+            "command": "${workspaceFolder}/Bin/RelWithDebInfo/TestSuite.exe",
+            "args": [],
             "options": {
                 "cwd": "${workspaceFolder}/Bin"
             },
-            "group": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": false,
+                "focus": true,
                 "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: RenderTest draw_instanced",
+            "type": "shell",
+            "command": "${workspaceFolder}/Bin/RelWithDebInfo/RenderTest.exe",
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-test", "draw_instanced"],
+            "options": {
+                "cwd": "${workspaceFolder}/Bin"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: RenderTest pixel_readback",
+            "type": "shell",
+            "command": "${workspaceFolder}/Bin/RelWithDebInfo/RenderTest.exe",
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-test", "pixel_readback"],
+            "options": {
+                "cwd": "${workspaceFolder}/Bin"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: All",
+            "dependsOn": [
+                "Test: TestSuite",
+                "Test: RenderTest draw_instanced",
+                "Test: RenderTest pixel_readback"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": true
             },
             "problemMatcher": []
         }
