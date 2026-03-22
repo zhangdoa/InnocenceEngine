@@ -117,7 +117,6 @@ bool PhysicsSimulationServiceImpl::Update()
 
 void PhysicsSimulationServiceImpl::CreatePhysXActor(EntityID Entity)
 {
-	// TODO Phase2-migrate: PhysX actor binding deferred — physics simulation not yet using EntityRegistry components
 #if defined INNO_PLATFORM_WIN
 #endif
 }

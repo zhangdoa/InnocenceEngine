@@ -117,13 +117,6 @@ void CameraComponentPropertyEditor::edit(void* component)
 {
     m_component = reinterpret_cast<CameraComponent*>(component);
 
-    // TODO Phase2-migrate: m_transformWidget->setPosition(m_component->m_Transform.m_pos.x, m_component->m_Transform.m_pos.y, m_component->m_Transform.m_pos.z);
-
-    // TODO Phase2-migrate: auto eulerAngles = Math::quatToEulerAngle(m_component->m_Transform.m_rot);
-    // TODO Phase2-migrate: m_transformWidget->setRotation(Math::radianToAngle(eulerAngles.x), Math::radianToAngle(eulerAngles.y), Math::radianToAngle(eulerAngles.z));
-
-    // TODO Phase2-migrate: m_transformWidget->setScale(m_component->m_Transform.m_scale.x, m_component->m_Transform.m_scale.y, m_component->m_Transform.m_scale.z);
-
     GetFOV();
     GetWidthScale();
     GetHeightScale();
@@ -223,16 +216,12 @@ void CameraComponentPropertyEditor::SetTransform()
 
     float x, y, z;
     m_transformWidget->getPosition(x, y, z);
-    // TODO Phase2-migrate: m_component->m_Transform.m_pos = Vec4(x, y, z, 1.0f);
-
     m_transformWidget->getRotation(x, y, z);
     auto roll = Math::angleToRadian(x);
     auto pitch = Math::angleToRadian(y);
     auto yaw = Math::angleToRadian(z);
-    // TODO Phase2-migrate: m_component->m_Transform.m_rot = Math::eulerAngleToQuat(roll, pitch, yaw);
 
     m_transformWidget->getScale(x, y, z);
-    // TODO Phase2-migrate: m_component->m_Transform.m_scale = Vec4(x, y, z, 1.0f);
 }
 
 void CameraComponentPropertyEditor::remove()

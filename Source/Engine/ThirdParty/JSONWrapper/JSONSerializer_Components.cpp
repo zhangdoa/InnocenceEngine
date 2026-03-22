@@ -1,6 +1,6 @@
 ﻿#include "JSONWrapper.h"
+#include "../../Common/IOService.h"
 #include "../../Services/EntityRegistry.h"
-#include "../../Services/ComponentManager.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/AssetService.h"

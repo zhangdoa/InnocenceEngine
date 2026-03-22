@@ -1,5 +1,4 @@
 #include "JSONWrapper.h"
-#include "../../Services/ComponentManager.h"
 
 #include "../../Engine.h"
 using namespace Inno;

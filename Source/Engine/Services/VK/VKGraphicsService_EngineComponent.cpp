@@ -22,7 +22,6 @@ using namespace VKHelper;
 template <typename U, typename T>
 bool VKGraphicsService::SetObjectName(U* owner, const T& rhs, VkObjectType objectType, const char* objectTypeSuffix)
 {
-	// TODO Phase2-migrate: auto l_Name = std::string(owner->m_InstanceName.c_str());
 	std::string l_Name;
 	l_Name += "_";
 	l_Name += objectTypeSuffix;
@@ -63,8 +62,6 @@ bool VKGraphicsService::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &
 	SetObjectName(l_rhs, l_rhs->m_VBO, VK_OBJECT_TYPE_BUFFER, "VB");
 	SetObjectName(l_rhs, l_rhs->m_IBO, VK_OBJECT_TYPE_BUFFER, "IB");
 #endif //  INNO_DEBUG
-
-	// TODO Phase2-migrate: l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMeshes.emplace(l_rhs);
 

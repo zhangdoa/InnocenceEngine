@@ -191,7 +191,6 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 			if (l_textureID.empty())
 				continue;
 
-			// TODO Phase2-migrate: TextureComponent not yet in EntityRegistry - will migrate in Task 9
 			// if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
 			// 	continue;
 			// auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);

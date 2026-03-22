@@ -25,8 +25,7 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 		m_debugCameraFrustumMeshComps[i] = l_graphicsService->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
 		g_Engine->Get<TemplateAssetService>()->GenerateMesh(MeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
 		//m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
-		// TODO Phase2-migrate: m_debugCameraFrustumMeshComps[i]->m_ObjectStatus = ObjectStatus::Created;
-	}
+		}
 	
 	m_debugSphereMeshGPUBufferComp = l_graphicsService->AddGPUBufferComponent("DebugSphereMeshGPUBuffer/");
 	m_debugSphereMeshGPUBufferComp->m_ElementCount = m_maxDebugMeshes;

@@ -4,7 +4,6 @@
 #include "../../Common/IOService.h"
 #include "../../Common/TaskScheduler.h"
 
-#include "../../Services/ComponentManager.h"
 #include "../../Services/AssetService.h"
 #include "../../Services/EntityRegistry.h"
 

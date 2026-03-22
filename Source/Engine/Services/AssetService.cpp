@@ -133,7 +133,6 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	auto l_workingDir = "../Data/Components/";
 	std::filesystem::create_directories(l_workingDir);
 
-	// TODO Phase2-migrate: std::string l_baseName = component.m_InstanceName.c_str();
 	std::string l_baseName;
 	auto l_binaryFileName = l_baseName + ".innobin";
 	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
@@ -151,7 +150,6 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, indices);
 	l_binaryFile.close();
 
-	// TODO Phase2-migrate: auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	auto filePath = std::string();
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
@@ -160,7 +158,6 @@ bool AssetService::Save(const MaterialComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	// TODO Phase2-migrate: auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	auto filePath = GetAssetFilePath("MaterialComponent");
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
@@ -192,7 +189,6 @@ bool AssetService::Save(const CameraComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	// TODO Phase2-migrate: auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	auto filePath = std::string();
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
@@ -201,7 +197,6 @@ bool AssetService::Save(const LightComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	// TODO Phase2-migrate: auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	auto filePath = std::string();
 	return JSONWrapper::Save(filePath.c_str(), j);
 }

@@ -6,7 +6,6 @@
 #include "../Engine/Services/EntityRegistry.h"
 #include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/CameraService.h"
-#include "../Engine/Services/ComponentManager.h" // TODO Phase2-migrate: Task 14 — keep until TextureComponent and AnimationComponent are migrated
 #include <QHeaderView>
 
 using namespace Inno;
@@ -149,7 +148,6 @@ void WorldExplorer::endRename()
     }
     else
     {
-        // TODO Phase2-migrate: EntityRegistry has no SetName API; entity rename is display-only until SetName is added
         // Entity items store EntityID as uint32_t in slot 1 — no direct name mutation possible here
         Log(Warning, "WorldExplorer: entity rename is display-only; EntityRegistry::SetName not yet implemented.");
     }
@@ -201,18 +199,16 @@ void WorldExplorer::deleteEntity()
 template<class T>
 T* WorldExplorer::addComponent()
 {
-    // TODO Phase2-migrate: Task 14 — migrate addComponent to EntityRegistry::Emplace<T> when ComponentManager is deleted
     auto l_items = selectedItems();
     QTreeWidgetItem* item;
     if (l_items.count() != 0)
     {
         item = l_items[0];
-        auto l_entityPtr = reinterpret_cast<Entity*>(item->data(1, Qt::UserRole).value<void*>());
+        auto l_entityID = (EntityID)item->data(1, Qt::UserRole).toUInt();
 
-        auto l_componentPtr = g_Engine->Get<ComponentManager>()->Spawn<T>(l_entityPtr, true, ObjectLifespan::Scene);
+        auto l_componentPtr = g_Engine->Get<EntityRegistry>()->Emplace<T>(l_entityID);
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-
         l_componentItem->setText(0, T::GetTypeName());
         l_componentItem->setData(0, Qt::UserRole, QVariant(T::GetTypeID()));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
@@ -221,10 +217,8 @@ T* WorldExplorer::addComponent()
         setCurrentItem(l_componentItem);
         startRename();
 
-        l_componentPtr->m_ObjectStatus = ObjectStatus::Activated;
         return l_componentPtr;
     }
-
     return nullptr;
 }
 
@@ -261,16 +255,10 @@ void WorldExplorer::destroyComponent(Component *component)
     {
         g_Engine->Get<EntityRegistry>()->Remove<CameraComponent>(l_entityID);
     }
-    // TODO Phase2-migrate: else if (componentType == MeshComponent::GetTypeID())
-    // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MeshComponent*>(component)); }
-    // TODO Phase2-migrate: else if (componentType == MaterialComponent::GetTypeID())
-    // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component)); }
     else if (componentType == TextureComponent::GetTypeID())
     {
         g_Engine->getGraphicsService()->Delete(reinterpret_cast<TextureComponent*>(component));
     }
-    // TODO Phase2-migrate: else if (componentType == SkeletonComponent::GetTypeID())
-    // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component)); }
     else if (componentType == AnimationComponent::GetTypeID())
     {
         g_Engine->Get<EntityRegistry>()->Remove<AnimationComponent>(l_entityID);

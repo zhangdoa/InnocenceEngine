@@ -1,5 +1,4 @@
 ﻿#include "../../Engine/Services/EntityRegistry.h"
-#include "../../Engine/Services/ComponentManager.h"
 #include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"

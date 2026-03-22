@@ -56,7 +56,6 @@ bool DX12GraphicsService::Add(IOutputMergerTarget*& rhs)
 
 bool DX12GraphicsService::Delete(MeshComponent* mesh)
 {
-	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
 	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 
 	auto vertexUploadIt = m_MeshVertexBuffers_Upload.find(componentUUID);

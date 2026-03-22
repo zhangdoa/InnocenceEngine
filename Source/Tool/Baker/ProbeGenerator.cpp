@@ -82,7 +82,6 @@ namespace Inno
 
             uint32_t l_index = 0;
 
-            // TODO Phase2-migrate: iterate EntityRegistry::Storage<MeshComponent> and build draw calls
             // once TransformComponent, MeshComponent, and MaterialComponent are fully wired to the baker pipeline
             Config::Get().m_staticMeshDrawCallCount = l_index;
 
