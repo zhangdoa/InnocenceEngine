@@ -1,6 +1,5 @@
 #pragma once
 #include "../Interface/ISystem.h"
-#include "../RenderingServer/IRenderingServer.h"
 #include "../Component/SkeletonComponent.h"
 #include "../Component/AnimationComponent.h"
 #include "../Common/EntityID.h"

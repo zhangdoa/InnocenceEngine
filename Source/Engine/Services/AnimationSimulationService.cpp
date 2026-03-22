@@ -86,6 +86,7 @@ bool AnimationSimulationService::Update()
 
 bool AnimationSimulationService::Terminate()
 {
+	m_Impl->m_ObjectStatus = ObjectStatus::Terminated;
 	delete m_Impl;
 	return true;
 }

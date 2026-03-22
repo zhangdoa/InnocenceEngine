@@ -527,7 +527,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				Get<AnimationDrawCallService>()->Update();
 				Get<BillboardDrawCallService>()->Update();
 				Get<DebugDrawCallService>()->Update();
-					Get<AnimationSimulationService>()->Update();
+				Get<AnimationSimulationService>()->Update();
 				Get<AnimationResourceService>()->Update();
 				if (m_pImpl->m_RenderingClient) {
 					m_pImpl->m_RenderingClient->Update();
