@@ -49,11 +49,13 @@ commented until needed.
 6. `Terminate()` returns `false` on validation failure → `RenderTest.exe` exits with
    code 2 (crash code, distinct from D3D12 validation error code 1)
 
-### Shader: `pixelReadback.vert` / `pixelReadback.frag`
+### Shader reuse
 
-- Vertex shader: emit a full-screen triangle from 3 invocations of `gl_VertexID`
-- Fragment shader: output `float4(1, 0, 0, 1)` (solid red)
-- HLSL, compiled to DXIL via the existing HLSL2DXIL pipeline
+`drawInstanced.vert` and `drawInstanced.frag` already exist and already output a solid-red
+triangle (frag outputs `float4(1,0,0,1)`). The `pixel_readback` test reuses these shaders
+directly — no new HLSL is needed. The test uses a dedicated 256×256 render target (not
+the default full-screen target) to guarantee deterministic pixel layout with no DX12
+row-pitch padding (256 × 4 bytes = 1024 = multiple of 256-byte alignment).
 
 ### Region sampling strategy
 

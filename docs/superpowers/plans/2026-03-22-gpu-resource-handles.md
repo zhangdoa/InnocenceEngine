@@ -1,0 +1,720 @@
+# GPU Resource Handle Redesign Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Strip Component/Object inheritance from all 8 GPU resource handle types, move pool ownership into IRenderingServer, and delete ComponentManager.
+
+**Architecture:** GPUResourceComponent loses its Component base and becomes a plain struct (retaining ObjectStatus, InstanceName, and GPU binding fields). GPUResourceComponent.h is NOT deleted — it remains as the polymorphic base for `IRenderingServer::BindGPUResource(GPUResourceComponent*)`. RenderPass, ShaderProgram, and CommandList structs similarly lose their Component base. IRenderingServer::Setup() calls IRenderingServer::InitializePool() which now allocates TObjectPool<T> directly per type, replacing the 8 ComponentManager::RegisterType calls. All consumers updated to use IRenderingServer::AddXComponent() and FindXByName() instead of ComponentManager.
+
+**Tech Stack:** C++17, MSVC, TObjectPool from `Source/Engine/Common/ObjectPool.h`, ThreadSafeUnorderedMap from `Source/Engine/Common/ThreadSafeUnorderedMap.h`, ThreadSafeVector from `Source/Engine/Common/ThreadSafeVector.h`.
+
+---
+
+## File Map
+
+**Modified component headers:**
+- `Source/Engine/Component/GPUResourceComponent.h` — strip `Component` base, add `ObjectStatus` + `ObjectName` inline fields
+- `Source/Engine/Component/RenderPassComponent.h` — strip `Component` base, add `ObjectStatus` + `ObjectName` inline
+- `Source/Engine/Component/ShaderProgramComponent.h` — same
+- `Source/Engine/Component/CommandListComponent.h` — same
+- `Source/Engine/Component/MaterialComponent.h` — `m_TextureComponents: vector<uint64_t>` → `vector<string>`
+
+**Modified rendering server:**
+- `Source/Engine/RenderingServer/IRenderingServer.h` — add pool + LUT + pointer-list fields for 8 types
+- `Source/Engine/RenderingServer/Common/IRenderingServer.cpp` — rewrite `InitializePool()` + `TerminatePool()`, replace `AddComponent<T>` free func with pool-backed implementation; add `FindTextureByName()` helper
+
+**Modified consumers:**
+- `Source/Engine/Services/TemplateAssetService.cpp` — Spawn<T> → AddXComponent; FindByUUID → FindXByName via IRenderingServer
+- `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp` — FindByUUID<TextureComponent> → FindTextureByName; read/write path strings
+- `Source/Editor/worldexplorer.cpp` — Spawn<TextureComponent> → AddTextureComponent; Destroy → Delete
+- `Source/Engine/Services/SceneService.cpp` — remove ComponentManager include and CleanUp call
+- `Source/Engine/Services/DrawCallService.cpp` — remove the dead commented-out `FindByUUID<TextureComponent>` line (line 195) and any ComponentManager include
+
+**Deleted:**
+- `Source/Engine/Services/ComponentManager.h` — deleted after all usages removed
+- `Source/Engine/Component/GPUResourceComponent.h` — NOT deleted; stripped of Component base (still used by Texture/GPUBuffer/Sampler for BindGPUResource polymorphism)
+
+**Engine registration:**
+- `Source/Engine/Engine.cpp` — remove `ComponentManager` `Get<>` service and related includes
+
+---
+
+## Task 1: Strip Component base from GPUResourceComponent
+
+**Files:**
+- Modify: `Source/Engine/Component/GPUResourceComponent.h`
+
+GPUResourceComponent currently inherits `Component` → `Object`. After this task it is a standalone struct.
+Fields dropped: `m_UUID`, `m_Serializable`, `m_ObjectLifespan`, `m_Owner` (these come from Object/Component).
+Fields added inline: `ObjectStatus m_ObjectStatus` and `ObjectName m_InstanceName` (these were on Object; the rendering code checks them directly).
+
+- [ ] **Step 1: Read GPUResourceComponent.h in full**
+
+```
+Source/Engine/Component/GPUResourceComponent.h
+```
+
+Confirm current content: `class GPUResourceComponent : public Component { ... }` with fields:
+`m_GPUResourceType`, `m_CPUAccessibility`, `m_GPUAccessibility`, `m_ReadState`, `m_WriteState`, `m_ReadHandles`, `m_WriteHandles`.
+
+- [ ] **Step 2: Read Object.h and Component.h to confirm which types you need to include for ObjectStatus / ObjectName**
+
+```
+Source/Engine/Common/Object.h
+```
+
+`ObjectStatus` and `ObjectName` (a typedef over `FixedSizeString<64>`) are defined in `Object.h`.
+
+- [ ] **Step 3: Rewrite GPUResourceComponent.h**
+
+Replace the class with a struct, keep the include for `GraphicsPrimitive.h` (defines `GPUResourceType`, `Accessibility`, `DescriptorHandle`), keep `Object.h` for `ObjectStatus`/`ObjectName` type definitions (do NOT inherit), add the two new inline fields:
+
+```cpp
+#pragma once
+#include "../Common/GraphicsPrimitive.h"
+#include "../Common/Object.h"
+
+namespace Inno
+{
+    struct GPUResourceComponent
+    {
+        GPUResourceType   m_GPUResourceType  = GPUResourceType::Sampler;
+        Accessibility     m_CPUAccessibility = Accessibility::WriteOnly;
+        Accessibility     m_GPUAccessibility = Accessibility::ReadOnly;
+        uint32_t          m_ReadState        = 0;
+        uint32_t          m_WriteState       = 0;
+        std::vector<DescriptorHandle> m_ReadHandles;
+        std::vector<DescriptorHandle> m_WriteHandles;
+        ObjectStatus      m_ObjectStatus     = ObjectStatus::Invalid;
+        ObjectName        m_InstanceName     = "";
+    };
+}
+```
+
+- [ ] **Step 4: Build to verify TextureComponent, GPUBufferComponent, SamplerComponent still compile**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+```
+
+Expected: build succeeds. These three types inherit GPUResourceComponent and pick up the new fields automatically.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Source/Engine/Component/GPUResourceComponent.h
+git commit -m "refactor: strip Component base from GPUResourceComponent, inline ObjectStatus/InstanceName"
+```
+
+---
+
+## Task 2: Strip Component base from RenderPass, ShaderProgram, CommandList
+
+**Files:**
+- Modify: `Source/Engine/Component/RenderPassComponent.h`
+- Modify: `Source/Engine/Component/ShaderProgramComponent.h`
+- Modify: `Source/Engine/Component/CommandListComponent.h`
+
+These three types inherit `Component` directly (not via GPUResourceComponent). They don't participate in the `BindGPUResource(GPUResourceComponent*)` polymorphism, so they can safely become standalone structs.
+
+The rendering server checks `m_ObjectStatus` on these after initialize, and logs use `m_InstanceName`. Both fields move inline.
+
+- [ ] **Step 1: Update RenderPassComponent.h**
+
+Change `class RenderPassComponent : public Component` to `struct RenderPassComponent`. Add `ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;` and `ObjectName m_InstanceName = "";` as the first two fields. Keep `#include "../Common/Object.h"` for the type definitions; remove it only if the types are available from GraphicsPrimitive.h (they are not — keep it).
+
+Remove the `static uint32_t GetTypeID()` and `static const char* GetTypeName()` methods — these were only needed by ComponentManager's template machinery and are no longer required.
+
+```cpp
+#pragma once
+#include "../Common/GraphicsPrimitive.h"
+#include "../Common/Object.h"
+#include "../Component/TextureComponent.h"
+#include "../Component/ShaderProgramComponent.h"
+#include "../Component/CommandListComponent.h"
+
+namespace Inno
+{
+    struct RenderPassComponent
+    {
+        ObjectStatus    m_ObjectStatus  = ObjectStatus::Invalid;
+        ObjectName      m_InstanceName  = "";
+
+        ShaderProgramComponent* m_ShaderProgram = nullptr;
+
+        RenderPassDesc m_RenderPassDesc = {};
+        std::vector<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
+
+        size_t m_CurrentFrame = 0;
+
+        std::function<void()> m_OnResize;
+        std::function<void(CommandListComponent*)> m_CustomCommandsFunc;
+
+        IOutputMergerTarget* m_OutputMergerTarget   = nullptr;
+        IPipelineStateObject* m_PipelineStateObject = nullptr;
+        std::vector<ISemaphore*> m_Semaphores;
+    };
+}
+```
+
+- [ ] **Step 2: Update ShaderProgramComponent.h**
+
+Same pattern: `struct ShaderProgramComponent`, remove `Component` base, add `m_ObjectStatus` + `m_InstanceName` as first two fields. Remove `GetTypeID()` and `GetTypeName()`.
+
+```cpp
+#pragma once
+#include "../Common/Object.h"
+#include <vector>
+
+namespace Inno
+{
+    using ShaderFilePath = FixedSizeString<128>;
+
+    struct ShaderFilePaths
+    {
+        ShaderFilePath m_VSPath = "";
+        ShaderFilePath m_HSPath = "";
+        ShaderFilePath m_DSPath = "";
+        ShaderFilePath m_GSPath = "";
+        ShaderFilePath m_PSPath = "";
+        ShaderFilePath m_CSPath = "";
+        ShaderFilePath m_RayGenPath     = "";
+        ShaderFilePath m_AnyHitPath     = "";
+        ShaderFilePath m_ClosestHitPath = "";
+        ShaderFilePath m_MissPath       = "";
+    };
+
+    struct ShaderProgramComponent
+    {
+        ObjectStatus     m_ObjectStatus     = ObjectStatus::Invalid;
+        ObjectName       m_InstanceName     = "";
+
+        ShaderFilePaths  m_ShaderFilePaths  = {};
+
+        std::vector<uint8_t> m_VSBuffer;
+        std::vector<uint8_t> m_HSBuffer;
+        std::vector<uint8_t> m_DSBuffer;
+        std::vector<uint8_t> m_GSBuffer;
+        std::vector<uint8_t> m_PSBuffer;
+        std::vector<uint8_t> m_CSBuffer;
+        std::vector<uint8_t> m_RayGenBuffer;
+        std::vector<uint8_t> m_AnyHitBuffer;
+        std::vector<uint8_t> m_ClosestHitBuffer;
+        std::vector<uint8_t> m_MissBuffer;
+    };
+}
+```
+
+- [ ] **Step 3: Update CommandListComponent.h**
+
+```cpp
+#pragma once
+#include "../Common/Object.h"
+#include "../Common/GraphicsPrimitive.h"
+
+namespace Inno
+{
+    struct CommandListComponent
+    {
+        ObjectStatus   m_ObjectStatus = ObjectStatus::Invalid;
+        ObjectName     m_InstanceName = "";
+
+        uint64_t       m_CommandList  = 0;
+        GPUEngineType  m_Type         = GPUEngineType::Graphics;
+    };
+}
+```
+
+- [ ] **Step 4: Build**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+```
+
+Expected: build succeeds. If DX12 concrete types (e.g. `DX12RenderPassComponent`) inherit `RenderPassComponent`, they will compile fine since the struct API is unchanged.
+
+- [ ] **Step 5: Run tests**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
+```
+
+Expected: all tests pass.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add Source/Engine/Component/RenderPassComponent.h
+git add Source/Engine/Component/ShaderProgramComponent.h
+git add Source/Engine/Component/CommandListComponent.h
+git commit -m "refactor: strip Component base from RenderPass/ShaderProgram/CommandList structs"
+```
+
+---
+
+## Task 3: Move pool ownership into IRenderingServer
+
+**Files:**
+- Modify: `Source/Engine/RenderingServer/IRenderingServer.h`
+- Modify: `Source/Engine/RenderingServer/Common/IRenderingServer.cpp`
+
+This is the core mechanical change. `InitializePool()` creates 8 `TObjectPool<T>*` directly. The `AddComponent<T>` free function is replaced by direct pool + LUT management. `TerminatePool()` destroys all pools.
+
+### IRenderingServer.h changes
+
+Add private pool fields after the `m_needResize` member (end of the private section):
+
+```cpp
+// GPU resource handle pools (owned by IRenderingServer)
+struct GPUHandlePools
+{
+    TObjectPool<MeshComponent>*          Meshes          = nullptr;
+    TObjectPool<TextureComponent>*       Textures        = nullptr;
+    TObjectPool<MaterialComponent>*      Materials       = nullptr;
+    TObjectPool<RenderPassComponent>*    RenderPasses    = nullptr;
+    TObjectPool<ShaderProgramComponent>* ShaderPrograms  = nullptr;
+    TObjectPool<SamplerComponent>*       Samplers        = nullptr;
+    TObjectPool<GPUBufferComponent>*     GPUBuffers      = nullptr;
+    TObjectPool<CommandListComponent>*   CommandLists    = nullptr;
+
+    ThreadSafeUnorderedMap<std::string, MeshComponent*>          MeshLUT;
+    ThreadSafeUnorderedMap<std::string, TextureComponent*>       TextureLUT;
+    ThreadSafeUnorderedMap<std::string, MaterialComponent*>      MaterialLUT;
+    ThreadSafeUnorderedMap<std::string, RenderPassComponent*>    RenderPassLUT;
+    ThreadSafeUnorderedMap<std::string, ShaderProgramComponent*> ShaderProgramLUT;
+    ThreadSafeUnorderedMap<std::string, SamplerComponent*>       SamplerLUT;
+    ThreadSafeUnorderedMap<std::string, GPUBufferComponent*>     GPUBufferLUT;
+    ThreadSafeUnorderedMap<std::string, CommandListComponent*>   CommandListLUT;
+
+    ThreadSafeVector<MeshComponent*>          MeshPointers;
+    ThreadSafeVector<TextureComponent*>       TexturePointers;
+    ThreadSafeVector<MaterialComponent*>      MaterialPointers;
+    ThreadSafeVector<RenderPassComponent*>    RenderPassPointers;
+    ThreadSafeVector<ShaderProgramComponent*> ShaderProgramPointers;
+    ThreadSafeVector<SamplerComponent*>       SamplerPointers;
+    ThreadSafeVector<GPUBufferComponent*>     GPUBufferPointers;
+    ThreadSafeVector<CommandListComponent*>   CommandListPointers;
+};
+GPUHandlePools m_GPUHandlePools;
+```
+
+Also add to `IRenderingServer.h` public section the new lookup API needed by TemplateAssetService and JSONSerializer:
+
+```cpp
+TextureComponent*  FindTextureByName(const char* name);
+MeshComponent*     FindMeshByName(const char* name);
+MaterialComponent* FindMaterialByName(const char* name);
+```
+
+### IRenderingServer.cpp changes
+
+- [ ] **Step 1: Read IRenderingServer.cpp lines 1–60 (InitializePool, TerminatePool, Setup)**
+
+Confirms the `TODO Phase2-migrate: Task 14` comment and the 8 `RegisterType<T>` calls.
+
+- [ ] **Step 2: Rewrite InitializePool()**
+
+Remove the 8 `RegisterType<T>` calls and the ComponentManager include. Add pool creation:
+
+```cpp
+bool IRenderingServer::InitializePool()
+{
+    auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
+
+    m_GPUHandlePools.Meshes         = TObjectPool<MeshComponent>::Create(l_cap.maxMeshes);
+    m_GPUHandlePools.Textures       = TObjectPool<TextureComponent>::Create(l_cap.maxTextures);
+    m_GPUHandlePools.Materials      = TObjectPool<MaterialComponent>::Create(l_cap.maxMaterials);
+    m_GPUHandlePools.RenderPasses   = TObjectPool<RenderPassComponent>::Create(128);
+    m_GPUHandlePools.ShaderPrograms = TObjectPool<ShaderProgramComponent>::Create(256);
+    m_GPUHandlePools.Samplers       = TObjectPool<SamplerComponent>::Create(256);
+    m_GPUHandlePools.GPUBuffers     = TObjectPool<GPUBufferComponent>::Create(l_cap.maxBuffers);
+    m_GPUHandlePools.CommandLists   = TObjectPool<CommandListComponent>::Create(256);
+
+    return true;
+}
+```
+
+- [ ] **Step 3: Rewrite TerminatePool()**
+
+Add pool destruction (TObjectPool::Create allocates on heap; check if it needs explicit delete or if the pool class handles it — use `TObjectPool<T>::Destroy(pool)` if that API exists, or just `delete pool`). Check `Source/Engine/Common/ObjectPool.h` for the destroy API:
+
+```cpp
+bool IRenderingServer::TerminatePool()
+{
+    TObjectPool<MeshComponent>::Destroy(m_GPUHandlePools.Meshes);
+    TObjectPool<TextureComponent>::Destroy(m_GPUHandlePools.Textures);
+    TObjectPool<MaterialComponent>::Destroy(m_GPUHandlePools.Materials);
+    TObjectPool<RenderPassComponent>::Destroy(m_GPUHandlePools.RenderPasses);
+    TObjectPool<ShaderProgramComponent>::Destroy(m_GPUHandlePools.ShaderPrograms);
+    TObjectPool<SamplerComponent>::Destroy(m_GPUHandlePools.Samplers);
+    TObjectPool<GPUBufferComponent>::Destroy(m_GPUHandlePools.GPUBuffers);
+    TObjectPool<CommandListComponent>::Destroy(m_GPUHandlePools.CommandLists);
+    return true;
+}
+```
+
+> Check `Source/Engine/Common/ObjectPool.h` for the exact Destroy API signature before writing this step.
+
+- [ ] **Step 4: Replace the AddComponent<T> free function with a pool-backed helper**
+
+The `AddComponent<T>` free function (lines ~250–280) currently calls `EntityRegistry::Spawn()` then `ComponentManager::Spawn<T>()`. Replace with a template function that uses the correct pool + LUT from `m_GPUHandlePools`:
+
+```cpp
+template <typename T>
+static T* AllocateGPUHandle(TObjectPool<T>* pool,
+                             ThreadSafeUnorderedMap<std::string, T*>& lut,
+                             ThreadSafeVector<T*>& pointers,
+                             const char* name)
+{
+    if (!name || name[0] == '\0')
+    {
+        Log(Error, "GPU handle name cannot be empty.");
+        return nullptr;
+    }
+
+    auto l_existing = lut.find(name);
+    if (l_existing != lut.end())
+        return l_existing->second;
+
+    auto l_ptr = pool->Spawn();
+    if (!l_ptr)
+    {
+        Log(Error, "GPU handle pool exhausted for name: ", name);
+        return nullptr;
+    }
+
+    l_ptr->m_ObjectStatus = ObjectStatus::Created;
+    l_ptr->m_InstanceName = ObjectName(name);
+
+    lut.emplace(name, l_ptr);
+    pointers.emplace_back(l_ptr);
+    return l_ptr;
+}
+```
+
+Then update the 8 `AddXComponent` implementations:
+
+```cpp
+MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.Meshes,
+                             m_GPUHandlePools.MeshLUT,
+                             m_GPUHandlePools.MeshPointers, name);
+}
+TextureComponent* IRenderingServer::AddTextureComponent(const char* name)
+{
+    return AllocateGPUHandle(m_GPUHandlePools.Textures,
+                             m_GPUHandlePools.TextureLUT,
+                             m_GPUHandlePools.TexturePointers, name);
+}
+// ... repeat for all 8 types
+```
+
+- [ ] **Step 5: Implement the Find* methods**
+
+```cpp
+TextureComponent* IRenderingServer::FindTextureByName(const char* name)
+{
+    auto l_result = m_GPUHandlePools.TextureLUT.find(name);
+    return (l_result != m_GPUHandlePools.TextureLUT.end()) ? l_result->second : nullptr;
+}
+MeshComponent* IRenderingServer::FindMeshByName(const char* name)
+{
+    auto l_result = m_GPUHandlePools.MeshLUT.find(name);
+    return (l_result != m_GPUHandlePools.MeshLUT.end()) ? l_result->second : nullptr;
+}
+MaterialComponent* IRenderingServer::FindMaterialByName(const char* name)
+{
+    auto l_result = m_GPUHandlePools.MaterialLUT.find(name);
+    return (l_result != m_GPUHandlePools.MaterialLUT.end()) ? l_result->second : nullptr;
+}
+```
+
+- [ ] **Step 6: Update Delete() to clean up the LUT and pointer list**
+
+The existing `Delete(MeshComponent*)` etc. virtual methods on DX12RenderingServer free GPU resources. After that, the base class Delete should also remove from the pool + LUT + pointer list.
+
+Add a non-virtual `ReleaseGPUHandle<T>` helper in IRenderingServer.cpp that the virtual Delete overrides can call at their end (or call from the base class after the virtual work is done). Check how the existing virtual Delete implementations are structured in `DX12RenderingServer_ComponentPool.cpp` before implementing this.
+
+Pattern:
+```cpp
+template <typename T>
+static void ReleaseGPUHandle(TObjectPool<T>* pool,
+                              ThreadSafeUnorderedMap<std::string, T*>& lut,
+                              ThreadSafeVector<T*>& pointers,
+                              T* ptr)
+{
+    if (!ptr) return;
+    lut.erase(ptr->m_InstanceName.c_str());
+    pointers.eraseByValue(ptr);
+    pool->Destroy(ptr);
+}
+```
+
+- [ ] **Step 7: Remove the ComponentManager include and all remaining ComponentManager references from IRenderingServer.cpp**
+
+The `#include "../../Services/ComponentManager.h"` at line 16 and any remaining `g_Engine->Get<ComponentManager>()` calls should be gone after steps 2–6.
+
+- [ ] **Step 8: Build**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+```
+
+Expected: succeeds. DX12RenderingServer's virtual Delete overrides still compile because they receive the same `T*` pointers.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add Source/Engine/RenderingServer/IRenderingServer.h
+git add Source/Engine/RenderingServer/Common/IRenderingServer.cpp
+git commit -m "refactor: move GPU handle pool ownership from ComponentManager into IRenderingServer"
+```
+
+---
+
+## Task 4: Update TemplateAssetService
+
+**Files:**
+- Modify: `Source/Engine/Services/TemplateAssetService.cpp`
+
+TemplateAssetService currently calls `ComponentManager::Spawn<T>` and `FindByUUID<T>` to allocate and look up GPU resource components. After this task, it uses `IRenderingServer::AddXComponent(name)` and `IRenderingServer::FindXByName(name)`.
+
+- [ ] **Step 1: Read TemplateAssetService.cpp lines 1–160**
+
+Confirm the pattern: each asset type (Texture, Material, Mesh) is loaded by:
+1. Checking if it's already loaded (`FindByUUID`)
+2. If not, spawning a new component via ComponentManager
+3. Loading the asset into the component
+
+- [ ] **Step 2: Replace Texture loading pattern**
+
+Before:
+```cpp
+auto entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, (std::string(name) + "/").c_str());
+texturePtr = componentManager->FindByUUID<TextureComponent>(loadedTexture);
+// ...
+texturePtr = componentManager->Spawn<TextureComponent>(entity, true, ObjectLifespan::Persistence);
+```
+
+After:
+```cpp
+texturePtr = g_Engine->getRenderingServer()->FindTextureByName(name);
+if (!texturePtr)
+    texturePtr = g_Engine->getRenderingServer()->AddTextureComponent(name);
+```
+
+The EntityRegistry::Spawn call is no longer needed — GPU handles aren't entities.
+
+- [ ] **Step 3: Apply the same replacement to Material and Mesh loading**
+
+Same pattern: `FindMaterialByName` / `AddMaterialComponent`, `FindMeshByName` / `AddMeshComponent`.
+
+- [ ] **Step 4: Remove the ComponentManager include and the `auto componentManager = ...` lines**
+
+- [ ] **Step 5: Build and run tests**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add Source/Engine/Services/TemplateAssetService.cpp
+git commit -m "refactor: replace ComponentManager Spawn/Find with IRenderingServer pool API in TemplateAssetService"
+```
+
+---
+
+## Task 5: Update MaterialComponent and JSONSerializer for path-based texture refs
+
+**Files:**
+- Modify: `Source/Engine/Component/MaterialComponent.h`
+- Modify: `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp`
+
+`MaterialComponent::m_TextureComponents` stores `vector<uint64_t>` UUID keys. JSON serialization writes these UUIDs and deserializes by calling `FindByUUID<TextureComponent>`. After this task, the field becomes `vector<string>` holding asset paths, and serialization writes/reads path strings.
+
+- [ ] **Step 1: Change MaterialComponent.h**
+
+```cpp
+// Before:
+std::vector<uint64_t> m_TextureComponents;
+
+// After:
+std::vector<std::string> m_TextureComponents;
+```
+
+Note: MaterialComponent already includes `TextureComponent.h`. No other change needed in the header.
+
+- [ ] **Step 2: Read JSONSerializer_Components.cpp in full**
+
+Look at how `m_TextureComponents` is written during serialization and how `FindByUUID<TextureComponent>` is called during deserialization (around line 78). There may also be a write path that saves UUIDs.
+
+- [ ] **Step 3: Update deserialization (FindByUUID → FindTextureByName)**
+
+Before:
+```cpp
+auto textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(textureComponentID);
+```
+
+After:
+```cpp
+auto textureComponent = g_Engine->getRenderingServer()->FindTextureByName(textureComponentID.c_str());
+```
+
+The `textureComponentID` variable changes from `uint64_t` to `std::string` — update the JSON key read accordingly (it was reading a number, now reads a string).
+
+- [ ] **Step 4: Update serialization write path if UUIDs are written**
+
+Search for any code writing `m_TextureComponents` elements to JSON. Change from writing UUID integers to writing `m_InstanceName.c_str()` (the asset name string).
+
+- [ ] **Step 5: Remove the ComponentManager include from JSONSerializer_Components.cpp**
+
+- [ ] **Step 6: Build and run tests**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
+```
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add Source/Engine/Component/MaterialComponent.h
+git add Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp
+git commit -m "refactor: MaterialComponent.m_TextureComponents switches from UUID to asset name strings"
+```
+
+---
+
+## Task 6: Update worldexplorer and SceneService
+
+**Files:**
+- Modify: `Source/Editor/worldexplorer.cpp`
+- Modify: `Source/Engine/Services/SceneService.cpp`
+
+- [ ] **Step 1: Read worldexplorer.cpp around the ComponentManager usage (lines 200–275)**
+
+There are `TODO Phase2-migrate` comments here. The active usage is `Spawn<TextureComponent>` (line 211) and `Destroy(reinterpret_cast<TextureComponent*>(...))` (line 270).
+
+- [ ] **Step 2: Replace worldexplorer Spawn → AddTextureComponent**
+
+Before:
+```cpp
+auto l_componentPtr = g_Engine->Get<ComponentManager>()->Spawn<T>(l_entityPtr, true, ObjectLifespan::Scene);
+```
+
+After:
+```cpp
+auto l_componentPtr = g_Engine->getRenderingServer()->AddTextureComponent(l_name.c_str());
+```
+
+Note: for non-Texture types that are commented out in worldexplorer, remove the TODO comments (they're now resolved).
+
+- [ ] **Step 3: Replace worldexplorer Destroy → Delete**
+
+Before:
+```cpp
+g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
+```
+
+After:
+```cpp
+g_Engine->getRenderingServer()->Delete(reinterpret_cast<TextureComponent*>(component));
+```
+
+- [ ] **Step 4: Remove the ComponentManager include from worldexplorer.cpp**
+
+- [ ] **Step 5: Read SceneService.cpp around the ComponentManager CleanUp call**
+
+The call `g_Engine->Get<ComponentManager>()->CleanUp(ObjectLifespan::Scene)` is a no-op for GPU resources (all Persistence). Remove the call and the ComponentManager include.
+
+- [ ] **Step 6: Clean up DrawCallService.cpp**
+
+Open `Source/Engine/Services/DrawCallService.cpp`. Line 195 has a dead commented-out line:
+```cpp
+// auto* l_texture = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(l_textureID);
+```
+Delete this line entirely. If `DrawCallService.cpp` has a `#include "ComponentManager.h"` (check line ~4), remove that include too.
+
+- [ ] **Step 7: Build and run tests**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
+```
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add Source/Editor/worldexplorer.cpp
+git add Source/Engine/Services/SceneService.cpp
+git add Source/Engine/Services/DrawCallService.cpp
+git commit -m "refactor: replace ComponentManager usage in worldexplorer, SceneService, DrawCallService"
+```
+
+---
+
+## Task 7: Delete ComponentManager and clean up Engine.cpp
+
+**Files:**
+- Delete: `Source/Engine/Services/ComponentManager.h`
+- Modify: `Source/Engine/Engine.cpp`
+- Modify: `Build/Source/Engine/Services/Services.vcxproj` (remove file entry)
+
+- [ ] **Step 1: Verify no remaining ComponentManager includes**
+
+```
+grep -r "ComponentManager" Source/ --include="*.h" --include="*.cpp" -l
+```
+
+Expected: zero results (or only the file itself). If any remain, fix them before continuing.
+
+- [ ] **Step 2: Delete ComponentManager.h**
+
+```bash
+git rm Source/Engine/Services/ComponentManager.h
+```
+
+- [ ] **Step 3: Remove ComponentManager from Engine.cpp**
+
+Find and remove:
+- `#include "Services/ComponentManager.h"`
+- `Get<ComponentManager>()` registration in `CreateServices()`
+- Any Setup/Initialize/Terminate/Update calls on ComponentManager
+
+- [ ] **Step 4: Remove ComponentManager from the Visual Studio project file**
+
+```
+Build/Source/Engine/Services/Services.vcxproj
+```
+
+Find the `<ClInclude Include="..\..\..\..\Source\Engine\Services\ComponentManager.h" />` entry and remove it.
+
+- [ ] **Step 5: Full rebuild**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Build && msbuild InnocenceEngine.sln /p:Configuration=RelWithDebInfo /t:Rebuild" 2>&1
+```
+
+Expected: zero errors, zero warnings about ComponentManager.
+
+- [ ] **Step 6: Run full test suite**
+
+```
+cmd.exe /c "cd C:\GitRepo\InnocenceEngine\Bin && RelWithDebInfo\Test.exe" 2>&1
+powershell.exe -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode" 2>&1
+```
+
+Expected: Test.exe all pass, RenderTest.exe exits 0.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git rm Source/Engine/Services/ComponentManager.h
+git add Source/Engine/Engine.cpp
+git add Build/Source/Engine/Services/Services.vcxproj
+git commit -m "refactor: delete ComponentManager — GPU resource pools now owned by IRenderingServer"
+```

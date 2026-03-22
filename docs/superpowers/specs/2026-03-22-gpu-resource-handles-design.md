@@ -42,9 +42,13 @@ Component directly, which is accidental coupling that needs to be cut.
 - `m_InstanceName` — used in logging throughout
 
 For the three GPUResourceComponent children (Texture, GPUBuffer, Sampler), their shared
-GPUResourceComponent fields (`m_GPUResourceType`, `m_CPUAccessibility`, `m_GPUAccessibility`,
-`m_ReadState`, `m_WriteState`, `m_ReadHandles`, `m_WriteHandles`) move inline into each
-struct. `GPUResourceComponent.h` is then deleted.
+GPUResourceComponent fields are retained through their base class relationship.
+**GPUResourceComponent.h is kept** (not deleted) because `IRenderingServer::BindGPUResource`
+takes a `GPUResourceComponent*` parameter — this polymorphic base is still needed for the
+binding API. GPUResourceComponent loses its `Component` base and becomes a standalone struct,
+gaining `m_ObjectStatus` and `m_InstanceName` inline (stripped from the old Object chain).
+The three child types continue to inherit GPUResourceComponent and acquire these fields
+transitively.
 
 MaterialComponent already is a plain struct; it manually duplicates the GPUResourceComponent
 fields. No change needed there except the `m_TextureComponents` field below.
