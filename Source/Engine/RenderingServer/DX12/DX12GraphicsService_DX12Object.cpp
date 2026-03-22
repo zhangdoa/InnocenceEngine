@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -11,7 +11,7 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-ComPtr<ID3D12Resource> DX12RenderingServer::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name)
+ComPtr<ID3D12Resource> DX12GraphicsService::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name)
 {
 	ComPtr<ID3D12Resource> l_uploadHeapBuffer;
 
@@ -32,7 +32,7 @@ ComPtr<ID3D12Resource> DX12RenderingServer::CreateUploadHeapBuffer(D3D12_RESOURC
 	return l_uploadHeapBuffer;
 }
 
-ComPtr<ID3D12Resource> DX12RenderingServer::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue, const char* name)
+ComPtr<ID3D12Resource> DX12GraphicsService::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue, const char* name)
 {
 	ComPtr<ID3D12Resource> l_defaultHeapBuffer;
 
@@ -53,7 +53,7 @@ ComPtr<ID3D12Resource> DX12RenderingServer::CreateDefaultHeapBuffer(D3D12_RESOUR
 	return l_defaultHeapBuffer;
 }
 
-ComPtr<ID3D12Resource> DX12RenderingServer::CreateReadBackHeapBuffer(UINT64 size, const char* name)
+ComPtr<ID3D12Resource> DX12GraphicsService::CreateReadBackHeapBuffer(UINT64 size, const char* name)
 {
 	ComPtr<ID3D12Resource> l_readBackHeapBuffer;
 
@@ -74,7 +74,7 @@ ComPtr<ID3D12Resource> DX12RenderingServer::CreateReadBackHeapBuffer(UINT64 size
 	return l_readBackHeapBuffer;
 }
 
-ComPtr<ID3D12CommandQueue> DX12RenderingServer::CreateCommandQueue(D3D12_COMMAND_QUEUE_DESC* commandQueueDesc, const wchar_t* name)
+ComPtr<ID3D12CommandQueue> DX12GraphicsService::CreateCommandQueue(D3D12_COMMAND_QUEUE_DESC* commandQueueDesc, const wchar_t* name)
 {
 	ComPtr<ID3D12CommandQueue> l_commandQueue;
 
@@ -94,7 +94,7 @@ ComPtr<ID3D12CommandQueue> DX12RenderingServer::CreateCommandQueue(D3D12_COMMAND
 	return l_commandQueue;
 }
 
-ComPtr<ID3D12CommandAllocator> DX12RenderingServer::CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, const wchar_t* name)
+ComPtr<ID3D12CommandAllocator> DX12GraphicsService::CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, const wchar_t* name)
 {
 	ComPtr<ID3D12CommandAllocator> l_commandAllocator;
 
@@ -114,7 +114,7 @@ ComPtr<ID3D12CommandAllocator> DX12RenderingServer::CreateCommandAllocator(D3D12
 	return l_commandAllocator;
 }
 
-ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t* name)
+ComPtr<ID3D12GraphicsCommandList7> DX12GraphicsService::CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t* name)
 {
 	ComPtr<ID3D12GraphicsCommandList7> l_commandList;
 
@@ -134,14 +134,14 @@ ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateCommandList(D3D12_
 	return l_commandList;
 }
 
-ComPtr<ID3D12GraphicsCommandList7> DX12RenderingServer::CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator)
+ComPtr<ID3D12GraphicsCommandList7> DX12GraphicsService::CreateTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12CommandAllocator> commandAllocator)
 {
 	static uint64_t index = 0;
 
 	return CreateCommandList(commandListType, commandAllocator, (L"TemporaryCommandList_" + std::to_wstring(index++)).c_str());
 }
 
-ComPtr<ID3D12DescriptorHeap> DX12RenderingServer::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc, const wchar_t* name)
+ComPtr<ID3D12DescriptorHeap> DX12GraphicsService::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc, const wchar_t* name)
 {
 	ComPtr<ID3D12DescriptorHeap> l_descriptorHeap = 0;
 	auto l_HResult = m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&l_descriptorHeap));

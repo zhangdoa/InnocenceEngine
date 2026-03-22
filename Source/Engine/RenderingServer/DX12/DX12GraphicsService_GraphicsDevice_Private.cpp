@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 
 #include "../../Platform/WinWindow/WinWindowService.h"
 
@@ -94,7 +94,7 @@ static void CALLBACK D3D12DebugMessageCallback(
     }
 }
 
-bool DX12RenderingServer::CreateDebugCallback()
+bool DX12GraphicsService::CreateDebugCallback()
 {
     ID3D12Debug* l_debugInterface;
 
@@ -129,7 +129,7 @@ bool DX12RenderingServer::CreateDebugCallback()
     return true;
 }
 
-bool DX12RenderingServer::CreatePhysicalDevices()
+bool DX12GraphicsService::CreatePhysicalDevices()
 {
     // Create a DirectX graphics interface factory.
     UINT l_DXGIFlag = 0;
@@ -332,7 +332,7 @@ bool DX12RenderingServer::CreatePhysicalDevices()
     return true;
 }
 
-bool DX12RenderingServer::CreateGlobalCommandQueues()
+bool DX12GraphicsService::CreateGlobalCommandQueues()
 {
     // Set up the description of the command queues.
     D3D12_COMMAND_QUEUE_DESC l_graphicCommandQueueDesc = {};
@@ -362,7 +362,7 @@ bool DX12RenderingServer::CreateGlobalCommandQueues()
     return true;
 }
 
-bool DX12RenderingServer::CreateGlobalCommandAllocators()
+bool DX12GraphicsService::CreateGlobalCommandAllocators()
 {
     m_directCommandAllocators.resize(m_swapChainImageCount);
     m_computeCommandAllocators.resize(m_swapChainImageCount);
@@ -379,7 +379,7 @@ bool DX12RenderingServer::CreateGlobalCommandAllocators()
     return true;
 }
 
-bool DX12RenderingServer::CreateSyncPrimitives()
+bool DX12GraphicsService::CreateSyncPrimitives()
 {
     if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence))))
     {
@@ -415,7 +415,7 @@ bool DX12RenderingServer::CreateSyncPrimitives()
     return true;
 }
 
-bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
+bool DX12GraphicsService::CreateGlobalDescriptorHeaps()
 {
     auto l_renderingCapacity = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -677,7 +677,7 @@ bool DX12RenderingServer::CreateGlobalDescriptorHeaps()
     return true;
 }
 
-bool DX12RenderingServer::CreateMipmapGenerator()
+bool DX12GraphicsService::CreateMipmapGenerator()
 {
     {
         CD3DX12_DESCRIPTOR_RANGE uavRanges[2];
@@ -750,7 +750,7 @@ bool DX12RenderingServer::CreateMipmapGenerator()
     return true;
 }
 
-bool DX12RenderingServer::CreateSwapChain()
+bool DX12GraphicsService::CreateSwapChain()
 {
     // Set the swap chain to use multi-buffering.
     m_swapChainDesc.BufferCount = m_swapChainImageCount;
@@ -806,7 +806,7 @@ bool DX12RenderingServer::CreateSwapChain()
     return true;
 }
 
-bool DX12RenderingServer::HasGPUError() const
+bool DX12GraphicsService::HasGPUError() const
 {
     return g_GPUErrorDetected.load();
 }

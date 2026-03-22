@@ -1,4 +1,4 @@
-#include "VolumetricPass.h"
+﻿#include "VolumetricPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -58,7 +58,7 @@ namespace VolumetricPass
 
 bool VolumetricPass::setupGeometryProcessPass()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_froxelizationSPC = l_renderingServer->AddShaderProgramComponent("VolumetricGeometryProcessPass/");
 
@@ -121,7 +121,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 
 bool VolumetricPass::setupIrradianceInjectionPass()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_irraidanceInjectionSPC = l_renderingServer->AddShaderProgramComponent("VolumetricIrraidanceInjectionPass/");
 
@@ -199,7 +199,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 
 bool VolumetricPass::setupRayMarchingPass()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_rayMarchingSPC = l_renderingServer->AddShaderProgramComponent("VolumetricRayMarchingPass/");
 
@@ -270,7 +270,7 @@ bool VolumetricPass::setupRayMarchingPass()
 
 bool VolumetricPass::setupVisualizationPass()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_visualizationSPC = l_renderingServer->AddShaderProgramComponent("VolumetricVisualizationPass/");
 
@@ -330,7 +330,7 @@ bool VolumetricPass::setupVisualizationPass()
 
 bool VolumetricPass::Setup()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("VolumetricPass/");
 
@@ -377,7 +377,7 @@ bool VolumetricPass::Setup()
 
 bool VolumetricPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_SamplerComp);
 
@@ -408,7 +408,7 @@ bool VolumetricPass::Initialize()
 
 bool VolumetricPass::froxelization()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
@@ -452,7 +452,7 @@ bool VolumetricPass::froxelization()
 
 bool VolumetricPass::irraidanceInjection()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
@@ -504,7 +504,7 @@ bool VolumetricPass::irraidanceInjection()
 
 bool VolumetricPass::rayMarching()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	GPUResourceComponent *l_currentResultBinder;
 	GPUResourceComponent *l_historyResultBinder;
 
@@ -567,7 +567,7 @@ bool VolumetricPass::rayMarching()
 
 bool VolumetricPass::visualization(GPUResourceComponent *input)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
@@ -612,7 +612,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 
 bool VolumetricPass::ExecuteCommands(bool visualize)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	froxelization();
 	irraidanceInjection();
@@ -654,7 +654,7 @@ bool VolumetricPass::ExecuteCommands(bool visualize)
 
 bool VolumetricPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_froxelizationRenderPassComp);
 	l_renderingServer->Delete(m_irraidanceInjectionRenderPassComp);

@@ -1,4 +1,4 @@
-#include "LightDataService.h"
+﻿#include "LightDataService.h"
 
 #include "../Common/LogService.h"
 #include "../Common/MathHelper.h"
@@ -66,7 +66,7 @@ namespace Inno
 
 bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_PointLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PointLightCBuffer/");
 	m_SphereLightGPUBufferComp = l_renderingServer->AddGPUBufferComponent("SphereLightCBuffer/");
@@ -81,7 +81,7 @@ bool LightDataServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
 		m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
@@ -279,7 +279,7 @@ bool LightDataServiceImpl::Update()
 		UpdateLightData();
 		UpdateCSMData();
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		if (m_PointLightCBVector.size() > 0)
 		{
@@ -305,7 +305,7 @@ bool LightDataServiceImpl::Update()
 
 bool LightDataServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_PointLightGPUBufferComp);
 	l_renderingServer->Delete(m_SphereLightGPUBufferComp);

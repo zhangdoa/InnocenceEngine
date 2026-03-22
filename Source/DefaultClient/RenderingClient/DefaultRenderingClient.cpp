@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "DefaultRenderingClient.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
@@ -162,7 +162,7 @@ namespace Inno
 				return m_Canvas;
 			};
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		l_renderingServer->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 
@@ -173,7 +173,7 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Initialize()
 	{
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		// GIDataLoader::Initialize();
 		BRDFLUTPass::Get().Initialize();
@@ -229,7 +229,7 @@ namespace Inno
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		if (m_ExecuteOneShotCommands)
 		{
@@ -300,7 +300,7 @@ namespace Inno
 	bool DefaultRenderingClientImpl::ExecuteCommands(IRenderingConfig* renderingConfig)
 	{
 		auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 		GPUResourceComponent* l_canvas;
 		RenderPassComponent* l_canvasOwner;
 		if (m_ExecuteOneShotCommands)
@@ -630,7 +630,7 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Terminate()
 	{
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 		auto l_graphicsSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Graphics);
 		auto l_computeSemaphoreValue = l_renderingServer->GetSemaphoreValue(GPUEngineType::Compute);
 		l_renderingServer->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);

@@ -1,4 +1,4 @@
-#include "DrawCallService.h"
+﻿#include "DrawCallService.h"
 
 #include "../Common/LogService.h"
 #include "EntityRegistry.h"
@@ -42,21 +42,21 @@ namespace Inno
 
 GPUBufferComponent* DrawCallServiceImpl::GetCurrentFrameTransformBuffer()
 {
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_TransformBufferComp : m_TransformPrevBufferComp;
 }
 
 GPUBufferComponent* DrawCallServiceImpl::GetPreviousFrameTransformBuffer()
 {
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_TransformPrevBufferComp : m_TransformBufferComp;
 }
 
 bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_GPUModelDataBufferComp = l_renderingServer->AddGPUBufferComponent("GPUModelDataBuffer/");
 	m_TransformBufferComp = l_renderingServer->AddGPUBufferComponent("TransformBuffer/");
@@ -71,7 +71,7 @@ bool DrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -213,7 +213,7 @@ bool DrawCallServiceImpl::Update()
 
 		UpdateDrawCalls();
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		if (m_GPUModelDataVector.size() > 0)
 		{
@@ -240,7 +240,7 @@ bool DrawCallServiceImpl::Update()
 
 bool DrawCallServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_GPUModelDataBufferComp);
 	l_renderingServer->Delete(m_TransformBufferComp);

@@ -1,4 +1,4 @@
-#include "VXGIVisualizationPass.h"
+﻿#include "VXGIVisualizationPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -14,7 +14,7 @@ using namespace Inno;
 
 bool VXGIVisualizationPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("VoxelVisualizationPass/");
 
@@ -69,7 +69,7 @@ bool VXGIVisualizationPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIVisualizationPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -81,7 +81,7 @@ bool VXGIVisualizationPass::Initialize()
 
 bool VXGIVisualizationPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -101,7 +101,7 @@ bool VXGIVisualizationPass::PrepareCommandList(IRenderingContext* renderingConte
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	// Use the Graphics command list component for VXGI rendering
 	if (!m_CommandListComp_Graphics)
@@ -147,7 +147,7 @@ GPUResourceComponent* VXGIVisualizationPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_renderingServer = g_Engine->getGraphicsService();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

@@ -1,4 +1,4 @@
-#include "BSDFTestPass.h"
+﻿#include "BSDFTestPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -17,7 +17,7 @@ using namespace Inno;
 
 bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("BSDFTestPass/");
 
@@ -121,7 +121,7 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 
 bool BSDFTestPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -135,7 +135,7 @@ bool BSDFTestPass::Initialize()
 
 bool BSDFTestPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -151,7 +151,7 @@ ObjectStatus BSDFTestPass::GetStatus()
 
 bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();

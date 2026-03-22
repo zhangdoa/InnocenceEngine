@@ -1,4 +1,4 @@
-#include "BrickGenerator.h"
+﻿#include "BrickGenerator.h"
 
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Common/MathHelper.h"
@@ -23,7 +23,7 @@ namespace Inno
     {
         void BrickGenerator::setup()
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             m_SPC_BrickFactor = l_renderingServer->AddShaderProgramComponent("GIBakeBrickFactorPass/");
 
@@ -254,7 +254,7 @@ namespace Inno
 
         bool BrickGenerator::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, const std::vector<Mat4>& v)
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             std::vector<Mat4> l_GICameraConstantBuffer(8);
             l_GICameraConstantBuffer[0] = p;
@@ -295,7 +295,7 @@ namespace Inno
 
         bool BrickGenerator::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks)
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             static int l_index = 0;
 
@@ -407,7 +407,7 @@ namespace Inno
 
         bool BrickGenerator::assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes)
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
             
             Log(Success, "Start to generate brick factor and assign to probes...");
 

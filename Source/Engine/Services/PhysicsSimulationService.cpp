@@ -1,4 +1,4 @@
-#include "PhysicsSimulationService.h"
+﻿#include "PhysicsSimulationService.h"
 
 #include "../Common/MathHelper.h"
 #include "../Common/LogService.h"
@@ -7,7 +7,7 @@
 #include "SceneService.h"
 #include "AssetService.h"
 #include "BVHService.h"
-#include "../RenderingServer/IRenderingServer.h"
+#include "../RenderingServer/IGraphicsService.h"
 #include "../Component/TransformComponent.h"
 #include "../Component/RigidBodyComponent.h"
 #include "../Component/CollisionShapeComponent.h"

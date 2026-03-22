@@ -1,14 +1,14 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 #include "../../Engine.h"
 
 using namespace Inno;
 
-ComPtr<ID3D12Device8> DX12RenderingServer::GetDevice()
+ComPtr<ID3D12Device8> DX12GraphicsService::GetDevice()
 {
 	return m_device.Get();
 }
 
-ComPtr<ID3D12CommandAllocator> DX12RenderingServer::GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType)
+ComPtr<ID3D12CommandAllocator> DX12GraphicsService::GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType)
 {
 	auto l_currentFrame = GetCurrentFrame();
 	switch (commandListType)
@@ -25,7 +25,7 @@ ComPtr<ID3D12CommandAllocator> DX12RenderingServer::GetGlobalCommandAllocator(D3
 	}
 }
 
-ComPtr<ID3D12CommandQueue> DX12RenderingServer::GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType)
+ComPtr<ID3D12CommandQueue> DX12GraphicsService::GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType)
 {
 	switch (commandListType)
 	{
@@ -41,7 +41,7 @@ ComPtr<ID3D12CommandQueue> DX12RenderingServer::GetGlobalCommandQueue(D3D12_COMM
 	}
 }
 
-DX12DescriptorHeapAccessor& DX12RenderingServer::GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility
+DX12DescriptorHeapAccessor& DX12GraphicsService::GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility
 	, Accessibility resourceAccessibility, TextureUsage textureUsage, bool isShaderVisible)
 {
 	if (type == GPUResourceType::Buffer)

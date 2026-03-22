@@ -1,4 +1,4 @@
-#include "VXGIRayTracingPass.h"
+﻿#include "VXGIRayTracingPass.h"
 
 #include "../../Engine/Common/Timer.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -6,7 +6,7 @@
 #include "VXGIConvertPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
@@ -15,7 +15,7 @@ using namespace Inno;
 
 bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
@@ -146,7 +146,7 @@ bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIRayTracingPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -163,7 +163,7 @@ bool VXGIRayTracingPass::Initialize()
 
 bool VXGIRayTracingPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -179,7 +179,7 @@ ObjectStatus VXGIRayTracingPass::GetStatus()
 
 bool VXGIRayTracingPass::PrepareCommandList(IRenderingContext* renderingContext)
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_renderingContext = reinterpret_cast<VXGIRayTracingPassRenderingContext*>(renderingContext);
 	
 	auto l_tick = g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond);

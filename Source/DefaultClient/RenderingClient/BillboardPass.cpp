@@ -1,4 +1,4 @@
-#include "BillboardPass.h"
+﻿#include "BillboardPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -13,7 +13,7 @@ using namespace Inno;
 
 bool BillboardPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("BillboardPass/");
 
@@ -73,7 +73,7 @@ bool BillboardPass::Setup(IServiceConfig* systemConfig)
 
 bool BillboardPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -87,7 +87,7 @@ bool BillboardPass::Initialize()
 
 bool BillboardPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_SamplerComp);
 	l_renderingServer->Delete(m_RenderPassComp);
@@ -105,7 +105,7 @@ ObjectStatus BillboardPass::GetStatus()
 
 bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_BillboardGPUBufferComp = g_Engine->Get<BillboardDrawCallService>()->GetBillboardBuffer();

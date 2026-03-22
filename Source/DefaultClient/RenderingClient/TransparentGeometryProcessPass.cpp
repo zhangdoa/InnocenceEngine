@@ -1,4 +1,4 @@
-#include "TransparentGeometryProcessPass.h"
+﻿#include "TransparentGeometryProcessPass.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/DrawCallService.h"
@@ -12,7 +12,7 @@ using namespace Inno;
 
 bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -109,7 +109,7 @@ bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 bool TransparentGeometryProcessPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_atomicCounterGPUBufferComp);
 	l_renderingServer->Initialize(m_RT0);
@@ -126,7 +126,7 @@ bool TransparentGeometryProcessPass::Initialize()
 
 bool TransparentGeometryProcessPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -142,7 +142,7 @@ ObjectStatus TransparentGeometryProcessPass::GetStatus()
 
 bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	static uint32_t zero = 0;
 	l_renderingServer->Upload(m_atomicCounterGPUBufferComp, &zero);

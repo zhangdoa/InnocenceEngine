@@ -1,4 +1,4 @@
-#include "ProbeGenerator.h"
+﻿#include "ProbeGenerator.h"
 
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -22,7 +22,7 @@ namespace Inno
     {
         void ProbeGenerator::setup()
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -76,7 +76,7 @@ namespace Inno
 
         bool ProbeGenerator::gatherStaticMeshData()
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             Log(Success, "Gathering static meshes...");
 
@@ -99,7 +99,7 @@ namespace Inno
 
         bool ProbeGenerator::generateProbeCaches(std::vector<Probe>& probes)
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             Log(Success, "Generate probe caches...");
 

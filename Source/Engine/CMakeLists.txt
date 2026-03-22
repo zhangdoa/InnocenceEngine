@@ -1,4 +1,4 @@
-add_subdirectory("Common")
+﻿add_subdirectory("Common")
 add_subdirectory("ThirdParty")
 add_subdirectory("Services")
 add_subdirectory("RenderingServer")
@@ -19,7 +19,7 @@ target_link_libraries(Engine HeadlessWindowService)
 target_link_libraries(Engine HeadlessRenderingServer)
 
 if (INNO_RENDERER_DIRECTX)
-target_link_libraries(Engine DX12RenderingServer)
+target_link_libraries(Engine DX12GraphicsService)
 endif (INNO_RENDERER_DIRECTX)
 
 if (INNO_RENDERER_VULKAN)

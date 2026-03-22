@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 
 #include "../../Common/LogServiceSpecialization.h"
 
@@ -15,7 +15,7 @@ using namespace Inno;
 
 using namespace DX12Helper;
 
-bool DX12RenderingServer::CreateHardwareResources()
+bool DX12GraphicsService::CreateHardwareResources()
 {
     bool l_result = true;
 
@@ -68,7 +68,7 @@ bool DX12RenderingServer::CreateHardwareResources()
     return l_result;
 }
 
-bool DX12RenderingServer::ReleaseHardwareResources()
+bool DX12GraphicsService::ReleaseHardwareResources()
 {
     Delete(m_RaytracingInstanceBufferComponent);
     Delete(m_ScratchBufferComponent);
@@ -165,7 +165,7 @@ bool DX12RenderingServer::ReleaseHardwareResources()
     return true;
 }
 
-bool DX12RenderingServer::GetSwapChainImages()
+bool DX12GraphicsService::GetSwapChainImages()
 {
     Log(Verbose, "GetSwapChainImages: Called with offscreen=", g_Engine->getInitConfig().isOffscreen);
     
@@ -199,7 +199,7 @@ bool DX12RenderingServer::GetSwapChainImages()
     return true;
 }
 
-bool DX12RenderingServer::AssignSwapChainImages()
+bool DX12GraphicsService::AssignSwapChainImages()
 {
     // Skip swap chain image assignment in offscreen mode
     if (g_Engine->getInitConfig().isOffscreen)
@@ -238,12 +238,12 @@ bool DX12RenderingServer::AssignSwapChainImages()
     return true;
 }
 
-bool DX12RenderingServer::ReleaseSwapChainImages()
+bool DX12GraphicsService::ReleaseSwapChainImages()
 {
     return true;
 }
 
-bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* renderPass)
+bool DX12GraphicsService::CreatePipelineStateObject(RenderPassComponent* renderPass)
 {
     bool l_result = true;
     l_result &= CreateRootSignature(renderPass);
@@ -286,7 +286,7 @@ bool DX12RenderingServer::CreatePipelineStateObject(RenderPassComponent* renderP
     return l_result;
 }
 
-bool DX12RenderingServer::CreateGraphicsPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
+bool DX12GraphicsService::CreateGraphicsPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
 {
     GenerateDepthStencilStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, PSO);
     GenerateBlendStateDesc(RenderPassComp->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, PSO);
@@ -336,7 +336,7 @@ bool DX12RenderingServer::CreateGraphicsPipelineStateObject(RenderPassComponent*
     return true;
 }
 
-bool DX12RenderingServer::CreateRaytracingPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
+bool DX12GraphicsService::CreateRaytracingPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
 {
     auto l_SPC = RenderPassComp->m_ShaderProgram;
     
@@ -451,7 +451,7 @@ bool DX12RenderingServer::CreateRaytracingPipelineStateObject(RenderPassComponen
     return true;
 }
 
-bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* renderPass)
+bool DX12GraphicsService::CreateFenceEvents(RenderPassComponent* renderPass)
 {
     bool result = true;
     for (size_t i = 0; i < renderPass->m_Semaphores.size(); i++)
@@ -487,7 +487,7 @@ bool DX12RenderingServer::CreateFenceEvents(RenderPassComponent* renderPass)
     return result;
 }
 
-bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* renderPass)
+bool DX12GraphicsService::OnOutputMergerTargetsCreated(RenderPassComponent* renderPass)
 {
     auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
     if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
@@ -544,10 +544,10 @@ bool DX12RenderingServer::OnOutputMergerTargetsCreated(RenderPassComponent* rend
     return true;
 }
 
-bool DX12RenderingServer::BeginFrame()
+bool DX12GraphicsService::BeginFrame()
 {
     // Reset command allocators for the current frame
-    // Safe to reset because IRenderingServer::Update() ensures GPU synchronization
+    // Safe to reset because IGraphicsService::Update() ensures GPU synchronization
     // via WaitOnCPU() calls before calling BeginFrame()
     // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
     // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
@@ -556,7 +556,7 @@ bool DX12RenderingServer::BeginFrame()
     return true;
 }
 
-bool DX12RenderingServer::PrepareRayTracing(CommandListComponent* commandList)
+bool DX12GraphicsService::PrepareRayTracing(CommandListComponent* commandList)
 {
     auto l_currentFrame = GetCurrentFrame();
     auto l_instanceDescList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[l_currentFrame]);
@@ -619,7 +619,7 @@ bool DX12RenderingServer::PrepareRayTracing(CommandListComponent* commandList)
     return true;
 }
 
-bool DX12RenderingServer::PresentImpl()
+bool DX12GraphicsService::PresentImpl()
 {
     // Skip present in offscreen mode - no swap chain to present to
     if (g_Engine->getInitConfig().isOffscreen)
@@ -632,7 +632,7 @@ bool DX12RenderingServer::PresentImpl()
     return true;
 }
 
-bool DX12RenderingServer::EndFrame()
+bool DX12GraphicsService::EndFrame()
 {
     // Skip frame management in offscreen mode - no swap chain frames
     if (g_Engine->getInitConfig().isOffscreen)
@@ -647,7 +647,7 @@ bool DX12RenderingServer::EndFrame()
     return true;
 }
 
-bool DX12RenderingServer::ResizeImpl()
+bool DX12GraphicsService::ResizeImpl()
 {
     // Skip resize in offscreen mode - no swap chain to resize
     if (g_Engine->getInitConfig().isOffscreen)
@@ -677,7 +677,7 @@ bool DX12RenderingServer::ResizeImpl()
     return true;
 }
 
-bool DX12RenderingServer::OnSceneLoadingStart()
+bool DX12GraphicsService::OnSceneLoadingStart()
 {
     for (size_t i = 0; i < m_RaytracingInstanceDescs.size(); i++)
     {
@@ -692,7 +692,7 @@ bool DX12RenderingServer::OnSceneLoadingStart()
     return true;
 }
 
-bool DX12RenderingServer::BeginCapture()
+bool DX12GraphicsService::BeginCapture()
 {
     if (m_graphicsAnalysis != nullptr)
     {
@@ -703,7 +703,7 @@ bool DX12RenderingServer::BeginCapture()
     return false;
 }
 
-bool DX12RenderingServer::EndCapture()
+bool DX12GraphicsService::EndCapture()
 {
     if (m_graphicsAnalysis != nullptr)
     {

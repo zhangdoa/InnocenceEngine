@@ -1,4 +1,4 @@
-#include "OpaqueCullingPass.h"
+﻿#include "OpaqueCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -10,7 +10,7 @@ using namespace Inno;
 
 bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("OpaqueCullingPass/");
 
@@ -72,7 +72,7 @@ bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 
 bool OpaqueCullingPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -86,7 +86,7 @@ bool OpaqueCullingPass::Initialize()
 
 bool OpaqueCullingPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_IndirectDrawCommandBuffer);
 	l_renderingServer->Delete(m_RenderPassComp);
@@ -116,7 +116,7 @@ bool OpaqueCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (l_modelCount == 0)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);

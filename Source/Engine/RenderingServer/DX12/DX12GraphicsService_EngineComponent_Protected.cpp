@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 #include <d3d12.h>
 #include <dxgiformat.h>
 
@@ -19,7 +19,7 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
 	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 
@@ -200,7 +200,7 @@ bool DX12RenderingServer::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textureData)
+bool DX12GraphicsService::InitializeImpl(TextureComponent* texture, void* textureData)
 {
 	texture->m_GPUResourceType = GPUResourceType::Image;
 	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
@@ -393,7 +393,7 @@ bool DX12RenderingServer::InitializeImpl(TextureComponent* texture, void* textur
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent* shaderProgram)
+bool DX12GraphicsService::InitializeImpl(ShaderProgramComponent* shaderProgram)
 {
 #ifdef USE_DXIL
 	if (shaderProgram->m_ShaderFilePaths.m_VSPath != "")
@@ -525,7 +525,7 @@ bool DX12RenderingServer::InitializeImpl(ShaderProgramComponent* shaderProgram)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(SamplerComponent* sampler)
+bool DX12GraphicsService::InitializeImpl(SamplerComponent* sampler)
 {
 	sampler->m_GPUResourceType = GPUResourceType::Sampler;
 
@@ -556,7 +556,7 @@ bool DX12RenderingServer::InitializeImpl(SamplerComponent* sampler)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 {
 	auto l_initialState = D3D12_RESOURCE_STATE_COMMON;
 	auto l_isRaytracingAS = gpuBuffer->m_Usage == GPUBufferUsage::TLAS || gpuBuffer->m_Usage == GPUBufferUsage::ScratchBuffer;
@@ -694,7 +694,7 @@ bool DX12RenderingServer::InitializeImpl(GPUBufferComponent* gpuBuffer)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(EntityID Entity)
+bool DX12GraphicsService::InitializeImpl(EntityID Entity)
 {
 	auto* l_world = g_Engine->Get<EntityRegistry>()->Get<WorldTransformComponent>(Entity);
 	Mat4 transformMatrix = l_world ? l_world->m_WorldMatrix : Mat4{};
@@ -744,7 +744,7 @@ bool DX12RenderingServer::InitializeImpl(EntityID Entity)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeImpl(CommandListComponent* commandList)
+bool DX12GraphicsService::InitializeImpl(CommandListComponent* commandList)
 {
 	if (!commandList)
 	{
@@ -802,7 +802,7 @@ bool DX12RenderingServer::InitializeImpl(CommandListComponent* commandList)
 	return true;
 }
 
-bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh)
+bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh)
 {
 	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
 	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
@@ -818,14 +818,14 @@ bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, MeshCom
 	return true;
 }
 
-bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, TextureComponent* texture)
+bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, TextureComponent* texture)
 {
 	// Texture upload is handled during initialization with centralized resources
 	// This function is kept for interface compatibility
 	return true;
 }
 
-bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
 {
 	auto l_mesh = reinterpret_cast<GPUBufferComponent*>(gpuBuffer);
 	auto l_currentFrame = GetCurrentFrame();
@@ -836,7 +836,7 @@ bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, GPUBuff
 	return UploadToGPU(commandList, l_mappedMemory, l_deviceMemory, l_mesh);
 }
 
-bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent)
+bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* GPUBufferComponent)
 {
 	if (!deviceMemory->m_DefaultHeapBuffer)
 		return true;
@@ -848,7 +848,7 @@ bool DX12RenderingServer::UploadToGPU(CommandListComponent* commandList, DX12Map
 	return true;
 }
 
-bool DX12RenderingServer::Clear(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::Clear(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
@@ -869,7 +869,7 @@ bool DX12RenderingServer::Clear(CommandListComponent* commandList, GPUBufferComp
 	return true;
 }
 
-bool DX12RenderingServer::Copy(CommandListComponent* commandList, TextureComponent* sourceTexture, TextureComponent* destinationTexture)
+bool DX12GraphicsService::Copy(CommandListComponent* commandList, TextureComponent* sourceTexture, TextureComponent* destinationTexture)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
@@ -888,7 +888,7 @@ bool DX12RenderingServer::Copy(CommandListComponent* commandList, TextureCompone
 	return true;
 }
 
-bool DX12RenderingServer::Clear(CommandListComponent* commandList, TextureComponent* texture)
+bool DX12GraphicsService::Clear(CommandListComponent* commandList, TextureComponent* texture)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();

@@ -1,4 +1,4 @@
-#include "SurfelGITestPass.h"
+﻿#include "SurfelGITestPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -18,7 +18,7 @@ using namespace Inno;
 
 bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_probeSphereMeshGPUBufferComp = l_renderingServer->AddGPUBufferComponent("ProbeSphereMeshGPUBuffer/");
 	m_probeSphereMeshGPUBufferComp->m_ElementCount = 4096;
@@ -90,7 +90,7 @@ bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 
 bool SurfelGITestPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	//m_RenderPassComp->m_DepthStencilRenderTarget = OpaquePass::Get().GetRenderPassComp()->m_DepthStencilRenderTarget;
 
@@ -111,7 +111,7 @@ ObjectStatus SurfelGITestPass::GetStatus()
 
 bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_probes = GIDataLoader::GetProbes();
 
@@ -237,7 +237,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 bool SurfelGITestPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 

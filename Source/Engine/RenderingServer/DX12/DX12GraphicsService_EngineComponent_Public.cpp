@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -15,7 +15,7 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-std::optional<uint32_t> DX12RenderingServer::GetIndex(TextureComponent* texture, Accessibility bindingAccessibility)
+std::optional<uint32_t> DX12GraphicsService::GetIndex(TextureComponent* texture, Accessibility bindingAccessibility)
 {
     if (!texture)
         return std::nullopt;
@@ -40,12 +40,12 @@ std::optional<uint32_t> DX12RenderingServer::GetIndex(TextureComponent* texture,
     return std::nullopt;
 }
 
-Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 DX12GraphicsService::ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y)
 {
     return Vec4();
 }
 
-std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
+std::vector<Vec4> DX12GraphicsService::ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp)
 {
     auto textureDesc = TextureComp->m_TextureDesc;
     auto l_frameIndex = textureDesc.IsMultiBuffer ? GetCurrentFrame() : 0;
@@ -226,7 +226,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassComponent*
     return l_result;
 }
 
-bool DX12RenderingServer::GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList)
+bool DX12GraphicsService::GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList)
 {
     if (!commandList)
     {

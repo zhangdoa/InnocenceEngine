@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Common/ClassTemplate.h"
 #include "Common/LogService.h"
 #include "Interface/IService.h"
@@ -23,7 +23,7 @@ namespace Inno
 	};
 
 	class IWindowService;
-	class IRenderingServer;
+	class IGraphicsService;
 
 	class EngineImpl;
 	class Engine
@@ -48,7 +48,7 @@ namespace Inno
 
 		InitConfig getInitConfig();
 		const FixedSizeString<128>& GetApplicationName();
-		IRenderingServer* getRenderingServer();
+		IGraphicsService* getGraphicsService();
 		IWindowService* getWindowService();
 		float getTickTime();
 
@@ -84,7 +84,7 @@ namespace Inno
 		
 		// Platform-specific system creation helpers
 		IWindowService* CreateWindowSystem(bool isHeadless);
-		IRenderingServer* CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType);
+		IGraphicsService* CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType);
 
 		EngineImpl* m_pImpl;
 
@@ -100,8 +100,8 @@ namespace Inno
 		if constexpr (std::is_same_v<T, IWindowService>) {
 			return reinterpret_cast<T*>(getWindowService());
 		}
-		else if constexpr (std::is_same_v<T, IRenderingServer>) {
-			return reinterpret_cast<T*>(getRenderingServer());
+		else if constexpr (std::is_same_v<T, IGraphicsService>) {
+			return reinterpret_cast<T*>(getGraphicsService());
 		}
 		else {
 			// Handle regular IService classes

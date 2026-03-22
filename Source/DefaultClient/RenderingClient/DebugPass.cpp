@@ -1,4 +1,4 @@
-#include "DebugPass.h"
+﻿#include "DebugPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/DebugDrawCallService.h"
@@ -16,7 +16,7 @@ using namespace Inno;
 
 bool DebugPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	auto l_cameraFrustumMeshCount = 4;
 	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
@@ -101,7 +101,7 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 
 bool DebugPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 	{
@@ -128,7 +128,7 @@ bool DebugPass::Update()
 
 bool DebugPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -144,7 +144,7 @@ ObjectStatus DebugPass::GetStatus()
 
 bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 	
@@ -172,7 +172,7 @@ DebugPerObjectConstantBuffer DebugPass::AddAABB(const AABB& aabb)
 
 bool DebugPass::AddBVHNode(const BVHNode& node)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	static bool drawIntermediateBB = false;
 	if(node.m_Entity == INVALID_ENTITY && !drawIntermediateBB)

@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "../Engine/Interface/IRenderingClient.h"
-#include "../Engine/RenderingServer/IRenderingServer.h"
+#include "../Engine/RenderingServer/IGraphicsService.h"
 
 namespace Inno
 {

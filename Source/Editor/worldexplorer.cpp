@@ -1,4 +1,4 @@
-#include "worldexplorer.h"
+﻿#include "worldexplorer.h"
 
 #include "../Engine/Engine.h"
 #include "../Engine/Common/ComponentHeaders.h"
@@ -266,7 +266,7 @@ void WorldExplorer::destroyComponent(Component *component)
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component)); }
     else if (componentType == TextureComponent::GetTypeID())
     {
-        g_Engine->getRenderingServer()->Delete(reinterpret_cast<TextureComponent*>(component));
+        g_Engine->getGraphicsService()->Delete(reinterpret_cast<TextureComponent*>(component));
     }
     // TODO Phase2-migrate: else if (componentType == SkeletonComponent::GetTypeID())
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component)); }

@@ -1,4 +1,4 @@
-#include "VXGIMultiBouncePass.h"
+﻿#include "VXGIMultiBouncePass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
@@ -6,7 +6,7 @@
 #include "VXGIConvertPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
@@ -15,7 +15,7 @@ using namespace Inno;
 
 bool VXGIMultiBouncePass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
@@ -88,7 +88,7 @@ bool VXGIMultiBouncePass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIMultiBouncePass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -102,7 +102,7 @@ bool VXGIMultiBouncePass::Initialize()
 
 bool VXGIMultiBouncePass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -118,7 +118,7 @@ ObjectStatus VXGIMultiBouncePass::GetStatus()
 
 bool VXGIMultiBouncePass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	auto l_renderingContext = reinterpret_cast<VXGIMultiBouncePassRenderingContext*>(renderingContext);
 	auto l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(l_renderingContext);

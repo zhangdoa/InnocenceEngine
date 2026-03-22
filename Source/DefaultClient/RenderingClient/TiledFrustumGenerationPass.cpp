@@ -1,4 +1,4 @@
-#include "TiledFrustumGenerationPass.h"
+﻿#include "TiledFrustumGenerationPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -9,7 +9,7 @@ using namespace Inno;
 
 bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";
@@ -55,7 +55,7 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 
 bool TiledFrustumGenerationPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
@@ -73,7 +73,7 @@ bool TiledFrustumGenerationPass::Initialize()
 
 bool TiledFrustumGenerationPass::Update()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	DispatchParamsConstantBuffer l_tiledFrustumWorkload;
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;
@@ -86,7 +86,7 @@ bool TiledFrustumGenerationPass::Update()
 
 bool TiledFrustumGenerationPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_TiledFrustum);
 	l_renderingServer->Delete(m_DispatchParamsGPUBufferComp);
@@ -111,7 +111,7 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	if (m_TiledFrustum->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
@@ -142,7 +142,7 @@ GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 
 bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 

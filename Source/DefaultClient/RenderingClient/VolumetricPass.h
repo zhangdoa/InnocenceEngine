@@ -1,5 +1,5 @@
-#pragma once
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+﻿#pragma once
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 namespace VolumetricPass

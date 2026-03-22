@@ -1,4 +1,4 @@
-#include "WinVKWindowSurface.h"
+﻿#include "WinVKWindowSurface.h"
 #include "../WinWindowService.h"
 #include "../../../Common/LogService.h"
 #include "../../../Common/TaskScheduler.h"
@@ -27,7 +27,7 @@ bool WinVKWindowSurface::Initialize()
 	l_createInfo.hinstance = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationInstance();
 	l_createInfo.hwnd = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle();
 
-	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_Engine->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_Engine->getGraphicsService());
 	auto l_VkInstance = reinterpret_cast<VkInstance>(l_renderingServer->GetVkInstance());
 	auto l_VkSurface = reinterpret_cast<VkSurfaceKHR*>(l_renderingServer->GetVkSurface());
 

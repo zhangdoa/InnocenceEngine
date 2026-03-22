@@ -1,4 +1,4 @@
-#include "LuminanceHistogramPass.h"
+﻿#include "LuminanceHistogramPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -9,7 +9,7 @@ using namespace Inno;
 
 bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -66,7 +66,7 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceHistogramPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -81,7 +81,7 @@ bool LuminanceHistogramPass::Initialize()
 
 bool LuminanceHistogramPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_luminanceHistogram);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -111,7 +111,7 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 	if (m_luminanceHistogram->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 

@@ -1,4 +1,4 @@
-#include "FinalBlendPass.h"
+﻿#include "FinalBlendPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -13,7 +13,7 @@ using namespace Inno;
 
 bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("FinalBlendPass/");
 
@@ -96,7 +96,7 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 bool FinalBlendPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -110,7 +110,7 @@ bool FinalBlendPass::Initialize()
 
 bool FinalBlendPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -140,7 +140,7 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (l_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;	
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -187,7 +187,7 @@ GPUResourceComponent* FinalBlendPass::GetResult()
 
 bool FinalBlendPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_Result)
 		l_renderingServer->Delete(m_Result);

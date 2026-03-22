@@ -1,4 +1,4 @@
-#include "TemplateAssetService.h"
+﻿#include "TemplateAssetService.h"
 
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
@@ -72,7 +72,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto renderingServer = g_Engine->getRenderingServer();
+            auto renderingServer = g_Engine->getGraphicsService();
 
             auto loadOrCreateTexture = [&](const char* name, const char* texturePath, TextureComponent*& texturePtr) -> bool {
                 auto l_componentName = std::string(name) + "." + TextureComponent::GetTypeName();
@@ -174,7 +174,7 @@ bool TemplateAssetServiceImpl::UnloadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Termination Task", ITask::Type::Once, 2);
     auto l_DefaultAssetTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             l_renderingServer->Delete(m_basicNormalTexture);
             l_renderingServer->Delete(m_basicAlbedoTexture);

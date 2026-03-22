@@ -1,9 +1,9 @@
-#pragma once
-#include "../IRenderingServer.h"
+﻿#pragma once
+#include "../IGraphicsService.h"
 
 namespace Inno
 {
-	class HeadlessRenderingServer : public IRenderingServer
+	class HeadlessRenderingServer : public IGraphicsService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(HeadlessRenderingServer);

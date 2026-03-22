@@ -1,4 +1,4 @@
-#include "TransparentBlendPass.h"
+﻿#include "TransparentBlendPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -14,7 +14,7 @@ using namespace Inno;
 
 bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	
@@ -71,7 +71,7 @@ bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 
 bool TransparentBlendPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -83,7 +83,7 @@ bool TransparentBlendPass::Initialize()
 
 bool TransparentBlendPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -99,7 +99,7 @@ ObjectStatus TransparentBlendPass::GetStatus()
 
 bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	GPUResourceComponent* l_canvas = nullptr;
 
@@ -152,7 +152,7 @@ GPUResourceComponent* TransparentBlendPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_renderingServer = g_Engine->getGraphicsService();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

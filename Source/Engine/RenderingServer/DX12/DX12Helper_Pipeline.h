@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "../../Common/LogService.h"
 
 #include "../../Component/RenderPassComponent.h"
-#include "../IRenderingServer.h"
+#include "../IGraphicsService.h"
 
 #include "DX12Headers.h"
 

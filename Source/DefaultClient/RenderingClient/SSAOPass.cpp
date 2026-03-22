@@ -1,4 +1,4 @@
-#include "SSAOPass.h"
+﻿#include "SSAOPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -11,7 +11,7 @@ using namespace Inno;
 
 bool SSAOPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("SSAONoisePass/");
 
@@ -148,7 +148,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 
 bool SSAOPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -166,7 +166,7 @@ bool SSAOPass::Initialize()
 
 bool SSAOPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_NoiseTexture);
@@ -199,7 +199,7 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_NoiseTexture->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -245,7 +245,7 @@ GPUResourceComponent* SSAOPass::GetResult()
 
 bool SSAOPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_Result)
 		l_renderingServer->Delete(m_Result);

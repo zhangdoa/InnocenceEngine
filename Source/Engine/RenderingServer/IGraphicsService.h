@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Interface/IService.h"
 
 #include "../Common/ThreadSafeQueue.h"
@@ -18,10 +18,10 @@
 
 namespace Inno
 {
-	class IRenderingServer : public IService
+	class IGraphicsService : public IService
 	{
 	public:
-		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingServer);
+		INNO_CLASS_INTERFACE_NON_COPYABLE(IGraphicsService);
 
 		bool Setup(IServiceConfig* systemConfig) override;
         bool Initialize() override;

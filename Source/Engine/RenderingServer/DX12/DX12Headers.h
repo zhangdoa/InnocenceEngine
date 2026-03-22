@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <wrl/client.h>
 #include "directx/d3dx12.h"
 #include <d3d12.h>
@@ -59,7 +59,7 @@ namespace Inno
 	
 	class DX12DescriptorHeapAccessor
 	{
-		friend class DX12RenderingServer;
+		friend class DX12GraphicsService;
 		
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetHeap() const { return m_Heap; }

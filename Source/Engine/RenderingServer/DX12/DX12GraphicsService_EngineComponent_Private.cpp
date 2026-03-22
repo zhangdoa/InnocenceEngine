@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -17,7 +17,7 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(ComPtr<ID3D12DescriptorHeap> descHeap, D3D12_DESCRIPTOR_HEAP_DESC desc
+DX12DescriptorHeapAccessor DX12GraphicsService::CreateDescriptorHeapAccessor(ComPtr<ID3D12DescriptorHeap> descHeap, D3D12_DESCRIPTOR_HEAP_DESC desc
 	, uint32_t maxDescriptors, uint32_t descriptorSize, const DescriptorHandle& firstHandle, bool shaderVisible, const wchar_t* name)
 {
 	DX12DescriptorHeapAccessor l_descHeapAccessor = {};
@@ -38,7 +38,7 @@ DX12DescriptorHeapAccessor DX12RenderingServer::CreateDescriptorHeapAccessor(Com
 	return l_descHeapAccessor;
 }
 
-bool DX12RenderingServer::CreateSRV(TextureComponent* texture, uint32_t mipSlice)
+bool DX12GraphicsService::CreateSRV(TextureComponent* texture, uint32_t mipSlice)
 {
 	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
 	auto l_desc = GetSRVDesc(texture->m_TextureDesc, l_textureDesc, mipSlice);
@@ -65,7 +65,7 @@ bool DX12RenderingServer::CreateSRV(TextureComponent* texture, uint32_t mipSlice
 	return true;
 }
 
-bool DX12RenderingServer::CreateUAV(TextureComponent* texture, uint32_t mipSlice)
+bool DX12GraphicsService::CreateUAV(TextureComponent* texture, uint32_t mipSlice)
 {
 	auto l_textureDesc = GetDX12TextureDesc(texture->m_TextureDesc);
 	auto l_desc = GetUAVDesc(texture->m_TextureDesc, l_textureDesc, mipSlice);
@@ -102,7 +102,7 @@ bool DX12RenderingServer::CreateUAV(TextureComponent* texture, uint32_t mipSlice
 	return true;
 }
 
-bool DX12RenderingServer::CreateSRV(GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::CreateSRV(GPUBufferComponent* gpuBuffer)
 {
 	bool l_isRaytracingAS = gpuBuffer->m_Usage == GPUBufferUsage::TLAS || gpuBuffer->m_Usage == GPUBufferUsage::ScratchBuffer;
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_desc = {};
@@ -126,7 +126,7 @@ bool DX12RenderingServer::CreateSRV(GPUBufferComponent* gpuBuffer)
 	return true;
 }
 
-bool DX12RenderingServer::CreateUAV(GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::CreateUAV(GPUBufferComponent* gpuBuffer)
 {
 	bool l_isRaytracingAS = gpuBuffer->m_Usage == GPUBufferUsage::TLAS || gpuBuffer->m_Usage == GPUBufferUsage::ScratchBuffer;
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
@@ -164,7 +164,7 @@ bool DX12RenderingServer::CreateUAV(GPUBufferComponent* gpuBuffer)
 	return true;
 }
 
-bool DX12RenderingServer::CreateCBV(GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::CreateCBV(GPUBufferComponent* gpuBuffer)
 {
 	auto& l_descHeapAccessor = GetDescriptorHeapAccessor(gpuBuffer->m_GPUResourceType, Accessibility::ReadOnly, Accessibility::ReadOnly);
 
@@ -187,7 +187,7 @@ bool DX12RenderingServer::CreateCBV(GPUBufferComponent* gpuBuffer)
 	return true;
 }
 
-bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassComp)
+bool DX12GraphicsService::CreateRootSignature(RenderPassComponent* RenderPassComp)
 {
 	if (RenderPassComp->m_ResourceBindingLayoutDescs.empty())
 		Log(Verbose, "Creating empty RootSignature for ", RenderPassComp->m_InstanceName);
@@ -347,7 +347,7 @@ bool DX12RenderingServer::CreateRootSignature(RenderPassComponent* RenderPassCom
 	return true;
 }
 
-D3D12_DESCRIPTOR_RANGE1 DX12RenderingServer::GetDescriptorRange(RenderPassComponent* RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc)
+D3D12_DESCRIPTOR_RANGE1 DX12GraphicsService::GetDescriptorRange(RenderPassComponent* RenderPassComp, const ResourceBindingLayoutDesc& resourceBinderLayoutDesc)
 {
 	auto& l_descriptorAccessor = GetDescriptorHeapAccessor(resourceBinderLayoutDesc.m_GPUResourceType, resourceBinderLayoutDesc.m_BindingAccessibility
 		, resourceBinderLayoutDesc.m_ResourceAccessibility, resourceBinderLayoutDesc.m_TextureUsage);
@@ -409,7 +409,7 @@ D3D12_DESCRIPTOR_RANGE1 DX12RenderingServer::GetDescriptorRange(RenderPassCompon
 	return l_range;
 }
 
-bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList)
+bool DX12GraphicsService::SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	if (!l_commandList)
@@ -424,7 +424,7 @@ bool DX12RenderingServer::SetDescriptorHeaps(RenderPassComponent* renderPass, Co
 	return true;
 }
 
-bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList)
+bool DX12GraphicsService::SetRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
@@ -464,7 +464,7 @@ bool DX12RenderingServer::SetRenderTargets(RenderPassComponent* renderPass, Comm
 	return true;
 }
 
-bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, CommandListComponent* commandList, DX12PipelineStateObject* PSO)
+bool DX12GraphicsService::PreparePipeline(RenderPassComponent* renderPass, CommandListComponent* commandList, DX12PipelineStateObject* PSO)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
@@ -504,7 +504,7 @@ bool DX12RenderingServer::PreparePipeline(RenderPassComponent* renderPass, Comma
 	return true;
 }
 
-bool DX12RenderingServer::Open(CommandListComponent* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject)
+bool DX12GraphicsService::Open(CommandListComponent* commandList, GPUEngineType GPUEngineType, IPipelineStateObject* pipelineStateObject)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_pipelineStateObject = reinterpret_cast<DX12PipelineStateObject*>(pipelineStateObject);
@@ -533,7 +533,7 @@ bool DX12RenderingServer::Open(CommandListComponent* commandList, GPUEngineType 
 	return true;
 }
 
-bool DX12RenderingServer::Close(CommandListComponent* commandList, GPUEngineType GPUEngineType)
+bool DX12GraphicsService::Close(CommandListComponent* commandList, GPUEngineType GPUEngineType)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	l_commandList->Close();

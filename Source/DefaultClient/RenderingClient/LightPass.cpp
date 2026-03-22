@@ -1,4 +1,4 @@
-#include "LightPass.h"
+﻿#include "LightPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -21,7 +21,7 @@ using namespace Inno;
 
 bool LightPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("LightPass/");
 
@@ -197,7 +197,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 bool LightPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -213,7 +213,7 @@ bool LightPass::Initialize()
 
 bool LightPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_LuminanceResult);
 	l_renderingServer->Delete(m_IlluminanceResult);
@@ -250,7 +250,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (BRDFLUTMSPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -326,7 +326,7 @@ TextureComponent* LightPass::GetIlluminanceResult()
 
 bool LightPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_LuminanceResult)
 		l_renderingServer->Delete(m_LuminanceResult);

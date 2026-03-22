@@ -1,15 +1,15 @@
-#include "BRDFLUTPass.h"
+﻿#include "BRDFLUTPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
 bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("BRDFLUTPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp/";
@@ -57,7 +57,7 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 
 bool BRDFLUTPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -72,7 +72,7 @@ bool BRDFLUTPass::Initialize()
 
 bool BRDFLUTPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -95,7 +95,7 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);

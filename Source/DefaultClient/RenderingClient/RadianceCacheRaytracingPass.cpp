@@ -1,4 +1,4 @@
-#include "RadianceCacheRaytracingPass.h"
+﻿#include "RadianceCacheRaytracingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -14,7 +14,7 @@ using namespace Inno;
 
 bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_SamplerComp = l_renderingServer->AddSamplerComponent("RadianceCacheRaytracingPass/");
 
@@ -148,7 +148,7 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheRaytracingPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -163,7 +163,7 @@ bool RadianceCacheRaytracingPass::Initialize()
 
 bool RadianceCacheRaytracingPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_SamplerComp);	
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -189,7 +189,7 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	if (l_result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 

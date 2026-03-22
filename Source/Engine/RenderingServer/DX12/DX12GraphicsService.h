@@ -1,16 +1,16 @@
-#pragma once
-#include "../IRenderingServer.h"
+﻿#pragma once
+#include "../IGraphicsService.h"
 #include "DX12Headers.h"
 
 namespace Inno
 {
-    class DX12RenderingServer : public IRenderingServer
+    class DX12GraphicsService : public IGraphicsService
     {
     public:
-        INNO_CLASS_CONCRETE_NON_COPYABLE(DX12RenderingServer);
+        INNO_CLASS_CONCRETE_NON_COPYABLE(DX12GraphicsService);
 
-        // Inherited via IRenderingServer
-        // In DX12RenderingServer_ComponentPool.cpp
+        // Inherited via IGraphicsService
+        // In DX12GraphicsService_ComponentPool.cpp
         IPipelineStateObject* AddPipelineStateObject() override;
         ISemaphore* AddSemaphore() override;
         bool Add(IOutputMergerTarget*& rhs) override;
@@ -27,7 +27,7 @@ namespace Inno
         virtual	bool Delete(ISemaphore* rhs) override;
         virtual bool Delete(IOutputMergerTarget* rhs) override;
 
-        // In DX12RenderingServer_CommandListAPI.cpp
+        // In DX12GraphicsService_CommandListAPI.cpp
         bool BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
         bool ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index = -1) override;
         bool BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount) override;
@@ -48,18 +48,18 @@ namespace Inno
 
         bool DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) override;
 
-        // In DX12RenderingServer_EngineComponent_Public.cpp
+        // In DX12GraphicsService_EngineComponent_Public.cpp
         std::optional<uint32_t> GetIndex(TextureComponent* texture, Accessibility bindingAccessibility) override;
         Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) override;
         std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* TextureComp) override;
         bool GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList = nullptr) override;
 
-        // In DX12RenderingServer_GraphicsDevice_Protected.cpp
+        // In DX12GraphicsService_GraphicsDevice_Protected.cpp
         bool BeginCapture() override;
         bool EndCapture() override;
         bool HasGPUError() const override;
 
-        // In DX12RenderingServer_APISpecific.cpp
+        // In DX12GraphicsService_APISpecific.cpp
         ComPtr<ID3D12Device8> GetDevice();
         ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType);
         ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
@@ -67,7 +67,7 @@ namespace Inno
             , Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
 
     protected:
-        // In DX12RenderingServer_ComponentPool.cpp
+        // In DX12GraphicsService_ComponentPool.cpp
         bool InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
         bool InitializeImpl(TextureComponent* texture, void* textureData) override;
         bool InitializeImpl(ShaderProgramComponent* shaderProgram) override;
@@ -89,7 +89,7 @@ namespace Inno
         bool InitializePool() override;
         bool TerminatePool() override;
 
-        // In DX12RenderingServer_GraphicsDevice_Protected.cpp
+        // In DX12GraphicsService_GraphicsDevice_Protected.cpp
         bool CreateHardwareResources() override;
         bool ReleaseHardwareResources() override;
         bool GetSwapChainImages() override;
@@ -111,7 +111,7 @@ namespace Inno
 
     private:
         // Global initialization functions
-        // In DX12RenderingServer_GraphicsDevice_Private.cpp
+        // In DX12GraphicsService_GraphicsDevice_Private.cpp
         bool CreateDebugCallback();
         bool CreatePhysicalDevices();
         bool CreateGlobalCommandQueues();
@@ -122,7 +122,7 @@ namespace Inno
         bool CreateSwapChain();
 
         // APIs for DX12 objects
-        // In DX12RenderingServer_DX12Object.cpp
+        // In DX12GraphicsService_DX12Object.cpp
         ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, const char* name = "");
         ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
         ComPtr<ID3D12Resource> CreateReadBackHeapBuffer(UINT64 size, const char* name = "");
@@ -133,7 +133,7 @@ namespace Inno
         ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc, const wchar_t* name = L"");
 
         // APIs for engine components
-        // In DX12RenderingServer_EngineComponent_Private.cpp
+        // In DX12GraphicsService_EngineComponent_Private.cpp
         DX12DescriptorHeapAccessor CreateDescriptorHeapAccessor
         (
             ComPtr<ID3D12DescriptorHeap> descHeap,

@@ -1,4 +1,4 @@
-#include "VXGILightPass.h"
+﻿#include "VXGILightPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -14,7 +14,7 @@ using namespace Inno;
 
 bool VXGILightPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
@@ -82,7 +82,7 @@ bool VXGILightPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGILightPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -95,7 +95,7 @@ bool VXGILightPass::Initialize()
 
 bool VXGILightPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -111,7 +111,7 @@ ObjectStatus VXGILightPass::GetStatus()
 
 bool VXGILightPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_renderingContext = reinterpret_cast<VXGILightPassRenderingContext*>(renderingContext);
 	auto l_numThreadGroup = l_renderingContext->m_resolution / 8;
 

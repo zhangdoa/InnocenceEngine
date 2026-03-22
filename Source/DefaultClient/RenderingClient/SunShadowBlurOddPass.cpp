@@ -1,4 +1,4 @@
-#include "SunShadowBlurOddPass.h"
+﻿#include "SunShadowBlurOddPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -14,7 +14,7 @@ using namespace Inno;
 
 bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
@@ -74,7 +74,7 @@ bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowBlurOddPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -86,7 +86,7 @@ bool SunShadowBlurOddPass::Initialize()
 
 bool SunShadowBlurOddPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -102,7 +102,7 @@ ObjectStatus SunShadowBlurOddPass::GetStatus()
 
 bool SunShadowBlurOddPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
 	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -137,7 +137,7 @@ GPUResourceComponent* SunShadowBlurOddPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_renderingServer = g_Engine->getGraphicsService();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

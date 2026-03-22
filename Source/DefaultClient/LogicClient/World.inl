@@ -1,4 +1,4 @@
-#include "../../Engine/Services/EntityRegistry.h"
+﻿#include "../../Engine/Services/EntityRegistry.h"
 #include "../../Engine/Services/ComponentManager.h"
 #include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -10,7 +10,7 @@
 #include "../../Engine/Component/CameraComponent.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
@@ -102,7 +102,7 @@ namespace Inno
 						0.0f);
 				l_Transform.m_LocalPos = Vec3(l_pos.x, l_pos.y, l_pos.z);
 				// TODO: load mesh and material via AssetService once AssetService is migrated
-				g_Engine->getRenderingServer()->Initialize(l_Entity);
+				g_Engine->getGraphicsService()->Initialize(l_Entity);
 			}
 		}
 
@@ -156,7 +156,7 @@ namespace Inno
 					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 					l_randomRotDelta(m_generator));
 				// TODO: load mesh and material via AssetService once AssetService is migrated
-				g_Engine->getRenderingServer()->Initialize(l_Entity);
+				g_Engine->getGraphicsService()->Initialize(l_Entity);
 			}
 		}
 
@@ -200,7 +200,7 @@ namespace Inno
 					Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
 					l_randomRotDelta(m_generator));
 				// TODO: load mesh and material via AssetService once AssetService is migrated
-				g_Engine->getRenderingServer()->Initialize(l_Entity);
+				g_Engine->getGraphicsService()->Initialize(l_Entity);
 			}
 		}
 
@@ -230,7 +230,7 @@ namespace Inno
 			l_Transform.m_LocalScale = Vec3(1.0f * i, 1.0f * i, 0.5f);
 			l_Transform.m_LocalPos = Vec3(0.0f, 2.0f * i, -(i * l_breadthInterval) - 4.0f);
 			// TODO: load mesh and material via AssetService once AssetService is migrated
-			g_Engine->getRenderingServer()->Initialize(l_Entity);
+			g_Engine->getGraphicsService()->Initialize(l_Entity);
 		}
 
 		return true;
@@ -260,7 +260,7 @@ namespace Inno
 			l_Transform.m_LocalScale = Vec3(4.0f, 4.0f, 4.0f);
 			l_Transform.m_LocalPos = Vec3(l_randomPosDelta(m_generator), 2.0f, l_randomPosDelta(m_generator));
 			// TODO: load mesh and material via AssetService once AssetService is migrated
-			g_Engine->getRenderingServer()->Initialize(l_Entity);
+			g_Engine->getGraphicsService()->Initialize(l_Entity);
 		}
 
 		return true;

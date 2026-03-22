@@ -1,4 +1,4 @@
-#include "PerFrameDataService.h"
+﻿#include "PerFrameDataService.h"
 
 #include "../Common/LogService.h"
 #include "CameraService.h"
@@ -54,21 +54,21 @@ float PerFrameDataServiceImpl::RadicalInverse(uint32_t n, uint32_t base)
 
 GPUBufferComponent* PerFrameDataServiceImpl::GetCurrentFramePerFrameBuffer()
 {
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_PerFrameCBufferGPUBufferComp : m_PerFrameCBufferPrevGPUBufferComp;
 }
 
 GPUBufferComponent* PerFrameDataServiceImpl::GetPreviousFramePerFrameBuffer()
 {
-	auto l_frameCount = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
 }
 
 bool PerFrameDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_PerFrameCBufferGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBuffer/");
 	m_PerFrameCBufferPrevGPUBufferComp = l_renderingServer->AddGPUBufferComponent("PerFrameCBufferPrev/");
@@ -81,9 +81,9 @@ bool PerFrameDataServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		m_perFrameCBs.resize(g_Engine->getRenderingServer()->GetSwapChainImageCount());
+		m_perFrameCBs.resize(g_Engine->getGraphicsService()->GetSwapChainImageCount());
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 		m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
@@ -117,7 +117,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	auto l_p = l_camera->m_ProjectionMatrix;
 
 	PerFrameConstantBuffer l_perFrameCB = {};
-	l_perFrameCB.frameIndex = g_Engine->getRenderingServer()->GetFrameCountSinceLaunch();
+	l_perFrameCB.frameIndex = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
 	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
 	l_perFrameCB.p_original = l_p;
 	l_perFrameCB.p_jittered = l_p;
@@ -181,7 +181,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
 	l_perFrameCB.activeCascade = currentCascade;
 
-	m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()] = l_perFrameCB;
+	m_perFrameCBs[g_Engine->getGraphicsService()->GetCurrentFrame()] = l_perFrameCB;
 
 	return true;
 }
@@ -194,7 +194,7 @@ bool PerFrameDataServiceImpl::Update()
 
 		UpdatePerFrameConstantBuffer();
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 		auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
 		l_renderingServer->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[l_renderingServer->GetCurrentFrame()]);
 
@@ -209,7 +209,7 @@ bool PerFrameDataServiceImpl::Update()
 
 bool PerFrameDataServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_PerFrameCBufferGPUBufferComp);
 	l_renderingServer->Delete(m_PerFrameCBufferPrevGPUBufferComp);
@@ -251,7 +251,7 @@ ObjectStatus PerFrameDataService::GetStatus()
 const PerFrameConstantBuffer& PerFrameDataService::GetPerFrameConstantBuffer()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_perFrameCBs[g_Engine->getRenderingServer()->GetCurrentFrame()];
+	return m_Impl->m_perFrameCBs[g_Engine->getGraphicsService()->GetCurrentFrame()];
 }
 
 GPUBufferComponent* PerFrameDataService::GetCurrentFrameBuffer()

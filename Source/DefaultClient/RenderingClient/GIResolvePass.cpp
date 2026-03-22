@@ -1,4 +1,4 @@
-#include "GIResolvePass.h"
+﻿#include "GIResolvePass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -79,7 +79,7 @@ namespace GIResolvePass
 
 bool GIResolvePass::InitializeGPUBuffers()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_surfels = GIDataLoader::GetSurfels();
 
@@ -274,7 +274,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 bool GIResolvePass::DeleteGPUBuffers()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	ITask::Desc taskDesc("GIResolvePassDeleteGPUBuffersTask", ITask::Type::Once, 2);
 	auto l_GIResolvePassDeleteGPUBuffersTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
@@ -319,7 +319,7 @@ bool GIResolvePass::DeleteGPUBuffers()
 
 bool GIResolvePass::Setup()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	f_reloadGIData = [&]() { m_needToReloadGIData = true; };
 	g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
@@ -341,7 +341,7 @@ bool GIResolvePass::Setup()
 
 bool GIResolvePass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_skyRadianceSPC);
 	l_renderingServer->Initialize(m_skyRadianceRenderPassComp);
@@ -370,7 +370,7 @@ bool GIResolvePass::Initialize()
 
 bool GIResolvePass::setupSky()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -443,7 +443,7 @@ bool GIResolvePass::setupSky()
 
 bool GIResolvePass::setupSurfels()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_surfelSPC = l_renderingServer->AddShaderProgramComponent("GIResolveSurfelPass/");
 	m_surfelSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSurfelPass.comp/";
@@ -498,7 +498,7 @@ bool GIResolvePass::setupSurfels()
 
 bool GIResolvePass::setupBricks()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_brickSPC = l_renderingServer->AddShaderProgramComponent("GIResolveBrickPass/");
 	m_brickSPC->m_ShaderFilePaths.m_CSPath = "GIResolveBrickPass.comp/";
@@ -546,7 +546,7 @@ bool GIResolvePass::setupBricks()
 
 bool GIResolvePass::setupProbes()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_probeSPC = l_renderingServer->AddShaderProgramComponent("GIResolveProbePass/");
 	m_probeSPC->m_ShaderFilePaths.m_CSPath = "GIResolveProbePass.comp/";
@@ -605,7 +605,7 @@ bool GIResolvePass::setupProbes()
 
 bool GIResolvePass::setupIrradianceVolume()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_irradianceVolumeSPC = l_renderingServer->AddShaderProgramComponent("GIResolveIrradianceVolumePass/");
 	m_irradianceVolumeSPC->m_ShaderFilePaths.m_CSPath = "GIResolveIrradianceVolumePass.comp/";
@@ -669,7 +669,7 @@ bool GIResolvePass::setupIrradianceVolume()
 
 bool GIResolvePass::generateSkyRadiance()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
@@ -691,7 +691,7 @@ bool GIResolvePass::generateSkyRadiance()
 
 bool GIResolvePass::generateSkyIrradiance()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	// l_renderingServer->CommandListBegin(m_skyIrradianceRenderPassComp, 0);
 	// l_renderingServer->BindRenderPassComponent(m_skyIrradianceRenderPassComp);
@@ -712,7 +712,7 @@ bool GIResolvePass::generateSkyIrradiance()
 
 bool GIResolvePass::litSurfels()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
@@ -758,7 +758,7 @@ bool GIResolvePass::litSurfels()
 
 bool GIResolvePass::litBricks()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
 	auto l_GIGPUBufferComp = g_Engine->Get<LightDataService>()->GetGIBuffer();
@@ -800,7 +800,7 @@ bool GIResolvePass::litBricks()
 
 bool GIResolvePass::litProbes()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
@@ -846,7 +846,7 @@ bool GIResolvePass::litProbes()
 
 bool GIResolvePass::generateIrradianceVolume()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	// TODO: Implement per-pass dispatch params buffer for GIResolvePass
@@ -888,7 +888,7 @@ bool GIResolvePass::generateIrradianceVolume()
 
 bool GIResolvePass::PrepareCommandList()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_needToReloadGIData)
 	{
@@ -939,7 +939,7 @@ bool GIResolvePass::PrepareCommandList()
 
 bool GIResolvePass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_skyRadianceRenderPassComp);
 	l_renderingServer->Delete(m_skyIrradianceRenderPassComp);

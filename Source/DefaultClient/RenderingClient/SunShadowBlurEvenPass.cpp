@@ -1,4 +1,4 @@
-#include "SunShadowBlurEvenPass.h"
+﻿#include "SunShadowBlurEvenPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -15,7 +15,7 @@ using namespace Inno;
 
 bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
@@ -75,7 +75,7 @@ bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowBlurEvenPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -87,7 +87,7 @@ bool SunShadowBlurEvenPass::Initialize()
 
 bool SunShadowBlurEvenPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -103,7 +103,7 @@ ObjectStatus SunShadowBlurEvenPass::GetStatus()
 
 bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
 	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -138,7 +138,7 @@ GPUResourceComponent* SunShadowBlurEvenPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_renderingServer = g_Engine->getGraphicsService();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

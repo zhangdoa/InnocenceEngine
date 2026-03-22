@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/DrawCallService.h"
@@ -8,7 +8,7 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
+bool DX12GraphicsService::BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	if (!renderPass || !commandList)
 	{
@@ -39,7 +39,7 @@ bool DX12RenderingServer::BindRenderPassComponent(RenderPassComponent* renderPas
 	return true;
 }
 
-bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index)
+bool DX12GraphicsService::ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index)
 {
 	if (!renderPass || !commandList)
 	{
@@ -165,7 +165,7 @@ bool DX12RenderingServer::ClearRenderTargets(RenderPassComponent* renderPass, Co
 	return true;
 }
 
-bool DX12RenderingServer::BindComputeResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
+bool DX12GraphicsService::BindComputeResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
 {
 	if (!commandList)
 	{
@@ -276,7 +276,7 @@ bool DX12RenderingServer::BindComputeResource(CommandListComponent* commandList,
 	return false;
 }
 
-bool DX12RenderingServer::BindGraphicsResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
+bool DX12GraphicsService::BindGraphicsResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource)
 {
 	if (!commandList)
 	{
@@ -384,7 +384,7 @@ bool DX12RenderingServer::BindGraphicsResource(CommandListComponent* commandList
 	return false;
 }
 
-bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
+bool DX12GraphicsService::BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
 	if (!renderPass || !commandList)
 	{
@@ -403,7 +403,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassComponent* renderPass, Comma
 	return false;
 }
 
-bool DX12RenderingServer::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
+bool DX12GraphicsService::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
@@ -432,7 +432,7 @@ bool DX12RenderingServer::TryToTransitState(TextureComponent* texture, CommandLi
 	return true;
 }
 
-bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
+bool DX12GraphicsService::TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	uint32_t frameIndex = GetCurrentFrame();
@@ -462,7 +462,7 @@ bool DX12RenderingServer::TryToTransitState(GPUBufferComponent* gpuBuffer, Comma
 	return true;
 }
 
-bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
+bool DX12GraphicsService::ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand)
 {
 	if (!renderPass || !commandList || !indirectDrawCommand)
 	{
@@ -491,7 +491,7 @@ bool DX12RenderingServer::ExecuteIndirect(RenderPassComponent* renderPass, Comma
 	return true;
 }
 
-void DX12RenderingServer::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
+void DX12GraphicsService::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
 {
 	if (!renderPass || !commandList)
 		return;
@@ -504,7 +504,7 @@ void DX12RenderingServer::PushRootConstants(RenderPassComponent* renderPass, Com
 		l_commandList->SetComputeRoot32BitConstants(0, 1, &rootConstants, 0);
 }
 
-bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount)
+bool DX12GraphicsService::DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount)
 {
 	if (!renderPass || !commandList || !mesh)
 	{
@@ -534,7 +534,7 @@ bool DX12RenderingServer::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 	return true;
 }
 
-bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount)
+bool DX12GraphicsService::DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount)
 {
 	if (!renderPass || !commandList)
 	{
@@ -554,7 +554,7 @@ bool DX12RenderingServer::DrawInstanced(RenderPassComponent* renderPass, Command
 	return true;
 }
 
-bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool DX12GraphicsService::Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	if (!renderPass || !commandList)
 	{
@@ -575,7 +575,7 @@ bool DX12RenderingServer::Dispatch(RenderPassComponent* renderPass, CommandListC
 	return true;
 }
 
-bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType)
+bool DX12GraphicsService::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType)
 {
 	if (!m_GlobalSemaphore)
 	{
@@ -637,7 +637,7 @@ bool DX12RenderingServer::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queue
 	return true;
 }
 
-bool DX12RenderingServer::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool DX12GraphicsService::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	ID3D12CommandQueue* commandQueue = nullptr;
 	ID3D12Fence* fence = nullptr;
@@ -681,7 +681,7 @@ bool DX12RenderingServer::WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueTy
 	return true;
 }
 
-bool DX12RenderingServer::Execute(CommandListComponent* commandList, GPUEngineType queueType)
+bool DX12GraphicsService::Execute(CommandListComponent* commandList, GPUEngineType queueType)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
@@ -703,7 +703,7 @@ bool DX12RenderingServer::Execute(CommandListComponent* commandList, GPUEngineTy
 	return true;
 }
 
-uint64_t DX12RenderingServer::GetSemaphoreValue(GPUEngineType queueType)
+uint64_t DX12GraphicsService::GetSemaphoreValue(GPUEngineType queueType)
 {
 	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 
@@ -717,7 +717,7 @@ uint64_t DX12RenderingServer::GetSemaphoreValue(GPUEngineType queueType)
 	return 0;
 }
 
-bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
+bool DX12GraphicsService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
 {
 	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
 	UINT64 l_semaphoreValue = 0;
@@ -840,7 +840,7 @@ bool DX12RenderingServer::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queue
 	return true;
 }
 
-bool DX12RenderingServer::DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ)
+bool DX12GraphicsService::DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ)
 {
 	if (!renderPass || !commandList)
 	{

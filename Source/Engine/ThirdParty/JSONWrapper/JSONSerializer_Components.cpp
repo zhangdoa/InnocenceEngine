@@ -1,4 +1,4 @@
-#include "JSONWrapper.h"
+﻿#include "JSONWrapper.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Services/ComponentManager.h"
 #include "../../Services/TemplateAssetService.h"
@@ -137,7 +137,7 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
         // @TODO: Implement SkeletonComponent loading
     }
 
-    g_Engine->getRenderingServer()->Initialize(&component, l_vertices, l_indices);
+    g_Engine->getGraphicsService()->Initialize(&component, l_vertices, l_indices);
 
     return true;
 }
@@ -168,7 +168,7 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
     component.m_materialAttributes.Thickness = j["Thickness"];
     component.m_ShaderModel = ShaderModel(j["ShaderModel"]);
 
-    g_Engine->getRenderingServer()->Initialize(&component);
+    g_Engine->getGraphicsService()->Initialize(&component);
 
     return true;
 }
@@ -185,7 +185,7 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component)
 
     void* textureData = STBWrapper::Load(("../Data/Components/" + j["File"].get<std::string>()).c_str(), component);
 
-    g_Engine->getRenderingServer()->Initialize(&component, textureData);
+    g_Engine->getGraphicsService()->Initialize(&component, textureData);
     return true;
 }
 

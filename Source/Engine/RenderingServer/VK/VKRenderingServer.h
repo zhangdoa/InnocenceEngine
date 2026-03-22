@@ -1,5 +1,5 @@
-#pragma once
-#include "../IRenderingServer.h"
+﻿#pragma once
+#include "../IGraphicsService.h"
 #include "VKHeaders.h"
 
 #include "../../Common/ObjectPool.h"
@@ -14,12 +14,12 @@
 
 namespace Inno
 {
-	class VKRenderingServer : public IRenderingServer
+	class VKRenderingServer : public IGraphicsService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(VKRenderingServer);
 
-		// Inherited via IRenderingServer
+		// Inherited via IGraphicsService
 		IPipelineStateObject* AddPipelineStateObject() override;
 		ISemaphore* AddSemaphore() override;
         bool Add(IOutputMergerTarget*& rhs) override;		

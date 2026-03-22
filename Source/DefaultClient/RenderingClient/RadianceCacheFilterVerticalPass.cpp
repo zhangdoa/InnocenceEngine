@@ -1,4 +1,4 @@
-#include "RadianceCacheFilterVerticalPass.h"
+﻿#include "RadianceCacheFilterVerticalPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -12,7 +12,7 @@ using namespace Inno;
 
 bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("RadianceCacheFilterVerticalPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterVertical.comp/";
@@ -79,7 +79,7 @@ bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheFilterVerticalPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -93,7 +93,7 @@ bool RadianceCacheFilterVerticalPass::Initialize()
 
 bool RadianceCacheFilterVerticalPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -123,7 +123,7 @@ bool RadianceCacheFilterVerticalPass::PrepareCommandList(IRenderingContext* rend
 	if (l_horizontalResult->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources
@@ -166,7 +166,7 @@ TextureComponent* RadianceCacheFilterVerticalPass::GetResult()
 
 bool RadianceCacheFilterVerticalPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_horizontalResult = RadianceCacheFilterHorizontalPass::Get().GetResult();
 
 	if (m_Result)

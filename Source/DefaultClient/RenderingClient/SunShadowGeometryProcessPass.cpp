@@ -1,4 +1,4 @@
-#include "SunShadowGeometryProcessPass.h"
+﻿#include "SunShadowGeometryProcessPass.h"
 #include "SunShadowCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -12,7 +12,7 @@ using namespace Inno;
 
 bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_shadowMapResolution = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution;
 
@@ -121,7 +121,7 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowGeometryProcessPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -135,7 +135,7 @@ bool SunShadowGeometryProcessPass::Initialize()
 
 bool SunShadowGeometryProcessPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_SamplerComp);	
 	l_renderingServer->Delete(m_RenderPassComp);
@@ -156,7 +156,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -200,7 +200,7 @@ GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_renderingServer = g_Engine->getGraphicsService();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

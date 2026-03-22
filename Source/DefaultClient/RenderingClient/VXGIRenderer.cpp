@@ -1,4 +1,4 @@
-#include "VXGIRenderer.h"
+﻿#include "VXGIRenderer.h"
 
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/SceneService.h"
@@ -20,7 +20,7 @@ using namespace Inno;
 
 bool VXGIRenderer::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	f_sceneLoadingFinishedCallback = [&]() {
 		m_isInitialLoadScene = true;
@@ -47,7 +47,7 @@ bool VXGIRenderer::Setup(IServiceConfig* systemConfig)
 
 bool VXGIRenderer::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_VXGICBuffer);
 	VXGIGeometryProcessPass::Get().Initialize();
@@ -66,7 +66,7 @@ bool VXGIRenderer::Initialize()
 bool VXGIRenderer::ExecuteCommands(IRenderingConfig* renderingConfig)
 {
 	VXGIRenderingConfig* l_VXGIRenderingConfig = reinterpret_cast<VXGIRenderingConfig*>(renderingConfig);
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto f_renderGeometryPasses = [&]() 
 	{

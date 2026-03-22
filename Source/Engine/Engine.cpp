@@ -1,4 +1,4 @@
-#include "Engine.h"
+﻿#include "Engine.h"
 #include "Common/Timer.h"
 #include "Common/LogService.h"
 #include "Common/Memory.h"
@@ -39,7 +39,7 @@
 
 // Rendering servers
 #if defined INNO_RENDERER_DIRECTX
-#include "RenderingServer/DX12/DX12RenderingServer.h"
+#include "RenderingServer/DX12/DX12GraphicsService.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
 #include "RenderingServer/VK/VKRenderingServer.h"
@@ -77,7 +77,7 @@ IWindowService* Engine::CreateWindowSystem(bool isHeadless)
 #endif
 }
 
-IRenderingServer* Engine::CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType)
+IGraphicsService* Engine::CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType)
 {
 	if (isHeadless) {
 		return new HeadlessRenderingServer();
@@ -86,7 +86,7 @@ IRenderingServer* Engine::CreateRenderingServer(bool isHeadless, RenderingServer
 	switch (renderingServerType) {
 	case RenderingServer::DX12:
 #if defined INNO_RENDERER_DIRECTX
-		return new DX12RenderingServer();
+		return new DX12GraphicsService();
 #else
 		Log(Error, "DirectX 12 renderer not available on this platform.");
 		return nullptr;
@@ -151,7 +151,7 @@ namespace Inno
 		InitConfig m_initConfig;
 
 		std::unique_ptr<IWindowService> m_WindowSystem;
-		std::unique_ptr<IRenderingServer> m_RenderingServer;
+		std::unique_ptr<IGraphicsService> m_RenderingServer;
 
 		std::unique_ptr<IRenderingClient> m_RenderingClient;
 		std::unique_ptr<ILogicClient> m_LogicClient;
@@ -388,7 +388,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		switch (m_pImpl->m_initConfig.renderingServer) {
 		case RenderingServer::DX12:
 #if defined INNO_RENDERER_DIRECTX
-			m_pImpl->m_RenderingServer = std::make_unique<DX12RenderingServer>();
+			m_pImpl->m_RenderingServer = std::make_unique<DX12GraphicsService>();
 #endif
 			break;
 		case RenderingServer::VK:
@@ -801,7 +801,7 @@ InitConfig Engine::getInitConfig()
 	return m_pImpl->m_initConfig;
 }
 
-IRenderingServer* Engine::getRenderingServer()
+IGraphicsService* Engine::getGraphicsService()
 {
 	return m_pImpl->m_RenderingServer.get();
 }

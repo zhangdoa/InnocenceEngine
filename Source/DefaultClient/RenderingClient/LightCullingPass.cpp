@@ -1,4 +1,4 @@
-#include "LightCullingPass.h"
+﻿#include "LightCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -13,7 +13,7 @@ using namespace Inno;
 
 bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_initialIndexCount = 1;
 
@@ -119,7 +119,7 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 
 bool LightCullingPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
@@ -141,7 +141,7 @@ bool LightCullingPass::Initialize()
 
 bool LightCullingPass::Update()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_lightListIndexCounter = 1;
 	l_renderingServer->Upload(m_lightListIndexCounter, &l_lightListIndexCounter);
@@ -157,7 +157,7 @@ bool LightCullingPass::Update()
 
 bool LightCullingPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_lightListIndexCounter);
 	l_renderingServer->Delete(m_lightIndexList);
@@ -193,7 +193,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_heatMap->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -252,7 +252,7 @@ GPUResourceComponent* LightCullingPass::GetHeatMap()
 
 bool LightCullingPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_lightIndexList)
 		l_renderingServer->Delete(m_lightIndexList);

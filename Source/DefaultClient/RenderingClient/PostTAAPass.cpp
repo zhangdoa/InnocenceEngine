@@ -1,15 +1,15 @@
-#include "PostTAAPass.h"
+﻿#include "PostTAAPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
 bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("PostTAAPass/");
 
@@ -57,7 +57,7 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 
 bool PostTAAPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -71,7 +71,7 @@ bool PostTAAPass::Initialize()
 
 bool PostTAAPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -97,7 +97,7 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -139,7 +139,7 @@ GPUResourceComponent* PostTAAPass::GetResult()
 
 bool PostTAAPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_Result)
 		l_renderingServer->Delete(m_Result);

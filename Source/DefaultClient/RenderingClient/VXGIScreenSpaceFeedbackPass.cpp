@@ -1,4 +1,4 @@
-#include "VXGIScreenSpaceFeedbackPass.h"
+﻿#include "VXGIScreenSpaceFeedbackPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -16,7 +16,7 @@ using namespace Inno;
 
 bool VXGIScreenSpaceFeedbackPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 
@@ -84,7 +84,7 @@ bool VXGIScreenSpaceFeedbackPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIScreenSpaceFeedbackPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -97,7 +97,7 @@ bool VXGIScreenSpaceFeedbackPass::Initialize()
 
 bool VXGIScreenSpaceFeedbackPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -117,7 +117,7 @@ bool VXGIScreenSpaceFeedbackPass::PrepareCommandList(IRenderingContext* renderin
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	// Use the Graphics command list component for VXGI rendering
 	if (!m_CommandListComp_Graphics)

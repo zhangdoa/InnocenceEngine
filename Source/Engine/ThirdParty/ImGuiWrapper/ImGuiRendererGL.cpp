@@ -1,4 +1,4 @@
-#include "ImGuiRendererGL.h"
+﻿#include "ImGuiRendererGL.h"
 
 #include "../../Component/GLRenderPassComponent.h"
 #include "../ImGui/imgui_impl_opengl3.cpp"
@@ -40,7 +40,7 @@ bool ImGuiRendererGL::NewFrame()
 bool ImGuiRendererGL::Prepare()
 {
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<GLRenderPassComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
+	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<GLRenderPassComponent*>(g_Engine->getGraphicsService()->GetUserPipelineOutput());
 
 	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_userPipelineOutputRenderPassComp->m_FBO);

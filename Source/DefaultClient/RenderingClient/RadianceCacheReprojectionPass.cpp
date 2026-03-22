@@ -1,4 +1,4 @@
-#include "RadianceCacheReprojectionPass.h"
+﻿#include "RadianceCacheReprojectionPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -13,7 +13,7 @@ using namespace Inno;
 
 bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("RadianceCacheReprojectionPass/");
 
@@ -112,7 +112,7 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheReprojectionPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -126,7 +126,7 @@ bool RadianceCacheReprojectionPass::Initialize()
 
 bool RadianceCacheReprojectionPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_WorldProbeGrid);
 	l_renderingServer->Delete(m_ProbePosition_Even);
@@ -158,7 +158,7 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 		|| m_RadianceCache_Odd->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_readTexture = GetPreviousFrameResult();
 	auto l_writeTexture = GetCurrentFrameResult();
@@ -212,7 +212,7 @@ RenderPassComponent* RadianceCacheReprojectionPass::GetRenderPassComp()
 
 bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_RadianceCache_Even)
 		l_renderingServer->Delete(m_RadianceCache_Even);
@@ -282,7 +282,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
@@ -291,7 +291,7 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 
 TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
@@ -300,7 +300,7 @@ TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
@@ -309,7 +309,7 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 
 TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
@@ -318,7 +318,7 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition(
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
@@ -327,7 +327,7 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 
 TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbeNormal()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 

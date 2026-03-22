@@ -1,4 +1,4 @@
-#include "LuminanceAveragePass.h"
+﻿#include "LuminanceAveragePass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -11,7 +11,7 @@ using namespace Inno;
 
 bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -67,7 +67,7 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -88,7 +88,7 @@ bool LuminanceAveragePass::Update()
 
 bool LuminanceAveragePass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_luminanceAverage);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -116,7 +116,7 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 	if (m_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 

@@ -1,4 +1,4 @@
-#include "PreTAAPass.h"
+﻿#include "PreTAAPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
@@ -6,13 +6,13 @@
 #include "SkyPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
 bool PreTAAPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("PreTAAPass/");
 
@@ -70,7 +70,7 @@ bool PreTAAPass::Setup(IServiceConfig* systemConfig)
 
 bool PreTAAPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -84,7 +84,7 @@ bool PreTAAPass::Initialize()
 
 bool PreTAAPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -110,7 +110,7 @@ bool PreTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
@@ -150,7 +150,7 @@ GPUResourceComponent* PreTAAPass::GetResult()
 
 bool PreTAAPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_Result)
 		l_renderingServer->Delete(m_Result);

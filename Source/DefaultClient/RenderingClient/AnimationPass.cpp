@@ -1,4 +1,4 @@
-#include "AnimationPass.h"
+﻿#include "AnimationPass.h"
 #include "OpaquePass.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/DrawCallService.h"
@@ -10,7 +10,7 @@ using namespace Inno;
 
 bool AnimationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("AnimationPass/");
 
@@ -113,7 +113,7 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -127,7 +127,7 @@ bool AnimationPass::Initialize()
 
 bool AnimationPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_SamplerComp);
 	l_renderingServer->Delete(m_RenderPassComp);
@@ -145,7 +145,7 @@ ObjectStatus AnimationPass::GetStatus()
 
 bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
@@ -211,7 +211,7 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 
 bool AnimationPass::RenderTargetsReservationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
 		l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTarget);
 

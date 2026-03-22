@@ -1,4 +1,4 @@
-#include "GIDataLoader.h"
+﻿#include "GIDataLoader.h"
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Common/IOService.h"
 
@@ -100,7 +100,7 @@ bool GIDataLoader::loadGIData()
 
 bool GIDataLoader::Setup()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	f_sceneLoadingFinishedCallback = []()
 	{
@@ -176,7 +176,7 @@ bool GIDataLoader::Setup()
 
 bool GIDataLoader::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_testSampleCubemap);
 	l_renderingServer->Initialize(m_testSample3DTexture);

@@ -1,4 +1,4 @@
-#include "SurfelGenerator.h"
+﻿#include "SurfelGenerator.h"
 
 #include "../../Engine/Common/MathHelper.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -23,7 +23,7 @@ namespace Inno
     {
         void SurfelGenerator::setup()
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             m_SPC_Surfel = l_renderingServer->AddShaderProgramComponent("GIBakeSurfelPass/");
 
@@ -168,7 +168,7 @@ namespace Inno
 
         bool SurfelGenerator::drawObjects(Probe& probeCache, const Mat4& p, const std::vector<Mat4>& v)
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
 
             auto l_t = Math::getInvertTranslationMatrix(probeCache.pos);
 
@@ -237,7 +237,7 @@ namespace Inno
 
         bool SurfelGenerator::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches)
         {
-            auto l_renderingServer = g_Engine->getRenderingServer();
+            auto l_renderingServer = g_Engine->getGraphicsService();
             
             static uint32_t l_index = 0;
 

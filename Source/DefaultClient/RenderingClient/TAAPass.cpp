@@ -1,4 +1,4 @@
-#include "TAAPass.h"
+﻿#include "TAAPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -9,7 +9,7 @@ using namespace Inno;
 
 bool TAAPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("TAAPass/");
 
@@ -74,7 +74,7 @@ bool TAAPass::Setup(IServiceConfig* systemConfig)
 
 bool TAAPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -88,7 +88,7 @@ bool TAAPass::Initialize()
 
 bool TAAPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_OddTextureComp);
 	l_renderingServer->Delete(m_EvenTextureComp);
@@ -116,7 +116,7 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 		|| m_OddTextureComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 			
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	auto l_readTexture = l_isOddFrame ? m_EvenTextureComp : m_OddTextureComp;
@@ -161,7 +161,7 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 
 GPUResourceComponent* TAAPass::GetResult()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_frameCount = l_renderingServer->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
@@ -170,7 +170,7 @@ GPUResourceComponent* TAAPass::GetResult()
 
 bool TAAPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	if (m_EvenTextureComp)
 		l_renderingServer->Delete(m_EvenTextureComp);

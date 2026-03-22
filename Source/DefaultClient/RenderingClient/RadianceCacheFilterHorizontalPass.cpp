@@ -1,4 +1,4 @@
-#include "RadianceCacheFilterHorizontalPass.h"
+﻿#include "RadianceCacheFilterHorizontalPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -11,7 +11,7 @@ using namespace Inno;
 
 bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("RadianceCacheFilterHorizontalPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterHorizontal.comp/";
@@ -78,7 +78,7 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheFilterHorizontalPass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -92,7 +92,7 @@ bool RadianceCacheFilterHorizontalPass::Initialize()
 
 bool RadianceCacheFilterHorizontalPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_Result);
 	l_renderingServer->Delete(m_CommandListComp_Compute);
@@ -122,7 +122,7 @@ bool RadianceCacheFilterHorizontalPass::PrepareCommandList(IRenderingContext* re
 	if (l_raytracingResult->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources
@@ -165,7 +165,7 @@ TextureComponent* RadianceCacheFilterHorizontalPass::GetResult()
 
 bool RadianceCacheFilterHorizontalPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_raytracingResult = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
 
 	if (m_Result)

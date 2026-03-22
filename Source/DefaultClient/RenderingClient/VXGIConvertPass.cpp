@@ -1,11 +1,11 @@
-#include "VXGIConvertPass.h"
+﻿#include "VXGIConvertPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "VXGIRenderer.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/RenderingServer/IGraphicsService.h"
 
 using namespace Inno;
 
@@ -14,7 +14,7 @@ using namespace Inno;
 
 bool VXGIConvertPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_VXGIRenderingConfig = &reinterpret_cast<VXGIRendererSystemConfig*>(systemConfig)->m_VXGIRenderingConfig;
 	
@@ -80,7 +80,7 @@ bool VXGIConvertPass::Setup(IServiceConfig *systemConfig)
 
 bool VXGIConvertPass::Initialize()
 {	
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -94,7 +94,7 @@ bool VXGIConvertPass::Initialize()
 
 bool VXGIConvertPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_RenderPassComp);
 
@@ -110,7 +110,7 @@ ObjectStatus VXGIConvertPass::GetStatus()
 
 bool VXGIConvertPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	auto l_renderingContext = reinterpret_cast<VXGIConvertPassRenderingContext*>(renderingContext);
 	auto l_numThreadGroup = l_renderingContext->m_resolution / 8;

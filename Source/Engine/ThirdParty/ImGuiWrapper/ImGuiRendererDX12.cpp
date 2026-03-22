@@ -1,8 +1,8 @@
-#include "ImGuiRendererDX12.h"
+﻿#include "ImGuiRendererDX12.h"
 
 #include "../ImGui/imgui_impl_dx12.cpp"
 
-#include "../../RenderingServer/DX12/DX12RenderingServer.h"
+#include "../../RenderingServer/DX12/DX12GraphicsService.h"
 #include "../../RenderingServer/DX12/DX12Helper_Common.h"
 
 #include "../../Interface/IRenderPass.h"
@@ -41,7 +41,7 @@ namespace ImGuiRendererDX12NS
 using namespace ImGuiRendererDX12NS;
 bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 
 	m_RenderPassComp = l_renderingServer->AddRenderPassComponent("ImGuiRenderPass/");
 
@@ -66,7 +66,7 @@ bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 
 bool ImGuiRenderPass::Initialize()
 {
-	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 	l_renderingServer->Initialize(m_RenderPassComp);
 
 	// The actual rendering is called by the rendering server
@@ -78,7 +78,7 @@ bool ImGuiRenderPass::Initialize()
 				return;
 			}
 
-			auto l_renderingServer = g_Engine->getRenderingServer();
+			auto l_renderingServer = g_Engine->getGraphicsService();
 			auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
 			auto l_currentFrame =l_renderingServer->GetCurrentFrame();
 
@@ -104,7 +104,7 @@ bool ImGuiRenderPass::Initialize()
 
 bool ImGuiRenderPass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	l_renderingServer->Delete(m_RenderPassComp);
 	l_renderingServer->Delete(m_CommandListComp_Graphics);
 
@@ -125,7 +125,7 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 		return true;
 	}
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);	
 	l_renderingServer->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -141,7 +141,7 @@ RenderPassComponent* ImGuiRenderPass::GetRenderPassComp()
 
 bool ImGuiRenderPass::RenderTargetsReservationFunc()
 {
-	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());	
+	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());	
 
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
 		l_renderingServer->Add(m_RenderPassComp->m_OutputMergerTarget);
@@ -154,7 +154,7 @@ bool ImGuiRenderPass::RenderTargetsReservationFunc()
 
 bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
-	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_renderingServer->GetSwapChainRenderPassComponent());
 	
 	// Skip render target creation in offscreen mode or if swap chain is not available
@@ -191,7 +191,7 @@ bool ImGuiRendererDX12::Initialize()
 		return true;
 	}
 
-	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 	auto l_device = l_renderingServer->GetDevice().Get();
 	auto& l_descHeapAccessor = l_renderingServer->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
 	auto l_newHandle = l_descHeapAccessor.GetNewHandle();
@@ -236,7 +236,7 @@ bool ImGuiRendererDX12::Prepare()
 
 bool ImGuiRendererDX12::ExecuteCommands()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_swapChainRenderPassComp = l_renderingServer->GetSwapChainRenderPassComponent();
 
 	// Skip ImGui execution in offscreen mode or if swap chain is not available

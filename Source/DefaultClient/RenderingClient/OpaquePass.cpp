@@ -1,4 +1,4 @@
-#include "OpaquePass.h"
+﻿#include "OpaquePass.h"
 #include "OpaqueCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
@@ -11,7 +11,7 @@ using namespace Inno;
 
 bool OpaquePass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_ShaderProgramComp = l_renderingServer->AddShaderProgramComponent("OpaquePass/");
 
@@ -107,7 +107,7 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 bool OpaquePass::Initialize()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Initialize(m_ShaderProgramComp);
 	l_renderingServer->Initialize(m_RenderPassComp);
@@ -121,7 +121,7 @@ bool OpaquePass::Initialize()
 
 bool OpaquePass::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_SamplerComp);	
 	l_renderingServer->Delete(m_RenderPassComp);
@@ -142,7 +142,7 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 
 	l_renderingServer->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
@@ -186,7 +186,7 @@ GPUResourceComponent* OpaquePass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return nullptr;
 
-	auto l_renderingServer = g_Engine->getRenderingServer();	
+	auto l_renderingServer = g_Engine->getGraphicsService();	
 	auto l_currentFrame = l_renderingServer->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[2];

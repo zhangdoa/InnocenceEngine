@@ -1,4 +1,4 @@
-#include "../IRenderingServer.h"
+﻿#include "../IGraphicsService.h"
 
 #include "../../Common/Timer.h"
 #include "../../Common/LogService.h"
@@ -29,7 +29,7 @@ Accessibility Accessibility::ReadWrite = Accessibility(true, true);
 Accessibility Accessibility::CopySource = Accessibility(true, false, true, false);  // read=true, write=false, copySource=true
 Accessibility Accessibility::CopyDestination = Accessibility(false, true, false, true);  // read=false, write=true, copyDest=true
 
-bool IRenderingServer::InitializePool()
+bool IGraphicsService::InitializePool()
 {
 	auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -45,7 +45,7 @@ bool IRenderingServer::InitializePool()
 	return true;
 }
 
-bool IRenderingServer::TerminatePool()
+bool IGraphicsService::TerminatePool()
 {
 	TObjectPool<MeshComponent>::Destruct(m_GPUHandlePools.Meshes);
 	m_GPUHandlePools.Meshes = nullptr;
@@ -66,7 +66,7 @@ bool IRenderingServer::TerminatePool()
 	return true;
 }
 
-bool IRenderingServer::Setup(IServiceConfig* systemConfig)
+bool IGraphicsService::Setup(IServiceConfig* systemConfig)
 {
 	bool l_result = InitializePool();
 	if (!l_result)
@@ -107,7 +107,7 @@ bool IRenderingServer::Setup(IServiceConfig* systemConfig)
 	return true;
 }
 
-bool IRenderingServer::Initialize()
+bool IGraphicsService::Initialize()
 {
 	if (m_ObjectStatus != ObjectStatus::Created)
 	{
@@ -133,7 +133,7 @@ bool IRenderingServer::Initialize()
 	return true;
 }
 
-bool IRenderingServer::InitializeSwapChainRenderPassComponent()
+bool IGraphicsService::InitializeSwapChainRenderPassComponent()
 {
 	// Skip swap chain render pass initialization in offscreen mode
 	if (g_Engine->getInitConfig().isOffscreen)
@@ -151,8 +151,8 @@ bool IRenderingServer::InitializeSwapChainRenderPassComponent()
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IRenderingServer::AssignSwapChainImages, this);
-	l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IRenderingServer::ReleaseSwapChainImages, this);
+	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&IGraphicsService::AssignSwapChainImages, this);
+	l_RenderPassDesc.m_RenderTargetsRemovalFunc = std::bind(&IGraphicsService::ReleaseSwapChainImages, this);
 
 	m_SwapChainRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 	m_SwapChainRenderPassComp->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
@@ -178,7 +178,7 @@ bool IRenderingServer::InitializeSwapChainRenderPassComponent()
 	return true;
 }
 
-bool IRenderingServer::Update()
+bool IGraphicsService::Update()
 {
 	auto l_currentFrame = GetCurrentFrame();
 
@@ -239,7 +239,7 @@ bool IRenderingServer::Update()
 	return true;
 }
 
-bool IRenderingServer::Terminate()
+bool IGraphicsService::Terminate()
 {
 	auto l_result = true;
 	l_result &= Delete(m_SwapChainSamplerComp);
@@ -290,65 +290,65 @@ static T* AllocateGPUHandle(TObjectPool<T>* pool,
 	return l_ptr;
 }
 
-MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
+MeshComponent* IGraphicsService::AddMeshComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.Meshes, m_GPUHandlePools.MeshLUT, m_GPUHandlePools.MeshPointers, name);
 }
 
-TextureComponent* IRenderingServer::AddTextureComponent(const char* name)
+TextureComponent* IGraphicsService::AddTextureComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.Textures, m_GPUHandlePools.TextureLUT, m_GPUHandlePools.TexturePointers, name);
 }
 
-MaterialComponent* IRenderingServer::AddMaterialComponent(const char* name)
+MaterialComponent* IGraphicsService::AddMaterialComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.Materials, m_GPUHandlePools.MaterialLUT, m_GPUHandlePools.MaterialPointers, name);
 }
 
-RenderPassComponent* IRenderingServer::AddRenderPassComponent(const char* name)
+RenderPassComponent* IGraphicsService::AddRenderPassComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.RenderPasses, m_GPUHandlePools.RenderPassLUT, m_GPUHandlePools.RenderPassPointers, name);
 }
 
-ShaderProgramComponent* IRenderingServer::AddShaderProgramComponent(const char* name)
+ShaderProgramComponent* IGraphicsService::AddShaderProgramComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.ShaderPrograms, m_GPUHandlePools.ShaderProgramLUT, m_GPUHandlePools.ShaderProgramPointers, name);
 }
 
-SamplerComponent* IRenderingServer::AddSamplerComponent(const char* name)
+SamplerComponent* IGraphicsService::AddSamplerComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.Samplers, m_GPUHandlePools.SamplerLUT, m_GPUHandlePools.SamplerPointers, name);
 }
 
-GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
+GPUBufferComponent* IGraphicsService::AddGPUBufferComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.GPUBuffers, m_GPUHandlePools.GPUBufferLUT, m_GPUHandlePools.GPUBufferPointers, name);
 }
 
-CommandListComponent* IRenderingServer::AddCommandListComponent(const char* name)
+CommandListComponent* IGraphicsService::AddCommandListComponent(const char* name)
 {
 	return AllocateGPUHandle(m_GPUHandlePools.CommandLists, m_GPUHandlePools.CommandListLUT, m_GPUHandlePools.CommandListPointers, name);
 }
 
-TextureComponent* IRenderingServer::FindTextureByName(const char* name)
+TextureComponent* IGraphicsService::FindTextureByName(const char* name)
 {
 	auto l_result = m_GPUHandlePools.TextureLUT.find(name);
 	return (l_result != m_GPUHandlePools.TextureLUT.end()) ? l_result->second : nullptr;
 }
 
-MeshComponent* IRenderingServer::FindMeshByName(const char* name)
+MeshComponent* IGraphicsService::FindMeshByName(const char* name)
 {
 	auto l_result = m_GPUHandlePools.MeshLUT.find(name);
 	return (l_result != m_GPUHandlePools.MeshLUT.end()) ? l_result->second : nullptr;
 }
 
-MaterialComponent* IRenderingServer::FindMaterialByName(const char* name)
+MaterialComponent* IGraphicsService::FindMaterialByName(const char* name)
 {
 	auto l_result = m_GPUHandlePools.MaterialLUT.find(name);
 	return (l_result != m_GPUHandlePools.MaterialLUT.end()) ? l_result->second : nullptr;
 }
 
-void IRenderingServer::Initialize(EntityID Entity)
+void IGraphicsService::Initialize(EntityID Entity)
 {
 	if (m_initializedEntities.count(Entity))
 		return;
@@ -357,7 +357,7 @@ void IRenderingServer::Initialize(EntityID Entity)
 	Log(Verbose, "Entity ", Entity, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
 	if (std::find(m_initializedMeshes.begin(), m_initializedMeshes.end(), mesh) != m_initializedMeshes.end())
 		return;
@@ -376,7 +376,7 @@ void IRenderingServer::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(TextureComponent* texture, void* textureData)
+void IGraphicsService::Initialize(TextureComponent* texture, void* textureData)
 {
 	if (std::find(m_initializedTextures.begin(), m_initializedTextures.end(), texture) != m_initializedTextures.end())
 		return;
@@ -386,7 +386,7 @@ void IRenderingServer::Initialize(TextureComponent* texture, void* textureData)
 	Log(Verbose, "TextureComponent ", texture->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(MaterialComponent* material)
+void IGraphicsService::Initialize(MaterialComponent* material)
 {
 	if (std::find(m_initializedMaterials.begin(), m_initializedMaterials.end(), material) != m_initializedMaterials.end())
 		return;
@@ -396,17 +396,17 @@ void IRenderingServer::Initialize(MaterialComponent* material)
 	Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(ShaderProgramComponent* shaderProgram)
+void IGraphicsService::Initialize(ShaderProgramComponent* shaderProgram)
 {
 	InitializeImpl(shaderProgram);
 }
 
-void IRenderingServer::Initialize(SamplerComponent* sampler)
+void IGraphicsService::Initialize(SamplerComponent* sampler)
 {
 	InitializeImpl(sampler);
 }
 
-void IRenderingServer::Initialize(GPUBufferComponent* gpuBuffer)
+void IGraphicsService::Initialize(GPUBufferComponent* gpuBuffer)
 {
 	if (std::find(m_initializedGPUBuffers.begin(), m_initializedGPUBuffers.end(), gpuBuffer) != m_initializedGPUBuffers.end())
 		return;
@@ -416,7 +416,7 @@ void IRenderingServer::Initialize(GPUBufferComponent* gpuBuffer)
 	Log(Verbose, "GPUBufferComponent ", gpuBuffer->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(RenderPassComponent* renderPass)
+void IGraphicsService::Initialize(RenderPassComponent* renderPass)
 {
 	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), renderPass) != m_initializedRenderPasses.end())
 		return;
@@ -426,12 +426,12 @@ void IRenderingServer::Initialize(RenderPassComponent* renderPass)
 	Log(Verbose, "RenderPassComponent ", renderPass->m_InstanceName, " queued for deferred initialization");
 }
 
-void IRenderingServer::Initialize(CommandListComponent* commandList)
+void IGraphicsService::Initialize(CommandListComponent* commandList)
 {
 	InitializeImpl(commandList);
 }
 
-bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* renderPass)
+bool IGraphicsService::CreateOutputMergerTargets(RenderPassComponent* renderPass)
 {
 	if (renderPass->m_RenderPassDesc.m_RenderTargetsCreationFunc)
 	{
@@ -470,7 +470,7 @@ bool IRenderingServer::CreateOutputMergerTargets(RenderPassComponent* renderPass
 	return true;
 }
 
-bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* renderPass)
+bool IGraphicsService::InitializeOutputMergerTargets(RenderPassComponent* renderPass)
 {
 	if (renderPass->m_RenderPassDesc.m_RenderTargetsInitializationFunc)
 	{
@@ -523,7 +523,7 @@ bool IRenderingServer::InitializeOutputMergerTargets(RenderPassComponent* render
 	return true;
 }
 
-bool IRenderingServer::SignalOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType)
+bool IGraphicsService::SignalOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType)
 {
 	if (renderPass == nullptr)
 	{
@@ -542,7 +542,7 @@ bool IRenderingServer::SignalOnGPU(RenderPassComponent* renderPass, GPUEngineTyp
 	return SignalOnGPU(l_semaphore, queueType);
 }
 
-bool IRenderingServer::WaitOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType, GPUEngineType semaphoreType)
+bool IGraphicsService::WaitOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	if (renderPass == nullptr)
 	{
@@ -561,7 +561,7 @@ bool IRenderingServer::WaitOnGPU(RenderPassComponent* renderPass, GPUEngineType 
 	return WaitOnGPU(l_semaphore, queueType, semaphoreType);
 }
 
-bool IRenderingServer::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
+bool IGraphicsService::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
 	if (!commandList || !renderPass)
 		return false;
@@ -569,7 +569,7 @@ bool IRenderingServer::CommandListBegin(RenderPassComponent* renderPass, Command
 	return Open(commandList, commandList->m_Type, renderPass->m_PipelineStateObject);
 }
 
-bool IRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
+bool IGraphicsService::CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
 	if (!renderPass || !commandList)
 	{
@@ -586,7 +586,7 @@ bool IRenderingServer::CommandListEnd(RenderPassComponent* renderPass, CommandLi
 	return true;
 }
 
-bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
+bool IGraphicsService::ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType != GPUEngineType::Graphics)
 		return true;
@@ -608,7 +608,7 @@ bool IRenderingServer::ChangeRenderTargetStates(RenderPassComponent* renderPass,
 	return true;
 }
 
-bool IRenderingServer::Present()
+bool IGraphicsService::Present()
 {
 	PresentImpl();
 
@@ -635,24 +635,24 @@ bool IRenderingServer::Present()
 	return true;
 }
 
-bool IRenderingServer::SetUserPipelineOutput(std::function<GPUResourceComponent* ()>&& getUserPipelineOutputFunc)
+bool IGraphicsService::SetUserPipelineOutput(std::function<GPUResourceComponent* ()>&& getUserPipelineOutputFunc)
 {
 	m_GetUserPipelineOutputFunc = getUserPipelineOutputFunc;
 	return true;
 }
 
-GPUResourceComponent* IRenderingServer::GetUserPipelineOutput()
+GPUResourceComponent* IGraphicsService::GetUserPipelineOutput()
 {
 	return m_GetUserPipelineOutputFunc();
 }
 
-bool IRenderingServer::Resize()
+bool IGraphicsService::Resize()
 {
 	m_needResize = true;
 	return true;
 }
 
-bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
+bool IGraphicsService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
 {
 	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
@@ -678,14 +678,14 @@ bool IRenderingServer::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedM
 	return true;
 }
 
-bool IRenderingServer::InitializeImpl(MaterialComponent* material)
+bool IGraphicsService::InitializeImpl(MaterialComponent* material)
 {
 	material->m_GPUResourceType = GPUResourceType::Material;
 
 	return true;
 }
 
-bool IRenderingServer::InitializeImpl(RenderPassComponent* renderPass)
+bool IGraphicsService::InitializeImpl(RenderPassComponent* renderPass)
 {
 	bool l_result = true;
 
@@ -717,7 +717,7 @@ bool IRenderingServer::InitializeImpl(RenderPassComponent* renderPass)
 	return l_result;
 }
 
-bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* renderPass)
+bool IGraphicsService::DeleteRenderTargets(RenderPassComponent* renderPass)
 {
 	if (renderPass->m_OutputMergerTarget)
 	{
@@ -734,54 +734,54 @@ bool IRenderingServer::DeleteRenderTargets(RenderPassComponent* renderPass)
 	return true;
 }
 
-void IRenderingServer::SetUploadHeapPreparationCallback(std::function<bool()>&& callback)
+void IGraphicsService::SetUploadHeapPreparationCallback(std::function<bool()>&& callback)
 {
 	m_UploadHeapPreparationCallback = callback;
 }
 
-void IRenderingServer::SetCommandPreparationCallback(std::function<bool()>&& callback)
+void IGraphicsService::SetCommandPreparationCallback(std::function<bool()>&& callback)
 {
 	m_CommandPreparationCallback = callback;
 }
 
-void IRenderingServer::SetCommandExecutionCallback(std::function<bool()>&& callback)
+void IGraphicsService::SetCommandExecutionCallback(std::function<bool()>&& callback)
 {
 	m_CommandExecutionCallback = callback;
 }
 
-uint32_t IRenderingServer::GetSwapChainImageCount()
+uint32_t IGraphicsService::GetSwapChainImageCount()
 {
 	return m_swapChainImageCount;
 }
 
-RenderPassComponent* IRenderingServer::GetSwapChainRenderPassComponent()
+RenderPassComponent* IGraphicsService::GetSwapChainRenderPassComponent()
 {
 	return m_SwapChainRenderPassComp;
 }
 
-uint32_t IRenderingServer::GetPreviousFrame()
+uint32_t IGraphicsService::GetPreviousFrame()
 {
 	auto l_previousFrame = m_CurrentFrame == 0 ? m_swapChainImageCount - 1 : m_CurrentFrame - 1;
 	return l_previousFrame;
 }
 
-uint32_t IRenderingServer::GetCurrentFrame()
+uint32_t IGraphicsService::GetCurrentFrame()
 {
 	return m_CurrentFrame;
 }
 
-uint32_t IRenderingServer::GetNextFrame()
+uint32_t IGraphicsService::GetNextFrame()
 {
 	auto l_nextFrame = m_CurrentFrame == m_swapChainImageCount - 1 ? 0 : m_CurrentFrame + 1;
 	return l_nextFrame;
 }
 
-uint32_t IRenderingServer::GetFrameCountSinceLaunch()
+uint32_t IGraphicsService::GetFrameCountSinceLaunch()
 {
 	return m_FrameCountSinceLaunch;
 }
 
-bool IRenderingServer::InitializeComponents()
+bool IGraphicsService::InitializeComponents()
 {
 	// Process queued mesh initialization tasks
 	while (m_uninitializedMeshes.size() > 0)
@@ -882,7 +882,7 @@ bool IRenderingServer::InitializeComponents()
 	return true;
 }
 
-bool IRenderingServer::PrepareGlobalCommands()
+bool IGraphicsService::PrepareGlobalCommands()
 {
 	auto l_currentFrame = GetCurrentFrame();
 
@@ -935,7 +935,7 @@ bool IRenderingServer::PrepareGlobalCommands()
 	return true;
 }
 
-bool IRenderingServer::ExecuteGlobalCommands()
+bool IGraphicsService::ExecuteGlobalCommands()
 {
 	auto l_currentFrame = GetCurrentFrame();
 
@@ -946,12 +946,12 @@ bool IRenderingServer::ExecuteGlobalCommands()
 	return true;
 }
 
-bool IRenderingServer::PrepareSwapChainCommands()
+bool IGraphicsService::PrepareSwapChainCommands()
 {
 	// Skip swap chain commands in offscreen mode
 	if (g_Engine->getInitConfig().isOffscreen)
 	{
-		//Log(Verbose, "IRenderingServer: Skipping swap chain commands in offscreen mode");
+		//Log(Verbose, "IGraphicsService: Skipping swap chain commands in offscreen mode");
 		return true;
 	}
 
@@ -988,12 +988,12 @@ bool IRenderingServer::PrepareSwapChainCommands()
 	return true;
 }
 
-bool IRenderingServer::ExecuteSwapChainCommands()
+bool IGraphicsService::ExecuteSwapChainCommands()
 {
 	// Skip swap chain execution in offscreen mode
 	if (g_Engine->getInitConfig().isOffscreen)
 	{
-		//Log(Verbose, "IRenderingServer: Skipping swap chain execution in offscreen mode");
+		//Log(Verbose, "IGraphicsService: Skipping swap chain execution in offscreen mode");
 		return true;
 	}
 
@@ -1012,7 +1012,7 @@ bool IRenderingServer::ExecuteSwapChainCommands()
 	return true;
 }
 
-bool IRenderingServer::ExecuteResize()
+bool IGraphicsService::ExecuteResize()
 {
 	PreResize();
 	ResizeImpl();
@@ -1021,7 +1021,7 @@ bool IRenderingServer::ExecuteResize()
 	return true;
 }
 
-bool IRenderingServer::PreResize()
+bool IGraphicsService::PreResize()
 {
 	for (auto i : m_initializedRenderPasses)
 	{
@@ -1035,7 +1035,7 @@ bool IRenderingServer::PreResize()
 	return true;
 }
 
-bool IRenderingServer::PreResize(RenderPassComponent* renderPass)
+bool IGraphicsService::PreResize(RenderPassComponent* renderPass)
 {
 	if (!renderPass->m_RenderPassDesc.m_Resizable)
 		return true;
@@ -1045,7 +1045,7 @@ bool IRenderingServer::PreResize(RenderPassComponent* renderPass)
 	return true;
 }
 
-bool IRenderingServer::PostResize()
+bool IGraphicsService::PostResize()
 {
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	for (auto i : m_initializedRenderPasses)
@@ -1060,7 +1060,7 @@ bool IRenderingServer::PostResize()
 	return true;
 }
 
-bool IRenderingServer::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass)
+bool IGraphicsService::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass)
 {
 	if (!renderPass->m_RenderPassDesc.m_Resizable)
 		return true;

@@ -1,4 +1,4 @@
-#include "RayTracer.h"
+﻿#include "RayTracer.h"
 #include "../Common/Timer.h"
 #include "../Common/TaskScheduler.h"
 #include "../Common/LogService.h"
@@ -8,7 +8,7 @@
 #include "../Services/RenderingConfigurationService.h"
 
 #include "../Engine.h"
-#include "../RenderingServer/IRenderingServer.h"
+#include "../RenderingServer/IGraphicsService.h"
 using namespace Inno;
 ;
 
@@ -415,7 +415,7 @@ bool RayTracer::Initialize()
 
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_TextureComp = g_Engine->getRenderingServer()->AddTextureComponent("RayTracingResult/");
+	m_TextureComp = g_Engine->getGraphicsService()->AddTextureComponent("RayTracingResult/");
 
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;

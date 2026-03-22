@@ -1,4 +1,4 @@
-#include "BillboardDrawCallService.h"
+﻿#include "BillboardDrawCallService.h"
 
 #include "../Common/LogService.h"
 #include "../Common/GPUDataStructure.h"
@@ -40,7 +40,7 @@ namespace Inno
 
 bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	m_BillboardGPUBufferComp = l_renderingServer->AddGPUBufferComponent("BillboardCBuffer/");
 
@@ -64,7 +64,7 @@ bool BillboardDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -157,7 +157,7 @@ bool BillboardDrawCallServiceImpl::Update()
 
 		UpdateBillboardPassData();
 
-		auto l_renderingServer = g_Engine->getRenderingServer();
+		auto l_renderingServer = g_Engine->getGraphicsService();
 
 		if (m_BillboardPassPerObjectCB.size() > 0)
 		{
@@ -175,7 +175,7 @@ bool BillboardDrawCallServiceImpl::Update()
 
 bool BillboardDrawCallServiceImpl::Terminate()
 {
-	auto l_renderingServer = g_Engine->getRenderingServer();
+	auto l_renderingServer = g_Engine->getGraphicsService();
 
 	l_renderingServer->Delete(m_BillboardGPUBufferComp);
 

@@ -1,13 +1,13 @@
-#pragma once
-#include "../IRenderingServer.h"
+﻿#pragma once
+#include "../IGraphicsService.h"
 #include "MTRenderingServerBridge.h"
 
 namespace Inno
 {
-	class MTRenderingServer : public IRenderingServer
+	class MTRenderingServer : public IGraphicsService
 	{
 	public:
-		// Inherited via IRenderingServer
+		// Inherited via IGraphicsService
 		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Terminate() override;

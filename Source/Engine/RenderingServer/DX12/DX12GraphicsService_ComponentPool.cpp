@@ -1,4 +1,4 @@
-#include "DX12RenderingServer.h"
+﻿#include "DX12GraphicsService.h"
 
 #include "../../Common/Randomizer.h"
 #include "../../Services/RenderingConfigurationService.h"
@@ -7,9 +7,9 @@
 
 using namespace Inno;
 
-bool DX12RenderingServer::InitializePool()
+bool DX12GraphicsService::InitializePool()
 {
-	IRenderingServer::InitializePool();
+	IGraphicsService::InitializePool();
 
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
 	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
@@ -18,9 +18,9 @@ bool DX12RenderingServer::InitializePool()
 	return true;
 }
 
-bool DX12RenderingServer::TerminatePool()
+bool DX12GraphicsService::TerminatePool()
 {
-	IRenderingServer::TerminatePool();
+	IGraphicsService::TerminatePool();
 
 	m_MeshVertexBuffers_Upload.clear();
 	m_MeshVertexBuffers_Default.clear();
@@ -38,23 +38,23 @@ bool DX12RenderingServer::TerminatePool()
 	return true;
 }
 
-IPipelineStateObject* DX12RenderingServer::AddPipelineStateObject()
+IPipelineStateObject* DX12GraphicsService::AddPipelineStateObject()
 {
 	return m_PSOPool->Spawn();
 }
 
-ISemaphore* DX12RenderingServer::AddSemaphore()
+ISemaphore* DX12GraphicsService::AddSemaphore()
 {
 	return m_SemaphorePool->Spawn();
 }
 
-bool DX12RenderingServer::Add(IOutputMergerTarget*& rhs)
+bool DX12GraphicsService::Add(IOutputMergerTarget*& rhs)
 {
 	rhs = m_OutputMergerTargetPool->Spawn();
 	return rhs != nullptr;
 }
 
-bool DX12RenderingServer::Delete(MeshComponent* mesh)
+bool DX12GraphicsService::Delete(MeshComponent* mesh)
 {
 	// TODO Phase2-migrate: auto componentUUID = mesh->m_UUID;
 	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
@@ -101,7 +101,7 @@ bool DX12RenderingServer::Delete(MeshComponent* mesh)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(TextureComponent* texture)
+bool DX12GraphicsService::Delete(TextureComponent* texture)
 {
 	auto componentUUID = reinterpret_cast<uint64_t>(texture);
 
@@ -129,7 +129,7 @@ bool DX12RenderingServer::Delete(TextureComponent* texture)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(MaterialComponent* material)
+bool DX12GraphicsService::Delete(MaterialComponent* material)
 {
 	m_initializedMaterials.erase(material);
 
@@ -139,7 +139,7 @@ bool DX12RenderingServer::Delete(MaterialComponent* material)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(RenderPassComponent* renderPass)
+bool DX12GraphicsService::Delete(RenderPassComponent* renderPass)
 {
 	DeleteRenderTargets(renderPass);
 
@@ -151,7 +151,7 @@ bool DX12RenderingServer::Delete(RenderPassComponent* renderPass)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(ShaderProgramComponent* shaderProgram)
+bool DX12GraphicsService::Delete(ShaderProgramComponent* shaderProgram)
 {
 	ReleaseFromPool(m_GPUHandlePools.ShaderPrograms,
 	                m_GPUHandlePools.ShaderProgramLUT,
@@ -159,7 +159,7 @@ bool DX12RenderingServer::Delete(ShaderProgramComponent* shaderProgram)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(SamplerComponent* sampler)
+bool DX12GraphicsService::Delete(SamplerComponent* sampler)
 {
 	ReleaseFromPool(m_GPUHandlePools.Samplers,
 	                m_GPUHandlePools.SamplerLUT,
@@ -167,7 +167,7 @@ bool DX12RenderingServer::Delete(SamplerComponent* sampler)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(GPUBufferComponent* gpuBuffer)
+bool DX12GraphicsService::Delete(GPUBufferComponent* gpuBuffer)
 {
 	for (auto i : gpuBuffer->m_DeviceMemories)
 	{
@@ -193,7 +193,7 @@ bool DX12RenderingServer::Delete(GPUBufferComponent* gpuBuffer)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(IPipelineStateObject* rhs)
+bool DX12GraphicsService::Delete(IPipelineStateObject* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12PipelineStateObject*>(rhs);
 	l_rhs->m_PSO.Reset();
@@ -202,7 +202,7 @@ bool DX12RenderingServer::Delete(IPipelineStateObject* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(CommandListComponent* commandList)
+bool DX12GraphicsService::Delete(CommandListComponent* commandList)
 {
 	auto l_dx12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	if (l_dx12CommandList)
@@ -216,7 +216,7 @@ bool DX12RenderingServer::Delete(CommandListComponent* commandList)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(ISemaphore* rhs)
+bool DX12GraphicsService::Delete(ISemaphore* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12Semaphore*>(rhs);
 
@@ -225,7 +225,7 @@ bool DX12RenderingServer::Delete(ISemaphore* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::Delete(IOutputMergerTarget* rhs)
+bool DX12GraphicsService::Delete(IOutputMergerTarget* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12OutputMergerTarget*>(rhs);
 

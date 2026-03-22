@@ -1,10 +1,10 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <windowsx.h>
 #include <iostream>
 
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
-#include "../../RenderingServer/IRenderingServer.h"
+#include "../../RenderingServer/IGraphicsService.h"
 #include "../../Interface/IClientFactory.h"
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
@@ -134,7 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
         m_pEngine->Terminate();
 
-        if (m_pEngine->getRenderingServer()->HasGPUError())
+        if (m_pEngine->getGraphicsService()->HasGPUError())
             return 1;
 
         if (l_renderingClientPtr && !l_renderingClientPtr->GetValidationPassed())
