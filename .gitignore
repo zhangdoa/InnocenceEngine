@@ -79,3 +79,11 @@ xcuserdata/
 
 # AI Agent Team coordination files
 AI Agent Team/
+
+# Transient build/test output (never commit these)
+build*.log
+build*.txt
+test*.log
+test*.txt
+gpu_test*.txt
+*.Log
