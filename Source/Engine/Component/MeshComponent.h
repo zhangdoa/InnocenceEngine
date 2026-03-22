@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/GraphicsPrimitive.h"
+#include "../Common/Object.h"
 #include "../Common/Array.h"
 #include "../Common/MathHelper.h"
 
@@ -24,6 +25,9 @@ namespace Inno
 	{
 		static uint32_t GetTypeID() { return 6; };
 		static const char* GetTypeName() { return "MeshComponent"; };
+
+		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+		ObjectName   m_InstanceName = "";
 
 		void* m_MappedMemory_VB = nullptr;
 		void* m_MappedMemory_IB = nullptr;

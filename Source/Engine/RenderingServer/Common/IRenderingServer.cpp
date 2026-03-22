@@ -12,8 +12,6 @@
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/GUISystem.h"
 #include "../../Services/SceneService.h"
-#include "../../Services/EntityRegistry.h"
-#include "../../Services/ComponentManager.h"
 #include "../../Component/TextureComponent.h"
 #include "../../Component/MeshComponent.h"
 #include "../../Component/MaterialComponent.h"
@@ -34,23 +32,30 @@ Accessibility Accessibility::CopyDestination = Accessibility(false, true, false,
 
 bool IRenderingServer::InitializePool()
 {
-	// TODO Phase2-migrate: Task 14 — restore EntityRegistry-based storage for GPU components when they are stripped to plain structs
-	auto l_renderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
+	auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
-	g_Engine->Get<ComponentManager>()->RegisterType<MeshComponent>(l_renderingCapability.maxMeshes, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<TextureComponent>(l_renderingCapability.maxTextures, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<MaterialComponent>(l_renderingCapability.maxMaterials, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<RenderPassComponent>(128, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<ShaderProgramComponent>(256, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<SamplerComponent>(256, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<GPUBufferComponent>(l_renderingCapability.maxBuffers, this);
-	g_Engine->Get<ComponentManager>()->RegisterType<CommandListComponent>(256, this);
+	m_GPUHandlePools.Meshes         = TObjectPool<MeshComponent>::Create(l_cap.maxMeshes);
+	m_GPUHandlePools.Textures       = TObjectPool<TextureComponent>::Create(l_cap.maxTextures);
+	m_GPUHandlePools.Materials      = TObjectPool<MaterialComponent>::Create(l_cap.maxMaterials);
+	m_GPUHandlePools.RenderPasses   = TObjectPool<RenderPassComponent>::Create(128);
+	m_GPUHandlePools.ShaderPrograms = TObjectPool<ShaderProgramComponent>::Create(256);
+	m_GPUHandlePools.Samplers       = TObjectPool<SamplerComponent>::Create(256);
+	m_GPUHandlePools.GPUBuffers     = TObjectPool<GPUBufferComponent>::Create(l_cap.maxBuffers);
+	m_GPUHandlePools.CommandLists   = TObjectPool<CommandListComponent>::Create(256);
 
 	return true;
 }
 
 bool IRenderingServer::TerminatePool()
 {
+	TObjectPool<MeshComponent>::Destruct(m_GPUHandlePools.Meshes);
+	TObjectPool<TextureComponent>::Destruct(m_GPUHandlePools.Textures);
+	TObjectPool<MaterialComponent>::Destruct(m_GPUHandlePools.Materials);
+	TObjectPool<RenderPassComponent>::Destruct(m_GPUHandlePools.RenderPasses);
+	TObjectPool<ShaderProgramComponent>::Destruct(m_GPUHandlePools.ShaderPrograms);
+	TObjectPool<SamplerComponent>::Destruct(m_GPUHandlePools.Samplers);
+	TObjectPool<GPUBufferComponent>::Destruct(m_GPUHandlePools.GPUBuffers);
+	TObjectPool<CommandListComponent>::Destruct(m_GPUHandlePools.CommandLists);
 	return true;
 }
 
@@ -248,64 +253,86 @@ bool IRenderingServer::Terminate()
 }
 
 template <typename T>
-T* AddComponent(const char* name)
+static T* AllocateGPUHandle(TObjectPool<T>* pool,
+                             ThreadSafeUnorderedMap<std::string, T*>& lut,
+                             ThreadSafeVector<T*>& pointers,
+                             const char* name)
 {
-	if (strcmp(name, "") == 0)
-	{
-		Log(Error, "Component name cannot be empty.");
-		return nullptr;
-	}
-	std::string l_name = name;
+	auto l_existing = lut.find(name);
+	if (l_existing != lut.end())
+		return l_existing->second;
 
-	auto l_parentEntity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, l_name.c_str());
-	auto l_component = g_Engine->Get<ComponentManager>()->Spawn<T>(l_parentEntity, false, ObjectLifespan::Persistence);
-	if (!l_component)
+	auto l_ptr = pool->Spawn();
+	if (!l_ptr)
 	{
-		Log(Error, "Failed to allocate component from the pool.");
+		Log(Error, "GPU handle pool exhausted for name: ", name);
 		return nullptr;
 	}
 
-	return l_component;
+	l_ptr->m_ObjectStatus = ObjectStatus::Created;
+	l_ptr->m_InstanceName = ObjectName(name);
+
+	lut.emplace(name, l_ptr);
+	pointers.emplace_back(l_ptr);
+	return l_ptr;
 }
 
 MeshComponent* IRenderingServer::AddMeshComponent(const char* name)
 {
-	return AddComponent<MeshComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.Meshes, m_GPUHandlePools.MeshLUT, m_GPUHandlePools.MeshPointers, name);
 }
 
 TextureComponent* IRenderingServer::AddTextureComponent(const char* name)
 {
-	return AddComponent<TextureComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.Textures, m_GPUHandlePools.TextureLUT, m_GPUHandlePools.TexturePointers, name);
 }
 
 MaterialComponent* IRenderingServer::AddMaterialComponent(const char* name)
 {
-	return AddComponent<MaterialComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.Materials, m_GPUHandlePools.MaterialLUT, m_GPUHandlePools.MaterialPointers, name);
 }
 
 RenderPassComponent* IRenderingServer::AddRenderPassComponent(const char* name)
 {
-	return AddComponent<RenderPassComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.RenderPasses, m_GPUHandlePools.RenderPassLUT, m_GPUHandlePools.RenderPassPointers, name);
 }
 
 ShaderProgramComponent* IRenderingServer::AddShaderProgramComponent(const char* name)
 {
-	return AddComponent<ShaderProgramComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.ShaderPrograms, m_GPUHandlePools.ShaderProgramLUT, m_GPUHandlePools.ShaderProgramPointers, name);
 }
 
 SamplerComponent* IRenderingServer::AddSamplerComponent(const char* name)
 {
-	return AddComponent<SamplerComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.Samplers, m_GPUHandlePools.SamplerLUT, m_GPUHandlePools.SamplerPointers, name);
 }
 
 GPUBufferComponent* IRenderingServer::AddGPUBufferComponent(const char* name)
 {
-	return AddComponent<GPUBufferComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.GPUBuffers, m_GPUHandlePools.GPUBufferLUT, m_GPUHandlePools.GPUBufferPointers, name);
 }
 
 CommandListComponent* IRenderingServer::AddCommandListComponent(const char* name)
 {
-	return AddComponent<CommandListComponent>(name);
+	return AllocateGPUHandle(m_GPUHandlePools.CommandLists, m_GPUHandlePools.CommandListLUT, m_GPUHandlePools.CommandListPointers, name);
+}
+
+TextureComponent* IRenderingServer::FindTextureByName(const char* name)
+{
+	auto l_result = m_GPUHandlePools.TextureLUT.find(name);
+	return (l_result != m_GPUHandlePools.TextureLUT.end()) ? l_result->second : nullptr;
+}
+
+MeshComponent* IRenderingServer::FindMeshByName(const char* name)
+{
+	auto l_result = m_GPUHandlePools.MeshLUT.find(name);
+	return (l_result != m_GPUHandlePools.MeshLUT.end()) ? l_result->second : nullptr;
+}
+
+MaterialComponent* IRenderingServer::FindMaterialByName(const char* name)
+{
+	auto l_result = m_GPUHandlePools.MaterialLUT.find(name);
+	return (l_result != m_GPUHandlePools.MaterialLUT.end()) ? l_result->second : nullptr;
 }
 
 void IRenderingServer::Initialize(EntityID Entity)

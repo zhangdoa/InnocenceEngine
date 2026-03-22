@@ -3,6 +3,8 @@
 
 #include "../Common/ThreadSafeQueue.h"
 #include "../Common/ObjectPool.h"
+#include "../Common/ThreadSafeUnorderedMap.h"
+#include "../Common/ThreadSafeVector.h"
 
 #include "../Component/MeshComponent.h"
 #include "../Component/TextureComponent.h"
@@ -38,6 +40,10 @@ namespace Inno
 		virtual GPUBufferComponent* AddGPUBufferComponent(const char* name = "");
 		virtual CommandListComponent* AddCommandListComponent(const char* name = "");
 		virtual IPipelineStateObject* AddPipelineStateObject() = 0;
+
+		TextureComponent*  FindTextureByName(const char* name);
+		MeshComponent*     FindMeshByName(const char* name);
+		MaterialComponent* FindMaterialByName(const char* name);
 		virtual ISemaphore* AddSemaphore() = 0;
 		virtual bool Add(IOutputMergerTarget*& rhs) = 0;
 
@@ -133,6 +139,18 @@ namespace Inno
 
 	protected:
 		bool WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range);
+
+		template <typename T>
+		void ReleaseFromPool(TObjectPool<T>* pool,
+		                     ThreadSafeUnorderedMap<std::string, T*>& lut,
+		                     ThreadSafeVector<T*>& pointers,
+		                     T* ptr)
+		{
+			if (!ptr) return;
+			lut.erase(std::string(ptr->m_InstanceName.c_str()));
+			pointers.eraseByValue(ptr);
+			pool->Destroy(ptr);
+		}
 
 	public:
 		template<typename T>
@@ -267,6 +285,37 @@ namespace Inno
 		bool PostResize();
 		bool PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass);
 
-		std::atomic_bool m_needResize = false;	
+		std::atomic_bool m_needResize = false;
+
+		struct GPUHandlePools
+		{
+			TObjectPool<MeshComponent>*          Meshes          = nullptr;
+			TObjectPool<TextureComponent>*       Textures        = nullptr;
+			TObjectPool<MaterialComponent>*      Materials       = nullptr;
+			TObjectPool<RenderPassComponent>*    RenderPasses    = nullptr;
+			TObjectPool<ShaderProgramComponent>* ShaderPrograms  = nullptr;
+			TObjectPool<SamplerComponent>*       Samplers        = nullptr;
+			TObjectPool<GPUBufferComponent>*     GPUBuffers      = nullptr;
+			TObjectPool<CommandListComponent>*   CommandLists    = nullptr;
+
+			ThreadSafeUnorderedMap<std::string, MeshComponent*>          MeshLUT;
+			ThreadSafeUnorderedMap<std::string, TextureComponent*>       TextureLUT;
+			ThreadSafeUnorderedMap<std::string, MaterialComponent*>      MaterialLUT;
+			ThreadSafeUnorderedMap<std::string, RenderPassComponent*>    RenderPassLUT;
+			ThreadSafeUnorderedMap<std::string, ShaderProgramComponent*> ShaderProgramLUT;
+			ThreadSafeUnorderedMap<std::string, SamplerComponent*>       SamplerLUT;
+			ThreadSafeUnorderedMap<std::string, GPUBufferComponent*>     GPUBufferLUT;
+			ThreadSafeUnorderedMap<std::string, CommandListComponent*>   CommandListLUT;
+
+			ThreadSafeVector<MeshComponent*>          MeshPointers;
+			ThreadSafeVector<TextureComponent*>       TexturePointers;
+			ThreadSafeVector<MaterialComponent*>      MaterialPointers;
+			ThreadSafeVector<RenderPassComponent*>    RenderPassPointers;
+			ThreadSafeVector<ShaderProgramComponent*> ShaderProgramPointers;
+			ThreadSafeVector<SamplerComponent*>       SamplerPointers;
+			ThreadSafeVector<GPUBufferComponent*>     GPUBufferPointers;
+			ThreadSafeVector<CommandListComponent*>   CommandListPointers;
+		};
+		GPUHandlePools m_GPUHandlePools;
 	};
 }

@@ -11,6 +11,9 @@ namespace Inno
 		static uint32_t GetTypeID() { return 7; };
 		static const char* GetTypeName() { return "MaterialComponent"; };
 
+		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+		ObjectName   m_InstanceName = "";
+
 		GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
 		Accessibility m_CPUAccessibility = Accessibility::WriteOnly;
 		Accessibility m_GPUAccessibility = Accessibility::ReadOnly;

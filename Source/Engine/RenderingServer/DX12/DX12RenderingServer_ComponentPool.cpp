@@ -95,6 +95,9 @@ bool DX12RenderingServer::Delete(MeshComponent* mesh)
 		m_MeshScratchBuffers.erase(scratchIt);
 	}
 
+	ReleaseFromPool(m_GPUHandlePools.Meshes,
+	                m_GPUHandlePools.MeshLUT,
+	                m_GPUHandlePools.MeshPointers, mesh);
 	return true;
 }
 
@@ -120,6 +123,9 @@ bool DX12RenderingServer::Delete(TextureComponent* texture)
 
 	m_initializedTextures.erase(texture);
 
+	ReleaseFromPool(m_GPUHandlePools.Textures,
+	                m_GPUHandlePools.TextureLUT,
+	                m_GPUHandlePools.TexturePointers, texture);
 	return true;
 }
 
@@ -127,35 +133,37 @@ bool DX12RenderingServer::Delete(MaterialComponent* material)
 {
 	m_initializedMaterials.erase(material);
 
+	ReleaseFromPool(m_GPUHandlePools.Materials,
+	                m_GPUHandlePools.MaterialLUT,
+	                m_GPUHandlePools.MaterialPointers, material);
 	return true;
 }
 
 bool DX12RenderingServer::Delete(RenderPassComponent* renderPass)
 {
-	// Command lists are now created dynamically and managed separately - no cleanup needed
-
 	DeleteRenderTargets(renderPass);
 
 	Delete(renderPass->m_ShaderProgram);
 
-	//m_RenderPassComponentPool->Destroy(renderPass);
-
+	ReleaseFromPool(m_GPUHandlePools.RenderPasses,
+	                m_GPUHandlePools.RenderPassLUT,
+	                m_GPUHandlePools.RenderPassPointers, renderPass);
 	return true;
 }
 
 bool DX12RenderingServer::Delete(ShaderProgramComponent* shaderProgram)
 {
-	//auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(shaderProgram);
-	//m_ShaderProgramComponentPool->Destroy(l_rhs);
-
+	ReleaseFromPool(m_GPUHandlePools.ShaderPrograms,
+	                m_GPUHandlePools.ShaderProgramLUT,
+	                m_GPUHandlePools.ShaderProgramPointers, shaderProgram);
 	return true;
 }
 
 bool DX12RenderingServer::Delete(SamplerComponent* sampler)
 {
-	//auto l_rhs = reinterpret_cast<DX12SamplerComponent*>(sampler);
-	//m_SamplerComponentPool->Destroy(l_rhs);
-
+	ReleaseFromPool(m_GPUHandlePools.Samplers,
+	                m_GPUHandlePools.SamplerLUT,
+	                m_GPUHandlePools.SamplerPointers, sampler);
 	return true;
 }
 
@@ -177,8 +185,9 @@ bool DX12RenderingServer::Delete(GPUBufferComponent* gpuBuffer)
 			l_DX12MappedMemory->m_UploadHeapBuffer.Reset();
 	}
 
-	//m_GPUBufferComponentPool->Destroy(rhs);
-
+	ReleaseFromPool(m_GPUHandlePools.GPUBuffers,
+	                m_GPUHandlePools.GPUBufferLUT,
+	                m_GPUHandlePools.GPUBufferPointers, gpuBuffer);
 	return true;
 }
 
@@ -199,6 +208,9 @@ bool DX12RenderingServer::Delete(CommandListComponent* commandList)
 		l_dx12CommandList->Release();
 	}
 
+	ReleaseFromPool(m_GPUHandlePools.CommandLists,
+	                m_GPUHandlePools.CommandListLUT,
+	                m_GPUHandlePools.CommandListPointers, commandList);
 	return true;
 }
 
