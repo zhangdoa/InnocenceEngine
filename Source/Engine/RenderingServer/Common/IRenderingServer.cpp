@@ -250,23 +250,12 @@ bool IRenderingServer::Terminate()
 template <typename T>
 T* AddComponent(const char* name)
 {
-	static std::atomic<uint32_t> l_count = 0;
-	l_count++;
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = (std::string(typeid(T).name()) + "_" + std::to_string(l_count) + "/");
-	}
-
 	if (strcmp(name, "") == 0)
 	{
 		Log(Error, "Component name cannot be empty.");
 		return nullptr;
 	}
+	std::string l_name = name;
 
 	auto l_parentEntity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, l_name.c_str());
 	auto l_component = g_Engine->Get<ComponentManager>()->Spawn<T>(l_parentEntity, false, ObjectLifespan::Persistence);

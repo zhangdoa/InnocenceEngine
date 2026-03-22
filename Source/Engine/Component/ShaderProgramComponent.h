@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/Object.h"
+#include "../Common/STL14.h"
 
 namespace Inno
 {

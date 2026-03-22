@@ -21,10 +21,10 @@ namespace Inno
 	};
 
 	template<typename T, typename = void>
-	struct HasInstanceName : std::false_type {};
+	struct HasLifecycleFields : std::false_type {};
 
 	template<typename T>
-	struct HasInstanceName<T, std::void_t<decltype(std::declval<T>().m_InstanceName)>> : std::true_type {};
+	struct HasLifecycleFields<T, std::void_t<decltype(std::declval<T>().m_InstanceName)>> : std::true_type {};
 
 	template<typename T>
 	class TComponentFactory : public IComponentFactory
@@ -151,7 +151,7 @@ namespace Inno
 				m_ComponentUUIDs.emplace(l_Component, PlainStructInfo{ l_UUID, objectLifespan, owner });
 				m_ComponentLUTByUUID.emplace(l_UUID, l_Component);
 
-				if constexpr (HasInstanceName<T>::value)
+				if constexpr (HasLifecycleFields<T>::value)
 				{
 					auto l_OwnerName = g_Engine->Get<EntityRegistry>()->GetName(owner);
 					l_Component->m_InstanceName = ObjectName((std::string(l_OwnerName ? l_OwnerName : "")
@@ -305,7 +305,7 @@ namespace Inno
 				return false;
 			}
 
-			if constexpr (std::is_base_of_v<Component, T>)
+			if constexpr (std::is_base_of_v<Component, T> || HasLifecycleFields<T>::value)
 				component->m_ObjectStatus = ObjectStatus::Terminated;
 
 			static_cast<TObjectPool<T>*>(m_ComponentPool)->Destroy(component);
