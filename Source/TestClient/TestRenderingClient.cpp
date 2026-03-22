@@ -259,6 +259,14 @@ void TestRenderingClient::ValidatePixelReadback(TextureComponent* rt, const std:
     const uint32_t l_cy   = l_h / 2;
     const uint32_t l_half = 16;
 
+    if (pixels.size() < static_cast<size_t>(l_w) * l_h)
+    {
+        Log(Error, "ValidatePixelReadback: pixel buffer too small (", pixels.size(),
+            " < ", l_w * l_h, ")");
+        m_ValidationPassed = false;
+        return;
+    }
+
     for (uint32_t y = l_cy - l_half; y < l_cy + l_half; ++y)
     {
         for (uint32_t x = l_cx - l_half; x < l_cx + l_half; ++x)
