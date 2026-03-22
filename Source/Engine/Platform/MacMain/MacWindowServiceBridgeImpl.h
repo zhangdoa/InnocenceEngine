@@ -1,25 +1,25 @@
 //
-//  MacWindowSystemBridgeImpl.h
+//  MacWindowServiceBridgeImpl.h
 //  Main
 //
 //  Created by zhangdoa on 14/04/2019.
 //  Copyright © 2019 InnocenceEngine. All rights reserved.
 //
 
-#ifndef MacWindowSystemBridgeImpl_h
-#define MacWindowSystemBridgeImpl_h
+#ifndef MacWindowServiceBridgeImpl_h
+#define MacWindowServiceBridgeImpl_h
 
-#import "../MacWindow/MacWindowSystemBridge.h"
+#import "../MacWindow/MacWindowServiceBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
 namespace Inno
 {
-	class MacWindowSystemBridgeImpl : public MacWindowSystemBridge
+	class MacWindowServiceBridgeImpl : public MacWindowServiceBridge
 	{
 	public:
-		explicit MacWindowSystemBridgeImpl(MacWindowDelegate *macWindowDelegate, MetalDelegate *metalDelegate);
-		~MacWindowSystemBridgeImpl();
+		explicit MacWindowServiceBridgeImpl(MacWindowDelegate *macWindowDelegate, MetalDelegate *metalDelegate);
+		~MacWindowServiceBridgeImpl();
 
 		bool Setup(uint32_t sizeX, uint32_t sizeY) override;
 		bool Initialize() override;
@@ -35,4 +35,4 @@ namespace Inno
 		NSApplication *app;
 	};
 } // namespace Inno
-#endif /* MacWindowSystemBridgeImpl_h */
+#endif /* MacWindowServiceBridgeImpl_h */

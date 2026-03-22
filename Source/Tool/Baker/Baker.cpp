@@ -5,7 +5,7 @@
 #include "../../Engine/Common/TaskScheduler.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/EntityRegistry.h"
-#include "../../Engine/Services/CameraSystem.h"
+#include "../../Engine/Services/CameraService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -41,9 +41,9 @@ void Baker::BakeProbeCache(const char* sceneName)
 	if (l_playerCameraEntityID != INVALID_ENTITY)
 	{
 		auto* l_playerCameraComponent = g_Engine->Get<EntityRegistry>()->Get<CameraComponent>(l_playerCameraEntityID);
-		auto* l_CameraSystem = g_Engine->Get<CameraSystem>();
-		l_CameraSystem->SetMainCamera(l_playerCameraComponent);
-		l_CameraSystem->SetActiveCamera(l_playerCameraComponent);
+		auto* l_CameraService = g_Engine->Get<CameraService>();
+		l_CameraService->SetMainCamera(l_playerCameraComponent);
+		l_CameraService->SetActiveCamera(l_playerCameraComponent);
 	}
 
 	g_Engine->Update();
@@ -155,7 +155,7 @@ void Baker::BakeBrickFactor(const char* brickFileName)
 	}
 }
 
-bool BakerRenderingClient::Setup(ISystemConfig* systemConfig)
+bool BakerRenderingClient::Setup(IServiceConfig* systemConfig)
 {
 	auto l_BakerRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit("BakerRenderingClientSetupTask", 2,
 		[]() {

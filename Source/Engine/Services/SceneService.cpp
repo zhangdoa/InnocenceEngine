@@ -59,7 +59,7 @@ bool SceneService::LoadSync(const char* fileName)
 	return true;
 }
 
-bool SceneService::Setup(ISystemConfig* systemConfig)
+bool SceneService::Setup(IServiceConfig* systemConfig)
 {
 	f_SceneLoadingStartedCallback = [&]()
 	{

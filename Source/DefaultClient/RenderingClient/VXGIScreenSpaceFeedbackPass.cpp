@@ -14,7 +14,7 @@ using namespace Inno;
 
 
 
-bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
+bool VXGIScreenSpaceFeedbackPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

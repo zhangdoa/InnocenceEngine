@@ -1,13 +1,13 @@
-#ifndef MacWindowSystemBridge_h
-#define MacWindowSystemBridge_h
+#ifndef MacWindowServiceBridge_h
+#define MacWindowServiceBridge_h
 
 namespace Inno
 {
-	class MacWindowSystemBridge
+	class MacWindowServiceBridge
 	{
 	public:
-		MacWindowSystemBridge() {};
-		virtual ~MacWindowSystemBridge() {};
+		MacWindowServiceBridge() {};
+		virtual ~MacWindowServiceBridge() {};
 
 		virtual bool Setup(uint32_t sizeX, uint32_t sizeY) = 0;
 		virtual bool Initialize() = 0;
@@ -17,4 +17,4 @@ namespace Inno
 		virtual ObjectStatus GetStatus() = 0;
 	};
 }
-#endif /* MacWindowSystemBridge_h */
+#endif /* MacWindowServiceBridge_h */

@@ -4,7 +4,7 @@
 #include "../Engine/Common/ComponentHeaders.h"
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/EntityRegistry.h"
-#include "../Engine/Services/CameraSystem.h"
+#include "../Engine/Services/CameraService.h"
 #include "../Engine/Services/ComponentManager.h" // TODO Phase2-migrate: Task 14 — keep until TextureComponent and AnimationComponent are migrated
 #include <QHeaderView>
 

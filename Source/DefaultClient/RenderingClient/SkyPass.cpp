@@ -7,7 +7,7 @@
 
 using namespace Inno;
 
-bool SkyPass::Setup(ISystemConfig* systemConfig)
+bool SkyPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

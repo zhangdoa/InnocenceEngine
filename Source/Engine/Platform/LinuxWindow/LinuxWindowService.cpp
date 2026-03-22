@@ -1,4 +1,4 @@
-#include "LinuxWindowSystem.h"
+#include "LinuxWindowService.h"
 
 #include "../../Engine.h"
 
@@ -14,7 +14,7 @@ using namespace Inno;
 
 typedef GLXContext(*glXCreateContextAttribsARBProc) (Display*, GLXFBConfig, GLXContext, Bool, const int32_t*);
 
-namespace LinuxWindowSystemNS
+namespace LinuxWindowServiceNS
 {
 	bool Setup();
 	bool Initialize();
@@ -41,7 +41,7 @@ namespace LinuxWindowSystemNS
 	GLXContext m_context;
 }
 
-bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
+bool LinuxWindowServiceNS::Setup(IServiceConfig* systemConfig)
 {
 	m_display = XOpenDisplay(0);
 
@@ -128,77 +128,77 @@ bool LinuxWindowSystemNS::Setup(ISystemConfig* systemConfig)
 		return false;
 	}
 
-	LinuxWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "LinuxWindowSystem Setup finished.");
+	LinuxWindowServiceNS::m_ObjectStatus = ObjectStatus::Activated;
+	Log(Success, "LinuxWindowService Setup finished.");
 
 	return true;
 }
 
-bool LinuxWindowSystemNS::Initialize()
+bool LinuxWindowServiceNS::Initialize()
 {
-	Log(Success, "LinuxWindowSystem has been initialized.");
+	Log(Success, "LinuxWindowService has been initialized.");
 	return true;
 }
 
-bool LinuxWindowSystemNS::Update()
-{
-	return true;
-}
-
-bool LinuxWindowSystemNS::Terminate()
-{
-	LinuxWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "LinuxWindowSystem has been terminated.");
-	return true;
-}
-
-bool LinuxWindowSystem::Setup(void* hInstance, void* hwnd)
-{
-	return LinuxWindowSystemNS::Setup(ISystemConfig * systemConfig);
-}
-
-bool LinuxWindowSystem::Initialize()
-{
-	return LinuxWindowSystemNS::Initialize();
-}
-
-bool LinuxWindowSystem::Update()
-{
-	return LinuxWindowSystemNS::Update();
-}
-
-bool LinuxWindowSystem::Terminate()
-{
-	return LinuxWindowSystemNS::Terminate();
-}
-
-ObjectStatus LinuxWindowSystem::GetStatus()
-{
-	return LinuxWindowSystemNS::m_ObjectStatus;
-}
-
-IWindowSurface* LinuxWindowSystem::GetWindowSurface()
-{
-	return LinuxWindowSystemNS::m_WindowSurface;
-}
-
-const std::vector<ButtonState>& LinuxWindowSystem::GetButtonState()
-{
-	return LinuxWindowSystemNS::m_ButtonStates;
-}
-
-bool LinuxWindowSystem::SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam)
+bool LinuxWindowServiceNS::Update()
 {
 	return true;
 }
 
-bool LinuxWindowSystem::AddEventCallback(WindowEventCallback* callback)
+bool LinuxWindowServiceNS::Terminate()
 {
-	LinuxWindowSystemNS::m_WindowEventCallbacks.emplace(functor);
+	LinuxWindowServiceNS::m_ObjectStatus = ObjectStatus::Terminated;
+	Log(Success, "LinuxWindowService has been terminated.");
 	return true;
 }
 
-//void LinuxWindowSystem::swapBuffer()
+bool LinuxWindowService::Setup(void* hInstance, void* hwnd)
+{
+	return LinuxWindowServiceNS::Setup(IServiceConfig * systemConfig);
+}
+
+bool LinuxWindowService::Initialize()
+{
+	return LinuxWindowServiceNS::Initialize();
+}
+
+bool LinuxWindowService::Update()
+{
+	return LinuxWindowServiceNS::Update();
+}
+
+bool LinuxWindowService::Terminate()
+{
+	return LinuxWindowServiceNS::Terminate();
+}
+
+ObjectStatus LinuxWindowService::GetStatus()
+{
+	return LinuxWindowServiceNS::m_ObjectStatus;
+}
+
+IWindowSurface* LinuxWindowService::GetWindowSurface()
+{
+	return LinuxWindowServiceNS::m_WindowSurface;
+}
+
+const std::vector<ButtonState>& LinuxWindowService::GetButtonState()
+{
+	return LinuxWindowServiceNS::m_ButtonStates;
+}
+
+bool LinuxWindowService::SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam)
+{
+	return true;
+}
+
+bool LinuxWindowService::AddEventCallback(WindowEventCallback* callback)
+{
+	LinuxWindowServiceNS::m_WindowEventCallbacks.emplace(functor);
+	return true;
+}
+
+//void LinuxWindowService::swapBuffer()
 //{
-	//glXSwapBuffers(LinuxWindowSystemNS::m_display, LinuxWindowSystemNS::m_window);
+	//glXSwapBuffers(LinuxWindowServiceNS::m_display, LinuxWindowServiceNS::m_window);
 //}

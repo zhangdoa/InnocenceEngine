@@ -10,7 +10,7 @@ namespace MTRenderingServerNS
 	MTRenderingServerBridge* m_bridge;
 }
 
-bool MTRenderingServer::Setup(ISystemConfig* systemConfig)
+bool MTRenderingServer::Setup(IServiceConfig* systemConfig)
 {
 	return true;
 }

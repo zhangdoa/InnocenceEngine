@@ -10,7 +10,7 @@
 
 using namespace Inno;
 
-bool SunShadowGeometryProcessPass::Setup(ISystemConfig *systemConfig)
+bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

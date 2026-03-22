@@ -9,7 +9,7 @@ namespace ImGuiRendererMTNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererMT::Setup(ISystemConfig* systemConfig)
+bool ImGuiRendererMT::Setup(IServiceConfig* systemConfig)
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "ImGuiRendererMT Setup finished.");

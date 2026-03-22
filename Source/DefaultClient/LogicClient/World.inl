@@ -1,6 +1,6 @@
 #include "../../Engine/Services/EntityRegistry.h"
 #include "../../Engine/Services/ComponentManager.h"
-#include "../../Engine/Services/CameraSystem.h"
+#include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/AssetService.h"
@@ -18,12 +18,12 @@ using namespace Inno;
 
 namespace Inno
 {
-	class WorldSystem : public ISystem
+	class WorldSystem : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_DEFAULT(WorldSystem);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update();
 		bool Terminate() override;
@@ -319,7 +319,7 @@ namespace Inno
 		return true;
 	}
 
-	bool WorldSystem::Setup(ISystemConfig* systemConfig)
+	bool WorldSystem::Setup(IServiceConfig* systemConfig)
 	{
 		auto l_testQuatToMat = [&]() -> bool {
 			std::uniform_real_distribution<float> randomAxis(0.0f, 1.0f);
@@ -484,7 +484,7 @@ namespace Inno
 		auto l_w = 1.0f;
 		Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
 
-		auto l_activeCamera = g_Engine->Get<CameraSystem>()->GetActiveCamera();
+		auto l_activeCamera = g_Engine->Get<CameraService>()->GetActiveCamera();
 		if (l_activeCamera == nullptr)
 		{
 			return Vec4();

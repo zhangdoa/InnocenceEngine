@@ -6,16 +6,16 @@
 
 namespace Inno
 {
-	class ISystemConfig
+	class IServiceConfig
 	{
 	};
 
-	class ISystem
+	class IService
 	{
 	public:
-		INNO_CLASS_INTERFACE_NON_COPYABLE(ISystem);
+		INNO_CLASS_INTERFACE_NON_COPYABLE(IService);
 
-		virtual bool Setup(ISystemConfig* systemConfig = nullptr) = 0;
+		virtual bool Setup(IServiceConfig* systemConfig = nullptr) = 0;
 		virtual bool Initialize() = 0;
 		virtual bool Update() { return true; };
 		virtual bool Terminate() = 0;

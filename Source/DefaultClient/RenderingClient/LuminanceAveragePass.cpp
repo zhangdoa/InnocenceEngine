@@ -9,7 +9,7 @@
 
 using namespace Inno;
 
-bool LuminanceAveragePass::Setup(ISystemConfig* systemConfig)
+bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

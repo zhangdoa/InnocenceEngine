@@ -8,7 +8,7 @@
 
 using namespace Inno;
 
-bool SunShadowCullingPass::Setup(ISystemConfig *systemConfig)
+bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

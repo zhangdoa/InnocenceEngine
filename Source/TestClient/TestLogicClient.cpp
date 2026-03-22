@@ -2,7 +2,7 @@
 
 using namespace Inno;
 
-bool TestLogicClient::Setup(ISystemConfig*)
+bool TestLogicClient::Setup(IServiceConfig*)
 {
     m_ObjectStatus = ObjectStatus::Activated;
     return true;

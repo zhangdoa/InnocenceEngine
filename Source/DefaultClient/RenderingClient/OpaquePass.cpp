@@ -9,7 +9,7 @@
 
 using namespace Inno;
 
-bool OpaquePass::Setup(ISystemConfig *systemConfig)
+bool OpaquePass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

@@ -10,7 +10,7 @@ namespace Inno
 		INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultRenderingClient);
 
 		// Inherited via IRenderingClient
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool PrepareCommands() override;

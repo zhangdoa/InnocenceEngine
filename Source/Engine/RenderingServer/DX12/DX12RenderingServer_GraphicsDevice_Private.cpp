@@ -1,6 +1,6 @@
 #include "DX12RenderingServer.h"
 
-#include "../../Platform/WinWindow/WinWindowSystem.h"
+#include "../../Platform/WinWindow/WinWindowService.h"
 
 #include "../../Services/RenderingConfigurationService.h"
 
@@ -785,7 +785,7 @@ bool DX12RenderingServer::CreateSwapChain()
     IDXGISwapChain1* l_swapChain1;
     auto l_hResult = m_factory->CreateSwapChainForHwnd(
         m_directCommandQueue.Get(),
-        reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(),
+        reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle(),
         &m_swapChainDesc,
         nullptr,
         nullptr,

@@ -13,7 +13,7 @@ using namespace Inno;
 
 
 
-bool VXGIGeometryProcessPass::Setup(ISystemConfig *systemConfig)
+bool VXGIGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

@@ -8,7 +8,7 @@ namespace ImGuiWindowMacNS
 {
 }
 
-bool ImGuiWindowMac::Setup(ISystemConfig* systemConfig)
+bool ImGuiWindowMac::Setup(IServiceConfig* systemConfig)
 {
 	Log(Success, "ImGuiWindowMac Setup finished.");
 

@@ -53,7 +53,7 @@ namespace Inno
 		INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultRenderingClientImpl);
 
 		// Inherited via IRenderingClient
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool PrepareCommands() override;
@@ -87,7 +87,7 @@ namespace Inno
 		ObjectStatus m_ObjectStatus;
 	};
 
-	bool DefaultRenderingClientImpl::Setup(ISystemConfig* systemConfig)
+	bool DefaultRenderingClientImpl::Setup(IServiceConfig* systemConfig)
 	{
 		f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
@@ -679,7 +679,7 @@ namespace Inno
 	}
 }
 
-bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
+bool DefaultRenderingClient::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new DefaultRenderingClientImpl();
 	return m_Impl->Setup(systemConfig);

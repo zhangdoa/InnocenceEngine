@@ -7,7 +7,7 @@ namespace Inno
 	class BakerLogicClient: public ILogicClient
 	{
 		// Inherited via ILogicClient
-		bool Setup(ISystemConfig* systemConfig) override
+		bool Setup(IServiceConfig* systemConfig) override
 		{
 			return true;
 		}

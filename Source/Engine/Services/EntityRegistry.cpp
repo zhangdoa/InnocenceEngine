@@ -5,7 +5,7 @@
 
 using namespace Inno;
 
-bool EntityRegistry::Setup(ISystemConfig*)
+bool EntityRegistry::Setup(IServiceConfig*)
 {
     m_Valid.assign(MAX_ENTITIES, false);
     m_Lifespans.assign(MAX_ENTITIES, ObjectLifespan::Invalid);

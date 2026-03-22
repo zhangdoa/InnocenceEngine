@@ -14,7 +14,7 @@ namespace ImGuiRendererDX11NS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererDX11::Setup(ISystemConfig* systemConfig)
+bool ImGuiRendererDX11::Setup(IServiceConfig* systemConfig)
 {
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "ImGuiRendererDX11 Setup finished.");

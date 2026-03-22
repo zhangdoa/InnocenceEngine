@@ -1,4 +1,4 @@
-#include "CameraSystem.h"
+#include "CameraService.h"
 #include "../Component/CameraComponent.h"
 #include "../Component/TransformComponent.h"
 #include "../Common/LogService.h"
@@ -11,7 +11,7 @@
 
 using namespace Inno;
 
-namespace CameraSystemNS
+namespace CameraServiceNS
 {
 	const size_t m_MaxComponentCount = 32;
 
@@ -26,7 +26,7 @@ namespace CameraSystemNS
 }
 
 
-void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
+void CameraServiceNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 {
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
@@ -34,7 +34,7 @@ void CameraSystemNS::GenerateProjectionMatrix(CameraComponent* cameraComponent)
 }
 
 
-void CameraSystemNS::GenerateFrustum(CameraComponent* cameraComponent, EntityID EntityID)
+void CameraServiceNS::GenerateFrustum(CameraComponent* cameraComponent, EntityID EntityID)
 {
 	auto l_pCamera = cameraComponent->m_ProjectionMatrix;
 	auto l_frustumVerticesVS = Math::GenerateFrustumInViewSpace(l_pCamera);
@@ -48,7 +48,7 @@ void CameraSystemNS::GenerateFrustum(CameraComponent* cameraComponent, EntityID 
 	std::copy(l_frustumVerticesWS.begin(), l_frustumVerticesWS.end(), cameraComponent->m_FrustumVerticesWS.begin());
 }
 
-void CameraSystemNS::GenerateRayOfEye(CameraComponent* cameraComponent, EntityID EntityID)
+void CameraServiceNS::GenerateRayOfEye(CameraComponent* cameraComponent, EntityID EntityID)
 {
 	auto* l_Transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(EntityID);
 	if (l_Transform)
@@ -58,20 +58,20 @@ void CameraSystemNS::GenerateRayOfEye(CameraComponent* cameraComponent, EntityID
 	}
 }
 
-using namespace CameraSystemNS;
+using namespace CameraServiceNS;
 
-bool CameraSystem::Setup(ISystemConfig* systemConfig)
+bool CameraService::Setup(IServiceConfig* systemConfig)
 {
 	return true;
 }
 
-bool CameraSystem::Initialize()
+bool CameraService::Initialize()
 {
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
 }
 
-bool CameraSystem::Update()
+bool CameraService::Update()
 {
 	if (!m_MainCamera)
 		return true;
@@ -93,33 +93,33 @@ bool CameraSystem::Update()
 	return true;
 }
 
-bool CameraSystem::Terminate()
+bool CameraService::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
 }
 
-ObjectStatus CameraSystem::GetStatus()
+ObjectStatus CameraService::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-void CameraSystem::SetMainCamera(CameraComponent* cameraComponent)
+void CameraService::SetMainCamera(CameraComponent* cameraComponent)
 {
-	CameraSystemNS::m_MainCamera = cameraComponent;
+	CameraServiceNS::m_MainCamera = cameraComponent;
 }
 
-CameraComponent* CameraSystem::GetMainCamera()
+CameraComponent* CameraService::GetMainCamera()
 {
-	return CameraSystemNS::m_MainCamera;
+	return CameraServiceNS::m_MainCamera;
 }
 
-void CameraSystem::SetActiveCamera(CameraComponent* cameraComponent)
+void CameraService::SetActiveCamera(CameraComponent* cameraComponent)
 {
-	CameraSystemNS::m_ActiveCamera = cameraComponent;
+	CameraServiceNS::m_ActiveCamera = cameraComponent;
 }
 
-CameraComponent* CameraSystem::GetActiveCamera()
+CameraComponent* CameraService::GetActiveCamera()
 {
-	return CameraSystemNS::m_ActiveCamera;
+	return CameraServiceNS::m_ActiveCamera;
 }

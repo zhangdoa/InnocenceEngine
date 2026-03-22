@@ -8,7 +8,7 @@ namespace ImGuiWindowLinuxNS
 {
 }
 
-bool ImGuiWindowLinux::Setup(ISystemConfig* systemConfig)
+bool ImGuiWindowLinux::Setup(IServiceConfig* systemConfig)
 {
 	Log(Success, "ImGuiWindowLinux Setup finished.");
 

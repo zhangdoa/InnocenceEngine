@@ -1,14 +1,14 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 namespace Inno
 {
-	class GUISystem : public ISystem
+	class GUIService : public IService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(GUISystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(GUIService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool ExecuteCommands();

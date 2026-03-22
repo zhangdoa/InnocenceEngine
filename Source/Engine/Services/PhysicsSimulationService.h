@@ -1,5 +1,5 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Common/EntityID.h"
 #include "../Common/GPUDataStructure.h"
 #include "CullingResult.h"
@@ -7,12 +7,12 @@
 namespace Inno
 {
 	struct PhysicsSimulationServiceImpl;
-	class PhysicsSimulationService : public ISystem
+	class PhysicsSimulationService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(PhysicsSimulationService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

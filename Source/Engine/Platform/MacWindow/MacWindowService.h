@@ -1,15 +1,15 @@
 #pragma once
-#include "../../Interface/IWindowSystem.h"
-#include "MacWindowSystemBridge.h"
+#include "../../Interface/IWindowService.h"
+#include "MacWindowServiceBridge.h"
 
 namespace Inno
 {
-	class MacWindowSystem : public IWindowSystem
+	class MacWindowService : public IWindowService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(MacWindowSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(MacWindowService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;
@@ -22,6 +22,6 @@ namespace Inno
 		bool SendEvent(uint32_t uMsg, uint32_t wParam, int32_t lParam) override;
 		bool AddEventCallback(WindowEventCallback* callback) override;
 
-		void setBridge(MacWindowSystemBridge* bridge);
+		void setBridge(MacWindowServiceBridge* bridge);
 	};
 }

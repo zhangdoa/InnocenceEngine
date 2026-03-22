@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/MathHelper.h"
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 namespace Inno
 {
@@ -25,10 +25,10 @@ namespace Inno
 		std::array<Vertex, 8> m_FrustumVerticesWS = {};
 	};
 
-	class ICameraSystem : public ISystem
+	class ICameraService : public IService
 	{
 	public:
-		INNO_CLASS_INTERFACE_NON_COPYABLE(ICameraSystem);
+		INNO_CLASS_INTERFACE_NON_COPYABLE(ICameraService);
 
 		virtual void SetMainCamera(CameraComponent* cameraComponent) = 0;
 		virtual CameraComponent* GetMainCamera() = 0;

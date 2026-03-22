@@ -1,5 +1,5 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Common/EntityID.h"
 
 namespace Inno
@@ -7,12 +7,12 @@ namespace Inno
 	using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 	using ComponentPair = std::pair<uint32_t, Component*>;
 	using SceneHierarchyMap = std::unordered_map<EntityID, std::set<ComponentPair>>;
-	class SceneService : public ISystem
+	class SceneService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(SceneService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

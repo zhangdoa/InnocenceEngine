@@ -1,10 +1,10 @@
 #pragma once
-#include "ISystem.h"
+#include "IService.h"
 #include "../Common/ComponentHeaders.h"
 
 namespace Inno
 {
-	class ILogicClient : public ISystem
+	class ILogicClient : public IService
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(ILogicClient);

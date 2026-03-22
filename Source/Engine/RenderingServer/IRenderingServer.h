@@ -1,5 +1,5 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 #include "../Common/ThreadSafeQueue.h"
 #include "../Common/ObjectPool.h"
@@ -18,12 +18,12 @@
 
 namespace Inno
 {
-	class IRenderingServer : public ISystem
+	class IRenderingServer : public IService
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingServer);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
         bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

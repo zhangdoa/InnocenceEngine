@@ -19,7 +19,7 @@ namespace Inno
 		bool m_screenFeedback = false;
 	};
 
-	class VXGIRendererSystemConfig: public ISystemConfig
+	class VXGIRendererSystemConfig: public IServiceConfig
 	{
 	public:
 		VXGIRenderingConfig m_VXGIRenderingConfig = {};
@@ -30,7 +30,7 @@ namespace Inno
 	public:
 		INNO_CLASS_SINGLETON(VXGIRenderer);
 		
-		bool Setup(ISystemConfig* systemConfig = nullptr) override;
+		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) override;
 		bool Terminate() override;

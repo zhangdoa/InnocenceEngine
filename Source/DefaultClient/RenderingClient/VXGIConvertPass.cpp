@@ -12,7 +12,7 @@ using namespace Inno;
 
 
 
-bool VXGIConvertPass::Setup(ISystemConfig *systemConfig)
+bool VXGIConvertPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

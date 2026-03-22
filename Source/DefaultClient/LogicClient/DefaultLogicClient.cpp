@@ -2,7 +2,7 @@
 
 #include "DefaultLogicClientImpl.inl"
 
-bool DefaultLogicClient::Setup(ISystemConfig* systemConfig)
+bool DefaultLogicClient::Setup(IServiceConfig* systemConfig)
 {
 	return GetImpl()->Setup(systemConfig);
 }

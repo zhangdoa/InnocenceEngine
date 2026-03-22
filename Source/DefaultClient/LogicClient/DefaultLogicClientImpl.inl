@@ -12,7 +12,7 @@ namespace Inno
     public:
         INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultLogicClientImpl);
 
-        bool Setup(ISystemConfig* systemConfig) override;
+        bool Setup(IServiceConfig* systemConfig) override;
         bool Initialize() override;
         bool Update() override;
         bool Terminate() override;
@@ -27,7 +27,7 @@ namespace Inno
         WorldSystem* m_world = nullptr;
     };
 
-    bool DefaultLogicClientImpl::Setup(ISystemConfig* systemConfig)
+    bool DefaultLogicClientImpl::Setup(IServiceConfig* systemConfig)
     {
         if(!m_world)
             m_world = new WorldSystem();

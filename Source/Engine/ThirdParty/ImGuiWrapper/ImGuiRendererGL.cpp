@@ -15,7 +15,7 @@ namespace ImGuiRendererGLNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererGL::Setup(ISystemConfig* systemConfig)
+bool ImGuiRendererGL::Setup(IServiceConfig* systemConfig)
 {
 	ImGuiRendererGLNS::m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "ImGuiRendererGL Setup finished.");

@@ -7,7 +7,7 @@
 
 using namespace Inno;
 
-bool TAAPass::Setup(ISystemConfig* systemConfig)
+bool TAAPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

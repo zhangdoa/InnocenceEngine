@@ -1,12 +1,12 @@
 #pragma once
-#include "../../Interface/ISystem.h"
+#include "../../Interface/IService.h"
 #include "../ImGui/imgui.h"
 
 namespace Inno
 {
 	enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
 
-	class IImGuiRenderer : public ISystem
+	class IImGuiRenderer : public IService
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiRenderer);

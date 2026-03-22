@@ -10,7 +10,7 @@
 
 using namespace Inno;
 
-bool PreTAAPass::Setup(ISystemConfig* systemConfig)
+bool PreTAAPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

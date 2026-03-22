@@ -7,7 +7,7 @@
 
 using namespace Inno;
 
-bool LuminanceHistogramPass::Setup(ISystemConfig* systemConfig)
+bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

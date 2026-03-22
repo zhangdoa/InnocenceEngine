@@ -8,7 +8,7 @@ namespace Inno
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiWindowWin);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool NewFrame() override;
 		bool Terminate() override;

@@ -4,7 +4,7 @@
 #include "../Common/MathHelper.h"
 #include "../Common/GPUDataStructure.h"
 #include "EntityRegistry.h"
-#include "CameraSystem.h"
+#include "CameraService.h"
 #include "RenderingConfigurationService.h"
 #include "../Component/LightComponent.h"
 #include "../Component/TransformComponent.h"
@@ -54,7 +54,7 @@ namespace Inno
 		GPUBufferComponent* m_CSMGPUBufferComp          = nullptr;
 		GPUBufferComponent* m_GICBufferGPUBufferComp    = nullptr;
 
-		bool Setup(ISystemConfig* systemConfig);
+		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
@@ -64,7 +64,7 @@ namespace Inno
 	};
 }
 
-bool LightDataServiceImpl::Setup(ISystemConfig* systemConfig)
+bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -181,7 +181,7 @@ bool LightDataServiceImpl::UpdateCSMData()
 	if (!l_SunTransform)
 		return false;
 
-	auto* l_Camera = static_cast<ICameraSystem*>(g_Engine->Get<CameraSystem>())->GetMainCamera();
+	auto* l_Camera = static_cast<ICameraService*>(g_Engine->Get<CameraService>())->GetMainCamera();
 	if (!l_Camera)
 		return false;
 
@@ -317,7 +317,7 @@ bool LightDataServiceImpl::Terminate()
 	return true;
 }
 
-bool LightDataService::Setup(ISystemConfig* systemConfig)
+bool LightDataService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new LightDataServiceImpl();
 

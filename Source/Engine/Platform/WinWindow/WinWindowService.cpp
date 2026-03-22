@@ -1,4 +1,4 @@
-#include "WinWindowSystem.h"
+#include "WinWindowService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Services/HIDService.h"
@@ -11,9 +11,9 @@
 
 using namespace Inno;
 
-bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
+bool WinWindowService::Setup(IServiceConfig* systemConfig)
 {
-	auto l_systemConfig = reinterpret_cast<IWindowSystemConfig*>(systemConfig);
+	auto l_systemConfig = reinterpret_cast<IWindowServiceConfig*>(systemConfig);
 	m_ApplicationInstance = static_cast<HINSTANCE>(l_systemConfig->m_AppHook);
 	if (l_systemConfig->m_ExtraHook)
 	{
@@ -47,10 +47,10 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 		ZeroMemory(&wcex, sizeof(wcex));
 		wcex.cbSize = sizeof(wcex);
 		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-		wcex.lpfnWndProc = (WNDPROC)WinWindowSystem::WindowProcedure;
-		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance();
+		wcex.lpfnWndProc = (WNDPROC)WinWindowService::WindowProcedure;
+		wcex.hInstance = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationInstance();
 		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationName();
+		wcex.lpszClassName = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationName();
 
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
@@ -73,7 +73,7 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 		
 		// create a new window and context
 		auto l_hwnd = CreateWindow(
-			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationName(), // class name, window name
+			l_windowClass, reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationName(), // class name, window name
 			WS_OVERLAPPEDWINDOW, // styles
 			posX, posY, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
 			actualWindowWidth, actualWindowHeight, // width, height
@@ -88,30 +88,30 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	m_WindowSurface->Setup();
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	Log(Success, "WinWindowSystem Setup finished.");
+	Log(Success, "WinWindowService Setup finished.");
 
 	return true;
 }
 
-bool WinWindowSystem::Initialize()
+bool WinWindowService::Initialize()
 {
 	m_WindowSurface->Initialize();
 
 	if (m_InitConfig.engineMode == EngineMode::Host)
 	{
 		// Bring the window up on the screen and set it as main focus.
-		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle(), true);
-		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
-		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
+		ShowWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle());
+		SetFocus(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle());
 
 		Log(Success, "The window has been brought to the foreground.");
 	}
 
-	Log(Success, "WinWindowSystem has been initialized.");
+	Log(Success, "WinWindowService has been initialized.");
 	return true;
 }
 
-bool WinWindowSystem::Update()
+bool WinWindowService::Update()
 {
 	if (m_InitConfig.engineMode != EngineMode::Host)
 		return true;
@@ -126,7 +126,7 @@ bool WinWindowSystem::Update()
 	return true;
 }
 
-bool WinWindowSystem::Terminate()
+bool WinWindowService::Terminate()
 {
 	m_WindowSurface->Terminate();
 
@@ -149,21 +149,21 @@ bool WinWindowSystem::Terminate()
 	PostQuitMessage(0);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-	Log(Success, "WinWindowSystem has been terminated.");
+	Log(Success, "WinWindowService has been terminated.");
 	return true;
 }
 
-ObjectStatus WinWindowSystem::GetStatus()
+ObjectStatus WinWindowService::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-IWindowSurface* WinWindowSystem::GetWindowSurface()
+IWindowSurface* WinWindowService::GetWindowSurface()
 {
 	return m_WindowSurface;
 }
 
-void WinWindowSystem::ConsumeEvents(const WindowEventProcessCallback& p_Callback)
+void WinWindowService::ConsumeEvents(const WindowEventProcessCallback& p_Callback)
 {
 	m_WindowEvents.Read([&](auto const& l_FrontBuffer)
 		{
@@ -181,7 +181,7 @@ void WinWindowSystem::ConsumeEvents(const WindowEventProcessCallback& p_Callback
 		});
 }
 
-bool WinWindowSystem::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam)
+bool WinWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
 	for (auto i : m_WindowEventCallbacks)
 	{
@@ -288,36 +288,36 @@ bool WinWindowSystem::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam
 	return false;
 }
 
-bool WinWindowSystem::AddEventCallback(WindowEventCallback* callback)
+bool WinWindowService::AddEventCallback(WindowEventCallback* callback)
 {
 	m_WindowEventCallbacks.emplace(callback);
 	return true;
 }
 
-LPCSTR WinWindowSystem::GetApplicationName()
+LPCSTR WinWindowService::GetApplicationName()
 {
 	return m_ApplicationName;
 }
 
-HINSTANCE WinWindowSystem::GetApplicationInstance()
+HINSTANCE WinWindowService::GetApplicationInstance()
 {
 	return m_ApplicationInstance;
 }
 
-HWND WinWindowSystem::GetWindowHandle()
+HWND WinWindowService::GetWindowHandle()
 {
 	return m_WindowHandle;
 }
 
-bool WinWindowSystem::SetWindowHandle(HWND hwnd)
+bool WinWindowService::SetWindowHandle(HWND hwnd)
 {
 	m_WindowHandle = hwnd;
 	return true;
 }
 
-LRESULT CALLBACK WinWindowSystem::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WinWindowService::WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	auto l_processed = g_Engine->getWindowSystem()->SendEvent(hwnd, uMsg, wParam, lParam);
+	auto l_processed = g_Engine->getWindowService()->SendEvent(hwnd, uMsg, wParam, lParam);
 	if (l_processed)
 	{
 		return 0;

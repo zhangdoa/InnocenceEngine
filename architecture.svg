@@ -38,7 +38,7 @@
 
   <rect x="55" y="174" width="220" height="36" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
   <text x="165" y="197" text-anchor="middle" fill="#89b4fa"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">WindowSystem</text>
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">WindowService</text>
 
   <rect x="55" y="220" width="220" height="36" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
   <text x="165" y="243" text-anchor="middle" fill="#89b4fa"

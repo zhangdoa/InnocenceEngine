@@ -14,7 +14,7 @@ namespace Inno
 	public:
 		INNO_CLASS_SINGLETON(LightCullingPass)
 
-		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Setup(IServiceConfig *systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Update() override;		
 		bool Terminate() override;

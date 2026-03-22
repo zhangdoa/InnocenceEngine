@@ -39,7 +39,7 @@ namespace Inno
 	class BakerRenderingClient: public IRenderingClient
 	{
 		// Inherited via IRenderingClient
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Render(IRenderingConfig* renderingConfig = nullptr) override;
 		bool Terminate() override;

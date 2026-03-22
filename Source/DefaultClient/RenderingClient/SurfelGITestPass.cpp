@@ -16,7 +16,7 @@ using namespace Inno;
 
 
 
-bool SurfelGITestPass::Setup(ISystemConfig *systemConfig)
+bool SurfelGITestPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

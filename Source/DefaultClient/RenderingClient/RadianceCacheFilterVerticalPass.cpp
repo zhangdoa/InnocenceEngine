@@ -10,7 +10,7 @@
 
 using namespace Inno;
 
-bool RadianceCacheFilterVerticalPass::Setup(ISystemConfig* systemConfig)
+bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

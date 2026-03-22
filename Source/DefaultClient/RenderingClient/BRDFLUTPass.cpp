@@ -7,7 +7,7 @@
 
 using namespace Inno;
 
-bool BRDFLUTPass::Setup(ISystemConfig *systemConfig)
+bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

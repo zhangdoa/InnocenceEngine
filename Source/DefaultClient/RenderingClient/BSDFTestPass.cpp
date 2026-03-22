@@ -15,7 +15,7 @@ using namespace Inno;
 
 
 
-bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
+bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

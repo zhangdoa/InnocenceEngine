@@ -1,12 +1,12 @@
 #include "WinDXWindowSurface.h"
-#include "../WinWindowSystem.h"
+#include "../WinWindowService.h"
 #include "../../../Common/LogService.h"
 #include "../../../Services/RenderingConfigurationService.h"
 
 #include "../../../Engine.h"
 using namespace Inno;
 
-bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
+bool WinDXWindowSurface::Setup(IServiceConfig* systemConfig)
 {
 	m_ObjectStatus = ObjectStatus::Created;
 

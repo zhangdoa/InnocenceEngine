@@ -1,14 +1,14 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 namespace Inno
 {
-	class LightSimulationService : public ISystem
+	class LightSimulationService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(LightSimulationService);
 
-		bool Setup(ISystemConfig*) override;
+		bool Setup(IServiceConfig*) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

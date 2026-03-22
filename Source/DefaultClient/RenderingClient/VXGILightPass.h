@@ -16,7 +16,7 @@ namespace Inno
 	public:
 		INNO_CLASS_SINGLETON(VXGILightPass)
 
-		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Setup(IServiceConfig *systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;

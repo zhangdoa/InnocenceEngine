@@ -18,7 +18,7 @@
 
 using namespace Inno;
 
-bool VXGIRenderer::Setup(ISystemConfig* systemConfig)
+bool VXGIRenderer::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	

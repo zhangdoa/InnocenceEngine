@@ -2,7 +2,7 @@
 #include <qt_windows.h>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
-#include "../Engine/Interface/IWindowSystem.h"
+#include "../Engine/Interface/IWindowService.h"
 #include "../Engine/RenderingServer/IRenderingServer.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 
@@ -40,7 +40,7 @@ Viewport::Viewport(QWidget* parent)
 
 Viewport::~Viewport()
 {
-    g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_DESTROY, WM_DESTROY, 0);
+    g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_DESTROY, WM_DESTROY, 0);
 }
 
 void Viewport::initialize()
@@ -97,7 +97,7 @@ bool ViewportEventFilter::eventFilter(QObject* obj, QEvent* event)
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
         if (l_key->key() < Qt::Key_Escape)
         {
-            g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_KEYDOWN, l_key->key(), 0);
+            g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_KEYDOWN, l_key->key(), 0);
         }
 
     }
@@ -106,7 +106,7 @@ bool ViewportEventFilter::eventFilter(QObject* obj, QEvent* event)
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
         if (l_key->key() < Qt::Key_Escape)
         {
-            g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_KEYUP, l_key->key(), 0);
+            g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_KEYUP, l_key->key(), 0);
         }
     }
     if (l_eventType == QEvent::MouseButtonPress)
@@ -115,10 +115,10 @@ bool ViewportEventFilter::eventFilter(QObject* obj, QEvent* event)
         switch (l_key->button())
         {
         case Qt::MouseButton::LeftButton:
-            g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_LBUTTONDOWN, WM_LBUTTONDOWN, 0);
+            g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_LBUTTONDOWN, WM_LBUTTONDOWN, 0);
             break;
         case Qt::MouseButton::RightButton:
-            g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_RBUTTONDOWN, WM_RBUTTONDOWN, 0);
+            g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_RBUTTONDOWN, WM_RBUTTONDOWN, 0);
             break;
         default:
             break;
@@ -130,10 +130,10 @@ bool ViewportEventFilter::eventFilter(QObject* obj, QEvent* event)
         switch (l_mouseButton->button())
         {
         case Qt::MouseButton::LeftButton:
-            g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_LBUTTONUP, WM_LBUTTONUP, 0);
+            g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_LBUTTONUP, WM_LBUTTONUP, 0);
             break;
         case Qt::MouseButton::RightButton:
-            g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_RBUTTONUP, WM_RBUTTONUP, 0);
+            g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_RBUTTONUP, WM_RBUTTONUP, 0);
             break;
         default:
             break;
@@ -145,7 +145,7 @@ bool ViewportEventFilter::eventFilter(QObject* obj, QEvent* event)
         auto l_x = l_mouseMovement->pos().x() * MOUSE_SENSITIVITY;
         auto l_y = l_mouseMovement->pos().y() * MOUSE_SENSITIVITY;
         auto l_lparm = MAKELONG(l_x, l_y);
-        g_Engine->getWindowSystem()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_MOUSEMOVE, WM_MOUSEMOVE, l_lparm);
+        g_Engine->getWindowService()->SendEvent(reinterpret_cast<void*>(m_HWND), WM_MOUSEMOVE, WM_MOUSEMOVE, l_lparm);
     }
     return false;
 }

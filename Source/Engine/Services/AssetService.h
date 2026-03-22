@@ -1,15 +1,15 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Common/ComponentHeaders.h"
 
 namespace Inno
 {
-	class AssetService : public ISystem
+	class AssetService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(AssetService);
 
-		bool Setup(ISystemConfig* systemConfig = nullptr) override;
+		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

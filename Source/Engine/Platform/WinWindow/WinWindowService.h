@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Interface/IWindowSystem.h"
+#include "../../Interface/IWindowService.h"
 #include "../../Engine.h"
 #include "../../Common/DoubleBuffer.h"
 #include <SDKDDKVer.h>
@@ -8,12 +8,12 @@
 
 namespace Inno
 {
-	class WinWindowSystem : public IWindowSystem
+	class WinWindowService : public IWindowService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(WinWindowSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(WinWindowService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

@@ -1,5 +1,5 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Component/SkeletonComponent.h"
 #include "../Component/AnimationComponent.h"
 #include "../Common/EntityID.h"
@@ -7,12 +7,12 @@
 namespace Inno
 {
 	struct AnimationResourceServiceImpl;
-	class AnimationResourceService : public ISystem
+	class AnimationResourceService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(AnimationResourceService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

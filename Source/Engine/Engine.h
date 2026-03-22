@@ -1,7 +1,7 @@
 #pragma once
 #include "Common/ClassTemplate.h"
 #include "Common/LogService.h"
-#include "Interface/ISystem.h"
+#include "Interface/IService.h"
 #include "Interface/IRenderingClient.h"
 #include "Interface/ILogicClient.h"
 #include <type_traits>
@@ -22,7 +22,7 @@ namespace Inno
 		char testCase[64] = {};
 	};
 
-	class IWindowSystem;
+	class IWindowService;
 	class IRenderingServer;
 
 	class EngineImpl;
@@ -49,7 +49,7 @@ namespace Inno
 		InitConfig getInitConfig();
 		const FixedSizeString<128>& GetApplicationName();
 		IRenderingServer* getRenderingServer();
-		IWindowSystem* getWindowSystem();
+		IWindowService* getWindowService();
 		float getTickTime();
 
 		template <typename T>
@@ -59,8 +59,8 @@ namespace Inno
 			auto it = singletons_.find(type);
 			if (it == singletons_.end()) 
 			{
-				// For ISystem classes, use dependency resolution
-				if constexpr (std::is_base_of_v<ISystem, T>) {
+				// For IService classes, use dependency resolution
+				if constexpr (std::is_base_of_v<IService, T>) {
 					return GetSystemWithDependencies<T>();
 				}
 				else {
@@ -83,7 +83,7 @@ namespace Inno
 		void ResolveDependencies(const std::vector<std::type_index>& dependencies);
 		
 		// Platform-specific system creation helpers
-		IWindowSystem* CreateWindowSystem(bool isHeadless);
+		IWindowService* CreateWindowSystem(bool isHeadless);
 		IRenderingServer* CreateRenderingServer(bool isHeadless, RenderingServer renderingServerType);
 
 		EngineImpl* m_pImpl;
@@ -97,14 +97,14 @@ namespace Inno
 	T* Engine::GetSystemWithDependencies()
 	{
 		// Special handling for WindowSystem and RenderingServer - redirect to public methods
-		if constexpr (std::is_same_v<T, IWindowSystem>) {
-			return reinterpret_cast<T*>(getWindowSystem());
+		if constexpr (std::is_same_v<T, IWindowService>) {
+			return reinterpret_cast<T*>(getWindowService());
 		}
 		else if constexpr (std::is_same_v<T, IRenderingServer>) {
 			return reinterpret_cast<T*>(getRenderingServer());
 		}
 		else {
-			// Handle regular ISystem classes
+			// Handle regular IService classes
 			auto type = std::type_index(typeid(T));
 			auto it = singletons_.find(type);
 			if (it == singletons_.end()) {

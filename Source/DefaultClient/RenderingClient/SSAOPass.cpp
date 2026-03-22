@@ -9,7 +9,7 @@
 
 using namespace Inno;
 
-bool SSAOPass::Setup(ISystemConfig* systemConfig)
+bool SSAOPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

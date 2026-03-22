@@ -1,16 +1,16 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../RenderingServer/IRenderingServer.h"
 
 namespace Inno
 {
 	struct LightDataServiceImpl;
-	class LightDataService : public ISystem
+	class LightDataService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(LightDataService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

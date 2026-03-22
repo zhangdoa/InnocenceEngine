@@ -1,7 +1,7 @@
 #include "PerFrameDataService.h"
 
 #include "../Common/LogService.h"
-#include "CameraSystem.h"
+#include "CameraService.h"
 #include "EntityRegistry.h"
 #include "../Component/TransformComponent.h"
 #include "RenderingConfigurationService.h"
@@ -23,7 +23,7 @@ namespace Inno
 		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
 		GPUBufferComponent* m_PerFrameCBufferPrevGPUBufferComp;
 
-		bool Setup(ISystemConfig* systemConfig);
+		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
@@ -66,7 +66,7 @@ GPUBufferComponent* PerFrameDataServiceImpl::GetPreviousFramePerFrameBuffer()
 	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
 }
 
-bool PerFrameDataServiceImpl::Setup(ISystemConfig* systemConfig)
+bool PerFrameDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -110,7 +110,7 @@ bool PerFrameDataServiceImpl::Initialize()
 
 bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 {
-	auto l_camera = g_Engine->Get<CameraSystem>()->GetActiveCamera();
+	auto l_camera = g_Engine->Get<CameraService>()->GetActiveCamera();
 	if (l_camera == nullptr)
 		return false;
 
@@ -219,7 +219,7 @@ bool PerFrameDataServiceImpl::Terminate()
 	return true;
 }
 
-bool PerFrameDataService::Setup(ISystemConfig* systemConfig)
+bool PerFrameDataService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new PerFrameDataServiceImpl();
 

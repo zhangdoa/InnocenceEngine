@@ -14,7 +14,7 @@
 
 using namespace Inno;
 
-bool DebugPass::Setup(ISystemConfig *systemConfig)
+bool DebugPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	

@@ -8,7 +8,7 @@
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
 #include "Services/LightSimulationService.h"
-#include "Services/CameraSystem.h"
+#include "Services/CameraService.h"
 #include "Services/SceneService.h"
 #include "Services/AssetService.h"
 #include "Services/PhysicsSimulationService.h"
@@ -24,17 +24,17 @@
 #include "Services/DebugDrawCallService.h"
 #include "Services/AnimationResourceService.h"
 #include "Services/AnimationSimulationService.h"
-#include "Services/GUISystem.h"
+#include "Services/GUIService.h"
 
 // Platform-specific systems
 #if defined INNO_PLATFORM_WIN
-#include "Platform/WinWindow/WinWindowSystem.h"
+#include "Platform/WinWindow/WinWindowService.h"
 #endif
 #if defined INNO_PLATFORM_MAC
-#include "Platform/MacWindow/MacWindowSystem.h"
+#include "Platform/MacWindow/MacWindowService.h"
 #endif
 #if defined INNO_PLATFORM_LINUX
-#include "Platform/LinuxWindow/LinuxWindowSystem.h"
+#include "Platform/LinuxWindow/LinuxWindowService.h"
 #endif
 
 // Rendering servers
@@ -49,7 +49,7 @@
 #endif
 
 // Headless stubs
-#include "Platform/HeadlessWindow/HeadlessWindowSystem.h"
+#include "Platform/HeadlessWindow/HeadlessWindowService.h"
 #include "RenderingServer/Headless/HeadlessRenderingServer.h"
 
 namespace Inno
@@ -59,18 +59,18 @@ namespace Inno
 
 using namespace Inno;
 
-IWindowSystem* Engine::CreateWindowSystem(bool isHeadless)
+IWindowService* Engine::CreateWindowSystem(bool isHeadless)
 {
 	if (isHeadless) {
-		return new HeadlessWindowSystem();
+		return new HeadlessWindowService();
 	}
 	
 #if defined INNO_PLATFORM_WIN
-	return new WinWindowSystem();
+	return new WinWindowService();
 #elif defined INNO_PLATFORM_MAC
-	return new MacWindowSystem();
+	return new MacWindowService();
 #elif defined INNO_PLATFORM_LINUX
-	return new LinuxWindowSystem();
+	return new LinuxWindowService();
 #else
 	Log(Error, "No WindowSystem implementation available for this platform.");
 	return nullptr;
@@ -150,7 +150,7 @@ namespace Inno
 	public:
 		InitConfig m_initConfig;
 
-		std::unique_ptr<IWindowSystem> m_WindowSystem;
+		std::unique_ptr<IWindowService> m_WindowSystem;
 		std::unique_ptr<IRenderingServer> m_RenderingServer;
 
 		std::unique_ptr<IRenderingClient> m_RenderingClient;
@@ -349,14 +349,14 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 
 	// Create WindowSystem based on headless/offscreen mode
 	if (m_pImpl->m_initConfig.isHeadless || m_pImpl->m_initConfig.isOffscreen) {
-		m_pImpl->m_WindowSystem = std::make_unique<HeadlessWindowSystem>();
+		m_pImpl->m_WindowSystem = std::make_unique<HeadlessWindowService>();
 	} else {
 #if defined INNO_PLATFORM_WIN
-		m_pImpl->m_WindowSystem = std::make_unique<WinWindowSystem>();
+		m_pImpl->m_WindowSystem = std::make_unique<WinWindowService>();
 #elif defined INNO_PLATFORM_MAC
-		m_pImpl->m_WindowSystem = std::make_unique<MacWindowSystem>();
+		m_pImpl->m_WindowSystem = std::make_unique<MacWindowService>();
 #elif defined INNO_PLATFORM_LINUX
-		m_pImpl->m_WindowSystem = std::make_unique<LinuxWindowSystem>();
+		m_pImpl->m_WindowSystem = std::make_unique<LinuxWindowService>();
 #endif
 	}
 
@@ -377,7 +377,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<DebugDrawCallService>();
 		Get<AnimationSimulationService>();
 		Get<AnimationResourceService>();
-		Get<GUISystem>();
+		Get<GUIService>();
 	}
 
 	// Create RenderingServer based on headless mode (offscreen uses real rendering server)
@@ -412,8 +412,8 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	// Platform-specific bridge setup for Mac
 #if defined INNO_PLATFORM_MAC
 	if (!m_pImpl->m_initConfig.isHeadless) {
-		auto l_windowSystem = reinterpret_cast<MacWindowSystem*>(m_pImpl->m_WindowSystem.get());
-		auto l_windowSystemBridge = reinterpret_cast<MacWindowSystemBridge*>(appHook);
+		auto l_windowSystem = reinterpret_cast<MacWindowService*>(m_pImpl->m_WindowSystem.get());
+		auto l_windowSystemBridge = reinterpret_cast<MacWindowServiceBridge*>(appHook);
 		l_windowSystem->setBridge(l_windowSystemBridge);
 
 		auto l_renderingServer = reinterpret_cast<MTRenderingServer*>(m_pImpl->m_RenderingServer.get());
@@ -422,13 +422,13 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	}
 #endif
 
-	// Additional Systems (ISystem-based, with dependency resolution)
+	// Additional Systems (IService-based, with dependency resolution)
 	Get<EntityRegistry>();
 	Get<AssetService>();
 	Get<SceneService>();
 	Get<PhysicsSimulationService>();
 	Get<LightSimulationService>();
-	Get<CameraSystem>();
+	Get<CameraService>();
 
 	return true;
 }
@@ -464,7 +464,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	SystemSetup(HIDService);
 
-	IWindowSystemConfig l_windowSystemConfig;
+	IWindowServiceConfig l_windowSystemConfig;
 	l_windowSystemConfig.m_AppHook = appHook;
 	l_windowSystemConfig.m_ExtraHook = extraHook;
 
@@ -482,7 +482,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 	SystemSetup(PhysicsSimulationService);
 
 	SystemSetup(LightSimulationService);
-	SystemSetup(CameraSystem);
+	SystemSetup(CameraService);
 
 	SystemSetup(TemplateAssetService);
 
@@ -505,7 +505,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			}
 
 			// Update components
-			Get<CameraSystem>()->Update();
+			Get<CameraService>()->Update();
 			Get<LightSimulationService>()->Update();
 
 			SystemUpdate(EntityRegistry);
@@ -578,7 +578,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				}
 			}
 
-			SystemSetup(GUISystem);
+			SystemSetup(GUIService);
 
 			return true;
 			});
@@ -630,7 +630,7 @@ bool Engine::Initialize()
 	SystemInit(PhysicsSimulationService);
 
 	SystemInit(LightSimulationService);
-	SystemInit(CameraSystem);
+	SystemInit(CameraService);
 	m_pImpl->m_RenderingServer->Initialize();
 
 	// Only initialize rendering-related services if not headless
@@ -655,7 +655,7 @@ bool Engine::Initialize()
 				}
 			}
 
-			SystemInit(GUISystem);
+			SystemInit(GUIService);
 
 			return true;
 			});
@@ -724,7 +724,7 @@ bool Engine::Terminate()
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
-			SystemTerm(GUISystem);
+			SystemTerm(GUIService);
 
 			if (m_pImpl->m_RenderingClient && !m_pImpl->m_RenderingClient->Terminate())
 			{
@@ -753,7 +753,7 @@ bool Engine::Terminate()
 		return false;
 	}
 
-	SystemTerm(CameraSystem);
+	SystemTerm(CameraService);
 	SystemTerm(LightSimulationService);
 
 	SystemTerm(PhysicsSimulationService);
@@ -806,7 +806,7 @@ IRenderingServer* Engine::getRenderingServer()
 	return m_pImpl->m_RenderingServer.get();
 }
 
-IWindowSystem* Engine::getWindowSystem()
+IWindowService* Engine::getWindowService()
 {
 	return m_pImpl->m_WindowSystem.get();
 }

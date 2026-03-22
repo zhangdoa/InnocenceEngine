@@ -1,6 +1,6 @@
 #pragma once
-#include "../Interface/ISystem.h"
-#include "../Interface/IWindowSystem.h"
+#include "../Interface/IService.h"
+#include "../Interface/IWindowService.h"
 #include "../Common/MathHelper.h"
 
 namespace Inno
@@ -38,12 +38,12 @@ namespace Inno
 	using ButtonEventMap = std::unordered_map<ButtonState, std::set<ButtonEvent>, ButtonStateHasher>;
 	using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
 
-	class HIDService : public ISystem
+	class HIDService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(HIDService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

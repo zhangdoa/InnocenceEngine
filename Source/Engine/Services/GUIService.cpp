@@ -1,19 +1,19 @@
-#include "GUISystem.h"
+#include "GUIService.h"
 #include "../ThirdParty/ImGuiWrapper/ImGuiWrapper.h"
 #include "HIDService.h"
 
 #include "../Engine.h"
 using namespace Inno;
 
-namespace GUISystemNS
+namespace GUIServiceNS
 {
 	bool m_showImGui = false;
 	std::function<void()> f_toggleshowImGui;
 }
 
-using namespace GUISystemNS;
+using namespace GUIServiceNS;
 
-bool GUISystem::Setup(ISystemConfig* systemConfig)
+bool GUIService::Setup(IServiceConfig* systemConfig)
 {
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
@@ -23,12 +23,12 @@ bool GUISystem::Setup(ISystemConfig* systemConfig)
 	return 	ImGuiWrapper::Get().Setup();
 }
 
-bool GUISystem::Initialize()
+bool GUIService::Initialize()
 {
 	return ImGuiWrapper::Get().Initialize();
 }
 
-bool GUISystem::Update()
+bool GUIService::Update()
 {
 	if (m_showImGui)
 	{
@@ -38,7 +38,7 @@ bool GUISystem::Update()
 	return true;
 }
 
-bool GUISystem::ExecuteCommands()
+bool GUIService::ExecuteCommands()
 {
 	if (m_showImGui)
 	{
@@ -48,12 +48,12 @@ bool GUISystem::ExecuteCommands()
 	return true;
 }
 
-bool GUISystem::Terminate()
+bool GUIService::Terminate()
 {
 	return ImGuiWrapper::Get().Terminate();
 }
 
-ObjectStatus GUISystem::GetStatus()
+ObjectStatus GUIService::GetStatus()
 {
 	return ObjectStatus();
 }

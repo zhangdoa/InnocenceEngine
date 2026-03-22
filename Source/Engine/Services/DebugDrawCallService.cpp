@@ -15,14 +15,14 @@ namespace Inno
 
 		std::vector<DebugPassDrawCallInfo> m_DebugPassDrawCallInfoVector;
 
-		bool Setup(ISystemConfig* systemConfig);
+		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
 	};
 }
 
-bool DebugDrawCallServiceImpl::Setup(ISystemConfig* systemConfig)
+bool DebugDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -67,7 +67,7 @@ bool DebugDrawCallServiceImpl::Terminate()
 	return true;
 }
 
-bool DebugDrawCallService::Setup(ISystemConfig* systemConfig)
+bool DebugDrawCallService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new DebugDrawCallServiceImpl();
 

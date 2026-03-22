@@ -13,7 +13,7 @@ using namespace Inno;
 
 
 
-bool VXGIMultiBouncePass::Setup(ISystemConfig *systemConfig)
+bool VXGIMultiBouncePass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

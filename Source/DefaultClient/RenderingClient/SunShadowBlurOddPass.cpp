@@ -12,7 +12,7 @@ using namespace Inno;
 
 
 
-bool SunShadowBlurOddPass::Setup(ISystemConfig *systemConfig)
+bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

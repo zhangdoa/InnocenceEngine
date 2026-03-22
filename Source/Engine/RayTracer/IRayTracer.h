@@ -1,11 +1,11 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 #include "../Common/ClassTemplate.h"
 
 namespace Inno
 {
-	class IRayTracer : public ISystem
+	class IRayTracer : public IService
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRayTracer);

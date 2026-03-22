@@ -10,12 +10,12 @@
 #import "MacWindowDelegate.h"
 
 #import "../ApplicationEntry/ApplicationEntry.h"
-#import "MacWindowSystemBridgeImpl.h"
+#import "MacWindowServiceBridgeImpl.h"
 #import "MTRenderingServerBridgeImpl.h"
 
 using namespace Inno;
 @implementation NSApplication
-MacWindowSystemBridgeImpl* m_macWindowSystemBridge;
+MacWindowServiceBridgeImpl* m_macWindowSystemBridge;
 MTRenderingServerBridgeImpl* m_metalRenderingServerBridge;
 MacWindowDelegate* m_macWindowDelegate;
 MetalDelegate* m_metalDelegate;
@@ -31,7 +31,7 @@ MetalDelegate* m_metalDelegate;
     m_macWindowDelegate = [MacWindowDelegate alloc];
     m_metalDelegate = [MetalDelegate alloc];
 
-    m_macWindowSystemBridge = new MacWindowSystemBridgeImpl(m_macWindowDelegate, m_metalDelegate);
+    m_macWindowSystemBridge = new MacWindowServiceBridgeImpl(m_macWindowDelegate, m_metalDelegate);
     m_metalRenderingServerBridge = new MTRenderingServerBridgeImpl(m_macWindowDelegate, m_metalDelegate);
 
     //Start the engine C++ module

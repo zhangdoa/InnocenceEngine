@@ -19,7 +19,7 @@ namespace ImGuiRendererDX12NS
 	class ImGuiRenderPass : public IRenderPass
 	{
 	public:
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
@@ -39,7 +39,7 @@ namespace ImGuiRendererDX12NS
 }
 
 using namespace ImGuiRendererDX12NS;
-bool ImGuiRenderPass::Setup(ISystemConfig* systemConfig)
+bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = reinterpret_cast<DX12RenderingServer*>(g_Engine->getRenderingServer());
 
@@ -172,7 +172,7 @@ bool ImGuiRenderPass::RenderTargetsCreationFunc()
 	return true;
 }
 
-bool ImGuiRendererDX12::Setup(ISystemConfig* systemConfig)
+bool ImGuiRendererDX12::Setup(IServiceConfig* systemConfig)
 {
 	m_RenderPass = new ImGuiRenderPass();
 	m_RenderPass->Setup(nullptr);

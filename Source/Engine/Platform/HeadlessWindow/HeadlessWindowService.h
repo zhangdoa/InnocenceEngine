@@ -1,17 +1,17 @@
 #pragma once
-#include "../../Interface/IWindowSystem.h"
+#include "../../Interface/IWindowService.h"
 #include "../../Common/Object.h"
 
 namespace Inno
 {
 	class IWindowSurface;
 	
-	class HeadlessWindowSystem : public IWindowSystem
+	class HeadlessWindowService : public IWindowService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(HeadlessWindowSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(HeadlessWindowService);
 
-		bool Setup(ISystemConfig* systemConfig = nullptr) override;
+		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

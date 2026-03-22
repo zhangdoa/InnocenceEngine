@@ -9,7 +9,7 @@ namespace Inno
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultLogicClient);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

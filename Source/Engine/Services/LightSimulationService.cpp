@@ -7,7 +7,7 @@
 
 using namespace Inno;
 
-bool LightSimulationService::Setup(ISystemConfig*)
+bool LightSimulationService::Setup(IServiceConfig*)
 {
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;

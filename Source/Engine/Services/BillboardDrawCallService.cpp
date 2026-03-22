@@ -29,7 +29,7 @@ namespace Inno
 
 		std::function<void()> f_SceneLoadingFinishedCallback;
 
-		bool Setup(ISystemConfig* systemConfig);
+		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
@@ -38,7 +38,7 @@ namespace Inno
 	};
 }
 
-bool BillboardDrawCallServiceImpl::Setup(ISystemConfig* systemConfig)
+bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -184,7 +184,7 @@ bool BillboardDrawCallServiceImpl::Terminate()
 	return true;
 }
 
-bool BillboardDrawCallService::Setup(ISystemConfig* systemConfig)
+bool BillboardDrawCallService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new BillboardDrawCallServiceImpl();
 

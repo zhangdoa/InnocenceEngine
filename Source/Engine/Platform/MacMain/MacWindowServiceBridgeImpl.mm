@@ -1,5 +1,5 @@
 //
-//  MacWindowSystemBridgeImpl.mm
+//  MacWindowServiceBridgeImpl.mm
 //  Main
 //
 //  Created by zhangdoa on 14/04/2019.
@@ -7,10 +7,10 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "MacWindowSystemBridgeImpl.h"
+#import "MacWindowServiceBridgeImpl.h"
 
 using namespace Inno;
-bool MacWindowSystemBridgeImpl::Setup(uint32_t sizeX, uint32_t sizeY) {
+bool MacWindowServiceBridgeImpl::Setup(uint32_t sizeX, uint32_t sizeY) {
     NSRect frame = NSMakeRect(0, 0, sizeX, sizeY);
     
     [m_macWindowDelegate initWithContentRect:frame
@@ -27,13 +27,13 @@ bool MacWindowSystemBridgeImpl::Setup(uint32_t sizeX, uint32_t sizeY) {
     return true;
 }
 
-bool MacWindowSystemBridgeImpl::Initialize() {
+bool MacWindowServiceBridgeImpl::Initialize() {
     [m_macWindowDelegate setView:[m_metalDelegate getView]];
         m_ObjectStatus = ObjectStatus::Activated;
     return true;
 }
 
-bool MacWindowSystemBridgeImpl::Update() {
+bool MacWindowServiceBridgeImpl::Update() {
     NSEvent *event =
     [app
      nextEventMatchingMask:NSEventMaskAny
@@ -46,11 +46,11 @@ bool MacWindowSystemBridgeImpl::Update() {
     return true;
 }
 
-bool MacWindowSystemBridgeImpl::Terminate() {
+bool MacWindowServiceBridgeImpl::Terminate() {
     return true;
 }
 
-ObjectStatus MacWindowSystemBridgeImpl::GetStatus() {
+ObjectStatus MacWindowServiceBridgeImpl::GetStatus() {
     if(![m_macWindowDelegate isAlive])
     {
         m_ObjectStatus = ObjectStatus::Suspended;
@@ -58,11 +58,11 @@ ObjectStatus MacWindowSystemBridgeImpl::GetStatus() {
     return m_ObjectStatus;
 }
 
-MacWindowSystemBridgeImpl::MacWindowSystemBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate *metalDelegate) {
+MacWindowServiceBridgeImpl::MacWindowServiceBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate *metalDelegate) {
     m_macWindowDelegate = macWindowDelegate;
     m_metalDelegate = metalDelegate;
 }
 
 
-MacWindowSystemBridgeImpl::~MacWindowSystemBridgeImpl() {
+MacWindowServiceBridgeImpl::~MacWindowServiceBridgeImpl() {
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "ISystem.h"
+#include "IService.h"
 #include "../Component/RenderPassComponent.h"
 #include "../Component/GPUResourceComponent.h"
 #include "../Component/SamplerComponent.h"
@@ -10,7 +10,7 @@ namespace Inno
 {
 	class IRenderingContext {};
 
-	class IRenderPass : public ISystem
+	class IRenderPass : public IService
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderPass);

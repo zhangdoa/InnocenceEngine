@@ -9,7 +9,7 @@
 
 using namespace Inno;
 
-bool TransformService::Setup(ISystemConfig*)
+bool TransformService::Setup(IServiceConfig*)
 {
 	m_Nodes.resize(MAX_ENTITIES);
 	m_ObjectStatus = ObjectStatus::Created;

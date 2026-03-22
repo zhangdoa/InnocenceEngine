@@ -1,7 +1,7 @@
 #include "../../Engine/Services/PhysicsSimulationService.h"
 #include "../../Engine/Services/HIDService.h"
 #include "../../Engine/Services/EntityRegistry.h"
-#include "../../Engine/Services/CameraSystem.h"
+#include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Component/TransformComponent.h"
 #include "../../Engine/Component/CameraComponent.h"
 
@@ -126,8 +126,8 @@ namespace Inno
 		}
 
 		m_ActiveCameraComponent = m_PlayerCameraComponent;
-		g_Engine->Get<CameraSystem>()->SetMainCamera(m_PlayerCameraComponent);
-		g_Engine->Get<CameraSystem>()->SetActiveCamera(m_ActiveCameraComponent);
+		g_Engine->Get<CameraService>()->SetMainCamera(m_PlayerCameraComponent);
+		g_Engine->Get<CameraService>()->SetActiveCamera(m_ActiveCameraComponent);
 
 		m_TargetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		m_TargetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -224,7 +224,7 @@ namespace Inno
 				m_ActiveCameraComponent = m_PlayerCameraComponent;
 			}
 
-			g_Engine->Get<CameraSystem>()->SetActiveCamera(m_ActiveCameraComponent);
+			g_Engine->Get<CameraService>()->SetActiveCamera(m_ActiveCameraComponent);
 		};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });

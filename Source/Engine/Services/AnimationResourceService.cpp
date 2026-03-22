@@ -41,7 +41,7 @@ void AnimationResourceServiceImpl::InitializeAnimation(AnimationComponent* rhs)
 	g_Engine->Get<AnimationSimulationService>()->RegisterAnimationData(rhs->m_InstanceName.c_str(), l_data);
 }
 
-bool AnimationResourceService::Setup(ISystemConfig* systemConfig)
+bool AnimationResourceService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new AnimationResourceServiceImpl();
 	m_Impl->m_ObjectStatus = ObjectStatus::Created;

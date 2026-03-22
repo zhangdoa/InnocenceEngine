@@ -1,12 +1,12 @@
 #pragma once
-#include "../../Interface/IWindowSystem.h"
+#include "../../Interface/IWindowService.h"
 
 namespace Inno
 {
-	class LinuxWindowSystem : public IWindowSystem
+	class LinuxWindowService : public IWindowService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(LinuxWindowSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(LinuxWindowService);
 
 		bool Setup(void* hInstance, void* hwnd) override;
 		bool Initialize() override;

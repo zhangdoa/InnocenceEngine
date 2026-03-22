@@ -15,7 +15,7 @@ namespace Inno
 
 		GPUBufferComponent* m_AnimationGPUBufferComp;
 
-		bool Setup(ISystemConfig* systemConfig);
+		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
@@ -24,7 +24,7 @@ namespace Inno
 	};
 }
 
-bool AnimationDrawCallServiceImpl::Setup(ISystemConfig* systemConfig)
+bool AnimationDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -96,7 +96,7 @@ bool AnimationDrawCallServiceImpl::Terminate()
 	return true;
 }
 
-bool AnimationDrawCallService::Setup(ISystemConfig* systemConfig)
+bool AnimationDrawCallService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new AnimationDrawCallServiceImpl();
 

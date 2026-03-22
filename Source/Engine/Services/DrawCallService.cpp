@@ -28,7 +28,7 @@ namespace Inno
 		GPUBufferComponent* m_TransformPrevBufferComp;
 		GPUBufferComponent* m_MaterialGPUBufferComp;
 
-		bool Setup(ISystemConfig* systemConfig);
+		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
@@ -54,7 +54,7 @@ GPUBufferComponent* DrawCallServiceImpl::GetPreviousFrameTransformBuffer()
 	return l_isOddFrame ? m_TransformPrevBufferComp : m_TransformBufferComp;
 }
 
-bool DrawCallServiceImpl::Setup(ISystemConfig* systemConfig)
+bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
@@ -252,7 +252,7 @@ bool DrawCallServiceImpl::Terminate()
 	return true;
 }
 
-bool DrawCallService::Setup(ISystemConfig* systemConfig)
+bool DrawCallService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new DrawCallServiceImpl();
 

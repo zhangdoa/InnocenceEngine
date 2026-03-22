@@ -12,7 +12,7 @@
 
 using namespace Inno;
 
-bool RadianceCacheRaytracingPass::Setup(ISystemConfig* systemConfig)
+bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

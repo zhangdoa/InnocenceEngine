@@ -1,15 +1,15 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Component/CameraComponent.h"
 
 namespace Inno
 {
-	class CameraSystem : public ICameraSystem
+	class CameraService : public ICameraService
 	{
 	public:
-		INNO_CLASS_CONCRETE_NON_COPYABLE(CameraSystem);
+		INNO_CLASS_CONCRETE_NON_COPYABLE(CameraService);
 
-		bool Setup(ISystemConfig* systemConfig = nullptr) override;
+		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

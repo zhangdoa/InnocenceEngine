@@ -13,7 +13,7 @@ using namespace Inno;
 
 
 
-bool VXGIRayTracingPass::Setup(ISystemConfig *systemConfig)
+bool VXGIRayTracingPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

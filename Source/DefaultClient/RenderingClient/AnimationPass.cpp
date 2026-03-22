@@ -8,7 +8,7 @@
 
 using namespace Inno;
 
-bool AnimationPass::Setup(ISystemConfig* systemConfig)
+bool AnimationPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

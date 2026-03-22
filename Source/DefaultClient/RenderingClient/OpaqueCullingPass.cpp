@@ -8,7 +8,7 @@
 
 using namespace Inno;
 
-bool OpaqueCullingPass::Setup(ISystemConfig* systemConfig)
+bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

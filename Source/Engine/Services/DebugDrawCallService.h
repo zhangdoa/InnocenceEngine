@@ -1,16 +1,16 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
 {
 	struct DebugDrawCallServiceImpl;
-	class DebugDrawCallService : public ISystem
+	class DebugDrawCallService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(DebugDrawCallService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

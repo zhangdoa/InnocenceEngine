@@ -10,7 +10,7 @@
 
 using namespace Inno;
 
-bool TransparentGeometryProcessPass::Setup(ISystemConfig *systemConfig)
+bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_renderingServer = g_Engine->getRenderingServer();
 	

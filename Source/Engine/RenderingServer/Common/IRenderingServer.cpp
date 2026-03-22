@@ -10,7 +10,7 @@
 
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/TemplateAssetService.h"
-#include "../../Services/GUISystem.h"
+#include "../../Services/GUIService.h"
 #include "../../Services/SceneService.h"
 #include "../../Component/TextureComponent.h"
 #include "../../Component/MeshComponent.h"
@@ -66,7 +66,7 @@ bool IRenderingServer::TerminatePool()
 	return true;
 }
 
-bool IRenderingServer::Setup(ISystemConfig* systemConfig)
+bool IRenderingServer::Setup(IServiceConfig* systemConfig)
 {
 	bool l_result = InitializePool();
 	if (!l_result)
@@ -202,7 +202,7 @@ bool IRenderingServer::Update()
 		m_CommandPreparationCallback();
 
 		PrepareSwapChainCommands();
-		g_Engine->Get<GUISystem>()->Update();
+		g_Engine->Get<GUIService>()->Update();
 
 		// The global commands have to finish before the user pipeline starts.
 		WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
@@ -223,7 +223,7 @@ bool IRenderingServer::Update()
 		}
 
 		// The GUI commands must signal on the GPU.
-		g_Engine->Get<GUISystem>()->ExecuteCommands();
+		g_Engine->Get<GUIService>()->ExecuteCommands();
 	}
 
 	m_GraphicsSemaphoreValues[l_currentFrame] = GetSemaphoreValue(GPUEngineType::Graphics);

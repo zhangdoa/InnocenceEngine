@@ -122,7 +122,7 @@ void PhysicsSimulationServiceImpl::CreatePhysXActor(EntityID Entity)
 #endif
 }
 
-bool PhysicsSimulationService::Setup(ISystemConfig* systemConfig)
+bool PhysicsSimulationService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new PhysicsSimulationServiceImpl();
 	

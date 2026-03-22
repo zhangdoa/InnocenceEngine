@@ -671,7 +671,7 @@ bool TemplateAssetServiceImpl::GenerateMesh(MeshShape shape, MeshComponent* mesh
     return true;
 }
 
-bool TemplateAssetService::Setup(ISystemConfig* systemConfig)
+bool TemplateAssetService::Setup(IServiceConfig* systemConfig)
 {
     m_Impl = new TemplateAssetServiceImpl();
 

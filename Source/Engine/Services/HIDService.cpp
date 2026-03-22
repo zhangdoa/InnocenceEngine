@@ -6,7 +6,7 @@
 #include "../RenderingServer/IRenderingServer.h"
 using namespace Inno;
 
-bool HIDService::Setup(ISystemConfig* systemConfig)
+bool HIDService::Setup(IServiceConfig* systemConfig)
 {
 	m_PreviousFrameButtonStates.reserve(m_InputConfig.totalKeyCodes);
 	for (int i = 0; i < m_InputConfig.totalKeyCodes; i++)
@@ -42,7 +42,7 @@ bool HIDService::Update()
 		return false;
 	}
 
-	g_Engine->getWindowSystem()->ConsumeEvents([this](const std::vector<IWindowEvent*>& l_events)
+	g_Engine->getWindowService()->ConsumeEvents([this](const std::vector<IWindowEvent*>& l_events)
 		{
 			for (auto l_event : l_events)
 			{

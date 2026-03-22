@@ -9,7 +9,7 @@ namespace ImGuiRendererVKNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererVK::Setup(ISystemConfig* systemConfig)
+bool ImGuiRendererVK::Setup(IServiceConfig* systemConfig)
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "ImGuiRendererVK Setup finished.");

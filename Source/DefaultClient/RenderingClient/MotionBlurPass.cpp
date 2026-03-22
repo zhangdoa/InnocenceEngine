@@ -12,7 +12,7 @@ using namespace Inno;
 
 
 
-bool MotionBlurPass::Setup(ISystemConfig *systemConfig)
+bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

@@ -8,7 +8,7 @@ namespace Inno
 	{
 	public:
 		// Inherited via IRenderingServer
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Terminate() override;
 

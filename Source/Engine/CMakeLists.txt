@@ -15,7 +15,7 @@ target_link_libraries(Engine RayTracer)
 target_link_libraries(Engine RenderingServerCommon)
 
 # Always link headless systems (platform-agnostic)
-target_link_libraries(Engine HeadlessWindowSystem)
+target_link_libraries(Engine HeadlessWindowService)
 target_link_libraries(Engine HeadlessRenderingServer)
 
 if (INNO_RENDERER_DIRECTX)
@@ -31,7 +31,7 @@ target_link_libraries(Engine MTRenderingServer)
 endif (INNO_RENDERER_METAL)
 
 if (INNO_PLATFORM_WIN)
-target_link_libraries(Engine WinWindowSystem)
+target_link_libraries(Engine WinWindowService)
 endif (INNO_PLATFORM_WIN)
 
 if (INNO_PLATFORM_MAC)

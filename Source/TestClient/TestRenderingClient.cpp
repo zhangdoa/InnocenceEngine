@@ -1,6 +1,6 @@
 #include "TestRenderingClient.h"
 #include "../Engine/Engine.h"
-#include "../Engine/Interface/IWindowSystem.h"
+#include "../Engine/Interface/IWindowService.h"
 #include "../Engine/RenderingServer/IRenderingServer.h"
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
@@ -22,7 +22,7 @@ TestRenderingClient::TestCase TestRenderingClient::ParseTestCase(const char* nam
     return TestCase::Unknown;
 }
 
-bool TestRenderingClient::Setup(ISystemConfig*)
+bool TestRenderingClient::Setup(IServiceConfig*)
 {
     m_TestCase = ParseTestCase(g_Engine->getInitConfig().testCase);
 
@@ -96,7 +96,7 @@ void TestRenderingClient::CountFrameAndTerminateIfDone()
     {
         Log(Success, "TestRenderingClient: completed ", m_FramesAfterLoad,
             " frames. Terminating.");
-        g_Engine->getWindowSystem()->Terminate();
+        g_Engine->getWindowService()->Terminate();
     }
 }
 
@@ -245,7 +245,7 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
 
         Log(Success, "TestRenderingClient (pixel_readback): completed. Validation: ",
             m_ValidationPassed ? "PASSED" : "FAILED");
-        g_Engine->getWindowSystem()->Terminate();
+        g_Engine->getWindowService()->Terminate();
     }
 
     return true;

@@ -11,7 +11,7 @@
 
 using namespace Inno;
 
-bool RadianceCacheIntegrationPass::Setup(ISystemConfig* systemConfig)
+bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

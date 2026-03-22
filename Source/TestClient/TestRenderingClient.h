@@ -7,7 +7,7 @@ namespace Inno
     class TestRenderingClient : public IRenderingClient
     {
     public:
-        bool Setup(ISystemConfig* systemConfig = nullptr) override;
+        bool Setup(IServiceConfig* systemConfig = nullptr) override;
         bool Initialize() override;
         bool Update() override;
         bool PrepareCommands() override;

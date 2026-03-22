@@ -1,6 +1,6 @@
 #include "ImGuiWindowWin.h"
 #include "ImGuiWindowWin.h"
-#include "../../Platform/WinWindow/WinWindowSystem.h"
+#include "../../Platform/WinWindow/WinWindowService.h"
 
 #include "../ImGui/imgui_impl_win32.cpp"
 
@@ -19,12 +19,12 @@ using namespace ImGuiWindowWinNS;
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
+bool ImGuiWindowWin::Setup(IServiceConfig* systemConfig)
 {
 	ImGuiWindowWinNS::m_windowEventCallbackFunctor = [](void* hWnd, uint32_t msg, uint64_t wParam, int64_t lParam) {
 		ImGui_ImplWin32_WndProcHandler((HWND)hWnd, msg, wParam, lParam);
 	};
-	g_Engine->getWindowSystem()->AddEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
+	g_Engine->getWindowService()->AddEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
 
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -35,7 +35,7 @@ bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
 
 bool ImGuiWindowWin::Initialize()
 {
-	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle());
+	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle());
 
 	m_ObjectStatus = ObjectStatus::Activated;
 

@@ -6,16 +6,16 @@
 #include "../Common/ComponentStorage.h"
 #include "../Common/Object.h"
 #include "../Common/ClassTemplate.h"
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 namespace Inno
 {
-    class EntityRegistry : public ISystem
+    class EntityRegistry : public IService
     {
     public:
         INNO_CLASS_CONCRETE_NON_COPYABLE(EntityRegistry);
 
-        bool Setup(ISystemConfig* Config) override;
+        bool Setup(IServiceConfig* Config) override;
         bool Initialize() override;
         bool Update() override;
         bool Terminate() override;

@@ -1,7 +1,7 @@
 #pragma once
 #include "../Common/EntityID.h"
 #include "../Common/STL14.h"
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 
 namespace Inno
 {
@@ -13,12 +13,12 @@ namespace Inno
 		uint32_t m_Depth       = 0;
 	};
 
-	class TransformService : public ISystem
+	class TransformService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(TransformService);
 
-		bool Setup(ISystemConfig*) override;
+		bool Setup(IServiceConfig*) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

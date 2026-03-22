@@ -1,5 +1,5 @@
 #include "WinVKWindowSurface.h"
-#include "../WinWindowSystem.h"
+#include "../WinWindowService.h"
 #include "../../../Common/LogService.h"
 #include "../../../Common/TaskScheduler.h"
 #include "../../../Services/RenderingConfigurationService.h"
@@ -12,7 +12,7 @@
 
 using namespace Inno;
 
-bool WinVKWindowSurface::Setup(ISystemConfig* systemConfig)
+bool WinVKWindowSurface::Setup(IServiceConfig* systemConfig)
 {
 	m_ObjectStatus = ObjectStatus::Created;
 
@@ -24,8 +24,8 @@ bool WinVKWindowSurface::Initialize()
 	VkWin32SurfaceCreateInfoKHR l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	l_createInfo.pNext = NULL;
-	l_createInfo.hinstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetApplicationInstance();
-	l_createInfo.hwnd = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->GetWindowHandle();
+	l_createInfo.hinstance = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetApplicationInstance();
+	l_createInfo.hwnd = reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle();
 
 	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_Engine->getRenderingServer());
 	auto l_VkInstance = reinterpret_cast<VkInstance>(l_renderingServer->GetVkInstance());

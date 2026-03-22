@@ -4,7 +4,7 @@
 
 using namespace Inno;
 
-bool HeadlessRenderingServer::Setup(ISystemConfig* systemConfig)
+bool HeadlessRenderingServer::Setup(IServiceConfig* systemConfig)
 {
     Log(Success, "HeadlessRenderingServer: Setup complete (stub implementation).");
     m_ObjectStatus = ObjectStatus::Created;

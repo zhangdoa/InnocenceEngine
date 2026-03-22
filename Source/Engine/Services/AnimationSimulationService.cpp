@@ -65,7 +65,7 @@ void AnimationSimulationServiceImpl::Tick()
 	m_PreviousTime = m_CurrentTime;
 }
 
-bool AnimationSimulationService::Setup(ISystemConfig* systemConfig)
+bool AnimationSimulationService::Setup(IServiceConfig* systemConfig)
 {
 	m_Impl = new AnimationSimulationServiceImpl();
 	m_Impl->m_ObjectStatus = ObjectStatus::Created;

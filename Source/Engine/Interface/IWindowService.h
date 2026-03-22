@@ -1,7 +1,7 @@
 #pragma once
 #include "../Common/STL14.h"
 #include "../Common/Enum.h"
-#include "ISystem.h"
+#include "IService.h"
 #include "IWindowSurface.h"
 
 INNO_ENUM(WindowEventType, Button, Mouse);
@@ -68,17 +68,17 @@ namespace Inno
 		}
 	};
 
-	class IWindowSystemConfig : public ISystemConfig
+	class IWindowServiceConfig : public IServiceConfig
 	{
 	public:
 		void* m_AppHook;
 		void* m_ExtraHook;
 	};
 
-	class IWindowSystem : public ISystem
+	class IWindowService : public IService
 	{
 	public:
-		INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowSystem);
+		INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowService);
 
 		virtual IWindowSurface* GetWindowSurface() = 0;
 		virtual bool SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam) = 0;

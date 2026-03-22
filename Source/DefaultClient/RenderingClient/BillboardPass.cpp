@@ -11,7 +11,7 @@
 
 using namespace Inno;
 
-bool BillboardPass::Setup(ISystemConfig* systemConfig)
+bool BillboardPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 

@@ -3,7 +3,7 @@
 #include "../Common/TaskScheduler.h"
 #include "../Common/LogService.h"
 
-#include "../Services/CameraSystem.h"
+#include "../Services/CameraService.h"
 #include "../Services/AssetService.h"
 #include "../Services/RenderingConfigurationService.h"
 
@@ -302,7 +302,7 @@ bool ExecuteRayTracing()
 {
 	Log(Verbose, "Start ray tracing...");
 
-	auto l_camera = g_Engine->Get<CameraSystem>()->GetMainCamera();
+	auto l_camera = g_Engine->Get<CameraService>()->GetMainCamera();
 	// TODO Phase2-migrate: auto l_lookfrom = Vec4(l_camera->m_Transform.m_pos, 1.0f);
 	// TODO Phase2-migrate: auto l_lookat = l_lookfrom + Math::getDirection(Direction::Backward, l_camera->m_Transform.m_rot);
 	// TODO Phase2-migrate: auto l_up = Math::getDirection(Direction::Up, l_camera->m_Transform.m_rot);
@@ -403,7 +403,7 @@ bool ExecuteRayTracing()
 	return true;
 }
 
-bool RayTracer::Setup(ISystemConfig* systemConfig)
+bool RayTracer::Setup(IServiceConfig* systemConfig)
 {
 	RayTracerNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;

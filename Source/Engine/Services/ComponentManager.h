@@ -6,7 +6,7 @@
 #include "../Common/ThreadSafeVector.h"
 #include "../Common/ThreadSafeUnorderedMap.h"
 #include "../Common/Randomizer.h"
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../Services/AssetService.h"
 #include "../Services/EntityRegistry.h"
 #include "../Engine.h"
@@ -350,7 +350,7 @@ namespace Inno
 	{
 	public:
 		template<typename T>
-		bool RegisterType(uint32_t maxComponentCount, ISystem* componentSystem)
+		bool RegisterType(uint32_t maxComponentCount, IService* componentSystem)
 		{
 			auto& l_TypeInfo = typeid(T);
 			auto l_typeHashCode = l_TypeInfo.hash_code();
@@ -386,7 +386,7 @@ namespace Inno
 		}
 
 		template<typename T>
-		ISystem* GetComponentSystem()
+		IService* GetComponentSystem()
 		{
 			const std::type_info& l_TypeInfo = typeid(T);
 			auto l_typeHashCode = l_TypeInfo.hash_code();
@@ -457,7 +457,7 @@ namespace Inno
 	private:
 		std::unordered_map<size_t, uint32_t> m_ComponentTypeIndexLUT;
 		std::unordered_map<size_t, std::shared_ptr<IComponentFactory>> m_ComponentFactories;
-		std::unordered_map<size_t, ISystem*> m_ComponentSystems;
+		std::unordered_map<size_t, IService*> m_ComponentSystems;
 
 		std::atomic<uint32_t> m_ComponentTypeIndexTracker = 0;
 

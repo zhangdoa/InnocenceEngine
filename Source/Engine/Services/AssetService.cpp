@@ -22,7 +22,7 @@ namespace AssetServiceNS
 
 using namespace AssetServiceNS;
 
-bool AssetService::Setup(ISystemConfig* systemConfig)
+bool AssetService::Setup(IServiceConfig* systemConfig)
 {
 	m_ObjectStatus = ObjectStatus::Created;
 

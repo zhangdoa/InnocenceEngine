@@ -2,7 +2,7 @@
 
 #include "../../Common/LogServiceSpecialization.h"
 
-#include "../../Platform/WinWindow/WinWindowSystem.h"
+#include "../../Platform/WinWindow/WinWindowService.h"
 
 #include "../../Services/RenderingConfigurationService.h"
 

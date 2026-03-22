@@ -1,10 +1,10 @@
 #pragma once
-#include "ISystem.h"
+#include "IService.h"
 
 namespace Inno
 {
 	class IRenderingConfig {};
-	class IRenderingClient : public ISystem
+	class IRenderingClient : public IService
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingClient);

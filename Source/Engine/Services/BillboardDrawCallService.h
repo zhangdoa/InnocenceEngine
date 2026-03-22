@@ -1,17 +1,17 @@
 #pragma once
-#include "../Interface/ISystem.h"
+#include "../Interface/IService.h"
 #include "../RenderingServer/IRenderingServer.h"
 #include "../Common/GPUDataStructure.h"
 
 namespace Inno
 {
 	struct BillboardDrawCallServiceImpl;
-	class BillboardDrawCallService : public ISystem
+	class BillboardDrawCallService : public IService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(BillboardDrawCallService);
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

@@ -19,7 +19,7 @@
 
 using namespace Inno;
 
-bool LightPass::Setup(ISystemConfig *systemConfig)
+bool LightPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_renderingServer = g_Engine->getRenderingServer();
 
