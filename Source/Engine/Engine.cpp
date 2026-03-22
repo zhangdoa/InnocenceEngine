@@ -5,7 +5,6 @@
 #include "Common/TaskScheduler.h"
 #include "Common/IOService.h"
 #include "Common/Task.h"
-#include "Services/ComponentManager.h"
 #include "Services/EntityRegistry.h"
 #include "Services/TransformService.h"
 #include "Services/LightSimulationService.h"
@@ -424,7 +423,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 #endif
 
 	// Additional Systems (ISystem-based, with dependency resolution)
-	Get<ComponentManager>();
 	Get<EntityRegistry>();
 	Get<AssetService>();
 	Get<SceneService>();
