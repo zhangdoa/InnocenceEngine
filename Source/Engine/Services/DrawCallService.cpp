@@ -188,7 +188,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		for (size_t j = 0; j < l_material->m_TextureComponents.size(); j++)
 		{
 			auto l_textureID = l_material->m_TextureComponents[j];
-			if (!l_textureID)
+			if (l_textureID.empty())
 				continue;
 
 			// TODO Phase2-migrate: TextureComponent not yet in EntityRegistry - will migrate in Task 9
