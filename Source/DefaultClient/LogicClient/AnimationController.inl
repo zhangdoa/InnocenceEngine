@@ -1,6 +1,6 @@
 
 #include "../../Engine/Services/EntityRegistry.h"
-#include "../../Engine/Services/AnimationService.h"
+#include "../../Engine/Services/AnimationSimulationService.h"
 
 #include "../../Engine/Engine.h"
 
@@ -34,11 +34,11 @@ namespace Inno
 			m_Entity = l_Entity;
 
 			std::function<void()> f_idle = [&]() {
-				g_Engine->Get<AnimationService>()->PlayAnimation(m_Entity, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+				g_Engine->Get<AnimationSimulationService>()->PlayAnimation(m_Entity, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
 			};
 
 			std::function<void()> f_run = [&]() {
-				g_Engine->Get<AnimationService>()->PlayAnimation(m_Entity, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+				g_Engine->Get<AnimationSimulationService>()->PlayAnimation(m_Entity, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
 			};
 
 			m_states.emplace("Idle", f_idle);
@@ -61,7 +61,7 @@ namespace Inno
 			auto l_func = m_states.find(m_currentState);
 			if (l_func != m_states.end())
 			{
-				g_Engine->Get<AnimationService>()->StopAnimation(m_Entity);
+				g_Engine->Get<AnimationSimulationService>()->StopAnimation(m_Entity);
 				l_func->second();
 				m_isStateChanged = false;
 

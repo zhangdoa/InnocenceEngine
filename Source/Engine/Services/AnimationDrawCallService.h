@@ -2,7 +2,7 @@
 #include "../Interface/ISystem.h"
 #include "../RenderingServer/IRenderingServer.h"
 #include "../Common/GPUDataStructure.h"
-#include "AnimationService.h"
+#include "AnimationSimulationService.h"
 
 namespace Inno
 {

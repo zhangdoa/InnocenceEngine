@@ -23,7 +23,8 @@
 #include "Services/AnimationDrawCallService.h"
 #include "Services/BillboardDrawCallService.h"
 #include "Services/DebugDrawCallService.h"
-#include "Services/AnimationService.h"
+#include "Services/AnimationResourceService.h"
+#include "Services/AnimationSimulationService.h"
 #include "Services/GUISystem.h"
 
 // Platform-specific systems
@@ -375,7 +376,8 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Get<AnimationDrawCallService>();
 		Get<BillboardDrawCallService>();
 		Get<DebugDrawCallService>();
-		Get<AnimationService>();
+		Get<AnimationSimulationService>();
+		Get<AnimationResourceService>();
 		Get<GUISystem>();
 	}
 
@@ -525,7 +527,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				Get<AnimationDrawCallService>()->Update();
 				Get<BillboardDrawCallService>()->Update();
 				Get<DebugDrawCallService>()->Update();
-					Get<AnimationService>()->Update();
+					Get<AnimationSimulationService>()->Update();
+				Get<AnimationResourceService>()->Update();
 				if (m_pImpl->m_RenderingClient) {
 					m_pImpl->m_RenderingClient->Update();
 				}
@@ -564,7 +567,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		SystemSetup(AnimationDrawCallService);
 		SystemSetup(BillboardDrawCallService);
 		SystemSetup(DebugDrawCallService);
-		SystemSetup(AnimationService);
+		SystemSetup(AnimationSimulationService);
+		SystemSetup(AnimationResourceService);
 
 		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
@@ -640,7 +644,8 @@ bool Engine::Initialize()
 		SystemInit(AnimationDrawCallService);
 		SystemInit(BillboardDrawCallService);
 		SystemInit(DebugDrawCallService);
-		SystemInit(AnimationService);
+		SystemInit(AnimationSimulationService);
+		SystemInit(AnimationResourceService);
 
 		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
 		auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
@@ -733,7 +738,8 @@ bool Engine::Terminate()
 		l_DefaultRenderingClientTerminationTask->Activate();
 		l_DefaultRenderingClientTerminationTask->Wait();
 
-		SystemTerm(AnimationService);
+		SystemTerm(AnimationResourceService);
+		SystemTerm(AnimationSimulationService);
 		SystemTerm(DebugDrawCallService);
 		SystemTerm(BillboardDrawCallService);
 		SystemTerm(AnimationDrawCallService);
