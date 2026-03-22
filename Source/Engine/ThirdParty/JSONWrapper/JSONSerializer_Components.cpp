@@ -73,15 +73,11 @@ void JSONWrapper::to_json(json& j, const MaterialComponent& component)
     };
 
     json textureComponents = json::array();
-    for (auto textureComponentID : component.m_TextureComponents)
+    for (const auto& textureName : component.m_TextureComponents)
     {
-        auto textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(textureComponentID);
-        if (textureComponent)
-        {
-            json textureJson;
-            textureJson["Name"] = textureComponent->m_InstanceName.c_str();
-            textureComponents.push_back(textureJson);
-        }
+        json textureJson;
+        textureJson["Name"] = textureName;
+        textureComponents.push_back(textureJson);
     }
     j["TextureComponents"] = textureComponents;
 }
@@ -152,11 +148,14 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
     if (!Load(fileName, j))
         return false;
 
-    // TODO Phase2-migrate: TextureComponent still inherits Component, restore loading when migrated
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
         component.m_TextureComponents.reserve(l_j.size());
+        for (const auto& l_entry : l_j)
+        {
+            component.m_TextureComponents.push_back(l_entry["Name"].get<std::string>());
+        }
     }
 
     component.m_materialAttributes.AlbedoR = j["Albedo"]["R"];

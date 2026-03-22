@@ -22,7 +22,7 @@ namespace Inno
 		std::vector<DescriptorHandle> m_ReadHandles;
 		std::vector<DescriptorHandle> m_WriteHandles;
 		MaterialAttributes m_materialAttributes = {};
-		std::vector<uint64_t> m_TextureComponents;
+		std::vector<std::string> m_TextureComponents;
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;
 	};
 }
