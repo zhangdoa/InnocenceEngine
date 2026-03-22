@@ -20,6 +20,12 @@ namespace Inno
 		virtual bool CleanUp(ObjectLifespan objectLifespan) = 0;
 	};
 
+	template<typename T, typename = void>
+	struct HasInstanceName : std::false_type {};
+
+	template<typename T>
+	struct HasInstanceName<T, std::void_t<decltype(std::declval<T>().m_InstanceName)>> : std::true_type {};
+
 	template<typename T>
 	class TComponentFactory : public IComponentFactory
 	{
@@ -42,7 +48,7 @@ namespace Inno
 			if (m_ComponentPointers.empty())
 				return true;
 
-			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str());
+			Log(Verbose, "Removing all ", typeid(T).name(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str());
 
 			// Mark matching components for destruction and set their pointers to nullptr
 			m_ComponentPointers.for_each([this, objectLifespan](T*& component)
@@ -104,7 +110,7 @@ namespace Inno
 				return component == nullptr;
 				});
 
-			Log(Verbose, "Removing all ", T::GetTypeName(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
+			Log(Verbose, "Removing all ", typeid(T).name(), " by ObjectLifespan: ", std::to_string(static_cast<int>(objectLifespan)).c_str(), " has been done");
 			return true;
 		}
 
@@ -112,14 +118,14 @@ namespace Inno
 		{
 			if (owner == INVALID_ENTITY)
 			{
-				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), " by invalid EntityID!");
+				Log(Error, typeid(T).name(), " Can't spawn ", typeid(T).name(), " by invalid EntityID!");
 				return nullptr;
 			}
 
 			auto l_Component = static_cast<TObjectPool<T>*>(m_ComponentPool)->Spawn();
 			if (!l_Component)
 			{
-				Log(Error, T::GetTypeName(), " Can't spawn ", T::GetTypeName(), "!");
+				Log(Error, typeid(T).name(), " Can't spawn ", typeid(T).name(), "!");
 				return nullptr;
 			}
 
@@ -133,7 +139,7 @@ namespace Inno
 
 				auto l_OwnerName = g_Engine->Get<EntityRegistry>()->GetName(owner);
 				l_Component->m_InstanceName = ObjectName((std::string(l_OwnerName ? l_OwnerName : "")
-					+ "." + std::string(T::GetTypeName()) + "/").c_str());
+					+ "." + std::string(typeid(T).name()) + "/").c_str());
 
 				m_ComponentLUTByUUID.emplace(l_Component->m_UUID, l_Component);
 
@@ -144,6 +150,16 @@ namespace Inno
 				uint64_t l_UUID = Randomizer::GenerateUUID();
 				m_ComponentUUIDs.emplace(l_Component, PlainStructInfo{ l_UUID, objectLifespan, owner });
 				m_ComponentLUTByUUID.emplace(l_UUID, l_Component);
+
+				if constexpr (HasInstanceName<T>::value)
+				{
+					auto l_OwnerName = g_Engine->Get<EntityRegistry>()->GetName(owner);
+					l_Component->m_InstanceName = ObjectName((std::string(l_OwnerName ? l_OwnerName : "")
+						+ "." + std::string(typeid(T).name()) + "/").c_str());
+					l_Component->m_ObjectStatus = ObjectStatus::Created;
+
+					Log(Verbose, "Component ", l_Component->m_InstanceName.c_str(), " has been created.");
+				}
 			}
 
 			m_ComponentPointers.emplace_back(l_Component);
@@ -198,7 +214,7 @@ namespace Inno
 		{
 			if (owner == INVALID_ENTITY)
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by invalid EntityID!");
+				Log(Error, typeid(T).name(), " Can't find ", typeid(T).name(), " by invalid EntityID!");
 				return nullptr;
 			}
 
@@ -209,7 +225,7 @@ namespace Inno
 			}
 			else
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by EntityID: ", std::to_string(owner).c_str(), "!");
+				Log(Error, typeid(T).name(), " Can't find ", typeid(T).name(), " by EntityID: ", std::to_string(owner).c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -223,7 +239,7 @@ namespace Inno
 			}
 			else
 			{
-				Log(Error, T::GetTypeName(), " Can't find ", T::GetTypeName(), " by UUID: ", std::to_string(uuid).c_str(), "!");
+				Log(Error, typeid(T).name(), " Can't find ", typeid(T).name(), " by UUID: ", std::to_string(uuid).c_str(), "!");
 				return nullptr;
 			}
 		}
@@ -232,7 +248,7 @@ namespace Inno
 		{
 			if (index >= m_ComponentPointers.size())
 			{
-				Log(Error, T::GetTypeName(), " Can't get ", T::GetTypeName(), " by index: ", std::to_string(index).c_str(), "!");
+				Log(Error, typeid(T).name(), " Can't get ", typeid(T).name(), " by index: ", std::to_string(index).c_str(), "!");
 				return nullptr;
 			}
 
@@ -285,7 +301,7 @@ namespace Inno
 		{
 			if (!component)
 			{
-				Log(Error, T::GetTypeName(), "ComponentFactory: Can't destroy ", T::GetTypeName(), " by nullptr!");
+				Log(Error, typeid(T).name(), "ComponentFactory: Can't destroy ", typeid(T).name(), " by nullptr!");
 				return false;
 			}
 

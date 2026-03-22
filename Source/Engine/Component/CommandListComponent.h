@@ -1,15 +1,15 @@
 #pragma once
 #include "../Common/Object.h"
+#include "../Common/GraphicsPrimitive.h"
 
 namespace Inno
 {
-	class CommandListComponent : public Component
+	struct CommandListComponent
 	{
-	public:
-		static uint32_t GetTypeID() { return 100; }
-		static const char* GetTypeName() { return "CommandListComponent"; }
-		
-		uint64_t m_CommandList = 0;
-		GPUEngineType m_Type = GPUEngineType::Graphics;
+		ObjectStatus  m_ObjectStatus = ObjectStatus::Invalid;
+		ObjectName    m_InstanceName = "";
+
+		uint64_t      m_CommandList  = 0;
+		GPUEngineType m_Type         = GPUEngineType::Graphics;
 	};
 }

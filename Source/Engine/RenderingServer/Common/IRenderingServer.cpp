@@ -259,7 +259,7 @@ T* AddComponent(const char* name)
 	}
 	else
 	{
-		l_name = (std::string(T::GetTypeName()) + "_" + std::to_string(l_count) + "/");
+		l_name = (std::string(typeid(T).name()) + "_" + std::to_string(l_count) + "/");
 	}
 
 	if (strcmp(name, "") == 0)
