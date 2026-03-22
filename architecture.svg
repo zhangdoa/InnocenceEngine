@@ -1,164 +1,157 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
   <defs>
     <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
       <path d="M0,0.5 L0,5.5 L6,3 z" fill="#6b6b8a"/>
     </marker>
   </defs>
 
-  <rect width="1200" height="620" fill="#1e1e2e"/>
+  <rect width="1200" height="600" fill="#1e1e2e"/>
 
-  <!-- Title -->
-  <text x="600" y="28" text-anchor="middle" fill="#cdd6f4"
+  <text x="600" y="26" text-anchor="middle" fill="#cdd6f4"
         font-family="'Segoe UI',Arial,sans-serif" font-size="17" font-weight="600">
     InnocenceEngine — Architecture Overview
   </text>
 
-  <!-- ── WinMain ── -->
-  <rect x="500" y="42" width="200" height="38" rx="5" fill="#2a2a3e" stroke="#cba6f7" stroke-width="1.5"/>
-  <text x="600" y="66" text-anchor="middle" fill="#cba6f7"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="13">WinMain</text>
-  <line x1="600" y1="80" x2="600" y2="96" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- ── Engine ── -->
-  <rect x="50" y="96" width="1100" height="44" rx="5" fill="#2a2a3e" stroke="#cba6f7" stroke-width="2"/>
-  <text x="600" y="123" text-anchor="middle" fill="#cba6f7"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="14" font-weight="700">
-    Engine  ·  Service Locator
-  </text>
-  <line x1="600" y1="140" x2="600" y2="154" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- ══ INFRASTRUCTURE layer band ══ -->
-  <rect x="50" y="154" width="1100" height="52" rx="4" fill="#20253a" stroke="#89b4fa" stroke-width="1" opacity="0.9"/>
-  <rect x="50" y="154" width="5"    height="52" rx="2" fill="#89b4fa" opacity="0.6"/>
-  <text x="68" y="166" fill="#89b4fa" font-family="'Segoe UI',Arial,sans-serif"
-        font-size="9" letter-spacing="1.5" opacity="0.7">INFRASTRUCTURE</text>
-
-  <rect x="80"  y="163" width="242" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
-  <text x="201" y="185" text-anchor="middle" fill="#89b4fa"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">WindowService</text>
-
-  <rect x="338" y="163" width="242" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
-  <text x="459" y="185" text-anchor="middle" fill="#89b4fa"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">TaskScheduler</text>
-
-  <rect x="596" y="163" width="242" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
-  <text x="717" y="185" text-anchor="middle" fill="#89b4fa"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">LogService</text>
-
-  <rect x="854" y="163" width="242" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
-  <text x="975" y="185" text-anchor="middle" fill="#89b4fa"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">FileService</text>
-
-  <line x1="600" y1="206" x2="600" y2="220" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- ══ CLIENT PLUGINS layer band ══ -->
-  <rect x="50" y="220" width="1100" height="210" rx="4" fill="#1e2b2e" stroke="#89dceb" stroke-width="1" opacity="0.9"/>
-  <rect x="50" y="220" width="5"    height="210" rx="2" fill="#89dceb" opacity="0.6"/>
-  <text x="68" y="232" fill="#89dceb" font-family="'Segoe UI',Arial,sans-serif"
+  <!-- ══ Layer 5 (top): CLIENT PLUGINS ══ -->
+  <rect x="50" y="36" width="1100" height="198" rx="4" fill="#1e2b2e" stroke="#89dceb" stroke-width="1" opacity="0.9"/>
+  <rect x="50" y="36" width="5" height="198" rx="2" fill="#89dceb" opacity="0.6"/>
+  <text x="68" y="48" fill="#89dceb" font-family="'Segoe UI',Arial,sans-serif"
         font-size="9" letter-spacing="1.5" opacity="0.7">CLIENT PLUGINS</text>
 
   <!-- Interface boxes -->
-  <rect x="80"  y="238" width="520" height="36" rx="4" fill="#2a2a3e" stroke="#89dceb" stroke-width="1.5"/>
-  <text x="340" y="261" text-anchor="middle" fill="#89dceb"
+  <rect x="65"  y="52" width="520" height="36" rx="4" fill="#2a2a3e" stroke="#89dceb" stroke-width="1.5"/>
+  <text x="325" y="75" text-anchor="middle" fill="#89dceb"
         font-family="'Segoe UI',Arial,sans-serif" font-size="12">ILogicClient</text>
 
-  <rect x="620" y="238" width="520" height="36" rx="4" fill="#2a2a3e" stroke="#89dceb" stroke-width="1.5"/>
-  <text x="880" y="261" text-anchor="middle" fill="#89dceb"
+  <rect x="615" y="52" width="520" height="36" rx="4" fill="#2a2a3e" stroke="#89dceb" stroke-width="1.5"/>
+  <text x="875" y="75" text-anchor="middle" fill="#89dceb"
         font-family="'Segoe UI',Arial,sans-serif" font-size="12">IRenderingClient</text>
 
-  <!-- implements arrows -->
-  <line x1="340" y1="274" x2="340" y2="290" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
-  <line x1="880" y1="274" x2="880" y2="290" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+  <line x1="325" y1="88" x2="325" y2="104" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+  <line x1="875" y1="88" x2="875" y2="104" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
 
-  <!-- DefaultLogicClient detail box -->
-  <rect x="80" y="290" width="520" height="130" rx="4" fill="#232336" stroke="#89dceb" stroke-width="1" stroke-dasharray="5,3"/>
-  <text x="340" y="308" text-anchor="middle" fill="#89dceb" opacity="0.65"
+  <!-- DefaultLogicClient detail -->
+  <rect x="65" y="104" width="520" height="122" rx="4" fill="#232336" stroke="#89dceb" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="325" y="121" text-anchor="middle" fill="#89dceb" opacity="0.65"
         font-family="'Segoe UI',Arial,sans-serif" font-size="10" font-style="italic">DefaultLogicClient</text>
-  <line x1="90" y1="313" x2="590" y2="313" stroke="#89dceb" stroke-width="0.5" opacity="0.25"/>
-  <text x="100" y="332" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  World / Scene</text>
-  <text x="320" y="332" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Player &amp; Camera</text>
-  <text x="100" y="354" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Physics (PhysX)</text>
-  <text x="320" y="354" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Animation</text>
-  <text x="100" y="376" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Asset Loading</text>
-  <text x="320" y="376" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  GUI (ImGui)</text>
+  <line x1="75" y1="126" x2="575" y2="126" stroke="#89dceb" stroke-width="0.5" opacity="0.25"/>
+  <text x="85"  y="145" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  World / Scene</text>
+  <text x="305" y="145" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Player &amp; Camera</text>
+  <text x="85"  y="165" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Physics (PhysX)</text>
+  <text x="305" y="165" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Animation</text>
+  <text x="85"  y="185" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Asset Loading</text>
+  <text x="305" y="185" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  GUI (ImGui)</text>
 
-  <!-- DefaultRenderingClient detail box -->
-  <rect x="620" y="290" width="520" height="130" rx="4" fill="#232336" stroke="#89dceb" stroke-width="1" stroke-dasharray="5,3"/>
-  <text x="880" y="308" text-anchor="middle" fill="#89dceb" opacity="0.65"
+  <!-- DefaultRenderingClient detail -->
+  <rect x="615" y="104" width="520" height="122" rx="4" fill="#232336" stroke="#89dceb" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="875" y="121" text-anchor="middle" fill="#89dceb" opacity="0.65"
         font-family="'Segoe UI',Arial,sans-serif" font-size="10" font-style="italic">DefaultRenderingClient</text>
-  <line x1="630" y1="313" x2="1130" y2="313" stroke="#89dceb" stroke-width="0.5" opacity="0.25"/>
-  <text x="640" y="332" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  GBuffer Pass</text>
-  <text x="860" y="332" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Light Culling Pass</text>
-  <text x="640" y="354" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Light Pass</text>
-  <text x="860" y="354" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Sky &amp; Transparent</text>
-  <text x="640" y="376" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  TAA / Motion Blur</text>
-  <text x="860" y="376" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  ACES Tone Mapping</text>
+  <line x1="625" y1="126" x2="1125" y2="126" stroke="#89dceb" stroke-width="0.5" opacity="0.25"/>
+  <text x="635" y="145" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  GBuffer Pass</text>
+  <text x="855" y="145" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Light Culling Pass</text>
+  <text x="635" y="165" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Light Pass</text>
+  <text x="855" y="165" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  Sky &amp; Transparent</text>
+  <text x="635" y="185" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  TAA / Motion Blur</text>
+  <text x="855" y="185" fill="#89dceb" opacity="0.85" font-family="'Segoe UI',Arial,sans-serif" font-size="11">·  ACES Tone Mapping</text>
 
-  <line x1="600" y1="430" x2="600" y2="444" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="600" y1="234" x2="600" y2="248" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
 
-  <!-- ══ DATA SERVICES layer band ══ -->
-  <rect x="50" y="444" width="1100" height="54" rx="4" fill="#1e2b1e" stroke="#a6e3a1" stroke-width="1" opacity="0.9"/>
-  <rect x="50" y="444" width="5"    height="54" rx="2" fill="#a6e3a1" opacity="0.6"/>
-  <text x="68" y="456" fill="#a6e3a1" font-family="'Segoe UI',Arial,sans-serif"
-        font-size="9" letter-spacing="1.5" opacity="0.7">DATA SERVICES</text>
-
-  <!-- EntityRegistry — special -->
-  <rect x="80"  y="454" width="196" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="2.5"/>
-  <text x="178" y="476" text-anchor="middle" fill="#a6e3a1"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12" font-weight="700">EntityRegistry</text>
-
-  <rect x="290" y="454" width="196" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
-  <text x="388" y="476" text-anchor="middle" fill="#a6e3a1"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">DrawCallService</text>
-
-  <rect x="500" y="454" width="196" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
-  <text x="598" y="476" text-anchor="middle" fill="#a6e3a1"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="11">PerFrameDataService</text>
-
-  <rect x="710" y="454" width="196" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
-  <text x="808" y="476" text-anchor="middle" fill="#a6e3a1"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="12">LightDataService</text>
-
-  <rect x="920" y="454" width="220" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
-  <text x="1030" y="472" text-anchor="middle" fill="#a6e3a1"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="11">RenderingConfigService</text>
-
-  <line x1="600" y1="498" x2="600" y2="512" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
-
-  <!-- IRenderingClient → IRenderingServer dashed bypass -->
-  <line x1="1140" y1="256" x2="1155" y2="256" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3"/>
-  <line x1="1155" y1="256" x2="1155" y2="530" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3"/>
-  <line x1="1155" y1="530" x2="1152" y2="530" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
-
-  <!-- ── IRenderingServer ── -->
-  <rect x="50" y="512" width="1100" height="48" rx="5" fill="#2a2a3e" stroke="#f38ba8" stroke-width="2"/>
-  <text x="600" y="533" text-anchor="middle" fill="#f38ba8"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="13" font-weight="700">IRenderingServer</text>
-  <text x="600" y="551" text-anchor="middle" fill="#f38ba8" opacity="0.75"
-        font-family="'Segoe UI',Arial,sans-serif" font-size="11">
-    DX12RenderingServer  ·  Vulkan (WIP)  ·  Metal (WIP)
+  <!-- ══ Layer 4: ENGINE ══ -->
+  <rect x="50" y="248" width="1100" height="50" rx="4" fill="#2a2a3e" stroke="#cba6f7" stroke-width="2"/>
+  <rect x="50" y="248" width="5" height="50" rx="2" fill="#cba6f7" opacity="0.6"/>
+  <text x="600" y="278" text-anchor="middle" fill="#cba6f7"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="14" font-weight="700">
+    Engine  ·  Service Locator
   </text>
 
+  <line x1="600" y1="298" x2="600" y2="312" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══ Layer 3: DATA SERVICES ══ -->
+  <rect x="50" y="312" width="1100" height="54" rx="4" fill="#1e2b1e" stroke="#a6e3a1" stroke-width="1" opacity="0.9"/>
+  <rect x="50" y="312" width="5" height="54" rx="2" fill="#a6e3a1" opacity="0.6"/>
+  <text x="68" y="324" fill="#a6e3a1" font-family="'Segoe UI',Arial,sans-serif"
+        font-size="9" letter-spacing="1.5" opacity="0.7">DATA SERVICES</text>
+
+  <rect x="65"  y="322" width="204" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="2.5"/>
+  <text x="167" y="344" text-anchor="middle" fill="#a6e3a1"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12" font-weight="700">EntityRegistry</text>
+
+  <rect x="281" y="322" width="204" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
+  <text x="383" y="344" text-anchor="middle" fill="#a6e3a1"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">DrawCallService</text>
+
+  <rect x="497" y="322" width="204" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
+  <text x="599" y="344" text-anchor="middle" fill="#a6e3a1"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="11">PerFrameDataService</text>
+
+  <rect x="713" y="322" width="204" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
+  <text x="815" y="344" text-anchor="middle" fill="#a6e3a1"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">LightDataService</text>
+
+  <rect x="929" y="322" width="211" height="34" rx="4" fill="#2a2a3e" stroke="#a6e3a1" stroke-width="1.5"/>
+  <text x="1034" y="340" text-anchor="middle" fill="#a6e3a1"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="11">RenderingConfig</text>
+  <text x="1034" y="354" text-anchor="middle" fill="#a6e3a1"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="11">Service</text>
+
+  <line x1="600" y1="366" x2="600" y2="380" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══ Layer 2: RENDERING BACKEND ══ -->
+  <rect x="50" y="380" width="1100" height="52" rx="4" fill="#2b1e22" stroke="#f38ba8" stroke-width="1.5" opacity="0.9"/>
+  <rect x="50" y="380" width="5" height="52" rx="2" fill="#f38ba8" opacity="0.6"/>
+  <text x="68" y="392" fill="#f38ba8" font-family="'Segoe UI',Arial,sans-serif"
+        font-size="9" letter-spacing="1.5" opacity="0.7">RENDERING BACKEND</text>
+
+  <rect x="65" y="390" width="1075" height="34" rx="4" fill="#2a2a3e" stroke="#f38ba8" stroke-width="2"/>
+  <text x="602" y="408" text-anchor="middle" fill="#f38ba8"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="13" font-weight="700">IRenderingServer</text>
+  <text x="602" y="421" text-anchor="middle" fill="#f38ba8" opacity="0.7"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="11">DX12RenderingServer  ·  Vulkan (WIP)  ·  Metal (WIP)</text>
+
+  <line x1="600" y1="432" x2="600" y2="446" stroke="#6b6b8a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ══ Layer 1 (bottom): PLATFORM ══ -->
+  <rect x="50" y="446" width="1100" height="54" rx="4" fill="#20253a" stroke="#89b4fa" stroke-width="1" opacity="0.9"/>
+  <rect x="50" y="446" width="5" height="54" rx="2" fill="#89b4fa" opacity="0.6"/>
+  <text x="68" y="458" fill="#89b4fa" font-family="'Segoe UI',Arial,sans-serif"
+        font-size="9" letter-spacing="1.5" opacity="0.7">PLATFORM</text>
+
+  <rect x="65"  y="456" width="256" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
+  <text x="193" y="478" text-anchor="middle" fill="#89b4fa"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">WindowService</text>
+
+  <rect x="337" y="456" width="256" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
+  <text x="465" y="478" text-anchor="middle" fill="#89b4fa"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">TaskScheduler</text>
+
+  <rect x="609" y="456" width="256" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
+  <text x="737" y="478" text-anchor="middle" fill="#89b4fa"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">LogService</text>
+
+  <rect x="881" y="456" width="259" height="34" rx="4" fill="#2a2a3e" stroke="#89b4fa" stroke-width="1.5"/>
+  <text x="1010" y="478" text-anchor="middle" fill="#89b4fa"
+        font-family="'Segoe UI',Arial,sans-serif" font-size="12">FileService</text>
+
   <!-- ── Legend ── -->
-  <rect x="50"  y="582" width="11" height="11" rx="2" fill="#cba6f7"/>
-  <text x="67"  y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Engine Core</text>
+  <rect x="50"  y="526" width="11" height="11" rx="2" fill="#89dceb"/>
+  <text x="67"  y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Client Plugins</text>
 
-  <rect x="160" y="582" width="11" height="11" rx="2" fill="#89b4fa"/>
-  <text x="177" y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Infrastructure</text>
+  <rect x="160" y="526" width="11" height="11" rx="2" fill="#cba6f7"/>
+  <text x="177" y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Engine Core</text>
 
-  <rect x="275" y="582" width="11" height="11" rx="2" fill="#89dceb"/>
-  <text x="292" y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Client Plugins</text>
+  <rect x="268" y="526" width="11" height="11" rx="2" fill="#a6e3a1"/>
+  <text x="285" y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Data Services</text>
 
-  <rect x="385" y="582" width="11" height="11" rx="2" fill="#a6e3a1"/>
-  <text x="402" y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Data Services</text>
+  <rect x="378" y="526" width="11" height="11" rx="2" fill="#f38ba8"/>
+  <text x="395" y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Rendering Backend</text>
 
-  <rect x="490" y="582" width="11" height="11" rx="2" fill="#f38ba8"/>
-  <text x="507" y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Rendering Backend</text>
+  <rect x="510" y="526" width="11" height="11" rx="2" fill="#89b4fa"/>
+  <text x="527" y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">Platform</text>
 
-  <line x1="625" y1="587" x2="655" y2="587" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="663" y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">reads / uses</text>
+  <line x1="595" y1="531" x2="625" y2="531" stroke="#6b6b8a" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="633" y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">implements</text>
 
-  <line x1="745" y1="587" x2="775" y2="587" stroke="#6b6b8a" stroke-width="1.5"/>
-  <text x="783" y="592" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">owns / drives</text>
+  <line x1="715" y1="531" x2="745" y2="531" stroke="#6b6b8a" stroke-width="1.5"/>
+  <text x="753" y="536" fill="#6b6b8a" font-family="'Segoe UI',Arial,sans-serif" font-size="11">depends on ↓</text>
 </svg>
