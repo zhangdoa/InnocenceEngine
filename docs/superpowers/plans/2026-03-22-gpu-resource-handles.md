@@ -673,7 +673,7 @@ git commit -m "refactor: replace ComponentManager Spawn/Find with IRenderingServ
 - Modify: `Source/Engine/Component/MaterialComponent.h`
 - Modify: `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp`
 
-`MaterialComponent::m_TextureComponents` stores `vector<uint64_t>` UUID keys. JSON serialization writes these UUIDs and deserializes by calling `FindByUUID<TextureComponent>`. After this task, the field becomes `vector<string>` holding asset paths, and serialization writes/reads path strings.
+`MaterialComponent::m_TextureComponents` stores `vector<uint64_t>` UUID keys. The serialization write path (`to_json`) loops over these UUIDs, looks up each via `ComponentManager::FindByUUID<TextureComponent>`, and writes `m_InstanceName.c_str()` as a `"Name"` string. The deserialization path (`Load(MaterialComponent)`) is currently a stub (`TODO Phase2-migrate`) that only calls `reserve` — it never populates the field. After this task, the field becomes `vector<string>` and both paths operate on names directly with no ComponentManager dependency.
 
 - [ ] **Step 1: Change MaterialComponent.h**
 
@@ -687,29 +687,72 @@ std::vector<std::string> m_TextureComponents;
 
 Note: MaterialComponent already includes `TextureComponent.h`. No other change needed in the header.
 
-- [ ] **Step 2: Read JSONSerializer_Components.cpp in full**
+- [ ] **Step 2: Read JSONSerializer_Components.cpp lines 60–175**
 
-Look at how `m_TextureComponents` is written during serialization and how `FindByUUID<TextureComponent>` is called during deserialization (around line 78). There may also be a write path that saves UUIDs.
+Two distinct code paths handle `m_TextureComponents`:
+- **Serialization** (`to_json`, ~lines 75–86): loops over UUID elements, calls `ComponentManager::FindByUUID<TextureComponent>`, writes `m_InstanceName.c_str()` as `"Name"`.
+- **Deserialization** (`Load(MaterialComponent)`, ~lines 155–160): a stub with `TODO Phase2-migrate` comment — it calls `reserve` but never populates `m_TextureComponents`. There is no live `FindByUUID` call in the deserialization path.
 
-- [ ] **Step 3: Update deserialization (FindByUUID → FindTextureByName)**
+- [ ] **Step 3: Implement the deserialization stub (lines 155–160)**
 
-From Step 2 you will have seen the actual variable name used for the texture ID in the local code (around line 78 of JSONSerializer_Components.cpp). In the pattern below, `textureComponentID` is a placeholder — use whatever the file actually calls it.
+The stub currently reads the `"TextureComponents"` JSON array but does nothing with it. After `m_TextureComponents` becomes `vector<string>`, implement the loop body to populate it:
 
-Before (approximate):
+Before:
 ```cpp
-auto textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(textureComponentID);
+// TODO Phase2-migrate: TextureComponent still inherits Component, restore loading when migrated
+if (j.find("TextureComponents") != j.end())
+{
+    auto l_j = j["TextureComponents"];
+    component.m_TextureComponents.reserve(l_j.size());
+}
 ```
 
 After:
 ```cpp
-auto textureComponent = g_Engine->getRenderingServer()->FindTextureByName(textureComponentID.c_str());
+if (j.find("TextureComponents") != j.end())
+{
+    auto l_j = j["TextureComponents"];
+    component.m_TextureComponents.reserve(l_j.size());
+    for (const auto& l_entry : l_j)
+    {
+        component.m_TextureComponents.push_back(l_entry["Name"].get<std::string>());
+    }
+}
 ```
 
-The variable's type changes from `uint64_t` to `std::string` — update the JSON key read that populates it (was reading a number, now reads a string).
+Remove the `TODO Phase2-migrate` comment.
 
-- [ ] **Step 4: Update serialization write path if UUIDs are written**
+- [ ] **Step 4: Update the serialization write path (to_json, lines 75–86)**
 
-Search for any code writing `m_TextureComponents` elements to JSON. Change from writing UUID integers to writing `m_InstanceName.c_str()` (the asset name string).
+The current write path uses UUID elements to look up the component. After `m_TextureComponents` becomes `vector<string>`, the names are already stored — no lookup needed. Replace the entire loop:
+
+Before:
+```cpp
+json textureComponents = json::array();
+for (auto textureComponentID : component.m_TextureComponents)
+{
+    auto textureComponent = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(textureComponentID);
+    if (textureComponent)
+    {
+        json textureJson;
+        textureJson["Name"] = textureComponent->m_InstanceName.c_str();
+        textureComponents.push_back(textureJson);
+    }
+}
+j["TextureComponents"] = textureComponents;
+```
+
+After:
+```cpp
+json textureComponents = json::array();
+for (const auto& textureName : component.m_TextureComponents)
+{
+    json textureJson;
+    textureJson["Name"] = textureName;
+    textureComponents.push_back(textureJson);
+}
+j["TextureComponents"] = textureComponents;
+```
 
 - [ ] **Step 5: Remove the ComponentManager include from JSONSerializer_Components.cpp**
 
