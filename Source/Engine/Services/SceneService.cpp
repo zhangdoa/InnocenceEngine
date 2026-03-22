@@ -2,7 +2,6 @@
 #include "../Common/LogService.h"
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
-#include "ComponentManager.h"
 #include "EntityRegistry.h"
 
 #include "../Engine.h"
@@ -68,7 +67,6 @@ bool SceneService::Setup(ISystemConfig* systemConfig)
 
 		m_SceneHierarchyMap.clear();
 		g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
-		g_Engine->Get<ComponentManager>()->CleanUp(ObjectLifespan::Scene);
 
 		Log(Success, "Scene hierarchy map has been reset.");
 	};
@@ -213,25 +211,6 @@ bool SceneService::AddSceneLoadingFinishedCallback(std::function<void()>* functo
 {
 	m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
 	return true;
-}
-
-template<typename T>
-void SceneService::AddComponentToSceneHierarchyMap()
-{
-	auto l_Components = g_Engine->Get<ComponentManager>()->GetAll<T>();
-	for (auto i : l_Components)
-	{
-		auto l_componentPair = std::make_pair(i->GetTypeID(), i);
-		auto l_result = m_SceneHierarchyMap.find(i->m_Owner);
-		if (l_result != m_SceneHierarchyMap.end())
-		{
-			l_result->second.emplace(l_componentPair);
-		}
-		else
-		{
-			m_SceneHierarchyMap.emplace(i->m_Owner, std::set<ComponentPair>{ l_componentPair });
-		}
-	}
 }
 
 const SceneHierarchyMap& SceneService::getSceneHierarchyMap()

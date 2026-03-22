@@ -192,7 +192,6 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 				continue;
 
 			// TODO Phase2-migrate: TextureComponent not yet in EntityRegistry - will migrate in Task 9
-			// auto* l_texture = g_Engine->Get<ComponentManager>()->FindByUUID<TextureComponent>(l_textureID);
 			// if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
 			// 	continue;
 			// auto textureIndex = l_renderingServer->GetIndex(l_texture, Accessibility::ReadOnly);

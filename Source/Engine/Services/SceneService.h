@@ -33,9 +33,6 @@ namespace Inno
 		bool LoadAsync(const char* fileName);
 		bool LoadSync(const char* fileName);
 		
-		template<typename T>
-		void AddComponentToSceneHierarchyMap();
-
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 		std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;

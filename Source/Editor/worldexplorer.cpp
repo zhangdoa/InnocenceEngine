@@ -266,8 +266,7 @@ void WorldExplorer::destroyComponent(Component *component)
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<MaterialComponent*>(component)); }
     else if (componentType == TextureComponent::GetTypeID())
     {
-        // TODO Phase2-migrate: Task 13 — TextureComponent is GPU-resource managed; migrate when Task 13 clarifies ownership
-        g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<TextureComponent*>(component));
+        g_Engine->getRenderingServer()->Delete(reinterpret_cast<TextureComponent*>(component));
     }
     // TODO Phase2-migrate: else if (componentType == SkeletonComponent::GetTypeID())
     // TODO Phase2-migrate: { g_Engine->Get<ComponentManager>()->Destroy(reinterpret_cast<SkeletonComponent*>(component)); }
