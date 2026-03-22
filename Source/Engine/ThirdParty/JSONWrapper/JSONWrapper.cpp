@@ -6,6 +6,7 @@
 
 #include "../../Services/AssetService.h"
 #include "../../Services/EntityRegistry.h"
+#include "../../Component/TransformComponent.h"
 
 #include "../../Engine.h"
 using namespace Inno;
@@ -94,12 +95,16 @@ bool JSONWrapper::LoadScene(const char* fileName)
 				auto& l_Light = g_Engine->Get<EntityRegistry>()->Emplace<LightComponent>(l_EntityID);
 				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
 				AssetService::Load(l_FilePath.c_str(), l_Light);
+				if (!g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID))
+					g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
 			}
 			else if (l_ComponentTypeID == CameraComponent::GetTypeID())
 			{
 				auto& l_Camera = g_Engine->Get<EntityRegistry>()->Emplace<CameraComponent>(l_EntityID);
 				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
 				AssetService::Load(l_FilePath.c_str(), l_Camera);
+				if (!g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID))
+					g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
 			}
 			else
 			{

@@ -3,10 +3,13 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/AssetService.h"
+#include "../../Engine/Services/TemplateAssetService.h"
 #include "../../Engine/RayTracer/RayTracer.h"
 #include "../../Engine/Component/TransformComponent.h"
 #include "../../Engine/Component/LightComponent.h"
 #include "../../Engine/Component/CameraComponent.h"
+#include "../../Engine/Component/MeshComponent.h"
+#include "../../Engine/Component/MaterialComponent.h"
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/IGraphicsService.h"
@@ -35,6 +38,11 @@ namespace Inno
 		bool setupTransparentCubes();
 		bool setupVolumetricCubes();
 		bool setupPointLights();
+
+		void attachMeshAndMaterial(EntityID Entity, MeshShape Shape);
+		void processPendingMeshSetups();
+
+		std::vector<std::pair<EntityID, MeshShape>> m_PendingMeshSetups;
 
 		//bool updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel = ShaderModel::Opaque);
 		void updateSpheres();
@@ -70,6 +78,46 @@ namespace Inno
 		uint32_t m_matrixDim = 8;
 	};
 
+	void WorldSystem::attachMeshAndMaterial(EntityID Entity, MeshShape Shape)
+	{
+		auto l_templateMesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(Shape);
+		auto l_defaultMaterial = g_Engine->Get<TemplateAssetService>()->GetDefaultMaterialComponent();
+
+		if (!l_templateMesh || !l_defaultMaterial)
+		{
+			Log(Error, "TemplateAssetService returned null mesh or material for entity ", Entity);
+			return;
+		}
+
+		auto l_Registry = g_Engine->Get<EntityRegistry>();
+
+		auto& l_mesh = l_Registry->Emplace<MeshComponent>(Entity);
+		l_mesh.m_VertexBufferView = l_templateMesh->m_VertexBufferView;
+		l_mesh.m_IndexBufferView = l_templateMesh->m_IndexBufferView;
+		l_mesh.m_AABB = l_templateMesh->m_AABB;
+		l_mesh.m_ObjectStatus = ObjectStatus::Activated;
+
+		auto& l_material = l_Registry->Emplace<MaterialComponent>(Entity);
+		l_material.m_materialAttributes = l_defaultMaterial->m_materialAttributes;
+		l_material.m_ShaderModel = l_defaultMaterial->m_ShaderModel;
+		l_material.m_ObjectStatus = ObjectStatus::Activated;
+	}
+
+	void WorldSystem::processPendingMeshSetups()
+	{
+		if (m_PendingMeshSetups.empty())
+			return;
+
+		auto l_sphereMesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
+		if (!l_sphereMesh || !l_sphereMesh->m_VertexBufferView.IsValid())
+			return;
+
+		for (auto& l_pair : m_PendingMeshSetups)
+			attachMeshAndMaterial(l_pair.first, l_pair.second);
+
+		m_PendingMeshSetups.clear();
+	}
+
 	bool WorldSystem::setupReferenceSpheres()
 	{
 		float l_breadthInterval = 4.0f;
@@ -100,8 +148,7 @@ namespace Inno
 						(j * l_breadthInterval) - 2.0f * (m_matrixDim - 1),
 						0.0f);
 				l_Transform.m_LocalPos = Vec3(l_pos.x, l_pos.y, l_pos.z);
-				// TODO: load mesh and material via AssetService once AssetService is migrated
-				g_Engine->getGraphicsService()->Initialize(l_Entity);
+				m_PendingMeshSetups.emplace_back(l_Entity, MeshShape::Sphere);
 			}
 		}
 
@@ -154,8 +201,7 @@ namespace Inno
 				l_Transform.m_LocalRot = Math::calcRotatedLocalRotator(l_Transform.m_LocalRot,
 					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 					l_randomRotDelta(m_generator));
-				// TODO: load mesh and material via AssetService once AssetService is migrated
-				g_Engine->getGraphicsService()->Initialize(l_Entity);
+				m_PendingMeshSetups.emplace_back(l_Entity, MeshShape::Cube);
 			}
 		}
 
@@ -198,8 +244,7 @@ namespace Inno
 				l_Transform.m_LocalRot = Math::calcRotatedLocalRotator(l_Transform.m_LocalRot,
 					Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
 					l_randomRotDelta(m_generator));
-				// TODO: load mesh and material via AssetService once AssetService is migrated
-				g_Engine->getGraphicsService()->Initialize(l_Entity);
+				m_PendingMeshSetups.emplace_back(l_Entity, MeshShape::Sphere);
 			}
 		}
 
@@ -228,8 +273,7 @@ namespace Inno
 			auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
 			l_Transform.m_LocalScale = Vec3(1.0f * i, 1.0f * i, 0.5f);
 			l_Transform.m_LocalPos = Vec3(0.0f, 2.0f * i, -(i * l_breadthInterval) - 4.0f);
-			// TODO: load mesh and material via AssetService once AssetService is migrated
-			g_Engine->getGraphicsService()->Initialize(l_Entity);
+			m_PendingMeshSetups.emplace_back(l_Entity, MeshShape::Cube);
 		}
 
 		return true;
@@ -258,8 +302,7 @@ namespace Inno
 			auto& l_Transform = l_Registry->Emplace<TransformComponent>(l_Entity);
 			l_Transform.m_LocalScale = Vec3(4.0f, 4.0f, 4.0f);
 			l_Transform.m_LocalPos = Vec3(l_randomPosDelta(m_generator), 2.0f, l_randomPosDelta(m_generator));
-			// TODO: load mesh and material via AssetService once AssetService is migrated
-			g_Engine->getGraphicsService()->Initialize(l_Entity);
+			m_PendingMeshSetups.emplace_back(l_Entity, MeshShape::Cube);
 		}
 
 		return true;
@@ -427,6 +470,8 @@ namespace Inno
 	{
 		if (m_ObjectStatus != ObjectStatus::Activated)
 			return false;
+
+		processPendingMeshSetups();
 
 		if (!allowUpdate)
 			return false;

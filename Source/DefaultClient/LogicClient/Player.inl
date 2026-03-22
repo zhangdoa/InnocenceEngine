@@ -102,6 +102,8 @@ namespace Inno
 		{
 			m_PlayerCameraEntity = l_PlayerCameraEntity;
 			m_PlayerCameraComponent = l_Registry->Get<CameraComponent>(m_PlayerCameraEntity);
+			if (!l_Registry->Get<TransformComponent>(m_PlayerCameraEntity))
+				l_Registry->Emplace<TransformComponent>(m_PlayerCameraEntity);
 		}
 		else
 		{
