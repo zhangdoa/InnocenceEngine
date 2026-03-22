@@ -2,8 +2,10 @@
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/EntityRegistry.h"
 #include "../../Engine/Component/TransformComponent.h"
+#include "../../Engine/Component/WorldTransformComponent.h"
 #include "../../Engine/Component/VisibilityComponent.h"
 #include "../../Engine/Component/RigidBodyComponent.h"
+#include "../../Engine/Services/TransformService.h"
 
 using namespace Inno;
 
@@ -190,6 +192,56 @@ static void TestNewComponentTypes()
 	TestRunner::EndTest(l_TestPassed);
 }
 
+static void TestTransformPropagation()
+{
+	TestRunner::StartTest("TransformService propagates WorldTransformComponent");
+
+	auto* l_Registry = g_Engine->Get<EntityRegistry>();
+	auto* l_TransformService = g_Engine->Get<TransformService>();
+	bool l_TestPassed = l_Registry != nullptr && l_TransformService != nullptr;
+
+	if (l_TestPassed)
+	{
+		EntityID l_Root = l_Registry->Spawn(ObjectLifespan::Frame, "transform_test_root");
+		auto& l_RootTransform = l_Registry->Emplace<TransformComponent>(l_Root);
+		l_RootTransform.m_LocalPos = Vec3(1.f, 2.f, 3.f);
+
+		EntityID l_Child = l_Registry->Spawn(ObjectLifespan::Frame, "transform_test_child");
+		auto& l_ChildTransform = l_Registry->Emplace<TransformComponent>(l_Child);
+		l_ChildTransform.m_LocalPos = Vec3(0.f, 1.f, 0.f);
+
+		l_TransformService->SetParent(l_Child, l_Root);
+		l_TransformService->Update();
+
+		// Root world position: toTranslationMatrix stores x at m03, y at m13, z at m23
+		auto* l_RootWorld = l_Registry->Get<WorldTransformComponent>(l_Root);
+		l_TestPassed = l_RootWorld != nullptr;
+		if (l_TestPassed)
+		{
+			l_TestPassed = l_RootWorld->m_WorldMatrix.m03 == 1.f
+			            && l_RootWorld->m_WorldMatrix.m13 == 2.f
+			            && l_RootWorld->m_WorldMatrix.m23 == 3.f;
+		}
+
+		// Child world position = root (1,2,3) + local (0,1,0) = (1,3,3)
+		if (l_TestPassed)
+		{
+			auto* l_ChildWorld = l_Registry->Get<WorldTransformComponent>(l_Child);
+			l_TestPassed = l_ChildWorld != nullptr;
+			if (l_TestPassed)
+			{
+				l_TestPassed = l_ChildWorld->m_WorldMatrix.m03 == 1.f
+				            && l_ChildWorld->m_WorldMatrix.m13 == 3.f
+				            && l_ChildWorld->m_WorldMatrix.m23 == 3.f;
+			}
+		}
+
+		l_Registry->CleanUp(ObjectLifespan::Frame);
+	}
+
+	TestRunner::EndTest(l_TestPassed);
+}
+
 void RunEntityRegistryUnitTests()
 {
 	TestRunner::StartTestSuite("EntityRegistry Unit Tests");
@@ -200,6 +252,7 @@ void RunEntityRegistryUnitTests()
 	TestEntityRegistryCleanUp();
 	TestEntityRegistryFreeListRecycle();
 	TestNewComponentTypes();
+	TestTransformPropagation();
 
 	TestRunner::EndTestSuite();
 }
