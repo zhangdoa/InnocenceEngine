@@ -97,7 +97,6 @@ void main(uint3 id : SV_DispatchThreadID)
     // Get GPU model data
     GPUModelData modelData = u_ModelDataBuffer[objectIndex];
 
-    // Frustum culling using bounding box
     float4x4 viewProjectionMatrix = mul(perFrameCB.v, perFrameCB.p_original);
     bool isVisible = IsInFrustum(modelData.m_BoundingBoxMin, modelData.m_BoundingBoxMax, viewProjectionMatrix);
 

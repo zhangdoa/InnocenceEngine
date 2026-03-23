@@ -120,7 +120,6 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_Meshes = l_MeshStorage.All();
 	const auto& l_Owners = l_MeshStorage.AllOwners();
-
 	uint32_t l_drawCallIndex = 0;
 	for (size_t i = 0; i < l_Meshes.size(); i++)
 	{
@@ -159,16 +158,45 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		l_gpuModelData.m_VisibilityMask = static_cast<uint32_t>(VisibilityMask::MainCamera);
 		l_gpuModelData.m_MeshUsage = static_cast<uint32_t>(MeshUsage::Static);
 
-		const AABB& l_aabb = l_vis ? l_vis->m_AABB : l_mesh.m_AABB;
-		l_gpuModelData.m_BoundingBoxMin = Vec4(l_aabb.m_boundMin.x, l_aabb.m_boundMin.y, l_aabb.m_boundMin.z, 1.0f);
-		l_gpuModelData.m_BoundingBoxMax = Vec4(l_aabb.m_boundMax.x, l_aabb.m_boundMax.y, l_aabb.m_boundMax.z, 1.0f);
+		auto* l_world = l_registry->Get<WorldTransformComponent>(l_Entity);
+		const AABB& l_localAabb = l_vis ? l_vis->m_AABB : l_mesh.m_AABB;
+		if (l_world)
+		{
+			const auto& M = l_world->m_WorldMatrix;
+			Vec4 l_corners[8] = {
+				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f),
+				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f),
+				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMin.z, 1.0f),
+				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMin.z, 1.0f),
+				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMax.z, 1.0f),
+				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMax.z, 1.0f),
+				Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f),
+				Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f),
+			};
+			Vec4 wsMin = Math::maxVec4<float>;
+			Vec4 wsMax = Math::minVec4<float>;
+			for (int i = 0; i < 8; i++)
+			{
+				Vec4 ws = M * l_corners[i];
+				wsMin = Math::elementWiseMin(wsMin, ws);
+				wsMax = Math::elementWiseMax(wsMax, ws);
+			}
+			wsMin.w = 1.0f;
+			wsMax.w = 1.0f;
+			l_gpuModelData.m_BoundingBoxMin = wsMin;
+			l_gpuModelData.m_BoundingBoxMax = wsMax;
+		}
+		else
+		{
+			l_gpuModelData.m_BoundingBoxMin = Vec4(l_localAabb.m_boundMin.x, l_localAabb.m_boundMin.y, l_localAabb.m_boundMin.z, 1.0f);
+			l_gpuModelData.m_BoundingBoxMax = Vec4(l_localAabb.m_boundMax.x, l_localAabb.m_boundMax.y, l_localAabb.m_boundMax.z, 1.0f);
+		}
 
 		l_gpuModelData.m_InstanceCount = 1;
 		l_gpuModelData.m_FirstInstance = 0;
 
 		m_GPUModelDataVector.emplace_back(l_gpuModelData);
 
-		auto* l_world = l_registry->Get<WorldTransformComponent>(l_Entity);
 		TransformConstantBuffer l_transformCB = {};
 		if (l_world)
 		{
