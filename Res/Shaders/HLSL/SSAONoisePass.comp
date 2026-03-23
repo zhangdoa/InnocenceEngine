@@ -82,7 +82,7 @@ void main(ComputeInputType input)
 	// 2. Fetch the per-pixel random rotation vector.
 	//    - Using wrap addressing to avoid seams.
 	// -------------------------------------------------------------------------
-	float3 randomRot = in_randomRot.SampleLevel(in_samplerTypeWrap, readCoord, 0.0).xyz;
+	float3 randomRot = in_randomRot.SampleLevel(in_samplerTypeWrap, readCoord / float2(4.0, 4.0), 0.0).xyz;
 
 	// -------------------------------------------------------------------------
 	// 3. Retrieve and transform the pixel's world-space position to view-space.

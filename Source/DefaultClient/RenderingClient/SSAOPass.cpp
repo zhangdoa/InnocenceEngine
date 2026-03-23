@@ -115,6 +115,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 	}
 
 	m_KernelGPUBuffer = l_graphicsService->AddGPUBufferComponent("SSAO_Kernel/");
+	m_KernelGPUBuffer->m_GPUResourceType = GPUResourceType::Buffer;
 	m_KernelGPUBuffer->m_ElementSize = sizeof(Vec4);
 	m_KernelGPUBuffer->m_ElementCount = m_kernelSize;
 	m_KernelGPUBuffer->m_InitialData = &m_Kernel[0];
