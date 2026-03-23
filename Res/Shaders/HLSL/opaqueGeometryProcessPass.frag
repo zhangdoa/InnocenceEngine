@@ -71,16 +71,12 @@ PixelOutputType main(PixelInputType input)
 	}
 
 	float transparency = 1.0;
-	float3 out_albedo = float3(0.0, 0.0, 0.0);
+	float3 out_albedo = materialCBuffer.albedo.rgb;
 	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;
 	if (albedoTextureIndex != INVALID_TEXTURE_INDEX)
 	{
 		Texture2D t2d_albedo = g_2DTextures[albedoTextureIndex];
 		out_albedo = t2d_albedo.Sample(g_Sampler, input.texCoord).rgb;
-	}
-	else
-	{
-		out_albedo = materialCBuffer.albedo.rgb;
 	}
 
 	float out_metallic = materialCBuffer.MRAT.r;

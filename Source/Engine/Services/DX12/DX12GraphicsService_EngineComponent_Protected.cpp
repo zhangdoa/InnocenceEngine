@@ -593,8 +593,15 @@ bool DX12GraphicsService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 	}
 	else
 	{
-		// Default buffer states for other usage types
-		gpuBuffer->m_ReadState = static_cast<uint32_t>(l_initialState);
+		// UAV-capable buffers (ReadWrite) that also have a default heap for SRV reads must be
+		// explicitly transitioned to ALL_SHADER_RESOURCE after CopyResource. They cannot rely on
+		// implicit promotion from COMMON because D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
+		// blocks implicit promotion to SHADER_RESOURCE state.
+		bool l_needDefaultHeap = gpuBuffer->m_GPUAccessibility.CanRead() && !gpuBuffer->m_CPUAccessibility.CanRead();
+		if (l_needDefaultHeap)
+			gpuBuffer->m_ReadState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+		else
+			gpuBuffer->m_ReadState = static_cast<uint32_t>(l_initialState);
 		gpuBuffer->m_WriteState = static_cast<uint32_t>(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	}
 
@@ -604,9 +611,10 @@ bool DX12GraphicsService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 	gpuBuffer->m_TotalSize = l_actualElementCount * gpuBuffer->m_ElementSize;
 	gpuBuffer->m_MappedMemories.resize(l_swapChainImageCount);
 	gpuBuffer->m_DeviceMemories.resize(l_swapChainImageCount);
-	
-	// Initialize state tracking - buffers start in their read state by default
-	gpuBuffer->m_CurrentState.resize(l_swapChainImageCount, gpuBuffer->m_ReadState);
+
+	// Resources are created in COMMON state. m_ReadState may differ (e.g. ALL_SHADER_RESOURCE for
+	// UAV-capable buffers), so initialize m_CurrentState from l_initialState, not m_ReadState.
+	gpuBuffer->m_CurrentState.resize(l_swapChainImageCount, static_cast<uint32_t>(l_initialState));
 
 	auto l_uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(gpuBuffer->m_TotalSize);
 	bool l_needDefaultHeap = gpuBuffer->m_GPUAccessibility.CanRead() && !gpuBuffer->m_CPUAccessibility.CanRead();

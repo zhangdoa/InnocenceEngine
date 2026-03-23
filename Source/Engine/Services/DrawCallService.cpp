@@ -75,24 +75,28 @@ bool DrawCallServiceImpl::Initialize()
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
+		m_GPUModelDataBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_GPUModelDataBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_GPUModelDataBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_GPUModelDataBufferComp->m_ElementSize = sizeof(GPUModelData);
 
 		l_graphicsService->Initialize(m_GPUModelDataBufferComp);
 
+		m_TransformBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_TransformBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_TransformBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_TransformBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
 		l_graphicsService->Initialize(m_TransformBufferComp);
 
+		m_TransformPrevBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_TransformPrevBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_TransformPrevBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_TransformPrevBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
 		l_graphicsService->Initialize(m_TransformPrevBufferComp);
 
+		m_MaterialGPUBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
 		m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
@@ -116,6 +120,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	m_TransformBufferVector.clear();
 	m_MaterialCBVector.clear();
 
+	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_Meshes = l_MeshStorage.All();
@@ -215,14 +220,16 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 
 		for (size_t j = 0; j < l_material->m_TextureComponents.size(); j++)
 		{
-			auto l_textureID = l_material->m_TextureComponents[j];
-			if (l_textureID.empty())
+			const auto& l_textureName = l_material->m_TextureComponents[j];
+			if (l_textureName.empty())
 				continue;
 
-			// if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
-			// 	continue;
-			// auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);
-			// l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+			auto l_texture = l_graphicsService->FindTextureByName(l_textureName.c_str());
+			if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
+				continue;
+
+			auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);
+			l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
 		}
 
 		m_MaterialCBVector.emplace_back(l_materialCB);

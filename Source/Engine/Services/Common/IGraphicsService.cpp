@@ -920,7 +920,6 @@ bool IGraphicsService::PrepareGlobalCommands()
 		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
-			// Transition to copy destination, upload, then transition back
 			TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
 			UploadToGPU(l_commandList, i);
 			TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
