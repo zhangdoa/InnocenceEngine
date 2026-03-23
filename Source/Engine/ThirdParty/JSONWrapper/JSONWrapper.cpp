@@ -44,19 +44,78 @@ bool JSONWrapper::Save(const char* fileName, const json& data)
 
 bool JSONWrapper::SaveScene(const char* fileName)
 {
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto l_EntityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+
 	json topLevel;
+	topLevel["Name"] = g_Engine->Get<IOService>()->getFileName(fileName);
+	topLevel["Entities"] = json::array();
 
-	std::string sceneName = g_Engine->Get<IOService>()->getFileName(fileName);
-	
-	topLevel["Name"] = sceneName;
-
-	auto l_EntityIDs = g_Engine->Get<EntityRegistry>()->GetAllEntityIDs(ObjectLifespan::Scene);
 	for (auto l_EntityID : l_EntityIDs)
 	{
+		// Strip the trailing "/" that Spawn appends
+		std::string l_FullName = l_registry->GetName(l_EntityID);
+		std::string l_Name = (!l_FullName.empty() && l_FullName.back() == '/')
+			? l_FullName.substr(0, l_FullName.size() - 1)
+			: l_FullName;
+
 		json entityJson;
-		entityJson["ID"] = l_EntityID;
-		entityJson["Name"] = g_Engine->Get<EntityRegistry>()->GetName(l_EntityID);
+		entityJson["Name"] = l_Name;
 		entityJson["Components"] = json::array();
+
+		// Inline Transform
+		auto* l_xf = l_registry->Get<TransformComponent>(l_EntityID);
+		if (l_xf)
+		{
+			Transform t;
+			t.m_pos   = l_xf->m_LocalPos;
+			t.m_rot   = l_xf->m_LocalRot;
+			t.m_scale = l_xf->m_LocalScale;
+			json xfJson;
+			to_json(xfJson, t);
+			entityJson["Transform"] = xfJson;
+		}
+
+		// LightComponent — name derived from entity name
+		auto* l_light = l_registry->Get<LightComponent>(l_EntityID);
+		if (l_light)
+		{
+			std::string l_CompName = l_Name + ".LightComponent";
+			json j;
+			to_json(j, *l_light);
+			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
+			entityJson["Components"].push_back({{"Type", LightComponent::GetTypeID()}, {"Name", l_CompName}});
+		}
+
+		// CameraComponent — name derived from entity name
+		auto* l_camera = l_registry->Get<CameraComponent>(l_EntityID);
+		if (l_camera)
+		{
+			std::string l_CompName = l_Name + ".CameraComponent";
+			json j;
+			to_json(j, *l_camera);
+			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
+			entityJson["Components"].push_back({{"Type", CameraComponent::GetTypeID()}, {"Name", l_CompName}});
+		}
+
+		// MeshComponent — reference only, asset file is source of truth
+		auto* l_mesh = l_registry->Get<MeshComponent>(l_EntityID);
+		if (l_mesh && l_mesh->m_InstanceName.c_str()[0] != '\0')
+		{
+			entityJson["Components"].push_back({{"Type", MeshComponent::GetTypeID()}, {"Name", l_mesh->m_InstanceName.c_str()}});
+		}
+
+		// MaterialComponent — regenerate file (attributes may have changed)
+		auto* l_material = l_registry->Get<MaterialComponent>(l_EntityID);
+		if (l_material && l_material->m_InstanceName.c_str()[0] != '\0')
+		{
+			std::string l_CompName = l_material->m_InstanceName.c_str();
+			json j;
+			to_json(j, *l_material);
+			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
+			entityJson["Components"].push_back({{"Type", MaterialComponent::GetTypeID()}, {"Name", l_CompName}});
+		}
+
 		topLevel["Entities"].emplace_back(entityJson);
 	}
 
@@ -71,60 +130,57 @@ bool JSONWrapper::LoadScene(const char* fileName)
 	if (!Load(fileName, j))
 		return false;
 
-	auto l_name = j["Name"];
+	auto l_registry = g_Engine->Get<EntityRegistry>();
 
-	for (auto i : j["Entities"])
+	for (auto& entityJson : j["Entities"])
 	{
-		std::string l_EntityName = i["Name"];
+		std::string l_EntityName = entityJson["Name"];
 		l_EntityName += "/";
+		auto l_EntityID = l_registry->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
-		auto l_EntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
-
-		for (auto k : i["Components"])
+		// Entity-level Transform
+		if (entityJson.contains("Transform"))
 		{
-			uint32_t l_ComponentTypeID = k["Type"];
-			std::string l_ComponentName = k["Name"];
+			auto& l_Transform = l_registry->Emplace<TransformComponent>(l_EntityID);
+			Transform l_xf;
+			from_json(entityJson["Transform"], l_xf);
+			l_Transform.m_LocalPos   = l_xf.m_pos;
+			l_Transform.m_LocalRot   = l_xf.m_rot;
+			l_Transform.m_LocalScale = l_xf.m_scale;
+		}
 
-			if (l_ComponentTypeID == 2 || l_ComponentTypeID == 200)
+		for (auto& compJson : entityJson["Components"])
+		{
+			uint32_t    l_TypeID   = compJson["Type"];
+			std::string l_CompName = compJson["Name"];
+			std::string l_FilePath = AssetService::GetAssetFilePath(l_CompName.c_str());
+
+			if (l_TypeID == LightComponent::GetTypeID())
 			{
-				// ModelComponent (2) and DrawCallComponent (200) are deleted — skip deprecated scene data
-				Log(Warning, "Skipping deprecated component type ", l_ComponentTypeID, " in scene file.");
-			}
-			else if (l_ComponentTypeID == LightComponent::GetTypeID())
-			{
-				auto& l_Light = g_Engine->Get<EntityRegistry>()->Emplace<LightComponent>(l_EntityID);
-				auto& l_Transform = g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
-				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
+				auto& l_Light = l_registry->Emplace<LightComponent>(l_EntityID);
 				AssetService::Load(l_FilePath.c_str(), l_Light);
-				json l_ComponentJson;
-				if (Load(l_FilePath.c_str(), l_ComponentJson) && l_ComponentJson.contains("Transform"))
-				{
-					Transform l_xf;
-					from_json(l_ComponentJson["Transform"], l_xf);
-					l_Transform.m_LocalPos = l_xf.m_pos;
-					l_Transform.m_LocalRot = l_xf.m_rot;
-					l_Transform.m_LocalScale = l_xf.m_scale;
-				}
 			}
-			else if (l_ComponentTypeID == CameraComponent::GetTypeID())
+			else if (l_TypeID == CameraComponent::GetTypeID())
 			{
-				auto& l_Camera = g_Engine->Get<EntityRegistry>()->Emplace<CameraComponent>(l_EntityID);
-				auto& l_Transform = g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
-				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
+				auto& l_Camera = l_registry->Emplace<CameraComponent>(l_EntityID);
 				AssetService::Load(l_FilePath.c_str(), l_Camera);
-				json l_ComponentJson;
-				if (Load(l_FilePath.c_str(), l_ComponentJson) && l_ComponentJson.contains("Transform"))
-				{
-					Transform l_xf;
-					from_json(l_ComponentJson["Transform"], l_xf);
-					l_Transform.m_LocalPos = l_xf.m_pos;
-					l_Transform.m_LocalRot = l_xf.m_rot;
-					l_Transform.m_LocalScale = l_xf.m_scale;
-				}
+			}
+			else if (l_TypeID == MeshComponent::GetTypeID())
+			{
+				auto& l_Mesh = l_registry->Emplace<MeshComponent>(l_EntityID);
+				AssetService::Load(l_FilePath.c_str(), l_Mesh);
+				l_Mesh.m_InstanceName = l_CompName.c_str(); // restore after template copy
+			}
+			else if (l_TypeID == MaterialComponent::GetTypeID())
+			{
+				auto& l_Material = l_registry->Emplace<MaterialComponent>(l_EntityID);
+				AssetService::Load(l_FilePath.c_str(), l_Material);
+				l_Material.m_InstanceName = l_CompName.c_str();
 			}
 			else
 			{
-				Log(Error, "Unknown ComponentTypeID: ", l_ComponentTypeID);
+				Log(Warning, "LoadScene: skipping unknown component type ", l_TypeID,
+					" (", l_CompName.c_str(), ")");
 			}
 		}
 	}
