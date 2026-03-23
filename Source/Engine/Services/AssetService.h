@@ -26,6 +26,7 @@ namespace Inno
 			return "../Data/Components/" + std::string(componentName) + ".json";
 		}
 
+		static bool Load(const char* fileName, TransformComponent& component);
 		static bool Load(const char* fileName, MeshComponent& component);
 		static bool Load(const char* fileName, MaterialComponent& component);
 		static bool Load(const char* fileName, TextureComponent& component);

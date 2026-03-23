@@ -16,6 +16,7 @@ namespace Inno
 		void to_json(json& j, const Mat4& p);
 		void to_json(json& j, const Transform& p);
 
+		void to_json(json& j, const TransformComponent& p);
 		void to_json(json& j, const MeshComponent& p);
 		void to_json(json& j, const MaterialComponent& p);
 		void to_json(json& j, const TextureComponent& p);
@@ -32,6 +33,7 @@ namespace Inno
 		bool SaveScene(const char* fileName);
 		bool LoadScene(const char* fileName);
 
+		bool Load(const char* fileName, TransformComponent& component);
 		bool Load(const char* fileName, MeshComponent& component);
 		bool Load(const char* fileName, MaterialComponent& component);
 		bool Load(const char* fileName, TextureComponent& component);

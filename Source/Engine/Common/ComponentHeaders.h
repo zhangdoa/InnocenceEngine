@@ -1,4 +1,5 @@
 #pragma once
+#include "../Component/TransformComponent.h"
 #include "../Component/LightComponent.h"
 #include "../Component/CameraComponent.h"
 #include "../Component/MeshComponent.h"

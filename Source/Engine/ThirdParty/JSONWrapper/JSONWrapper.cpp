@@ -63,17 +63,15 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		entityJson["Name"] = l_Name;
 		entityJson["Components"] = json::array();
 
-		// Inline Transform
+		// TransformComponent
 		auto* l_xf = l_registry->Get<TransformComponent>(l_EntityID);
 		if (l_xf)
 		{
-			Transform t;
-			t.m_pos   = l_xf->m_LocalPos;
-			t.m_rot   = l_xf->m_LocalRot;
-			t.m_scale = l_xf->m_LocalScale;
-			json xfJson;
-			to_json(xfJson, t);
-			entityJson["Transform"] = xfJson;
+			std::string l_CompName = l_Name + ".TransformComponent";
+			json j;
+			to_json(j, *l_xf);
+			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
+			entityJson["Components"].push_back({{"Type", TransformComponent::GetTypeID()}, {"Name", l_CompName}});
 		}
 
 		// LightComponent — name derived from entity name
@@ -138,24 +136,18 @@ bool JSONWrapper::LoadScene(const char* fileName)
 		l_EntityName += "/";
 		auto l_EntityID = l_registry->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
-		// Entity-level Transform
-		if (entityJson.contains("Transform"))
-		{
-			auto& l_Transform = l_registry->Emplace<TransformComponent>(l_EntityID);
-			Transform l_xf;
-			from_json(entityJson["Transform"], l_xf);
-			l_Transform.m_LocalPos   = l_xf.m_pos;
-			l_Transform.m_LocalRot   = l_xf.m_rot;
-			l_Transform.m_LocalScale = l_xf.m_scale;
-		}
-
 		for (auto& compJson : entityJson["Components"])
 		{
 			uint32_t    l_TypeID   = compJson["Type"];
 			std::string l_CompName = compJson["Name"];
 			std::string l_FilePath = AssetService::GetAssetFilePath(l_CompName.c_str());
 
-			if (l_TypeID == LightComponent::GetTypeID())
+			if (l_TypeID == TransformComponent::GetTypeID())
+			{
+				auto& l_Transform = l_registry->Emplace<TransformComponent>(l_EntityID);
+				AssetService::Load(l_FilePath.c_str(), l_Transform);
+			}
+			else if (l_TypeID == LightComponent::GetTypeID())
 			{
 				auto& l_Light = l_registry->Emplace<LightComponent>(l_EntityID);
 				AssetService::Load(l_FilePath.c_str(), l_Light);

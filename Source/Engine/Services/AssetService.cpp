@@ -81,6 +81,11 @@ bool AssetService::LoadScene(const char* fileName)
 	return JSONWrapper::LoadScene(fileName);
 }
 
+bool AssetService::Load(const char* fileName, TransformComponent& component)
+{
+	return JSONWrapper::Load(fileName, component);
+}
+
 bool AssetService::Load(const char* fileName, MeshComponent& component)
 {
 	return JSONWrapper::Load(fileName, component);

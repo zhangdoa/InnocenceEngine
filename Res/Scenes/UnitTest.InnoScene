@@ -3,59 +3,44 @@
     "Entities": [
         {
             "Name": "Sun",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 4.0, "Z": 0.0},
-                "Rotation": {"X": -0.4105069041252136, "Y": 0.2154165655374527, "Z": 0.10045039653778076, "W": 0.8803348541259766},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
-            "Components": [{"Type": 3, "Name": "Sun.LightComponent"}]
+            "Components": [
+                {"Type": 1, "Name": "Sun.TransformComponent"},
+                {"Type": 3, "Name": "Sun.LightComponent"}
+            ]
         },
         {
             "Name": "Main Camera",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 5.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
-            "Components": [{"Type": 4, "Name": "Main Camera.CameraComponent"}]
+            "Components": [
+                {"Type": 1, "Name": "Main Camera.TransformComponent"},
+                {"Type": 4, "Name": "Main Camera.CameraComponent"}
+            ]
         },
         {
             "Name": "Test Point Light",
-            "Transform": {
-                "Position": {"X": 2.0, "Y": 2.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
-            "Components": [{"Type": 3, "Name": "Test Point Light.LightComponent"}]
+            "Components": [
+                {"Type": 1, "Name": "Test Point Light.TransformComponent"},
+                {"Type": 3, "Name": "Test Point Light.LightComponent"}
+            ]
         },
         {
             "Name": "Test Sphere Light",
-            "Transform": {
-                "Position": {"X": -2.0, "Y": 2.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
-            "Components": [{"Type": 3, "Name": "Test Sphere Light.LightComponent"}]
+            "Components": [
+                {"Type": 1, "Name": "Test Sphere Light.TransformComponent"},
+                {"Type": 3, "Name": "Test Sphere Light.LightComponent"}
+            ]
         },
         {
             "Name": "Player Character",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 0.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
-            "Components": []
+            "Components": [
+                {"Type": 1, "Name": "Player Character.TransformComponent"}
+            ]
         },
         {
             "Name": "Landscape Box",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": -0.1, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 200.0, "Y": 0.20000000298023224, "Z": 200.0}
-            },
             "Components": [
-                {"Type": 6, "Name": "Landscape Box.MeshComponent"},
-                {"Type": 7, "Name": "Landscape Box.MaterialComponent"}
+                {"Type": 1, "Name": "Landscape Box.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
             ]
         }
     ]

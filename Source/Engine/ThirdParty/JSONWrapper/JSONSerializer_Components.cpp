@@ -9,6 +9,20 @@
 #include "../../Engine.h"
 using namespace Inno;
 
+void JSONWrapper::to_json(json& j, const TransformComponent& component)
+{
+    Transform t;
+    t.m_pos   = component.m_LocalPos;
+    t.m_rot   = component.m_LocalRot;
+    t.m_scale = component.m_LocalScale;
+    json xfJson;
+    to_json(xfJson, t);
+    j["ComponentType"] = TransformComponent::GetTypeID();
+    j["Position"] = xfJson["Position"];
+    j["Rotation"] = xfJson["Rotation"];
+    j["Scale"]    = xfJson["Scale"];
+}
+
 void JSONWrapper::to_json(json& j, const LightComponent& component)
 {
     json color;
@@ -93,6 +107,20 @@ void JSONWrapper::to_json(json& j, const TextureComponent& component)
     };
 
     // Note: For binary texture data, additional fields are added by AssetService::Save
+}
+
+bool JSONWrapper::Load(const char* fileName, TransformComponent& component)
+{
+    json j;
+    if (!Load(fileName, j))
+        return false;
+
+    Transform t;
+    from_json(j, t);
+    component.m_LocalPos   = t.m_pos;
+    component.m_LocalRot   = t.m_rot;
+    component.m_LocalScale = t.m_scale;
+    return true;
 }
 
 bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
