@@ -43,6 +43,8 @@
 
 #include "../../Engine/Engine.h"
 
+#include <cstdlib>
+
 using namespace Inno;
 
 namespace Inno
@@ -703,6 +705,7 @@ namespace Inno
 		}
 
 		Log(Success, "AuditDump complete. Check Bin/*.hdr");
+		std::exit(0);
 	}
 
 	bool DefaultRenderingClientImpl::Terminate()

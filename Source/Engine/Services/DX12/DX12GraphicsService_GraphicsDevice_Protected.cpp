@@ -546,12 +546,11 @@ bool DX12GraphicsService::OnOutputMergerTargetsCreated(RenderPassComponent* rend
 
 bool DX12GraphicsService::BeginFrame()
 {
-    // Reset command allocators for the current frame
-    // Safe to reset because IGraphicsService::Update() ensures GPU synchronization
-    // via WaitOnCPU() calls before calling BeginFrame()
-    // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT)->Reset();
-    // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE)->Reset();
-    // GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY)->Reset();
+    // Command allocator resets are deferred: resetting here is unsafe because
+    // IGraphicsService::Update()'s WaitOnCPU() only waits on per-frame semaphore
+    // values which do not cover initialization CLs submitted during InitializeComponents().
+    // The allocators accumulate memory over time but remain functionally correct.
+    // TODO: implement a proper triple-buffer reset after all associated CLs are confirmed done.
 
     return true;
 }

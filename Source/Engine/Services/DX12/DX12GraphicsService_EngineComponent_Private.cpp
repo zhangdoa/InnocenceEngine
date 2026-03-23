@@ -529,13 +529,23 @@ bool DX12GraphicsService::Open(CommandListComponent* commandList, GPUEngineType 
 		return false;
 	}
 
-	l_commandList->Reset(allocator, l_PSO);
+	auto l_resetResult = l_commandList->Reset(allocator, l_PSO);
+	if (FAILED(l_resetResult))
+	{
+		Log(Error, "DX12GraphicsService::Open: Reset failed, HRESULT=", l_resetResult);
+		return false;
+	}
 	return true;
 }
 
 bool DX12GraphicsService::Close(CommandListComponent* commandList, GPUEngineType GPUEngineType)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
-	l_commandList->Close();
+	auto l_closeResult = l_commandList->Close();
+	if (FAILED(l_closeResult))
+	{
+		Log(Error, "DX12GraphicsService::Close: Close failed, HRESULT=", l_closeResult);
+		return false;
+	}
 	return true;
 }
