@@ -93,18 +93,34 @@ bool JSONWrapper::LoadScene(const char* fileName)
 			else if (l_ComponentTypeID == LightComponent::GetTypeID())
 			{
 				auto& l_Light = g_Engine->Get<EntityRegistry>()->Emplace<LightComponent>(l_EntityID);
+				auto& l_Transform = g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
 				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
 				AssetService::Load(l_FilePath.c_str(), l_Light);
-				if (!g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID))
-					g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
+				json l_ComponentJson;
+				if (Load(l_FilePath.c_str(), l_ComponentJson) && l_ComponentJson.contains("Transform"))
+				{
+					Transform l_xf;
+					from_json(l_ComponentJson["Transform"], l_xf);
+					l_Transform.m_LocalPos = l_xf.m_pos;
+					l_Transform.m_LocalRot = l_xf.m_rot;
+					l_Transform.m_LocalScale = l_xf.m_scale;
+				}
 			}
 			else if (l_ComponentTypeID == CameraComponent::GetTypeID())
 			{
 				auto& l_Camera = g_Engine->Get<EntityRegistry>()->Emplace<CameraComponent>(l_EntityID);
+				auto& l_Transform = g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
 				std::string l_FilePath = AssetService::GetAssetFilePath(l_ComponentName.c_str());
 				AssetService::Load(l_FilePath.c_str(), l_Camera);
-				if (!g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID))
-					g_Engine->Get<EntityRegistry>()->Emplace<TransformComponent>(l_EntityID);
+				json l_ComponentJson;
+				if (Load(l_FilePath.c_str(), l_ComponentJson) && l_ComponentJson.contains("Transform"))
+				{
+					Transform l_xf;
+					from_json(l_ComponentJson["Transform"], l_xf);
+					l_Transform.m_LocalPos = l_xf.m_pos;
+					l_Transform.m_LocalRot = l_xf.m_rot;
+					l_Transform.m_LocalScale = l_xf.m_scale;
+				}
 			}
 			else
 			{
