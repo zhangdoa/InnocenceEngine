@@ -153,50 +153,49 @@ namespace Inno
 			auto l_TickTime = g_Engine->getTickTime();
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
 
-			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
-			{
+			if (m_IsTP && m_ActiveCameraComponent == m_PlayerCameraComponent)
 				MoveModel(m_PlayerCharacterEntity, Direction::Backward, l_MoveSpd);
-			}
 			if (!m_IsTP)
 			{
-				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+				EntityID l_cam = (m_ActiveCameraComponent == m_PlayerCameraComponent) ? m_PlayerCameraEntity : m_DebugCameraEntity;
+				MoveCamera(l_cam, Direction::Backward, l_MoveSpd);
 			}
 		};
-		// +z actually so Direction::Backward
+		// +z actually so Direction::Forward
 		f_moveBackward = [&]() {
 			auto l_TickTime = g_Engine->getTickTime();
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
-			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
-			{
+
+			if (m_IsTP && m_ActiveCameraComponent == m_PlayerCameraComponent)
 				MoveModel(m_PlayerCharacterEntity, Direction::Forward, l_MoveSpd);
-			}
 			if (!m_IsTP)
 			{
-				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+				EntityID l_cam = (m_ActiveCameraComponent == m_PlayerCameraComponent) ? m_PlayerCameraEntity : m_DebugCameraEntity;
+				MoveCamera(l_cam, Direction::Forward, l_MoveSpd);
 			}
 		};
 		f_moveLeft = [&]() {
 			auto l_TickTime = g_Engine->getTickTime();
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
-			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
-			{
+
+			if (m_IsTP && m_ActiveCameraComponent == m_PlayerCameraComponent)
 				MoveModel(m_PlayerCharacterEntity, Direction::Left, l_MoveSpd);
-			}
 			if (!m_IsTP)
 			{
-				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+				EntityID l_cam = (m_ActiveCameraComponent == m_PlayerCameraComponent) ? m_PlayerCameraEntity : m_DebugCameraEntity;
+				MoveCamera(l_cam, Direction::Left, l_MoveSpd);
 			}
 		};
 		f_moveRight = [&]() {
 			auto l_TickTime = g_Engine->getTickTime();
 			auto l_MoveSpd = m_MoveSpeed * l_TickTime;
-			if (m_ActiveCameraComponent == m_PlayerCameraComponent)
-			{
+
+			if (m_IsTP && m_ActiveCameraComponent == m_PlayerCameraComponent)
 				MoveModel(m_PlayerCharacterEntity, Direction::Right, l_MoveSpd);
-			}
 			if (!m_IsTP)
 			{
-				// TODO Phase2-migrate: need EntityID for active camera to call MoveCamera
+				EntityID l_cam = (m_ActiveCameraComponent == m_PlayerCameraComponent) ? m_PlayerCameraEntity : m_DebugCameraEntity;
+				MoveCamera(l_cam, Direction::Right, l_MoveSpd);
 			}
 		};
 
@@ -306,12 +305,19 @@ namespace Inno
 
 			m_CanSlerp = false;
 
-			auto* l_playerTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(m_PlayerCharacterEntity);
-			if (l_playerTransform)
+			if (m_IsTP)
 			{
-				l_playerTransform->m_LocalRot = m_TargetCameraRotY.quatMul(l_playerTransform->m_LocalRot);
+				auto* l_playerTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(m_PlayerCharacterEntity);
+				if (l_playerTransform)
+					l_playerTransform->m_LocalRot = m_TargetCameraRotY.quatMul(l_playerTransform->m_LocalRot);
 			}
-			// TODO Phase2-migrate: rotate active camera TransformComponent
+			else
+			{
+				EntityID l_cam = (m_ActiveCameraComponent == m_PlayerCameraComponent) ? m_PlayerCameraEntity : m_DebugCameraEntity;
+				auto* l_cameraTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_cam);
+				if (l_cameraTransform)
+					l_cameraTransform->m_LocalRot = m_TargetCameraRotY.quatMul(l_cameraTransform->m_LocalRot);
+			}
 
 			m_CanSlerp = true;
 		}
@@ -323,12 +329,16 @@ namespace Inno
 		{
 			m_CanSlerp = false;
 
-			// TODO Phase2-migrate: get right direction from active camera TransformComponent
-			auto l_Right = Vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			EntityID l_cam = (m_ActiveCameraComponent == m_PlayerCameraComponent) ? m_PlayerCameraEntity : m_DebugCameraEntity;
+			auto* l_cameraTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_cam);
+			auto l_Right = l_cameraTransform
+				? Math::getDirection(Direction::Right, l_cameraTransform->m_LocalRot)
+				: Vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			m_TargetCameraRotX = Math::getQuatRotator(
 				l_Right,
 				((offset * m_RotateSpeed) / 180.0f) * PI<float>);
-			// TODO Phase2-migrate: rotate active camera TransformComponent
+			if (l_cameraTransform)
+				l_cameraTransform->m_LocalRot = m_TargetCameraRotX.quatMul(l_cameraTransform->m_LocalRot);
 
 			m_CanSlerp = true;
 		}
