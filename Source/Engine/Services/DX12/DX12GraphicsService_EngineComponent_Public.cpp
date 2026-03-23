@@ -2,6 +2,7 @@
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
+#include "../../Common/MathHelper.h"
 
 #ifdef max
 #undef max
@@ -220,6 +221,18 @@ std::vector<Vec4> DX12GraphicsService::ReadTextureBackToCPU(RenderPassComponent*
                         memcpy(&b, l_PixelData + 8,  4);
                         memcpy(&a, l_PixelData + 12, 4);
                         l_result[l_dstIndex] = Vec4(r, g, b, a);
+                    }
+                    else if (textureDesc.PixelDataType == TexturePixelDataType::Float16)
+                    {
+                        uint32_t channels = l_pixelDataSize / 2;
+                        float values[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+                        for (uint32_t ch = 0; ch < channels && ch < 4; ++ch)
+                        {
+                            uint16_t h;
+                            memcpy(&h, l_PixelData + ch * 2, 2);
+                            values[ch] = Math::float16ToFloat32(h);
+                        }
+                        l_result[l_dstIndex] = Vec4(values[0], values[1], values[2], values[3]);
                     }
                     else
                     {
