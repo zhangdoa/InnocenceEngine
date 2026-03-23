@@ -120,6 +120,9 @@ namespace Inno
 			l_Registry->Emplace<TransformComponent>(m_DebugCameraEntity);
 			m_DebugCameraComponent = &l_DebugCamera;
 
+			// Re-fetch: Emplace above may have reallocated CameraComponent storage, invalidating m_PlayerCameraComponent
+			m_PlayerCameraComponent = l_Registry->Get<CameraComponent>(m_PlayerCameraEntity);
+
 			m_DebugCameraComponent->m_FOVX = m_PlayerCameraComponent->m_FOVX;
 			m_DebugCameraComponent->m_ZNear = m_PlayerCameraComponent->m_ZNear;
 			m_DebugCameraComponent->m_ZFar = m_PlayerCameraComponent->m_ZFar;
