@@ -165,8 +165,9 @@ bool RadianceCacheRaytracingPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 
-	l_graphicsService->Delete(m_SamplerComp);	
+	l_graphicsService->Delete(m_SamplerComp);
 	l_graphicsService->Delete(m_CommandListComp_Compute);
+	l_graphicsService->Delete(m_CommandListComp_Graphics);
 	l_graphicsService->Delete(m_RenderPassComp);
 	l_graphicsService->Delete(m_ShaderProgramComp);
 

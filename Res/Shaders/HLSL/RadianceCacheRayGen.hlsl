@@ -227,12 +227,15 @@ void RayGenShader()
         
         in_RadianceCacheResults[texIndex] = float4(lerp(oldScreenSpaceRadiance, radiance, temporalWeight), 1);
 
-        uint worldProbeIndex = ComputeProbeHash(positionWS);
-        float3 oldWorldProbeRadiance = in_WorldProbeGrid[worldProbeIndex].radiance;
-        in_WorldProbeGrid[worldProbeIndex].positionWS = positionWS;
-
-        // Apply same conservative blending to world probe grid
-        in_WorldProbeGrid[worldProbeIndex].radiance = lerp(oldWorldProbeRadiance, radiance, temporalWeight);
-        in_WorldProbeGrid[worldProbeIndex].weight = 1.0;
+        // Only write to world probe grid on the first sample to avoid intra-probe write races.
+        // Cross-probe hash collisions on the same cell remain a known limitation of the hash-grid approach.
+        if (i == 0)
+        {
+            uint worldProbeIndex = ComputeProbeHash(positionWS);
+            float3 oldWorldProbeRadiance = in_WorldProbeGrid[worldProbeIndex].radiance;
+            in_WorldProbeGrid[worldProbeIndex].positionWS = positionWS;
+            in_WorldProbeGrid[worldProbeIndex].radiance = lerp(oldWorldProbeRadiance, radiance, temporalWeight);
+            in_WorldProbeGrid[worldProbeIndex].weight = 1.0;
+        }
     }
 }

@@ -69,28 +69,13 @@ float CalculateReprojectionConfidence(
     return clamp(confidence, MIN_CONFIDENCE, MAX_CONFIDENCE);
 }
 
-// Enhanced temporal filtering with variance detection
-float4 TemporalFilter(float4 currentSample, float4 historySample, float confidence, float2 screenCoord)
+float4 TemporalFilter(float4 currentSample, float4 historySample, float confidence)
 {
-    // Adaptive blend rate based on confidence
-    float blendRate = lerp(0.1, 0.95, confidence); // More aggressive when confident
-    
-    // Variance detection for flickering reduction
-    float3 variance = abs(currentSample.rgb - historySample.rgb);
-    float avgVariance = (variance.r + variance.g + variance.b) / 3.0;
-    
-    // If variance is high, reduce blend rate to stabilize
-    if (avgVariance > 0.1)
-    {
-        blendRate *= 0.5;
-    }
-    
-    // Exponential moving average with confidence weighting
+    // High confidence = valid reprojection = weight history heavily to accumulate samples.
+    // Low confidence = disocclusion or fast motion = favor current frame.
+    float blendRate = lerp(0.95, 0.1, confidence);
     float4 result = lerp(historySample, currentSample, blendRate);
-    
-    // Clamp to prevent negative values that cause artifacts
     result.rgb = max(result.rgb, float3(0.0, 0.0, 0.0));
-    
     return result;
 }
 
@@ -158,34 +143,34 @@ void main(ComputeInputType input)
     float prevDepth = length(prevPositionWS_Probe - g_Frame.camera_posWS.xyz);
     float depthDiff = abs(currentDepth - prevDepth);
 
-    // Enhanced validation with depth check
-    if (plane_dist < MAX_PLANE_DISTANCE && 
-        normal_check > NORMAL_THRESHOLD && 
+    // Hoist confidence so it is in scope after the barrier
+    float threadConfidence = 0.0;
+
+    if (plane_dist < MAX_PLANE_DISTANCE &&
+        normal_check > NORMAL_THRESHOLD &&
         depthDiff < DEPTH_THRESHOLD)
     {
         float dist = distance(prevPositionWS_Probe, positionWS);
-        
-        // Calculate confidence for this reprojection
-        float confidence = CalculateReprojectionConfidence(
-            positionWS, normalWS, 
+
+        threadConfidence = CalculateReprojectionConfidence(
+            positionWS, normalWS,
             prevPositionWS_Probe, prevNormal_Probe,
             motionVector, depthDiff);
 
-        // Encode score with distance and confidence
+        // Score by distance; lower 16 bits carry groupIndex for winner identification
         uint distScore = (uint)(saturate(dist / MAX_PLANE_DISTANCE) * 65535.0);
-        uint confidenceScore = (uint)(confidence * 65535.0);
-        uint combinedScore = (distScore << 16) | input.groupIndex;
+        uint candidateScore = (distScore << 16) | input.groupIndex;
 
-        // Use confidence-weighted scoring
-        uint weightedScore = (uint)(combinedScore * (1.0 - confidence));
-        
-        InterlockedMin(sharedReprojectionScore, weightedScore);
-        
-        // Store confidence for winner
-        if (weightedScore == sharedReprojectionScore)
-        {
-            sharedConfidence = confidence;
-        }
+        InterlockedMin(sharedReprojectionScore, candidateScore);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    // Exactly one thread (the winner) writes confidence — race-free because each
+    // thread has a unique groupIndex and only one can match the stored lower 16 bits.
+    if ((sharedReprojectionScore & 0xFFFF) == input.groupIndex)
+    {
+        sharedConfidence = threadConfidence;
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -208,9 +193,7 @@ void main(ComputeInputType input)
                 float4 currentSample = in_RadianceCacheResults[currentPixel];
                 float4 historySample = in_RadianceCacheResults_Prev[prevPixel];
                 
-                // Apply enhanced temporal filtering
-                float4 filteredSample = TemporalFilter(
-                    currentSample, historySample, reprojectionConfidence, currentPixel);
+                float4 filteredSample = TemporalFilter(currentSample, historySample, reprojectionConfidence);
                 
                 in_RadianceCacheResults[currentPixel] = filteredSample;
             }
