@@ -652,6 +652,14 @@ namespace Inno
 			if (!tc) { Log(Warning, "AuditDump: null TextureComponent for ", filename); return; }
 			auto l_pixels = l_rs->ReadTextureBackToCPU(rp, tc);
 			if (l_pixels.empty()) { Log(Error, "AuditDump: empty readback for ", filename); return; }
+			for (size_t pi = 0; pi < l_pixels.size(); pi++) {
+				if (l_pixels[pi].x != 0.0f || l_pixels[pi].y != 0.0f || l_pixels[pi].z != 0.0f) {
+					uint32_t py = (uint32_t)(pi / tc->m_TextureDesc.Width);
+					uint32_t px = (uint32_t)(pi % tc->m_TextureDesc.Width);
+					Log(Verbose, "AuditDump: ", filename, " first-nonzero y=", py, " x=", px, " rgba=(", l_pixels[pi].x, ",", l_pixels[pi].y, ",", l_pixels[pi].z, ",", l_pixels[pi].w, ")");
+					break;
+				}
+			}
 			TextureDesc l_desc = tc->m_TextureDesc;
 			l_desc.PixelDataType = TexturePixelDataType::Float32;
 			g_Engine->Get<AssetService>()->Save(filename, l_desc, l_pixels.data());
