@@ -237,7 +237,7 @@ namespace Inno
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshScratchBuffers;
         
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_TextureBuffers_Upload;
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_TextureBuffers_Default;
+        std::unordered_map<uint64_t, std::vector<ComPtr<ID3D12Resource>>> m_TextureBuffers_Default;
 
         // Component pools
         TObjectPool<DX12PipelineStateObject>* m_PSOPool = nullptr;

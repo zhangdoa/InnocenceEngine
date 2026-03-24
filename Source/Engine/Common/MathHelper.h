@@ -377,7 +377,7 @@ namespace Inno
 				else
 				{
 					// Denormalized number
-					const float mantissaFloat = static_cast<float>(mantissa) / 1024.0f;
+					const float mantissaFloat = 1.0f + static_cast<float>(mantissa) / 1024.0f;
 					const float signFloat = sign ? -1.0f : 1.0f;
 					return signFloat * mantissaFloat * powf(2.0f, -14.0f);
 				}
@@ -397,8 +397,8 @@ namespace Inno
 			}
 			else
 			{
-				// Normalized number
-				const float mantissaFloat = static_cast<float>(mantissa) / 1024.0f;
+				// Normalized number: value = (-1)^sign * 2^(exp-15) * (1 + mantissa/1024)
+				const float mantissaFloat = 1.0f + static_cast<float>(mantissa) / 1024.0f;
 				const float exponentFloat = static_cast<float>(exponent - 15);
 				const float signFloat = sign ? -1.0f : 1.0f;
 				return signFloat * mantissaFloat * powf(2.0f, exponentFloat);

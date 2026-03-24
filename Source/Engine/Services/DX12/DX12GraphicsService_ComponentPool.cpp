@@ -112,7 +112,7 @@ bool DX12GraphicsService::Delete(TextureComponent* texture)
 
 	auto defaultIt = m_TextureBuffers_Default.find(componentUUID);
 	if (defaultIt != m_TextureBuffers_Default.end()) {
-		if (defaultIt->second) defaultIt->second.Reset();
+		for (auto& buf : defaultIt->second) buf.Reset();
 		m_TextureBuffers_Default.erase(defaultIt);
 	}
 

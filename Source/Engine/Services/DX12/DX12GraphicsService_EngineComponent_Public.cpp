@@ -169,7 +169,6 @@ std::vector<Vec4> DX12GraphicsService::ReadTextureBackToCPU(RenderPassComponent*
     }
     std::memcpy(l_rawResult.data(), l_pData, l_rawResult.size());
     l_readBackHeapBuffer->Unmap(0, nullptr);
-
     std::vector<Vec4> l_result(l_pixelCount);
     size_t l_subresourceOffset = 0;
     for (uint32_t sub = 0; sub < l_subresourceCount; ++sub)

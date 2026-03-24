@@ -126,7 +126,7 @@ PixelOutputType main(PixelInputType input)
 	output.opaquePassRT0 = float4(input.posWS, 1.0);
 	output.opaquePassRT1 = float4(normalWS, out_metallic);
 	output.opaquePassRT2 = float4(out_albedo, out_roughness);
-	output.opaquePassRT3 = float4(motionVec.xy, out_AO, transparency);
+	output.opaquePassRT3 = float4(motionVec, out_AO, transparency);
 
 	return output;
 }

@@ -257,8 +257,7 @@ bool DX12GraphicsService::InitializeImpl(TextureComponent* texture, void* textur
 #endif
 
 		texture->m_GPUResources[frame] = defaultHeapBuffer.Get();
-		m_TextureBuffers_Default[reinterpret_cast<uint64_t>(texture)] = defaultHeapBuffer;
-		defaultHeapBuffer.Detach();
+		m_TextureBuffers_Default[reinterpret_cast<uint64_t>(texture)].push_back(std::move(defaultHeapBuffer));
 	}
 
 	// Phase 1: Upload texture data with direct command list
