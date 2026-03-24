@@ -696,7 +696,7 @@ namespace Inno
 		Dump("audit_09_Sky.hdr",     SkyPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(SkyPass::Get().GetResult()));
 
 		// 10: TAA
-		Dump("audit_10_TAAPass.hdr",  TAAPass::Get().GetRenderPassComp(),  static_cast<TextureComponent*>(TAAPass::Get().GetResult()));
+		Dump("audit_10_TAAPass.hdr", TAAPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(TAAPass::Get().GetResult()));
 
 		// 11: Final blend
 		// PrepareSwapChainCommands (which runs before ExecuteCommands) speculatively

@@ -46,6 +46,13 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[1] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[2] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[3] = 1.0f;
+	// Must match sunShadowGeometryProcessPass.frag output: float4(depth, depth*depth, 0, 1)
+	// at far plane (depth=1). PCSS reads .r as blocker depth; clearing to 1.0 prevents
+	// unrendered texels from registering as blockers at depth 0.
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[0] = 1.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[1] = 1.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[2] = 0.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[3] = 1.0f;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_shadowMapResolution;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_shadowMapResolution;
