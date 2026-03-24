@@ -557,6 +557,20 @@ bool DX12GraphicsService::BeginFrame()
     if (FAILED(m_copyCommandAllocators[l_currentFrame]->Reset()))
         return false;
 
+    // Re-record every registered CL as an empty closed recording against the fresh allocators.
+    // Without this, a CL that PrepareCommandList skips this frame remains backed by the allocator
+    // memory we just reclaimed via Reset(), causing D3D12 to fire "allocator was reset after CL
+    // was recorded" at ExecuteCommandLists. Open() re-associates the CL with the current allocator;
+    // Close() leaves it in a valid empty closed state so Execute is safe even if the pass is skipped.
+    m_GPUHandlePools.CommandListPointers.for_each([this](CommandListComponent* cl)
+    {
+        if (cl && cl->m_ObjectStatus == ObjectStatus::Activated)
+        {
+            Open(cl, cl->m_Type, nullptr);
+            Close(cl, cl->m_Type);
+        }
+    });
+
     return true;
 }
 
