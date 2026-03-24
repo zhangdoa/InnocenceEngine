@@ -40,7 +40,7 @@ void main(ComputeInputType input)
 	);
 
 	int2 writeCoord = input.dispatchThreadID.xy;
-	writeCoord.y = g_Frame.viewportSize.y - writeCoord.y;
+	writeCoord.y = g_Frame.viewportSize.y - 1 - writeCoord.y;
 
 	out_skyPassRT0[writeCoord] = float4(color, 1.0);
 }
