@@ -14,16 +14,10 @@ Texture2D in_TAAPassRT0 : register(t0);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> out_postTAAPassRT0 : register(u0);
 
-#include "common/Tonemapping.hlsl"
-
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
 	float4 TAAResult = in_TAAPassRT0[input.dispatchThreadID.xy];
-	float3 currentColor = TAAResult.rgb;
 
-	// Undo tone mapping
-	float3 finalColor = TonemapInvertReinhardLuma(currentColor);
-
-	out_postTAAPassRT0[input.dispatchThreadID.xy] = float4(currentColor, 1.0);
+	out_postTAAPassRT0[input.dispatchThreadID.xy] = float4(TAAResult.rgb, 1.0);
 }

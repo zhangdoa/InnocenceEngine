@@ -24,6 +24,7 @@ namespace Inno
 		RenderPassComponent* GetRenderPassComp() override;
 
 		GPUResourceComponent* GetResult();
+		GPUResourceComponent* GetHistory();
 
 	private:
 		ObjectStatus m_ObjectStatus;

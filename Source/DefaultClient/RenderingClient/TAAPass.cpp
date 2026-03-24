@@ -165,7 +165,18 @@ GPUResourceComponent* TAAPass::GetResult()
 	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
-	return l_isOddFrame ? m_OddTextureComp : m_EvenTextureComp;;
+	return l_isOddFrame ? m_OddTextureComp : m_EvenTextureComp;
+}
+
+// Must be called in the same frame phase as PrepareCommandList; the returned
+// texture is the ping-pong read source for the frame that just ran.
+GPUResourceComponent* TAAPass::GetHistory()
+{
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_isOddFrame = l_frameCount % 2 == 1;
+
+	return l_isOddFrame ? m_EvenTextureComp : m_OddTextureComp;
 }
 
 bool TAAPass::RenderTargetsCreationFunc()
