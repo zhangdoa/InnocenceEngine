@@ -76,6 +76,10 @@ namespace Inno
 		float m_seed = 0.0f;
 		bool allowUpdate = true;
 		uint32_t m_matrixDim = 8;
+
+		uint32_t m_AutoFrameCount = 0;
+		bool m_AutoGISceneTriggered = false;
+		bool m_AutoTerminateCalled = false;
 	};
 
 	void WorldSystem::attachMeshAndMaterial(EntityID Entity, MeshShape Shape)
@@ -472,6 +476,28 @@ namespace Inno
 			return false;
 
 		processPendingMeshSetups();
+
+		auto l_maxFrames = g_Engine->getInitConfig().maxFrames;
+		if (l_maxFrames > 0)
+		{
+			if (!m_AutoGISceneTriggered)
+			{
+				m_AutoGISceneTriggered = true;
+				Log(Success, "Auto-test: loading GITestBox scene...");
+				g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
+				m_AutoFrameCount = 0;
+			}
+			else
+			{
+				m_AutoFrameCount++;
+				if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_maxFrames))
+				{
+					Log(Success, "Auto-test: ", l_maxFrames, " frames rendered, terminating.");
+					m_AutoTerminateCalled = true;
+					g_Engine->Get<IWindowService>()->Terminate();
+				}
+			}
+		}
 
 		if (!allowUpdate)
 			return false;
