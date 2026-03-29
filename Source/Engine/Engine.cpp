@@ -336,6 +336,18 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	auto l_framesArgPos = arg.find("-frames");
+	if (l_framesArgPos != std::string::npos)
+	{
+		std::string l_remainder = arg.substr(l_framesArgPos + 7);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			l_result.maxFrames = std::stoi(l_remainder.substr(l_start));
+			Log(Success, "Auto-terminate after ", l_result.maxFrames, " frames post-GI-scene-load.");
+		}
+	}
+
 	return l_result;
 }
 
