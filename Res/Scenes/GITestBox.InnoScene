@@ -2,173 +2,203 @@
     "Name": "GITestBox",
     "Entities": [
         {
-            "UUID": 3893945313581013994,
+            "Name": "Sun",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 4.0, "Z": 0.0},
+                "Rotation": {"X": -0.4105069041252136, "Y": 0.2154165655374527, "Z": 0.10045039653778076, "W": 0.8803348541259766},
+                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
+            },
+            "Components": [
+                {"Type": 3, "Name": "Sun.LightComponent"}
+            ]
+        },
+        {
             "Name": "Main Camera",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 5.0, "Z": 0.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
+            },
             "Components": [
-                {
-                    "Type": 4,
-                    "Name": "Main Camera.CameraComponent"
-                }
+                {"Type": 4, "Name": "Main Camera.CameraComponent"}
             ]
         },
         {
-            "UUID": 4027202176466351347,
-            "Name": "sun",
-            "Components": [
-                {
-                    "Type": 3,
-                    "Name": "sun.LightComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 3785639188721978974,
-            "Name": "landscape",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "landscape.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 2625824572977615441,
-            "Name": "building1",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "building1.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 4151042781638266096,
-            "Name": "building2",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "building2.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 2480001524610261744,
-            "Name": "building3",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "building3.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 2976899435179555125,
-            "Name": "building4",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "building4.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 4222095814970651951,
             "Name": "pointLight",
+            "Transform": {
+                "Position": {"X": -4.0, "Y": -500.0, "Z": -7.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 0.10000000149011612, "Y": 0.10000000149011612, "Z": 0.10000000149011612}
+            },
             "Components": [
-                {
-                    "Type": 3,
-                    "Name": "pointLight.LightComponent"
-                }
+                {"Type": 3, "Name": "pointLight.LightComponent"}
             ]
         },
         {
-            "UUID": 4340186128843775561,
             "Name": "sphereLight",
+            "Transform": {
+                "Position": {"X": -6.0, "Y": -500.0, "Z": 2.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 3.200000047683716, "Y": 3.200000047683716, "Z": 3.200000047683716}
+            },
             "Components": [
-                {
-                    "Type": 3,
-                    "Name": "sphereLight.LightComponent"
-                }
+                {"Type": 3, "Name": "sphereLight.LightComponent"}
             ]
         },
         {
-            "UUID": 2538605614284092321,
+            "Name": "landscape",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 0.0, "Z": 0.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 32.0, "Y": 1.0, "Z": 32.0}
+            },
+            "Components": [
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "landscape.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building1",
+            "Transform": {
+                "Position": {"X": 16.0, "Y": 10.0, "Z": 4.0},
+                "Rotation": {"X": -0.30070582032203674, "Y": 0.0, "Z": 0.0, "W": 0.9537169337272644},
+                "Scale":    {"X": 6.0, "Y": 10.0, "Z": 1.0}
+            },
+            "Components": [
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building1.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building2",
+            "Transform": {
+                "Position": {"X": -16.0, "Y": 12.0, "Z": -5.0},
+                "Rotation": {"X": 0.0, "Y": 0.19509032368659973, "Z": 0.0, "W": 0.9807852506637573},
+                "Scale":    {"X": 2.0, "Y": 12.0, "Z": 6.0}
+            },
+            "Components": [
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building2.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building3",
+            "Transform": {
+                "Position": {"X": 5.0, "Y": 9.0, "Z": -16.0},
+                "Rotation": {"X": 0.0, "Y": -0.2798290252685547, "Z": 0.0, "W": 0.9600498676300049},
+                "Scale":    {"X": 9.0, "Y": 9.0, "Z": 3.0}
+            },
+            "Components": [
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building3.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building4",
+            "Transform": {
+                "Position": {"X": 2.0, "Y": 8.0, "Z": 20.0},
+                "Rotation": {"X": 0.0, "Y": -0.5555702447891235, "Z": 0.0, "W": 0.8314695954322815},
+                "Scale":    {"X": 4.0, "Y": 8.0, "Z": 8.0}
+            },
+            "Components": [
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building4.MaterialComponent"}
+            ]
+        },
+        {
             "Name": "wall1",
+            "Transform": {
+                "Position": {"X": -32.0, "Y": 32.0, "Z": 0.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 1.0, "Y": 32.0, "Z": 32.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "wall1.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building1.MaterialComponent"}
             ]
         },
         {
-            "UUID": 4584048933416667324,
             "Name": "wall2",
+            "Transform": {
+                "Position": {"X": 32.0, "Y": 32.0, "Z": 0.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 1.0, "Y": 32.0, "Z": 32.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "wall2.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building2.MaterialComponent"}
             ]
         },
         {
-            "UUID": 3018612281180412659,
             "Name": "wall3",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 32.0, "Z": -32.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 32.0, "Y": 32.0, "Z": 1.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "wall3.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
-            "UUID": 3018612281180412539,
             "Name": "wall4",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 14.0, "Z": 32.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 32.0, "Y": 14.0, "Z": 1.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "wall4.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
-            "UUID": 3018612281180412339,
             "Name": "wall5",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 50.0, "Z": 32.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 32.0, "Y": 14.0, "Z": 1.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "wall5.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
-            "UUID": 4166710034649527036,
-            "Name": "ceiling_middle",
-            "Components": [
-                {
-                    "Type": 2,
-                    "Name": "ceiling_middle.ModelComponent"
-                }
-            ]
-        },
-        {
-            "UUID": 4166710034649523036,
             "Name": "ceiling",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 64.0, "Z": 0.0},
+                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
+                "Scale":    {"X": 32.0, "Y": 1.0, "Z": 32.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "ceiling.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "ceiling.MaterialComponent"}
             ]
         },
         {
-            "UUID": 3024868626650980010,
-            "Name": "Player Character",
+            "Name": "ceiling_middle",
+            "Transform": {
+                "Position": {"X": 0.0, "Y": 32.0, "Z": -24.0},
+                "Rotation": {"X": -0.13052619993686676, "Y": 0.0, "Z": 0.0, "W": 0.9914448857307434},
+                "Scale":    {"X": 32.0, "Y": 1.0, "Z": 8.0}
+            },
             "Components": [
-                {
-                    "Type": 2,
-                    "Name": "Player Character.ModelComponent"
-                }
+                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
+                {"Type": 7, "Name": "ceiling_middle.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Player Character",
+            "Transform": {
+                "Position": {"X": -14.516154289245605, "Y": 2.0, "Z": 34.64309310913086},
+                "Rotation": {"X": 0.0, "Y": 0.028484240174293518, "Z": 0.0, "W": 0.9995942711830139},
+                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
+            },
+            "Components": [
+                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
+                {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
             ]
         }
     ]
