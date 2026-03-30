@@ -498,7 +498,7 @@ bool RayTracer::Setup(IServiceConfig* systemConfig)
 
 bool RayTracer::Initialize()
 {
-	const int l_denom = 2;
+	const int l_denom = 8;
 
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 

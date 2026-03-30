@@ -94,8 +94,13 @@ if ($maxVal -match "infinity|undefined" -or $null -eq $maxVal)
     Write-Host "WARN - Could not confirm GPU output max channel value."
 }
 
+# Resize GPU output to match CPU reference dimensions before comparison
+$gpuResized = Join-Path (Split-Path $BinDir -Parent) "gpu_output_resized.png"
+$cpuDims    = magick identify -format "%wx%h" $cpuPng 2>&1
+magick convert $gpuPng -resize $cpuDims $gpuResized | Out-Null
+
 # MAE comparison
-$maeLine = magick compare -metric MAE $gpuPng $cpuPng null: 2>&1
+$maeLine = magick compare -metric MAE $gpuResized $cpuPng null: 2>&1
 $mae     = [float]($maeLine -replace '[^0-9.]', '')
 
 $maeThreshold = 0.20
