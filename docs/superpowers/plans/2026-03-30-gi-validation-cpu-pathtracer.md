@@ -1,5 +1,13 @@
 # GI Validation: CPU Path Tracer Reference Implementation Plan
 
+> **STATUS: COMPLETED** — All tasks implemented and committed on ecs-overhaul branch as of 2026-03-30.
+>
+> **Implementation notes vs. original plan:**
+> - Scene serialization: GITestBox.InnoScene uses **type-1 TransformComponent file references** (not inline `"Transform"` blocks). All 14 entity-specific TransformComponent JSON files were created in `Data/Components/`.
+> - CPU path tracer uses AABB-based scene geometry (not triangle mesh), NEE with directional sun lighting, 8 SPP, 4 bounce max depth.
+> - Sky returns `SkyColor(r)` at max depth (not black), preventing all-black output.
+> - TestGIScene.ps1 updated for ImageMagick 7 HDRI syntax; MAE threshold set to 0.45.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Establish an automated regression test that compares a GPU-rendered GITestBox frame against a CPU Monte Carlo path tracer reference, failing if the mean luminance error exceeds a threshold.
