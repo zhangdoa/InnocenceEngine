@@ -133,6 +133,8 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
     if (l_meshShape != MeshShape::Customized)
     {
         component = *g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_meshShape);
+        Log(Warning, "MeshComponent copy: stride=", component.m_VertexBufferView.m_StrideInBytes,
+            " indexCount=", component.GetIndexCount(), " shape=", (uint32_t)l_meshShape);
         return true;
     }
 
@@ -166,6 +168,8 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
     }
 
     g_Engine->getGraphicsService()->Initialize(&component, l_vertices, l_indices);
+    Log(Warning, "MeshComponent init: stride=", component.m_VertexBufferView.m_StrideInBytes,
+        " indexCount=", component.GetIndexCount(), " file=", l_meshFileName.c_str());
 
     return true;
 }
