@@ -16,7 +16,6 @@
 #include "../Engine.h"
 #include "../Services/IGraphicsService.h"
 using namespace Inno;
-;
 
 namespace RayTracerNS
 {
@@ -92,7 +91,7 @@ struct Material
 
 struct Lambertian : public Material
 {
-	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const
+	bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const override
 	{
 		Vec4 scatterDir = result.HitNormal + RandomUnitVector();
 		scattered.m_origin = result.HitPoint;
@@ -104,7 +103,7 @@ struct Lambertian : public Material
 
 struct Metal : public Material
 {
-	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const
+	bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const override
 	{
 		Vec4 reflected = Reflect(r.m_direction.normalize(), result.HitNormal);
 		scattered.m_origin = result.HitPoint;
@@ -116,7 +115,7 @@ struct Metal : public Material
 
 struct Emissive : public Material
 {
-	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const
+	bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const override
 	{
 		attenuation = Albedo;
 		return false;
@@ -132,7 +131,7 @@ struct Hitable
 struct HitableCube : public Hitable
 {
 	AABB m_AABB;
-	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
+	bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult) override;
 };
 
 bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult)
@@ -193,7 +192,7 @@ bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 struct HitableSphere : public Hitable
 {
 	Sphere m_Sphere;
-	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
+	bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult) override;
 };
 
 bool HitableSphere::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult)
@@ -240,7 +239,7 @@ struct HitableList : public Hitable
 {
 	uint32_t m_Size;
 	Hitable** m_List;
-	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
+	bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult) override;
 };
 
 bool HitableList::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult)
@@ -280,7 +279,7 @@ public:
 
 	Ray GetRay(float s, float t)
 	{
-		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius * 0.5 + 0.5;
+		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius;
 		Vec4 offset = u * rd.x + v * rd.y;
 
 		Ray l_result;
@@ -302,28 +301,20 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 {
 	HitResult l_result;
 	Vec4 color = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	static bool l_visualizeNormal = false;
 
 	if (depth < m_maxDepth)
 	{
 		if (world->Hit(r, 0.001f, std::numeric_limits<float>::infinity(), l_result))
 		{
-			if (l_visualizeNormal)
+			Ray scattered;
+			Vec4 attenuation;
+			if (l_result.HitMaterial->scatter(r, l_result, attenuation, scattered))
 			{
-				color = l_result.HitNormal;
+				color = attenuation.scale(CalcRadiance(scattered, world, depth + 1));
 			}
 			else
 			{
-				Ray scattered;
-				Vec4 attenuation;
-				if (l_result.HitMaterial->scatter(r, l_result, attenuation, scattered))
-				{
-					color = attenuation.scale(CalcRadiance(scattered, world, depth + 1));
-				}
-				else
-				{
-					color = attenuation;
-				}
+				color = attenuation;
 			}
 		}
 		else
@@ -339,19 +330,11 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 
 static AABB BuildWorldAABB(const AABB& localAABB, const TransformComponent& xf)
 {
-	Vec4 halfExtent = (localAABB.m_boundMax - localAABB.m_boundMin) * 0.5f;
-	halfExtent.x *= xf.m_LocalScale.x;
-	halfExtent.y *= xf.m_LocalScale.y;
-	halfExtent.z *= xf.m_LocalScale.z;
-	Vec4 center = localAABB.m_boundMin + (localAABB.m_boundMax - localAABB.m_boundMin) * 0.5f;
-	center.x += xf.m_LocalPos.x;
-	center.y += xf.m_LocalPos.y;
-	center.z += xf.m_LocalPos.z;
-	AABB worldAABB;
-	worldAABB.m_center   = center;
-	worldAABB.m_boundMin = Vec4(center.x - halfExtent.x, center.y - halfExtent.y, center.z - halfExtent.z, 1.0f);
-	worldAABB.m_boundMax = Vec4(center.x + halfExtent.x, center.y + halfExtent.y, center.z + halfExtent.z, 1.0f);
-	return worldAABB;
+	Mat4 l_s = Math::toScaleMatrix(Vec4(xf.m_LocalScale.x, xf.m_LocalScale.y, xf.m_LocalScale.z, 1.0f));
+	Mat4 l_r = Math::toRotationMatrix(xf.m_LocalRot);
+	Mat4 l_t = Math::toTranslationMatrix(Vec4(xf.m_LocalPos.x, xf.m_LocalPos.y, xf.m_LocalPos.z, 1.0f));
+	Mat4 l_trs = l_t * l_r * l_s;
+	return Math::TransformAABB(localAABB, l_trs);
 }
 
 bool ExecuteRayTracing()

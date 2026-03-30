@@ -446,6 +446,13 @@ namespace Inno
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
+		if (g_Engine->getInitConfig().maxFrames > 0)
+		{
+			auto* l_rayTracer = g_Engine->Get<RayTracer>();
+			l_rayTracer->Setup(nullptr);
+			l_rayTracer->Initialize();
+		}
+
 		return true;
 	}
 
@@ -527,16 +534,11 @@ namespace Inno
 		if (g_Engine->getInitConfig().maxFrames > 0)
 		{
 			Log(Verbose, "Auto-test: running CPU path tracer reference render...");
-			auto l_rayTracer = g_Engine->Get<RayTracer>();
-			if (l_rayTracer->GetStatus() != ObjectStatus::Activated)
-			{
-				l_rayTracer->Setup(nullptr);
-				l_rayTracer->Initialize();
-			}
-			l_rayTracer->Execute();
-			l_rayTracer->Terminate();
+			g_Engine->Get<RayTracer>()->Execute();
+			g_Engine->Get<RayTracer>()->Terminate();
 		}
 
+		m_ObjectStatus = ObjectStatus::Terminated;
 		return true;
 	}
 
