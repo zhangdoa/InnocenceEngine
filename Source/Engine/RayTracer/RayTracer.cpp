@@ -22,7 +22,7 @@ namespace RayTracerNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
 	Handle<ITask> m_LastTask;
-	const int m_maxDepth = 64;
+	const int m_maxDepth = 8;
 	const int m_maxSamplePerPixel = 8;
 	std::default_random_engine m_generator;
 	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
@@ -297,35 +297,30 @@ public:
 	float lens_radius;
 };
 
+static Vec4 SkyColor(const Ray& r)
+{
+	Vec4 unitDir = r.m_direction.normalize();
+	float t = unitDir.y * 0.5f + 0.5f;
+	return Math::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
+}
+
 Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 {
-	HitResult l_result;
-	Vec4 color = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (depth >= m_maxDepth)
+		return SkyColor(r);
 
-	if (depth < m_maxDepth)
+	HitResult l_result;
+	if (world->Hit(r, 0.001f, std::numeric_limits<float>::infinity(), l_result))
 	{
-		if (world->Hit(r, 0.001f, std::numeric_limits<float>::infinity(), l_result))
-		{
-			Ray scattered;
-			Vec4 attenuation;
-			if (l_result.HitMaterial->scatter(r, l_result, attenuation, scattered))
-			{
-				color = attenuation.scale(CalcRadiance(scattered, world, depth + 1));
-			}
-			else
-			{
-				color = attenuation;
-			}
-		}
+		Ray scattered;
+		Vec4 attenuation;
+		if (l_result.HitMaterial->scatter(r, l_result, attenuation, scattered))
+			return attenuation.scale(CalcRadiance(scattered, world, depth + 1));
 		else
-		{
-			Vec4 unitDir = r.m_direction.normalize();
-			float t = unitDir.y * 0.5f + 0.5f;
-			color = Math::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
-		}
+			return attenuation;
 	}
 
-	return color;
+	return SkyColor(r);
 }
 
 static AABB BuildWorldAABB(const AABB& localAABB, const TransformComponent& xf)
