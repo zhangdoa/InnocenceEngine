@@ -6,6 +6,12 @@
 #include "../Services/CameraService.h"
 #include "../Services/AssetService.h"
 #include "../Services/RenderingConfigurationService.h"
+#include "../Services/EntityRegistry.h"
+
+#include "../Component/MeshComponent.h"
+#include "../Component/TransformComponent.h"
+#include "../Component/MaterialComponent.h"
+#include "../Component/CameraComponent.h"
 
 #include "../Engine.h"
 #include "../Services/IGraphicsService.h"
@@ -104,6 +110,15 @@ struct Metal : public Material
 		scattered.m_direction = reflected;
 		attenuation = Albedo;
 		return (scattered.m_direction * result.HitNormal > 0);
+	}
+};
+
+struct Emissive : public Material
+{
+	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const
+	{
+		attenuation = Albedo;
+		return false;
 	}
 };
 
@@ -304,6 +319,10 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 				{
 					color = attenuation.scale(CalcRadiance(scattered, world, depth + 1));
 				}
+				else
+				{
+					color = attenuation;
+				}
 			}
 		}
 		else
@@ -317,56 +336,115 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 	return color;
 }
 
+static AABB BuildWorldAABB(const AABB& localAABB, const TransformComponent& xf)
+{
+	Vec4 halfExtent = (localAABB.m_boundMax - localAABB.m_boundMin) * 0.5f;
+	halfExtent.x *= xf.m_LocalScale.x;
+	halfExtent.y *= xf.m_LocalScale.y;
+	halfExtent.z *= xf.m_LocalScale.z;
+	Vec4 center = localAABB.m_boundMin + (localAABB.m_boundMax - localAABB.m_boundMin) * 0.5f;
+	center.x += xf.m_LocalPos.x;
+	center.y += xf.m_LocalPos.y;
+	center.z += xf.m_LocalPos.z;
+	AABB worldAABB;
+	worldAABB.m_center   = center;
+	worldAABB.m_boundMin = Vec4(center.x - halfExtent.x, center.y - halfExtent.y, center.z - halfExtent.z, 1.0f);
+	worldAABB.m_boundMax = Vec4(center.x + halfExtent.x, center.y + halfExtent.y, center.z + halfExtent.z, 1.0f);
+	return worldAABB;
+}
+
 bool ExecuteRayTracing()
 {
 	Log(Verbose, "Start ray tracing...");
 
 	auto l_camera = g_Engine->Get<CameraService>()->GetMainCamera();
-	auto l_lookfrom = Vec4(0.0f, 0.0f, 0.0f, 1.0f); // TODO: read from TransformComponent when RayTracer is activated
-	auto l_lookat = Vec4(0.0f, 0.0f, -1.0f, 1.0f); // TODO: read from TransformComponent when RayTracer is activated
-	auto l_up = Vec4(0.0f, 1.0f, 0.0f, 0.0f); // TODO: read from TransformComponent when RayTracer is activated
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto l_entityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+
+	Vec4 l_lookfrom = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	Vec4 l_lookat   = Vec4(0.0f, 0.0f, -1.0f, 1.0f);
+
+	for (auto l_entityID : l_entityIDs)
+	{
+		auto* l_camComp = l_registry->Get<CameraComponent>(l_entityID);
+		auto* l_xf      = l_registry->Get<TransformComponent>(l_entityID);
+		if (l_camComp && l_xf)
+		{
+			l_lookfrom = Vec4(l_xf->m_LocalPos.x, l_xf->m_LocalPos.y, l_xf->m_LocalPos.z, 1.0f);
+			auto l_forward = Vec4(0.0f, 0.0f, -1.0f, 0.0f).rotateDirectionByQuat(l_xf->m_LocalRot);
+			l_lookat = l_lookfrom + l_forward;
+			break;
+		}
+	}
+
+	auto l_up = Vec4(0.0f, 1.0f, 0.0f, 0.0f);
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_Aperture, 1000.0f);
 
 	std::vector<Hitable*> l_hitableListVector;
 
-	auto l_hitable = new HitableSphere();
-	l_hitable->m_Material = new Lambertian();
-	l_hitable->m_Material->Albedo.x = 1.0f;
-	l_hitable->m_Material->Albedo.y = 1.0f;
-	l_hitable->m_Material->Albedo.z = 1.0f;
-	l_hitable->m_Material->MRAT.x = 0.0f;
-	l_hitable->m_Material->MRAT.y = 1.0f;
-
-	l_hitable->m_Sphere.m_center = Vec3(0.0f, -200.0f, 0.0f);
-	l_hitable->m_Sphere.m_radius = 200.0f;
-
-	l_hitableListVector.emplace_back(l_hitable);
-
-	for (size_t i = 0; i < 32; i++)
+	for (auto l_entityID : l_entityIDs)
 	{
-		l_hitable = new HitableSphere();
+		auto* l_mesh = l_registry->Get<MeshComponent>(l_entityID);
+		auto* l_xf   = l_registry->Get<TransformComponent>(l_entityID);
+		if (!l_mesh || !l_xf)
+			continue;
+		if (l_mesh->m_VertexBufferView.m_StrideInBytes == 0)
+			continue;
 
-		if (m_randomDirDelta(m_generator) > 0.0f)
+		auto* l_mat = l_registry->Get<MaterialComponent>(l_entityID);
+
+		auto* l_hitable = new HitableCube();
+		l_hitable->m_AABB = BuildWorldAABB(l_mesh->m_AABB, *l_xf);
+
+		float roughness = l_mat ? l_mat->m_materialAttributes.Roughness : 0.8f;
+		float emissive  = l_mat ? (l_mat->m_materialAttributes.AlbedoR +
+		                           l_mat->m_materialAttributes.AlbedoG +
+		                           l_mat->m_materialAttributes.AlbedoB) / 3.0f : 0.0f;
+
+		if (l_mat && emissive > 0.5f && l_mat->m_ShaderModel == ShaderModel::Emissive)
 		{
-			l_hitable->m_Material = new Metal();
+			auto* m = new Emissive();
+			m->Albedo = Vec4(l_mat->m_materialAttributes.AlbedoR,
+			                 l_mat->m_materialAttributes.AlbedoG,
+			                 l_mat->m_materialAttributes.AlbedoB, 1.0f);
+			l_hitable->m_Material = m;
+		}
+		else if (roughness > 0.5f)
+		{
+			auto* m = new Lambertian();
+			m->Albedo = Vec4(l_mat ? l_mat->m_materialAttributes.AlbedoR : 0.8f,
+			                 l_mat ? l_mat->m_materialAttributes.AlbedoG : 0.8f,
+			                 l_mat ? l_mat->m_materialAttributes.AlbedoB : 0.8f, 1.0f);
+			m->MRAT.y = roughness;
+			l_hitable->m_Material = m;
 		}
 		else
 		{
-			l_hitable->m_Material = new Lambertian();
+			auto* m = new Metal();
+			m->Albedo = Vec4(l_mat ? l_mat->m_materialAttributes.AlbedoR : 0.8f,
+			                 l_mat ? l_mat->m_materialAttributes.AlbedoG : 0.8f,
+			                 l_mat ? l_mat->m_materialAttributes.AlbedoB : 0.8f, 1.0f);
+			m->MRAT.y = roughness;
+			l_hitable->m_Material = m;
 		}
 
-		l_hitable->m_Material->Albedo.x = m_randomDirDelta(m_generator) * 0.5f + 0.5f;
-		l_hitable->m_Material->Albedo.y = m_randomDirDelta(m_generator) * 0.5f + 0.5f;
-		l_hitable->m_Material->Albedo.z = m_randomDirDelta(m_generator) * 0.5f + 0.5f;
-		l_hitable->m_Material->MRAT.x = 0.0f;
-		l_hitable->m_Material->MRAT.y = 1.0f;
-
-		l_hitable->m_Sphere.m_radius = (m_randomDirDelta(m_generator) + 1.5f);
-		l_hitable->m_Sphere.m_center = Vec3(m_randomDirDelta(m_generator) * 10.0f, l_hitable->m_Sphere.m_radius, m_randomDirDelta(m_generator) * 10.0f);
-
 		l_hitableListVector.emplace_back(l_hitable);
+	}
+
+	if (l_hitableListVector.empty())
+	{
+		Log(Error, "RayTracer: no renderable mesh entities — writing 1x1 black PNG.");
+		uint8_t l_black[4] = {0, 0, 0, 255};
+		TextureDesc l_err = {};
+		l_err.Width           = 1;
+		l_err.Height          = 1;
+		l_err.PixelDataType   = TexturePixelDataType::UByte;
+		l_err.PixelDataFormat = TexturePixelDataFormat::RGBA;
+		l_err.Sampler         = TextureSampler::Sampler2D;
+		AssetService::Save("cpu_reference.png", l_err, l_black);
+		return false;
 	}
 
 	HitableList* l_hitableList = new HitableList();
@@ -409,10 +487,17 @@ bool ExecuteRayTracing()
 		}
 	}
 
-	//m_TextureComp->m_InitialData = &l_result[0];
+	TextureDesc l_outDesc = {};
+	l_outDesc.Width           = (uint32_t)nx;
+	l_outDesc.Height          = (uint32_t)ny;
+	l_outDesc.PixelDataType   = TexturePixelDataType::UByte;
+	l_outDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_outDesc.Sampler         = TextureSampler::Sampler2D;
 
-	// auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->Get<Timer>()->GetCurrentTimeFromEpoch(TimeUnit::Millisecond));
-	// g_Engine->Get<AssetService>()->Save(l_textureFileName.c_str(), m_TextureComp->m_TextureDesc, &l_result[0]);
+	if (AssetService::Save("cpu_reference.png", l_outDesc, l_result.data()))
+		Log(Success, "RayTracer: cpu_reference.png written.");
+	else
+		Log(Error, "RayTracer: failed to write cpu_reference.png.");
 
 	Log(Success, "Ray tracing finished.");
 
