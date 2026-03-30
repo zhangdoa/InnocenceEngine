@@ -3,200 +3,132 @@
     "Entities": [
         {
             "Name": "Sun",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 4.0, "Z": 0.0},
-                "Rotation": {"X": -0.4105069041252136, "Y": 0.2154165655374527, "Z": 0.10045039653778076, "W": 0.8803348541259766},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "Sun.TransformComponent"},
                 {"Type": 3, "Name": "Sun.LightComponent"}
             ]
         },
         {
             "Name": "Main Camera",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 5.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "Main Camera.TransformComponent"},
                 {"Type": 4, "Name": "Main Camera.CameraComponent"}
             ]
         },
         {
             "Name": "pointLight",
-            "Transform": {
-                "Position": {"X": -4.0, "Y": -500.0, "Z": -7.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 0.10000000149011612, "Y": 0.10000000149011612, "Z": 0.10000000149011612}
-            },
             "Components": [
+                {"Type": 1, "Name": "pointLight.TransformComponent"},
                 {"Type": 3, "Name": "pointLight.LightComponent"}
             ]
         },
         {
             "Name": "sphereLight",
-            "Transform": {
-                "Position": {"X": -6.0, "Y": -500.0, "Z": 2.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 3.200000047683716, "Y": 3.200000047683716, "Z": 3.200000047683716}
-            },
             "Components": [
+                {"Type": 1, "Name": "sphereLight.TransformComponent"},
                 {"Type": 3, "Name": "sphereLight.LightComponent"}
             ]
         },
         {
             "Name": "landscape",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 0.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 32.0, "Y": 1.0, "Z": 32.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "landscape.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "landscape.MaterialComponent"}
             ]
         },
         {
             "Name": "building1",
-            "Transform": {
-                "Position": {"X": 16.0, "Y": 10.0, "Z": 4.0},
-                "Rotation": {"X": -0.30070582032203674, "Y": 0.0, "Z": 0.0, "W": 0.9537169337272644},
-                "Scale":    {"X": 6.0, "Y": 10.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "building1.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building1.MaterialComponent"}
             ]
         },
         {
             "Name": "building2",
-            "Transform": {
-                "Position": {"X": -16.0, "Y": 12.0, "Z": -5.0},
-                "Rotation": {"X": 0.0, "Y": 0.19509032368659973, "Z": 0.0, "W": 0.9807852506637573},
-                "Scale":    {"X": 2.0, "Y": 12.0, "Z": 6.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "building2.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building2.MaterialComponent"}
             ]
         },
         {
             "Name": "building3",
-            "Transform": {
-                "Position": {"X": 5.0, "Y": 9.0, "Z": -16.0},
-                "Rotation": {"X": 0.0, "Y": -0.2798290252685547, "Z": 0.0, "W": 0.9600498676300049},
-                "Scale":    {"X": 9.0, "Y": 9.0, "Z": 3.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "building3.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
             "Name": "building4",
-            "Transform": {
-                "Position": {"X": 2.0, "Y": 8.0, "Z": 20.0},
-                "Rotation": {"X": 0.0, "Y": -0.5555702447891235, "Z": 0.0, "W": 0.8314695954322815},
-                "Scale":    {"X": 4.0, "Y": 8.0, "Z": 8.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "building4.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building4.MaterialComponent"}
             ]
         },
         {
             "Name": "wall1",
-            "Transform": {
-                "Position": {"X": -32.0, "Y": 32.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 32.0, "Z": 32.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "wall1.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building1.MaterialComponent"}
             ]
         },
         {
             "Name": "wall2",
-            "Transform": {
-                "Position": {"X": 32.0, "Y": 32.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 1.0, "Y": 32.0, "Z": 32.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "wall2.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building2.MaterialComponent"}
             ]
         },
         {
             "Name": "wall3",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 32.0, "Z": -32.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 32.0, "Y": 32.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "wall3.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
             "Name": "wall4",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 14.0, "Z": 32.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 32.0, "Y": 14.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "wall4.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
             "Name": "wall5",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 50.0, "Z": 32.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 32.0, "Y": 14.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "wall5.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "building3.MaterialComponent"}
             ]
         },
         {
             "Name": "ceiling",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 64.0, "Z": 0.0},
-                "Rotation": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0},
-                "Scale":    {"X": 32.0, "Y": 1.0, "Z": 32.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "ceiling.TransformComponent"},
                 {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
                 {"Type": 7, "Name": "ceiling.MaterialComponent"}
             ]
         },
         {
             "Name": "ceiling_middle",
-            "Transform": {
-                "Position": {"X": 0.0, "Y": 32.0, "Z": -24.0},
-                "Rotation": {"X": -0.13052619993686676, "Y": 0.0, "Z": 0.0, "W": 0.9914448857307434},
-                "Scale":    {"X": 32.0, "Y": 1.0, "Z": 8.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "ceiling_middle.TransformComponent"},
                 {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
                 {"Type": 7, "Name": "ceiling_middle.MaterialComponent"}
             ]
         },
         {
             "Name": "Player Character",
-            "Transform": {
-                "Position": {"X": -14.516154289245605, "Y": 2.0, "Z": 34.64309310913086},
-                "Rotation": {"X": 0.0, "Y": 0.028484240174293518, "Z": 0.0, "W": 0.9995942711830139},
-                "Scale":    {"X": 1.0, "Y": 1.0, "Z": 1.0}
-            },
             "Components": [
+                {"Type": 1, "Name": "Player Character.TransformComponent"},
                 {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
                 {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
             ]

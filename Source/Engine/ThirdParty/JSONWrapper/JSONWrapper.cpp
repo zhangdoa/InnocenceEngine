@@ -136,17 +136,6 @@ bool JSONWrapper::LoadScene(const char* fileName)
 		l_EntityName += "/";
 		auto l_EntityID = l_registry->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
-		// Entity-level inline Transform (new format)
-		if (entityJson.contains("Transform"))
-		{
-			auto& l_Transform = l_registry->Emplace<TransformComponent>(l_EntityID);
-			Transform l_xf;
-			from_json(entityJson["Transform"], l_xf);
-			l_Transform.m_LocalPos   = l_xf.m_pos;
-			l_Transform.m_LocalRot   = l_xf.m_rot;
-			l_Transform.m_LocalScale = l_xf.m_scale;
-		}
-
 		for (auto& compJson : entityJson["Components"])
 		{
 			uint32_t    l_TypeID   = compJson["Type"];
