@@ -12,6 +12,7 @@
 #include "../Component/TransformComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/CameraComponent.h"
+#include "../Component/LightComponent.h"
 
 #include "../Engine.h"
 #include "../Services/IGraphicsService.h"
@@ -22,12 +23,15 @@ namespace RayTracerNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
 	Handle<ITask> m_LastTask;
-	const int m_maxDepth = 8;
+	const int m_maxDepth = 4;
 	const int m_maxSamplePerPixel = 8;
 	std::default_random_engine m_generator;
 	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
 
 	TextureComponent* m_TextureComp;
+
+	Vec4 m_sunDir   = Vec4(0.0f, 1.0f, 0.0f, 0.0f);  // toward-sun direction (world space)
+	Vec4 m_sunColor = Vec4(1.0f, 0.95f, 0.8f, 1.0f);  // warm white
 }
 
 using namespace RayTracerNS;
@@ -301,7 +305,10 @@ static Vec4 SkyColor(const Ray& r)
 {
 	Vec4 unitDir = r.m_direction.normalize();
 	float t = unitDir.y * 0.5f + 0.5f;
-	return Math::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
+	Vec4 skyAmbient = Math::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
+	float sunDot  = std::max(0.0f, unitDir * m_sunDir);
+	float sunDisc = std::pow(sunDot, 128.0f);
+	return skyAmbient + m_sunColor * (sunDisc * 4.0f);
 }
 
 Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
@@ -315,7 +322,20 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 		Ray scattered;
 		Vec4 attenuation;
 		if (l_result.HitMaterial->scatter(r, l_result, attenuation, scattered))
-			return attenuation.scale(CalcRadiance(scattered, world, depth + 1));
+		{
+			Vec4 directSun(0.0f, 0.0f, 0.0f, 1.0f);
+			float NdotL = l_result.HitNormal * m_sunDir;
+			if (NdotL > 0.0f)
+			{
+				Ray shadowRay;
+				shadowRay.m_origin    = l_result.HitPoint;
+				shadowRay.m_direction = m_sunDir;
+				HitResult shadowHit;
+				if (!world->Hit(shadowRay, 0.001f, std::numeric_limits<float>::infinity(), shadowHit))
+					directSun = attenuation.scale(m_sunColor) * NdotL;
+			}
+			return directSun + attenuation.scale(CalcRadiance(scattered, world, depth + 1));
+		}
 		else
 			return attenuation;
 	}
@@ -338,6 +358,20 @@ bool ExecuteRayTracing()
 
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto l_entityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+
+	// Collect directional light (sun) for NEE
+	for (auto l_entityID : l_entityIDs)
+	{
+		auto* l_light = l_registry->Get<LightComponent>(l_entityID);
+		auto* l_xf    = l_registry->Get<TransformComponent>(l_entityID);
+		if (l_light && l_xf && l_light->m_LightType == LightType::Directional)
+		{
+			auto l_fwd = Vec4(0.0f, 0.0f, -1.0f, 0.0f).rotateDirectionByQuat(l_xf->m_LocalRot);
+			m_sunDir   = Vec4(-l_fwd.x, -l_fwd.y, -l_fwd.z, 0.0f).normalize();
+			m_sunColor = l_light->m_RGBColor;
+			break;
+		}
+	}
 
 	Vec4 l_lookfrom = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	Vec4 l_lookat   = Vec4(0.0f, 0.0f, -1.0f, 1.0f);
@@ -371,7 +405,8 @@ bool ExecuteRayTracing()
 		auto* l_xf   = l_registry->Get<TransformComponent>(l_entityID);
 		if (!l_mesh || !l_xf)
 			continue;
-		if (l_mesh->m_VertexBufferView.m_StrideInBytes == 0)
+		auto& l_aabb = l_mesh->m_AABB;
+		if (l_aabb.m_extend.x <= 0.0f && l_aabb.m_extend.y <= 0.0f && l_aabb.m_extend.z <= 0.0f)
 			continue;
 
 		auto* l_mat = l_registry->Get<MaterialComponent>(l_entityID);
