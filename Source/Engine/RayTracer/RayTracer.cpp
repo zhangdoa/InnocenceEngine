@@ -128,30 +128,49 @@ bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 	float t5 = (m_AABB.m_boundMin.z - r.m_origin.z) / r.m_direction.z;
 	float t6 = (m_AABB.m_boundMax.z - r.m_origin.z) / r.m_direction.z;
 
-	float tmin = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
-	float tmax = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
+	float tXmin = std::min(t1, t2);
+	float tYmin = std::min(t3, t4);
+	float tZmin = std::min(t5, t6);
 
-	if (tmax < 0.0f)
-	{
-		return false;
-	}
+	float tXmax = std::max(t1, t2);
+	float tYmax = std::max(t3, t4);
+	float tZmax = std::max(t5, t6);
 
-	if (tmin > tmax)
-	{
+	int axisEntry = 0;
+	float tminVal = tXmin;
+	if (tYmin > tminVal) { tminVal = tYmin; axisEntry = 1; }
+	if (tZmin > tminVal) { tminVal = tZmin; axisEntry = 2; }
+
+	int axisExit = 0;
+	float tmaxVal = tXmax;
+	if (tYmax < tmaxVal) { tmaxVal = tYmax; axisExit = 1; }
+	if (tZmax < tmaxVal) { tmaxVal = tZmax; axisExit = 2; }
+
+	if (tmaxVal < 0.0f || tminVal > tmaxVal)
 		return false;
-	}
 
 	hitResult.HitMaterial = m_Material;
 
-	if (tmin < 0.0f)
+	if (tminVal < 0.0f)
 	{
-		hitResult.HitPoint = r.m_origin + r.m_direction * tmax;
-		hitResult.HitNormal = hitResult.HitPoint - m_AABB.m_center;
-		return true;
+		hitResult.HitPoint = r.m_origin + r.m_direction * tmaxVal;
+		hitResult.t = tmaxVal;
+		Vec4 n;
+		if (axisExit == 0) n = Vec4((r.m_direction.x < 0.0f) ? 1.0f : -1.0f, 0.0f, 0.0f, 0.0f);
+		else if (axisExit == 1) n = Vec4(0.0f, (r.m_direction.y < 0.0f) ? 1.0f : -1.0f, 0.0f, 0.0f);
+		else n = Vec4(0.0f, 0.0f, (r.m_direction.z < 0.0f) ? 1.0f : -1.0f, 0.0f);
+		hitResult.HitNormal = n;
 	}
-
-	hitResult.HitPoint = r.m_origin + r.m_direction * tmin;
-	hitResult.HitNormal = hitResult.HitPoint - m_AABB.m_center;
+	else
+	{
+		hitResult.HitPoint = r.m_origin + r.m_direction * tminVal;
+		hitResult.t = tminVal;
+		Vec4 n;
+		if (axisEntry == 0) n = Vec4((r.m_direction.x < 0.0f) ? 1.0f : -1.0f, 0.0f, 0.0f, 0.0f);
+		else if (axisEntry == 1) n = Vec4(0.0f, (r.m_direction.y < 0.0f) ? 1.0f : -1.0f, 0.0f, 0.0f);
+		else n = Vec4(0.0f, 0.0f, (r.m_direction.z < 0.0f) ? 1.0f : -1.0f, 0.0f);
+		hitResult.HitNormal = n;
+	}
 	return true;
 }
 
