@@ -358,27 +358,29 @@ bool ExecuteRayTracing()
 {
 	Log(Verbose, "Start ray tracing...");
 
-	auto l_camera = g_Engine->Get<CameraService>()->GetMainCamera();
-	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
-
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto l_entityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
 
 	Vec4 l_lookfrom = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	Vec4 l_lookat   = Vec4(0.0f, 0.0f, -1.0f, 1.0f);
+	CameraComponent* l_camComp = nullptr;
 
 	for (auto l_entityID : l_entityIDs)
 	{
-		auto* l_camComp = l_registry->Get<CameraComponent>(l_entityID);
-		auto* l_xf      = l_registry->Get<TransformComponent>(l_entityID);
-		if (l_camComp && l_xf)
+		auto* l_cam = l_registry->Get<CameraComponent>(l_entityID);
+		auto* l_xf  = l_registry->Get<TransformComponent>(l_entityID);
+		if (l_cam && l_xf)
 		{
+			l_camComp = l_cam;
 			l_lookfrom = Vec4(l_xf->m_LocalPos.x, l_xf->m_LocalPos.y, l_xf->m_LocalPos.z, 1.0f);
 			auto l_forward = Vec4(0.0f, 0.0f, -1.0f, 0.0f).rotateDirectionByQuat(l_xf->m_LocalRot);
 			l_lookat = l_lookfrom + l_forward;
 			break;
 		}
 	}
+
+	auto l_camera = l_camComp ? l_camComp : g_Engine->Get<CameraService>()->GetMainCamera();
+	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
 	auto l_up = Vec4(0.0f, 1.0f, 0.0f, 0.0f);
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_Aperture, 1000.0f);
