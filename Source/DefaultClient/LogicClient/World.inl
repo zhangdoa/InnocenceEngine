@@ -522,10 +522,22 @@ namespace Inno
 		{
 			m_player->Terminate();
 			delete m_player;
-			return true;
 		}
 
-		return false;
+		if (g_Engine->getInitConfig().maxFrames > 0)
+		{
+			Log(Verbose, "Auto-test: running CPU path tracer reference render...");
+			auto l_rayTracer = g_Engine->Get<RayTracer>();
+			if (l_rayTracer->GetStatus() != ObjectStatus::Activated)
+			{
+				l_rayTracer->Setup(nullptr);
+				l_rayTracer->Initialize();
+			}
+			l_rayTracer->Execute();
+			l_rayTracer->Terminate();
+		}
+
+		return true;
 	}
 
 	void WorldSystem::runTest(uint32_t testTime, std::function<bool()> testCase)

@@ -22,6 +22,7 @@ namespace RayTracerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
+	Handle<ITask> m_LastTask;
 	const int m_maxDepth = 64;
 	const int m_maxSamplePerPixel = 8;
 	std::default_random_engine m_generator;
@@ -535,7 +536,8 @@ bool RayTracer::Execute()
 	{
 		RayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("RayTracingTask", ITask::Type::Once, 4), [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
+		RayTracerNS::m_LastTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("RayTracingTask", ITask::Type::Once, 4), [&]() { ExecuteRayTracing(); RayTracerNS::m_isWorking = false; });
+		RayTracerNS::m_LastTask->Activate();
 	}
 
 	return true;
@@ -543,6 +545,14 @@ bool RayTracer::Execute()
 
 bool RayTracer::Terminate()
 {
+	if (RayTracerNS::m_LastTask)
+	{
+		// Block until path tracer finishes writing cpu_reference.png.
+		// FRAGILITY NOTE: TaskScheduler::Freeze/Reset must not be called before this returns.
+		// Engine::Terminate() order: LogicClient::Terminate (reaches here) → TaskScheduler::Reset.
+		// If that ordering changes, this Wait() will deadlock.
+		RayTracerNS::m_LastTask->Wait();
+	}
 	RayTracerNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
 }
