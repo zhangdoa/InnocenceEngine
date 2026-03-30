@@ -78,6 +78,8 @@ namespace Inno
 		bool m_showVolumetric = false;
 		bool m_saveScreenCapture = false;
 		bool m_drawBRDFTest = false;
+		uint32_t m_autoCaptureFrameCount = 0;
+		bool m_autoCaptureWritten = false;
 
 		GPUResourceComponent* m_Canvas;
 		RenderPassComponent* m_CanvasOwner;
@@ -628,6 +630,57 @@ namespace Inno
 			auto l_textureData = l_graphicsService->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
 			g_Engine->Get<AssetService>()->Save("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
 			m_saveScreenCapture = false;
+		}
+
+		auto l_maxFrames = g_Engine->getInitConfig().maxFrames;
+		if (l_maxFrames > 0 && !m_autoCaptureWritten)
+		{
+			m_autoCaptureFrameCount++;
+			if (m_autoCaptureFrameCount >= static_cast<uint32_t>(l_maxFrames))
+			{
+				l_graphicsService->WaitOnCPU(l_graphicsService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+
+				auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_graphicsService->GetCurrentFrame() : 0u;
+				l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
+				auto l_floatPixels = l_graphicsService->ReadTextureBackToCPU(
+					FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
+
+				if (!l_floatPixels.empty())
+				{
+					std::vector<uint8_t> l_uint8Pixels;
+					l_uint8Pixels.reserve(l_floatPixels.size() * 4);
+					for (const auto& px : l_floatPixels)
+					{
+						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.x, 0.0f)), 1.0f)));
+						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.y, 0.0f)), 1.0f)));
+						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.z, 0.0f)), 1.0f)));
+						l_uint8Pixels.push_back(uint8_t(255));
+					}
+
+					TextureDesc l_desc = l_srcTex->m_TextureDesc;
+					l_desc.PixelDataType = TexturePixelDataType::UByte;
+					l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+					l_desc.Sampler = TextureSampler::Sampler2D;
+
+					if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
+						Log(Success, "Auto-capture: gpu_output.png written.");
+					else
+						Log(Error, "Auto-capture: failed to write gpu_output.png.");
+				}
+				else
+				{
+					Log(Error, "Auto-capture: ReadTextureBackToCPU returned empty, writing 1x1 black PNG.");
+					uint8_t l_black[4] = {0, 0, 0, 255};
+					TextureDesc l_desc = {};
+					l_desc.Width = 1; l_desc.Height = 1;
+					l_desc.PixelDataType = TexturePixelDataType::UByte;
+					l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+					l_desc.Sampler = TextureSampler::Sampler2D;
+					g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_black);
+				}
+				m_autoCaptureWritten = true;
+			}
 		}
 
 		if (g_Engine->getInitConfig().isAudit)
