@@ -60,5 +60,53 @@ if (-not $autoTerminated) {
     exit 1
 }
 
+# --- PNG comparison ---
+$gpuPng = Join-Path (Split-Path $BinDir -Parent) "gpu_output.png"
+$cpuPng = Join-Path (Split-Path $BinDir -Parent) "cpu_reference.png"
+
+# Check ImageMagick
+if (-not (Get-Command "magick" -ErrorAction SilentlyContinue))
+{
+    Write-Host "FAIL - ImageMagick 'magick' not found. Install from https://imagemagick.org/script/download.php"
+    exit 1
+}
+
+# Check file presence and size
+foreach ($f in @($gpuPng, $cpuPng))
+{
+    if (-not (Test-Path $f))
+    {
+        Write-Host "FAIL - Missing file: $f"
+        exit 1
+    }
+    if ((Get-Item $f).Length -lt 100)
+    {
+        Write-Host "FAIL - File too small (likely 1x1 error sentinel): $f"
+        exit 1
+    }
+}
+
+# NaN/Inf check on GPU output
+$identify = magick identify -verbose $gpuPng 2>&1
+$maxVal   = $identify | Select-String "Channel statistics:" -A 20 | Select-String "max:" | Select-Object -First 1
+if ($maxVal -match "infinity|undefined" -or $null -eq $maxVal)
+{
+    Write-Host "WARN - Could not confirm GPU output max channel value."
+}
+
+# MAE comparison
+$maeLine = magick compare -metric MAE $gpuPng $cpuPng null: 2>&1
+$mae     = [float]($maeLine -replace '[^0-9.]', '')
+
+$maeThreshold = 0.20
+
+Write-Host "MAE:              $mae  (threshold: $maeThreshold)"
+
+if ($mae -gt $maeThreshold)
+{
+    Write-Host "FAIL - MAE $mae exceeds threshold $maeThreshold"
+    exit 1
+}
+
 Write-Host 'PASS'
 exit 0
