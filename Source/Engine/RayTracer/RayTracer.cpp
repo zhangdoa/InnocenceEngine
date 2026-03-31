@@ -29,6 +29,8 @@ namespace RayTracerNS
 	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
 
 	TextureComponent* m_TextureComp;
+	uint32_t m_outputWidth  = 0;
+	uint32_t m_outputHeight = 0;
 
 	Vec4 m_sunDir   = Vec4(0.0f, 1.0f, 0.0f, 0.0f);  // toward-sun direction (world space)
 	Vec4 m_sunColor = Vec4(1.0f, 0.95f, 0.8f, 1.0f);  // warm white
@@ -522,23 +524,33 @@ bool ExecuteRayTracing()
 
 bool RayTracer::Setup(IServiceConfig* systemConfig)
 {
+	auto* l_config = static_cast<RayTracerConfig*>(systemConfig);
+	if (l_config && l_config->outputWidth > 0 && l_config->outputHeight > 0)
+	{
+		RayTracerNS::m_outputWidth  = l_config->outputWidth;
+		RayTracerNS::m_outputHeight = l_config->outputHeight;
+	}
+	else
+	{
+		uint32_t l_denom = l_config ? l_config->downsampleDenominator : 8u;
+		auto l_res = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+		RayTracerNS::m_outputWidth  = l_res.x / l_denom;
+		RayTracerNS::m_outputHeight = l_res.y / l_denom;
+	}
+
 	RayTracerNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool RayTracer::Initialize()
 {
-	const int l_denom = 8;
-
-	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-
 	m_TextureComp = g_Engine->getGraphicsService()->AddTextureComponent("RayTracingResult/");
 
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_TextureComp->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_TextureComp->m_TextureDesc.Width = l_screenResolution.x / l_denom;
-	m_TextureComp->m_TextureDesc.Height = l_screenResolution.y / l_denom;
+	m_TextureComp->m_TextureDesc.Width = RayTracerNS::m_outputWidth;
+	m_TextureComp->m_TextureDesc.Height = RayTracerNS::m_outputHeight;
 	m_TextureComp->m_TextureDesc.PixelDataType = TexturePixelDataType::UByte;
 
 	RayTracerNS::m_ObjectStatus = ObjectStatus::Activated;

@@ -5,6 +5,16 @@
 
 namespace Inno
 {
+	// Passed to RayTracer::Setup() to control output resolution.
+	// If outputWidth and outputHeight are both non-zero they are used directly.
+	// Otherwise the output is sized to screenResolution / downsampleDenominator.
+	struct RayTracerConfig : public IServiceConfig
+	{
+		uint32_t outputWidth          = 0;
+		uint32_t outputHeight         = 0;
+		uint32_t downsampleDenominator = 8;
+	};
+
 	class IRayTracer : public IService
 	{
 	public:
