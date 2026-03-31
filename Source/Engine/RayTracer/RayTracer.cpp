@@ -165,12 +165,12 @@ bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 	if (tYmax < tmaxVal) { tmaxVal = tYmax; axisExit = 1; }
 	if (tZmax < tmaxVal) { tmaxVal = tZmax; axisExit = 2; }
 
-	if (tmaxVal < 0.0f || tminVal > tmaxVal)
+	if (tmaxVal < tMin || tminVal > tMax || tminVal > tmaxVal)
 		return false;
 
 	hitResult.HitMaterial = m_Material;
 
-	if (tminVal < 0.0f)
+	if (tminVal < tMin)
 	{
 		hitResult.HitPoint = r.m_origin + r.m_direction * tmaxVal;
 		hitResult.t = tmaxVal;

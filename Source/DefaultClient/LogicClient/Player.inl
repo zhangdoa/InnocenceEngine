@@ -97,7 +97,7 @@ namespace Inno
 			m_PlayerCharacterEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Player Character/");
 		}
 
-		auto l_PlayerCameraEntity = l_Registry->FindByName("Main Camera");
+		auto l_PlayerCameraEntity = l_Registry->FindByName("Main Camera/");
 		if (l_PlayerCameraEntity != INVALID_ENTITY)
 		{
 			m_PlayerCameraEntity = l_PlayerCameraEntity;
