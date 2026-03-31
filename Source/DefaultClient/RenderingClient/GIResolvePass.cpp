@@ -333,8 +333,8 @@ bool GIResolvePass::Setup()
 	f_sceneLoadingStartedCallback = []() { DeleteGPUBuffers(); };
 	f_sceneLoadingFinishedCallback = []() { InitializeGPUBuffers(); };
 
-	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 0);
-	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneUnloadingCallback(&f_sceneLoadingStartedCallback);
+	g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadingFinishedCallback);
 
 	return true;
 }

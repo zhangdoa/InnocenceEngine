@@ -18,6 +18,8 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
+		void OnSceneLoaded();
+
 		const std::vector<BillboardPassDrawCallInfo>& GetBillboardPassDrawCallInfo();
 		GPUBufferComponent* GetBillboardBuffer();
 

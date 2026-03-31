@@ -26,6 +26,8 @@ namespace Inno
 
 		bool addForce(EntityID Entity, Vec4 force);
 
+		bool OnSceneUnloading();
+
 	private:
 		PhysXWrapper() {};
 	};

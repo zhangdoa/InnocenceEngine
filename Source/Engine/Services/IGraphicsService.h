@@ -60,7 +60,7 @@ namespace Inno
 		virtual	bool Delete(IOutputMergerTarget* rhs) = 0;
 
 		void Initialize(EntityID Entity);
-		void Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices);
+		void Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices, EntityID owner = INVALID_ENTITY);
 		void Initialize(TextureComponent* texture, void* textureData = nullptr);
 		void Initialize(MaterialComponent* material);
 		void Initialize(RenderPassComponent* renderPass);
@@ -136,6 +136,8 @@ namespace Inno
 		// Raytracing-related APIs
 		virtual bool DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) { return false; }
 		GPUResourceComponent* GetTLASBuffer() { return m_TLASBufferComponent; }
+
+		bool OnSceneUnloading();
 
 	protected:
 		bool WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range);
@@ -229,18 +231,17 @@ namespace Inno
 		std::function<bool()> m_UploadHeapPreparationCallback;
 		std::function<bool()> m_CommandPreparationCallback;
 		std::function<bool()> m_CommandExecutionCallback;
-		
-		std::function<void()> m_SceneLoadingStartedCallback;
 
 		// Init task objects for deferred component initialization
 		struct MeshInitTask
 		{
-			MeshInitTask(MeshComponent* component, std::vector<Vertex>&& vertices, std::vector<Index>&& indices)
-				: m_Component(component), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)) {}
-			
+			MeshInitTask(MeshComponent* component, std::vector<Vertex>&& vertices, std::vector<Index>&& indices, EntityID owner = INVALID_ENTITY)
+				: m_Component(component), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)), m_Owner(owner) {}
+
 			MeshComponent* m_Component;
 			std::vector<Vertex> m_Vertices;
 			std::vector<Index> m_Indices;
+			EntityID m_Owner;
 		};
 
 		struct TextureInitTask
@@ -259,11 +260,6 @@ namespace Inno
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
 		ThreadSafeQueue<EntityID> m_uninitializedEntities;
 
-		std::unordered_set<MeshComponent*> m_initializedMeshes;
-		std::unordered_set<TextureComponent*> m_initializedTextures;
-		std::unordered_set<MaterialComponent*> m_initializedMaterials;
-		std::unordered_set<GPUBufferComponent*> m_initializedGPUBuffers;
-		std::vector<RenderPassComponent*> m_initializedRenderPasses;
 		std::unordered_set<EntityID> m_initializedEntities;
 	
         GPUBufferComponent* m_TLASBufferComponent = nullptr;

@@ -24,6 +24,8 @@ namespace Inno
 		bool Terminate() override;
 		ObjectStatus GetStatus() override;
 
+		void OnSceneUnloading();
+
 		void     SetParent(EntityID Child, EntityID Parent);
 		void     ClearParent(EntityID Child);
 		EntityID GetParent(EntityID Child) const;
@@ -35,8 +37,6 @@ namespace Inno
 		std::vector<EntityID>      m_TraversalOrder;
 		bool                       m_HierarchyDirty = true;
 		ObjectStatus               m_ObjectStatus   = ObjectStatus::Invalid;
-
-		std::function<void()> m_SceneLoadingCallback;
 
 		void RebuildTraversalOrder(const std::vector<EntityID>& AllTransformOwners);
 	};

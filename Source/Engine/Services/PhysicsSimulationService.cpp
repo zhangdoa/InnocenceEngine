@@ -56,7 +56,6 @@ namespace Inno
 		std::vector<CullingResult> m_CullingResults;
 		mutable std::shared_mutex m_CullingResultsMutex;
 
-		std::function<void()> f_SceneLoadingStartedCallback;
 	};
 }
 
@@ -73,27 +72,6 @@ bool PhysicsSimulationServiceImpl::Setup()
 #if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().Setup();
 #endif
-
-	f_SceneLoadingStartedCallback = [&]()
-		{
-			Log(Verbose, "Clearing all physics simulation data...");
-
-			Log(Verbose, "All collision components have been destroyed.");
-
-			Log(Verbose, "All top-level collision primitives have been destroyed.");
-
-			g_Engine->Get<BVHService>()->ClearNodes();
-
-			CreateRootComponent();
-
-			m_TotalSceneBoundary.Reset();
-			m_StaticSceneBoundary.Reset();
-			m_VisibleSceneBoundary.Reset();
-
-			Log(Success, "All physics simulation data has been cleared.");
-		};
-
-	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 1);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -142,7 +120,6 @@ bool PhysicsSimulationService::Initialize()
 		Log(Error, "Object is not created!");
 		return false;
 	}
-	return true;
 }
 
 bool PhysicsSimulationService::Update()
@@ -161,6 +138,23 @@ bool PhysicsSimulationService::Terminate()
 ObjectStatus PhysicsSimulationService::GetStatus()
 {
 	return m_Impl->m_ObjectStatus;
+}
+
+void PhysicsSimulationService::OnSceneUnloading()
+{
+	Log(Verbose, "Clearing all physics simulation data...");
+
+	g_Engine->Get<BVHService>()->ClearNodes();
+	m_Impl->CreateRootComponent();
+	m_Impl->m_TotalSceneBoundary.Reset();
+	m_Impl->m_StaticSceneBoundary.Reset();
+	m_Impl->m_VisibleSceneBoundary.Reset();
+
+#if defined INNO_PLATFORM_WIN
+	PhysXWrapper::get().OnSceneUnloading();
+#endif
+
+	Log(Success, "All physics simulation data has been cleared.");
 }
 
 void PhysicsSimulationService::RunCulling()

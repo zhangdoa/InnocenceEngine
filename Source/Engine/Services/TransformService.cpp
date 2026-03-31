@@ -4,7 +4,6 @@
 #include "../Component/TransformComponent.h"
 #include "../Component/WorldTransformComponent.h"
 #include "EntityRegistry.h"
-#include "SceneService.h"
 #include "../Engine.h"
 
 using namespace Inno;
@@ -18,14 +17,6 @@ bool TransformService::Setup(IServiceConfig*)
 
 bool TransformService::Initialize()
 {
-	m_SceneLoadingCallback = [this]()
-	{
-		std::fill(m_Nodes.begin(), m_Nodes.end(), HierarchyNode{});
-		m_TraversalOrder.clear();
-		m_HierarchyDirty = true;
-	};
-	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&m_SceneLoadingCallback, 0);
-
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
 }
@@ -94,6 +85,13 @@ bool TransformService::Terminate()
 ObjectStatus TransformService::GetStatus()
 {
 	return m_ObjectStatus;
+}
+
+void TransformService::OnSceneUnloading()
+{
+	std::fill(m_Nodes.begin(), m_Nodes.end(), HierarchyNode{});
+	m_TraversalOrder.clear();
+	m_HierarchyDirty = true;
 }
 
 void TransformService::SetParent(EntityID l_Child, EntityID l_Parent)

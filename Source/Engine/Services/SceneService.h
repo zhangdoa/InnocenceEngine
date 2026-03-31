@@ -4,9 +4,6 @@
 
 namespace Inno
 {
-	using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
-	using ComponentPair = std::pair<uint32_t, Component*>;
-	using SceneHierarchyMap = std::unordered_map<EntityID, std::set<ComponentPair>>;
 	class SceneService : public IService
 	{
 	public:
@@ -24,19 +21,17 @@ namespace Inno
 		bool Save(const char* fileName);
 		bool IsLoading();
 
-		bool AddSceneLoadingStartedCallback(std::function<void()>* functor, int32_t priority);
-		bool AddSceneLoadingFinishedCallback(std::function<void()>* functor, int32_t priority);
-
-		const SceneHierarchyMap& getSceneHierarchyMap();
+		bool AddSceneUnloadingCallback(std::function<void()>* functor);
+		bool AddSceneLoadedCallback(std::function<void()>* functor);
 
 	private:
 		bool LoadAsync(const char* fileName);
 		bool LoadSync(const char* fileName);
-		
+
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
-		std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
+		std::vector<std::function<void()>*> m_sceneUnloadingCallbacks;
+		std::vector<std::function<void()>*> m_sceneLoadedCallbacks;
 
 		std::atomic<bool> m_IsLoading = false;
 		std::atomic<bool> m_prepareForLoadingScene = false;
@@ -44,10 +39,6 @@ namespace Inno
 		std::string m_nextLoadingScene;
 		std::string m_currentScene;
 
-		SceneHierarchyMap m_SceneHierarchyMap;
 		std::atomic<bool> m_needUpdate = true;
-
-		std::function<void()> f_SceneLoadingStartedCallback;
-		std::function<void()> f_SceneLoadingFinishCallback;
 	};
 }

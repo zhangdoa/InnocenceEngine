@@ -9,6 +9,7 @@
 #include "../../Common/MathHelper.h"
 
 #include "../../Services/RenderingConfigurationService.h"
+#include "../../Services/EntityRegistry.h"
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/GUIService.h"
 #include "../../Services/SceneService.h"
@@ -99,11 +100,41 @@ bool IGraphicsService::Setup(IServiceConfig* systemConfig)
 
 	m_ObjectStatus = ObjectStatus::Created;
 
-	m_SceneLoadingStartedCallback = [this]() { OnSceneLoadingStart(); };
-
-	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&m_SceneLoadingStartedCallback, 0);
-
 	Log(Success, "GraphicsService Setup finished.");
+	return true;
+}
+
+bool IGraphicsService::OnSceneUnloading()
+{
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto l_sceneEntityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+	for (auto l_entityID : l_sceneEntityIDs)
+	{
+		auto* l_mesh = l_registry->Get<MeshComponent>(l_entityID);
+		if (l_mesh && l_mesh->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			l_mesh->m_ObjectStatus = ObjectStatus::Invalid;
+			Delete(l_mesh);
+		}
+
+		auto* l_material = l_registry->Get<MaterialComponent>(l_entityID);
+		if (l_material && l_material->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			l_material->m_ObjectStatus = ObjectStatus::Invalid;
+			Delete(l_material);
+		}
+	}
+
+	MeshInitTask l_meshStale(nullptr, {}, {});
+	while (m_uninitializedMeshes.tryPop(l_meshStale)) {}
+
+	MaterialComponent* l_matStale = nullptr;
+	while (m_uninitializedMaterials.tryPop(l_matStale)) {}
+
+	EntityID l_entityStale = INVALID_ENTITY;
+	while (m_uninitializedEntities.tryPop(l_entityStale)) {}
+
+	OnSceneLoadingStart();
 	return true;
 }
 
@@ -357,12 +388,12 @@ void IGraphicsService::Initialize(EntityID Entity)
 	Log(Verbose, "Entity ", Entity, " queued for deferred initialization");
 }
 
-void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices, EntityID owner)
 {
-	if (std::find(m_initializedMeshes.begin(), m_initializedMeshes.end(), mesh) != m_initializedMeshes.end())
+	if (mesh->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
-	// Calculate AABB from vertex data before queuing for deferred initialization
+	// Calculate AABB from vertex data synchronously — safe because mesh is valid at this call site
 	if (!vertices.empty())
 	{
 		mesh->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
@@ -372,13 +403,13 @@ void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 	}
 
 	// Queue mesh for deferred initialization using move semantics to avoid copying vertex/index data
-	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices)));
+	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices), owner));
 	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
 void IGraphicsService::Initialize(TextureComponent* texture, void* textureData)
 {
-	if (std::find(m_initializedTextures.begin(), m_initializedTextures.end(), texture) != m_initializedTextures.end())
+	if (texture->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
 	// Queue texture for deferred initialization
@@ -388,7 +419,7 @@ void IGraphicsService::Initialize(TextureComponent* texture, void* textureData)
 
 void IGraphicsService::Initialize(MaterialComponent* material)
 {
-	if (std::find(m_initializedMaterials.begin(), m_initializedMaterials.end(), material) != m_initializedMaterials.end())
+	if (material->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
 	// Queue material for deferred initialization
@@ -408,7 +439,7 @@ void IGraphicsService::Initialize(SamplerComponent* sampler)
 
 void IGraphicsService::Initialize(GPUBufferComponent* gpuBuffer)
 {
-	if (std::find(m_initializedGPUBuffers.begin(), m_initializedGPUBuffers.end(), gpuBuffer) != m_initializedGPUBuffers.end())
+	if (gpuBuffer->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
 	// Queue GPU buffer for deferred initialization
@@ -418,7 +449,7 @@ void IGraphicsService::Initialize(GPUBufferComponent* gpuBuffer)
 
 void IGraphicsService::Initialize(RenderPassComponent* renderPass)
 {
-	if (std::find(m_initializedRenderPasses.begin(), m_initializedRenderPasses.end(), renderPass) != m_initializedRenderPasses.end())
+	if (renderPass->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
 	// Queue render pass for deferred initialization
@@ -792,9 +823,22 @@ bool IGraphicsService::InitializeComponents()
 		if (!l_task.m_Component)
 			continue;
 
-		Log(Verbose, "Processing deferred mesh initialization for: ", l_task.m_Component->m_InstanceName);
-		if (InitializeImpl(l_task.m_Component, l_task.m_Vertices, l_task.m_Indices))
-			m_initializedMeshes.emplace(l_task.m_Component);
+		// If an owner EntityID was provided, re-resolve the current component pointer.
+		// The ComponentStorage vector may have reallocated since Initialize() was called,
+		// making the originally stored pointer stale.
+		MeshComponent* l_mesh = l_task.m_Component;
+		if (l_task.m_Owner != INVALID_ENTITY)
+		{
+			MeshComponent* l_current = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(l_task.m_Owner);
+			if (l_current)
+				l_mesh = l_current;
+			else
+				Log(Warning, "MeshInitTask: entity ", l_task.m_Owner, " no longer has MeshComponent, using stored pointer");
+		}
+
+		Log(Verbose, "Processing deferred mesh initialization for: ", l_mesh->m_InstanceName);
+		if (InitializeImpl(l_mesh, l_task.m_Vertices, l_task.m_Indices))
+			l_mesh->m_ObjectStatus = ObjectStatus::Activated;
 		else
 			m_uninitializedMeshes.push(std::move(l_task));
 	}
@@ -810,7 +854,7 @@ bool IGraphicsService::InitializeComponents()
 
 		Log(Verbose, "Processing deferred texture initialization for: ", l_task.m_Component->m_InstanceName);
 		if (InitializeImpl(l_task.m_Component, l_task.m_TextureData))
-			m_initializedTextures.emplace(l_task.m_Component);
+			l_task.m_Component->m_ObjectStatus = ObjectStatus::Activated;
 		else
 			m_uninitializedTextures.push(std::move(l_task));
 	}
@@ -826,7 +870,7 @@ bool IGraphicsService::InitializeComponents()
 
 		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-			m_initializedMaterials.emplace(l_component);
+			l_component->m_ObjectStatus = ObjectStatus::Activated;
 		else
 			m_uninitializedMaterials.push(std::move(l_component));
 	}
@@ -842,7 +886,7 @@ bool IGraphicsService::InitializeComponents()
 
 		Log(Verbose, "Processing deferred GPU buffer initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-			m_initializedGPUBuffers.emplace(l_component);
+			l_component->m_ObjectStatus = ObjectStatus::Activated;
 		else
 			m_uninitializedGPUBuffers.push(std::move(l_component));
 	}
@@ -858,7 +902,7 @@ bool IGraphicsService::InitializeComponents()
 
 		Log(Verbose, "Processing deferred render pass initialization for: ", l_component->m_InstanceName);
 		if (InitializeImpl(l_component))
-			m_initializedRenderPasses.emplace_back(l_component);
+			l_component->m_ObjectStatus = ObjectStatus::Activated;
 		else
 			m_uninitializedRenderPasses.push(std::move(l_component));
 	}
@@ -912,8 +956,10 @@ bool IGraphicsService::PrepareGlobalCommands()
 	// 	}
 	// }
 
-	for (auto i : m_initializedGPUBuffers)
+	for (auto i : m_GPUHandlePools.GPUBufferPointers)
 	{
+		if (i->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
 		if (i->m_MappedMemories.size() == 0)
 			continue;
 
@@ -1022,8 +1068,10 @@ bool IGraphicsService::ExecuteResize()
 
 bool IGraphicsService::PreResize()
 {
-	for (auto i : m_initializedRenderPasses)
+	for (auto i : m_GPUHandlePools.RenderPassPointers)
 	{
+		if (i->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
 		if (!PreResize(i))
 		{
 			Log(Error, "Can't delete resources for ", i->m_InstanceName, " when resizing.");
@@ -1047,8 +1095,10 @@ bool IGraphicsService::PreResize(RenderPassComponent* renderPass)
 bool IGraphicsService::PostResize()
 {
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	for (auto i : m_initializedRenderPasses)
+	for (auto i : m_GPUHandlePools.RenderPassPointers)
 	{
+		if (i->m_ObjectStatus != ObjectStatus::Activated)
+			continue;
 		if (!PostResize(l_screenResolution, i))
 		{
 			Log(Error, "Can't resize ", i->m_InstanceName);

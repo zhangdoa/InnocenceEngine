@@ -111,7 +111,7 @@ bool GIDataLoader::Setup()
 		loadGIData();
 	};
 
-	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+	g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadingFinishedCallback);
 
 	////
 	m_testSampleCubemap = l_graphicsService->AddTextureComponent("TestSampleCubemap/");

@@ -87,7 +87,7 @@ void WorldExplorer::initialize(PropertyEditor* propertyEditor)
         buildTree();
     };
 
-    g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishCallback, 2);
+    g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadingFinishCallback);
 }
 
 void WorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)

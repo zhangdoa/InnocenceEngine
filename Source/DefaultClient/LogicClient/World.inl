@@ -96,9 +96,11 @@ namespace Inno
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		auto& l_mesh = l_Registry->Emplace<MeshComponent>(Entity);
-		l_mesh.m_VertexBufferView = l_templateMesh->m_VertexBufferView;
-		l_mesh.m_IndexBufferView = l_templateMesh->m_IndexBufferView;
-		l_mesh.m_AABB = l_templateMesh->m_AABB;
+		l_mesh.m_VertexBufferView  = l_templateMesh->m_VertexBufferView;
+		l_mesh.m_IndexBufferView   = l_templateMesh->m_IndexBufferView;
+		l_mesh.m_AABB              = l_templateMesh->m_AABB;
+		l_mesh.m_MappedMemory_VB   = l_templateMesh->m_MappedMemory_VB;
+		l_mesh.m_MappedMemory_IB   = l_templateMesh->m_MappedMemory_IB;
 		l_mesh.m_ObjectStatus = ObjectStatus::Activated;
 
 		auto& l_material = l_Registry->Emplace<MaterialComponent>(Entity);
@@ -406,17 +408,17 @@ namespace Inno
 
 			m_posOffset = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-			setupReferenceSpheres();
+			//setupReferenceSpheres();
 			//setupOcclusionCubes();
-			setupOpaqueSpheres();
-			setupTransparentCubes();
-			setupVolumetricCubes();
-			setupPointLights();
+			//setupOpaqueSpheres();
+			//setupTransparentCubes();
+			//setupVolumetricCubes();
+			//setupPointLights();
 
 			m_ObjectStatus = ObjectStatus::Activated;
 			};
 
-		g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_sceneLoadingFinishedCallback, 0);
+		g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadingFinishedCallback);
 
 		return true;
 	}

@@ -3,7 +3,6 @@
 #include "../Common/LogService.h"
 #include "../Common/GPUDataStructure.h"
 #include "EntityRegistry.h"
-#include "SceneService.h"
 #include "TemplateAssetService.h"
 #include "RenderingConfigurationService.h"
 #include "../Engine.h"
@@ -27,14 +26,15 @@ namespace Inno
 
 		GPUBufferComponent* m_BillboardGPUBufferComp;
 
-		std::function<void()> f_SceneLoadingFinishedCallback;
-
+	
 		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
 		bool Terminate();
 
-		bool UpdateBillboardPassData();
+		void OnSceneLoaded();
+
+	bool UpdateBillboardPassData();
 	};
 }
 
@@ -44,20 +44,18 @@ bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 
 	m_BillboardGPUBufferComp = l_graphicsService->AddGPUBufferComponent("BillboardCBuffer/");
 
-	f_SceneLoadingFinishedCallback = [&]()
-		{
-			m_BillboardPassDrawCallInfoVector.resize(3);
-			m_BillboardPassDrawCallInfoVector[0].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-			m_BillboardPassDrawCallInfoVector[1].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
-			m_BillboardPassDrawCallInfoVector[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
-		};
-
-	f_SceneLoadingFinishedCallback();
-
-	g_Engine->Get<SceneService>()->AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishedCallback, 0);
+	OnSceneLoaded();
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
+}
+
+void BillboardDrawCallServiceImpl::OnSceneLoaded()
+{
+	m_BillboardPassDrawCallInfoVector.resize(3);
+	m_BillboardPassDrawCallInfoVector[0].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
+	m_BillboardPassDrawCallInfoVector[1].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::POINT_LIGHT);
+	m_BillboardPassDrawCallInfoVector[2].iconTexture = g_Engine->Get<TemplateAssetService>()->GetTextureComponent(WorldEditorIconType::SPHERE_LIGHT);
 }
 
 bool BillboardDrawCallServiceImpl::Initialize()
@@ -210,6 +208,11 @@ bool BillboardDrawCallService::Terminate()
 ObjectStatus BillboardDrawCallService::GetStatus()
 {
 	return m_Impl->m_ObjectStatus;
+}
+
+void BillboardDrawCallService::OnSceneLoaded()
+{
+	m_Impl->OnSceneLoaded();
 }
 
 const std::vector<BillboardPassDrawCallInfo>& BillboardDrawCallService::GetBillboardPassDrawCallInfo()

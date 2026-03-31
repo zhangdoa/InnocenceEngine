@@ -29,6 +29,8 @@ namespace Inno
 
 		bool AddForce(EntityID Entity, Vec4 Force);
 
+		void OnSceneUnloading();
+
 	private:
 		PhysicsSimulationServiceImpl* m_Impl;
 	};

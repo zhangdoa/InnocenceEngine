@@ -63,7 +63,6 @@ namespace PhysXWrapperNS
 	PxMaterial* gMaterial = nullptr;
 
 	bool m_needSimulate = false;
-	std::function<void()> f_sceneLoadingStartedCallback;
 	std::function<void()> f_TogglePhysXUpdateTask;
 	Handle<ITask> m_PhysXUpdateTask;
 
@@ -115,24 +114,6 @@ bool PhysXWrapperNS::Setup()
 	gScene->addActor(*groundPlane);
 
 	PhysXActors.reserve(65536);
-
-	f_sceneLoadingStartedCallback = [&]() 
-	{
-		m_needSimulate = false;
-
-		Log(Verbose, "Removing all PhysX Actors...");
-
-		for (auto i : PhysXActors)
-		{
-			gScene->removeActor(*i.m_PxRigidActor);
-		}
-
-		PhysXActors.clear();
-
-		Log(Success, "All PhysX Actors have been removed.");
-	};
-
-	g_Engine->Get<SceneService>()->AddSceneLoadingStartedCallback(&f_sceneLoadingStartedCallback, 1);
 
 	m_PhysXUpdateTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("PhysXUpdateTask", ITask::Type::Recurrent, 3), [&]()
 		{
@@ -633,6 +614,25 @@ bool PhysXWrapper::Update()
 bool PhysXWrapper::Terminate()
 {
 	return PhysXWrapperNS::Terminate();
+}
+
+bool PhysXWrapper::OnSceneUnloading()
+{
+#if defined INNO_PLATFORM_WIN
+	PhysXWrapperNS::m_needSimulate = false;
+
+	Log(Verbose, "Removing all PhysX Actors...");
+
+	for (auto i : PhysXWrapperNS::PhysXActors)
+	{
+		PhysXWrapperNS::gScene->removeActor(*i.m_PxRigidActor);
+	}
+
+	PhysXWrapperNS::PhysXActors.clear();
+
+	Log(Success, "All PhysX Actors have been removed.");
+#endif
+	return true;
 }
 
 bool PhysXWrapper::createPxSphere(uint64_t index, Vec4 position, float radius, bool isDynamic)

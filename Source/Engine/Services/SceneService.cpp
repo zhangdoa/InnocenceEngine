@@ -1,8 +1,11 @@
 #include "SceneService.h"
 #include "../Common/LogService.h"
-#include "../Common/TaskScheduler.h"
 #include "AssetService.h"
 #include "EntityRegistry.h"
+#include "IGraphicsService.h"
+#include "TransformService.h"
+#include "PhysicsSimulationService.h"
+#include "BillboardDrawCallService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -24,63 +27,50 @@ bool SceneService::LoadSync(const char* fileName)
 
 	m_currentScene = fileName;
 
-	std::sort(m_sceneLoadingStartCallbacks.begin(), m_sceneLoadingStartCallbacks.end(),
-		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
-			return A.second < B.second;
-		});
-
-	std::sort(m_sceneLoadingFinishCallbacks.begin(), m_sceneLoadingFinishCallbacks.end(),
-		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
-			return A.second < B.second;
-		});
-
 	Log(Verbose, "Loading scene ", fileName, "...");
 
-	for (auto& i : m_sceneLoadingStartCallbacks)
-	{
-		Log(Verbose, "Scene loading start callback (priority: ", i.second, ") is called.");
-		(*i.first)();
-	}
+	// Unloading phase — order is critical:
+	// 1. Free GPU resources first (while component pointers still valid)
+	g_Engine->getGraphicsService()->OnSceneUnloading();
 
+	// 2. Destroy scene-scoped components
+	g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
+	Log(Success, "Scene entities cleaned up.");
+
+	// 3. Clear transform hierarchy (nodes index into now-empty storage, safe to reset)
+	g_Engine->Get<TransformService>()->OnSceneUnloading();
+
+	// 4. Clear physics simulation state and PhysX actors
+	g_Engine->Get<PhysicsSimulationService>()->OnSceneUnloading();
+
+	// 5. Client unloading callbacks (e.g. GIResolvePass::DeleteGPUBuffers)
+	for (auto* cb : m_sceneUnloadingCallbacks)
+		(*cb)();
+
+	// Load the new scene
 	AssetService::LoadScene(fileName);
 
 	Log(Verbose, "Scene ", fileName, " has been loaded.");
 
-	for (auto& i : m_sceneLoadingFinishCallbacks)
-	{
-		Log(Verbose, "Scene loading finish callback (priority: ", i.second, ") is called.");
-		(*i.first)();
-	}
+	// Loaded phase:
+	// 6. Refresh engine service state that depends on loaded scene data
+	g_Engine->Get<BillboardDrawCallService>()->OnSceneLoaded();
 
+	// 7. Client loaded callbacks (GIDataLoader, GIResolvePass, VXGIRenderer, WorldSystem, Editor)
+	for (auto* cb : m_sceneLoadedCallbacks)
+		(*cb)();
+
+	m_needUpdate = true;
 	m_IsLoading = false;
 
 	Log(Success, "Scene ", fileName, " has been loaded.");
-	
+
 	return true;
 }
 
 bool SceneService::Setup(IServiceConfig* systemConfig)
 {
-	f_SceneLoadingStartedCallback = [&]()
-	{
-		Log(Verbose, "Resetting scene hierarchy map...");
-
-		m_SceneHierarchyMap.clear();
-		g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
-
-		Log(Success, "Scene hierarchy map has been reset.");
-	};
-
-	f_SceneLoadingFinishCallback = [&]() 
-	{
-		m_needUpdate = true;
-	};
-
-	AddSceneLoadingStartedCallback(&f_SceneLoadingStartedCallback, 0);
-	AddSceneLoadingFinishedCallback(&f_SceneLoadingFinishCallback, 0);
-
 	m_ObjectStatus = ObjectStatus::Created;
-
 	return true;
 }
 
@@ -136,7 +126,7 @@ std::string SceneService::GetCurrentSceneName()
 	{
 		return "Untitled";
 	}
-	
+
 	std::string l_SceneName = m_currentScene;
 
 	auto l_ExtensionPos = l_SceneName.find(".InnoScene");
@@ -201,24 +191,14 @@ bool SceneService::IsLoading()
 	return m_IsLoading;
 }
 
-bool SceneService::AddSceneLoadingStartedCallback(std::function<void()>* functor, int32_t priority)
+bool SceneService::AddSceneUnloadingCallback(std::function<void()>* functor)
 {
-	m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
+	m_sceneUnloadingCallbacks.push_back(functor);
 	return true;
 }
 
-bool SceneService::AddSceneLoadingFinishedCallback(std::function<void()>* functor, int32_t priority)
+bool SceneService::AddSceneLoadedCallback(std::function<void()>* functor)
 {
-	m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
+	m_sceneLoadedCallbacks.push_back(functor);
 	return true;
-}
-
-const SceneHierarchyMap& SceneService::getSceneHierarchyMap()
-{
-	if (m_needUpdate)
-	{
-		m_needUpdate = false;
-	}
-
-	return m_SceneHierarchyMap;
 }
