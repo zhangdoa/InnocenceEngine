@@ -433,10 +433,13 @@ namespace Inno
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 		f_loadTestScene = []() {
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene");
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
-			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+			// AsyncLoad=true: HIDService fires this on the main thread, but LoadSync must only run
+			// on the render thread. Deferring via async lets SceneService::Update() on the render
+			// thread call LoadSync, eliminating the cross-thread data race in the DX12 backend.
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene", true);
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene", true);
+			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene", true);
+			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene", true);
 			};
 
 		f_convertModel = []() {
@@ -487,22 +490,18 @@ namespace Inno
 		auto l_maxFrames = g_Engine->getInitConfig().maxFrames;
 		if (l_maxFrames > 0)
 		{
+			m_AutoFrameCount++;
 			if (!m_AutoGISceneTriggered)
 			{
 				m_AutoGISceneTriggered = true;
-				Log(Success, "Auto-test: loading GITestBox scene...");
 				g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
-				m_AutoFrameCount = 0;
+				Log(Success, "Auto-test: loaded GITestBox scene.");
 			}
-			else
+			else if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_maxFrames))
 			{
-				m_AutoFrameCount++;
-				if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_maxFrames))
-				{
-					Log(Success, "Auto-test: ", l_maxFrames, " frames rendered, terminating.");
-					m_AutoTerminateCalled = true;
-					g_Engine->Get<IWindowService>()->Terminate();
-				}
+				m_AutoTerminateCalled = true;
+				Log(Success, "Auto-test: ", l_maxFrames, " frames rendered, terminating.");
+				g_Engine->Get<IWindowService>()->Terminate();
 			}
 		}
 

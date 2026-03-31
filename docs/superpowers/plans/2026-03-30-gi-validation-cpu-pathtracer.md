@@ -1,12 +1,14 @@
 # GI Validation: CPU Path Tracer Reference Implementation Plan
 
-> **STATUS: COMPLETED** — All tasks implemented and committed on ecs-overhaul branch as of 2026-03-30.
+> **STATUS: IN PROGRESS** — Partial implementation committed. CPU path tracer produces output but is not a finished reference renderer; GI validation goal not achieved.
 >
-> **Implementation notes vs. original plan:**
+> **What was done:**
 > - Scene serialization: GITestBox.InnoScene uses **type-1 TransformComponent file references** (not inline `"Transform"` blocks). All 14 entity-specific TransformComponent JSON files were created in `Data/Components/`.
 > - CPU path tracer uses AABB-based scene geometry (not triangle mesh), NEE with directional sun lighting, 8 SPP, 4 bounce max depth.
 > - Sky returns `SkyColor(r)` at max depth (not black), preventing all-black output.
 > - TestGIScene.ps1 updated for ImageMagick 7 HDRI syntax; MAE threshold set to 0.45.
+>
+> **What remains:** The path tracer is not a validated reference renderer. GI validation (meaningful GPU vs CPU comparison) is incomplete.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

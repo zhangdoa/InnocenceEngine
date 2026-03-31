@@ -428,7 +428,7 @@ bool DX12GraphicsService::TryToTransitState(TextureComponent* texture, CommandLi
 
 		texture->SetCurrentState(frameIndex, static_cast<uint32_t>(l_newState));
 	}
-	
+
 	return true;
 }
 
