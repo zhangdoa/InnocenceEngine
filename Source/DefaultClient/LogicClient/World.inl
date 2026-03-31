@@ -449,8 +449,10 @@ namespace Inno
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
+		  RayTracerConfig l_cfg;
+		l_cfg.downsampleDenominator = 2;
 		auto* l_rayTracer = g_Engine->Get<RayTracer>();
-		l_rayTracer->Setup(nullptr);
+		l_rayTracer->Setup(&l_cfg);
 		l_rayTracer->Initialize();
 
 		return true;
