@@ -18,6 +18,7 @@ namespace Inno
 		ShaderFilePath m_AnyHitPath     = "";
 		ShaderFilePath m_ClosestHitPath = "";
 		ShaderFilePath m_MissPath       = "";
+		ShaderFilePath m_ShadowMissPath = "";
 	};
 
 	struct ShaderProgramComponent
@@ -37,5 +38,6 @@ namespace Inno
 		std::vector<uint8_t> m_AnyHitBuffer;
 		std::vector<uint8_t> m_ClosestHitBuffer;
 		std::vector<uint8_t> m_MissBuffer;
+		std::vector<uint8_t> m_ShadowMissBuffer;
 	};
 }

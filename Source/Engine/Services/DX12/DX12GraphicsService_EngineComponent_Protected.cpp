@@ -435,6 +435,10 @@ bool DX12GraphicsService::InitializeImpl(ShaderProgramComponent* shaderProgram)
 	{
 		LoadShaderFile(shaderProgram->m_MissBuffer, shaderProgram->m_ShaderFilePaths.m_MissPath);
 	}
+	if (shaderProgram->m_ShaderFilePaths.m_ShadowMissPath != "")
+	{
+		LoadShaderFile(shaderProgram->m_ShadowMissBuffer, shaderProgram->m_ShaderFilePaths.m_ShadowMissPath);
+	}
 #else
 	// For non-DXIL path, we need temporary ID3DBlob storage
 	ComPtr<ID3DBlob> tempBuffer;
@@ -516,6 +520,14 @@ bool DX12GraphicsService::InitializeImpl(ShaderProgramComponent* shaderProgram)
 		{
 			shaderProgram->m_MissBuffer.resize(tempBuffer->GetBufferSize());
 			std::memcpy(shaderProgram->m_MissBuffer.data(), tempBuffer->GetBufferPointer(), tempBuffer->GetBufferSize());
+		}
+	}
+	if (shaderProgram->m_ShaderFilePaths.m_ShadowMissPath != "")
+	{
+		if (LoadShaderFile(&tempBuffer, ShaderStage::Miss, shaderProgram->m_ShaderFilePaths.m_ShadowMissPath))
+		{
+			shaderProgram->m_ShadowMissBuffer.resize(tempBuffer->GetBufferSize());
+			std::memcpy(shaderProgram->m_ShadowMissBuffer.data(), tempBuffer->GetBufferPointer(), tempBuffer->GetBufferSize());
 		}
 	}
 #endif
