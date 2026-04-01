@@ -61,29 +61,37 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage            = m_ShaderStage;
 
-	// t1 - MaterialBuffer (set 1, binding 1)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType   = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex   = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage       = m_ShaderStage;
+	// t1 - MaterialBuffer (set 1, binding 1, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex        = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage            = m_ShaderStage;
 
-	// t2 - MegaVertexBuffer (set 1, binding 2)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType   = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex   = 2;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage       = m_ShaderStage;
+	// t2 - MegaVertexBuffer (set 1, binding 2, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex        = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage            = m_ShaderStage;
 
-	// t3 - MegaIndexBuffer (set 1, binding 3)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType   = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex   = 3;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage       = m_ShaderStage;
+	// t3 - MegaIndexBuffer (set 1, binding 3, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex        = 3;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage            = m_ShaderStage;
 
-	// t4 - MeshOffsets (set 1, binding 4)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType   = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex   = 4;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ShaderStage       = m_ShaderStage;
+	// t4 - MeshOffsets (set 1, binding 4, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex        = 4;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ShaderStage            = m_ShaderStage;
 
 	// u0 - AccumulationBuffer (set 2, binding 0, ReadWrite UAV)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType        = GPUResourceType::Image;
@@ -104,7 +112,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	// --- ToneMap SPC ---
 	m_ToneMapSPC = l_graphicsService->AddShaderProgramComponent("GPUPathTracerToneMapPass/");
-	m_ToneMapSPC->m_ShaderFilePaths.m_CSPath = "GPUPathTracerToneMap.hlsl/";
+	m_ToneMapSPC->m_ShaderFilePaths.m_CSPath = "GPUPathTracerToneMap.comp/";
 
 	// --- ToneMap Render Pass ---
 	m_ToneMapRenderPassComp = l_graphicsService->AddRenderPassComponent("GPUPathTracerToneMapPass/");
@@ -237,7 +245,12 @@ bool GPUPathTracerPass::Update()
 		l_graphicsService->Upload(m_FrameCountCB, &m_FrameCount);
 	}
 
-	m_ObjectStatus = ObjectStatus::Activated;
+	const bool l_geometryReady =
+		m_MegaVertexBuffer && m_MegaVertexBuffer->m_ObjectStatus == ObjectStatus::Activated &&
+		m_MegaIndexBuffer  && m_MegaIndexBuffer->m_ObjectStatus  == ObjectStatus::Activated &&
+		m_MeshOffsetBuffer && m_MeshOffsetBuffer->m_ObjectStatus == ObjectStatus::Activated;
+
+	m_ObjectStatus = l_geometryReady ? ObjectStatus::Activated : ObjectStatus::Suspended;
 
 	return true;
 }

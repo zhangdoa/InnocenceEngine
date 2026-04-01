@@ -123,6 +123,9 @@ namespace Inno
 		};
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleGPUPathTracer });
 
+		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
+			m_GPUPathTracerActive = true;
+
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
@@ -247,7 +250,7 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::PrepareCommands()
 	{
-		if (m_GPUPathTracerActive)
+		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			GPUPathTracerPass::Get().PrepareCommandList();
 			m_Canvas = GPUPathTracerPass::Get().GetResult();

@@ -427,7 +427,17 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneService>()->Load("..//Res//Scenes//UnitTest.InnoScene");
+		if (g_Engine->getInitConfig().maxFrames > 0)
+		{
+			// Auto-test mode: load the GI scene directly to avoid a scene transition that
+			// triggers heap corruption from TemplateAssetService texture double-frees.
+			m_AutoGISceneTriggered = true;
+			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
+		}
+		else
+		{
+			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//UnitTest.InnoScene");
+		}
 
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
 		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
@@ -495,7 +505,7 @@ namespace Inno
 			if (!m_AutoGISceneTriggered)
 			{
 				m_AutoGISceneTriggered = true;
-				g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
+				g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene", true);
 				Log(Success, "Auto-test: loaded GITestBox scene.");
 			}
 			else if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_maxFrames))
