@@ -339,7 +339,7 @@ bool DX12GraphicsService::CreateGraphicsPipelineStateObject(RenderPassComponent*
 bool DX12GraphicsService::CreateRaytracingPipelineStateObject(RenderPassComponent* RenderPassComp, DX12PipelineStateObject* PSO)
 {
     auto l_SPC = RenderPassComp->m_ShaderProgram;
-    
+
     if (!PSO->m_RootSignature)
     {
         Log(Error, RenderPassComp->m_InstanceName, " Global root signature is null!");
@@ -347,6 +347,8 @@ bool DX12GraphicsService::CreateRaytracingPipelineStateObject(RenderPassComponen
     }
 
     LoadRaytracingShaders(RenderPassComp);
+
+    const bool hasShadowMiss = !l_SPC->m_ShadowMissBuffer.empty();
 
     D3D12_DXIL_LIBRARY_DESC rayGenLib = {};
     rayGenLib.DXILLibrary.pShaderBytecode = &l_SPC->m_RayGenBuffer[0];
@@ -364,53 +366,68 @@ bool DX12GraphicsService::CreateRaytracingPipelineStateObject(RenderPassComponen
     missLib.DXILLibrary.pShaderBytecode = &l_SPC->m_MissBuffer[0];
     missLib.DXILLibrary.BytecodeLength = l_SPC->m_MissBuffer.size();
 
+    D3D12_DXIL_LIBRARY_DESC shadowMissLib = {};
+    if (hasShadowMiss)
+    {
+        shadowMissLib.DXILLibrary.pShaderBytecode = &l_SPC->m_ShadowMissBuffer[0];
+        shadowMissLib.DXILLibrary.BytecodeLength = l_SPC->m_ShadowMissBuffer.size();
+    }
+
     D3D12_HIT_GROUP_DESC hitGroupDesc = {};
-    hitGroupDesc.HitGroupExport = L"HitGroup";  // Name for your hit group.
+    hitGroupDesc.HitGroupExport = L"HitGroup";
     hitGroupDesc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
     hitGroupDesc.ClosestHitShaderImport = L"ClosestHitShader";
     hitGroupDesc.AnyHitShaderImport = L"AnyHitShader";
-    hitGroupDesc.IntersectionShaderImport = nullptr; // For triangle geometry.
+    hitGroupDesc.IntersectionShaderImport = nullptr;
 
     D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
-    shaderConfig.MaxPayloadSizeInBytes = 32;  // Adjust to your needs.
-    shaderConfig.MaxAttributeSizeInBytes = 8; // For example, 2 floats for barycentrics.
+    shaderConfig.MaxPayloadSizeInBytes = 48;  // PathTracerPayload: 44B; ShadowPayload: 4B
+    shaderConfig.MaxAttributeSizeInBytes = 8; // barycentrics
 
     D3D12_GLOBAL_ROOT_SIGNATURE globalSig = { PSO->m_RootSignature.Get() };
 
     D3D12_RAYTRACING_PIPELINE_CONFIG pipelineCfg = {};
-    pipelineCfg.MaxTraceRecursionDepth = 1; // Ray generation, no recursion.
+    pipelineCfg.MaxTraceRecursionDepth = 1;
 
-    D3D12_STATE_SUBOBJECT subobjects[8] = {};
-    subobjects[0].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-    subobjects[0].pDesc = &rayGenLib;
+    // Up to 9 subobjects: RayGen + ClosestHit + AnyHit + Miss + (opt ShadowMiss) + HitGroup + ShaderConfig + GlobalRS + PipelineCfg
+    D3D12_STATE_SUBOBJECT subobjects[9] = {};
+    uint32_t subIdx = 0;
 
-    subobjects[1].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-    subobjects[1].pDesc = &closestHitLib;
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[subIdx++].pDesc = &rayGenLib;
 
-    subobjects[2].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-    subobjects[2].pDesc = &anyHitLib;
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[subIdx++].pDesc = &closestHitLib;
 
-    subobjects[3].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-    subobjects[3].pDesc = &missLib;
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[subIdx++].pDesc = &anyHitLib;
 
-    subobjects[4].Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
-    subobjects[4].pDesc = &hitGroupDesc;
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+    subobjects[subIdx++].pDesc = &missLib;
 
-    subobjects[5].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
-    subobjects[5].pDesc = &shaderConfig;
+    if (hasShadowMiss)
+    {
+        subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+        subobjects[subIdx++].pDesc = &shadowMissLib;
+    }
 
-    subobjects[6].Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-    subobjects[6].pDesc = &globalSig;
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+    subobjects[subIdx++].pDesc = &hitGroupDesc;
 
-    subobjects[7].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
-    subobjects[7].pDesc = &pipelineCfg;
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+    subobjects[subIdx++].pDesc = &shaderConfig;
+
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    subobjects[subIdx++].pDesc = &globalSig;
+
+    subobjects[subIdx].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+    subobjects[subIdx++].pDesc = &pipelineCfg;
 
     D3D12_STATE_OBJECT_DESC stateObjectDesc = {};
     stateObjectDesc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
-    stateObjectDesc.NumSubobjects = ARRAYSIZE(subobjects);
+    stateObjectDesc.NumSubobjects = subIdx;
     stateObjectDesc.pSubobjects = subobjects;
 
-    // Create the state object.
     HRESULT l_HResult = m_device->CreateStateObject(&stateObjectDesc, IID_PPV_ARGS(&PSO->m_RaytracingPSO));
     if (FAILED(l_HResult))
     {
@@ -420,11 +437,15 @@ bool DX12GraphicsService::CreateRaytracingPipelineStateObject(RenderPassComponen
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     SetObjectName(RenderPassComp, PSO->m_RaytracingPSO, "RaytracingPSO");
-#endif // INNO_DEBUG
+#endif
 
     Log(Verbose, RenderPassComp->m_InstanceName, " Raytracing PSO has been created.");
 
-    auto l_shaderIDBufferSize = 3 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+    // Shader table layout:
+    //   hasShadowMiss == false: [RayGen][Miss][HitGroup]             (3 slots)
+    //   hasShadowMiss == true:  [RayGen][Miss][ShadowMiss][HitGroup] (4 slots)
+    const uint32_t numSlots = hasShadowMiss ? 4 : 3;
+    auto l_shaderIDBufferSize = numSlots * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
     auto l_shaderIDBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(l_shaderIDBufferSize);
     PSO->m_RaytracingShaderIDBuffer = CreateUploadHeapBuffer(&l_shaderIDBufferDesc);
 
@@ -435,13 +456,14 @@ bool DX12GraphicsService::CreateRaytracingPipelineStateObject(RenderPassComponen
     auto writeId = [&](const wchar_t* name) {
         void* id = props->GetShaderIdentifier(name);
         memcpy(data, id, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-        data = static_cast<char*>(data) +
-            D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
-        };
+        data = static_cast<char*>(data) + D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+    };
 
     PSO->m_RaytracingShaderIDBuffer->Map(0, nullptr, &data);
     writeId(L"RayGenShader");
     writeId(L"MissShader");
+    if (hasShadowMiss)
+        writeId(L"ShadowMissShader");
     writeId(L"HitGroup");
     PSO->m_RaytracingShaderIDBuffer->Unmap(0, nullptr);
     props->Release();

@@ -835,23 +835,34 @@ bool DX12GraphicsService::DispatchRays(RenderPassComponent* renderPass, CommandL
 		return false;
 	}
 
-	auto l_currentFrame = GetCurrentFrame();
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
-	
+
 	auto l_shaderIDBufferVirtualAddress = l_PSO->m_RaytracingShaderIDBuffer->GetGPUVirtualAddress();
 
+	// Detect layout from shader table buffer size:
+	// 3-slot: [RayGen][Miss][HitGroup]
+	// 4-slot: [RayGen][Miss][ShadowMiss][HitGroup]
+	D3D12_RESOURCE_DESC l_bufDesc = l_PSO->m_RaytracingShaderIDBuffer->GetDesc();
+	const bool hasShadowMiss = (l_bufDesc.Width >= 4 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+
 	D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
-	dispatchDesc.RayGenerationShaderRecord = {};
+
 	dispatchDesc.RayGenerationShaderRecord.StartAddress = l_shaderIDBufferVirtualAddress;
 	dispatchDesc.RayGenerationShaderRecord.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
-	dispatchDesc.MissShaderTable = {};
 	dispatchDesc.MissShaderTable.StartAddress = l_shaderIDBufferVirtualAddress + D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
-	dispatchDesc.MissShaderTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+	dispatchDesc.MissShaderTable.StrideInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	dispatchDesc.MissShaderTable.SizeInBytes = hasShadowMiss
+		? 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT
+		: D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
-	dispatchDesc.HitGroupTable = {};
-	dispatchDesc.HitGroupTable.StartAddress = l_shaderIDBufferVirtualAddress + 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	const uint64_t hitGroupOffset = hasShadowMiss
+		? 3 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT
+		: 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+
+	dispatchDesc.HitGroupTable.StartAddress = l_shaderIDBufferVirtualAddress + hitGroupOffset;
+	dispatchDesc.HitGroupTable.StrideInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
 	dispatchDesc.Width = dimensionX;
