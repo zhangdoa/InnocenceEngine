@@ -20,18 +20,15 @@ struct MaterialCB
     uint  MaterialType;
 };
 
-// Mega geometry buffers (global bindings, set index 1)
 [[vk::binding(2, 1)]]
 ByteAddressBuffer in_MegaVertexBuffer : register(t2);   // PTVertex = {float3 pos, float3 normal}
 
 [[vk::binding(3, 1)]]
 ByteAddressBuffer in_MegaIndexBuffer  : register(t3);   // uint32 indices
 
-// MeshOffsetBuffer: StructuredBuffer<uint2> where x=vertexOffset, y=indexOffset
 [[vk::binding(4, 1)]]
 ByteAddressBuffer in_MeshOffsets      : register(t4);
 
-// MaterialConstantBuffer array (DrawCallService::GetMaterialBuffer())
 [[vk::binding(1, 1)]]
 StructuredBuffer<MaterialCB> in_MaterialBuffer : register(t1);
 
@@ -57,7 +54,7 @@ float3 LoadVertexNormal(uint baseVertex, uint vertexIndex)
 [shader("closesthit")]
 void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
-    uint instanceID = InstanceID();  // = drawCallIndex after Task 4
+    uint instanceID = InstanceID();
 
     // Load mesh offsets for this instance
     uint2 offsets = uint2(

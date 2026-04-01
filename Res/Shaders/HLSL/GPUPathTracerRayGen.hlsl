@@ -25,8 +25,6 @@ struct PathTracerPayload
 
 struct ShadowPayload { bool isShadowed; };
 
-// ── PRNG (PCG32) ─────────────────────────────────────────────────────────────
-
 uint PCG(inout uint state)
 {
     uint oldState = state;
@@ -42,12 +40,10 @@ float2 Rand2(inout uint rng)
     return float2(Rand(rng), Rand(rng));
 }
 
-uint InitRNG(uint2 pixel, uint frame)
+uint InitRNG(uint2 pixel, uint frame, uint width)
 {
-    return pixel.x + pixel.y * 16384u + frame * 1073741827u;
+    return pixel.x + pixel.y * width + frame * 1073741827u;
 }
-
-// ── Halton sequence for camera jitter ────────────────────────────────────────
 
 float Halton(uint index, uint base)
 {
@@ -55,8 +51,6 @@ float Halton(uint index, uint base)
     while (index > 0) { f /= float(base); result += f * float(index % base); index /= base; }
     return result;
 }
-
-// ── BRDFs ────────────────────────────────────────────────────────────────────
 
 float DistributionGGX(float3 N, float3 H, float roughness)
 {
@@ -101,8 +95,6 @@ float3 CookTorranceGGX(float3 N, float3 V, float3 L, float3 albedo, float metaln
     return (diffuse + specular) * max(dot(N, L), 0.0f);
 }
 
-// ── GGX importance sampling ───────────────────────────────────────────────────
-
 float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
 {
     float a = roughness * roughness;
@@ -112,7 +104,6 @@ float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
 
     float3 H = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 
-    // Build TBN from N
     float3 up    = abs(N.z) < 0.999f ? float3(0, 0, 1) : float3(1, 0, 0);
     float3 tangent   = normalize(cross(up, N));
     float3 bitangent = cross(N, tangent);
@@ -120,14 +111,10 @@ float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
     return normalize(tangent * H.x + bitangent * H.y + N * H.z);
 }
 
-// ── Sky model ────────────────────────────────────────────────────────────────
-
 float3 SkyColor(float3 dir)
 {
     return lerp(float3(0.1f, 0.15f, 0.2f), float3(0.5f, 0.7f, 1.0f), saturate(dir.y));
 }
-
-// ── Camera ray generation ─────────────────────────────────────────────────────
 
 RayDesc GenerateCameraRay(uint2 pixel, float2 jitter, uint2 resolution)
 {
@@ -135,7 +122,6 @@ RayDesc GenerateCameraRay(uint2 pixel, float2 jitter, uint2 resolution)
     uv.y = 1.0f - uv.y;
     float2 ndc = uv * 2.0f - 1.0f;
 
-    // Unproject from NDC using inverse matrices stored in PerFrame_CB
     float4 viewPos = mul(g_Frame.p_inv, float4(ndc.x, ndc.y, 1.0f, 1.0f));
     viewPos /= viewPos.w;
     float3 worldPos = mul(g_Frame.v_inv, float4(viewPos.xyz, 0.0f)).xyz;
@@ -148,15 +134,13 @@ RayDesc GenerateCameraRay(uint2 pixel, float2 jitter, uint2 resolution)
     return ray;
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
-
 [shader("raygeneration")]
 void RayGenShader()
 {
     uint2 pixel     = DispatchRaysIndex().xy;
     uint2 resolution = DispatchRaysDimensions().xy;
 
-    uint rng = InitRNG(pixel, g_FrameCount);
+    uint rng = InitRNG(pixel, g_FrameCount, resolution.x);
 
     float2 jitter = float2(Halton(g_FrameCount, 2), Halton(g_FrameCount, 3)) - 0.5f;
     RayDesc ray = GenerateCameraRay(pixel, jitter, resolution);
@@ -205,7 +189,6 @@ void RayGenShader()
             radiance += throughput * brdf * g_Frame.sun_illuminance.xyz;
         }
 
-        // Sample next bounce direction via GGX importance sampling
         float2 xi = Rand2(rng);
         float3 H  = ImportanceSampleGGX(xi, N, payload.roughness);
         float3 L  = reflect(-V, H);
@@ -220,7 +203,6 @@ void RayGenShader()
         float  pdf   = DistributionGGX(N, H, payload.roughness) * NdotH / max(4.0f * VdotH, 0.001f);
         throughput *= brdfSample * NdotL / max(pdf, 0.001f);
 
-        // Russian roulette after bounce 3
         if (bounce >= 3)
         {
             float q = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.05f, 0.95f);
@@ -235,7 +217,6 @@ void RayGenShader()
         ray.TMax      = 1e6f;
     }
 
-    // Running average accumulation
     float w = 1.0f / float(g_FrameCount);
     float3 prev = AccumBuffer[pixel].rgb;
     AccumBuffer[pixel] = float4(lerp(prev, radiance, w), 1.0f);

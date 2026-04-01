@@ -13,5 +13,4 @@ struct PathTracerPayload
 [shader("anyhit")]
 void AnyHitShader(inout PathTracerPayload payload, in BuiltInTriangleIntersectionAttributes attrib)
 {
-
 }
