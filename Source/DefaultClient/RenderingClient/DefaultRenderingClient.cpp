@@ -71,6 +71,7 @@ namespace Inno
 		std::function<void()> f_showTransparent;
 		std::function<void()> f_showVolumetric;
 		std::function<void()> f_saveScreenCapture;
+		std::function<void()> f_toggleGPUPathTracer;
 
 		bool m_showLightHeatmap = false;
 		bool m_showProbe = false;
@@ -80,7 +81,6 @@ namespace Inno
 		bool m_saveScreenCapture = false;
 		bool m_drawBRDFTest = false;
 		bool m_GPUPathTracerActive = false;
-		std::function<void()> f_toggleGPUPathTracer;
 		uint32_t m_autoCaptureFrameCount = 0;
 		bool m_autoCaptureWritten = false;
 
@@ -121,9 +121,7 @@ namespace Inno
 			if (m_GPUPathTracerActive)
 				GPUPathTracerPass::Get().ResetAccumulation();
 		};
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(
-			ButtonState{ INNO_KEY_B, true },
-			ButtonEvent{ EventLifeTime::OneShot, &f_toggleGPUPathTracer });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleGPUPathTracer });
 
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
