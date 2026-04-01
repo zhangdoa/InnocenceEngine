@@ -123,7 +123,7 @@ bool JSONWrapper::Load(const char* fileName, TransformComponent& component)
     return true;
 }
 
-bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
+bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID owner)
 {
     json j;
     if (!Load(fileName, j))
@@ -165,7 +165,7 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component)
         // @TODO: Implement SkeletonComponent loading
     }
 
-    g_Engine->getGraphicsService()->Initialize(&component, l_vertices, l_indices);
+    g_Engine->getGraphicsService()->Initialize(&component, l_vertices, l_indices, owner);
 
     return true;
 }

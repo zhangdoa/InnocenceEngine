@@ -34,7 +34,7 @@ namespace Inno
 		bool LoadScene(const char* fileName);
 
 		bool Load(const char* fileName, TransformComponent& component);
-		bool Load(const char* fileName, MeshComponent& component);
+		bool Load(const char* fileName, MeshComponent& component, EntityID owner = INVALID_ENTITY);
 		bool Load(const char* fileName, MaterialComponent& component);
 		bool Load(const char* fileName, TextureComponent& component);
 		bool Load(const char* fileName, CameraComponent& component);

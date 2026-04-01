@@ -160,7 +160,7 @@ bool JSONWrapper::LoadScene(const char* fileName)
 			else if (l_TypeID == MeshComponent::GetTypeID())
 			{
 				auto& l_Mesh = l_registry->Emplace<MeshComponent>(l_EntityID);
-				AssetService::Load(l_FilePath.c_str(), l_Mesh);
+				AssetService::Load(l_FilePath.c_str(), l_Mesh, l_EntityID);
 				l_Mesh.m_InstanceName = l_CompName.c_str(); // restore after template copy
 			}
 			else if (l_TypeID == MaterialComponent::GetTypeID())

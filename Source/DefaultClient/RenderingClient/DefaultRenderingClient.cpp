@@ -361,29 +361,27 @@ namespace Inno
 			}
 		}
 
-		if (m_GPUPathTracerActive)
+		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			if (GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
-			{
-				auto l_renderPass = GPUPathTracerPass::Get().GetRenderPassComp();
+			auto l_renderPass = GPUPathTracerPass::Get().GetRenderPassComp();
 
-				// Graphics CL: transition accumulation buffer to UAV
-				auto l_graphicsCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-				l_graphicsService->Execute(l_graphicsCL, GPUEngineType::Graphics);
-				l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-				l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+			// Graphics CL: transition accumulation buffer to UAV
+			auto l_graphicsCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			l_graphicsService->Execute(l_graphicsCL, GPUEngineType::Graphics);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-				// Compute CL: ray tracing dispatch
-				auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);
-				l_graphicsService->Execute(l_computeCL, GPUEngineType::Compute);
-				l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			// Compute CL: ray tracing dispatch
+			auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			l_graphicsService->Execute(l_computeCL, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 
-				// Tonemap CL: transition accum to SRV + dispatch
-				l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Compute);
-				auto l_toneMapCL = GPUPathTracerPass::Get().GetToneMapCommandList();
-				l_graphicsService->Execute(l_toneMapCL, GPUEngineType::Compute);
-				l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
-			}
+			// Tonemap CL: transition accum to SRV + dispatch
+			l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Compute);
+			auto l_toneMapCL = GPUPathTracerPass::Get().GetToneMapCommandList();
+			l_graphicsService->Execute(l_toneMapCL, GPUEngineType::Compute);
+			l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+
 			return true;
 		}
 

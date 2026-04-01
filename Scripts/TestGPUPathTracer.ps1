@@ -10,12 +10,12 @@ param(
 $mainExe = Join-Path $BinDir "Main.exe"
 Set-Location (Split-Path $BinDir -Parent)
 
-Write-Host "Running: $mainExe -renderer 0 -loglevel 2 -frames $Frames -test gpu_path_tracer"
+Write-Host "Running: $mainExe -renderer 0 -loglevel 0 -offscreen -frames $Frames -test gpu_path_tracer"
 
 $proc = Start-Process `
     -FilePath $mainExe `
-    -ArgumentList "-renderer 0 -loglevel 2 -frames $Frames -test gpu_path_tracer" `
-    -Wait -PassThru
+    -ArgumentList "-renderer 0 -loglevel 0 -offscreen -frames $Frames -test gpu_path_tracer" `
+    -Wait -PassThru -NoNewWindow
 
 Write-Host "Exit code: $($proc.ExitCode)"
 

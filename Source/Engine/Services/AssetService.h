@@ -27,7 +27,7 @@ namespace Inno
 		}
 
 		static bool Load(const char* fileName, TransformComponent& component);
-		static bool Load(const char* fileName, MeshComponent& component);
+		static bool Load(const char* fileName, MeshComponent& component, EntityID owner = INVALID_ENTITY);
 		static bool Load(const char* fileName, MaterialComponent& component);
 		static bool Load(const char* fileName, TextureComponent& component);
 		// static bool Load(const char* fileName, SkeletonComponent& component);

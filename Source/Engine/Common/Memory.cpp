@@ -22,13 +22,13 @@ void* Memory::Allocate(const std::size_t size)
 
 void* Memory::Reallocate(void* const ptr, const std::size_t size)
 {
+	auto l_result = realloc(ptr, size);
 	if (g_Engine)
 	{
 		g_Engine->Get<Memory>()->Erase(ptr);
-		g_Engine->Get<Memory>()->Record(ptr, size);
+		if (l_result)
+			g_Engine->Get<Memory>()->Record(l_result, size);
 	}
-	
-	auto l_result = realloc(ptr, size);
 	return l_result;
 }
 

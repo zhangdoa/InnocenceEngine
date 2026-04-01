@@ -429,8 +429,8 @@ namespace Inno
 
 		if (g_Engine->getInitConfig().maxFrames > 0)
 		{
-			// Auto-test mode: load the GI scene directly to avoid a scene transition that
-			// triggers heap corruption from TemplateAssetService texture double-frees.
+			// Auto-test mode: load GI scene directly — scene transitions crash due to
+			// heap corruption in the GPU resource teardown on the UnitTest→GITestBox path.
 			m_AutoGISceneTriggered = true;
 			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
 		}

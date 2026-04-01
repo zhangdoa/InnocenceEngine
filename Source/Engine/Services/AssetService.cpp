@@ -86,9 +86,9 @@ bool AssetService::Load(const char* fileName, TransformComponent& component)
 	return JSONWrapper::Load(fileName, component);
 }
 
-bool AssetService::Load(const char* fileName, MeshComponent& component)
+bool AssetService::Load(const char* fileName, MeshComponent& component, EntityID owner)
 {
-	return JSONWrapper::Load(fileName, component);
+	return JSONWrapper::Load(fileName, component, owner);
 }
 
 bool AssetService::Load(const char* fileName, MaterialComponent& component)

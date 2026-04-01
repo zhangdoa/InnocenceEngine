@@ -131,6 +131,9 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		EntityID l_Entity = l_Owners[i];
 		const MeshComponent& l_mesh = l_Meshes[i];
 
+		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
+			continue;
+
 		auto* l_material = l_registry->Get<MaterialComponent>(l_Entity);
 		if (!l_material)
 			continue;
