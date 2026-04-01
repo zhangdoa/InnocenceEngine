@@ -16,11 +16,12 @@ float3 ACESFilmic(float3 x)
     return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 }
 
-float3 LinearToSRGB(float3 linear)
+float3 LinearToSRGB(float3 color)
 {
-    return pow(saturate(linear), 1.0f / 2.2f);
+    return pow(saturate(color), 1.0f / 2.2f);
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
