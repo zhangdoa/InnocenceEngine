@@ -316,25 +316,13 @@ void ImGuiWrapperNS::showWorldExplorer()
 
 	ImGui::Begin("World Explorer", 0);
 	{
-		auto l_sceneHierarchyMap = g_Engine->Get<SceneService>()->getSceneHierarchyMap();
-
 		auto l_registry = g_Engine->Get<EntityRegistry>();
-		for (auto& i : l_sceneHierarchyMap)
+		auto l_entities = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+		for (auto entity : l_entities)
 		{
-			if (l_registry->IsValid(i.first))
+			if (l_registry->IsValid(entity))
 			{
-				if (ImGui::TreeNode(l_registry->GetName(i.first)))
-				{
-					for (auto& j : i.second)
-					{
-						if (ImGui::Selectable(j.second->m_InstanceName.c_str(), selectedComponent == j.second))
-						{
-							selectedComponent = j.second;
-							selectedComponentType = j.first;
-						}
-					}
-					ImGui::TreePop();
-				}
+				ImGui::Text("%s", l_registry->GetName(entity));
 			}
 		}
 	}
