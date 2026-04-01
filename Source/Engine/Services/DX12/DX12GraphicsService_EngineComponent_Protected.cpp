@@ -747,7 +747,7 @@ bool DX12GraphicsService::InitializeImpl(EntityID Entity)
 		instanceDesc.Transform[2][2] = transformMatrix.m22;
 		instanceDesc.Transform[2][3] = transformMatrix.m23;
 
-		instanceDesc.InstanceID = static_cast<UINT>(Entity);
+		instanceDesc.InstanceID = static_cast<UINT>(l_descList->m_Descs.size());
 		instanceDesc.InstanceMask = 0xFF;
 		instanceDesc.InstanceContributionToHitGroupIndex = 0;
 		instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
