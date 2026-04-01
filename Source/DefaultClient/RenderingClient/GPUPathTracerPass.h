@@ -61,7 +61,7 @@ namespace Inno
 		GPUBufferComponent* m_MeshOffsetBuffer = nullptr;
 
 		// Camera movement detection
-		Mat4     m_PrevViewMatrix = {};
+		Math::Mat4 m_PrevViewMatrix = {};
 		uint32_t m_FrameCount     = 1;
 
 		// Scene callbacks

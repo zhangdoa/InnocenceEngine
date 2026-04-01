@@ -32,6 +32,7 @@
 #include "BillboardPass.h"
 #include "DebugPass.h"
 #include "FinalBlendPass.h"
+#include "GPUPathTracerPass.h"
 
 #include "BSDFTestPass.h"
 
@@ -78,6 +79,8 @@ namespace Inno
 		bool m_showVolumetric = false;
 		bool m_saveScreenCapture = false;
 		bool m_drawBRDFTest = false;
+		bool m_GPUPathTracerActive = false;
+		std::function<void()> f_toggleGPUPathTracer;
 		uint32_t m_autoCaptureFrameCount = 0;
 		bool m_autoCaptureWritten = false;
 
@@ -113,6 +116,15 @@ namespace Inno
 		f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
+		f_toggleGPUPathTracer = [&]() {
+			m_GPUPathTracerActive = !m_GPUPathTracerActive;
+			if (m_GPUPathTracerActive)
+				GPUPathTracerPass::Get().ResetAccumulation();
+		};
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(
+			ButtonState{ INNO_KEY_B, true },
+			ButtonEvent{ EventLifeTime::OneShot, &f_toggleGPUPathTracer });
+
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
@@ -145,6 +157,7 @@ namespace Inno
 		LuminanceAveragePass::Get().Setup();
 
 		FinalBlendPass::Get().Setup();
+		GPUPathTracerPass::Get().Setup();
 
 		// SunShadowBlurOddPass::Get().Setup();
 		// SunShadowBlurEvenPass::Get().Setup();
@@ -214,6 +227,7 @@ namespace Inno
 		LuminanceAveragePass::Get().Initialize();
 
 		FinalBlendPass::Get().Initialize();
+		GPUPathTracerPass::Get().Initialize();
 
 		m_ObjectStatus = ObjectStatus::Activated;
 
@@ -227,11 +241,22 @@ namespace Inno
 		LightCullingPass::Get().Update();
 		LuminanceAveragePass::Get().Update();
 
+		if (m_GPUPathTracerActive)
+			GPUPathTracerPass::Get().Update();
+
 		return true;
 	}
 
 	bool DefaultRenderingClientImpl::PrepareCommands()
 	{
+		if (m_GPUPathTracerActive)
+		{
+			GPUPathTracerPass::Get().PrepareCommandList();
+			m_Canvas = GPUPathTracerPass::Get().GetResult();
+			m_CanvasOwner = GPUPathTracerPass::Get().GetRenderPassComp();
+			return true;
+		}
+
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
@@ -333,6 +358,32 @@ namespace Inno
 				l_graphicsService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 				m_ExecuteOneShotCommands = false;
 			}
+		}
+
+		if (m_GPUPathTracerActive)
+		{
+			if (GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
+			{
+				auto l_renderPass = GPUPathTracerPass::Get().GetRenderPassComp();
+
+				// Graphics CL: transition accumulation buffer to UAV
+				auto l_graphicsCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+				l_graphicsService->Execute(l_graphicsCL, GPUEngineType::Graphics);
+				l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+				l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+
+				// Compute CL: ray tracing dispatch
+				auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				l_graphicsService->Execute(l_computeCL, GPUEngineType::Compute);
+				l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+
+				// Tonemap CL: transition accum to SRV + dispatch
+				l_graphicsService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Compute);
+				auto l_toneMapCL = GPUPathTracerPass::Get().GetToneMapCommandList();
+				l_graphicsService->Execute(l_toneMapCL, GPUEngineType::Compute);
+				l_graphicsService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			}
+			return true;
 		}
 
 		if (SunShadowCullingPass::Get().GetStatus() == ObjectStatus::Activated)

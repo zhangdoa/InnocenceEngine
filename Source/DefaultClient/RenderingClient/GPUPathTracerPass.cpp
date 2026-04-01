@@ -222,7 +222,7 @@ bool GPUPathTracerPass::Update()
 
 	const auto& l_perFrameCB = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 
-	if (l_perFrameCB.v != m_PrevViewMatrix)
+	if (std::memcmp(&l_perFrameCB.v, &m_PrevViewMatrix, sizeof(Math::Mat4)) != 0)
 	{
 		m_FrameCount = 1;
 		m_PrevViewMatrix = l_perFrameCB.v;
