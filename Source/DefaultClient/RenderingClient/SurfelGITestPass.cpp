@@ -218,11 +218,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
 		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_GIGPUBufferComp, 1);
 		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, m_probeSphereMeshGPUBufferComp, 2);
-		// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
-
 		// l_graphicsService->DrawIndexedInstanced(m_RenderPassComp, l_sphere, m_probeSphereMeshData.size());
-
-		// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3);
 
 		// l_graphicsService->CommandListEnd(m_RenderPassComp);
 

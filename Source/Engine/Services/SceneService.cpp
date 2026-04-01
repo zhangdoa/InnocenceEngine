@@ -43,7 +43,7 @@ bool SceneService::LoadSync(const char* fileName)
 	// 4. Clear physics simulation state and PhysX actors
 	g_Engine->Get<PhysicsSimulationService>()->OnSceneUnloading();
 
-	// 5. Client unloading callbacks (e.g. GIResolvePass::DeleteGPUBuffers)
+	// 5. Client unloading callbacks
 	for (auto* cb : m_sceneUnloadingCallbacks)
 		(*cb)();
 
@@ -56,7 +56,7 @@ bool SceneService::LoadSync(const char* fileName)
 	// 6. Refresh engine service state that depends on loaded scene data
 	g_Engine->Get<BillboardDrawCallService>()->OnSceneLoaded();
 
-	// 7. Client loaded callbacks (GIDataLoader, GIResolvePass, VXGIRenderer, WorldSystem, Editor)
+	// 7. Client loaded callbacks (GIDataLoader, VXGIRenderer, WorldSystem, Editor)
 	for (auto* cb : m_sceneLoadedCallbacks)
 		(*cb)();
 
