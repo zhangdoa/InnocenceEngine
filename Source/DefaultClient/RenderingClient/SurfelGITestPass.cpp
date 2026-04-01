@@ -5,7 +5,6 @@
 #include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Services/TemplateAssetService.h"
 
-#include "GIResolvePass.h"
 #include "OpaquePass.h"
 #include "GIDataLoader.h"
 
