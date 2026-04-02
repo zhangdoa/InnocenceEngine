@@ -12,7 +12,7 @@ namespace Inno
 		size_t m_ElementCount = 0;
 		size_t m_ElementSize = 0;
 		size_t m_TotalSize = 0;
-		GPUBufferUsage m_Usage = GPUBufferUsage::None;
+		GPUBufferUsage m_Usage = GPUBufferUsage::Generic;
 		void* m_InitialData = 0;
 		std::vector<IMappedMemory*> m_MappedMemories;
 		std::vector<IDeviceMemory*> m_DeviceMemories;

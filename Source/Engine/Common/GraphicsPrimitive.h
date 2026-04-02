@@ -18,7 +18,7 @@ INNO_ENUM
 INNO_ENUM
 (
 	GPUBufferUsage,
-	None,
+	Generic,
 	IndirectDraw,
 	IndirectDispatch,
 	AtomicCounter,
@@ -329,7 +329,7 @@ namespace Inno
 			uint32_t m_SubresourceCount = 1;
 			bool m_IsRootConstant = false;
 			TextureUsage m_TextureUsage = TextureUsage::Invalid;  // @TODO: remove this as we can get it from the res getter
-			GPUBufferUsage m_GPUBufferUsage = GPUBufferUsage::None;  // @TODO: remove this as we can get it from the res getter
+			GPUBufferUsage m_GPUBufferUsage = GPUBufferUsage::Generic;  // @TODO: remove this as we can get it from the res getter
 
 			// @TODO: deprecated, remove this
 			bool m_IndirectBinding = false;
