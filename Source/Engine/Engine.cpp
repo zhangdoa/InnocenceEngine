@@ -88,25 +88,25 @@ IGraphicsService* Engine::CreateGraphicsService(bool isHeadless, GraphicsService
 #if defined INNO_RENDERER_DIRECTX
 		return new DX12GraphicsService();
 #else
-		Log(Error, "DirectX 12 renderer not available on this platform.");
+		Log(Error, "DirectX 12 graphics service not available on this platform.");
 		return nullptr;
 #endif
 	case GraphicsService::VK:
 #if defined INNO_RENDERER_VULKAN
 		return new VKGraphicsService();
 #else
-		Log(Error, "Vulkan renderer not available on this platform.");
+		Log(Error, "Vulkan graphics service not available on this platform.");
 		return nullptr;
 #endif
 	case GraphicsService::MT:
 #if defined INNO_RENDERER_METAL
 		return new MTGraphicsService();
 #else
-		Log(Error, "Metal renderer not available on this platform.");
+		Log(Error, "Metal graphics service not available on this platform.");
 		return nullptr;
 #endif
 	default:
-		Log(Error, "Unknown rendering server type.");
+		Log(Error, "Unknown graphics service type.");
 		return nullptr;
 	}
 }

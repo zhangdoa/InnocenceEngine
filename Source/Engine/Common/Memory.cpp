@@ -51,15 +51,16 @@ bool Memory::Record(void* ptr, std::size_t size)
 		Log(Warning, "Allocate collision happened at ", ptr, ".");
 		return false;
 	}
-	else
-	{
-		m_Memo.emplace(ptr, size);
-		return true;
-	}
+
+	m_Memo.emplace(ptr, size);
+	return true;
 }
 
 bool Memory::Erase(void* ptr)
 {
+	if (!ptr)
+		return true;
+
 	std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 	auto l_Result = m_Memo.find(ptr);
 	if (l_Result != m_Memo.end())
@@ -67,9 +68,7 @@ bool Memory::Erase(void* ptr)
 		m_Memo.erase(ptr);
 		return true;
 	}
-	else
-	{
-		Log(Warning, "Deallocate collision happened at ", ptr, ".");
-		return false;
-	}
+	
+	Log(Warning, "Deallocate collision happened at ", ptr, ".");
+	return false;
 }
