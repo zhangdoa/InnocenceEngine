@@ -855,7 +855,7 @@ bool DX12GraphicsService::DispatchRays(RenderPassComponent* renderPass, CommandL
 	dispatchDesc.MissShaderTable.StrideInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 	dispatchDesc.MissShaderTable.SizeInBytes = hasShadowMiss
 		? 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT
-		: D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+		: D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
 	const uint64_t hitGroupOffset = hasShadowMiss
 		? 3 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT
@@ -863,7 +863,7 @@ bool DX12GraphicsService::DispatchRays(RenderPassComponent* renderPass, CommandL
 
 	dispatchDesc.HitGroupTable.StartAddress = l_shaderIDBufferVirtualAddress + hitGroupOffset;
 	dispatchDesc.HitGroupTable.StrideInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
-	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
 	dispatchDesc.Width = dimensionX;
 	dispatchDesc.Height = dimensionY;
