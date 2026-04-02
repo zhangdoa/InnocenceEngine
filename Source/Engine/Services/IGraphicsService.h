@@ -61,8 +61,8 @@ namespace Inno
 
 		void Initialize(EntityID Entity);
 		void Initialize(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices, EntityID owner = INVALID_ENTITY);
-		void Initialize(TextureComponent* texture, void* textureData = nullptr);
-		void Initialize(MaterialComponent* material);
+		void Initialize(TextureComponent* texture, void* textureData = nullptr, EntityID owner = INVALID_ENTITY);
+		void Initialize(MaterialComponent* material, EntityID owner = INVALID_ENTITY);
 		void Initialize(RenderPassComponent* renderPass);
 		void Initialize(ShaderProgramComponent* shaderProgram);
 		void Initialize(SamplerComponent* sampler);
@@ -246,16 +246,26 @@ namespace Inno
 
 		struct TextureInitTask
 		{
-			TextureInitTask(TextureComponent* component, void* textureData)
-				: m_Component(component), m_TextureData(textureData) {}
-			
+			TextureInitTask(TextureComponent* component, void* textureData, EntityID owner = INVALID_ENTITY)
+				: m_Component(component), m_TextureData(textureData), m_Owner(owner) {}
+
 			TextureComponent* m_Component;
 			void* m_TextureData;
+			EntityID m_Owner;
+		};
+
+		struct MaterialInitTask
+		{
+			MaterialInitTask(MaterialComponent* component, EntityID owner = INVALID_ENTITY)
+				: m_Component(component), m_Owner(owner) {}
+
+			MaterialComponent* m_Component;
+			EntityID m_Owner;
 		};
 
 		ThreadSafeQueue<MeshInitTask> m_uninitializedMeshes;
 		ThreadSafeQueue<TextureInitTask> m_uninitializedTextures;
-		ThreadSafeQueue<MaterialComponent*> m_uninitializedMaterials;
+		ThreadSafeQueue<MaterialInitTask> m_uninitializedMaterials;
 		ThreadSafeQueue<GPUBufferComponent*> m_uninitializedGPUBuffers;
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
 		ThreadSafeQueue<EntityID> m_uninitializedEntities;

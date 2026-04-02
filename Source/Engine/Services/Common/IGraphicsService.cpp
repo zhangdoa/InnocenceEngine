@@ -125,11 +125,48 @@ bool IGraphicsService::OnSceneUnloading()
 		}
 	}
 
-	MeshInitTask l_meshStale(nullptr, {}, {});
-	while (m_uninitializedMeshes.tryPop(l_meshStale)) {}
+	// Discard only tasks explicitly owned by a scene-lifespan entity.
+	// Tasks with INVALID_ENTITY owner (GPU-pipeline resources) are preserved.
+	auto l_isSceneBound = [&](EntityID owner) {
+		return owner != INVALID_ENTITY
+			&& l_registry->GetLifespan(owner) == ObjectLifespan::Scene;
+	};
 
-	MaterialComponent* l_matStale = nullptr;
-	while (m_uninitializedMaterials.tryPop(l_matStale)) {}
+	{
+		std::vector<MeshInitTask> l_persistent;
+		MeshInitTask l_task(nullptr, {}, {});
+		while (m_uninitializedMeshes.tryPop(l_task))
+		{
+			if (!l_isSceneBound(l_task.m_Owner))
+				l_persistent.push_back(std::move(l_task));
+		}
+		for (auto& t : l_persistent)
+			m_uninitializedMeshes.push(std::move(t));
+	}
+
+	{
+		std::vector<TextureInitTask> l_persistent;
+		TextureInitTask l_task(nullptr, nullptr);
+		while (m_uninitializedTextures.tryPop(l_task))
+		{
+			if (!l_isSceneBound(l_task.m_Owner))
+				l_persistent.push_back(std::move(l_task));
+		}
+		for (auto& t : l_persistent)
+			m_uninitializedTextures.push(std::move(t));
+	}
+
+	{
+		std::vector<MaterialInitTask> l_persistent;
+		MaterialInitTask l_task(nullptr);
+		while (m_uninitializedMaterials.tryPop(l_task))
+		{
+			if (!l_isSceneBound(l_task.m_Owner))
+				l_persistent.push_back(std::move(l_task));
+		}
+		for (auto& t : l_persistent)
+			m_uninitializedMaterials.push(std::move(t));
+	}
 
 	EntityID l_entityStale = INVALID_ENTITY;
 	while (m_uninitializedEntities.tryPop(l_entityStale)) {}
@@ -407,23 +444,21 @@ void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
-void IGraphicsService::Initialize(TextureComponent* texture, void* textureData)
+void IGraphicsService::Initialize(TextureComponent* texture, void* textureData, EntityID owner)
 {
 	if (texture->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
-	// Queue texture for deferred initialization
-	m_uninitializedTextures.push(TextureInitTask(texture, textureData));
+	m_uninitializedTextures.push(TextureInitTask(texture, textureData, owner));
 	Log(Verbose, "TextureComponent ", texture->m_InstanceName, " queued for deferred initialization");
 }
 
-void IGraphicsService::Initialize(MaterialComponent* material)
+void IGraphicsService::Initialize(MaterialComponent* material, EntityID owner)
 {
 	if (material->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
-	// Queue material for deferred initialization
-	m_uninitializedMaterials.push(material);
+	m_uninitializedMaterials.push(MaterialInitTask(material, owner));
 	Log(Verbose, "MaterialComponent ", material->m_InstanceName, " queued for deferred initialization");
 }
 
@@ -852,9 +887,19 @@ bool IGraphicsService::InitializeComponents()
 		if (!l_task.m_Component)
 			continue;
 
-		Log(Verbose, "Processing deferred texture initialization for: ", l_task.m_Component->m_InstanceName);
-		if (InitializeImpl(l_task.m_Component, l_task.m_TextureData))
-			l_task.m_Component->m_ObjectStatus = ObjectStatus::Activated;
+		TextureComponent* l_texture = l_task.m_Component;
+		if (l_task.m_Owner != INVALID_ENTITY)
+		{
+			TextureComponent* l_current = g_Engine->Get<EntityRegistry>()->Get<TextureComponent>(l_task.m_Owner);
+			if (l_current)
+				l_texture = l_current;
+			else
+				Log(Warning, "TextureInitTask: entity ", l_task.m_Owner, " no longer has TextureComponent, using stored pointer");
+		}
+
+		Log(Verbose, "Processing deferred texture initialization for: ", l_texture->m_InstanceName);
+		if (InitializeImpl(l_texture, l_task.m_TextureData))
+			l_texture->m_ObjectStatus = ObjectStatus::Activated;
 		else
 			m_uninitializedTextures.push(std::move(l_task));
 	}
@@ -862,17 +907,27 @@ bool IGraphicsService::InitializeComponents()
 	// Process queued material components
 	while (m_uninitializedMaterials.size() > 0)
 	{
-		MaterialComponent* l_component;
-		m_uninitializedMaterials.tryPop(l_component);
+		MaterialInitTask l_task(nullptr);
+		m_uninitializedMaterials.tryPop(l_task);
 
-		if (!l_component)
+		if (!l_task.m_Component)
 			continue;
 
-		Log(Verbose, "Processing deferred material initialization for: ", l_component->m_InstanceName);
-		if (InitializeImpl(l_component))
-			l_component->m_ObjectStatus = ObjectStatus::Activated;
+		MaterialComponent* l_material = l_task.m_Component;
+		if (l_task.m_Owner != INVALID_ENTITY)
+		{
+			MaterialComponent* l_current = g_Engine->Get<EntityRegistry>()->Get<MaterialComponent>(l_task.m_Owner);
+			if (l_current)
+				l_material = l_current;
+			else
+				Log(Warning, "MaterialInitTask: entity ", l_task.m_Owner, " no longer has MaterialComponent, using stored pointer");
+		}
+
+		Log(Verbose, "Processing deferred material initialization for: ", l_material->m_InstanceName);
+		if (InitializeImpl(l_material))
+			l_material->m_ObjectStatus = ObjectStatus::Activated;
 		else
-			m_uninitializedMaterials.push(std::move(l_component));
+			m_uninitializedMaterials.push(std::move(l_task));
 	}
 
 	// Process queued GPU buffer components

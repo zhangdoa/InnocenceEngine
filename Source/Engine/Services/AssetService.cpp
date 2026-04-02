@@ -91,14 +91,14 @@ bool AssetService::Load(const char* fileName, MeshComponent& component, EntityID
 	return JSONWrapper::Load(fileName, component, owner);
 }
 
-bool AssetService::Load(const char* fileName, MaterialComponent& component)
+bool AssetService::Load(const char* fileName, MaterialComponent& component, EntityID owner)
 {
-	return JSONWrapper::Load(fileName, component);
+	return JSONWrapper::Load(fileName, component, owner);
 }
 
-bool AssetService::Load(const char* fileName, TextureComponent& component)
+bool AssetService::Load(const char* fileName, TextureComponent& component, EntityID owner)
 {
-	return JSONWrapper::Load(fileName, component);
+	return JSONWrapper::Load(fileName, component, owner);
 }
 
 // bool AssetService::Load(const char* fileName, SkeletonComponent& component)

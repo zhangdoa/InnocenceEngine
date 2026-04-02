@@ -166,7 +166,7 @@ bool JSONWrapper::LoadScene(const char* fileName)
 			else if (l_TypeID == MaterialComponent::GetTypeID())
 			{
 				auto& l_Material = l_registry->Emplace<MaterialComponent>(l_EntityID);
-				AssetService::Load(l_FilePath.c_str(), l_Material);
+				AssetService::Load(l_FilePath.c_str(), l_Material, l_EntityID);
 				l_Material.m_InstanceName = l_CompName.c_str();
 			}
 			else

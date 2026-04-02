@@ -170,7 +170,7 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
     return true;
 }
 
-bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
+bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, EntityID owner)
 {
     json j;
     if (!Load(fileName, j))
@@ -196,12 +196,12 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component)
     component.m_materialAttributes.Thickness = j["Thickness"];
     component.m_ShaderModel = ShaderModel(j["ShaderModel"]);
 
-    g_Engine->getGraphicsService()->Initialize(&component);
+    g_Engine->getGraphicsService()->Initialize(&component, owner);
 
     return true;
 }
 
-bool JSONWrapper::Load(const char* fileName, TextureComponent& component)
+bool JSONWrapper::Load(const char* fileName, TextureComponent& component, EntityID owner)
 {
     json j;
     if (!Load(fileName, j))
@@ -213,7 +213,7 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component)
 
     void* textureData = STBWrapper::Load(("../Data/Components/" + j["File"].get<std::string>()).c_str(), component);
 
-    g_Engine->getGraphicsService()->Initialize(&component, textureData);
+    g_Engine->getGraphicsService()->Initialize(&component, textureData, owner);
     return true;
 }
 

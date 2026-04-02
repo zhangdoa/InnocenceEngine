@@ -2,6 +2,7 @@
 
 #include "../Common/TaskScheduler.h"
 #include "AssetService.h"
+#include "EntityRegistry.h"
 #include "../Common/IOService.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../Engine.h"
@@ -40,30 +41,29 @@ namespace Inno
         std::unordered_map<MeshComponent*, std::vector<Index>> m_meshIndices;
         std::unordered_map<TextureComponent*, void*> m_textureData;
 
-        TextureComponent* m_basicNormalTexture;
-        TextureComponent* m_basicAlbedoTexture;
-        TextureComponent* m_basicMetallicTexture;
-        TextureComponent* m_basicRoughnessTexture;
-        TextureComponent* m_basicAOTexture;
+        EntityID m_basicNormalTextureEntity      = INVALID_ENTITY;
+        EntityID m_basicAlbedoTextureEntity      = INVALID_ENTITY;
+        EntityID m_basicMetallicTextureEntity    = INVALID_ENTITY;
+        EntityID m_basicRoughnessTextureEntity   = INVALID_ENTITY;
+        EntityID m_basicAOTextureEntity          = INVALID_ENTITY;
 
-        TextureComponent* m_iconTemplate_DirectionalLight;
-        TextureComponent* m_iconTemplate_PointLight;
-        TextureComponent* m_iconTemplate_SphereLight;
+        EntityID m_iconTemplate_DirectionalLightEntity = INVALID_ENTITY;
+        EntityID m_iconTemplate_PointLightEntity       = INVALID_ENTITY;
+        EntityID m_iconTemplate_SphereLightEntity      = INVALID_ENTITY;
 
-        MeshComponent* m_unitTriangleMesh;
-        MeshComponent* m_unitSquareMesh;
-        MeshComponent* m_unitPentagonMesh;
-        MeshComponent* m_unitHexagonMesh;
+        EntityID m_unitTriangleMeshEntity    = INVALID_ENTITY;
+        EntityID m_unitSquareMeshEntity      = INVALID_ENTITY;
+        EntityID m_unitPentagonMeshEntity    = INVALID_ENTITY;
+        EntityID m_unitHexagonMeshEntity     = INVALID_ENTITY;
+        EntityID m_unitTetrahedronMeshEntity = INVALID_ENTITY;
+        EntityID m_unitCubeMeshEntity        = INVALID_ENTITY;
+        EntityID m_unitOctahedronMeshEntity  = INVALID_ENTITY;
+        EntityID m_unitDodecahedronMeshEntity= INVALID_ENTITY;
+        EntityID m_unitIcosahedronMeshEntity = INVALID_ENTITY;
+        EntityID m_unitSphereMeshEntity      = INVALID_ENTITY;
+        EntityID m_terrainMeshEntity         = INVALID_ENTITY;
 
-        MeshComponent* m_unitTetrahedronMesh;
-        MeshComponent* m_unitCubeMesh;
-        MeshComponent* m_unitOctahedronMesh;
-        MeshComponent* m_unitDodecahedronMesh;
-        MeshComponent* m_unitIcosahedronMesh;
-        MeshComponent* m_unitSphereMesh;
-        MeshComponent* m_terrainMesh;
-
-        MaterialComponent* m_defaultMaterial;
+        EntityID m_defaultMaterialEntity     = INVALID_ENTITY;
     };
 }
 
@@ -73,92 +73,113 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
             auto graphicsService = g_Engine->getGraphicsService();
+            auto l_registry = g_Engine->Get<EntityRegistry>();
 
-            auto loadOrCreateTexture = [&](const char* name, const char* texturePath, TextureComponent*& texturePtr) -> bool {
+            auto loadOrCreateTexture = [&](const char* name, const char* texturePath, EntityID& entityIDRef) -> bool {
+                if (entityIDRef != INVALID_ENTITY)
+                    return true;
+
                 auto l_componentName = std::string(name) + "." + TextureComponent::GetTypeName();
+                auto l_entityName    = l_componentName + "/";
 
-                texturePtr = graphicsService->FindTextureByName(l_componentName.c_str());
-                if (texturePtr)
-                    return true;
+                auto l_entityID = l_registry->Spawn(ObjectLifespan::Persistence, l_entityName.c_str());
+                auto& l_texture = l_registry->Emplace<TextureComponent>(l_entityID);
+                l_texture.m_InstanceName = ObjectName(l_componentName.c_str());
+                auto* l_texturePtr = &l_texture;
 
-                texturePtr = graphicsService->AddTextureComponent(l_componentName.c_str());
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
-                if (AssetService::Load(l_filePath.c_str(), *texturePtr))
+                if (AssetService::Load(l_filePath.c_str(), *l_texturePtr, l_entityID))
+                {
+                    entityIDRef = l_entityID;
                     return true;
+                }
 
-                m_textureData[texturePtr] = STBWrapper::Load(texturePath, *texturePtr);
-                if (!m_textureData[texturePtr])
+                m_textureData[l_texturePtr] = STBWrapper::Load(texturePath, *l_texturePtr);
+                if (!m_textureData[l_texturePtr])
                     return false;
-                texturePtr->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-                texturePtr->m_TextureDesc.Usage = TextureUsage::Sample;
-                texturePtr->m_ObjectStatus = ObjectStatus::Created;
-                AssetService::Save(*texturePtr, m_textureData[texturePtr]);
+                l_texturePtr->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
+                l_texturePtr->m_TextureDesc.Usage = TextureUsage::Sample;
+                l_texturePtr->m_ObjectStatus = ObjectStatus::Created;
+                AssetService::Save(*l_texturePtr, m_textureData[l_texturePtr]);
 
-                graphicsService->Initialize(texturePtr, m_textureData[texturePtr]);
+                graphicsService->Initialize(l_texturePtr, m_textureData[l_texturePtr], l_entityID);
+                entityIDRef = l_entityID;
                 return true;
                 };
 
-            if (!loadOrCreateTexture("BasicNormalTexture", "../Res/Textures/basic_normal.png", m_basicNormalTexture)) return false;
-            if (!loadOrCreateTexture("BasicAlbedoTexture", "../Res/Textures/basic_albedo.png", m_basicAlbedoTexture)) return false;
-            if (!loadOrCreateTexture("BasicMetallicTexture", "../Res/Textures/basic_metallic.png", m_basicMetallicTexture)) return false;
-            if (!loadOrCreateTexture("BasicRoughnessTexture", "../Res/Textures/basic_roughness.png", m_basicRoughnessTexture)) return false;
-            if (!loadOrCreateTexture("BasicAOTexture", "../Res/Textures/basic_ao.png", m_basicAOTexture)) return false;
+            if (!loadOrCreateTexture("BasicNormalTexture", "../Res/Textures/basic_normal.png", m_basicNormalTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicAlbedoTexture", "../Res/Textures/basic_albedo.png", m_basicAlbedoTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicMetallicTexture", "../Res/Textures/basic_metallic.png", m_basicMetallicTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicRoughnessTexture", "../Res/Textures/basic_roughness.png", m_basicRoughnessTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicAOTexture", "../Res/Textures/basic_ao.png", m_basicAOTextureEntity)) return false;
 
-            auto l_materialName = std::string("DefaultMaterial.MaterialComponent");
-            m_defaultMaterial = graphicsService->FindMaterialByName(l_materialName.c_str());
-            if (!m_defaultMaterial)
+            if (m_defaultMaterialEntity == INVALID_ENTITY)
             {
-                m_defaultMaterial = graphicsService->AddMaterialComponent(l_materialName.c_str());
-                auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
-                if (!AssetService::Load(l_filePath.c_str(), *m_defaultMaterial))
-                {
-                    m_defaultMaterial->m_TextureComponents.resize(5);
-                    m_defaultMaterial->m_TextureComponents[0] = reinterpret_cast<uint64_t>(m_basicNormalTexture);
-                    m_defaultMaterial->m_TextureComponents[1] = reinterpret_cast<uint64_t>(m_basicAlbedoTexture);
-                    m_defaultMaterial->m_TextureComponents[2] = reinterpret_cast<uint64_t>(m_basicMetallicTexture);
-                    m_defaultMaterial->m_TextureComponents[3] = reinterpret_cast<uint64_t>(m_basicRoughnessTexture);
-                    m_defaultMaterial->m_TextureComponents[4] = reinterpret_cast<uint64_t>(m_basicAOTexture);
-                    m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
-                    AssetService::Save(*m_defaultMaterial);
+                auto l_materialName = std::string("DefaultMaterial.MaterialComponent");
+                auto l_entityName   = l_materialName + "/";
+                auto l_entityID     = l_registry->Spawn(ObjectLifespan::Persistence, l_entityName.c_str());
+                auto& l_material    = l_registry->Emplace<MaterialComponent>(l_entityID);
+                l_material.m_InstanceName = ObjectName(l_materialName.c_str());
+                auto* l_materialPtr = &l_material;
 
-                    graphicsService->Initialize(m_defaultMaterial);
+                auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
+                if (!AssetService::Load(l_filePath.c_str(), *l_materialPtr, l_entityID))
+                {
+                    l_materialPtr->m_TextureComponents.resize(5);
+                    l_materialPtr->m_TextureComponents[0] = l_registry->Get<TextureComponent>(m_basicNormalTextureEntity)->m_InstanceName.c_str();
+                    l_materialPtr->m_TextureComponents[1] = l_registry->Get<TextureComponent>(m_basicAlbedoTextureEntity)->m_InstanceName.c_str();
+                    l_materialPtr->m_TextureComponents[2] = l_registry->Get<TextureComponent>(m_basicMetallicTextureEntity)->m_InstanceName.c_str();
+                    l_materialPtr->m_TextureComponents[3] = l_registry->Get<TextureComponent>(m_basicRoughnessTextureEntity)->m_InstanceName.c_str();
+                    l_materialPtr->m_TextureComponents[4] = l_registry->Get<TextureComponent>(m_basicAOTextureEntity)->m_InstanceName.c_str();
+                    l_materialPtr->m_ShaderModel = ShaderModel::Opaque;
+                    AssetService::Save(*l_materialPtr);
+
+                    graphicsService->Initialize(l_materialPtr, l_entityID);
                 }
+                m_defaultMaterialEntity = l_entityID;
             }
 
-            auto loadOrCreateMesh = [&](const char* name, MeshShape shape, MeshComponent*& meshPtr) {
+            auto loadOrCreateMesh = [&](const char* name, MeshShape shape, EntityID& entityIDRef) {
+                if (entityIDRef != INVALID_ENTITY)
+                    return;
+
                 auto l_componentName = std::string(name) + ".MeshComponent";
+                auto l_entityName    = l_componentName + "/";
 
-                meshPtr = graphicsService->FindMeshByName(l_componentName.c_str());
-                if (meshPtr)
-                    return;
+                auto l_entityID  = l_registry->Spawn(ObjectLifespan::Persistence, l_entityName.c_str());
+                auto& l_mesh     = l_registry->Emplace<MeshComponent>(l_entityID);
+                l_mesh.m_InstanceName = ObjectName(l_componentName.c_str());
+                auto* l_meshPtr  = &l_mesh;
 
-                meshPtr = graphicsService->AddMeshComponent(l_componentName.c_str());
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
-                if (AssetService::Load(l_filePath.c_str(), *meshPtr))
+                if (AssetService::Load(l_filePath.c_str(), *l_meshPtr, l_entityID))
+                {
+                    entityIDRef = l_entityID;
                     return;
+                }
 
-                GenerateMesh(shape, meshPtr);
-                AssetService::Save(*meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
-
-                graphicsService->Initialize(meshPtr, m_meshVertices[meshPtr], m_meshIndices[meshPtr]);
+                GenerateMesh(shape, l_meshPtr);
+                AssetService::Save(*l_meshPtr, m_meshVertices[l_meshPtr], m_meshIndices[l_meshPtr]);
+                graphicsService->Initialize(l_meshPtr, m_meshVertices[l_meshPtr], m_meshIndices[l_meshPtr], l_entityID);
+                entityIDRef = l_entityID;
                 };
 
-            loadOrCreateMesh("UnitTriangleMesh", MeshShape::Triangle, m_unitTriangleMesh);
-            loadOrCreateMesh("UnitSquareMesh", MeshShape::Square, m_unitSquareMesh);
-            loadOrCreateMesh("UnitPentagonMesh", MeshShape::Pentagon, m_unitPentagonMesh);
-            loadOrCreateMesh("UnitHexagonMesh", MeshShape::Hexagon, m_unitHexagonMesh);
-            loadOrCreateMesh("UnitTetrahedronMesh", MeshShape::Tetrahedron, m_unitTetrahedronMesh);
-            loadOrCreateMesh("UnitCubeMesh", MeshShape::Cube, m_unitCubeMesh);
-            loadOrCreateMesh("UnitOctahedronMesh", MeshShape::Octahedron, m_unitOctahedronMesh);
-            loadOrCreateMesh("UnitDodecahedronMesh", MeshShape::Dodecahedron, m_unitDodecahedronMesh);
-            loadOrCreateMesh("UnitIcosahedronMesh", MeshShape::Icosahedron, m_unitIcosahedronMesh);
-            loadOrCreateMesh("UnitSphereMesh", MeshShape::Sphere, m_unitSphereMesh);
+            loadOrCreateMesh("UnitTriangleMesh",    MeshShape::Triangle,    m_unitTriangleMeshEntity);
+            loadOrCreateMesh("UnitSquareMesh",       MeshShape::Square,      m_unitSquareMeshEntity);
+            loadOrCreateMesh("UnitPentagonMesh",     MeshShape::Pentagon,    m_unitPentagonMeshEntity);
+            loadOrCreateMesh("UnitHexagonMesh",      MeshShape::Hexagon,     m_unitHexagonMeshEntity);
+            loadOrCreateMesh("UnitTetrahedronMesh",  MeshShape::Tetrahedron, m_unitTetrahedronMeshEntity);
+            loadOrCreateMesh("UnitCubeMesh",         MeshShape::Cube,        m_unitCubeMeshEntity);
+            loadOrCreateMesh("UnitOctahedronMesh",   MeshShape::Octahedron,  m_unitOctahedronMeshEntity);
+            loadOrCreateMesh("UnitDodecahedronMesh", MeshShape::Dodecahedron,m_unitDodecahedronMeshEntity);
+            loadOrCreateMesh("UnitIcosahedronMesh",  MeshShape::Icosahedron, m_unitIcosahedronMeshEntity);
+            loadOrCreateMesh("UnitSphereMesh",       MeshShape::Sphere,      m_unitSphereMeshEntity);
 
-            m_terrainMesh = nullptr;
+            m_terrainMeshEntity = INVALID_ENTITY;
 
-            if (!loadOrCreateTexture("DirectionalLightIcon", "../Res/Textures/WorldEditorIcons_DirectionalLight.png", m_iconTemplate_DirectionalLight)) return false;
-            if (!loadOrCreateTexture("PointLightIcon", "../Res/Textures/WorldEditorIcons_PointLight.png", m_iconTemplate_PointLight)) return false;
-            if (!loadOrCreateTexture("SphereLightIcon", "../Res/Textures/WorldEditorIcons_SphereLight.png", m_iconTemplate_SphereLight)) return false;
+            if (!loadOrCreateTexture("DirectionalLightIcon", "../Res/Textures/WorldEditorIcons_DirectionalLight.png", m_iconTemplate_DirectionalLightEntity)) return false;
+            if (!loadOrCreateTexture("PointLightIcon", "../Res/Textures/WorldEditorIcons_PointLight.png", m_iconTemplate_PointLightEntity)) return false;
+            if (!loadOrCreateTexture("SphereLightIcon", "../Res/Textures/WorldEditorIcons_SphereLight.png", m_iconTemplate_SphereLightEntity)) return false;
 
             return true;
         });
@@ -174,30 +195,51 @@ bool TemplateAssetServiceImpl::UnloadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Termination Task", ITask::Type::Once, 2);
     auto l_DefaultAssetTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto l_graphicsService = g_Engine->getGraphicsService();
+            auto l_registry = g_Engine->Get<EntityRegistry>();
 
-            l_graphicsService->Delete(m_basicNormalTexture);
-            l_graphicsService->Delete(m_basicAlbedoTexture);
-            l_graphicsService->Delete(m_basicMetallicTexture);
-            l_graphicsService->Delete(m_basicRoughnessTexture);
-            l_graphicsService->Delete(m_basicAOTexture);
+            // Template components live in EntityRegistry (not TObjectPool), so
+            // Delete() (which calls pool->Destroy) must NOT be called on them.
+            // GPU buffers are released by TerminatePool when the graphics service shuts down.
+            auto deleteTexture = [&](EntityID& entityIDRef) {
+                if (entityIDRef == INVALID_ENTITY) return;
+                l_registry->Destroy(entityIDRef);
+                entityIDRef = INVALID_ENTITY;
+            };
 
-            l_graphicsService->Delete(m_defaultMaterial);
+            auto deleteMesh = [&](EntityID& entityIDRef) {
+                if (entityIDRef == INVALID_ENTITY) return;
+                l_registry->Destroy(entityIDRef);
+                entityIDRef = INVALID_ENTITY;
+            };
 
-            l_graphicsService->Delete(m_iconTemplate_DirectionalLight);
-            l_graphicsService->Delete(m_iconTemplate_PointLight);
-            l_graphicsService->Delete(m_iconTemplate_SphereLight);
+            auto deleteMaterial = [&](EntityID& entityIDRef) {
+                if (entityIDRef == INVALID_ENTITY) return;
+                l_registry->Destroy(entityIDRef);
+                entityIDRef = INVALID_ENTITY;
+            };
 
-            l_graphicsService->Delete(m_unitTriangleMesh);
-            l_graphicsService->Delete(m_unitSquareMesh);
-            l_graphicsService->Delete(m_unitPentagonMesh);
-            l_graphicsService->Delete(m_unitHexagonMesh);
-            l_graphicsService->Delete(m_unitTetrahedronMesh);
-            l_graphicsService->Delete(m_unitCubeMesh);
-            l_graphicsService->Delete(m_unitOctahedronMesh);
-            l_graphicsService->Delete(m_unitDodecahedronMesh);
-            l_graphicsService->Delete(m_unitIcosahedronMesh);
-            l_graphicsService->Delete(m_unitSphereMesh);
+            deleteTexture(m_basicNormalTextureEntity);
+            deleteTexture(m_basicAlbedoTextureEntity);
+            deleteTexture(m_basicMetallicTextureEntity);
+            deleteTexture(m_basicRoughnessTextureEntity);
+            deleteTexture(m_basicAOTextureEntity);
+
+            deleteMaterial(m_defaultMaterialEntity);
+
+            deleteTexture(m_iconTemplate_DirectionalLightEntity);
+            deleteTexture(m_iconTemplate_PointLightEntity);
+            deleteTexture(m_iconTemplate_SphereLightEntity);
+
+            deleteMesh(m_unitTriangleMeshEntity);
+            deleteMesh(m_unitSquareMeshEntity);
+            deleteMesh(m_unitPentagonMeshEntity);
+            deleteMesh(m_unitHexagonMeshEntity);
+            deleteMesh(m_unitTetrahedronMeshEntity);
+            deleteMesh(m_unitCubeMeshEntity);
+            deleteMesh(m_unitOctahedronMeshEntity);
+            deleteMesh(m_unitDodecahedronMeshEntity);
+            deleteMesh(m_unitIcosahedronMeshEntity);
+            deleteMesh(m_unitSphereMeshEntity);
         });
 
     l_DefaultAssetTerminationTask->Activate();
@@ -707,63 +749,46 @@ ObjectStatus TemplateAssetService::GetStatus()
 
 MeshComponent* TemplateAssetService::GetMeshComponent(MeshShape shape)
 {
+    auto l_registry = g_Engine->Get<EntityRegistry>();
+    EntityID l_id = INVALID_ENTITY;
     switch (shape)
     {
-    case MeshShape::Triangle:
-        return m_Impl->m_unitTriangleMesh;
-        break;
-    case MeshShape::Square:
-        return m_Impl->m_unitSquareMesh;
-        break;
-    case MeshShape::Pentagon:
-        return m_Impl->m_unitPentagonMesh;
-        break;
-    case MeshShape::Hexagon:
-        return m_Impl->m_unitHexagonMesh;
-        break;
-    case MeshShape::Tetrahedron:
-        return m_Impl->m_unitTetrahedronMesh;
-        break;
-    case MeshShape::Cube:
-        return m_Impl->m_unitCubeMesh;
-        break;
-    case MeshShape::Octahedron:
-        return m_Impl->m_unitOctahedronMesh;
-        break;
-    case MeshShape::Dodecahedron:
-        return m_Impl->m_unitDodecahedronMesh;
-        break;
-    case MeshShape::Icosahedron:
-        return m_Impl->m_unitIcosahedronMesh;
-        break;
-    case MeshShape::Sphere:
-        return m_Impl->m_unitSphereMesh;
-        break;
+    case MeshShape::Triangle:    l_id = m_Impl->m_unitTriangleMeshEntity;    break;
+    case MeshShape::Square:      l_id = m_Impl->m_unitSquareMeshEntity;      break;
+    case MeshShape::Pentagon:    l_id = m_Impl->m_unitPentagonMeshEntity;    break;
+    case MeshShape::Hexagon:     l_id = m_Impl->m_unitHexagonMeshEntity;     break;
+    case MeshShape::Tetrahedron: l_id = m_Impl->m_unitTetrahedronMeshEntity; break;
+    case MeshShape::Cube:        l_id = m_Impl->m_unitCubeMeshEntity;        break;
+    case MeshShape::Octahedron:  l_id = m_Impl->m_unitOctahedronMeshEntity;  break;
+    case MeshShape::Dodecahedron:l_id = m_Impl->m_unitDodecahedronMeshEntity;break;
+    case MeshShape::Icosahedron: l_id = m_Impl->m_unitIcosahedronMeshEntity; break;
+    case MeshShape::Sphere:      l_id = m_Impl->m_unitSphereMeshEntity;      break;
     default:
         Log(Error, "Invalid MeshShape!");
         return nullptr;
-        break;
     }
+    return l_registry->Get<MeshComponent>(l_id);
 }
 
 TextureComponent* TemplateAssetService::GetTextureComponent(WorldEditorIconType iconType)
 {
+    auto l_registry = g_Engine->Get<EntityRegistry>();
     switch (iconType)
     {
     case WorldEditorIconType::DIRECTIONAL_LIGHT:
-        return m_Impl->m_iconTemplate_DirectionalLight; break;
+        return l_registry->Get<TextureComponent>(m_Impl->m_iconTemplate_DirectionalLightEntity);
     case WorldEditorIconType::POINT_LIGHT:
-        return m_Impl->m_iconTemplate_PointLight; break;
+        return l_registry->Get<TextureComponent>(m_Impl->m_iconTemplate_PointLightEntity);
     case WorldEditorIconType::SPHERE_LIGHT:
-        return m_Impl->m_iconTemplate_SphereLight; break;
+        return l_registry->Get<TextureComponent>(m_Impl->m_iconTemplate_SphereLightEntity);
     default:
-        return nullptr; break;
+        return nullptr;
     }
 }
 
 MaterialComponent* TemplateAssetService::GetDefaultMaterialComponent()
 {
-    return m_Impl->m_defaultMaterial;
+    return g_Engine->Get<EntityRegistry>()->Get<MaterialComponent>(m_Impl->m_defaultMaterialEntity);
 }
 
 bool TemplateAssetService::GenerateMesh(MeshShape shape, MeshComponent* meshComponent)
