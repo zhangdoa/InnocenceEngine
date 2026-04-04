@@ -4,8 +4,6 @@
 
 namespace Inno
 {
-	enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
-
 	struct MaterialComponent
 	{
 		static uint32_t GetTypeID() { return 7; };

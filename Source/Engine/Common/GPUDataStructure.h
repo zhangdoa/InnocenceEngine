@@ -75,6 +75,8 @@ namespace Inno
 		Mat4 normalMat; // Normal transformation matrix
 	};
 
+	enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
+
 	struct MaterialAttributes
 	{
 		float AlbedoR = 1.0f;
