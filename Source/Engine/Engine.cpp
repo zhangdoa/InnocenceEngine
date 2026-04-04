@@ -25,6 +25,7 @@
 #include "Services/AnimationResourceService.h"
 #include "Services/AnimationSimulationService.h"
 #include "Services/GUIService.h"
+#include "Services/GraphicsHardwareService.h"
 
 // Platform-specific systems
 #if defined INNO_PLATFORM_WIN
@@ -40,6 +41,7 @@
 // Rendering servers
 #if defined INNO_RENDERER_DIRECTX
 #include "Services/DX12/DX12GraphicsService.h"
+#include "Services/DX12/DX12GraphicsHardwareService.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
 #include "Services/VK/VKGraphicsService.h"
@@ -427,6 +429,16 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		Log(Error, "Failed to create Rendering Server.");
 		return false;
 	}
+
+	// Create GraphicsHardwareService as delegation wrapper around the graphics backend
+#if defined INNO_RENDERER_DIRECTX
+	if (!m_pImpl->m_initConfig.isHeadless)
+	{
+		auto* l_hwService = new DX12GraphicsHardwareService();
+		l_hwService->SetBackend(m_pImpl->m_GraphicsService.get());
+		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;
+	}
+#endif
 
 	// Platform-specific bridge setup for Mac
 #if defined INNO_PLATFORM_MAC
