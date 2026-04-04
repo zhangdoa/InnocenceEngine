@@ -1,26 +1,9 @@
 #pragma once
-#include "../Common/GraphicsPrimitive.h"
+#include "../Common/GPUMeshResource.h"
 #include "../Common/Object.h"
-#include "../Common/Array.h"
-#include "../Common/MathHelper.h"
 
 namespace Inno
 {
-	// API-agnostic GPU buffer view handles
-	// These map to D3D12_VERTEX_BUFFER_VIEW/D3D12_INDEX_BUFFER_VIEW in DX12
-	// and VkBuffer with offsets in Vulkan
-	struct GPUBufferView
-	{
-		uint64_t m_BufferLocation = 0; // GPU virtual address (for DX12) or offset (for VK)
-		uint32_t m_SizeInBytes = 0; // Size of the entire buffer in bytes
-		uint32_t m_StrideInBytes = 0; // Size of each element in bytes
-
-		bool IsValid() const
-		{
-			return m_BufferLocation !=0 && m_SizeInBytes > 0 && m_StrideInBytes > 0;
-		}
-	};
-
 	struct MeshComponent
 	{
 		static uint32_t GetTypeID() { return 6; };
@@ -29,19 +12,6 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 		ObjectName   m_InstanceName = "";
 
-		void* m_MappedMemory_VB = nullptr;
-		void* m_MappedMemory_IB = nullptr;
-		GPUBufferView m_VertexBufferView;
-		GPUBufferView m_IndexBufferView;
-
-		// Bounding box calculated from vertex data
-		AABB m_AABB;
-
-		uint32_t GetIndexCount() const
-		{
-			if (m_IndexBufferView.m_StrideInBytes == 0)
-				return 0;
-			return m_IndexBufferView.m_SizeInBytes / m_IndexBufferView.m_StrideInBytes;
-		}
+		GPUMeshResourceHandle m_GPUResource;
 	};
 }

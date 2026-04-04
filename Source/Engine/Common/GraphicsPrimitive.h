@@ -28,6 +28,21 @@ INNO_ENUM
 
 namespace Inno
 {
+	// API-agnostic GPU buffer view handles
+	// These map to D3D12_VERTEX_BUFFER_VIEW/D3D12_INDEX_BUFFER_VIEW in DX12
+	// and VkBuffer with offsets in Vulkan
+	struct GPUBufferView
+	{
+		uint64_t m_BufferLocation = 0; // GPU virtual address (for DX12) or offset (for VK)
+		uint32_t m_SizeInBytes = 0; // Size of the entire buffer in bytes
+		uint32_t m_StrideInBytes = 0; // Size of each element in bytes
+
+		bool IsValid() const
+		{
+			return m_BufferLocation !=0 && m_SizeInBytes > 0 && m_StrideInBytes > 0;
+		}
+	};
+
 	class GPUResourceComponent;
 	class TextureComponent;
 	namespace Type
