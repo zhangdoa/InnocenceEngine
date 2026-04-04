@@ -96,12 +96,8 @@ namespace Inno
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		auto& l_mesh = l_Registry->Emplace<MeshComponent>(Entity);
-		l_mesh.m_VertexBufferView  = l_templateMesh->m_VertexBufferView;
-		l_mesh.m_IndexBufferView   = l_templateMesh->m_IndexBufferView;
-		l_mesh.m_AABB              = l_templateMesh->m_AABB;
-		l_mesh.m_MappedMemory_VB   = l_templateMesh->m_MappedMemory_VB;
-		l_mesh.m_MappedMemory_IB   = l_templateMesh->m_MappedMemory_IB;
-		l_mesh.m_ObjectStatus = ObjectStatus::Activated;
+		l_mesh.m_GPUResource = l_templateMesh->m_GPUResource;
+		l_mesh.m_ObjectStatus = l_templateMesh->m_ObjectStatus;
 
 		auto& l_material = l_Registry->Emplace<MaterialComponent>(Entity);
 		l_material.m_materialAttributes = l_defaultMaterial->m_materialAttributes;
@@ -115,7 +111,7 @@ namespace Inno
 			return;
 
 		auto l_sphereMesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
-		if (!l_sphereMesh || !l_sphereMesh->m_VertexBufferView.IsValid())
+		if (!l_sphereMesh || !l_sphereMesh->m_GPUResource.IsValid())
 			return;
 
 		for (auto& l_pair : m_PendingMeshSetups)

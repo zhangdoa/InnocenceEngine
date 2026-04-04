@@ -734,8 +734,9 @@ bool DX12GraphicsService::InitializeImpl(EntityID Entity)
 	if (!l_mesh)
 		return true;
 
-	auto blasIt = m_MeshBLAS.find(reinterpret_cast<uint64_t>(l_mesh));
-	if (blasIt == m_MeshBLAS.end())
+	auto l_handleIndex = l_mesh->m_GPUResource.m_Index;
+	auto blasIt = m_DX12MeshResources.find(l_handleIndex);
+	if (blasIt == m_DX12MeshResources.end() || !blasIt->second.m_BLAS)
 		return false;
 
 	for (size_t frameIndex = 0; frameIndex < GetSwapChainImageCount(); frameIndex++)
@@ -763,7 +764,7 @@ bool DX12GraphicsService::InitializeImpl(EntityID Entity)
 		instanceDesc.InstanceMask = 0xFF;
 		instanceDesc.InstanceContributionToHitGroupIndex = 0;
 		instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-		instanceDesc.AccelerationStructure = blasIt->second->GetGPUVirtualAddress();
+		instanceDesc.AccelerationStructure = blasIt->second.m_BLAS->GetGPUVirtualAddress();
 
 		l_descList->m_Descs.emplace_back(instanceDesc);
 		l_descList->m_NeedFullUpdate = true;

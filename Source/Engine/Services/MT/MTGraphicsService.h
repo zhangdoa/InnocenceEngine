@@ -62,5 +62,9 @@ namespace Inno
 		bool EndCapture() override;
 
 		void setBridge(MTGraphicsServiceBridge* bridge);
+
+	protected:
+		bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+		void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) override;
 	};
 }

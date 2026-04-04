@@ -512,24 +512,28 @@ bool DX12GraphicsService::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 		return false;
 	}
 
+	auto* l_resource = GetMeshResource(mesh->m_GPUResource);
+	if (!l_resource || l_resource->m_Status != ObjectStatus::Activated)
+		return false;
+
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
 
 	D3D12_VERTEX_BUFFER_VIEW vbv = {};
-	vbv.BufferLocation = mesh->m_VertexBufferView.m_BufferLocation;
-	vbv.StrideInBytes = mesh->m_VertexBufferView.m_StrideInBytes;
-	vbv.SizeInBytes = mesh->m_VertexBufferView.m_SizeInBytes;
+	vbv.BufferLocation = l_resource->m_VertexBufferView.m_BufferLocation;
+	vbv.StrideInBytes = l_resource->m_VertexBufferView.m_StrideInBytes;
+	vbv.SizeInBytes = l_resource->m_VertexBufferView.m_SizeInBytes;
 
 	D3D12_INDEX_BUFFER_VIEW ibv = {};
-	ibv.BufferLocation = mesh->m_IndexBufferView.m_BufferLocation;
-	ibv.Format = DXGI_FORMAT_R32_UINT; // Index format
-	ibv.SizeInBytes = mesh->m_IndexBufferView.m_SizeInBytes;
+	ibv.BufferLocation = l_resource->m_IndexBufferView.m_BufferLocation;
+	ibv.Format = DXGI_FORMAT_R32_UINT;
+	ibv.SizeInBytes = l_resource->m_IndexBufferView.m_SizeInBytes;
 
 	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 	l_commandList->IASetVertexBuffers(0, 1, &vbv);
 	l_commandList->IASetIndexBuffer(&ibv);
-	l_commandList->DrawIndexedInstanced(mesh->GetIndexCount(), (uint32_t)instanceCount, 0, 0, 0);
+	l_commandList->DrawIndexedInstanced(l_resource->GetIndexCount(), (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }

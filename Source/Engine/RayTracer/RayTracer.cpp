@@ -5,6 +5,7 @@
 
 #include "../Services/CameraService.h"
 #include "../Services/AssetService.h"
+#include "../Services/IGraphicsService.h"
 #include "../Services/RenderingConfigurationService.h"
 #include "../Services/EntityRegistry.h"
 
@@ -410,14 +411,17 @@ bool ExecuteRayTracing()
 		auto* l_xf   = l_registry->Get<TransformComponent>(l_entityID);
 		if (!l_mesh || !l_xf)
 			continue;
-		auto& l_aabb = l_mesh->m_AABB;
+		auto* l_meshResource = g_Engine->getGraphicsService()->GetMeshResource(l_mesh->m_GPUResource);
+		if (!l_meshResource)
+			continue;
+		auto& l_aabb = l_meshResource->m_AABB;
 		if (l_aabb.m_extend.x <= 0.0f && l_aabb.m_extend.y <= 0.0f && l_aabb.m_extend.z <= 0.0f)
 			continue;
 
 		auto* l_mat = l_registry->Get<MaterialComponent>(l_entityID);
 
 		auto* l_hitable = new HitableCube();
-		l_hitable->m_AABB = BuildWorldAABB(l_mesh->m_AABB, *l_xf);
+		l_hitable->m_AABB = BuildWorldAABB(l_meshResource->m_AABB, *l_xf);
 
 		float roughness = l_mat ? l_mat->m_materialAttributes.Roughness : 0.8f;
 		float emissive  = l_mat ? (l_mat->m_materialAttributes.AlbedoR +

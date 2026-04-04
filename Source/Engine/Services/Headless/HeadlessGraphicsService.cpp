@@ -65,6 +65,10 @@ bool HeadlessGraphicsService::CommandListEnd(RenderPassComponent* renderPass, Co
 bool HeadlessGraphicsService::Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType) { return true; }
 bool HeadlessGraphicsService::Present() { return true; }
 
+// GPU mesh resource operations - no-ops for headless
+bool HeadlessGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return true; }
+void HeadlessGraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) {}
+
 // Hardware resource operations - all no-ops that succeed
 bool HeadlessGraphicsService::CreateHardwareResources() { return true; }
 bool HeadlessGraphicsService::ReleaseHardwareResources() { return true; }

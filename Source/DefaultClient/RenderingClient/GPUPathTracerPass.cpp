@@ -393,17 +393,21 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
-		if (!l_mesh.m_MappedMemory_VB || !l_mesh.m_MappedMemory_IB)
+		const auto* l_resource = l_graphicsService->GetMeshResource(l_mesh.m_GPUResource);
+		if (!l_resource || l_resource->m_Status != ObjectStatus::Activated)
 			continue;
 
-		const uint32_t l_vertexStride  = l_mesh.m_VertexBufferView.m_StrideInBytes;
-		const uint32_t l_indexStride   = l_mesh.m_IndexBufferView.m_StrideInBytes;
+		if (!l_resource->m_MappedMemory_VB || !l_resource->m_MappedMemory_IB)
+			continue;
+
+		const uint32_t l_vertexStride  = l_resource->m_VertexBufferView.m_StrideInBytes;
+		const uint32_t l_indexStride   = l_resource->m_IndexBufferView.m_StrideInBytes;
 
 		if (l_vertexStride == 0 || l_indexStride == 0)
 			continue;
 
-		const uint32_t l_vertexCount = l_mesh.m_VertexBufferView.m_SizeInBytes / l_vertexStride;
-		const uint32_t l_indexCount  = l_mesh.GetIndexCount();
+		const uint32_t l_vertexCount = l_resource->m_VertexBufferView.m_SizeInBytes / l_vertexStride;
+		const uint32_t l_indexCount  = l_resource->GetIndexCount();
 
 		if (l_vertexCount == 0 || l_indexCount == 0)
 			continue;
@@ -415,7 +419,7 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		l_offset.m_IndexCount   = l_indexCount;
 		l_offsets.push_back(l_offset);
 
-		const uint8_t* l_vbPtr = static_cast<const uint8_t*>(l_mesh.m_MappedMemory_VB);
+		const uint8_t* l_vbPtr = static_cast<const uint8_t*>(l_resource->m_MappedMemory_VB);
 		for (uint32_t v = 0; v < l_vertexCount; v++)
 		{
 			const Vertex* l_vert = reinterpret_cast<const Vertex*>(l_vbPtr + static_cast<size_t>(v) * l_vertexStride);
@@ -429,7 +433,7 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 			l_vertices.push_back(l_ptVertex);
 		}
 
-		const uint8_t* l_ibPtr = static_cast<const uint8_t*>(l_mesh.m_MappedMemory_IB);
+		const uint8_t* l_ibPtr = static_cast<const uint8_t*>(l_resource->m_MappedMemory_IB);
 		for (uint32_t idx = 0; idx < l_indexCount; idx++)
 		{
 			uint32_t l_index = 0;

@@ -134,6 +134,10 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
+		auto* l_resource = l_graphicsService->GetMeshResource(l_mesh.m_GPUResource);
+		if (!l_resource || l_resource->m_Status != ObjectStatus::Activated)
+			continue;
+
 		auto* l_material = l_registry->Get<MaterialComponent>(l_Entity);
 		if (!l_material)
 			continue;
@@ -144,21 +148,21 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 
 		GPUModelData l_gpuModelData = {};
 
-		l_gpuModelData.m_VertexBufferAddress = l_mesh.m_VertexBufferView.m_BufferLocation;
-		l_gpuModelData.m_IndexBufferAddress = l_mesh.m_IndexBufferView.m_BufferLocation;
+		l_gpuModelData.m_VertexBufferAddress = l_resource->m_VertexBufferView.m_BufferLocation;
+		l_gpuModelData.m_IndexBufferAddress = l_resource->m_IndexBufferView.m_BufferLocation;
 
-		if (l_mesh.m_VertexBufferView.m_StrideInBytes == 0)
+		if (l_resource->m_VertexBufferView.m_StrideInBytes == 0)
 		{
 			Log(Error, "Vertex stride is zero - cannot calculate vertex count");
 			l_gpuModelData.m_VertexCount = 0;
 		}
 		else
 		{
-			l_gpuModelData.m_VertexCount = l_mesh.m_VertexBufferView.m_SizeInBytes / l_mesh.m_VertexBufferView.m_StrideInBytes;
+			l_gpuModelData.m_VertexCount = l_resource->m_VertexBufferView.m_SizeInBytes / l_resource->m_VertexBufferView.m_StrideInBytes;
 		}
-		l_gpuModelData.m_IndexCount = l_mesh.GetIndexCount();
-		l_gpuModelData.m_VertexStride = l_mesh.m_VertexBufferView.m_StrideInBytes;
-		l_gpuModelData.m_IndexStride = l_mesh.m_IndexBufferView.m_StrideInBytes;
+		l_gpuModelData.m_IndexCount = l_resource->GetIndexCount();
+		l_gpuModelData.m_VertexStride = l_resource->m_VertexBufferView.m_StrideInBytes;
+		l_gpuModelData.m_IndexStride = l_resource->m_IndexBufferView.m_StrideInBytes;
 
 		l_gpuModelData.m_MaterialIndex = l_drawCallIndex;
 		l_gpuModelData.m_UUID = static_cast<float>(l_Entity);
@@ -167,7 +171,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		l_gpuModelData.m_MeshUsage = static_cast<uint32_t>(MeshUsage::Static);
 
 		auto* l_world = l_registry->Get<WorldTransformComponent>(l_Entity);
-		const AABB& l_localAabb = l_vis ? l_vis->m_AABB : l_mesh.m_AABB;
+		const AABB& l_localAabb = l_vis ? l_vis->m_AABB : l_resource->m_AABB;
 		if (l_world)
 		{
 			const auto& M = l_world->m_WorldMatrix;

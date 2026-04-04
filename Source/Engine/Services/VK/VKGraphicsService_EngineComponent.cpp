@@ -42,30 +42,14 @@ bool VKGraphicsService::SetObjectName(U* owner, const T& rhs, VkObjectType objec
 	return true;
 }
 
-bool VKGraphicsService::InitializeImpl(MeshComponent *rhs, std::vector<Vertex> &vertices, std::vector<Index> &indices)
+bool VKGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex> &vertices, std::vector<Index> &indices)
 {
-	auto l_rhs = reinterpret_cast<VKMeshComponent *>(rhs);
-
-	auto l_VBSize = sizeof(Vertex) * vertices.size();
-	auto l_IBSize = sizeof(Index) * indices.size();
-
-	CreateDeviceLocalBuffer(l_VBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_VBO, l_rhs->m_VBMemory);
-	CreateDeviceLocalBuffer(l_IBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_IBO, l_rhs->m_IBMemory);
-
-	InitializeDeviceLocalBuffer(&vertices[0], l_VBSize, l_rhs->m_VBO, l_rhs->m_VBMemory);
-	Log(Verbose, "VBO ", l_rhs->m_VBO, " is initialized.");
-
-	InitializeDeviceLocalBuffer(&indices[0], l_IBSize, l_rhs->m_IBO, l_rhs->m_IBMemory);
-	Log(Verbose, "IBO ", l_rhs->m_IBO, " is initialized.");
-
-#if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(l_rhs, l_rhs->m_VBO, VK_OBJECT_TYPE_BUFFER, "VB");
-	SetObjectName(l_rhs, l_rhs->m_IBO, VK_OBJECT_TYPE_BUFFER, "IB");
-#endif //  INNO_DEBUG
-
-	m_initializedMeshes.emplace(l_rhs);
-
+	// @TODO: Reimplement VK mesh resource initialization using GPUMeshResource table
 	return true;
+}
+
+void VKGraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle)
+{
 }
 
 bool VKGraphicsService::InitializeImpl(TextureComponent *rhs, void *textureData)

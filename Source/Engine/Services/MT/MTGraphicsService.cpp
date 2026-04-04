@@ -216,6 +216,15 @@ void MTGraphicsService::setBridge(MTGraphicsServiceBridge* bridge)
 	Log(Success, "Bridge connected at ", bridge);
 }
 
+bool MTGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+{
+	return true;
+}
+
+void MTGraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle)
+{
+}
+
 bool MTGraphicsService::BeginCapture()
 {
 	return true;
