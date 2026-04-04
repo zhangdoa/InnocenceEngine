@@ -30,5 +30,15 @@ namespace Inno
 			auto l_NameW = std::wstring(l_Name.begin(), l_Name.end());
 			return SetObjectName(l_NameW.c_str(), rhs, objectType);
 		}
+
+		template <typename T>
+		bool SetObjectName(const char* ownerName, ComPtr<T> rhs, const char* objectType)
+		{
+			auto l_Name = std::string(ownerName);
+			l_Name += "_";
+			l_Name += objectType;
+			auto l_NameW = std::wstring(l_Name.begin(), l_Name.end());
+			return SetObjectName(l_NameW.c_str(), rhs, objectType);
+		}
 	}
 }

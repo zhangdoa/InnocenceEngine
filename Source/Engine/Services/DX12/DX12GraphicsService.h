@@ -68,7 +68,8 @@ namespace Inno
 
     protected:
         // In DX12GraphicsService_ComponentPool.cpp
-        bool InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+        bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+        void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) override;
         bool InitializeImpl(TextureComponent* texture, void* textureData) override;
         bool InitializeImpl(ShaderProgramComponent* shaderProgram) override;
         bool InitializeImpl(SamplerComponent* sampler) override;
@@ -228,13 +229,16 @@ namespace Inno
         ID3D12PipelineState* m_2DMipmapPSO = nullptr;
         ID3D12PipelineState* m_3DMipmapPSO = nullptr;
 
-        // Key: Component pointer (as uint64_t), Value: DX12 GPU resources
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshVertexBuffers_Upload;
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshVertexBuffers_Default;
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshIndexBuffers_Upload;
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshIndexBuffers_Default;
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshBLAS;
-        std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_MeshScratchBuffers;
+        struct DX12MeshGPUResources
+        {
+            ComPtr<ID3D12Resource> m_VertexBuffer_Upload;
+            ComPtr<ID3D12Resource> m_VertexBuffer_Default;
+            ComPtr<ID3D12Resource> m_IndexBuffer_Upload;
+            ComPtr<ID3D12Resource> m_IndexBuffer_Default;
+            ComPtr<ID3D12Resource> m_BLAS;
+            ComPtr<ID3D12Resource> m_ScratchBuffer;
+        };
+        std::unordered_map<uint32_t, DX12MeshGPUResources> m_DX12MeshResources;
         
         std::unordered_map<uint64_t, ComPtr<ID3D12Resource>> m_TextureBuffers_Upload;
         std::unordered_map<uint64_t, std::vector<ComPtr<ID3D12Resource>>> m_TextureBuffers_Default;

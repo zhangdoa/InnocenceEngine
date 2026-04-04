@@ -22,12 +22,7 @@ bool DX12GraphicsService::TerminatePool()
 {
 	IGraphicsService::TerminatePool();
 
-	m_MeshVertexBuffers_Upload.clear();
-	m_MeshVertexBuffers_Default.clear();
-	m_MeshIndexBuffers_Upload.clear();
-	m_MeshIndexBuffers_Default.clear();
-	m_MeshBLAS.clear();
-	m_MeshScratchBuffers.clear();
+	m_DX12MeshResources.clear();
 	m_TextureBuffers_Upload.clear();
 	m_TextureBuffers_Default.clear();
 
@@ -56,48 +51,28 @@ bool DX12GraphicsService::Add(IOutputMergerTarget*& rhs)
 
 bool DX12GraphicsService::Delete(MeshComponent* mesh)
 {
-	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
-
-	auto vertexUploadIt = m_MeshVertexBuffers_Upload.find(componentUUID);
-	if (vertexUploadIt != m_MeshVertexBuffers_Upload.end()) {
-		if (vertexUploadIt->second) vertexUploadIt->second.Reset();
-		m_MeshVertexBuffers_Upload.erase(vertexUploadIt);
-	}
-
-	auto vertexDefaultIt = m_MeshVertexBuffers_Default.find(componentUUID);
-	if (vertexDefaultIt != m_MeshVertexBuffers_Default.end()) {
-		if (vertexDefaultIt->second) vertexDefaultIt->second.Reset();
-		m_MeshVertexBuffers_Default.erase(vertexDefaultIt);
-	}
-
-	auto indexUploadIt = m_MeshIndexBuffers_Upload.find(componentUUID);
-	if (indexUploadIt != m_MeshIndexBuffers_Upload.end()) {
-		if (indexUploadIt->second) indexUploadIt->second.Reset();
-		m_MeshIndexBuffers_Upload.erase(indexUploadIt);
-	}
-
-	auto indexDefaultIt = m_MeshIndexBuffers_Default.find(componentUUID);
-	if (indexDefaultIt != m_MeshIndexBuffers_Default.end()) {
-		if (indexDefaultIt->second) indexDefaultIt->second.Reset();
-		m_MeshIndexBuffers_Default.erase(indexDefaultIt);
-	}
-
-	auto blasIt = m_MeshBLAS.find(componentUUID);
-	if (blasIt != m_MeshBLAS.end()) {
-		if (blasIt->second) blasIt->second.Reset();
-		m_MeshBLAS.erase(blasIt);
-	}
-
-	auto scratchIt = m_MeshScratchBuffers.find(componentUUID);
-	if (scratchIt != m_MeshScratchBuffers.end()) {
-		if (scratchIt->second) scratchIt->second.Reset();
-		m_MeshScratchBuffers.erase(scratchIt);
-	}
+	if (mesh->m_GPUResource.IsValid())
+		ReleaseMeshGPUResourceImpl(mesh->m_GPUResource);
 
 	ReleaseFromPool(m_GPUHandlePools.Meshes,
 	                m_GPUHandlePools.MeshLUT,
 	                m_GPUHandlePools.MeshPointers, mesh);
 	return true;
+}
+
+void DX12GraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle)
+{
+	auto it = m_DX12MeshResources.find(handle.m_Index);
+	if (it != m_DX12MeshResources.end())
+	{
+		it->second.m_VertexBuffer_Upload.Reset();
+		it->second.m_VertexBuffer_Default.Reset();
+		it->second.m_IndexBuffer_Upload.Reset();
+		it->second.m_IndexBuffer_Default.Reset();
+		it->second.m_BLAS.Reset();
+		it->second.m_ScratchBuffer.Reset();
+		m_DX12MeshResources.erase(it);
+	}
 }
 
 bool DX12GraphicsService::Delete(TextureComponent* texture)

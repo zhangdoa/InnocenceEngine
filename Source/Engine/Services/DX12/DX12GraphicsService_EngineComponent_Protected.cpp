@@ -19,9 +19,16 @@
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool DX12GraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
+	auto* l_resource = GetMeshResource(handle);
+	if (!l_resource)
+	{
+		Log(Error, "InitializeImpl: invalid GPUMeshResourceHandle");
+		return false;
+	}
+
+	auto l_name = l_resource->m_Name.c_str();
 
 	// vertices
 	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * vertices.size());
@@ -30,28 +37,26 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_defaultHeapBuffer_VB = CreateDefaultHeapBuffer(&l_verticesResourceDesc);
 	if (!l_defaultHeapBuffer_VB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Default Heap!");
+		Log(Error, l_name, " can't create vertex buffer on Default Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
+	SetObjectName(l_name, l_defaultHeapBuffer_VB, "DefaultHeap_VB");
 #endif
-	m_MeshVertexBuffers_Default[componentUUID] = l_defaultHeapBuffer_VB;
 
 	auto l_uploadHeapBuffer_VB = CreateUploadHeapBuffer(&l_verticesResourceDesc);
 	if (!l_uploadHeapBuffer_VB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create vertex buffer on Upload Heap!");
+		Log(Error, l_name, " can't create vertex buffer on Upload Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_uploadHeapBuffer_VB, "UploadHeap_VB");
+	SetObjectName(l_name, l_uploadHeapBuffer_VB, "UploadHeap_VB");
 #endif
-	m_MeshVertexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_VB;
 
-	mesh->m_VertexBufferView.m_BufferLocation = l_defaultHeapBuffer_VB->GetGPUVirtualAddress();
-	mesh->m_VertexBufferView.m_SizeInBytes = l_verticesDataSize;
-	mesh->m_VertexBufferView.m_StrideInBytes = sizeof(Vertex);
+	l_resource->m_VertexBufferView.m_BufferLocation = l_defaultHeapBuffer_VB->GetGPUVirtualAddress();
+	l_resource->m_VertexBufferView.m_SizeInBytes = l_verticesDataSize;
+	l_resource->m_VertexBufferView.m_StrideInBytes = sizeof(Vertex);
 
 	// indices
 	auto l_indicesDataSize = uint32_t(sizeof(Index) * indices.size());
@@ -60,28 +65,26 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_defaultHeapBuffer_IB = CreateDefaultHeapBuffer(&l_indicesResourceDesc);
 	if (!l_defaultHeapBuffer_IB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create index buffer on Default Heap!");
+		Log(Error, l_name, " can't create index buffer on Default Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
+	SetObjectName(l_name, l_defaultHeapBuffer_IB, "DefaultHeap_IB");
 #endif
-	m_MeshIndexBuffers_Default[componentUUID] = l_defaultHeapBuffer_IB;
 
 	auto l_uploadHeapBuffer_IB = CreateUploadHeapBuffer(&l_indicesResourceDesc);
 	if (!l_uploadHeapBuffer_IB)
 	{
-		Log(Error, mesh->m_InstanceName, " can't create index buffer on Upload Heap!");
+		Log(Error, l_name, " can't create index buffer on Upload Heap!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_uploadHeapBuffer_IB, "UploadHeap_IB");
+	SetObjectName(l_name, l_uploadHeapBuffer_IB, "UploadHeap_IB");
 #endif
-	m_MeshIndexBuffers_Upload[componentUUID] = l_uploadHeapBuffer_IB;
 
-	mesh->m_IndexBufferView.m_BufferLocation = l_defaultHeapBuffer_IB->GetGPUVirtualAddress();
-	mesh->m_IndexBufferView.m_SizeInBytes = l_indicesDataSize;
-	mesh->m_IndexBufferView.m_StrideInBytes = sizeof(Index);
+	l_resource->m_IndexBufferView.m_BufferLocation = l_defaultHeapBuffer_IB->GetGPUVirtualAddress();
+	l_resource->m_IndexBufferView.m_SizeInBytes = l_indicesDataSize;
+	l_resource->m_IndexBufferView.m_StrideInBytes = sizeof(Index);
 
 	// Flip y texture coordinate
 	for (auto& i : vertices)
@@ -90,11 +93,11 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	}
 
 	CD3DX12_RANGE m_readRange(0, 0);
-	l_uploadHeapBuffer_VB->Map(0, &m_readRange, &mesh->m_MappedMemory_VB);
-	l_uploadHeapBuffer_IB->Map(0, &m_readRange, &mesh->m_MappedMemory_IB);
+	l_uploadHeapBuffer_VB->Map(0, &m_readRange, &l_resource->m_MappedMemory_VB);
+	l_uploadHeapBuffer_IB->Map(0, &m_readRange, &l_resource->m_MappedMemory_IB);
 
-	std::memcpy((char*)mesh->m_MappedMemory_VB, &vertices[0], vertices.size() * sizeof(Vertex));
-	std::memcpy((char*)mesh->m_MappedMemory_IB, &indices[0], indices.size() * sizeof(Index));
+	std::memcpy((char*)l_resource->m_MappedMemory_VB, &vertices[0], vertices.size() * sizeof(Vertex));
+	std::memcpy((char*)l_resource->m_MappedMemory_IB, &indices[0], indices.size() * sizeof(Index));
 
 	CommandListComponent l_commandList = {};
 	l_commandList.m_Type = GPUEngineType::Graphics;
@@ -107,7 +110,9 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_INDEX_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
 
-	UploadToGPU(&l_commandList, mesh);
+	// Inline upload: copy from upload heap to default heap
+	l_dx12CommandList->CopyResource(l_defaultHeapBuffer_VB.Get(), l_uploadHeapBuffer_VB.Get());
+	l_dx12CommandList->CopyResource(l_defaultHeapBuffer_IB.Get(), l_uploadHeapBuffer_IB.Get());
 
 	// Transition back to read states for normal rendering
 	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -139,7 +144,7 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0)
 	{
-		Log(Error, mesh->m_InstanceName, " Failed to get prebuild info for BLAS!");
+		Log(Error, l_name, " Failed to get prebuild info for BLAS!");
 		return false;
 	}
 
@@ -147,25 +152,23 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_BLAS = CreateDefaultHeapBuffer(&blasResourceDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 	if (!l_BLAS)
 	{
-		Log(Error, mesh->m_InstanceName, " Failed to create BLAS buffer!");
+		Log(Error, l_name, " Failed to create BLAS buffer!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_BLAS, "BLAS");
+	SetObjectName(l_name, l_BLAS, "BLAS");
 #endif
-	m_MeshBLAS[componentUUID] = l_BLAS;
 
 	auto scratchResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(prebuildInfo.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 	auto l_scratchBuffer = CreateDefaultHeapBuffer(&scratchResourceDesc);
 	if (!l_scratchBuffer)
 	{
-		Log(Error, mesh->m_InstanceName, " Failed to create scratch buffer for BLAS!");
+		Log(Error, l_name, " Failed to create scratch buffer for BLAS!");
 		return false;
 	}
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-	SetObjectName(mesh, l_scratchBuffer, "ScratchBuffer_BLAS");
+	SetObjectName(l_name, l_scratchBuffer, "ScratchBuffer_BLAS");
 #endif
-	m_MeshScratchBuffers[componentUUID] = l_scratchBuffer;
 
 	// Transition index and vertex buffers to NON_PIXEL_SHADER_RESOURCE state for BLAS build.
 	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -194,8 +197,17 @@ bool DX12GraphicsService::InitializeImpl(MeshComponent* mesh, std::vector<Vertex
 	auto l_semaphoreValue = GetSemaphoreValue(GPUEngineType::Graphics);
 	WaitOnCPU(l_semaphoreValue, GPUEngineType::Graphics);
 
-	Log(Verbose, mesh->m_InstanceName, " BLAS is initialized.");
-	mesh->m_ObjectStatus = ObjectStatus::Activated;
+	// Store all DX12 resources in consolidated struct
+	DX12MeshGPUResources l_dx12Resources;
+	l_dx12Resources.m_VertexBuffer_Upload = l_uploadHeapBuffer_VB;
+	l_dx12Resources.m_VertexBuffer_Default = l_defaultHeapBuffer_VB;
+	l_dx12Resources.m_IndexBuffer_Upload = l_uploadHeapBuffer_IB;
+	l_dx12Resources.m_IndexBuffer_Default = l_defaultHeapBuffer_IB;
+	l_dx12Resources.m_BLAS = l_BLAS;
+	l_dx12Resources.m_ScratchBuffer = l_scratchBuffer;
+	m_DX12MeshResources[handle.m_Index] = std::move(l_dx12Resources);
+
+	Log(Verbose, l_name, " BLAS is initialized.");
 
 	return true;
 }
@@ -823,16 +835,16 @@ bool DX12GraphicsService::InitializeImpl(CommandListComponent* commandList)
 
 bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh)
 {
-	auto componentUUID = reinterpret_cast<uint64_t>(mesh);
+	if (!mesh->m_GPUResource.IsValid())
+		return false;
+
+	auto l_it = m_DX12MeshResources.find(mesh->m_GPUResource.m_Index);
+	if (l_it == m_DX12MeshResources.end())
+		return false;
+
 	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
-
-	auto vertexDefault = m_MeshVertexBuffers_Default[componentUUID];
-	auto vertexUpload = m_MeshVertexBuffers_Upload[componentUUID];
-	auto indexDefault = m_MeshIndexBuffers_Default[componentUUID];
-	auto indexUpload = m_MeshIndexBuffers_Upload[componentUUID];
-
-	l_DX12CommandList->CopyResource(vertexDefault.Get(), vertexUpload.Get());
-	l_DX12CommandList->CopyResource(indexDefault.Get(), indexUpload.Get());
+	l_DX12CommandList->CopyResource(l_it->second.m_VertexBuffer_Default.Get(), l_it->second.m_VertexBuffer_Upload.Get());
+	l_DX12CommandList->CopyResource(l_it->second.m_IndexBuffer_Default.Get(), l_it->second.m_IndexBuffer_Upload.Get());
 
 	return true;
 }
