@@ -551,7 +551,7 @@ bool DX12GraphicsService::DrawInstanced(RenderPassComponent* renderPass, Command
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
 
 	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
-	l_commandList->IASetVertexBuffers(0, 1, nullptr);
+	l_commandList->IASetVertexBuffers(0, 0, nullptr);
 	l_commandList->IASetIndexBuffer(nullptr);
 	l_commandList->DrawInstanced(1, (uint32_t)instanceCount, 0, 0);
 
@@ -838,6 +838,9 @@ bool DX12GraphicsService::DispatchRays(RenderPassComponent* renderPass, CommandL
 		Log(Error, "Null parameters in DispatchRays");
 		return false;
 	}
+
+	if (!m_TLASReady)
+		return false;
 
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);

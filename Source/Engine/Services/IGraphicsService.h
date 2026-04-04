@@ -283,6 +283,7 @@ namespace Inno
         GPUBufferComponent* m_TLASBufferComponent = nullptr;
 		GPUBufferComponent* m_ScratchBufferComponent = nullptr;
  		GPUBufferComponent* m_RaytracingInstanceBufferComponent = nullptr;
+		bool m_TLASReady = false;
 
         std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
 

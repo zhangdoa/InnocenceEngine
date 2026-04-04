@@ -106,6 +106,16 @@ bool IGraphicsService::Setup(IServiceConfig* systemConfig)
 
 bool IGraphicsService::OnSceneUnloading()
 {
+	// Drain all GPU queues before releasing resources — previous frames may still
+	// be in flight referencing scene-scoped mesh/BLAS data.
+	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
+	SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Copy);
+
+	WaitOnCPU(GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+	WaitOnCPU(GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+	WaitOnCPU(GetSemaphoreValue(GPUEngineType::Copy), GPUEngineType::Copy);
+
 	ReleaseAllMeshResources(ObjectLifespan::Scene);
 
 	auto l_registry = g_Engine->Get<EntityRegistry>();
@@ -119,8 +129,8 @@ bool IGraphicsService::OnSceneUnloading()
 		auto* l_material = l_registry->Get<MaterialComponent>(l_entityID);
 		if (l_material && l_material->m_ObjectStatus == ObjectStatus::Activated)
 		{
+			m_initializedMaterials.erase(l_material);
 			l_material->m_ObjectStatus = ObjectStatus::Invalid;
-			Delete(l_material);
 		}
 	}
 

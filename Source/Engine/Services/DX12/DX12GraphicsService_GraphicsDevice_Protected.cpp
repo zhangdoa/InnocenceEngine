@@ -656,6 +656,8 @@ bool DX12GraphicsService::PrepareRayTracing(CommandListComponent* commandList)
     CD3DX12_RESOURCE_BARRIER tlasBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_TLASBuffer->m_DefaultHeapBuffer.Get());
     l_commandList->ResourceBarrier(1, &tlasBarrier);
 
+    m_TLASReady = true;
+
     return true;
 }
 
@@ -726,7 +728,8 @@ bool DX12GraphicsService::OnSceneLoadingStart()
     }
 
     m_initializedEntities.clear();
-    
+    m_TLASReady = false;
+
     Log(Verbose, "Raytracing instance descriptions have been cleared.");
 
     return true;
