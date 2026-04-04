@@ -50,7 +50,6 @@ namespace Inno
 
 		InitConfig getInitConfig();
 		const FixedSizeString<128>& GetApplicationName();
-		IGraphicsService* getGraphicsService();
 		IWindowService* getWindowService();
 		float getTickTime();
 
@@ -76,6 +75,8 @@ namespace Inno
 		}
 
 	private:
+		IGraphicsService* getGraphicsService();
+
 		InitConfig ParseInitConfig(const std::string& arg);
 		bool CreateServices(void* appHook, void* extraHook, char* pScmdline);
 		bool ExecuteDefaultTask();
@@ -98,12 +99,9 @@ namespace Inno
 	template<typename T>
 	T* Engine::GetSystemWithDependencies()
 	{
-		// Special handling for WindowSystem and GraphicsService - redirect to public methods
+		// Special handling for WindowSystem - redirect to public method
 		if constexpr (std::is_same_v<T, IWindowService>) {
 			return reinterpret_cast<T*>(getWindowService());
-		}
-		else if constexpr (std::is_same_v<T, IGraphicsService>) {
-			return reinterpret_cast<T*>(getGraphicsService());
 		}
 		else if constexpr (std::is_abstract_v<T>) {
 			return nullptr;
