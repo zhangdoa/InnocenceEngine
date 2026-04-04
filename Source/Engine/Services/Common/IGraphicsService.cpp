@@ -106,16 +106,15 @@ bool IGraphicsService::Setup(IServiceConfig* systemConfig)
 
 bool IGraphicsService::OnSceneUnloading()
 {
+	ReleaseAllMeshResources(ObjectLifespan::Scene);
+
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto l_sceneEntityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
 	for (auto l_entityID : l_sceneEntityIDs)
 	{
 		auto* l_mesh = l_registry->Get<MeshComponent>(l_entityID);
 		if (l_mesh && l_mesh->m_ObjectStatus == ObjectStatus::Activated)
-		{
 			l_mesh->m_ObjectStatus = ObjectStatus::Invalid;
-			Delete(l_mesh);
-		}
 
 		auto* l_material = l_registry->Get<MaterialComponent>(l_entityID);
 		if (l_material && l_material->m_ObjectStatus == ObjectStatus::Activated)
@@ -398,6 +397,98 @@ CommandListComponent* IGraphicsService::AddCommandListComponent(const char* name
 	return AllocateGPUHandle(m_GPUHandlePools.CommandLists, m_GPUHandlePools.CommandListLUT, m_GPUHandlePools.CommandListPointers, name);
 }
 
+GPUMeshResourceHandle IGraphicsService::AllocateMeshResource(const char* name, ObjectLifespan lifespan)
+{
+	auto l_existing = m_MeshResourceLUT.find(name);
+	if (l_existing != m_MeshResourceLUT.end())
+		return l_existing->second;
+
+	uint32_t l_index;
+	if (!m_FreeMeshResourceSlots.empty())
+	{
+		l_index = m_FreeMeshResourceSlots.back();
+		m_FreeMeshResourceSlots.pop_back();
+		m_MeshResources[l_index] = GPUMeshResource();
+	}
+	else
+	{
+		l_index = static_cast<uint32_t>(m_MeshResources.size());
+		m_MeshResources.emplace_back();
+	}
+
+	auto& l_resource = m_MeshResources[l_index];
+	l_resource.m_Lifespan = lifespan;
+	l_resource.m_Status = ObjectStatus::Created;
+	l_resource.m_Name = name;
+
+	GPUMeshResourceHandle l_handle;
+	l_handle.m_Index = l_index;
+	m_MeshResourceLUT.emplace(name, l_handle);
+
+	return l_handle;
+}
+
+void IGraphicsService::ReleaseMeshResource(GPUMeshResourceHandle handle)
+{
+	if (!handle.IsValid() || handle.m_Index >= m_MeshResources.size())
+		return;
+
+	auto& l_resource = m_MeshResources[handle.m_Index];
+	if (l_resource.m_Status == ObjectStatus::Invalid)
+		return;
+
+	ReleaseMeshGPUResourceImpl(handle);
+
+	m_MeshResourceLUT.erase(std::string(l_resource.m_Name.c_str()));
+	l_resource = GPUMeshResource();
+	m_FreeMeshResourceSlots.push_back(handle.m_Index);
+}
+
+void IGraphicsService::ReleaseAllMeshResources(ObjectLifespan lifespan)
+{
+	for (uint32_t i = 0; i < static_cast<uint32_t>(m_MeshResources.size()); i++)
+	{
+		if (m_MeshResources[i].m_Lifespan == lifespan && m_MeshResources[i].m_Status != ObjectStatus::Invalid)
+		{
+			GPUMeshResourceHandle l_handle;
+			l_handle.m_Index = i;
+			ReleaseMeshResource(l_handle);
+		}
+	}
+}
+
+GPUMeshResource* IGraphicsService::GetMeshResource(GPUMeshResourceHandle handle)
+{
+	if (!handle.IsValid() || handle.m_Index >= m_MeshResources.size())
+		return nullptr;
+
+	auto& l_resource = m_MeshResources[handle.m_Index];
+	if (l_resource.m_Status == ObjectStatus::Invalid)
+		return nullptr;
+
+	return &l_resource;
+}
+
+const GPUMeshResource* IGraphicsService::GetMeshResource(GPUMeshResourceHandle handle) const
+{
+	if (!handle.IsValid() || handle.m_Index >= m_MeshResources.size())
+		return nullptr;
+
+	auto& l_resource = m_MeshResources[handle.m_Index];
+	if (l_resource.m_Status == ObjectStatus::Invalid)
+		return nullptr;
+
+	return &l_resource;
+}
+
+GPUMeshResourceHandle IGraphicsService::FindMeshResourceByName(const char* name)
+{
+	auto l_result = m_MeshResourceLUT.find(name);
+	if (l_result != m_MeshResourceLUT.end())
+		return l_result->second;
+	return INVALID_GPU_MESH_HANDLE;
+}
+
 TextureComponent* IGraphicsService::FindTextureByName(const char* name)
 {
 	auto l_result = m_GPUHandlePools.TextureLUT.find(name);
@@ -430,17 +521,28 @@ void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 	if (mesh->m_ObjectStatus == ObjectStatus::Activated)
 		return;
 
-	// Calculate AABB from vertex data synchronously — safe because mesh is valid at this call site
-	if (!vertices.empty())
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto l_lifespan = (owner != INVALID_ENTITY) ? l_registry->GetLifespan(owner) : ObjectLifespan::Persistence;
+
+	auto l_handle = AllocateMeshResource(mesh->m_InstanceName.c_str(), l_lifespan);
+	if (!l_handle.IsValid())
 	{
-		mesh->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
-		Log(Verbose, "Calculated AABB for MeshComponent: min(",
-			mesh->m_AABB.m_boundMin.x, ",", mesh->m_AABB.m_boundMin.y, ",", mesh->m_AABB.m_boundMin.z,
-			") max(", mesh->m_AABB.m_boundMax.x, ",", mesh->m_AABB.m_boundMax.y, ",", mesh->m_AABB.m_boundMax.z, ")");
+		Log(Error, "Failed to allocate GPUMeshResource for: ", mesh->m_InstanceName);
+		return;
 	}
 
-	// Queue mesh for deferred initialization using move semantics to avoid copying vertex/index data
-	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices), owner));
+	mesh->m_GPUResource = l_handle;
+
+	auto* l_resource = GetMeshResource(l_handle);
+	if (!vertices.empty())
+	{
+		l_resource->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
+		Log(Verbose, "Calculated AABB for MeshComponent: min(",
+			l_resource->m_AABB.m_boundMin.x, ",", l_resource->m_AABB.m_boundMin.y, ",", l_resource->m_AABB.m_boundMin.z,
+			") max(", l_resource->m_AABB.m_boundMax.x, ",", l_resource->m_AABB.m_boundMax.y, ",", l_resource->m_AABB.m_boundMax.z, ")");
+	}
+
+	m_uninitializedMeshes.push(MeshInitTask(mesh, std::move(vertices), std::move(indices), owner, l_lifespan));
 	Log(Verbose, "MeshComponent ", mesh->m_InstanceName, " queued for deferred initialization");
 }
 
@@ -858,22 +960,29 @@ bool IGraphicsService::InitializeComponents()
 		if (!l_task.m_Component)
 			continue;
 
-		// If an owner EntityID was provided, re-resolve the current component pointer.
-		// The ComponentStorage vector may have reallocated since Initialize() was called,
-		// making the originally stored pointer stale.
-		MeshComponent* l_mesh = l_task.m_Component;
+		MeshComponent* l_meshComp = l_task.m_Component;
 		if (l_task.m_Owner != INVALID_ENTITY)
 		{
 			MeshComponent* l_current = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(l_task.m_Owner);
 			if (l_current)
-				l_mesh = l_current;
+				l_meshComp = l_current;
 			else
 				Log(Warning, "MeshInitTask: entity ", l_task.m_Owner, " no longer has MeshComponent, using stored pointer");
 		}
 
-		Log(Verbose, "Processing deferred mesh initialization for: ", l_mesh->m_InstanceName);
-		if (InitializeImpl(l_mesh, l_task.m_Vertices, l_task.m_Indices))
-			l_mesh->m_ObjectStatus = ObjectStatus::Activated;
+		auto* l_resource = GetMeshResource(l_meshComp->m_GPUResource);
+		if (!l_resource)
+		{
+			Log(Error, "MeshInitTask: invalid GPUMeshResource handle for ", l_meshComp->m_InstanceName);
+			continue;
+		}
+
+		Log(Verbose, "Processing deferred mesh initialization for: ", l_meshComp->m_InstanceName);
+		if (InitializeImpl(l_meshComp->m_GPUResource, l_task.m_Vertices, l_task.m_Indices))
+		{
+			l_resource->m_Status = ObjectStatus::Activated;
+			l_meshComp->m_ObjectStatus = ObjectStatus::Activated;
+		}
 		else
 			m_uninitializedMeshes.push(std::move(l_task));
 	}

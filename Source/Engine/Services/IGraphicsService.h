@@ -5,6 +5,7 @@
 #include "../Common/ObjectPool.h"
 #include "../Common/ThreadSafeUnorderedMap.h"
 #include "../Common/ThreadSafeVector.h"
+#include "../Common/GPUMeshResource.h"
 
 #include "../Component/MeshComponent.h"
 #include "../Component/TextureComponent.h"
@@ -44,6 +45,11 @@ namespace Inno
 		TextureComponent*  FindTextureByName(const char* name);
 		MeshComponent*     FindMeshByName(const char* name);
 		MaterialComponent* FindMaterialByName(const char* name);
+
+		GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle);
+		const GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle) const;
+		GPUMeshResourceHandle FindMeshResourceByName(const char* name);
+
 		virtual ISemaphore* AddSemaphore() = 0;
 		virtual bool Add(IOutputMergerTarget*& rhs) = 0;
 
@@ -169,7 +175,8 @@ namespace Inno
 		}
 
 	protected:
-		virtual bool InitializeImpl(MeshComponent* mesh, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
+		virtual bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
+		virtual void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) = 0;
 		virtual bool InitializeImpl(TextureComponent* texture, void* textureData) { return false; }
 		virtual bool InitializeImpl(MaterialComponent* material);
 		virtual bool InitializeImpl(RenderPassComponent* renderPass);
@@ -235,13 +242,14 @@ namespace Inno
 		// Init task objects for deferred component initialization
 		struct MeshInitTask
 		{
-			MeshInitTask(MeshComponent* component, std::vector<Vertex>&& vertices, std::vector<Index>&& indices, EntityID owner = INVALID_ENTITY)
-				: m_Component(component), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)), m_Owner(owner) {}
+			MeshInitTask(MeshComponent* component, std::vector<Vertex>&& vertices, std::vector<Index>&& indices, EntityID owner = INVALID_ENTITY, ObjectLifespan lifespan = ObjectLifespan::Invalid)
+				: m_Component(component), m_Vertices(std::move(vertices)), m_Indices(std::move(indices)), m_Owner(owner), m_Lifespan(lifespan) {}
 
 			MeshComponent* m_Component;
 			std::vector<Vertex> m_Vertices;
 			std::vector<Index> m_Indices;
 			EntityID m_Owner;
+			ObjectLifespan m_Lifespan;
 		};
 
 		struct TextureInitTask
@@ -311,6 +319,14 @@ namespace Inno
 			ThreadSafeVector<CommandListComponent*>   CommandListPointers;
 		};
 		GPUHandlePools m_GPUHandlePools;
+
+		std::vector<GPUMeshResource> m_MeshResources;
+		std::vector<uint32_t> m_FreeMeshResourceSlots;
+		ThreadSafeUnorderedMap<std::string, GPUMeshResourceHandle> m_MeshResourceLUT;
+
+		GPUMeshResourceHandle AllocateMeshResource(const char* name, ObjectLifespan lifespan);
+		void ReleaseMeshResource(GPUMeshResourceHandle handle);
+		void ReleaseAllMeshResources(ObjectLifespan lifespan);
 
 	private:
 		bool InitializeComponents();
