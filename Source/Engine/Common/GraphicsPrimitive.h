@@ -43,7 +43,7 @@ namespace Inno
 		}
 	};
 
-	class GPUResourceComponent;
+	struct GPUResourceComponent;
 	class TextureComponent;
 	namespace Type
 	{

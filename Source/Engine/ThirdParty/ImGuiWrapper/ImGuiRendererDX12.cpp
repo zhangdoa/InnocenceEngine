@@ -8,6 +8,7 @@
 #include "../../Interface/IRenderPass.h"
 #include "../../Services/GraphicsHardwareService.h"
 #include "../../Services/GraphicsResourceService.h"
+#include "../../Services/FrameManagementService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/TaskScheduler.h"
@@ -84,8 +85,9 @@ bool ImGuiRenderPass::Initialize()
 
 			auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-			auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
-			auto l_currentFrame =l_graphicsService->GetCurrentFrame();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+			auto l_swapChainRenderPassComp = l_fmService->GetSwapChainRenderPassComponent();
+			auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 			auto dx12CmdList = cmdList;
 			auto commandList = reinterpret_cast<ID3D12GraphicsCommandList*>(dx12CmdList->m_CommandList);
@@ -162,7 +164,8 @@ bool ImGuiRenderPass::RenderTargetsReservationFunc()
 bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
-	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_graphicsService->GetSwapChainRenderPassComponent());
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_fmService->GetSwapChainRenderPassComponent());
 	
 	// Skip render target creation in offscreen mode or if swap chain is not available
 	if (g_Engine->getInitConfig().isOffscreen || !l_swapChainRenderPassComp || 
@@ -199,10 +202,11 @@ bool ImGuiRendererDX12::Initialize()
 	}
 
 	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_device = l_graphicsService->GetDevice().Get();
 	auto& l_descHeapAccessor = l_graphicsService->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
 	auto l_newHandle = l_descHeapAccessor.GetNewHandle();
-	auto l_swapChainCount = l_graphicsService->GetSwapChainImageCount();
+	auto l_swapChainCount = l_fmService->GetSwapChainImageCount();
 
 	ImGui_ImplDX12_Init(l_device, l_swapChainCount,
 		DXGI_FORMAT_R8G8B8A8_UNORM, l_descHeapAccessor.GetHeap().Get(),
@@ -246,7 +250,8 @@ bool ImGuiRendererDX12::ExecuteCommands()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_swapChainRenderPassComp = l_fmService->GetSwapChainRenderPassComponent();
 
 	// Skip ImGui execution in offscreen mode or if swap chain is not available
 	if (g_Engine->getInitConfig().isOffscreen || !l_swapChainRenderPassComp)

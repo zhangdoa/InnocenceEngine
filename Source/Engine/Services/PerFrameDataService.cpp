@@ -9,6 +9,7 @@
 
 #include "../Engine.h"
 #include "GraphicsResourceService.h"
+#include "FrameManagementService.h"
 using namespace Inno;
 
 namespace Inno
@@ -83,7 +84,7 @@ bool PerFrameDataServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		m_perFrameCBs.resize(g_Engine->getGraphicsService()->GetSwapChainImageCount());
+		m_perFrameCBs.resize(g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount());
 
 		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
@@ -184,7 +185,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
 	l_perFrameCB.activeCascade = currentCascade;
 
-	m_perFrameCBs[g_Engine->getGraphicsService()->GetCurrentFrame()] = l_perFrameCB;
+	m_perFrameCBs[g_Engine->Get<FrameManagementService>()->GetCurrentFrame()] = l_perFrameCB;
 
 	return true;
 }
@@ -199,8 +200,9 @@ bool PerFrameDataServiceImpl::Update()
 
 		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+		auto l_fmService = g_Engine->Get<FrameManagementService>();
 		auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
-		l_rsService->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[l_graphicsService->GetCurrentFrame()]);
+		l_rsService->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[l_fmService->GetCurrentFrame()]);
 
 		return true;
 	}
@@ -256,7 +258,7 @@ ObjectStatus PerFrameDataService::GetStatus()
 const PerFrameConstantBuffer& PerFrameDataService::GetPerFrameConstantBuffer()
 {
 	std::lock_guard<std::shared_mutex> l_lock(m_Impl->m_Mutex);
-	return m_Impl->m_perFrameCBs[g_Engine->getGraphicsService()->GetCurrentFrame()];
+	return m_Impl->m_perFrameCBs[g_Engine->Get<FrameManagementService>()->GetCurrentFrame()];
 }
 
 GPUBufferComponent* PerFrameDataService::GetCurrentFrameBuffer()

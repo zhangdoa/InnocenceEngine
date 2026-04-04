@@ -7,6 +7,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -17,6 +18,7 @@ bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("MotionBlurPass/");
 
@@ -76,6 +78,7 @@ bool MotionBlurPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -90,6 +93,7 @@ bool MotionBlurPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Delete(m_RenderPassComp);
 
@@ -107,6 +111,7 @@ bool MotionBlurPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_renderingContext = reinterpret_cast<MotionBlurPassRenderingContext*>(renderingContext);	
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -148,7 +153,8 @@ GPUResourceComponent* MotionBlurPass::GetResult()
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
 }

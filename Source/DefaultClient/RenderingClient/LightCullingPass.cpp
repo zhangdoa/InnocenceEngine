@@ -9,6 +9,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -16,6 +17,7 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_initialIndexCount = 1;
 
@@ -123,6 +125,7 @@ bool LightCullingPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
@@ -146,6 +149,7 @@ bool LightCullingPass::Update()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_lightListIndexCounter = 1;
 	l_rsService->Upload(m_lightListIndexCounter, &l_lightListIndexCounter);
@@ -163,6 +167,7 @@ bool LightCullingPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Delete(m_lightListIndexCounter);
 	l_rsService->Delete(m_lightIndexList);
@@ -200,7 +205,8 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
@@ -260,6 +266,7 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_lightIndexList)
 		l_rsService->Delete(m_lightIndexList);

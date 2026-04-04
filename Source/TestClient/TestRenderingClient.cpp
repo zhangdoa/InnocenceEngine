@@ -7,6 +7,7 @@
 #include "../Engine/Services/AssetService.h"
 #include "../Engine/Services/GraphicsHardwareService.h"
 #include "../Engine/Services/GraphicsResourceService.h"
+#include "../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -146,10 +147,11 @@ bool TestRenderingClient::PrepareCommands_DrawInstanced()
 {
     auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+    auto l_fmService = g_Engine->Get<FrameManagementService>();
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
 
-    l_rs->CommandListBegin(l_rp, l_cl, l_rs->GetCurrentFrame());
+    l_rs->CommandListBegin(l_rp, l_cl, l_fmService->GetCurrentFrame());
     l_rs->BindRenderPassComponent(l_rp, l_cl);
     l_rs->ClearRenderTargets(l_rp, l_cl);
     l_rs->DrawInstanced(l_rp, l_cl, 3);

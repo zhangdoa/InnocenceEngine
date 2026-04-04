@@ -43,6 +43,7 @@
 #include "Services/DX12/DX12GraphicsService.h"
 #include "Services/DX12/DX12GraphicsHardwareService.h"
 #include "Services/DX12/DX12GraphicsResourceService.h"
+#include "Services/DX12/DX12FrameManagementService.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
 #include "Services/VK/VKGraphicsService.h"
@@ -442,6 +443,10 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		auto* l_rsService = new DX12GraphicsResourceService();
 		l_rsService->SetBackend(m_pImpl->m_GraphicsService.get());
 		singletons_[std::type_index(typeid(GraphicsResourceService))] = l_rsService;
+
+		auto* l_fmService = new DX12FrameManagementService();
+		l_fmService->SetBackend(m_pImpl->m_GraphicsService.get());
+		singletons_[std::type_index(typeid(FrameManagementService))] = l_fmService;
 	}
 #endif
 
@@ -528,7 +533,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		return false;
 	}
 
-	m_pImpl->m_GraphicsService->SetUploadHeapPreparationCallback([&]()
+	Get<FrameManagementService>()->SetUploadHeapPreparationCallback([&]()
 		{
 			SystemUpdate(SceneService);
 			
@@ -571,7 +576,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			return true;
 		});
 
-	m_pImpl->m_GraphicsService->SetCommandPreparationCallback([&]()
+	Get<FrameManagementService>()->SetCommandPreparationCallback([&]()
 		{
 			if (Get<SceneService>()->IsLoading())
 				return true;
@@ -582,7 +587,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			return true;
 		});
 
-	m_pImpl->m_GraphicsService->SetCommandExecutionCallback([&]()
+	Get<FrameManagementService>()->SetCommandExecutionCallback([&]()
 		{
 			if (Get<SceneService>()->IsLoading())
 				return true;

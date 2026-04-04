@@ -16,6 +16,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -23,6 +24,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LightPass/");
 
@@ -200,6 +202,7 @@ bool LightPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -217,6 +220,7 @@ bool LightPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Delete(m_LuminanceResult);
 	l_rsService->Delete(m_IlluminanceResult);
@@ -255,7 +259,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
@@ -329,6 +334,7 @@ bool LightPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_LuminanceResult)
 		l_rsService->Delete(m_LuminanceResult);

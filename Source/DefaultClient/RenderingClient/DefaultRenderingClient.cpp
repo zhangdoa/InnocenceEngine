@@ -44,6 +44,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 #include <cstdlib>
 
@@ -182,8 +183,9 @@ namespace Inno
 
 		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-		l_graphicsService->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
+		l_fmService->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 
 		m_ObjectStatus = ObjectStatus::Created;
 
@@ -335,6 +337,7 @@ namespace Inno
 		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+		auto l_fmService = g_Engine->Get<FrameManagementService>();
 		GPUResourceComponent* l_canvas;
 		RenderPassComponent* l_canvasOwner;
 		if (m_ExecuteOneShotCommands)
@@ -693,7 +696,7 @@ namespace Inno
 				l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
 
 				auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_graphicsService->GetCurrentFrame() : 0u;
+				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
 				l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
 				auto l_floatPixels = l_rsService->ReadTextureBackToCPU(
 					FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
@@ -810,7 +813,7 @@ namespace Inno
 		// Temporarily correct the tracker, dump, then restore so the swap chain CL works.
 		{
 			auto* l_fbTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-			auto l_fbIdx = l_fbTex->m_TextureDesc.IsMultiBuffer ? l_rs->GetCurrentFrame() : 0u;
+			auto l_fbIdx = l_fbTex->m_TextureDesc.IsMultiBuffer ? g_Engine->Get<FrameManagementService>()->GetCurrentFrame() : 0u;
 			auto l_savedState = l_fbTex->GetCurrentState(l_fbIdx);
 			l_fbTex->SetCurrentState(l_fbIdx, l_fbTex->m_WriteState);
 			Dump("audit_11_FinalBlend.hdr", FinalBlendPass::Get().GetRenderPassComp(), l_fbTex);

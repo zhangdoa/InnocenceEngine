@@ -7,6 +7,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/Common/Timer.h"
 
 using namespace Inno;
@@ -15,6 +16,7 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_shadowMapResolution = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution;
 
@@ -132,6 +134,7 @@ bool SunShadowGeometryProcessPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -147,6 +150,7 @@ bool SunShadowGeometryProcessPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Delete(m_SamplerComp);	
 	l_rsService->Delete(m_RenderPassComp);
@@ -169,6 +173,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -214,7 +219,8 @@ GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
 }

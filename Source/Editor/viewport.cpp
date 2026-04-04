@@ -4,6 +4,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include "../Engine/Interface/IWindowService.h"
 #include "../Engine/Services/IGraphicsService.h"
+#include "../Engine/Services/FrameManagementService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 
 using namespace Inno;
@@ -86,7 +87,7 @@ void Viewport::Resize(float width, float height)
     
     TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
     g_Engine->Get<RenderingConfigurationService>()->SetScreenResolution(l_newResolution);
-    g_Engine->getGraphicsService()->Resize();
+    g_Engine->Get<FrameManagementService>()->Resize();
 }
 
 bool ViewportEventFilter::eventFilter(QObject* obj, QEvent* event)

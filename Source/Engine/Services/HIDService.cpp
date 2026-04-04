@@ -4,6 +4,7 @@
 
 #include "../Engine.h"
 #include "../Services/IGraphicsService.h"
+#include "../Services/FrameManagementService.h"
 using namespace Inno;
 
 bool HIDService::Setup(IServiceConfig* systemConfig)
@@ -158,7 +159,7 @@ void HIDService::WindowResizeCallback(int32_t width, int32_t height)
 	m_IsResizing = true;
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
 	g_Engine->Get<RenderingConfigurationService>()->SetScreenResolution(l_newScreenResolution);
-	g_Engine->getGraphicsService()->Resize();
+	g_Engine->Get<FrameManagementService>()->Resize();
 	m_IsResizing = false;
 }
 

@@ -5,6 +5,7 @@
 #include "../../Services/DX11/DX11GraphicsService.h"
 #include "../../Component/DX11RenderPassComponent.h"
 
+#include "../../Services/FrameManagementService.h"
 #include "../../Engine.h"
 using namespace Inno;
 ;
@@ -42,7 +43,7 @@ bool ImGuiRendererDX11::NewFrame()
 
 bool ImGuiRendererDX11::Prepare()
 {
-	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<DX11RenderPassComponent*>(g_Engine->getGraphicsService()->GetUserPipelineOutput());
+	auto l_userPipelineOutputRenderPassComp = reinterpret_cast<DX11RenderPassComponent*>(g_Engine->Get<FrameManagementService>()->GetUserPipelineOutput());
 	auto l_graphicsService = reinterpret_cast<DX11GraphicsService*>(g_Engine->getGraphicsService());
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_graphicsService->GetDeviceContext());
 

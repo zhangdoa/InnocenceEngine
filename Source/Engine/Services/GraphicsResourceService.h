@@ -16,7 +16,7 @@ namespace Inno
 	class SamplerComponent;
 	class GPUBufferComponent;
 	class CommandListComponent;
-	class GPUResourceComponent;
+	struct GPUResourceComponent;
 
 	class GraphicsResourceService : public IService
 	{
