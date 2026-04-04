@@ -44,7 +44,6 @@ namespace ImGuiRendererDX12NS
 using namespace ImGuiRendererDX12NS;
 bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_RenderPassComp = l_rsService->AddRenderPassComponent("ImGuiRenderPass/");
@@ -70,7 +69,6 @@ bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 
 bool ImGuiRenderPass::Initialize()
 {
-	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	l_rsService->Initialize(m_RenderPassComp);
 
@@ -162,7 +160,6 @@ bool ImGuiRenderPass::RenderTargetsReservationFunc()
 
 bool ImGuiRenderPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_swapChainRenderPassComp = reinterpret_cast<RenderPassComponent*>(l_fmService->GetSwapChainRenderPassComponent());
 	
@@ -200,7 +197,7 @@ bool ImGuiRendererDX12::Initialize()
 		return true;
 	}
 
-	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->Get<GraphicsHardwareService>()->GetBackend());
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_device = l_graphicsService->GetDevice().Get();
 	auto& l_descHeapAccessor = l_graphicsService->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);

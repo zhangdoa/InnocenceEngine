@@ -37,6 +37,8 @@ namespace Inno
 		void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) override;
 		bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
 
+		IGraphicsService* GetBackend() override { return m_Backend; }
+
 		bool BeginCapture() override;
 		bool EndCapture() override;
 		bool HasGPUError() const override;

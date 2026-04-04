@@ -63,6 +63,7 @@ namespace Inno
 		GPUMeshResourceHandle FindMeshResourceByName(const char* name) override;
 
 		GPUResourceComponent* GetTLASBuffer() override;
+		bool OnSceneUnloading() override;
 
 	protected:
 		bool WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range) override;

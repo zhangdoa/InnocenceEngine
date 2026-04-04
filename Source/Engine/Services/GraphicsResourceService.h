@@ -88,6 +88,9 @@ namespace Inno
 		// Raytracing
 		virtual GPUResourceComponent* GetTLASBuffer() = 0;
 
+		// Scene lifecycle
+		virtual bool OnSceneUnloading() = 0;
+
 		// Upload helper
 		template<typename T>
 		bool Upload(GPUBufferComponent* gpuBuffer, const T* value, size_t startOffset = 0, size_t range = SIZE_MAX)
