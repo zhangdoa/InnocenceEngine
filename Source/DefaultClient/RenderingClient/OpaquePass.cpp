@@ -6,24 +6,26 @@
 #include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool OpaquePass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("OpaquePass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("OpaquePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "opaqueGeometryProcessPass.frag/";
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("OpaquePass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("OpaquePass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("OpaquePass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("OpaquePass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -97,7 +99,7 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("OpaquePass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("OpaquePass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 	
 	m_ObjectStatus = ObjectStatus::Created;
@@ -108,11 +110,12 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 bool OpaquePass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -122,10 +125,11 @@ bool OpaquePass::Initialize()
 bool OpaquePass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_SamplerComp);	
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_SamplerComp);	
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -143,6 +147,7 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 
 	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
@@ -186,7 +191,8 @@ GPUResourceComponent* OpaquePass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return nullptr;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();	
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[2];

@@ -8,18 +8,20 @@
 #include "LuminanceAveragePass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("FinalBlendPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("FinalBlendPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("FinalBlendPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("FinalBlendPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -83,10 +85,10 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("FinalBlendPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("FinalBlendPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("FinalBlendPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("FinalBlendPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -97,11 +99,12 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 bool FinalBlendPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -111,12 +114,13 @@ bool FinalBlendPass::Initialize()
 bool FinalBlendPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -141,6 +145,7 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;	
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -188,18 +193,19 @@ GPUResourceComponent* FinalBlendPass::GetResult()
 bool FinalBlendPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_Result)
-		l_graphicsService->Delete(m_Result);
+		l_rsService->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_Result = l_graphicsService->AddTextureComponent("Final Blend Pass Result/");
+	m_Result = l_rsService->AddTextureComponent("Final Blend Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_Result);
 
 	return true;
 }

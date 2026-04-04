@@ -5,19 +5,21 @@
 #include "../../Engine/Services/AnimationDrawCallService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool AnimationPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("AnimationPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("AnimationPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("AnimationPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("AnimationPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -98,12 +100,12 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("AnimationPass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("AnimationPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("AnimationPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("AnimationPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -114,11 +116,12 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 bool AnimationPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_SamplerComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -128,10 +131,11 @@ bool AnimationPass::Initialize()
 bool AnimationPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_SamplerComp);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_SamplerComp);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -146,6 +150,7 @@ ObjectStatus AnimationPass::GetStatus()
 bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
@@ -212,6 +217,7 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 bool AnimationPass::RenderTargetsReservationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
 		l_graphicsService->Add(m_RenderPassComp->m_OutputMergerTarget);
 

@@ -3,6 +3,7 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
@@ -10,12 +11,13 @@ using namespace Inno;
 bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("BRDFLUTPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("BRDFLUTPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("BRDFLUTPass/");
-	m_Result = l_graphicsService->AddTextureComponent("BRDF LUT/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("BRDFLUTPass/");
+	m_Result = l_rsService->AddTextureComponent("BRDF LUT/");
 	m_Result->m_TextureDesc.Width = 512;
 	m_Result->m_TextureDesc.Height = 512;
 	m_Result->m_TextureDesc.DepthOrArraySize = 1;
@@ -44,10 +46,10 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("BRDFLUTPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("BRDFLUTPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("BRDFLUTPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("BRDFLUTPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -58,12 +60,13 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 bool BRDFLUTPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_Result);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -73,12 +76,13 @@ bool BRDFLUTPass::Initialize()
 bool BRDFLUTPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);	
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);	
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -96,6 +100,7 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
 	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);

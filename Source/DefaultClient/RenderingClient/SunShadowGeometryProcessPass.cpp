@@ -6,6 +6,7 @@
 #include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Common/Timer.h"
 
 using namespace Inno;
@@ -13,21 +14,22 @@ using namespace Inno;
 bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_shadowMapResolution = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution;
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("SunShadowGeometryProcessPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag/";
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("SunShadowGeometryProcessPass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("SunShadowGeometryProcessPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SunShadowGeometryProcessPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("SunShadowGeometryProcessPass/");
 
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
@@ -118,7 +120,7 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("SunShadowGeometryProcessPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("SunShadowGeometryProcessPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -129,11 +131,12 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 bool SunShadowGeometryProcessPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -143,10 +146,11 @@ bool SunShadowGeometryProcessPass::Initialize()
 bool SunShadowGeometryProcessPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_SamplerComp);	
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_SamplerComp);	
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -164,6 +168,7 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -207,7 +212,8 @@ GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();	
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

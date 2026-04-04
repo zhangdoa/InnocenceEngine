@@ -9,23 +9,25 @@
 #include "RadianceCacheReprojectionPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("RadianceCacheRaytracingPass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("RadianceCacheRaytracingPass/");
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("RadianceCacheRaytracingPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("RadianceCacheRaytracingPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_RayGenPath = "RadianceCacheRayGen.hlsl/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_ClosestHitPath = "RadianceCacheClosestHit.hlsl/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_AnyHitPath = "RadianceCacheAnyHit.hlsl/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_MissPath = "RadianceCacheMiss.hlsl/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("RadianceCacheRaytracingPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("RadianceCacheRaytracingPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -135,10 +137,10 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("RadianceCacheRaytracingPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("RadianceCacheRaytracingPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("RadianceCacheRaytracingPass/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("RadianceCacheRaytracingPass/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -149,12 +151,13 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 bool RadianceCacheRaytracingPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -164,12 +167,13 @@ bool RadianceCacheRaytracingPass::Initialize()
 bool RadianceCacheRaytracingPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_SamplerComp);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_SamplerComp);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -191,6 +195,7 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 

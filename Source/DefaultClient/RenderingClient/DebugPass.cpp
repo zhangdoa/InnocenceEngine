@@ -10,48 +10,50 @@
 #include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool DebugPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
 	auto l_cameraFrustumMeshCount = 4;
 	m_debugCameraFrustumMeshComps.resize(l_cameraFrustumMeshCount);
 	for (size_t i = 0; i < l_cameraFrustumMeshCount; i++)
 	{
-		m_debugCameraFrustumMeshComps[i] = l_graphicsService->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
+		m_debugCameraFrustumMeshComps[i] = l_rsService->AddMeshComponent(("DebugCameraFrustumMesh_" + std::to_string(i) + "/").c_str());
 		g_Engine->Get<TemplateAssetService>()->GenerateMesh(MeshShape::Cube, m_debugCameraFrustumMeshComps[i]);
 		//m_debugCameraFrustumMeshComps[i]->m_MeshShape = MeshShape::Cube;
 		}
 	
-	m_debugSphereMeshGPUBufferComp = l_graphicsService->AddGPUBufferComponent("DebugSphereMeshGPUBuffer/");
+	m_debugSphereMeshGPUBufferComp = l_rsService->AddGPUBufferComponent("DebugSphereMeshGPUBuffer/");
 	m_debugSphereMeshGPUBufferComp->m_ElementCount = m_maxDebugMeshes;
 	m_debugSphereMeshGPUBufferComp->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugSphereMeshGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	m_debugCubeMeshGPUBufferComp = l_graphicsService->AddGPUBufferComponent("DebugCubeMeshGPUBuffer/");
+	m_debugCubeMeshGPUBufferComp = l_rsService->AddGPUBufferComponent("DebugCubeMeshGPUBuffer/");
 	m_debugCubeMeshGPUBufferComp->m_ElementCount = m_maxDebugMeshes;
 	m_debugCubeMeshGPUBufferComp->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugCubeMeshGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	m_debugCameraFrustumGPUBufferComp = l_graphicsService->AddGPUBufferComponent("DebugCameraFrustumGPUBuffer/");
+	m_debugCameraFrustumGPUBufferComp = l_rsService->AddGPUBufferComponent("DebugCameraFrustumGPUBuffer/");
 	m_debugCameraFrustumGPUBufferComp->m_ElementCount = l_cameraFrustumMeshCount;
 	m_debugCameraFrustumGPUBufferComp->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugCameraFrustumGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	m_debugMaterialGPUBufferComp = l_graphicsService->AddGPUBufferComponent("DebugMaterialGPUBuffer/");
+	m_debugMaterialGPUBufferComp = l_rsService->AddGPUBufferComponent("DebugMaterialGPUBuffer/");
 	m_debugMaterialGPUBufferComp->m_ElementCount = m_maxDebugMaterial;
 	m_debugMaterialGPUBufferComp->m_ElementSize = sizeof(DebugMaterialConstantBuffer);
 	m_debugMaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	////
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("DebugPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("DebugPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "debugPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("DebugPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("DebugPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -100,19 +102,20 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 bool DebugPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
 	{
-		//l_graphicsService->Initialize(m_debugCameraFrustumMeshComps[i]);
+		//l_rsService->Initialize(m_debugCameraFrustumMeshComps[i]);
 	}
 
-	l_graphicsService->Initialize(m_debugSphereMeshGPUBufferComp);
-	l_graphicsService->Initialize(m_debugCubeMeshGPUBufferComp);
-	l_graphicsService->Initialize(m_debugCameraFrustumGPUBufferComp);
-	l_graphicsService->Initialize(m_debugMaterialGPUBufferComp);
+	l_rsService->Initialize(m_debugSphereMeshGPUBufferComp);
+	l_rsService->Initialize(m_debugCubeMeshGPUBufferComp);
+	l_rsService->Initialize(m_debugCameraFrustumGPUBufferComp);
+	l_rsService->Initialize(m_debugMaterialGPUBufferComp);
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -127,8 +130,9 @@ bool DebugPass::Update()
 bool DebugPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -143,6 +147,7 @@ ObjectStatus DebugPass::GetStatus()
 bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 	
@@ -171,6 +176,7 @@ DebugPerObjectConstantBuffer DebugPass::AddAABB(const AABB& aabb)
 bool DebugPass::AddBVHNode(const BVHNode& node)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	static bool drawIntermediateBB = false;
 	if(node.m_Entity == INVALID_ENTITY && !drawIntermediateBB)

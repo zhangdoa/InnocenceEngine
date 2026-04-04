@@ -43,6 +43,7 @@
 #include "../../Engine/Common/TaskScheduler.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 #include <cstdlib>
 
@@ -180,6 +181,7 @@ namespace Inno
 			};
 
 		auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		l_graphicsService->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
 
@@ -191,6 +193,7 @@ namespace Inno
 	bool DefaultRenderingClientImpl::Initialize()
 	{
 		auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		BRDFLUTPass::Get().Initialize();
 		BRDFLUTMSPass::Get().Initialize();
@@ -258,6 +261,7 @@ namespace Inno
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
 		auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_ExecuteOneShotCommands)
 		{
@@ -329,6 +333,7 @@ namespace Inno
 	{
 		auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
 		auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 		GPUResourceComponent* l_canvas;
 		RenderPassComponent* l_canvasOwner;
@@ -674,7 +679,7 @@ namespace Inno
 		if (m_saveScreenCapture)
 		{
 			auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-			auto l_textureData = l_graphicsService->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
+			auto l_textureData = l_rsService->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
 			g_Engine->Get<AssetService>()->Save("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
 			m_saveScreenCapture = false;
 		}
@@ -690,7 +695,7 @@ namespace Inno
 				auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
 				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_graphicsService->GetCurrentFrame() : 0u;
 				l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
-				auto l_floatPixels = l_graphicsService->ReadTextureBackToCPU(
+				auto l_floatPixels = l_rsService->ReadTextureBackToCPU(
 					FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
 
 				if (!l_floatPixels.empty())

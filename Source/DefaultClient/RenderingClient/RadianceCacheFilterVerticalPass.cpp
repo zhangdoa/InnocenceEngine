@@ -7,17 +7,19 @@
 #include "RadianceCacheReprojectionPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("RadianceCacheFilterVerticalPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("RadianceCacheFilterVerticalPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterVertical.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("RadianceCacheFilterVerticalPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("RadianceCacheFilterVerticalPass/");
 	
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -66,10 +68,10 @@ bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("RadianceCacheFilterVerticalPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("RadianceCacheFilterVerticalPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("RadianceCacheFilterVerticalPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("RadianceCacheFilterVerticalPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -80,11 +82,12 @@ bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 bool RadianceCacheFilterVerticalPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -94,12 +97,13 @@ bool RadianceCacheFilterVerticalPass::Initialize()
 bool RadianceCacheFilterVerticalPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -124,6 +128,7 @@ bool RadianceCacheFilterVerticalPass::PrepareCommandList(IRenderingContext* rend
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources
@@ -167,14 +172,15 @@ TextureComponent* RadianceCacheFilterVerticalPass::GetResult()
 bool RadianceCacheFilterVerticalPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_horizontalResult = RadianceCacheFilterHorizontalPass::Get().GetResult();
 
 	if (m_Result)
-		l_graphicsService->Delete(m_Result);
+		l_rsService->Delete(m_Result);
 
-	m_Result = l_graphicsService->AddTextureComponent("RadianceCacheFilterVerticalPass_Result/");
+	m_Result = l_rsService->AddTextureComponent("RadianceCacheFilterVerticalPass_Result/");
 	m_Result->m_TextureDesc = l_horizontalResult->m_TextureDesc;
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_Result);
 
 	return true;
 }

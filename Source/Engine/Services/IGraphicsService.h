@@ -143,8 +143,9 @@ namespace Inno
 
 		bool OnSceneUnloading();
 
-	protected:
 		bool WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range);
+
+	protected:
 
 		template <typename T>
 		void ReleaseFromPool(TObjectPool<T>* pool,

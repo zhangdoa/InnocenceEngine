@@ -9,6 +9,7 @@
 #include "BRDFLUTMSPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
@@ -18,13 +19,14 @@ using namespace Inno;
 bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("BSDFTestPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("BSDFTestPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("BSDFTestPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("BSDFTestPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -78,10 +80,10 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("BSDFTestPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("BSDFTestPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("BSDFTestPass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("BSDFTestPass/");
 
 	//
 	auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
@@ -122,11 +124,12 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 bool BSDFTestPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -136,8 +139,9 @@ bool BSDFTestPass::Initialize()
 bool BSDFTestPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -152,13 +156,14 @@ ObjectStatus BSDFTestPass::GetStatus()
 bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
-	l_graphicsService->Upload(l_MeshGPUBufferComp, m_transformConstantBuffer);
-	l_graphicsService->Upload(l_MaterialGPUBufferComp, m_materialConstantBuffer);
+	l_rsService->Upload(l_MeshGPUBufferComp, m_transformConstantBuffer);
+	l_rsService->Upload(l_MaterialGPUBufferComp, m_materialConstantBuffer);
 
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 

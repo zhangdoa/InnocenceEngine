@@ -6,17 +6,19 @@
 #include "RadianceCacheReprojectionPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("RadianceCacheFilterHorizontalPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("RadianceCacheFilterHorizontalPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterHorizontal.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("RadianceCacheFilterHorizontalPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("RadianceCacheFilterHorizontalPass/");
 	
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -65,10 +67,10 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("RadianceCacheFilterHorizontalPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("RadianceCacheFilterHorizontalPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("RadianceCacheFilterHorizontalPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("RadianceCacheFilterHorizontalPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -79,11 +81,12 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 bool RadianceCacheFilterHorizontalPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -93,12 +96,13 @@ bool RadianceCacheFilterHorizontalPass::Initialize()
 bool RadianceCacheFilterHorizontalPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -123,6 +127,7 @@ bool RadianceCacheFilterHorizontalPass::PrepareCommandList(IRenderingContext* re
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources
@@ -166,14 +171,15 @@ TextureComponent* RadianceCacheFilterHorizontalPass::GetResult()
 bool RadianceCacheFilterHorizontalPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_raytracingResult = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
 
 	if (m_Result)
-		l_graphicsService->Delete(m_Result);
+		l_rsService->Delete(m_Result);
 
-	m_Result = l_graphicsService->AddTextureComponent("RadianceCacheFilterHorizontalPass_Result/");
+	m_Result = l_rsService->AddTextureComponent("RadianceCacheFilterHorizontalPass_Result/");
 	m_Result->m_TextureDesc = l_raytracingResult->m_TextureDesc;
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_Result);
 
 	return true;
 }

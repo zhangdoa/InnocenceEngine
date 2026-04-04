@@ -7,6 +7,7 @@
 #include "../../Services/AssetService.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Services/IGraphicsService.h"
+#include "../../Services/GraphicsResourceService.h"
 #include "../../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../../Engine.h"
 
@@ -25,7 +26,7 @@ TextureComponent* AssimpTextureProcessor::CreateTextureComponent(const char* Fil
 	auto l_Name = std::string(BaseName) + "." + std::string(FileName) + "/";
 	auto l_TempEntityID = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Frame, l_Name.c_str());
 
-	auto l_TextureComponent = g_Engine->getGraphicsService()->AddTextureComponent(l_Name.c_str());
+	auto l_TextureComponent = g_Engine->Get<GraphicsResourceService>()->AddTextureComponent(l_Name.c_str());
 
 	l_TextureComponent->m_TextureDesc.Sampler = Sampler;
 	l_TextureComponent->m_TextureDesc.Usage = Usage;

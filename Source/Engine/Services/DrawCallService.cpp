@@ -9,6 +9,7 @@
 #include "../Component/WorldTransformComponent.h"
 #include "../Component/VisibilityComponent.h"
 #include "../Engine.h"
+#include "GraphicsResourceService.h"
 
 using namespace Inno;
 
@@ -58,11 +59,12 @@ GPUBufferComponent* DrawCallServiceImpl::GetPreviousFrameTransformBuffer()
 bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_GPUModelDataBufferComp = l_graphicsService->AddGPUBufferComponent("GPUModelDataBuffer/");
-	m_TransformBufferComp = l_graphicsService->AddGPUBufferComponent("TransformBuffer/");
-	m_TransformPrevBufferComp = l_graphicsService->AddGPUBufferComponent("TransformPrevBuffer/");
-	m_MaterialGPUBufferComp = l_graphicsService->AddGPUBufferComponent("MaterialCBuffer/");
+	m_GPUModelDataBufferComp = l_rsService->AddGPUBufferComponent("GPUModelDataBuffer/");
+	m_TransformBufferComp = l_rsService->AddGPUBufferComponent("TransformBuffer/");
+	m_TransformPrevBufferComp = l_rsService->AddGPUBufferComponent("TransformPrevBuffer/");
+	m_MaterialGPUBufferComp = l_rsService->AddGPUBufferComponent("MaterialCBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -73,6 +75,7 @@ bool DrawCallServiceImpl::Initialize()
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -81,28 +84,28 @@ bool DrawCallServiceImpl::Initialize()
 		m_GPUModelDataBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_GPUModelDataBufferComp->m_ElementSize = sizeof(GPUModelData);
 
-		l_graphicsService->Initialize(m_GPUModelDataBufferComp);
+		l_rsService->Initialize(m_GPUModelDataBufferComp);
 
 		m_TransformBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_TransformBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_TransformBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_TransformBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
-		l_graphicsService->Initialize(m_TransformBufferComp);
+		l_rsService->Initialize(m_TransformBufferComp);
 
 		m_TransformPrevBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_TransformPrevBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_TransformPrevBufferComp->m_ElementCount = l_RenderingCapability.maxMeshes;
 		m_TransformPrevBufferComp->m_ElementSize = sizeof(TransformConstantBuffer);
 
-		l_graphicsService->Initialize(m_TransformPrevBufferComp);
+		l_rsService->Initialize(m_TransformPrevBufferComp);
 
 		m_MaterialGPUBufferComp->m_GPUResourceType = GPUResourceType::Buffer;
 		m_MaterialGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_MaterialGPUBufferComp->m_ElementCount = l_RenderingCapability.maxMaterials;
 		m_MaterialGPUBufferComp->m_ElementSize = sizeof(MaterialConstantBuffer);
 
-		l_graphicsService->Initialize(m_MaterialGPUBufferComp);
+		l_rsService->Initialize(m_MaterialGPUBufferComp);
 
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "DrawCallService has been initialized.");
@@ -122,6 +125,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	m_MaterialCBVector.clear();
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_Meshes = l_MeshStorage.All();
@@ -237,11 +241,11 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 				if (l_textureName.empty())
 					continue;
 
-				auto l_texture = l_graphicsService->FindTextureByName(l_textureName.c_str());
+				auto l_texture = l_rsService->FindTextureByName(l_textureName.c_str());
 				if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
 					continue;
 
-				auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);
+				auto textureIndex = l_rsService->GetIndex(l_texture, Accessibility::ReadOnly);
 				l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
 			}
 		}
@@ -262,19 +266,20 @@ bool DrawCallServiceImpl::Update()
 		UpdateDrawCalls();
 
 		auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_GPUModelDataVector.size() > 0)
 		{
-			l_graphicsService->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, m_GPUModelDataVector.size());
+			l_rsService->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, m_GPUModelDataVector.size());
 		}
 		if (m_TransformBufferVector.size() > 0)
 		{
 			auto l_currentFrameTransformBuffer = GetCurrentFrameTransformBuffer();
-			l_graphicsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, m_TransformBufferVector.size());
+			l_rsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, m_TransformBufferVector.size());
 		}
 		if (m_MaterialCBVector.size() > 0)
 		{
-			l_graphicsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, m_MaterialCBVector.size());
+			l_rsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, m_MaterialCBVector.size());
 		}
 
 		return true;
@@ -289,11 +294,12 @@ bool DrawCallServiceImpl::Update()
 bool DrawCallServiceImpl::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_GPUModelDataBufferComp);
-	l_graphicsService->Delete(m_TransformBufferComp);
-	l_graphicsService->Delete(m_TransformPrevBufferComp);
-	l_graphicsService->Delete(m_MaterialGPUBufferComp);
+	l_rsService->Delete(m_GPUModelDataBufferComp);
+	l_rsService->Delete(m_TransformBufferComp);
+	l_rsService->Delete(m_TransformPrevBufferComp);
+	l_rsService->Delete(m_MaterialGPUBufferComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "DrawCallService has been terminated.");

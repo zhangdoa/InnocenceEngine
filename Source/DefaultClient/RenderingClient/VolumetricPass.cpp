@@ -12,6 +12,7 @@
 #include "LightCullingPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
@@ -60,14 +61,15 @@ namespace VolumetricPass
 bool VolumetricPass::setupGeometryProcessPass()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_froxelizationSPC = l_graphicsService->AddShaderProgramComponent("VolumetricGeometryProcessPass/");
+	m_froxelizationSPC = l_rsService->AddShaderProgramComponent("VolumetricGeometryProcessPass/");
 
 	m_froxelizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricGeometryProcessPass.vert/";
 	m_froxelizationSPC->m_ShaderFilePaths.m_GSPath = "volumetricGeometryProcessPass.geom/";
 	m_froxelizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricGeometryProcessPass.frag/";
 
-	m_froxelizationRenderPassComp = l_graphicsService->AddRenderPassComponent("VolumetricGeometryProcessPass/");
+	m_froxelizationRenderPassComp = l_rsService->AddRenderPassComponent("VolumetricGeometryProcessPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -123,8 +125,9 @@ bool VolumetricPass::setupGeometryProcessPass()
 bool VolumetricPass::setupIrradianceInjectionPass()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_irraidanceInjectionSPC = l_graphicsService->AddShaderProgramComponent("VolumetricIrraidanceInjectionPass/");
+	m_irraidanceInjectionSPC = l_rsService->AddShaderProgramComponent("VolumetricIrraidanceInjectionPass/");
 
 	m_irraidanceInjectionSPC->m_ShaderFilePaths.m_CSPath = "volumetricIrraidanceInjectionPass.comp/";
 
@@ -133,7 +136,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_irraidanceInjectionRenderPassComp = l_graphicsService->AddRenderPassComponent("VolumetricIrraidanceInjectionPass/");
+	m_irraidanceInjectionRenderPassComp = l_rsService->AddRenderPassComponent("VolumetricIrraidanceInjectionPass/");
 
 	m_irraidanceInjectionRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -201,8 +204,9 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 bool VolumetricPass::setupRayMarchingPass()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_rayMarchingSPC = l_graphicsService->AddShaderProgramComponent("VolumetricRayMarchingPass/");
+	m_rayMarchingSPC = l_rsService->AddShaderProgramComponent("VolumetricRayMarchingPass/");
 
 	m_rayMarchingSPC->m_ShaderFilePaths.m_CSPath = "volumetricRayMarchingPass.comp/";
 
@@ -211,7 +215,7 @@ bool VolumetricPass::setupRayMarchingPass()
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_rayMarchingRenderPassComp = l_graphicsService->AddRenderPassComponent("VolumetricRayMarchingPass/");
+	m_rayMarchingRenderPassComp = l_rsService->AddRenderPassComponent("VolumetricRayMarchingPass/");
 
 	m_rayMarchingRenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -272,13 +276,14 @@ bool VolumetricPass::setupRayMarchingPass()
 bool VolumetricPass::setupVisualizationPass()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_visualizationSPC = l_graphicsService->AddShaderProgramComponent("VolumetricVisualizationPass/");
+	m_visualizationSPC = l_rsService->AddShaderProgramComponent("VolumetricVisualizationPass/");
 
 	m_visualizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricVisualizationPass.vert/";
 	m_visualizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricVisualizationPass.frag/";
 
-	m_visualizationRenderPassComp = l_graphicsService->AddRenderPassComponent("VolumetricVisualizationPass/");
+	m_visualizationRenderPassComp = l_rsService->AddRenderPassComponent("VolumetricVisualizationPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -332,8 +337,9 @@ bool VolumetricPass::setupVisualizationPass()
 bool VolumetricPass::Setup()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("VolumetricPass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("VolumetricPass/");
 
 	setupGeometryProcessPass();
 	setupIrradianceInjectionPass();
@@ -341,16 +347,16 @@ bool VolumetricPass::Setup()
 	setupVisualizationPass();
 
 	// Add command list components for each render pass
-	m_froxelizationCommandListComp = l_graphicsService->AddCommandListComponent("VolumetricPass/Froxelization/Graphics/");
+	m_froxelizationCommandListComp = l_rsService->AddCommandListComponent("VolumetricPass/Froxelization/Graphics/");
 	m_froxelizationCommandListComp->m_Type = GPUEngineType::Graphics;
 
-	m_irraidanceInjectionCommandListComp = l_graphicsService->AddCommandListComponent("VolumetricPass/IrraidanceInjection/Compute/");
+	m_irraidanceInjectionCommandListComp = l_rsService->AddCommandListComponent("VolumetricPass/IrraidanceInjection/Compute/");
 	m_irraidanceInjectionCommandListComp->m_Type = GPUEngineType::Compute;
 
-	m_rayMarchingCommandListComp = l_graphicsService->AddCommandListComponent("VolumetricPass/RayMarching/Compute/");
+	m_rayMarchingCommandListComp = l_rsService->AddCommandListComponent("VolumetricPass/RayMarching/Compute/");
 	m_rayMarchingCommandListComp->m_Type = GPUEngineType::Compute;
 
-	m_visualizationCommandListComp = l_graphicsService->AddCommandListComponent("VolumetricPass/Visualization/Graphics/");
+	m_visualizationCommandListComp = l_rsService->AddCommandListComponent("VolumetricPass/Visualization/Graphics/");
 	m_visualizationCommandListComp->m_Type = GPUEngineType::Graphics;
 
 	////
@@ -364,13 +370,13 @@ bool VolumetricPass::Setup()
 	l_textureDesc.DepthOrArraySize = m_voxelizationResolution.z;
 	l_textureDesc.PixelDataType = TexturePixelDataType::Float32;
 
-	m_irraidanceInjectionResult = l_graphicsService->AddTextureComponent("VolumetricIrraidanceInjectionResult/");
+	m_irraidanceInjectionResult = l_rsService->AddTextureComponent("VolumetricIrraidanceInjectionResult/");
 	m_irraidanceInjectionResult->m_TextureDesc = l_textureDesc;
 
-	m_rayMarchingResult_A = l_graphicsService->AddTextureComponent("VolumetricRayMarchingResult_A/");
+	m_rayMarchingResult_A = l_rsService->AddTextureComponent("VolumetricRayMarchingResult_A/");
 	m_rayMarchingResult_A->m_TextureDesc = l_textureDesc;
 
-	m_rayMarchingResult_B = l_graphicsService->AddTextureComponent("VolumetricRayMarchingResult_B/");
+	m_rayMarchingResult_B = l_rsService->AddTextureComponent("VolumetricRayMarchingResult_B/");
 	m_rayMarchingResult_B->m_TextureDesc = l_textureDesc;
 
 	return true;
@@ -379,30 +385,31 @@ bool VolumetricPass::Setup()
 bool VolumetricPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_SamplerComp);
 
-	l_graphicsService->Initialize(m_froxelizationSPC);
-	l_graphicsService->Initialize(m_froxelizationRenderPassComp);
+	l_rsService->Initialize(m_froxelizationSPC);
+	l_rsService->Initialize(m_froxelizationRenderPassComp);
 
-	l_graphicsService->Initialize(m_irraidanceInjectionSPC);
-	l_graphicsService->Initialize(m_irraidanceInjectionRenderPassComp);
+	l_rsService->Initialize(m_irraidanceInjectionSPC);
+	l_rsService->Initialize(m_irraidanceInjectionRenderPassComp);
 
-	l_graphicsService->Initialize(m_rayMarchingSPC);
-	l_graphicsService->Initialize(m_rayMarchingRenderPassComp);
+	l_rsService->Initialize(m_rayMarchingSPC);
+	l_rsService->Initialize(m_rayMarchingRenderPassComp);
 
-	l_graphicsService->Initialize(m_visualizationSPC);
-	l_graphicsService->Initialize(m_visualizationRenderPassComp);
+	l_rsService->Initialize(m_visualizationSPC);
+	l_rsService->Initialize(m_visualizationRenderPassComp);
 
 	// Initialize command list components
-	l_graphicsService->Initialize(m_froxelizationCommandListComp);
-	l_graphicsService->Initialize(m_irraidanceInjectionCommandListComp);
-	l_graphicsService->Initialize(m_rayMarchingCommandListComp);
-	l_graphicsService->Initialize(m_visualizationCommandListComp);
+	l_rsService->Initialize(m_froxelizationCommandListComp);
+	l_rsService->Initialize(m_irraidanceInjectionCommandListComp);
+	l_rsService->Initialize(m_rayMarchingCommandListComp);
+	l_rsService->Initialize(m_visualizationCommandListComp);
 
-	l_graphicsService->Initialize(m_irraidanceInjectionResult);
-	l_graphicsService->Initialize(m_rayMarchingResult_A);
-	l_graphicsService->Initialize(m_rayMarchingResult_B);
+	l_rsService->Initialize(m_irraidanceInjectionResult);
+	l_rsService->Initialize(m_rayMarchingResult_A);
+	l_rsService->Initialize(m_rayMarchingResult_B);
 
 	return true;
 }
@@ -410,6 +417,7 @@ bool VolumetricPass::Initialize()
 bool VolumetricPass::froxelization()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
@@ -454,6 +462,7 @@ bool VolumetricPass::froxelization()
 bool VolumetricPass::irraidanceInjection()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
@@ -472,7 +481,7 @@ bool VolumetricPass::irraidanceInjection()
 	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	// TODO: Implement per-pass dispatch params buffer upload
-	// l_graphicsService->Upload(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
+	// l_rsService->Upload(l_dispatchParamsGPUBufferComp, &l_irraidanceInjectionWorkload, 6, 1);
 
 	// l_graphicsService->CommandListBegin(m_irraidanceInjectionCommandListComp, m_irraidanceInjectionRenderPassComp, 0);
 	// l_graphicsService->BindRenderPassComponent(m_irraidanceInjectionRenderPassComp, m_irraidanceInjectionCommandListComp);
@@ -506,6 +515,7 @@ bool VolumetricPass::irraidanceInjection()
 bool VolumetricPass::rayMarching()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	GPUResourceComponent *l_currentResultBinder;
 	GPUResourceComponent *l_historyResultBinder;
 
@@ -537,7 +547,7 @@ bool VolumetricPass::rayMarching()
 	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	// TODO: Implement per-pass dispatch params buffer upload
-	// l_graphicsService->Upload(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
+	// l_rsService->Upload(l_dispatchParamsGPUBufferComp, &l_rayMarchingWorkload, 7, 1);
 
 	// l_graphicsService->CommandListBegin(m_rayMarchingCommandListComp, m_rayMarchingRenderPassComp, 0);
 	// l_graphicsService->BindRenderPassComponent(m_rayMarchingRenderPassComp, m_rayMarchingCommandListComp);
@@ -569,6 +579,7 @@ bool VolumetricPass::rayMarching()
 bool VolumetricPass::visualization(GPUResourceComponent *input)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
@@ -614,6 +625,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 bool VolumetricPass::ExecuteCommands(bool visualize)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	froxelization();
@@ -657,11 +669,12 @@ bool VolumetricPass::ExecuteCommands(bool visualize)
 bool VolumetricPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_froxelizationRenderPassComp);
-	l_graphicsService->Delete(m_irraidanceInjectionRenderPassComp);
-	l_graphicsService->Delete(m_rayMarchingRenderPassComp);
-	l_graphicsService->Delete(m_visualizationRenderPassComp);
+	l_rsService->Delete(m_froxelizationRenderPassComp);
+	l_rsService->Delete(m_irraidanceInjectionRenderPassComp);
+	l_rsService->Delete(m_rayMarchingRenderPassComp);
+	l_rsService->Delete(m_visualizationRenderPassComp);
 
 	return true;
 }

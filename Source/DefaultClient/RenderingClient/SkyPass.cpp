@@ -4,18 +4,20 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool SkyPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SkyPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("SkyPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "skyPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SkyPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("SkyPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -43,7 +45,7 @@ bool SkyPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("SkyPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("SkyPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -54,10 +56,11 @@ bool SkyPass::Setup(IServiceConfig* systemConfig)
 bool SkyPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -67,10 +70,11 @@ bool SkyPass::Initialize()
 bool SkyPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -91,6 +95,7 @@ bool SkyPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -123,17 +128,18 @@ GPUResourceComponent* SkyPass::GetResult()
 bool SkyPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_Result)
-		l_graphicsService->Delete(m_Result);
+		l_rsService->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_Result = l_graphicsService->AddTextureComponent("Sky Pass Result/");
+	m_Result = l_rsService->AddTextureComponent("Sky Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_Result);
 
 	return true;
 }

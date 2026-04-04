@@ -6,6 +6,7 @@
 #include "SunShadowGeometryProcessPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
@@ -15,6 +16,7 @@ using namespace Inno;
 bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
@@ -34,10 +36,10 @@ bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[2] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[3] = 1.0f;
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SunShadowBlurOddPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("SunShadowBlurOddPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowBlurPassOdd.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SunShadowBlurOddPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("SunShadowBlurOddPass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -75,9 +77,10 @@ bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 bool SunShadowBlurOddPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -87,8 +90,9 @@ bool SunShadowBlurOddPass::Initialize()
 bool SunShadowBlurOddPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -103,6 +107,7 @@ ObjectStatus SunShadowBlurOddPass::GetStatus()
 bool SunShadowBlurOddPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
 	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -137,7 +142,8 @@ GPUResourceComponent* SunShadowBlurOddPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();	
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

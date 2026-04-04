@@ -7,45 +7,47 @@
 #include "PreTAAPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_atomicCounterGPUBufferComp = l_graphicsService->AddGPUBufferComponent("TransparentPassAtomicCounter/");
+	m_atomicCounterGPUBufferComp = l_rsService->AddGPUBufferComponent("TransparentPassAtomicCounter/");
 	m_atomicCounterGPUBufferComp->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_atomicCounterGPUBufferComp->m_ElementSize = sizeof(uint32_t);
 	m_atomicCounterGPUBufferComp->m_ElementCount = 1;
 	m_atomicCounterGPUBufferComp->m_Usage = GPUBufferUsage::AtomicCounter;
 
 	uint32_t l_averangeFragmentPerPixel = 4;
-	m_RT0 = l_graphicsService->AddGPUBufferComponent("TransparentGeometryProcessPassRT0/");
+	m_RT0 = l_rsService->AddGPUBufferComponent("TransparentGeometryProcessPassRT0/");
 	m_RT0->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_RT0->m_ElementSize = sizeof(TVec4<uint32_t>);
 	m_RT0->m_ElementCount = l_RenderPassDesc.m_RenderTargetDesc.Width * l_RenderPassDesc.m_RenderTargetDesc.Height * l_averangeFragmentPerPixel;
 
-	m_RT1 = l_graphicsService->AddGPUBufferComponent("TransparentGeometryProcessPassRT1/");
+	m_RT1 = l_rsService->AddGPUBufferComponent("TransparentGeometryProcessPassRT1/");
 	m_RT1->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_RT1->m_ElementSize = sizeof(TVec4<uint32_t>);
 	m_RT1->m_ElementCount = l_RenderPassDesc.m_RenderTargetDesc.Width * l_RenderPassDesc.m_RenderTargetDesc.Height * l_averangeFragmentPerPixel;
 
-	m_HeadPtr = l_graphicsService->AddTextureComponent("TransparentGeometryProcessPassHeadPtr/");
+	m_HeadPtr = l_rsService->AddTextureComponent("TransparentGeometryProcessPassHeadPtr/");
 	m_HeadPtr->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_HeadPtr->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::R;
 	m_HeadPtr->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 	auto l_cleanValue = 0xFFFFFFFF;
 	std::memcpy(&m_HeadPtr->m_TextureDesc.ClearColor[0], &l_cleanValue, sizeof(l_cleanValue));
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("TransparentGeometryProcessPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("TransparentGeometryProcessPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "transparentGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "transparentGeometryProcessPass.frag/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("TransparentGeometryProcessPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("TransparentGeometryProcessPass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_UseOutputMerger = false;
@@ -110,14 +112,15 @@ bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 bool TransparentGeometryProcessPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_atomicCounterGPUBufferComp);
-	l_graphicsService->Initialize(m_RT0);
-	l_graphicsService->Initialize(m_RT1);
-	l_graphicsService->Initialize(m_HeadPtr);
+	l_rsService->Initialize(m_atomicCounterGPUBufferComp);
+	l_rsService->Initialize(m_RT0);
+	l_rsService->Initialize(m_RT1);
+	l_rsService->Initialize(m_HeadPtr);
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -127,8 +130,9 @@ bool TransparentGeometryProcessPass::Initialize()
 bool TransparentGeometryProcessPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -143,12 +147,13 @@ ObjectStatus TransparentGeometryProcessPass::GetStatus()
 bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	static uint32_t zero = 0;
-	l_graphicsService->Upload(m_atomicCounterGPUBufferComp, &zero);
-	l_graphicsService->Clear(m_CommandListComp_Graphics, m_RT0);
-	l_graphicsService->Clear(m_CommandListComp_Graphics, m_RT1);
-	l_graphicsService->Clear(m_CommandListComp_Graphics, m_HeadPtr);
+	l_rsService->Upload(m_atomicCounterGPUBufferComp, &zero);
+	l_rsService->Clear(m_CommandListComp_Graphics, m_RT0);
+	l_rsService->Clear(m_CommandListComp_Graphics, m_RT1);
+	l_rsService->Clear(m_CommandListComp_Graphics, m_HeadPtr);
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();

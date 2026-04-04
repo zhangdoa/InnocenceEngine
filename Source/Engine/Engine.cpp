@@ -42,6 +42,7 @@
 #if defined INNO_RENDERER_DIRECTX
 #include "Services/DX12/DX12GraphicsService.h"
 #include "Services/DX12/DX12GraphicsHardwareService.h"
+#include "Services/DX12/DX12GraphicsResourceService.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
 #include "Services/VK/VKGraphicsService.h"
@@ -437,6 +438,10 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		auto* l_hwService = new DX12GraphicsHardwareService();
 		l_hwService->SetBackend(m_pImpl->m_GraphicsService.get());
 		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;
+
+		auto* l_rsService = new DX12GraphicsResourceService();
+		l_rsService->SetBackend(m_pImpl->m_GraphicsService.get());
+		singletons_[std::type_index(typeid(GraphicsResourceService))] = l_rsService;
 	}
 #endif
 

@@ -8,22 +8,24 @@
 #include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_initialIndexCount = 1;
 
-	m_lightListIndexCounter = l_graphicsService->AddGPUBufferComponent("LightListIndexCounter/");
+	m_lightListIndexCounter = l_rsService->AddGPUBufferComponent("LightListIndexCounter/");
 	m_lightListIndexCounter->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_lightListIndexCounter->m_ElementCount = 1;
 	m_lightListIndexCounter->m_ElementSize = sizeof(uint32_t);
 	m_lightListIndexCounter->m_InitialData = &l_initialIndexCount;
 
-	m_DispatchParamsGPUBufferComp = l_graphicsService->AddGPUBufferComponent("LightCullingDispatchParams/");
+	m_DispatchParamsGPUBufferComp = l_rsService->AddGPUBufferComponent("LightCullingDispatchParams/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -31,10 +33,10 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&LightCullingPass::RenderTargetsCreationFunc, this);
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("LightCullingPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LightCullingPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("LightCullingPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("LightCullingPass/");
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(10);
@@ -104,12 +106,12 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("LightCullingPass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("LightCullingPass/");
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("LightCullingPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("LightCullingPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("LightCullingPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("LightCullingPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -120,19 +122,20 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 bool LightCullingPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 	m_DispatchParamsGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 
-	l_graphicsService->Initialize(m_DispatchParamsGPUBufferComp);
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_DispatchParamsGPUBufferComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_SamplerComp);
 
-	l_graphicsService->Initialize(m_lightListIndexCounter);
+	l_rsService->Initialize(m_lightListIndexCounter);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -142,15 +145,16 @@ bool LightCullingPass::Initialize()
 bool LightCullingPass::Update()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_lightListIndexCounter = 1;
-	l_graphicsService->Upload(m_lightListIndexCounter, &l_lightListIndexCounter);
+	l_rsService->Upload(m_lightListIndexCounter, &l_lightListIndexCounter);
 
 	DispatchParamsConstantBuffer lightCullingWorkload;
 	lightCullingWorkload.numThreadGroups = m_numThreadGroups;
 	lightCullingWorkload.numThreads = m_numThreads;
 
-	l_graphicsService->Upload(m_DispatchParamsGPUBufferComp, &lightCullingWorkload, 0, 1);
+	l_rsService->Upload(m_DispatchParamsGPUBufferComp, &lightCullingWorkload, 0, 1);
 
 	return true;
 }
@@ -158,16 +162,17 @@ bool LightCullingPass::Update()
 bool LightCullingPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_lightListIndexCounter);
-	l_graphicsService->Delete(m_lightIndexList);
-	l_graphicsService->Delete(m_DispatchParamsGPUBufferComp);
-	l_graphicsService->Delete(m_lightGrid);
-	l_graphicsService->Delete(m_heatMap);
+	l_rsService->Delete(m_lightListIndexCounter);
+	l_rsService->Delete(m_lightIndexList);
+	l_rsService->Delete(m_DispatchParamsGPUBufferComp);
+	l_rsService->Delete(m_lightGrid);
+	l_rsService->Delete(m_heatMap);
 
-	l_graphicsService->Delete(m_SamplerComp);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_SamplerComp);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -194,6 +199,7 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -253,13 +259,14 @@ GPUResourceComponent* LightCullingPass::GetHeatMap()
 bool LightCullingPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_lightIndexList)
-		l_graphicsService->Delete(m_lightIndexList);
+		l_rsService->Delete(m_lightIndexList);
 	if (m_lightGrid)
-		l_graphicsService->Delete(m_lightGrid);
+		l_rsService->Delete(m_lightGrid);
 	if (m_heatMap)
-		l_graphicsService->Delete(m_heatMap);
+		l_rsService->Delete(m_heatMap);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -273,12 +280,12 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 
 	auto l_elementCount = m_numThreadGroups.x * m_numThreadGroups.y * l_averageOverlapLight;
 
-	m_lightIndexList = l_graphicsService->AddGPUBufferComponent("LightIndexList/");
+	m_lightIndexList = l_rsService->AddGPUBufferComponent("LightIndexList/");
 	m_lightIndexList->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_lightIndexList->m_ElementCount = l_elementCount;
 	m_lightIndexList->m_ElementSize = sizeof(uint32_t);
 
-	m_lightGrid = l_graphicsService->AddTextureComponent("LightGrid/");
+	m_lightGrid = l_rsService->AddTextureComponent("LightGrid/");
 	m_lightGrid->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_lightGrid->m_TextureDesc.Width = m_numThreadGroups.x;
@@ -287,13 +294,13 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 	m_lightGrid->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
 	m_lightGrid->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 
-	m_heatMap = l_graphicsService->AddTextureComponent("LightCullingHeatMap/");
+	m_heatMap = l_rsService->AddTextureComponent("LightCullingHeatMap/");
 	m_heatMap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_heatMap->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_graphicsService->Initialize(m_lightIndexList);
-	l_graphicsService->Initialize(m_lightGrid);
-	l_graphicsService->Initialize(m_heatMap);
+	l_rsService->Initialize(m_lightIndexList);
+	l_rsService->Initialize(m_lightGrid);
+	l_rsService->Initialize(m_heatMap);
 
 	return true;
 }

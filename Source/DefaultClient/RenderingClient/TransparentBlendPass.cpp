@@ -6,6 +6,7 @@
 #include "TransparentGeometryProcessPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
@@ -15,14 +16,15 @@ using namespace Inno;
 bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("TransparentBlendPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("TransparentBlendPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "transparentBlendPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("TransparentBlendPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("TransparentBlendPass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -72,9 +74,10 @@ bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 bool TransparentBlendPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -84,8 +87,9 @@ bool TransparentBlendPass::Initialize()
 bool TransparentBlendPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -100,12 +104,13 @@ ObjectStatus TransparentBlendPass::GetStatus()
 bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	GPUResourceComponent* l_canvas = nullptr;
 
 	// if (renderingContext == nullptr)
 	// {
-	// 	l_graphicsService->Clear(m_RenderPassComp->m_RenderTargets[0].m_Texture);
+	// 	l_rsService->Clear(m_RenderPassComp->m_RenderTargets[0].m_Texture);
 	// 	l_canvas = m_RenderPassComp->m_RenderTargets[0].m_Texture;
 	// }
 	// else
@@ -152,7 +157,8 @@ GPUResourceComponent* TransparentBlendPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();	
+	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

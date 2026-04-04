@@ -6,12 +6,14 @@
 #include "LuminanceHistogramPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -20,11 +22,11 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("LuminanceAveragePass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LuminanceAveragePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("LuminanceAveragePass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("LuminanceAveragePass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -51,10 +53,10 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("LuminanceAveragePass/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("LuminanceAveragePass/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_luminanceAverage = l_graphicsService->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
+	m_luminanceAverage = l_rsService->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceAverage->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceAverage->m_ElementCount = m_MaxResultToKeep;
@@ -68,12 +70,13 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 bool LuminanceAveragePass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Compute);
 
-	l_graphicsService->Initialize(m_luminanceAverage);
+	l_rsService->Initialize(m_luminanceAverage);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -89,11 +92,12 @@ bool LuminanceAveragePass::Update()
 bool LuminanceAveragePass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_luminanceAverage);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_luminanceAverage);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -117,6 +121,7 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 

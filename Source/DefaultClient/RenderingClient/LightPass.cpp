@@ -15,18 +15,20 @@
 #include "VolumetricPass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool LightPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("LightPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LightPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("LightPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("LightPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -178,15 +180,15 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp_Linear = l_graphicsService->AddSamplerComponent("LightPass/LinearSampler/");
-	m_SamplerComp_Point = l_graphicsService->AddSamplerComponent("LightPass/PointSampler/");
+	m_SamplerComp_Linear = l_rsService->AddSamplerComponent("LightPass/LinearSampler/");
+	m_SamplerComp_Point = l_rsService->AddSamplerComponent("LightPass/PointSampler/");
 	m_SamplerComp_Point->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_Point->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("LightPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("LightPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("LightPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("LightPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -197,13 +199,14 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 bool LightPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_SamplerComp_Linear);
-	l_graphicsService->Initialize(m_SamplerComp_Point);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_SamplerComp_Linear);
+	l_rsService->Initialize(m_SamplerComp_Point);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -213,14 +216,15 @@ bool LightPass::Initialize()
 bool LightPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_LuminanceResult);
-	l_graphicsService->Delete(m_IlluminanceResult);
+	l_rsService->Delete(m_LuminanceResult);
+	l_rsService->Delete(m_IlluminanceResult);
 	
-	l_graphicsService->Delete(m_SamplerComp_Point);
-	l_graphicsService->Delete(m_SamplerComp_Linear);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_SamplerComp_Point);
+	l_rsService->Delete(m_SamplerComp_Linear);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -250,6 +254,7 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -323,27 +328,28 @@ TextureComponent* LightPass::GetIlluminanceResult()
 bool LightPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_LuminanceResult)
-		l_graphicsService->Delete(m_LuminanceResult);
+		l_rsService->Delete(m_LuminanceResult);
 
 	if (m_IlluminanceResult)
-		l_graphicsService->Delete(m_IlluminanceResult);
+		l_rsService->Delete(m_IlluminanceResult);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_LuminanceResult = l_graphicsService->AddTextureComponent("LightPass Luminance Result/");
+	m_LuminanceResult = l_rsService->AddTextureComponent("LightPass Luminance Result/");
 	m_LuminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_LuminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_graphicsService->Initialize(m_LuminanceResult);
+	l_rsService->Initialize(m_LuminanceResult);
 
-	m_IlluminanceResult = l_graphicsService->AddTextureComponent("LightPass Illuminance Result/");
+	m_IlluminanceResult = l_rsService->AddTextureComponent("LightPass Illuminance Result/");
 	m_IlluminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_IlluminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_graphicsService->Initialize(m_IlluminanceResult);
+	l_rsService->Initialize(m_IlluminanceResult);
 
 	return true;
 }

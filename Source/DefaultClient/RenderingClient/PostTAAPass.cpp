@@ -3,6 +3,7 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
@@ -10,12 +11,13 @@ using namespace Inno;
 bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("PostTAAPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("PostTAAPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("PostTAAPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("PostTAAPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -44,10 +46,10 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("PostTAAPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("PostTAAPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("PostTAAPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("PostTAAPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -58,11 +60,12 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 bool PostTAAPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -72,12 +75,13 @@ bool PostTAAPass::Initialize()
 bool PostTAAPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);	
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);	
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -98,6 +102,7 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_renderingContext = reinterpret_cast<PostTAAPassRenderingContext*>(renderingContext);
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -140,17 +145,18 @@ GPUResourceComponent* PostTAAPass::GetResult()
 bool PostTAAPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_Result)
-		l_graphicsService->Delete(m_Result);
+		l_rsService->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_Result = l_graphicsService->AddTextureComponent("Post-TAA Pass Result/");
+	m_Result = l_rsService->AddTextureComponent("Post-TAA Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_Result);
 
 	return true;
 }

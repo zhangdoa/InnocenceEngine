@@ -4,12 +4,14 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -17,11 +19,11 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("LuminanceHistogramPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LuminanceHistogramPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceHistogramPass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("LuminanceHistogramPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("LuminanceHistogramPass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -47,13 +49,13 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("LuminanceHistogramPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("LuminanceHistogramPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("LuminanceHistogramPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("LuminanceHistogramPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_luminanceHistogram = l_graphicsService->AddGPUBufferComponent("LuminanceHistogramGPUBuffer/");
+	m_luminanceHistogram = l_rsService->AddGPUBufferComponent("LuminanceHistogramGPUBuffer/");
 	m_luminanceHistogram->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceHistogram->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceHistogram->m_ElementCount = 256;
@@ -67,12 +69,13 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 bool LuminanceHistogramPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);	
-	l_graphicsService->Initialize(m_luminanceHistogram);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_CommandListComp_Graphics);	
+	l_rsService->Initialize(m_luminanceHistogram);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -82,12 +85,13 @@ bool LuminanceHistogramPass::Initialize()
 bool LuminanceHistogramPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_luminanceHistogram);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_luminanceHistogram);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -112,6 +116,7 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 

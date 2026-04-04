@@ -7,6 +7,7 @@
 
 #include "../../Interface/IRenderPass.h"
 #include "../../Services/GraphicsHardwareService.h"
+#include "../../Services/GraphicsResourceService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/TaskScheduler.h"
@@ -43,8 +44,9 @@ using namespace ImGuiRendererDX12NS;
 bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("ImGuiRenderPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("ImGuiRenderPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Graphics;
@@ -59,7 +61,7 @@ bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 
 	// No resource binding layout descriptors needed for ImGui.
 	
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("ImGuiRenderPass/Graphics");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("ImGuiRenderPass/Graphics");
 	
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -68,7 +70,8 @@ bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 bool ImGuiRenderPass::Initialize()
 {
 	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());
-	l_graphicsService->Initialize(m_RenderPassComp);
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	l_rsService->Initialize(m_RenderPassComp);
 
 	// The actual rendering is called by the rendering server
 	m_RenderPassComp->m_CustomCommandsFunc = [&](CommandListComponent* cmdList)
@@ -80,6 +83,7 @@ bool ImGuiRenderPass::Initialize()
 			}
 
 			auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 			auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
 			auto l_currentFrame =l_graphicsService->GetCurrentFrame();
 
@@ -97,7 +101,7 @@ bool ImGuiRenderPass::Initialize()
 			}
 		};
 
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
@@ -106,8 +110,9 @@ bool ImGuiRenderPass::Initialize()
 bool ImGuiRenderPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
@@ -127,6 +132,7 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 	}
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);	
 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -238,6 +244,7 @@ bool ImGuiRendererDX12::Prepare()
 bool ImGuiRendererDX12::ExecuteCommands()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
 

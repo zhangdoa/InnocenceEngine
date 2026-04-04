@@ -5,20 +5,22 @@
 #include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("OpaqueCullingPass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("OpaqueCullingPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "opaqueGPUCulling.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("OpaqueCullingPass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("OpaqueCullingPass/");
 
-	m_IndirectDrawCommandBuffer = l_graphicsService->AddGPUBufferComponent("OpaqueCullingPass/IndirectDrawCommandBuffer/");
+	m_IndirectDrawCommandBuffer = l_rsService->AddGPUBufferComponent("OpaqueCullingPass/IndirectDrawCommandBuffer/");
 	m_IndirectDrawCommandBuffer->m_Usage = GPUBufferUsage::IndirectDraw;
 	m_IndirectDrawCommandBuffer->m_ElementCount = 512;
 
@@ -62,7 +64,7 @@ bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("OpaqueCullingPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("OpaqueCullingPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -73,11 +75,12 @@ bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 bool OpaqueCullingPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_IndirectDrawCommandBuffer);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_IndirectDrawCommandBuffer);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -87,10 +90,11 @@ bool OpaqueCullingPass::Initialize()
 bool OpaqueCullingPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_IndirectDrawCommandBuffer);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_IndirectDrawCommandBuffer);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -117,6 +121,7 @@ bool OpaqueCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);

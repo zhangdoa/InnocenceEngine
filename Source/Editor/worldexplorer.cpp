@@ -5,6 +5,7 @@
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/EntityRegistry.h"
 #include "../Engine/Services/IGraphicsService.h"
+#include "../Engine/Services/GraphicsResourceService.h"
 #include "../Engine/Services/CameraService.h"
 #include <QHeaderView>
 
@@ -257,7 +258,7 @@ void WorldExplorer::destroyComponent(Component *component)
     }
     else if (componentType == TextureComponent::GetTypeID())
     {
-        g_Engine->getGraphicsService()->Delete(reinterpret_cast<TextureComponent*>(component));
+        g_Engine->Get<GraphicsResourceService>()->Delete(reinterpret_cast<TextureComponent*>(component));
     }
     else if (componentType == AnimationComponent::GetTypeID())
     {

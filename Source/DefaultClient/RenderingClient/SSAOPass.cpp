@@ -6,18 +6,20 @@
 #include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"
+#include "../../Engine/Services/GraphicsResourceService.h"
 
 using namespace Inno;
 
 bool SSAOPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_graphicsService->AddShaderProgramComponent("SSAONoisePass/");
+	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("SSAONoisePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp/";
 
-	m_RenderPassComp = l_graphicsService->AddRenderPassComponent("SSAONoisePass/");
+	m_RenderPassComp = l_rsService->AddRenderPassComponent("SSAONoisePass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -78,15 +80,15 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_graphicsService->AddCommandListComponent("SSAOPass/Graphics/");
+	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("SSAOPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_graphicsService->AddCommandListComponent("SSAOPass/Compute/");
+	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("SSAOPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_SamplerComp = l_graphicsService->AddSamplerComponent("SSAONoisePass/");
+	m_SamplerComp = l_rsService->AddSamplerComponent("SSAONoisePass/");
 
-	m_SamplerComp_RandomRot = l_graphicsService->AddSamplerComponent("SSAONoisePass_RandomRot/");
+	m_SamplerComp_RandomRot = l_rsService->AddSamplerComponent("SSAONoisePass_RandomRot/");
 
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
@@ -114,7 +116,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 		m_Kernel.emplace_back(l_sample);
 	}
 
-	m_KernelGPUBuffer = l_graphicsService->AddGPUBufferComponent("SSAO_Kernel/");
+	m_KernelGPUBuffer = l_rsService->AddGPUBufferComponent("SSAO_Kernel/");
 	m_KernelGPUBuffer->m_GPUResourceType = GPUResourceType::Buffer;
 	m_KernelGPUBuffer->m_ElementSize = sizeof(Vec4);
 	m_KernelGPUBuffer->m_ElementCount = m_kernelSize;
@@ -133,7 +135,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 		m_Noise.push_back(noise);
 	}
 
-	m_NoiseTexture = l_graphicsService->AddTextureComponent("SSAO_Noise/");
+	m_NoiseTexture = l_rsService->AddTextureComponent("SSAO_Noise/");
 
 	m_NoiseTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_NoiseTexture->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
@@ -150,15 +152,16 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 bool SSAOPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Initialize(m_ShaderProgramComp);
-	l_graphicsService->Initialize(m_RenderPassComp);
-	l_graphicsService->Initialize(m_CommandListComp_Graphics);
-	l_graphicsService->Initialize(m_CommandListComp_Compute);
-	l_graphicsService->Initialize(m_SamplerComp);
-	l_graphicsService->Initialize(m_SamplerComp_RandomRot);
-	l_graphicsService->Initialize(m_KernelGPUBuffer);
-	l_graphicsService->Initialize(m_NoiseTexture, &m_Noise[0]);
+	l_rsService->Initialize(m_ShaderProgramComp);
+	l_rsService->Initialize(m_RenderPassComp);
+	l_rsService->Initialize(m_CommandListComp_Graphics);
+	l_rsService->Initialize(m_CommandListComp_Compute);
+	l_rsService->Initialize(m_SamplerComp);
+	l_rsService->Initialize(m_SamplerComp_RandomRot);
+	l_rsService->Initialize(m_KernelGPUBuffer);
+	l_rsService->Initialize(m_NoiseTexture, &m_Noise[0]);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -168,16 +171,17 @@ bool SSAOPass::Initialize()
 bool SSAOPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_graphicsService->Delete(m_Result);
-	l_graphicsService->Delete(m_NoiseTexture);
-	l_graphicsService->Delete(m_KernelGPUBuffer);
-	l_graphicsService->Delete(m_SamplerComp_RandomRot);
-	l_graphicsService->Delete(m_SamplerComp);
-	l_graphicsService->Delete(m_CommandListComp_Compute);
-	l_graphicsService->Delete(m_CommandListComp_Graphics);
-	l_graphicsService->Delete(m_RenderPassComp);
-	l_graphicsService->Delete(m_ShaderProgramComp);
+	l_rsService->Delete(m_Result);
+	l_rsService->Delete(m_NoiseTexture);
+	l_rsService->Delete(m_KernelGPUBuffer);
+	l_rsService->Delete(m_SamplerComp_RandomRot);
+	l_rsService->Delete(m_SamplerComp);
+	l_rsService->Delete(m_CommandListComp_Compute);
+	l_rsService->Delete(m_CommandListComp_Graphics);
+	l_rsService->Delete(m_RenderPassComp);
+	l_rsService->Delete(m_ShaderProgramComp);
 	
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -201,6 +205,7 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_currentFrame = l_graphicsService->GetCurrentFrame();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -247,18 +252,19 @@ GPUResourceComponent* SSAOPass::GetResult()
 bool SSAOPass::RenderTargetsCreationFunc()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_Result)
-		l_graphicsService->Delete(m_Result);
+		l_rsService->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_Result = l_graphicsService->AddTextureComponent("SSAO_Result/");
+	m_Result = l_rsService->AddTextureComponent("SSAO_Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
-	l_graphicsService->Initialize(m_Result);
+	l_rsService->Initialize(m_Result);
 
 	return true;
 }
