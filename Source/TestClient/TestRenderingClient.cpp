@@ -5,6 +5,7 @@
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 #include "../Engine/Services/AssetService.h"
+#include "../Engine/Services/GraphicsHardwareService.h"
 
 using namespace Inno;
 
@@ -155,12 +156,12 @@ bool TestRenderingClient::PrepareCommands_DrawInstanced()
 
 bool TestRenderingClient::ExecuteCommands_DrawInstanced()
 {
-    auto l_rs = g_Engine->getGraphicsService();
+    auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
 
-    l_rs->Execute(l_cl, GPUEngineType::Graphics);
-    l_rs->SignalOnGPU(l_rp, GPUEngineType::Graphics);
+    l_hwService->Execute(l_cl, GPUEngineType::Graphics);
+    l_hwService->SignalOnGPU(l_rp, GPUEngineType::Graphics);
 
     CountFrameAndTerminateIfDone();
     return true;
@@ -169,7 +170,8 @@ bool TestRenderingClient::ExecuteCommands_DrawInstanced()
 bool TestRenderingClient::Terminate_DrawInstanced()
 {
     auto l_rs = g_Engine->getGraphicsService();
-    l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+    auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+    l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
     l_rs->Delete(m_DrawInstanced->CommandList);
     l_rs->Delete(m_DrawInstanced->RenderPass);
     l_rs->Delete(m_DrawInstanced->ShaderProgram);
@@ -216,11 +218,12 @@ bool TestRenderingClient::Initialize_PixelReadback()
 bool TestRenderingClient::ExecuteCommands_PixelReadback()
 {
     auto l_rs = g_Engine->getGraphicsService();
+    auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
 
-    l_rs->Execute(l_cl, GPUEngineType::Graphics);
-    l_rs->SignalOnGPU(l_rp, GPUEngineType::Graphics);
+    l_hwService->Execute(l_cl, GPUEngineType::Graphics);
+    l_hwService->SignalOnGPU(l_rp, GPUEngineType::Graphics);
 
     if (g_Engine->Get<SceneService>()->IsLoading())
         return true;
@@ -229,7 +232,7 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
 
     if (m_FramesAfterLoad == k_TargetFrames)
     {
-        l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+        l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
 
         auto* l_renderTarget = l_rp->m_OutputMergerTarget->m_ColorOutputs[0];
         auto l_pixels = l_rs->ReadTextureBackToCPU(l_rp, l_renderTarget);

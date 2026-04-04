@@ -105,6 +105,9 @@ namespace Inno
 		else if constexpr (std::is_same_v<T, IGraphicsService>) {
 			return reinterpret_cast<T*>(getGraphicsService());
 		}
+		else if constexpr (std::is_abstract_v<T>) {
+			return nullptr;
+		}
 		else {
 			// Handle regular IService classes
 			auto type = std::type_index(typeid(T));

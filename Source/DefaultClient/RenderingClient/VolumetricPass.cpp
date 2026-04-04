@@ -4,6 +4,7 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/LightDataService.h"
 #include "../../Engine/Services/DrawCallService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
@@ -613,6 +614,7 @@ bool VolumetricPass::visualization(GPUResourceComponent *input)
 bool VolumetricPass::ExecuteCommands(bool visualize)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	froxelization();
 	irraidanceInjection();
@@ -627,26 +629,26 @@ bool VolumetricPass::ExecuteCommands(bool visualize)
 	// TODO: Implement proper command list preparation and execution
 	// auto l_cmdList1 = froxelizationCommandList();
 	// if (l_cmdList1) { l_graphicsService->Execute(l_cmdList1, GPUEngineType::Graphics); }
-	l_graphicsService->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
-	l_graphicsService->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_hwService->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_hwService->WaitOnGPU(m_froxelizationRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 	// auto l_cmdList2 = irraidanceInjectionCommandList();
 	// if (l_cmdList2) { l_graphicsService->Execute(l_cmdList2, GPUEngineType::Graphics); }
-	l_graphicsService->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_hwService->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 	// if (l_cmdList2) { l_graphicsService->Execute(l_cmdList2, GPUEngineType::Compute); }
-	l_graphicsService->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
+	l_hwService->WaitOnGPU(m_irraidanceInjectionRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	// auto l_cmdList3 = rayMarchingCommandList();
 	// if (l_cmdList3) { l_graphicsService->Execute(l_cmdList3, GPUEngineType::Graphics); }
-	l_graphicsService->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
+	l_hwService->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Compute, GPUEngineType::Graphics);
 	// if (l_cmdList3) { l_graphicsService->Execute(l_cmdList3, GPUEngineType::Compute); }
-	l_graphicsService->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
+	l_hwService->WaitOnGPU(m_rayMarchingRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 	if (visualize)
 	{
 		// auto l_cmdList4 = visualizationCommandList();
 		// if (l_cmdList4) { l_graphicsService->Execute(l_cmdList4, GPUEngineType::Graphics); }
-		l_graphicsService->WaitOnGPU(m_visualizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+		l_hwService->WaitOnGPU(m_visualizationRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
 	}
 
 	return true;

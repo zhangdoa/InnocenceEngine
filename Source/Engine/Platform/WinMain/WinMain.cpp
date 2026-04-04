@@ -5,6 +5,7 @@
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
 #include "../../Services/IGraphicsService.h"
+#include "../../Services/GraphicsHardwareService.h"
 #include "../../Interface/IClientFactory.h"
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
@@ -134,7 +135,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
         m_pEngine->Terminate();
 
-        if (m_pEngine->getGraphicsService()->HasGPUError())
+        if (m_pEngine->Get<GraphicsHardwareService>()->HasGPUError())
             return 1;
 
         if (l_renderingClientPtr && !l_renderingClientPtr->GetValidationPassed())

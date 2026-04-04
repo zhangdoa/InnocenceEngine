@@ -6,6 +6,7 @@
 #include "../../Services/DX12/DX12Helper_Common.h"
 
 #include "../../Interface/IRenderPass.h"
+#include "../../Services/GraphicsHardwareService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/TaskScheduler.h"
@@ -237,6 +238,7 @@ bool ImGuiRendererDX12::Prepare()
 bool ImGuiRendererDX12::ExecuteCommands()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_swapChainRenderPassComp = l_graphicsService->GetSwapChainRenderPassComponent();
 
 	// Skip ImGui execution in offscreen mode or if swap chain is not available
@@ -247,18 +249,18 @@ bool ImGuiRendererDX12::ExecuteCommands()
 	}
 
 	// Let the swap chain rendering finish.
-	l_graphicsService->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
-	if (m_RenderPass->PrepareCommandList(nullptr)) 
-	{ 
+	l_hwService->WaitOnGPU(l_swapChainRenderPassComp, GPUEngineType::Graphics, GPUEngineType::Graphics);
+	if (m_RenderPass->PrepareCommandList(nullptr))
+	{
 		auto l_commandList = m_RenderPass->GetCommandListComp(GPUEngineType::Graphics);
 		if (l_commandList) {
-			l_graphicsService->Execute(l_commandList, GPUEngineType::Graphics); 
+			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
 		}
 	}
-	l_graphicsService->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
+	l_hwService->SignalOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics);
 
 	// Let the ImGui rendering finish.
-	l_graphicsService->WaitOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+	l_hwService->WaitOnGPU(m_RenderPass->GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 	return true;
 }
 

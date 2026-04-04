@@ -7,7 +7,6 @@
 #include "../../Engine/Services/PhysicsSimulationService.h"
 #include "../../Engine/Services/BVHService.h"
 
-#include "GIDataLoader.h"
 #include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"

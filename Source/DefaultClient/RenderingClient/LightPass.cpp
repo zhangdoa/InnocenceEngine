@@ -4,7 +4,6 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/LightDataService.h"
 
-#include "VXGIRenderer.h"
 #include "OpaquePass.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
@@ -278,8 +277,6 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_SphereLightGPUBufferComp, 2);
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_CSMGPUBufferComp, 3);
-	//l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, VXGIRenderer::Get().GetVoxelizationCBuffer(), 4);
-	//l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_GIGPUBufferComp, 5);
 
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 6);
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 7);
@@ -293,7 +290,6 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 15);
 
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheIntegrationPass::Get().GetResult(), 16);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, VXGIRenderer::Get().GetResult(), 16);
 	// l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 17);
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_LuminanceResult, 18);
 	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IlluminanceResult, 19);
