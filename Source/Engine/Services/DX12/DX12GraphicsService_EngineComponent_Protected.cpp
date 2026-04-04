@@ -834,22 +834,6 @@ bool DX12GraphicsService::InitializeImpl(CommandListComponent* commandList)
 	return true;
 }
 
-bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh)
-{
-	if (!mesh->m_GPUResource.IsValid())
-		return false;
-
-	auto l_it = m_DX12MeshResources.find(mesh->m_GPUResource.m_Index);
-	if (l_it == m_DX12MeshResources.end())
-		return false;
-
-	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
-	l_DX12CommandList->CopyResource(l_it->second.m_VertexBuffer_Default.Get(), l_it->second.m_VertexBuffer_Upload.Get());
-	l_DX12CommandList->CopyResource(l_it->second.m_IndexBuffer_Default.Get(), l_it->second.m_IndexBuffer_Upload.Get());
-
-	return true;
-}
-
 bool DX12GraphicsService::UploadToGPU(CommandListComponent* commandList, TextureComponent* texture)
 {
 	// Texture upload is handled during initialization with centralized resources

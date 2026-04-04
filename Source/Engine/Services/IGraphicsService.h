@@ -43,7 +43,6 @@ namespace Inno
 		virtual IPipelineStateObject* AddPipelineStateObject() = 0;
 
 		TextureComponent*  FindTextureByName(const char* name);
-		MeshComponent*     FindMeshByName(const char* name);
 		MaterialComponent* FindMaterialByName(const char* name);
 
 		GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle);
@@ -118,7 +117,6 @@ namespace Inno
 
 		virtual bool Resize();
 
-		virtual bool UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh) { return false; }
 		virtual bool UploadToGPU(CommandListComponent* commandList, TextureComponent* texture) { return false; }
 		virtual bool UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer) { return false; }
 		virtual bool Clear(CommandListComponent* commandList, TextureComponent* texture) { return false; }
@@ -278,7 +276,6 @@ namespace Inno
 		ThreadSafeQueue<RenderPassComponent*> m_uninitializedRenderPasses;
 		ThreadSafeQueue<EntityID> m_uninitializedEntities;
 
-		std::unordered_set<MeshComponent*>     m_initializedMeshes;
 		std::unordered_set<TextureComponent*>  m_initializedTextures;
 		std::unordered_set<MaterialComponent*> m_initializedMaterials;
 		std::unordered_set<EntityID>           m_initializedEntities;

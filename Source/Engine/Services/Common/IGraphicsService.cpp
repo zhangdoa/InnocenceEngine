@@ -495,12 +495,6 @@ TextureComponent* IGraphicsService::FindTextureByName(const char* name)
 	return (l_result != m_GPUHandlePools.TextureLUT.end()) ? l_result->second : nullptr;
 }
 
-MeshComponent* IGraphicsService::FindMeshByName(const char* name)
-{
-	auto l_result = m_GPUHandlePools.MeshLUT.find(name);
-	return (l_result != m_GPUHandlePools.MeshLUT.end()) ? l_result->second : nullptr;
-}
-
 MaterialComponent* IGraphicsService::FindMaterialByName(const char* name)
 {
 	auto l_result = m_GPUHandlePools.MaterialLUT.find(name);
@@ -1096,15 +1090,6 @@ bool IGraphicsService::PrepareGlobalCommands()
 
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	Open(l_commandList, GPUEngineType::Graphics);
-
-	// for (auto i : m_initializedMeshes)
-	// {
-	// 	if (i->m_NeedUploadToGPU)
-	// 	{
-	// 		UploadToGPU(l_commandList, i);
-	// 		i->m_NeedUploadToGPU = false;
-	// 	}
-	// }
 
 	// for (auto i : m_initializedTextures)
 	// {

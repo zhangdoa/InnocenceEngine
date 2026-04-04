@@ -77,7 +77,6 @@ namespace Inno
         bool InitializeImpl(EntityID Entity) override;
         bool InitializeImpl(CommandListComponent* commandList) override;
        
-        bool UploadToGPU(CommandListComponent* commandList, MeshComponent* mesh) override;
         bool UploadToGPU(CommandListComponent* commandList, TextureComponent* texture) override;
         bool UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer) override;
 		bool Clear(CommandListComponent* commandList, TextureComponent* texture) override;
