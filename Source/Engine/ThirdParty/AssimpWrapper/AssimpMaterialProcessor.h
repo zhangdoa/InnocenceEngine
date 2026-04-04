@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Common/ComponentHeaders.h"
+#include "../../Common/AssetData.h"
 
 struct aiMaterial;
 
@@ -9,8 +10,8 @@ namespace Inno
 	{
 		bool CreateMaterialComponent(const aiMaterial* Material, const char* BaseName, MaterialComponent& OutMaterial);
 
-		void ProcessMaterialProperties(const aiMaterial* Material, MaterialComponent* MaterialComp);
+		void ProcessMaterialProperties(const aiMaterial* Material, MaterialAssetData* AssetData);
 
-		void ProcessMaterialTextures(const aiMaterial* Material, const char* BaseName, MaterialComponent* MaterialComp);
+		void ProcessMaterialTextures(const aiMaterial* Material, const char* BaseName, MaterialAssetData* AssetData);
 	}
 }

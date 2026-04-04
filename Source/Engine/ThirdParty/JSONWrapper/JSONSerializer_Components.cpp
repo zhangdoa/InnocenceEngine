@@ -71,23 +71,30 @@ void JSONWrapper::to_json(json& j, const MeshComponent& component)
 
 void JSONWrapper::to_json(json& j, const MaterialComponent& component)
 {
+    auto* l_asset = AssetService::GetMaterialAsset(component.m_Asset);
+    if (!l_asset)
+    {
+        j = json{};
+        return;
+    }
+
     j = json
     {
-        {"ShaderModel", component.m_ShaderModel},
+        {"ShaderModel", l_asset->m_ShaderModel},
         {"Albedo", {
-            {"R", component.m_materialAttributes.AlbedoR},
-            {"G", component.m_materialAttributes.AlbedoG},
-            {"B", component.m_materialAttributes.AlbedoB},
-            {"A", component.m_materialAttributes.Alpha}
+            {"R", l_asset->m_Attributes.AlbedoR},
+            {"G", l_asset->m_Attributes.AlbedoG},
+            {"B", l_asset->m_Attributes.AlbedoB},
+            {"A", l_asset->m_Attributes.Alpha}
         }},
-        {"Metallic", component.m_materialAttributes.Metallic},
-        {"Roughness", component.m_materialAttributes.Roughness},
-        {"AO", component.m_materialAttributes.AO},
-        {"Thickness", component.m_materialAttributes.Thickness}
+        {"Metallic", l_asset->m_Attributes.Metallic},
+        {"Roughness", l_asset->m_Attributes.Roughness},
+        {"AO", l_asset->m_Attributes.AO},
+        {"Thickness", l_asset->m_Attributes.Thickness}
     };
 
     json textureComponents = json::array();
-    for (const auto& textureName : component.m_TextureComponents)
+    for (const auto& textureName : l_asset->m_TextureNames)
     {
         json textureJson;
         textureJson["Name"] = textureName;
@@ -176,25 +183,36 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     if (!Load(fileName, j))
         return false;
 
+    auto l_registry = g_Engine->Get<EntityRegistry>();
+    auto l_lifespan = (owner != INVALID_ENTITY) ? l_registry->GetLifespan(owner) : ObjectLifespan::Persistence;
+
+    auto l_handle = AssetService::AllocateMaterialAsset(component.m_InstanceName.c_str(), l_lifespan);
+    component.m_Asset = l_handle;
+
+    auto* l_asset = AssetService::GetMaterialAsset(l_handle);
+    if (!l_asset)
+        return false;
+
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
-        component.m_TextureComponents.reserve(l_j.size());
+        l_asset->m_TextureNames.reserve(l_j.size());
         for (const auto& l_entry : l_j)
         {
-            component.m_TextureComponents.push_back(l_entry["Name"].get<std::string>());
+            l_asset->m_TextureNames.push_back(l_entry["Name"].get<std::string>());
         }
     }
 
-    component.m_materialAttributes.AlbedoR = j["Albedo"]["R"];
-    component.m_materialAttributes.AlbedoG = j["Albedo"]["G"];
-    component.m_materialAttributes.AlbedoB = j["Albedo"]["B"];
-    component.m_materialAttributes.Alpha = j["Albedo"]["A"];
-    component.m_materialAttributes.Metallic = j["Metallic"];
-    component.m_materialAttributes.Roughness = j["Roughness"];
-    component.m_materialAttributes.AO = j["AO"];
-    component.m_materialAttributes.Thickness = j["Thickness"];
-    component.m_ShaderModel = ShaderModel(j["ShaderModel"]);
+    l_asset->m_Attributes.AlbedoR = j["Albedo"]["R"];
+    l_asset->m_Attributes.AlbedoG = j["Albedo"]["G"];
+    l_asset->m_Attributes.AlbedoB = j["Albedo"]["B"];
+    l_asset->m_Attributes.Alpha = j["Albedo"]["A"];
+    l_asset->m_Attributes.Metallic = j["Metallic"];
+    l_asset->m_Attributes.Roughness = j["Roughness"];
+    l_asset->m_Attributes.AO = j["AO"];
+    l_asset->m_Attributes.Thickness = j["Thickness"];
+    l_asset->m_ShaderModel = ShaderModel(j["ShaderModel"]);
+    l_asset->m_Residency = AssetResidency::Resident;
 
     g_Engine->getGraphicsService()->Initialize(&component, owner);
 

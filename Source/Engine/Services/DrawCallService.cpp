@@ -219,25 +219,31 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		m_TransformBufferVector.emplace_back(l_transformCB);
 
 		MaterialConstantBuffer l_materialCB = {};
-		l_materialCB.m_MaterialAttributes = l_material->m_materialAttributes;
+		auto* l_materialAsset = AssetService::GetMaterialAsset(l_material->m_Asset);
+
+		if (l_materialAsset)
+			l_materialCB.m_MaterialAttributes = l_materialAsset->m_Attributes;
 
 		for (size_t j = 0; j < MaxTextureSlotCount; j++)
 		{
 			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
 		}
 
-		for (size_t j = 0; j < l_material->m_TextureComponents.size(); j++)
+		if (l_materialAsset)
 		{
-			const auto& l_textureName = l_material->m_TextureComponents[j];
-			if (l_textureName.empty())
-				continue;
+			for (size_t j = 0; j < l_materialAsset->m_TextureNames.size(); j++)
+			{
+				const auto& l_textureName = l_materialAsset->m_TextureNames[j];
+				if (l_textureName.empty())
+					continue;
 
-			auto l_texture = l_graphicsService->FindTextureByName(l_textureName.c_str());
-			if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
-				continue;
+				auto l_texture = l_graphicsService->FindTextureByName(l_textureName.c_str());
+				if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
+					continue;
 
-			auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);
-			l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+				auto textureIndex = l_graphicsService->GetIndex(l_texture, Accessibility::ReadOnly);
+				l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
+			}
 		}
 
 		m_MaterialCBVector.emplace_back(l_materialCB);

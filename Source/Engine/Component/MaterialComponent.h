@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common/GPUDataStructure.h"
-#include "TextureComponent.h"
+#include "../Common/AssetHandle.h"
+#include "GPUResourceComponent.h"
 
 namespace Inno
 {
@@ -12,6 +13,8 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 		ObjectName   m_InstanceName = "";
 
+		MaterialAssetHandle m_Asset;
+
 		GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
 		Accessibility m_CPUAccessibility = Accessibility::WriteOnly;
 		Accessibility m_GPUAccessibility = Accessibility::ReadOnly;
@@ -19,8 +22,5 @@ namespace Inno
 		uint32_t m_WriteState = 0;
 		std::vector<DescriptorHandle> m_ReadHandles;
 		std::vector<DescriptorHandle> m_WriteHandles;
-		MaterialAttributes m_materialAttributes = {};
-		std::vector<std::string> m_TextureComponents;
-		ShaderModel m_ShaderModel = ShaderModel::Invalid;
 	};
 }

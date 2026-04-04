@@ -125,13 +125,17 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
                 if (!AssetService::Load(l_filePath.c_str(), *l_materialPtr, l_entityID))
                 {
-                    l_materialPtr->m_TextureComponents.resize(5);
-                    l_materialPtr->m_TextureComponents[0] = l_registry->Get<TextureComponent>(m_basicNormalTextureEntity)->m_InstanceName.c_str();
-                    l_materialPtr->m_TextureComponents[1] = l_registry->Get<TextureComponent>(m_basicAlbedoTextureEntity)->m_InstanceName.c_str();
-                    l_materialPtr->m_TextureComponents[2] = l_registry->Get<TextureComponent>(m_basicMetallicTextureEntity)->m_InstanceName.c_str();
-                    l_materialPtr->m_TextureComponents[3] = l_registry->Get<TextureComponent>(m_basicRoughnessTextureEntity)->m_InstanceName.c_str();
-                    l_materialPtr->m_TextureComponents[4] = l_registry->Get<TextureComponent>(m_basicAOTextureEntity)->m_InstanceName.c_str();
-                    l_materialPtr->m_ShaderModel = ShaderModel::Opaque;
+                    auto l_matHandle = AssetService::AllocateMaterialAsset(l_materialName.c_str(), ObjectLifespan::Persistence);
+                    l_materialPtr->m_Asset = l_matHandle;
+                    auto* l_matAsset = AssetService::GetMaterialAsset(l_matHandle);
+                    l_matAsset->m_TextureNames.resize(5);
+                    l_matAsset->m_TextureNames[0] = l_registry->Get<TextureComponent>(m_basicNormalTextureEntity)->m_InstanceName.c_str();
+                    l_matAsset->m_TextureNames[1] = l_registry->Get<TextureComponent>(m_basicAlbedoTextureEntity)->m_InstanceName.c_str();
+                    l_matAsset->m_TextureNames[2] = l_registry->Get<TextureComponent>(m_basicMetallicTextureEntity)->m_InstanceName.c_str();
+                    l_matAsset->m_TextureNames[3] = l_registry->Get<TextureComponent>(m_basicRoughnessTextureEntity)->m_InstanceName.c_str();
+                    l_matAsset->m_TextureNames[4] = l_registry->Get<TextureComponent>(m_basicAOTextureEntity)->m_InstanceName.c_str();
+                    l_matAsset->m_ShaderModel = ShaderModel::Opaque;
+                    l_matAsset->m_Residency = AssetResidency::Resident;
                     AssetService::Save(*l_materialPtr);
 
                     graphicsService->Initialize(l_materialPtr, l_entityID);

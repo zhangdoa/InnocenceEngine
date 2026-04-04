@@ -22,6 +22,10 @@ namespace Inno
 		static MeshAssetData* GetMeshAsset(MeshAssetHandle handle);
 		static MeshAssetHandle FindMeshAsset(const char* name);
 
+		static MaterialAssetHandle AllocateMaterialAsset(const char* name, ObjectLifespan lifespan);
+		static MaterialAssetData* GetMaterialAsset(MaterialAssetHandle handle);
+		static MaterialAssetHandle FindMaterialAsset(const char* name);
+
 		static void ReleaseAssetsByLifespan(ObjectLifespan lifespan);
 
 		// Serialization

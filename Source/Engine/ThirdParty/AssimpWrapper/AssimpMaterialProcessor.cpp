@@ -17,9 +17,21 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 
 	OutMaterial = {};
 
-	ProcessMaterialProperties(Material, &OutMaterial);
+	auto l_handle = AssetService::AllocateMaterialAsset(l_MaterialName, ObjectLifespan::Scene);
+	OutMaterial.m_Asset = l_handle;
 
-	ProcessMaterialTextures(Material, BaseName, &OutMaterial);
+	auto* l_assetData = AssetService::GetMaterialAsset(l_handle);
+	if (!l_assetData)
+	{
+		Log(Error, "Failed to allocate MaterialAsset for: ", l_MaterialName);
+		return false;
+	}
+
+	ProcessMaterialProperties(Material, l_assetData);
+
+	ProcessMaterialTextures(Material, BaseName, l_assetData);
+
+	l_assetData->m_Residency = AssetResidency::Resident;
 
 	bool l_Result = AssetService::Save(OutMaterial);
 
@@ -35,80 +47,74 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 	return l_Result;
 }
 
-void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* material, MaterialComponent* materialComponent)
+void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* material, MaterialAssetData* assetData)
 {
 	aiColor3D l_result;
 
-	// Albedo (Diffuse color)
 	if (material->Get(AI_MATKEY_COLOR_DIFFUSE, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		materialComponent->m_materialAttributes.AlbedoR = l_result.r;
-		materialComponent->m_materialAttributes.AlbedoG = l_result.g;
-		materialComponent->m_materialAttributes.AlbedoB = l_result.b;
+		assetData->m_Attributes.AlbedoR = l_result.r;
+		assetData->m_Attributes.AlbedoG = l_result.g;
+		assetData->m_Attributes.AlbedoB = l_result.b;
 	}
 	else
 	{
-		materialComponent->m_materialAttributes.AlbedoR = 1.0f;
-		materialComponent->m_materialAttributes.AlbedoG = 1.0f;
-		materialComponent->m_materialAttributes.AlbedoB = 1.0f;
+		assetData->m_Attributes.AlbedoR = 1.0f;
+		assetData->m_Attributes.AlbedoG = 1.0f;
+		assetData->m_Attributes.AlbedoB = 1.0f;
 	}
 
-	// Alpha (Transparency)
 	if (material->Get(AI_MATKEY_COLOR_TRANSPARENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		materialComponent->m_materialAttributes.Alpha = l_result.r;
-		materialComponent->m_ShaderModel = ShaderModel::Transparent;
+		assetData->m_Attributes.Alpha = l_result.r;
+		assetData->m_ShaderModel = ShaderModel::Transparent;
 	}
 	else
 	{
-		materialComponent->m_materialAttributes.Alpha = 1.0f;
-		materialComponent->m_ShaderModel = ShaderModel::Opaque;
+		assetData->m_Attributes.Alpha = 1.0f;
+		assetData->m_ShaderModel = ShaderModel::Opaque;
 	}
 
-	// Metallic (Specular)
 	if (material->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		materialComponent->m_materialAttributes.Metallic = l_result.r;
+		assetData->m_Attributes.Metallic = l_result.r;
 	}
 	else
 	{
-		materialComponent->m_materialAttributes.Metallic = 0.5f;
+		assetData->m_Attributes.Metallic = 0.5f;
 	}
 
-	// Roughness (Shininess)
 	if (material->Get(AI_MATKEY_SHININESS, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		materialComponent->m_materialAttributes.Roughness = l_result.r;
+		assetData->m_Attributes.Roughness = l_result.r;
 	}
 	else
 	{
-		materialComponent->m_materialAttributes.Roughness = 0.5f;
+		assetData->m_Attributes.Roughness = 0.5f;
 	}
 
-	// AO (Ambient)
 	if (material->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		materialComponent->m_materialAttributes.AO = l_result.r;
+		assetData->m_Attributes.AO = l_result.r;
 	}
 	else
 	{
-		materialComponent->m_materialAttributes.AO = 0.0f;
+		assetData->m_Attributes.AO = 0.0f;
 	}
 
-	// Thickness (Reflective)
 	if (material->Get(AI_MATKEY_COLOR_REFLECTIVE, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
-		materialComponent->m_materialAttributes.Thickness = l_result.r;
+		assetData->m_Attributes.Thickness = l_result.r;
 	}
 	else
 	{
-		materialComponent->m_materialAttributes.Thickness = 1.0f;
+		assetData->m_Attributes.Thickness = 1.0f;
 	}
 }
 
-void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, MaterialComponent* materialComponent)
+void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, MaterialAssetData* assetData)
 {
-	materialComponent->m_TextureComponents.clear();
+	assetData->m_TextureNames.clear();
 
 	for (uint32_t i = 0; i < aiTextureType_UNKNOWN; i++)
 	{
@@ -173,7 +179,7 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 
 			auto l_textureComponent = AssimpTextureProcessor::CreateTextureComponent(l_localPath, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
 			if (l_textureComponent)
-				materialComponent->m_TextureComponents.emplace_back(l_textureComponent->m_InstanceName.c_str());
+				assetData->m_TextureNames.emplace_back(l_textureComponent->m_InstanceName.c_str());
 		}
 	}
 }

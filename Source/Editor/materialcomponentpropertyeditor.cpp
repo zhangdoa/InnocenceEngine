@@ -3,6 +3,7 @@
 #include "propertyeditor.h"
 
 #include "../Engine/Engine.h"
+#include "../Engine/Services/AssetService.h"
 
 using namespace Inno;
 
@@ -127,15 +128,19 @@ void MaterialComponentPropertyEditor::GetMaterialAttributes()
     if (!m_component)
         return;
 
-    m_albedoR->SetFromFloat(m_component->m_materialAttributes.AlbedoR);
-    m_albedoG->SetFromFloat(m_component->m_materialAttributes.AlbedoG);
-    m_albedoB->SetFromFloat(m_component->m_materialAttributes.AlbedoB);
-    m_alpha->SetFromFloat(m_component->m_materialAttributes.Alpha);
-    m_metallic->SetFromFloat(m_component->m_materialAttributes.Metallic);
-    m_roughness->SetFromFloat(m_component->m_materialAttributes.Roughness);
-    m_AO->SetFromFloat(m_component->m_materialAttributes.AO);
-    m_thickness->SetFromFloat(m_component->m_materialAttributes.Thickness);
-    m_shaderModel->SetFromInt((int)m_component->m_ShaderModel);
+    auto* l_asset = AssetService::GetMaterialAsset(m_component->m_Asset);
+    if (!l_asset)
+        return;
+
+    m_albedoR->SetFromFloat(l_asset->m_Attributes.AlbedoR);
+    m_albedoG->SetFromFloat(l_asset->m_Attributes.AlbedoG);
+    m_albedoB->SetFromFloat(l_asset->m_Attributes.AlbedoB);
+    m_alpha->SetFromFloat(l_asset->m_Attributes.Alpha);
+    m_metallic->SetFromFloat(l_asset->m_Attributes.Metallic);
+    m_roughness->SetFromFloat(l_asset->m_Attributes.Roughness);
+    m_AO->SetFromFloat(l_asset->m_Attributes.AO);
+    m_thickness->SetFromFloat(l_asset->m_Attributes.Thickness);
+    m_shaderModel->SetFromInt((int)l_asset->m_ShaderModel);
 }
 
 void MaterialComponentPropertyEditor::SetMaterialAttributes()
@@ -143,15 +148,19 @@ void MaterialComponentPropertyEditor::SetMaterialAttributes()
     if (!m_component)
         return;
 
-    m_component->m_materialAttributes.AlbedoR = m_albedoR->GetAsFloat();
-    m_component->m_materialAttributes.AlbedoG = m_albedoG->GetAsFloat();
-    m_component->m_materialAttributes.AlbedoB = m_albedoB->GetAsFloat();
-    m_component->m_materialAttributes.Alpha = m_alpha->GetAsFloat();
-    m_component->m_materialAttributes.Metallic = m_metallic->GetAsFloat();
-    m_component->m_materialAttributes.Roughness = m_roughness->GetAsFloat();
-    m_component->m_materialAttributes.AO = m_AO->GetAsFloat();
-    m_component->m_materialAttributes.Thickness = m_thickness->GetAsFloat();
-    m_component->m_ShaderModel = ShaderModel(m_shaderModel->GetAsInt());
+    auto* l_asset = AssetService::GetMaterialAsset(m_component->m_Asset);
+    if (!l_asset)
+        return;
+
+    l_asset->m_Attributes.AlbedoR = m_albedoR->GetAsFloat();
+    l_asset->m_Attributes.AlbedoG = m_albedoG->GetAsFloat();
+    l_asset->m_Attributes.AlbedoB = m_albedoB->GetAsFloat();
+    l_asset->m_Attributes.Alpha = m_alpha->GetAsFloat();
+    l_asset->m_Attributes.Metallic = m_metallic->GetAsFloat();
+    l_asset->m_Attributes.Roughness = m_roughness->GetAsFloat();
+    l_asset->m_Attributes.AO = m_AO->GetAsFloat();
+    l_asset->m_Attributes.Thickness = m_thickness->GetAsFloat();
+    l_asset->m_ShaderModel = ShaderModel(m_shaderModel->GetAsInt());
 }
 
 void MaterialComponentPropertyEditor::remove()

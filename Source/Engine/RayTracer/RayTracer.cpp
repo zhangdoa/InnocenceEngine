@@ -418,39 +418,40 @@ bool ExecuteRayTracing()
 		if (l_aabb.m_extend.x <= 0.0f && l_aabb.m_extend.y <= 0.0f && l_aabb.m_extend.z <= 0.0f)
 			continue;
 
-		auto* l_mat = l_registry->Get<MaterialComponent>(l_entityID);
+		auto* l_matComp = l_registry->Get<MaterialComponent>(l_entityID);
+		auto* l_matAsset = l_matComp ? AssetService::GetMaterialAsset(l_matComp->m_Asset) : nullptr;
 
 		auto* l_hitable = new HitableCube();
 		l_hitable->m_AABB = BuildWorldAABB(l_meshResource->m_AABB, *l_xf);
 
-		float roughness = l_mat ? l_mat->m_materialAttributes.Roughness : 0.8f;
-		float emissive  = l_mat ? (l_mat->m_materialAttributes.AlbedoR +
-		                           l_mat->m_materialAttributes.AlbedoG +
-		                           l_mat->m_materialAttributes.AlbedoB) / 3.0f : 0.0f;
+		float roughness = l_matAsset ? l_matAsset->m_Attributes.Roughness : 0.8f;
+		float emissive  = l_matAsset ? (l_matAsset->m_Attributes.AlbedoR +
+		                                l_matAsset->m_Attributes.AlbedoG +
+		                                l_matAsset->m_Attributes.AlbedoB) / 3.0f : 0.0f;
 
-		if (l_mat && emissive > 0.5f && l_mat->m_ShaderModel == ShaderModel::Emissive)
+		if (l_matAsset && emissive > 0.5f && l_matAsset->m_ShaderModel == ShaderModel::Emissive)
 		{
 			auto* m = new Emissive();
-			m->Albedo = Vec4(l_mat->m_materialAttributes.AlbedoR,
-			                 l_mat->m_materialAttributes.AlbedoG,
-			                 l_mat->m_materialAttributes.AlbedoB, 1.0f);
+			m->Albedo = Vec4(l_matAsset->m_Attributes.AlbedoR,
+			                 l_matAsset->m_Attributes.AlbedoG,
+			                 l_matAsset->m_Attributes.AlbedoB, 1.0f);
 			l_hitable->m_Material = m;
 		}
 		else if (roughness > 0.5f)
 		{
 			auto* m = new Lambertian();
-			m->Albedo = Vec4(l_mat ? l_mat->m_materialAttributes.AlbedoR : 0.8f,
-			                 l_mat ? l_mat->m_materialAttributes.AlbedoG : 0.8f,
-			                 l_mat ? l_mat->m_materialAttributes.AlbedoB : 0.8f, 1.0f);
+			m->Albedo = Vec4(l_matAsset ? l_matAsset->m_Attributes.AlbedoR : 0.8f,
+			                 l_matAsset ? l_matAsset->m_Attributes.AlbedoG : 0.8f,
+			                 l_matAsset ? l_matAsset->m_Attributes.AlbedoB : 0.8f, 1.0f);
 			m->MRAT.y = roughness;
 			l_hitable->m_Material = m;
 		}
 		else
 		{
 			auto* m = new Metal();
-			m->Albedo = Vec4(l_mat ? l_mat->m_materialAttributes.AlbedoR : 0.8f,
-			                 l_mat ? l_mat->m_materialAttributes.AlbedoG : 0.8f,
-			                 l_mat ? l_mat->m_materialAttributes.AlbedoB : 0.8f, 1.0f);
+			m->Albedo = Vec4(l_matAsset ? l_matAsset->m_Attributes.AlbedoR : 0.8f,
+			                 l_matAsset ? l_matAsset->m_Attributes.AlbedoG : 0.8f,
+			                 l_matAsset ? l_matAsset->m_Attributes.AlbedoB : 0.8f, 1.0f);
 			m->MRAT.y = roughness;
 			l_hitable->m_Material = m;
 		}

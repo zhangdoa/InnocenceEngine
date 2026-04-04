@@ -100,8 +100,7 @@ namespace Inno
 		l_mesh.m_ObjectStatus = l_templateMesh->m_ObjectStatus;
 
 		auto& l_material = l_Registry->Emplace<MaterialComponent>(Entity);
-		l_material.m_materialAttributes = l_defaultMaterial->m_materialAttributes;
-		l_material.m_ShaderModel = l_defaultMaterial->m_ShaderModel;
+		l_material.m_Asset = l_defaultMaterial->m_Asset;
 		l_material.m_ObjectStatus = ObjectStatus::Activated;
 	}
 
