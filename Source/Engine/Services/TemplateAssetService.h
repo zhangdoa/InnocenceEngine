@@ -1,8 +1,6 @@
 ﻿#pragma once
 #include "../Interface/IService.h"
 
-#include "../Services/IGraphicsService.h"
-
 #include "../Component/MeshComponent.h"
 #include "../Component/TextureComponent.h"
 #include "../Component/MaterialComponent.h"

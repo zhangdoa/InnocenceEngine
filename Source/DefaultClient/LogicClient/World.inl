@@ -12,7 +12,6 @@
 #include "../../Engine/Component/MaterialComponent.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
 

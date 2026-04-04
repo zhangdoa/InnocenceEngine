@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "../Interface/IService.h"
-#include "../Services/IGraphicsService.h"
+#include "../Component/GPUBufferComponent.h"
 
 namespace Inno
 {

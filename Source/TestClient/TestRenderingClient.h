@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "../Engine/Interface/IRenderingClient.h"
-#include "../Engine/Services/IGraphicsService.h"
+#include "../Engine/Component/TextureComponent.h"
+#include "../Engine/Common/GPUDataStructure.h"
 
 namespace Inno
 {

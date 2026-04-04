@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../../Engine/Services/IGraphicsService.h"
+#include "../../Engine/Common/GraphicsPrimitive.h"
 
 using namespace Inno;
 namespace VolumetricPass
