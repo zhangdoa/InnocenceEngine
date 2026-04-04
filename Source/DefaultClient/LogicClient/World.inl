@@ -96,7 +96,7 @@ namespace Inno
 		auto l_Registry = g_Engine->Get<EntityRegistry>();
 
 		auto& l_mesh = l_Registry->Emplace<MeshComponent>(Entity);
-		l_mesh.m_GPUResource = l_templateMesh->m_GPUResource;
+		l_mesh.m_Asset = l_templateMesh->m_Asset;
 		l_mesh.m_ObjectStatus = l_templateMesh->m_ObjectStatus;
 
 		auto& l_material = l_Registry->Emplace<MaterialComponent>(Entity);
@@ -111,7 +111,7 @@ namespace Inno
 			return;
 
 		auto l_sphereMesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
-		if (!l_sphereMesh || !l_sphereMesh->m_GPUResource.IsValid())
+		if (!l_sphereMesh || !l_sphereMesh->m_Asset.IsValid())
 			return;
 
 		for (auto& l_pair : m_PendingMeshSetups)

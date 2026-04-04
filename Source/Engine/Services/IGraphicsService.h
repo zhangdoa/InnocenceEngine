@@ -173,8 +173,8 @@ namespace Inno
 		}
 
 	protected:
-		virtual bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
-		virtual void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) = 0;
+		virtual bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return false; }
+		virtual void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) = 0;
 		virtual bool InitializeImpl(TextureComponent* texture, void* textureData) { return false; }
 		virtual bool InitializeImpl(MaterialComponent* material);
 		virtual bool InitializeImpl(RenderPassComponent* renderPass);

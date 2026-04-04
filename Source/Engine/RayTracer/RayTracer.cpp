@@ -411,7 +411,7 @@ bool ExecuteRayTracing()
 		auto* l_xf   = l_registry->Get<TransformComponent>(l_entityID);
 		if (!l_mesh || !l_xf)
 			continue;
-		auto* l_meshResource = g_Engine->getGraphicsService()->GetMeshResource(l_mesh->m_GPUResource);
+		auto* l_meshResource = AssetService::GetMeshAsset(l_mesh->m_Asset);
 		if (!l_meshResource)
 			continue;
 		auto& l_aabb = l_meshResource->m_AABB;

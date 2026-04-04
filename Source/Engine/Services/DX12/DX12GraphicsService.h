@@ -68,8 +68,8 @@ namespace Inno
 
     protected:
         // In DX12GraphicsService_ComponentPool.cpp
-        bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
-        void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) override;
+        bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+        void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;
         bool InitializeImpl(TextureComponent* texture, void* textureData) override;
         bool InitializeImpl(ShaderProgramComponent* shaderProgram) override;
         bool InitializeImpl(SamplerComponent* sampler) override;

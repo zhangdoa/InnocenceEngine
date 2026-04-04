@@ -2,6 +2,7 @@
 #include "PhysicsSimulationService.h"
 #include "EntityRegistry.h"
 #include "IGraphicsService.h"
+#include "AssetService.h"
 #include "../Component/MeshComponent.h"
 
 #include "../Engine.h"
@@ -142,7 +143,7 @@ void BVHServiceImpl::Update()
         auto* l_mesh = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(i.m_Entity);
         if (!l_mesh)
             continue;
-        auto* l_meshResource = g_Engine->getGraphicsService()->GetMeshResource(l_mesh->m_GPUResource);
+        auto* l_meshResource = AssetService::GetMeshAsset(l_mesh->m_Asset);
         if (l_meshResource)
             i.m_AABB = l_meshResource->m_AABB;
     }
@@ -176,7 +177,7 @@ void BVHService::AddNode(EntityID Entity)
     auto* l_mesh = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(Entity);
     if (l_mesh)
     {
-        auto* l_meshResource = g_Engine->getGraphicsService()->GetMeshResource(l_mesh->m_GPUResource);
+        auto* l_meshResource = AssetService::GetMeshAsset(l_mesh->m_Asset);
         l_BVHNode.m_AABB = l_meshResource ? l_meshResource->m_AABB : AABB{};
     }
 

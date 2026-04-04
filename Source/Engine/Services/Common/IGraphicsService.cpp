@@ -11,6 +11,7 @@
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Services/TemplateAssetService.h"
+#include "../../Services/AssetService.h"
 #include "../../Services/GUIService.h"
 #include "../../Services/SceneService.h"
 #include "../../Component/TextureComponent.h"
@@ -447,7 +448,9 @@ void IGraphicsService::ReleaseMeshResource(GPUMeshResourceHandle handle)
 	if (l_resource.m_Status == ObjectStatus::Invalid)
 		return;
 
-	ReleaseMeshGPUResourceImpl(handle);
+	MeshAssetHandle l_assetHandle;
+	l_assetHandle.m_Index = handle.m_Index;
+	ReleaseMeshGPUResourceImpl(l_assetHandle);
 
 	m_MeshResourceLUT.erase(std::string(l_resource.m_Name.c_str()));
 	l_resource = GPUMeshResource();
@@ -528,16 +531,18 @@ void IGraphicsService::Initialize(MeshComponent* mesh, std::vector<Vertex>& vert
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto l_lifespan = (owner != INVALID_ENTITY) ? l_registry->GetLifespan(owner) : ObjectLifespan::Persistence;
 
-	auto l_handle = AllocateMeshResource(mesh->m_InstanceName.c_str(), l_lifespan);
-	if (!l_handle.IsValid())
+	auto l_assetHandle = AssetService::AllocateMeshAsset(mesh->m_InstanceName.c_str(), l_lifespan);
+	if (!l_assetHandle.IsValid())
 	{
-		Log(Error, "Failed to allocate GPUMeshResource for: ", mesh->m_InstanceName);
+		Log(Error, "Failed to allocate MeshAsset for: ", mesh->m_InstanceName);
 		return;
 	}
 
-	mesh->m_GPUResource = l_handle;
+	mesh->m_Asset = l_assetHandle;
 
-	auto* l_resource = GetMeshResource(l_handle);
+	AllocateMeshResource(mesh->m_InstanceName.c_str(), l_lifespan);
+
+	auto* l_resource = AssetService::GetMeshAsset(l_assetHandle);
 	if (!vertices.empty())
 	{
 		l_resource->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
@@ -974,17 +979,17 @@ bool IGraphicsService::InitializeComponents()
 				Log(Warning, "MeshInitTask: entity ", l_task.m_Owner, " no longer has MeshComponent, using stored pointer");
 		}
 
-		auto* l_resource = GetMeshResource(l_meshComp->m_GPUResource);
+		auto* l_resource = AssetService::GetMeshAsset(l_meshComp->m_Asset);
 		if (!l_resource)
 		{
-			Log(Error, "MeshInitTask: invalid GPUMeshResource handle for ", l_meshComp->m_InstanceName);
+			Log(Error, "MeshInitTask: invalid MeshAssetHandle for ", l_meshComp->m_InstanceName);
 			continue;
 		}
 
 		Log(Verbose, "Processing deferred mesh initialization for: ", l_meshComp->m_InstanceName);
-		if (InitializeImpl(l_meshComp->m_GPUResource, l_task.m_Vertices, l_task.m_Indices))
+		if (InitializeImpl(l_meshComp->m_Asset, l_task.m_Vertices, l_task.m_Indices))
 		{
-			l_resource->m_Status = ObjectStatus::Activated;
+			l_resource->m_Residency = AssetResidency::Resident;
 			l_meshComp->m_ObjectStatus = ObjectStatus::Activated;
 		}
 		else

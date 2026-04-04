@@ -3,6 +3,7 @@
 #include "../Common/LogService.h"
 #include "EntityRegistry.h"
 #include "RenderingConfigurationService.h"
+#include "AssetService.h"
 #include "../Component/MeshComponent.h"
 #include "../Component/MaterialComponent.h"
 #include "../Component/WorldTransformComponent.h"
@@ -134,8 +135,8 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
-		auto* l_resource = l_graphicsService->GetMeshResource(l_mesh.m_GPUResource);
-		if (!l_resource || l_resource->m_Status != ObjectStatus::Activated)
+		auto* l_resource = AssetService::GetMeshAsset(l_mesh.m_Asset);
+		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
 			continue;
 
 		auto* l_material = l_registry->Get<MaterialComponent>(l_Entity);

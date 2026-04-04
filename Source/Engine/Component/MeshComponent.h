@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/GPUMeshResource.h"
+#include "../Common/AssetHandle.h"
 #include "../Common/Object.h"
 
 namespace Inno
@@ -12,6 +12,6 @@ namespace Inno
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 		ObjectName   m_InstanceName = "";
 
-		GPUMeshResourceHandle m_GPUResource;
+		MeshAssetHandle m_Asset;
 	};
 }

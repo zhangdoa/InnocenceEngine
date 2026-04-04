@@ -40,8 +40,8 @@ namespace Inno
 		bool Present() override;
 
 	protected:
-		bool InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
-		void ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) override;
+		bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
+		void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;
 
 		bool CreateHardwareResources() override;
 		bool ReleaseHardwareResources() override;

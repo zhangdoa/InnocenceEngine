@@ -2,6 +2,7 @@
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/DrawCallService.h"
+#include "../../Services/AssetService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Texture.h"
 
@@ -512,8 +513,8 @@ bool DX12GraphicsService::DrawIndexedInstanced(RenderPassComponent* renderPass, 
 		return false;
 	}
 
-	auto* l_resource = GetMeshResource(mesh->m_GPUResource);
-	if (!l_resource || l_resource->m_Status != ObjectStatus::Activated)
+	auto* l_resource = AssetService::GetMeshAsset(mesh->m_Asset);
+	if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
 		return false;
 
 	auto l_renderPass = reinterpret_cast<RenderPassComponent*>(renderPass);

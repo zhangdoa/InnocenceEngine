@@ -42,13 +42,13 @@ bool VKGraphicsService::SetObjectName(U* owner, const T& rhs, VkObjectType objec
 	return true;
 }
 
-bool VKGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex> &vertices, std::vector<Index> &indices)
+bool VKGraphicsService::InitializeImpl(MeshAssetHandle handle, std::vector<Vertex> &vertices, std::vector<Index> &indices)
 {
-	// @TODO: Reimplement VK mesh resource initialization using GPUMeshResource table
+	// @TODO: Reimplement VK mesh resource initialization using MeshAssetData
 	return true;
 }
 
-void VKGraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle)
+void VKGraphicsService::ReleaseMeshGPUResourceImpl(MeshAssetHandle handle)
 {
 }
 

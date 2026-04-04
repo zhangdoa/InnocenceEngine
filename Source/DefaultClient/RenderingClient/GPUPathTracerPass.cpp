@@ -5,6 +5,7 @@
 #include "../../Engine/Services/DrawCallService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/EntityRegistry.h"
+#include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Component/MeshComponent.h"
 #include "../../Engine/Common/LogService.h"
 #include "../../Engine/Engine.h"
@@ -393,8 +394,8 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 
-		const auto* l_resource = l_graphicsService->GetMeshResource(l_mesh.m_GPUResource);
-		if (!l_resource || l_resource->m_Status != ObjectStatus::Activated)
+		const auto* l_resource = AssetService::GetMeshAsset(l_mesh.m_Asset);
+		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
 			continue;
 
 		if (!l_resource->m_MappedMemory_VB || !l_resource->m_MappedMemory_IB)

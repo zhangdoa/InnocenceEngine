@@ -13,18 +13,19 @@
 #include "../../Engine.h"
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/EntityRegistry.h"
+#include "../../Services/AssetService.h"
 #include "../../Component/WorldTransformComponent.h"
 #include "../../Component/MeshComponent.h"
 
 using namespace Inno;
 using namespace DX12Helper;
 
-bool DX12GraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices)
+bool DX12GraphicsService::InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices)
 {
-	auto* l_resource = GetMeshResource(handle);
+	auto* l_resource = AssetService::GetMeshAsset(handle);
 	if (!l_resource)
 	{
-		Log(Error, "InitializeImpl: invalid GPUMeshResourceHandle");
+		Log(Error, "InitializeImpl: invalid MeshAssetHandle");
 		return false;
 	}
 
@@ -734,7 +735,7 @@ bool DX12GraphicsService::InitializeImpl(EntityID Entity)
 	if (!l_mesh)
 		return true;
 
-	auto l_handleIndex = l_mesh->m_GPUResource.m_Index;
+	auto l_handleIndex = l_mesh->m_Asset.m_Index;
 	auto blasIt = m_DX12MeshResources.find(l_handleIndex);
 	if (blasIt == m_DX12MeshResources.end() || !blasIt->second.m_BLAS)
 		return false;

@@ -66,8 +66,8 @@ bool HeadlessGraphicsService::Execute(CommandListComponent* commandList, GPUEngi
 bool HeadlessGraphicsService::Present() { return true; }
 
 // GPU mesh resource operations - no-ops for headless
-bool HeadlessGraphicsService::InitializeImpl(GPUMeshResourceHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return true; }
-void HeadlessGraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle) {}
+bool HeadlessGraphicsService::InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) { return true; }
+void HeadlessGraphicsService::ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) {}
 
 // Hardware resource operations - all no-ops that succeed
 bool HeadlessGraphicsService::CreateHardwareResources() { return true; }

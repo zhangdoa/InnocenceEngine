@@ -51,8 +51,8 @@ bool DX12GraphicsService::Add(IOutputMergerTarget*& rhs)
 
 bool DX12GraphicsService::Delete(MeshComponent* mesh)
 {
-	if (mesh->m_GPUResource.IsValid())
-		ReleaseMeshGPUResourceImpl(mesh->m_GPUResource);
+	if (mesh->m_Asset.IsValid())
+		ReleaseMeshGPUResourceImpl(mesh->m_Asset);
 
 	ReleaseFromPool(m_GPUHandlePools.Meshes,
 	                m_GPUHandlePools.MeshLUT,
@@ -60,7 +60,7 @@ bool DX12GraphicsService::Delete(MeshComponent* mesh)
 	return true;
 }
 
-void DX12GraphicsService::ReleaseMeshGPUResourceImpl(GPUMeshResourceHandle handle)
+void DX12GraphicsService::ReleaseMeshGPUResourceImpl(MeshAssetHandle handle)
 {
 	auto it = m_DX12MeshResources.find(handle.m_Index);
 	if (it != m_DX12MeshResources.end())
