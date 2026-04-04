@@ -26,6 +26,10 @@ namespace Inno
 		static MaterialAssetData* GetMaterialAsset(MaterialAssetHandle handle);
 		static MaterialAssetHandle FindMaterialAsset(const char* name);
 
+		static TextureAssetHandle AllocateTextureAsset(const char* name, ObjectLifespan lifespan);
+		static TextureAssetData* GetTextureAsset(TextureAssetHandle handle);
+		static TextureAssetHandle FindTextureAsset(const char* name);
+
 		static void ReleaseAssetsByLifespan(ObjectLifespan lifespan);
 
 		// Serialization

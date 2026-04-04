@@ -30,6 +30,12 @@ namespace AssetServiceNS
 	std::vector<uint32_t> m_MaterialFreeSlots;
 	std::vector<uint32_t> m_MaterialGenerations;
 	std::unordered_map<std::string, MaterialAssetHandle> m_MaterialLUT;
+
+	// Texture asset registry
+	std::vector<TextureAssetData> m_TextureAssets;
+	std::vector<uint32_t> m_TextureFreeSlots;
+	std::vector<uint32_t> m_TextureGenerations;
+	std::unordered_map<std::string, TextureAssetHandle> m_TextureLUT;
 }
 
 using namespace AssetServiceNS;
@@ -181,6 +187,66 @@ MaterialAssetHandle AssetService::FindMaterialAsset(const char* name)
 	return MaterialAssetHandle{};
 }
 
+TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLifespan lifespan)
+{
+	auto l_existing = m_TextureLUT.find(name);
+	if (l_existing != m_TextureLUT.end())
+	{
+		auto& l_asset = m_TextureAssets[l_existing->second.m_Index];
+		if (l_asset.m_Residency != AssetResidency::Released)
+			return l_existing->second;
+	}
+
+	uint32_t l_index;
+	if (!m_TextureFreeSlots.empty())
+	{
+		l_index = m_TextureFreeSlots.back();
+		m_TextureFreeSlots.pop_back();
+		m_TextureAssets[l_index] = TextureAssetData();
+	}
+	else
+	{
+		l_index = static_cast<uint32_t>(m_TextureAssets.size());
+		m_TextureAssets.emplace_back();
+		m_TextureGenerations.emplace_back(0);
+	}
+
+	auto& l_asset = m_TextureAssets[l_index];
+	l_asset.m_Lifespan = lifespan;
+	l_asset.m_Residency = AssetResidency::Loading;
+	l_asset.m_Name = name;
+
+	TextureAssetHandle l_handle;
+	l_handle.m_Index = l_index;
+	l_handle.m_Generation = m_TextureGenerations[l_index];
+	m_TextureLUT[name] = l_handle;
+
+	return l_handle;
+}
+
+TextureAssetData* AssetService::GetTextureAsset(TextureAssetHandle handle)
+{
+	if (!handle.IsValid() || handle.m_Index >= m_TextureAssets.size())
+		return nullptr;
+
+	if (handle.m_Generation != m_TextureGenerations[handle.m_Index])
+		return nullptr;
+
+	auto& l_asset = m_TextureAssets[handle.m_Index];
+	if (l_asset.m_Residency == AssetResidency::Released)
+		return nullptr;
+
+	return &l_asset;
+}
+
+TextureAssetHandle AssetService::FindTextureAsset(const char* name)
+{
+	auto l_result = m_TextureLUT.find(name);
+	if (l_result != m_TextureLUT.end())
+		return l_result->second;
+	return TextureAssetHandle{};
+}
+
 void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 {
 	for (uint32_t i = 0; i < static_cast<uint32_t>(m_MeshAssets.size()); i++)
@@ -206,6 +272,19 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 			l_asset.m_Residency = AssetResidency::Released;
 			m_MaterialGenerations[i]++;
 			m_MaterialFreeSlots.push_back(i);
+		}
+	}
+
+	for (uint32_t i = 0; i < static_cast<uint32_t>(m_TextureAssets.size()); i++)
+	{
+		auto& l_asset = m_TextureAssets[i];
+		if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+		{
+			m_TextureLUT.erase(std::string(l_asset.m_Name.c_str()));
+			l_asset = TextureAssetData();
+			l_asset.m_Residency = AssetResidency::Released;
+			m_TextureGenerations[i]++;
+			m_TextureFreeSlots.push_back(i);
 		}
 	}
 }
