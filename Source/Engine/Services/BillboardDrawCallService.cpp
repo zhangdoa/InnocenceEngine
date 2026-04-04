@@ -41,7 +41,6 @@ namespace Inno
 
 bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_BillboardGPUBufferComp = l_rsService->AddGPUBufferComponent("BillboardCBuffer/");
@@ -64,7 +63,6 @@ bool BillboardDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
@@ -157,7 +155,6 @@ bool BillboardDrawCallServiceImpl::Update()
 
 		UpdateBillboardPassData();
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_BillboardPassPerObjectCB.size() > 0)
@@ -176,7 +173,6 @@ bool BillboardDrawCallServiceImpl::Update()
 
 bool BillboardDrawCallServiceImpl::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_BillboardGPUBufferComp);

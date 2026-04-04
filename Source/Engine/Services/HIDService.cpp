@@ -3,7 +3,6 @@
 #include "RenderingConfigurationService.h"
 
 #include "../Engine.h"
-#include "../Services/IGraphicsService.h"
 #include "../Services/FrameManagementService.h"
 using namespace Inno;
 

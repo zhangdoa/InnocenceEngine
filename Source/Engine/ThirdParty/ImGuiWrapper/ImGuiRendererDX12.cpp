@@ -83,7 +83,6 @@ bool ImGuiRenderPass::Initialize()
 				return;
 			}
 
-			auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -112,7 +111,6 @@ bool ImGuiRenderPass::Initialize()
 
 bool ImGuiRenderPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	l_rsService->Delete(m_RenderPassComp);
 	l_rsService->Delete(m_CommandListComp_Graphics);
@@ -134,7 +132,6 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 		return true;
 	}
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -152,10 +149,10 @@ RenderPassComponent* ImGuiRenderPass::GetRenderPassComp()
 
 bool ImGuiRenderPass::RenderTargetsReservationFunc()
 {
-	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->getGraphicsService());	
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
-		l_graphicsService->Add(m_RenderPassComp->m_OutputMergerTarget);
+		l_rsService->Add(m_RenderPassComp->m_OutputMergerTarget);
 
 	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
 	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);
@@ -249,7 +246,6 @@ bool ImGuiRendererDX12::Prepare()
 
 bool ImGuiRendererDX12::ExecuteCommands()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();

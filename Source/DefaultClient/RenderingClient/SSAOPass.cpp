@@ -14,7 +14,6 @@ using namespace Inno;
 
 bool SSAOPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -155,7 +154,6 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 
 bool SSAOPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -176,7 +174,6 @@ bool SSAOPass::Initialize()
 
 bool SSAOPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -212,7 +209,6 @@ bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_NoiseTexture->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -261,7 +257,6 @@ GPUResourceComponent* SSAOPass::GetResult()
 
 bool SSAOPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();

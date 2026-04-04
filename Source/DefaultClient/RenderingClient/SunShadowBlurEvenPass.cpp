@@ -18,7 +18,6 @@ using namespace Inno;
 
 bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -81,7 +80,6 @@ bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowBlurEvenPass::Initialize()
 {	
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -96,7 +94,6 @@ bool SunShadowBlurEvenPass::Initialize()
 
 bool SunShadowBlurEvenPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -115,7 +112,6 @@ ObjectStatus SunShadowBlurEvenPass::GetStatus()
 
 bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -153,7 +149,6 @@ GPUResourceComponent* SunShadowBlurEvenPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();

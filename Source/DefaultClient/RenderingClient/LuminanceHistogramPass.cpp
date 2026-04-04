@@ -11,7 +11,6 @@ using namespace Inno;
 
 bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -70,7 +69,6 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceHistogramPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -87,7 +85,6 @@ bool LuminanceHistogramPass::Initialize()
 
 bool LuminanceHistogramPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -119,7 +116,6 @@ bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingCont
 	if (m_luminanceHistogram->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

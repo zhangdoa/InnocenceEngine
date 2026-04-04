@@ -16,7 +16,6 @@ using namespace Inno;
 
 bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -125,7 +124,6 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 
 bool LightCullingPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -150,7 +148,6 @@ bool LightCullingPass::Initialize()
 
 bool LightCullingPass::Update()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -169,7 +166,6 @@ bool LightCullingPass::Update()
 
 bool LightCullingPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -208,7 +204,6 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_heatMap->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -270,7 +265,6 @@ GPUResourceComponent* LightCullingPass::GetHeatMap()
 
 bool LightCullingPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();

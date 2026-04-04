@@ -7,7 +7,6 @@
 #include "SceneService.h"
 #include "AssetService.h"
 #include "BVHService.h"
-#include "../Services/IGraphicsService.h"
 #include "../Component/TransformComponent.h"
 #include "../Component/RigidBodyComponent.h"
 #include "../Component/CollisionShapeComponent.h"

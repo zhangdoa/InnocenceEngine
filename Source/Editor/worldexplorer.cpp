@@ -4,7 +4,6 @@
 #include "../Engine/Common/ComponentHeaders.h"
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/EntityRegistry.h"
-#include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/GraphicsResourceService.h"
 #include "../Engine/Services/CameraService.h"
 #include <QHeaderView>

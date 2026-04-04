@@ -1,7 +1,6 @@
 ﻿#include "TestRenderingClient.h"
 #include "../Engine/Engine.h"
 #include "../Engine/Interface/IWindowService.h"
-#include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/SceneService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 #include "../Engine/Services/AssetService.h"
@@ -108,7 +107,6 @@ bool TestRenderingClient::Setup_BareBoot() { return true; }
 
 bool TestRenderingClient::Setup_DrawInstanced()
 {
-    auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
     m_DrawInstanced = new DrawInstancedResources();
@@ -135,7 +133,6 @@ bool TestRenderingClient::Setup_DrawInstanced()
 
 bool TestRenderingClient::Initialize_DrawInstanced()
 {
-    auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
     l_rsService->Initialize(m_DrawInstanced->ShaderProgram);
     l_rsService->Initialize(m_DrawInstanced->RenderPass);
@@ -145,7 +142,6 @@ bool TestRenderingClient::Initialize_DrawInstanced()
 
 bool TestRenderingClient::PrepareCommands_DrawInstanced()
 {
-    auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
     auto l_fmService = g_Engine->Get<FrameManagementService>();
     auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -176,7 +172,6 @@ bool TestRenderingClient::ExecuteCommands_DrawInstanced()
 
 bool TestRenderingClient::Terminate_DrawInstanced()
 {
-    auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
     auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
@@ -188,7 +183,6 @@ bool TestRenderingClient::Terminate_DrawInstanced()
 
 bool TestRenderingClient::Setup_PixelReadback()
 {
-    auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
     m_DrawInstanced = new DrawInstancedResources();
@@ -226,7 +220,6 @@ bool TestRenderingClient::Initialize_PixelReadback()
 
 bool TestRenderingClient::ExecuteCommands_PixelReadback()
 {
-    auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
     auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     auto l_rp = m_DrawInstanced->RenderPass;

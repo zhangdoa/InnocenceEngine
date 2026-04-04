@@ -85,6 +85,9 @@ namespace Inno
 		virtual GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle) = 0;
 		virtual GPUMeshResourceHandle FindMeshResourceByName(const char* name) = 0;
 
+		// Raytracing
+		virtual GPUResourceComponent* GetTLASBuffer() = 0;
+
 		// Upload helper
 		template<typename T>
 		bool Upload(GPUBufferComponent* gpuBuffer, const T* value, size_t startOffset = 0, size_t range = SIZE_MAX)

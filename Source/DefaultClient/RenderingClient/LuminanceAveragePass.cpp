@@ -13,7 +13,6 @@ using namespace Inno;
 
 bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -71,7 +70,6 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -94,7 +92,6 @@ bool LuminanceAveragePass::Update()
 
 bool LuminanceAveragePass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -124,7 +121,6 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 	if (m_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

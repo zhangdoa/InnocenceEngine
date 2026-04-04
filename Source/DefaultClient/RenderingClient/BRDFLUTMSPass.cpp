@@ -7,13 +7,11 @@
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
-#include "../../Engine/Services/IGraphicsService.h"
 
 using namespace Inno;
 
 bool BRDFLUTMSPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -68,7 +66,6 @@ bool BRDFLUTMSPass::Setup(IServiceConfig *systemConfig)
 
 bool BRDFLUTMSPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -84,7 +81,6 @@ bool BRDFLUTMSPass::Initialize()
 
 bool BRDFLUTMSPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -107,7 +103,6 @@ bool BRDFLUTMSPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 			
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

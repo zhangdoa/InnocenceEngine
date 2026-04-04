@@ -12,7 +12,6 @@ using namespace Inno;
 
 bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -76,7 +75,6 @@ bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 
 bool OpaqueCullingPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -92,7 +90,6 @@ bool OpaqueCullingPass::Initialize()
 
 bool OpaqueCullingPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -124,7 +121,6 @@ bool OpaqueCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (l_modelCount == 0)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

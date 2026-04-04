@@ -181,7 +181,6 @@ namespace Inno
 				return m_Canvas;
 			};
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
@@ -194,7 +193,6 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Initialize()
 	{
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		BRDFLUTPass::Get().Initialize();
@@ -262,7 +260,6 @@ namespace Inno
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_ExecuteOneShotCommands)
@@ -334,7 +331,6 @@ namespace Inno
 	bool DefaultRenderingClientImpl::ExecuteCommands(IRenderingConfig* renderingConfig)
 	{
 		auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 		auto l_fmService = g_Engine->Get<FrameManagementService>();

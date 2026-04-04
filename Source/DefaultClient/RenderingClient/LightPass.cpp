@@ -23,7 +23,6 @@ using namespace Inno;
 
 bool LightPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -202,7 +201,6 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 bool LightPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -221,7 +219,6 @@ bool LightPass::Initialize()
 
 bool LightPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -261,7 +258,6 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (BRDFLUTMSPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
@@ -337,7 +333,6 @@ TextureComponent* LightPass::GetIlluminanceResult()
 
 bool LightPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();

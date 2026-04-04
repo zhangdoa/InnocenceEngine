@@ -56,21 +56,20 @@ float PerFrameDataServiceImpl::RadicalInverse(uint32_t n, uint32_t base)
 
 GPUBufferComponent* PerFrameDataServiceImpl::GetCurrentFramePerFrameBuffer()
 {
-	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_PerFrameCBufferGPUBufferComp : m_PerFrameCBufferPrevGPUBufferComp;
 }
 
 GPUBufferComponent* PerFrameDataServiceImpl::GetPreviousFramePerFrameBuffer()
 {
-	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_PerFrameCBufferPrevGPUBufferComp : m_PerFrameCBufferGPUBufferComp;
 }
 
 bool PerFrameDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_PerFrameCBufferGPUBufferComp = l_rsService->AddGPUBufferComponent("PerFrameCBuffer/");
@@ -86,7 +85,6 @@ bool PerFrameDataServiceImpl::Initialize()
 	{
 		m_perFrameCBs.resize(g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount());
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
@@ -121,7 +119,7 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	auto l_p = l_camera->m_ProjectionMatrix;
 
 	PerFrameConstantBuffer l_perFrameCB = {};
-	l_perFrameCB.frameIndex = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
+	l_perFrameCB.frameIndex = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
 	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
 	l_perFrameCB.p_original = l_p;
 	l_perFrameCB.p_jittered = l_p;
@@ -198,7 +196,6 @@ bool PerFrameDataServiceImpl::Update()
 
 		UpdatePerFrameConstantBuffer();
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 		auto l_fmService = g_Engine->Get<FrameManagementService>();
 		auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
@@ -215,7 +212,6 @@ bool PerFrameDataServiceImpl::Update()
 
 bool PerFrameDataServiceImpl::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_PerFrameCBufferGPUBufferComp);

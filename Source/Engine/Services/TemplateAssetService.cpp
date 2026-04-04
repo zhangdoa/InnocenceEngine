@@ -6,6 +6,7 @@
 #include "../Common/IOService.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../Engine.h"
+#include "GraphicsResourceService.h"
 using namespace Inno;
 
 namespace Inno
@@ -72,7 +73,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto graphicsService = g_Engine->getGraphicsService();
+            auto graphicsService = g_Engine->Get<GraphicsResourceService>();
             auto l_registry = g_Engine->Get<EntityRegistry>();
 
             auto loadOrCreateTexture = [&](const char* name, const char* texturePath, EntityID& entityIDRef) -> bool {

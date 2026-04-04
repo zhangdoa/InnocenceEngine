@@ -7,6 +7,7 @@
 #include "../STBWrapper/STBWrapper.h"
 
 #include "../../Engine.h"
+#include "../../Services/GraphicsResourceService.h"
 using namespace Inno;
 
 void JSONWrapper::to_json(json& j, const TransformComponent& component)
@@ -172,7 +173,7 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
         // @TODO: Implement SkeletonComponent loading
     }
 
-    g_Engine->getGraphicsService()->Initialize(&component, l_vertices, l_indices, owner);
+    g_Engine->Get<GraphicsResourceService>()->Initialize(&component, l_vertices, l_indices, owner);
 
     return true;
 }
@@ -214,7 +215,7 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     l_asset->m_ShaderModel = ShaderModel(j["ShaderModel"]);
     l_asset->m_Residency = AssetResidency::Resident;
 
-    g_Engine->getGraphicsService()->Initialize(&component, owner);
+    g_Engine->Get<GraphicsResourceService>()->Initialize(&component, owner);
 
     return true;
 }
@@ -231,7 +232,7 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
 
     void* textureData = STBWrapper::Load(("../Data/Components/" + j["File"].get<std::string>()).c_str(), component);
 
-    g_Engine->getGraphicsService()->Initialize(&component, textureData, owner);
+    g_Engine->Get<GraphicsResourceService>()->Initialize(&component, textureData, owner);
     return true;
 }
 

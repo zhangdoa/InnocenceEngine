@@ -16,7 +16,6 @@ using namespace Inno;
 
 bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -178,7 +177,6 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 bool GPUPathTracerPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -233,7 +231,6 @@ bool GPUPathTracerPass::Initialize()
 
 bool GPUPathTracerPass::Update()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -266,7 +263,6 @@ bool GPUPathTracerPass::Update()
 
 bool GPUPathTracerPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -317,7 +313,6 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (!m_MeshOffsetBuffer || m_MeshOffsetBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_perFrameBuffer  = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -335,7 +330,7 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_perFrameBuffer,                 0);
 	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_FrameCountCB,                   1);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_graphicsService->GetTLASBuffer(), 2);
+	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_rsService->GetTLASBuffer(), 2);
 	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_materialBuffer,                  3);
 	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaVertexBuffer,                4);
 	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaIndexBuffer,                 5);
@@ -386,7 +381,6 @@ void GPUPathTracerPass::ResetAccumulation()
 
 void GPUPathTracerPass::RebuildGeometryBuffers()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_registry        = g_Engine->Get<EntityRegistry>();

@@ -16,7 +16,6 @@ using namespace Inno;
 
 bool DebugPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	
 	auto l_cameraFrustumMeshCount = 4;
@@ -101,7 +100,6 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 
 bool DebugPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	for (size_t i = 0; i < m_debugCameraFrustumMeshComps.size(); i++)
@@ -129,7 +127,6 @@ bool DebugPass::Update()
 
 bool DebugPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_RenderPassComp);
@@ -146,7 +143,6 @@ ObjectStatus DebugPass::GetStatus()
 
 bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
@@ -175,7 +171,6 @@ DebugPerObjectConstantBuffer DebugPass::AddAABB(const AABB& aabb)
 
 bool DebugPass::AddBVHNode(const BVHNode& node)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	static bool drawIntermediateBB = false;

@@ -12,7 +12,6 @@ using namespace Inno;
 
 bool AnimationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -117,7 +116,6 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -133,7 +131,6 @@ bool AnimationPass::Initialize()
 
 bool AnimationPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -153,7 +150,6 @@ ObjectStatus AnimationPass::GetStatus()
 
 bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -221,11 +217,10 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 
 bool AnimationPass::RenderTargetsReservationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
-		l_graphicsService->Add(m_RenderPassComp->m_OutputMergerTarget);
+		l_rsService->Add(m_RenderPassComp->m_OutputMergerTarget);
 
 	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
 	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);

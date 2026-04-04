@@ -27,7 +27,6 @@ namespace Inno
 
 bool AnimationDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_AnimationGPUBufferComp = l_rsService->AddGPUBufferComponent("AnimationCBuffer/");
@@ -40,7 +39,6 @@ bool AnimationDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		m_AnimationGPUBufferComp->m_ElementCount = 512;
@@ -75,7 +73,6 @@ bool AnimationDrawCallServiceImpl::Update()
 
 		if (m_AnimationCBVector.size() > 0)
 		{
-			auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 			l_rsService->Upload(m_AnimationGPUBufferComp, m_AnimationCBVector, 0, m_AnimationCBVector.size());
 		}
@@ -91,7 +88,6 @@ bool AnimationDrawCallServiceImpl::Update()
 
 bool AnimationDrawCallServiceImpl::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_AnimationGPUBufferComp);

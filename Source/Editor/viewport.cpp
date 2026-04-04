@@ -3,7 +3,6 @@
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
 #include "../Engine/Interface/IWindowService.h"
-#include "../Engine/Services/IGraphicsService.h"
 #include "../Engine/Services/FrameManagementService.h"
 #include "../Engine/Services/RenderingConfigurationService.h"
 

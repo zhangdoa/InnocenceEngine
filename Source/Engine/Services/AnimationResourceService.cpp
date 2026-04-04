@@ -1,6 +1,6 @@
 ﻿#include "AnimationResourceService.h"
 #include "AnimationSimulationService.h"
-#include "../Services/IGraphicsService.h"
+#include "GraphicsResourceService.h"
 #include "../Common/ThreadSafeQueue.h"
 #include "EntityRegistry.h"
 #include "../Engine.h"
@@ -24,13 +24,14 @@ void AnimationResourceServiceImpl::InitializeAnimation(AnimationComponent* rhs)
 {
 	std::string l_name = rhs->m_InstanceName.c_str();
 
-	auto l_keyData = g_Engine->getGraphicsService()->AddGPUBufferComponent((l_name + "_KeyData").c_str());
+	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_keyData = l_rsService->AddGPUBufferComponent((l_name + "_KeyData").c_str());
 	l_keyData->m_ElementCount    = rhs->m_KeyData.capacity();
 	l_keyData->m_ElementSize     = sizeof(KeyData);
 	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	g_Engine->getGraphicsService()->Initialize(l_keyData);
-	g_Engine->getGraphicsService()->Upload(l_keyData, &rhs->m_KeyData[0]);
+	l_rsService->Initialize(l_keyData);
+	l_rsService->Upload(l_keyData, &rhs->m_KeyData[0]);
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 

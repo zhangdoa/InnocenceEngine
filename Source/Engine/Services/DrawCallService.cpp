@@ -10,6 +10,7 @@
 #include "../Component/VisibilityComponent.h"
 #include "../Engine.h"
 #include "GraphicsResourceService.h"
+#include "FrameManagementService.h"
 
 using namespace Inno;
 
@@ -44,21 +45,20 @@ namespace Inno
 
 GPUBufferComponent* DrawCallServiceImpl::GetCurrentFrameTransformBuffer()
 {
-	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_TransformBufferComp : m_TransformPrevBufferComp;
 }
 
 GPUBufferComponent* DrawCallServiceImpl::GetPreviousFrameTransformBuffer()
 {
-	auto l_frameCount = g_Engine->getGraphicsService()->GetFrameCountSinceLaunch();
+	auto l_frameCount = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	return l_isOddFrame ? m_TransformPrevBufferComp : m_TransformBufferComp;
 }
 
 bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_GPUModelDataBufferComp = l_rsService->AddGPUBufferComponent("GPUModelDataBuffer/");
@@ -74,7 +74,6 @@ bool DrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
@@ -124,7 +123,6 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	m_TransformBufferVector.clear();
 	m_MaterialCBVector.clear();
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
@@ -265,7 +263,6 @@ bool DrawCallServiceImpl::Update()
 
 		UpdateDrawCalls();
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_GPUModelDataVector.size() > 0)
@@ -293,7 +290,6 @@ bool DrawCallServiceImpl::Update()
 
 bool DrawCallServiceImpl::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_GPUModelDataBufferComp);

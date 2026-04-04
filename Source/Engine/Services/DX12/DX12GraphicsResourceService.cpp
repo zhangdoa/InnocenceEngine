@@ -59,3 +59,5 @@ bool DX12GraphicsResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffe
 }
 
 uint32_t DX12GraphicsResourceService::GetCurrentFrame() { return m_Backend->GetCurrentFrame(); }
+
+GPUResourceComponent* DX12GraphicsResourceService::GetTLASBuffer() { return m_Backend->GetTLASBuffer(); }

@@ -15,7 +15,6 @@ using namespace Inno;
 
 bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -69,7 +68,6 @@ bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheIntegrationPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -96,7 +94,6 @@ bool RadianceCacheIntegrationPass::Update()
 
 bool RadianceCacheIntegrationPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -122,7 +119,6 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -166,7 +162,6 @@ GPUResourceComponent* RadianceCacheIntegrationPass::GetResult()
 
 bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

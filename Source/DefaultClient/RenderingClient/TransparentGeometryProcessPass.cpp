@@ -14,7 +14,6 @@ using namespace Inno;
 
 bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	
@@ -113,7 +112,6 @@ bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 bool TransparentGeometryProcessPass::Initialize()
 {	
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -132,7 +130,6 @@ bool TransparentGeometryProcessPass::Initialize()
 
 bool TransparentGeometryProcessPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -150,7 +147,6 @@ ObjectStatus TransparentGeometryProcessPass::GetStatus()
 
 bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

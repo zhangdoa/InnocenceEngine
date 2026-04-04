@@ -11,7 +11,6 @@ using namespace Inno;
 
 bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -59,7 +58,6 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 
 bool TiledFrustumGenerationPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -79,7 +77,6 @@ bool TiledFrustumGenerationPass::Initialize()
 
 bool TiledFrustumGenerationPass::Update()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -94,7 +91,6 @@ bool TiledFrustumGenerationPass::Update()
 
 bool TiledFrustumGenerationPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -121,7 +117,6 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 	if (m_TiledFrustum->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -154,7 +149,6 @@ GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 
 bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

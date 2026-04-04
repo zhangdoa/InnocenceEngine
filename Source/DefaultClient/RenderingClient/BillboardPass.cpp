@@ -14,7 +14,6 @@ using namespace Inno;
 
 bool BillboardPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_SamplerComp = l_rsService->AddSamplerComponent("BillboardPass/");
@@ -75,7 +74,6 @@ bool BillboardPass::Setup(IServiceConfig* systemConfig)
 
 bool BillboardPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
@@ -90,7 +88,6 @@ bool BillboardPass::Initialize()
 
 bool BillboardPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_SamplerComp);
@@ -109,7 +106,6 @@ ObjectStatus BillboardPass::GetStatus()
 
 bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();

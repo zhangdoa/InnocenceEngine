@@ -16,7 +16,6 @@ using namespace Inno;
 
 bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -117,7 +116,6 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheReprojectionPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -133,7 +131,6 @@ bool RadianceCacheReprojectionPass::Initialize()
 
 bool RadianceCacheReprojectionPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -167,7 +164,6 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 		|| m_RadianceCache_Odd->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -223,7 +219,6 @@ RenderPassComponent* RadianceCacheReprojectionPass::GetRenderPassComp()
 
 bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -295,7 +290,6 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -307,7 +301,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 
 TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -319,7 +312,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -331,7 +323,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 
 TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -343,7 +334,6 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition(
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -355,7 +345,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 
 TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbeNormal()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();

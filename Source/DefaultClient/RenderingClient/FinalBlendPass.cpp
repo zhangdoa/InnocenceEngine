@@ -15,7 +15,6 @@ using namespace Inno;
 
 bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -100,7 +99,6 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 bool FinalBlendPass::Initialize()
 {	
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	
@@ -116,7 +114,6 @@ bool FinalBlendPass::Initialize()
 
 bool FinalBlendPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -148,7 +145,6 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (l_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;	
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -197,7 +193,6 @@ GPUResourceComponent* FinalBlendPass::GetResult()
 
 bool FinalBlendPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 

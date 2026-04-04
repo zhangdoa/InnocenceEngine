@@ -4,7 +4,6 @@
 
 #include "../../Common/STL14.h"
 #include "../../Engine.h"
-#include "../../Services/IGraphicsService.h"
 #include "../../Services/GraphicsHardwareService.h"
 #include "../../Interface/IClientFactory.h"
 

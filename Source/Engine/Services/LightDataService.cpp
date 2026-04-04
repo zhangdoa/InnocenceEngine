@@ -67,7 +67,6 @@ namespace Inno
 
 bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	m_PointLightGPUBufferComp = l_rsService->AddGPUBufferComponent("PointLightCBuffer/");
@@ -83,7 +82,6 @@ bool LightDataServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -282,7 +280,6 @@ bool LightDataServiceImpl::Update()
 		UpdateLightData();
 		UpdateCSMData();
 
-		auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_PointLightCBVector.size() > 0)
@@ -309,7 +306,6 @@ bool LightDataServiceImpl::Update()
 
 bool LightDataServiceImpl::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	l_rsService->Delete(m_PointLightGPUBufferComp);

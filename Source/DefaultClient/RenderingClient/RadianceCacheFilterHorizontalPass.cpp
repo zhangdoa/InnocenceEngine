@@ -13,7 +13,6 @@ using namespace Inno;
 
 bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -82,7 +81,6 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheFilterHorizontalPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -98,7 +96,6 @@ bool RadianceCacheFilterHorizontalPass::Initialize()
 
 bool RadianceCacheFilterHorizontalPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -130,7 +127,6 @@ bool RadianceCacheFilterHorizontalPass::PrepareCommandList(IRenderingContext* re
 	if (l_raytracingResult->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
@@ -175,7 +171,6 @@ TextureComponent* RadianceCacheFilterHorizontalPass::GetResult()
 
 bool RadianceCacheFilterHorizontalPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_raytracingResult = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();

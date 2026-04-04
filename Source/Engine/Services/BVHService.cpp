@@ -1,7 +1,6 @@
 #include "BVHService.h"
 #include "PhysicsSimulationService.h"
 #include "EntityRegistry.h"
-#include "IGraphicsService.h"
 #include "AssetService.h"
 #include "../Component/MeshComponent.h"
 

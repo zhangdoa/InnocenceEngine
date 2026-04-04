@@ -6,7 +6,6 @@
 #include "../../Common/IOService.h"
 #include "../../Services/AssetService.h"
 #include "../../Services/EntityRegistry.h"
-#include "../../Services/IGraphicsService.h"
 #include "../../Services/GraphicsResourceService.h"
 #include "../../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../../Engine.h"

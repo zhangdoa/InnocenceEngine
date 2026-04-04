@@ -12,7 +12,6 @@ using namespace Inno;
 
 bool TAAPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -79,7 +78,6 @@ bool TAAPass::Setup(IServiceConfig* systemConfig)
 
 bool TAAPass::Initialize()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -95,7 +93,6 @@ bool TAAPass::Initialize()
 
 bool TAAPass::Terminate()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
@@ -125,7 +122,6 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 		|| m_OddTextureComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 			
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -173,7 +169,6 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 
 GPUResourceComponent* TAAPass::GetResult()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -187,7 +182,6 @@ GPUResourceComponent* TAAPass::GetResult()
 // texture is the ping-pong read source for the frame that just ran.
 GPUResourceComponent* TAAPass::GetHistory()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -199,7 +193,6 @@ GPUResourceComponent* TAAPass::GetHistory()
 
 bool TAAPass::RenderTargetsCreationFunc()
 {
-	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
