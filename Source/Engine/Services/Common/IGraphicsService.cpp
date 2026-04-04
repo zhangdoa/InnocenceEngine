@@ -118,25 +118,11 @@ bool IGraphicsService::OnSceneUnloading()
 	WaitOnCPU(GetSemaphoreValue(GPUEngineType::Copy), GPUEngineType::Copy);
 
 	ReleaseAllMeshResources(ObjectLifespan::Scene);
-
-	auto l_registry = g_Engine->Get<EntityRegistry>();
-	auto l_sceneEntityIDs = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
-	for (auto l_entityID : l_sceneEntityIDs)
-	{
-		auto* l_mesh = l_registry->Get<MeshComponent>(l_entityID);
-		if (l_mesh && l_mesh->m_ObjectStatus == ObjectStatus::Activated)
-			l_mesh->m_ObjectStatus = ObjectStatus::Invalid;
-
-		auto* l_material = l_registry->Get<MaterialComponent>(l_entityID);
-		if (l_material && l_material->m_ObjectStatus == ObjectStatus::Activated)
-		{
-			m_initializedMaterials.erase(l_material);
-			l_material->m_ObjectStatus = ObjectStatus::Invalid;
-		}
-	}
+	AssetService::ReleaseAssetsByLifespan(ObjectLifespan::Scene);
 
 	// Discard only tasks explicitly owned by a scene-lifespan entity.
 	// Tasks with INVALID_ENTITY owner (GPU-pipeline resources) are preserved.
+	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto l_isSceneBound = [&](EntityID owner) {
 		return owner != INVALID_ENTITY
 			&& l_registry->GetLifespan(owner) == ObjectLifespan::Scene;
