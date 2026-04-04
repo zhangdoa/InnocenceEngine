@@ -10,6 +10,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 
 using namespace Inno;
 
@@ -20,6 +21,7 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("BSDFTestPass/");
 
@@ -125,6 +127,7 @@ bool BSDFTestPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -140,6 +143,7 @@ bool BSDFTestPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_RenderPassComp);
 
@@ -157,6 +161,7 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
@@ -172,9 +177,9 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResource = BRDFLUTMSPass::Get().GetResult();
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResource = m_SamplerComp;
 
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Sphere);
 
@@ -182,14 +187,14 @@ bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	for (size_t i = 0; i < m_shpereCount * m_shpereCount; i++)
 	{
-		l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
-		l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_offset, 1);
-		l_graphicsService->DrawIndexedInstanced(m_RenderPassComp, m_CommandListComp_Graphics, l_mesh);
+		l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_offset, 1);
+		l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_offset, 1);
+		l_hwService->DrawIndexedInstanced(m_RenderPassComp, m_CommandListComp_Graphics, l_mesh);
 
 		l_offset++;
 	}
 
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }

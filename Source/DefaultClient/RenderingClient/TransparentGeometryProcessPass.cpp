@@ -8,6 +8,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 
 using namespace Inno;
 
@@ -15,6 +16,7 @@ bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -113,6 +115,7 @@ bool TransparentGeometryProcessPass::Initialize()
 {	
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Initialize(m_atomicCounterGPUBufferComp);
 	l_rsService->Initialize(m_RT0);
@@ -131,6 +134,7 @@ bool TransparentGeometryProcessPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_RenderPassComp);
 
@@ -148,6 +152,7 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	static uint32_t zero = 0;
 	l_rsService->Upload(m_atomicCounterGPUBufferComp, &zero);
@@ -159,16 +164,16 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
-	// l_graphicsService->CommandListBegin(m_RenderPassComp, 0);
-	// l_graphicsService->BindRenderPassComponent(m_RenderPassComp);
-	// l_graphicsService->ClearRenderTargets(m_RenderPassComp);
+	// l_hwService->CommandListBegin(m_RenderPassComp, 0);
+	// l_hwService->BindRenderPassComponent(m_RenderPassComp);
+	// l_hwService->ClearRenderTargets(m_RenderPassComp);
 
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_PerFrameCBufferGPUBufferComp, 0);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
 
 
 	// for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -181,21 +186,21 @@ bool TransparentGeometryProcessPass::PrepareCommandList(IRenderingContext* rende
 	// 		{
 	// 			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 	// 			{
-	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
-	// 				l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+	// 				l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Vertex, l_MeshGPUBufferComp, 1, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
+	// 				l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Pixel, l_MaterialGPUBufferComp, 2, l_drawCallData.m_PerObjectConstantBufferIndex, 1);
 
-	// 				l_graphicsService->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
+	// 				l_hwService->DrawIndexedInstanced(m_RenderPassComp, l_drawCallData.mesh);
 	// 			}
 	// 		}
 	// 	}
 	// }
 
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_HeadPtr, 3);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT0, 4);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_RT1, 5);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Pixel, m_atomicCounterGPUBufferComp, 6);
 
-	// l_graphicsService->CommandListEnd(m_RenderPassComp);
+	// l_hwService->CommandListEnd(m_RenderPassComp);
 
 	return false;
 }

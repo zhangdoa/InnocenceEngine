@@ -9,6 +9,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
@@ -18,6 +19,7 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	auto l_initialIndexCount = 1;
 
@@ -126,6 +128,7 @@ bool LightCullingPass::Initialize()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
@@ -150,6 +153,7 @@ bool LightCullingPass::Update()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	auto l_lightListIndexCounter = 1;
 	l_rsService->Upload(m_lightListIndexCounter, &l_lightListIndexCounter);
@@ -168,6 +172,7 @@ bool LightCullingPass::Terminate()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_lightListIndexCounter);
 	l_rsService->Delete(m_lightIndexList);
@@ -206,36 +211,37 @@ bool LightCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_PointLightGPUBufferComp = g_Engine->Get<LightDataService>()->GetPointLightBuffer();
 
 	// Use graphics command list to transition depth buffer from DEPTH_WRITE to NON_PIXEL_SHADER_RESOURCE state
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_hwService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 2);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, TiledFrustumGenerationPass::Get().GetTiledFrustum(), 3);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PointLightGPUBufferComp, 1);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 2);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, TiledFrustumGenerationPass::Get().GetTiledFrustum(), 3);
 
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightListIndexCounter, 4);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightIndexList, 5);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightGrid, 6);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_heatMap, 7);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightListIndexCounter, 4);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightIndexList, 5);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_lightGrid, 6);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_heatMap, 7);
 
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput, 8);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_DepthStencilOutput, 8);
 
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp, 9);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp, 9);
 
-	l_graphicsService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	l_hwService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -267,6 +273,7 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	if (m_lightIndexList)
 		l_rsService->Delete(m_lightIndexList);

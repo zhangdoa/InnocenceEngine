@@ -148,14 +148,15 @@ bool TestRenderingClient::PrepareCommands_DrawInstanced()
     auto l_rs = g_Engine->getGraphicsService();
     auto l_rsService = g_Engine->Get<GraphicsResourceService>();
     auto l_fmService = g_Engine->Get<FrameManagementService>();
+    auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
 
-    l_rs->CommandListBegin(l_rp, l_cl, l_fmService->GetCurrentFrame());
-    l_rs->BindRenderPassComponent(l_rp, l_cl);
-    l_rs->ClearRenderTargets(l_rp, l_cl);
-    l_rs->DrawInstanced(l_rp, l_cl, 3);
-    l_rs->CommandListEnd(l_rp, l_cl);
+    l_hwService->CommandListBegin(l_rp, l_cl, l_fmService->GetCurrentFrame());
+    l_hwService->BindRenderPassComponent(l_rp, l_cl);
+    l_hwService->ClearRenderTargets(l_rp, l_cl);
+    l_hwService->DrawInstanced(l_rp, l_cl, 3);
+    l_hwService->CommandListEnd(l_rp, l_cl);
 
     return true;
 }
@@ -244,7 +245,7 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
         l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
 
         auto* l_renderTarget = l_rp->m_OutputMergerTarget->m_ColorOutputs[0];
-        auto l_pixels = l_rs->ReadTextureBackToCPU(l_rp, l_renderTarget);
+        auto l_pixels = l_rsService->ReadTextureBackToCPU(l_rp, l_renderTarget);
 
         if (l_pixels.empty())
         {

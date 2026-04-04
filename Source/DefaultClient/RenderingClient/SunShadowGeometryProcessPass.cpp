@@ -7,6 +7,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/Common/Timer.h"
 
@@ -17,6 +18,7 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	m_shadowMapResolution = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution;
 
@@ -135,6 +137,7 @@ bool SunShadowGeometryProcessPass::Initialize()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -151,6 +154,7 @@ bool SunShadowGeometryProcessPass::Terminate()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_SamplerComp);	
 	l_rsService->Delete(m_RenderPassComp);
@@ -174,11 +178,12 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_graphicsService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 	auto l_transformCBuffer = l_drawCallService->GetCurrentFrameTransformBuffer();
@@ -186,18 +191,18 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_CSMCBuffer = g_Engine->Get<LightDataService>()->GetCSMBuffer();
 	auto l_materialCBuffer = l_drawCallService->GetMaterialBuffer();
 
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 1);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_CSMCBuffer, 2);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 4);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 5);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 6);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Vertex, l_transformCBuffer, 1);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Geometry, l_CSMCBuffer, 2);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_gpuModelDataBuffer, 3);	
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, l_materialCBuffer, 4);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, nullptr, 5);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel, m_SamplerComp, 6);
 
 	// Use the indirect draw command buffer from SunShadowCullingPass
 	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(SunShadowCullingPass::Get().GetResult());
-	l_graphicsService->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
+	l_hwService->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
 
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -220,6 +225,7 @@ GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

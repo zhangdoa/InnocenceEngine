@@ -8,6 +8,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
@@ -20,6 +21,7 @@ bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();
@@ -82,6 +84,7 @@ bool SunShadowBlurEvenPass::Initialize()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -96,6 +99,7 @@ bool SunShadowBlurEvenPass::Terminate()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_RenderPassComp);
 
@@ -114,23 +118,24 @@ bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingConte
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
 	auto l_perFrameGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
-	// l_graphicsService->CommandListBegin(m_RenderPassComp, 0);
-	// l_graphicsService->BindRenderPassComponent(m_RenderPassComp);
-	// l_graphicsService->ClearRenderTargets(m_RenderPassComp);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 0);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
+	// l_hwService->CommandListBegin(m_RenderPassComp, 0);
+	// l_hwService->BindRenderPassComponent(m_RenderPassComp);
+	// l_hwService->ClearRenderTargets(m_RenderPassComp);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_perFrameGPUBufferComp, 0);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
-	// l_graphicsService->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	// l_hwService->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
-	// l_graphicsService->CommandListEnd(m_RenderPassComp);
+	// l_hwService->CommandListEnd(m_RenderPassComp);
 
 	return false;
 }
@@ -151,6 +156,7 @@ GPUResourceComponent* SunShadowBlurEvenPass::GetResult()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];

@@ -10,6 +10,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 
 using namespace Inno;
 
@@ -17,6 +18,7 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	m_SamplerComp = l_rsService->AddSamplerComponent("RadianceCacheRaytracingPass/");
 
@@ -152,6 +154,7 @@ bool RadianceCacheRaytracingPass::Initialize()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -168,6 +171,7 @@ bool RadianceCacheRaytracingPass::Terminate()
 {
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_SamplerComp);
 	l_rsService->Delete(m_CommandListComp_Compute);
@@ -196,44 +200,45 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources to shader resource state
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_graphicsService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_graphicsService->TryToTransitState(LightPass::Get().GetIlluminanceResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_hwService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->TryToTransitState(LightPass::Get().GetIlluminanceResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	
 	// Transition previous frame result from its current state to ReadOnly
-	l_graphicsService->TryToTransitState(RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_hwService->TryToTransitState(RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	
-	l_graphicsService->TryToTransitState(l_result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->TryToTransitState(l_result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_graphicsService->GetTLASBuffer(), 1);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 2);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 3);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 4);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 5);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, LightPass::Get().GetIlluminanceResult(), 6);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), 7);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_result, 8);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 9);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 10);
-	l_graphicsService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_PerFrameCBufferGPUBufferComp, 0);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_graphicsService->GetTLASBuffer(), 1);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0], 2);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1], 3);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[2], 4);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3], 5);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, LightPass::Get().GetIlluminanceResult(), 6);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetPreviousFrameResult(), 7);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_result, 8);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetWorldProbeGrid(), 9);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 10);
+	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
 
 	auto dispatch_x = (l_result->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;  // Round up
 	auto dispatch_y = (l_result->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;  // Round up
 
-	l_graphicsService->DispatchRays(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_hwService->DispatchRays(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	

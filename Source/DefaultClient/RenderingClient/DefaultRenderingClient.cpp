@@ -750,15 +750,16 @@ namespace Inno
 
 	void DefaultRenderingClientImpl::AuditDump()
 	{
-		auto l_rs = g_Engine->getGraphicsService();
+		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+		auto l_rsService2 = g_Engine->Get<GraphicsResourceService>();
 
-		l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
-		l_rs->WaitOnCPU(l_rs->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+		l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+		l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
 
 		auto Dump = [&](const char* filename, RenderPassComponent* rp, TextureComponent* tc)
 		{
 			if (!tc) { Log(Warning, "AuditDump: null TextureComponent for ", filename); return; }
-			auto l_pixels = l_rs->ReadTextureBackToCPU(rp, tc);
+			auto l_pixels = l_rsService2->ReadTextureBackToCPU(rp, tc);
 			if (l_pixels.empty()) { Log(Error, "AuditDump: empty readback for ", filename); return; }
 			for (size_t pi = 0; pi < l_pixels.size(); pi++) {
 				if (l_pixels[pi].x != 0.0f || l_pixels[pi].y != 0.0f || l_pixels[pi].z != 0.0f) {

@@ -86,6 +86,7 @@ bool ImGuiRenderPass::Initialize()
 			auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 			auto l_swapChainRenderPassComp = l_fmService->GetSwapChainRenderPassComponent();
 			auto l_currentFrame = l_fmService->GetCurrentFrame();
 
@@ -99,7 +100,7 @@ bool ImGuiRenderPass::Initialize()
 				l_swapChainRenderPassComp->m_OutputMergerTarget && 
 				!l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs.empty())
 			{
-				l_graphicsService->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
+				l_hwService->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 			}
 		};
 
@@ -135,10 +136,11 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
-	l_graphicsService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);	
-	l_graphicsService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	l_graphicsService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }

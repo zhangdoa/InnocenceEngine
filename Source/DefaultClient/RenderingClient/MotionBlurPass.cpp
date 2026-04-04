@@ -7,6 +7,7 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
@@ -19,6 +20,7 @@ bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("MotionBlurPass/");
 
@@ -79,6 +81,7 @@ bool MotionBlurPass::Initialize()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -94,6 +97,7 @@ bool MotionBlurPass::Terminate()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	l_rsService->Delete(m_RenderPassComp);
 
@@ -112,28 +116,29 @@ bool MotionBlurPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 
 	auto l_renderingContext = reinterpret_cast<MotionBlurPassRenderingContext*>(renderingContext);	
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
-	// l_graphicsService->CommandListBegin(m_RenderPassComp, 0);
-	// l_graphicsService->BindRenderPassComponent(m_RenderPassComp);
-	// l_graphicsService->ClearRenderTargets(m_RenderPassComp);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 3);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
+	// l_hwService->CommandListBegin(m_RenderPassComp, 0);
+	// l_hwService->BindRenderPassComponent(m_RenderPassComp);
+	// l_hwService->ClearRenderTargets(m_RenderPassComp);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_SamplerComp, 3);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
 
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 0);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	// l_graphicsService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 0);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
+	// l_hwService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
-	// l_graphicsService->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	// l_hwService->Dispatch(m_RenderPassComp, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 0);
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
-	// l_graphicsService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, OpaquePass::Get().GetRenderPassComp()->m_RenderTargets[3], 0);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_renderingContext->m_input, 1);
+	// l_hwService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
-	// l_graphicsService->CommandListEnd(m_RenderPassComp);
+	// l_hwService->CommandListEnd(m_RenderPassComp);
 
 	return false;
 }
@@ -154,6 +159,7 @@ GPUResourceComponent* MotionBlurPass::GetResult()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
 	return m_RenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0];
