@@ -10,6 +10,7 @@
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -297,7 +298,8 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_RadianceCache_Odd : m_RadianceCache_Even;
@@ -308,7 +310,8 @@ TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_RadianceCache_Even : m_RadianceCache_Odd;
@@ -319,7 +322,8 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_ProbePosition_Odd : m_ProbePosition_Even;
@@ -330,7 +334,8 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition(
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_ProbePosition_Even : m_ProbePosition_Odd;
@@ -341,7 +346,8 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_ProbeNormal_Odd : m_ProbeNormal_Even;
@@ -352,7 +358,8 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbeNormal()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_ProbeNormal_Even : m_ProbeNormal_Odd;

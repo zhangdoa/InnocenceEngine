@@ -6,6 +6,7 @@
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
@@ -127,7 +128,8 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 	auto l_readTexture = l_isOddFrame ? m_EvenTextureComp : m_OddTextureComp;
 	auto l_writeTexture = l_isOddFrame ? m_OddTextureComp : m_EvenTextureComp;
@@ -174,7 +176,8 @@ GPUResourceComponent* TAAPass::GetResult()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_OddTextureComp : m_EvenTextureComp;
@@ -187,7 +190,8 @@ GPUResourceComponent* TAAPass::GetHistory()
 	auto l_graphicsService = g_Engine->getGraphicsService();
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	auto l_frameCount = l_graphicsService->GetFrameCountSinceLaunch();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
 
 	return l_isOddFrame ? m_EvenTextureComp : m_OddTextureComp;
