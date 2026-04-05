@@ -8,7 +8,7 @@
 
 namespace Inno
 {
-	enum EngineMode { Host, Slave };
+	enum EngineMode { Host, Slave, Sidecar };
 
 	enum GraphicsService { DX12, VK, MT };
 

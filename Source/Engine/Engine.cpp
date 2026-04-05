@@ -25,6 +25,7 @@
 #include "Services/AnimationResourceService.h"
 #include "Services/AnimationSimulationService.h"
 #include "Services/GUIService.h"
+#include "Services/EditorService.h"
 #include "Services/GraphicsHardwareService.h"
 
 // Platform-specific systems
@@ -280,6 +281,14 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "Launch in offscreen mode, no windowing but real rendering server for testing.");
 	}
 
+	auto l_sidecarArgPos = arg.find("sidecar");
+	if (l_sidecarArgPos != std::string::npos)
+	{
+		l_result.engineMode = EngineMode::Sidecar;
+		l_result.isOffscreen = true;
+		Log(Success, "Launch in sidecar mode, engine will be controlled by external process.");
+	}
+
 	if (arg.find("audit") != std::string::npos)
 	{
 		l_result.isAudit = true;
@@ -430,6 +439,11 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<LightSimulationService>();
 	Get<CameraService>();
 
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		Get<EditorService>();
+	}
+
 	return true;
 }
 
@@ -483,6 +497,11 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	SystemSetup(LightSimulationService);
 	SystemSetup(CameraService);
+
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		SystemSetup(EditorService);
+	}
 
 	SystemSetup(TemplateAssetService);
 
@@ -681,6 +700,11 @@ bool Engine::Initialize()
 	SystemInit(LightSimulationService);
 	SystemInit(CameraService);
 
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		SystemInit(EditorService);
+	}
+
 	// Only initialize rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		Get<FrameManagementService>()->Initialize();
@@ -810,6 +834,11 @@ bool Engine::Terminate()
 
 	SystemTerm(CameraService);
 	SystemTerm(LightSimulationService);
+
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		SystemTerm(EditorService);
+	}
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);
