@@ -1,5 +1,4 @@
 #include "DX12GraphicsHardwareService.h"
-#include "DX12GraphicsResourceService.h"
 #include "DX12TextureResourceService.h"
 #include "DX12GPUBufferResourceService.h"
 #include "DX12RenderPassResourceService.h"
@@ -7,7 +6,6 @@
 #include "../GPUBufferResourceService.h"
 #include "../RenderPassResourceService.h"
 #include "../FrameManagementService.h"
-#include "../GraphicsResourceService.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Common/LogService.h"

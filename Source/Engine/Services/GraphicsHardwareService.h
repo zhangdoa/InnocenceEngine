@@ -10,7 +10,6 @@ namespace Inno
 	class TextureComponent;
 	class GPUBufferComponent;
 	class MeshComponent;
-	class GraphicsResourceService;
 	class FrameManagementService;
 
 	class GraphicsHardwareService : public IService
@@ -24,7 +23,6 @@ namespace Inno
 		bool Terminate() override { return true; }
 		ObjectStatus GetStatus() override { return ObjectStatus::Activated; }
 
-		void SetResourceService(GraphicsResourceService* resourceService) { m_ResourceService = resourceService; }
 		void SetFrameManagementService(FrameManagementService* fmService) { m_FrameManagementService = fmService; }
 
 		// Sync primitives (low-level)
@@ -47,7 +45,6 @@ namespace Inno
 		virtual bool CreateHardwareResources() { return true; }
 		virtual bool ReleaseHardwareResources() { return true; }
 
-		GraphicsResourceService* m_ResourceService = nullptr;
 		FrameManagementService* m_FrameManagementService = nullptr;
 	};
 }

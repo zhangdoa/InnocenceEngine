@@ -4,8 +4,6 @@
 
 namespace Inno
 {
-	class DX12GraphicsResourceService;
-
 	class DX12FrameManagementService : public FrameManagementService
 	{
 	public:

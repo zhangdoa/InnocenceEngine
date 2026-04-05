@@ -1,6 +1,5 @@
 #include "../FrameManagementService.h"
 #include "../GraphicsHardwareService.h"
-#include "../GraphicsResourceService.h"
 #include "../CommandListResourceService.h"
 #include "../SamplerResourceService.h"
 #include "../ShaderProgramResourceService.h"
@@ -133,7 +132,6 @@ bool FrameManagementService::Update()
 
 	BeginFrame();
 
-	g_Engine->Get<GraphicsResourceService>()->InitializeComponents();
 	g_Engine->Get<MeshResourceService>()->InitializeComponents();
 	g_Engine->Get<TextureResourceService>()->InitializeComponents();
 	g_Engine->Get<MaterialResourceService>()->InitializeComponents();
@@ -319,23 +317,6 @@ bool FrameManagementService::PrepareGlobalCommands()
 		}
 	});
 
-	for (auto i : g_Engine->Get<GraphicsResourceService>()->GetGPUBufferPointers())
-	{
-		if (i->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
-		if (i->m_MappedMemories.size() == 0)
-			continue;
-
-		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
-		if (l_mappedMemory->m_NeedUploadToGPU)
-		{
-			TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
-			g_Engine->Get<GraphicsResourceService>()->UploadToGPU(l_commandList, i);
-			TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
-			l_mappedMemory->m_NeedUploadToGPU = false;
-		}
-	}
-
 	PrepareRayTracing(l_commandList);
 
 	Close(l_commandList, GPUEngineType::Graphics);
@@ -434,17 +415,6 @@ bool FrameManagementService::PreResize()
 		}
 	});
 
-	for (auto i : g_Engine->Get<GraphicsResourceService>()->GetRenderPassPointers())
-	{
-		if (i->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
-		if (!PreResize(i))
-		{
-			Log(Error, "Can't delete resources for ", i->m_InstanceName, " when resizing.");
-			l_result = false;
-		}
-	}
-
 	return l_result;
 }
 
@@ -453,7 +423,7 @@ bool FrameManagementService::PreResize(RenderPassComponent* renderPass)
 	if (!renderPass->m_RenderPassDesc.m_Resizable)
 		return true;
 
-	g_Engine->Get<GraphicsResourceService>()->DeleteRenderTargets(renderPass);
+	g_Engine->Get<RenderPassResourceService>()->DeleteRenderTargets(renderPass);
 
 	return true;
 }
@@ -474,17 +444,6 @@ bool FrameManagementService::PostResize()
 		}
 	});
 
-	for (auto i : g_Engine->Get<GraphicsResourceService>()->GetRenderPassPointers())
-	{
-		if (i->m_ObjectStatus != ObjectStatus::Activated)
-			continue;
-		if (!PostResize(l_screenResolution, i))
-		{
-			Log(Error, "Can't resize ", i->m_InstanceName);
-			l_result = false;
-		}
-	}
-
 	return l_result;
 }
 
@@ -499,14 +458,14 @@ bool FrameManagementService::PostResize(const TVec2<uint32_t>& screenResolution,
 	renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
 	renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
 
-	auto l_grsService = g_Engine->Get<GraphicsResourceService>();
-	l_grsService->CreateOutputMergerTargets(renderPass);
-	l_grsService->InitializeOutputMergerTargets(renderPass);
-	l_grsService->OnOutputMergerTargetsCreated(renderPass);
+	auto l_rpService = g_Engine->Get<RenderPassResourceService>();
+	l_rpService->CreateOutputMergerTargets(renderPass);
+	l_rpService->InitializeOutputMergerTargets(renderPass);
+	l_rpService->OnOutputMergerTargetsCreated(renderPass);
 
-	renderPass->m_PipelineStateObject = l_grsService->AddPipelineStateObject();
+	renderPass->m_PipelineStateObject = l_rpService->AddPipelineStateObject();
 
-	l_grsService->CreatePipelineStateObject(renderPass);
+	l_rpService->CreatePipelineStateObject(renderPass);
 
 	if (renderPass->m_OnResize)
 		renderPass->m_OnResize();

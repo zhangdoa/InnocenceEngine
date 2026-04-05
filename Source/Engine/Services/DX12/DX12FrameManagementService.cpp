@@ -1,6 +1,4 @@
 #include "DX12FrameManagementService.h"
-#include "DX12GraphicsResourceService.h"
-#include "../GraphicsResourceService.h"
 #include "../GraphicsHardwareService.h"
 #include "../CommandListResourceService.h"
 #include "../GPUBufferResourceService.h"

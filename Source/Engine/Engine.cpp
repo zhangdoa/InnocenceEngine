@@ -41,7 +41,6 @@
 // Rendering servers
 #if defined INNO_RENDERER_DIRECTX
 #include "Services/DX12/DX12GraphicsHardwareService.h"
-#include "Services/DX12/DX12GraphicsResourceService.h"
 #include "Services/DX12/DX12FrameManagementService.h"
 #include "Services/DX12/DX12CommandListResourceService.h"
 #include "Services/DX12/DX12SamplerResourceService.h"
@@ -376,18 +375,13 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		auto* l_hwService = new DX12GraphicsHardwareService();
 		auto* l_ctx = l_hwService->GetDX12Context();
 
-		auto* l_rsService = new DX12GraphicsResourceService();
-		l_rsService->SetDX12Context(l_ctx);
-
 		auto* l_fmService = new DX12FrameManagementService();
 		l_fmService->SetDX12Context(l_ctx);
 
-		l_hwService->SetResourceService(l_rsService);
 		l_hwService->SetFrameManagementService(l_fmService);
 		l_fmService->SetHardwareService(l_hwService);
 
 		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;
-		singletons_[std::type_index(typeid(GraphicsResourceService))] = l_rsService;
 		singletons_[std::type_index(typeid(FrameManagementService))] = l_fmService;
 
 		auto* l_cmdListService = new DX12CommandListResourceService();
@@ -494,12 +488,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	if (!m_pImpl->m_initConfig.isHeadless)
 	{
-		if (!Get<GraphicsResourceService>()->Setup())
-		{
-			Log(Error, "GraphicsResourceService can't be setup!");
-			return false;
-		}
-
 		if (!Get<CommandListResourceService>()->Setup())
 		{
 			Log(Error, "CommandListResourceService can't be setup!");
@@ -818,7 +806,6 @@ bool Engine::Terminate()
 		Get<ShaderProgramResourceService>()->Terminate();
 		Get<SamplerResourceService>()->Terminate();
 		Get<CommandListResourceService>()->Terminate();
-		Get<GraphicsResourceService>()->Terminate();
 	}
 
 	SystemTerm(CameraService);
