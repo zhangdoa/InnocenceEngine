@@ -18,7 +18,7 @@
           <p v-if="sharedHandle">Shared Handle: 0x{{ sharedHandle.toString(16).toUpperCase() }}</p>
           <p v-else>Waiting for Shared Handle...</p>
         </div>
-        <div class="viewport-placeholder">Engine Viewport</div>
+        <canvas ref="viewportCanvas" class="viewport-canvas"></canvas>
       </section>
       <aside class="sidebar right">
         <h3>Properties</h3>
@@ -36,6 +36,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const isConnected = ref(false)
 const sharedHandle = ref(null)
 const lastMessage = ref('')
+const viewportCanvas = ref(null)
 const entities = ref([
   { id: 1, name: 'Main Camera' },
   { id: 2, name: 'Directional Light' },
@@ -50,19 +51,16 @@ const connect = () => {
 
   socket.onopen = () => {
     console.log('Connected to Engine')
-    isConnected.ref = true // Wait, isConnected is a ref, so isConnected.value
     isConnected.value = true
     socket.send(JSON.stringify({ type: 'HELO' }))
   }
 
   socket.onmessage = (event) => {
-    console.log('Message from Engine:', event.data)
     lastMessage.value = event.data
     try {
       const msg = JSON.parse(event.data)
       if (msg.type === 'HELLO_REPLY') {
         sharedHandle.value = msg.sharedHandle
-        console.log('Received Shared Handle:', msg.sharedHandle)
       }
     } catch (e) {
       console.error('Failed to parse message:', e)
@@ -70,20 +68,40 @@ const connect = () => {
   }
 
   socket.onclose = () => {
-    console.log('Disconnected from Engine')
     isConnected.value = false
     sharedHandle.value = null
-    // Retry connection after 2 seconds
     setTimeout(connect, 2000)
-  }
-
-  socket.onerror = (error) => {
-    console.error('WebSocket Error:', error)
   }
 }
 
 onMounted(() => {
   connect()
+
+  // Setup Shared Texture Receiver
+  if (window.require) {
+    const { sharedTexture } = window.require('electron')
+    
+    sharedTexture.setSharedTextureReceiver(async (data) => {
+      const { importedSharedTexture } = data
+      
+      const videoFrame = importedSharedTexture.getVideoFrame()
+      
+      if (viewportCanvas.value) {
+        const canvas = viewportCanvas.value
+        const ctx = canvas.getContext('2d')
+        
+        if (canvas.width !== videoFrame.displayWidth || canvas.height !== videoFrame.displayHeight) {
+          canvas.width = videoFrame.displayWidth
+          canvas.height = videoFrame.displayHeight
+        }
+        
+        ctx.drawImage(videoFrame, 0, 0)
+      }
+
+      videoFrame.close()
+      importedSharedTexture.release()
+    })
+  }
 })
 
 onUnmounted(() => {
@@ -142,6 +160,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
+}
+
+.viewport-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .viewport-info {
@@ -152,12 +177,7 @@ onUnmounted(() => {
   padding: 5px 10px;
   border-radius: 5px;
   font-size: 12px;
-}
-
-.viewport-placeholder {
-  color: #444;
-  font-size: 24px;
-  font-weight: bold;
+  z-index: 10;
 }
 
 .editor-footer {

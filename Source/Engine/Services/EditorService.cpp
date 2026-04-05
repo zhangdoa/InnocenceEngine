@@ -38,15 +38,27 @@ bool EditorService::Initialize()
 						if (l_type == "HELO")
 						{
 							void* l_sharedHandle = g_Engine->Get<FrameManagementService>()->GetViewportSharedHandle();
-							
+							auto l_renderPass = g_Engine->Get<FrameManagementService>()->GetSwapChainRenderPassComponent();
+
+							uint32_t l_width = 1280;
+							uint32_t l_height = 720;
+
+							if (l_renderPass)
+							{
+								l_width = l_renderPass->m_RenderPassDesc.m_RenderTargetDesc.Width;
+								l_height = l_renderPass->m_RenderPassDesc.m_RenderTargetDesc.Height;
+							}
+
 							json l_reply;
 							l_reply["type"] = "HELLO_REPLY";
 							l_reply["sharedHandle"] = (uint64_t)l_sharedHandle;
-							
+							l_reply["width"] = l_width;
+							l_reply["height"] = l_height;
+							l_reply["format"] = "rgba"; // Assume RGBA for now
+
 							webSocket.send(l_reply.dump());
-							Log(Success, "EditorService: Sent HELLO_REPLY with sharedHandle: ", l_sharedHandle);
-						}
-					}
+							Log(Success, "EditorService: Sent HELLO_REPLY with sharedHandle: ", l_sharedHandle, " size: ", l_width, "x", l_height);
+						}					}
 				}
 				catch (const std::exception& e)
 				{
