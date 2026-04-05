@@ -3,7 +3,6 @@
 #include "DX12Headers.h"
 
 #include "../../Component/TextureComponent.h"
-#include "../IGraphicsService.h"
 
 namespace Inno
 {

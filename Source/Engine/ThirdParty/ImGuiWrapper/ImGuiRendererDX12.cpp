@@ -2,7 +2,7 @@
 
 #include "../ImGui/imgui_impl_dx12.cpp"
 
-#include "../../Services/DX12/DX12GraphicsService.h"
+#include "../../Services/DX12/DX12GraphicsHardwareService.h"
 #include "../../Services/DX12/DX12Helper_Common.h"
 
 #include "../../Interface/IRenderPass.h"
@@ -197,10 +197,10 @@ bool ImGuiRendererDX12::Initialize()
 		return true;
 	}
 
-	auto l_graphicsService = reinterpret_cast<DX12GraphicsService*>(g_Engine->Get<GraphicsHardwareService>()->GetBackend());
+	auto l_hwService = static_cast<DX12GraphicsHardwareService*>(g_Engine->Get<GraphicsHardwareService>());
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
-	auto l_device = l_graphicsService->GetDevice().Get();
-	auto& l_descHeapAccessor = l_graphicsService->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
+	auto l_device = l_hwService->GetDevice().Get();
+	auto& l_descHeapAccessor = l_hwService->GetDescriptorHeapAccessor(GPUResourceType::Image, Accessibility::ReadOnly, Accessibility::ReadWrite, TextureUsage::ColorAttachment);
 	auto l_newHandle = l_descHeapAccessor.GetNewHandle();
 	auto l_swapChainCount = l_fmService->GetSwapChainImageCount();
 

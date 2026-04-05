@@ -4,7 +4,7 @@
 #include "../../Component/VKTextureComponent.h"
 #include "../../Component/VKRenderPassComponent.h"
 #include "../../Component/VKShaderProgramComponent.h"
-#include "../IGraphicsService.h"
+#include "../GraphicsResourceService.h"
 
 namespace Inno
 {

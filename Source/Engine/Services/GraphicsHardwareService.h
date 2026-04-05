@@ -5,7 +5,6 @@
 
 namespace Inno
 {
-	class IGraphicsService;
 	class CommandListComponent;
 	struct GPUResourceComponent;
 	class TextureComponent;
@@ -53,9 +52,6 @@ namespace Inno
 		virtual bool ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand) = 0;
 		virtual void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) = 0;
 		virtual bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) = 0;
-
-		// Backend access for platform-specific glue code (ImGui, window surfaces)
-		virtual IGraphicsService* GetBackend() = 0;
 
 		// Debug/capture
 		virtual bool BeginCapture() { return false; }

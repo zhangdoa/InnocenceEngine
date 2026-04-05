@@ -2,7 +2,6 @@
 #include "../../Common/LogService.h"
 
 #include "../../Component/RenderPassComponent.h"
-#include "../IGraphicsService.h"
 
 #include "DX12Headers.h"
 

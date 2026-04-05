@@ -1,4 +1,5 @@
 #include "VKGraphicsService.h"
+#include "../GraphicsResourceService.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 
@@ -125,9 +126,9 @@ bool VKGraphicsService::InitializeImpl(RenderPassComponent *rhs)
 
 	bool l_result = true;
 
-	l_result &= CreateOutputMergerTargets(l_rhs);
+	l_result &= g_Engine->Get<GraphicsResourceService>()->CreateOutputMergerTargets(l_rhs);
 
-	l_result &= InitializeOutputMergerTargets(l_rhs);
+	l_result &= g_Engine->Get<GraphicsResourceService>()->InitializeOutputMergerTargets(l_rhs);
 
 	l_result &= ReserveFramebuffer(l_rhs);
 

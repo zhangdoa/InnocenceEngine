@@ -1,16 +1,15 @@
 #pragma once
 #include "../GraphicsHardwareService.h"
+#include "DX12Context.h"
 
 namespace Inno
 {
-	class IGraphicsService;
-
 	class DX12GraphicsHardwareService : public GraphicsHardwareService
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(DX12GraphicsHardwareService);
 
-		void SetBackend(IGraphicsService* backend) { m_Backend = backend; }
+		void SetDX12Context(DX12Context* ctx) { m_ctx = ctx; }
 
 		bool SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType) override;
 		bool WaitOnGPU(ISemaphore* semaphore, GPUEngineType queueType, GPUEngineType semaphoreType) override;
@@ -37,13 +36,27 @@ namespace Inno
 		void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) override;
 		bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
 
-		IGraphicsService* GetBackend() override { return m_Backend; }
-
+		// Debug/capture
 		bool BeginCapture() override;
 		bool EndCapture() override;
 		bool HasGPUError() const override;
 
+		// DX12-specific public accessors (for ImGui, window surfaces, etc.)
+		ComPtr<ID3D12Device8> GetDevice();
+		ComPtr<ID3D12CommandAllocator> GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType);
+		ComPtr<ID3D12CommandQueue> GetGlobalCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType);
+		DX12DescriptorHeapAccessor& GetDescriptorHeapAccessor(GPUResourceType type, Accessibility bindingAccessibility = Accessibility::ReadOnly,
+			Accessibility resourceAccessibility = Accessibility::ReadOnly, TextureUsage textureUsage = TextureUsage::Invalid, bool isShaderVisible = true);
+
 	private:
-		IGraphicsService* m_Backend = nullptr;
+		// Command recording helpers
+		bool BindComputeResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
+		bool BindGraphicsResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
+		bool SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList);
+		bool SetRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList);
+		bool PreparePipeline(RenderPassComponent* renderPass, CommandListComponent* commandList, DX12PipelineStateObject* PSO);
+		bool ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility);
+
+		DX12Context* m_ctx = nullptr;
 	};
 }

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../IGraphicsService.h"
+#include "../GraphicsResourceService.h"
 #include "VKHeaders.h"
 
 #include "../../Common/ObjectPool.h"
@@ -71,7 +71,7 @@ namespace Inno
 		bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
 		void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;
 		bool InitializeImpl(TextureComponent* texture, void* textureData) override;
-		bool InitializeImpl(RenderPassComponent* renderPass) override;
+		bool InitializeImpl(RenderPassComponent* renderPass);
 		bool InitializeImpl(ShaderProgramComponent* shaderProgram) override;
 		bool InitializeImpl(SamplerComponent* sampler) override;
 		bool InitializeImpl(GPUBufferComponent* gpuBuffer) override;

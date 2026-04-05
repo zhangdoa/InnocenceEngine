@@ -40,21 +40,13 @@
 
 // Rendering servers
 #if defined INNO_RENDERER_DIRECTX
-#include "Services/DX12/DX12GraphicsService.h"
 #include "Services/DX12/DX12GraphicsHardwareService.h"
 #include "Services/DX12/DX12GraphicsResourceService.h"
 #include "Services/DX12/DX12FrameManagementService.h"
 #endif
-#if defined INNO_RENDERER_VULKAN
-#include "Services/VK/VKGraphicsService.h"
-#endif
-#if defined INNO_RENDERER_METAL
-#include "Services/MT/MTGraphicsService.h"
-#endif
 
-// Headless stubs
+// Headless window stub
 #include "Platform/HeadlessWindow/HeadlessWindowService.h"
-#include "Services/Headless/HeadlessGraphicsService.h"
 
 namespace Inno
 {
@@ -81,39 +73,6 @@ IWindowService* Engine::CreateWindowSystem(bool isHeadless)
 #endif
 }
 
-IGraphicsService* Engine::CreateGraphicsService(bool isHeadless, GraphicsService graphicsServiceType)
-{
-	if (isHeadless) {
-		return new HeadlessGraphicsService();
-	}
-	
-	switch (graphicsServiceType) {
-	case GraphicsService::DX12:
-#if defined INNO_RENDERER_DIRECTX
-		return new DX12GraphicsService();
-#else
-		Log(Error, "DirectX 12 graphics service not available on this platform.");
-		return nullptr;
-#endif
-	case GraphicsService::VK:
-#if defined INNO_RENDERER_VULKAN
-		return new VKGraphicsService();
-#else
-		Log(Error, "Vulkan graphics service not available on this platform.");
-		return nullptr;
-#endif
-	case GraphicsService::MT:
-#if defined INNO_RENDERER_METAL
-		return new MTGraphicsService();
-#else
-		Log(Error, "Metal graphics service not available on this platform.");
-		return nullptr;
-#endif
-	default:
-		Log(Error, "Unknown graphics service type.");
-		return nullptr;
-	}
-}
 
 void Engine::ResolveDependencies(const std::vector<std::type_index>& dependencies)
 {
@@ -155,7 +114,6 @@ namespace Inno
 		InitConfig m_initConfig;
 
 		std::unique_ptr<IWindowService> m_WindowSystem;
-		std::unique_ptr<IGraphicsService> m_GraphicsService;
 
 		std::unique_ptr<IRenderingClient> m_RenderingClient;
 		std::unique_ptr<ILogicClient> m_LogicClient;
@@ -403,49 +361,24 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 			Get<GUIService>();
 	}
 
-	// Create GraphicsService based on headless mode (offscreen uses real rendering server)
-	if (m_pImpl->m_initConfig.isHeadless) {
-		m_pImpl->m_GraphicsService = std::make_unique<HeadlessGraphicsService>();
-	} else {
-		// For both windowed and offscreen modes, create real rendering server
-		switch (m_pImpl->m_initConfig.graphicsService) {
-		case GraphicsService::DX12:
-#if defined INNO_RENDERER_DIRECTX
-			m_pImpl->m_GraphicsService = std::make_unique<DX12GraphicsService>();
-#endif
-			break;
-		case GraphicsService::VK:
-#if defined INNO_RENDERER_VULKAN
-			m_pImpl->m_GraphicsService = std::make_unique<VKGraphicsService>();
-#endif
-			break;
-		case GraphicsService::MT:
-#if defined INNO_RENDERER_METAL
-			m_pImpl->m_GraphicsService = std::make_unique<MTGraphicsService>();
-#endif
-			break;
-		}
-	}
-
-	if (!m_pImpl->m_GraphicsService.get()) {
-		Log(Error, "Failed to create Rendering Server.");
-		return false;
-	}
-
-	// Create GraphicsHardwareService as delegation wrapper around the graphics backend
+	// Create focused graphics services (DX12-specific derived classes)
 #if defined INNO_RENDERER_DIRECTX
 	if (!m_pImpl->m_initConfig.isHeadless)
 	{
-		auto* l_hwService = new DX12GraphicsHardwareService();
-		l_hwService->SetBackend(m_pImpl->m_GraphicsService.get());
-		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;
+		auto* l_fmService = new DX12FrameManagementService();
+		auto* l_ctx = l_fmService->GetDX12Context();
 
 		auto* l_rsService = new DX12GraphicsResourceService();
-		l_rsService->SetBackend(m_pImpl->m_GraphicsService.get());
-		singletons_[std::type_index(typeid(GraphicsResourceService))] = l_rsService;
+		l_rsService->SetDX12Context(l_ctx);
 
-		auto* l_fmService = new DX12FrameManagementService();
-		l_fmService->SetBackend(m_pImpl->m_GraphicsService.get());
+		auto* l_hwService = new DX12GraphicsHardwareService();
+		l_hwService->SetDX12Context(l_ctx);
+
+		l_fmService->SetResourceService(l_rsService);
+		l_fmService->SetHardwareService(l_hwService);
+
+		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;
+		singletons_[std::type_index(typeid(GraphicsResourceService))] = l_rsService;
 		singletons_[std::type_index(typeid(FrameManagementService))] = l_fmService;
 	}
 #endif
@@ -456,10 +389,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		auto l_windowSystem = reinterpret_cast<MacWindowService*>(m_pImpl->m_WindowSystem.get());
 		auto l_windowSystemBridge = reinterpret_cast<MacWindowServiceBridge*>(appHook);
 		l_windowSystem->setBridge(l_windowSystemBridge);
-
-		auto l_graphicsService = reinterpret_cast<MTGraphicsService*>(m_pImpl->m_GraphicsService.get());
-		auto l_graphicsServiceBridge = reinterpret_cast<MTGraphicsServiceBridge*>(extraHook);
-		l_graphicsService->setBridge(l_graphicsServiceBridge);
+		// TODO: Metal bridge setup needs to go through the focused service pattern
 	}
 #endif
 
@@ -527,39 +457,43 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	SystemSetup(TemplateAssetService);
 
-	if (!m_pImpl->m_GraphicsService->Setup(nullptr))
+	if (!m_pImpl->m_initConfig.isHeadless)
 	{
-		Log(Error, "Rendering Server can't be setup!");
-		return false;
+		if (!Get<GraphicsResourceService>()->Setup())
+		{
+			Log(Error, "GraphicsResourceService can't be setup!");
+			return false;
+		}
+
+		if (!Get<FrameManagementService>()->Setup())
+		{
+			Log(Error, "FrameManagementService can't be setup!");
+			return false;
+		}
 	}
 
-	Get<FrameManagementService>()->SetUploadHeapPreparationCallback([&]()
-		{
-			SystemUpdate(SceneService);
-			
-			if (Get<SceneService>()->IsLoading())
-				return true;
+	// Only setup rendering-related services if not headless
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		Get<FrameManagementService>()->SetUploadHeapPreparationCallback([&]()
+			{
+				SystemUpdate(SceneService);
 
-			// Simulation - only if LogicClient exists
-			if (m_pImpl->m_LogicClient) {
-				m_pImpl->m_LogicClient->Update();
-			}
+				if (Get<SceneService>()->IsLoading())
+					return true;
 
-			// Update components
-			Get<CameraService>()->Update();
-			Get<LightSimulationService>()->Update();
+				// Simulation - only if LogicClient exists
+				if (m_pImpl->m_LogicClient) {
+					m_pImpl->m_LogicClient->Update();
+				}
 
-			SystemUpdate(EntityRegistry);
+				// Update components
+				Get<CameraService>()->Update();
+				Get<LightSimulationService>()->Update();
 
-			Get<TransformService>()->Update();
+				SystemUpdate(EntityRegistry);
 
-			// Culling
-			// Get<PhysicsSimulationService>()->Update();
-			// Get<BVHService>()->Update();
-			// Get<PhysicsSimulationService>()->RunCulling();
+				Get<TransformService>()->Update();
 
-			// Only update rendering-related services if not headless
-			if (!m_pImpl->m_initConfig.isHeadless) {
 				Get<PerFrameDataService>()->Update();
 				Get<LightDataService>()->Update();
 				Get<DrawCallService>()->Update();
@@ -571,32 +505,32 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				if (m_pImpl->m_RenderingClient) {
 					m_pImpl->m_RenderingClient->Update();
 				}
-			}
 
-			return true;
-		});
-
-	Get<FrameManagementService>()->SetCommandPreparationCallback([&]()
-		{
-			if (Get<SceneService>()->IsLoading())
 				return true;
+			});
 
-			if (m_pImpl->m_RenderingClient) {
-				m_pImpl->m_RenderingClient->PrepareCommands();
-			}
-			return true;
-		});
+		Get<FrameManagementService>()->SetCommandPreparationCallback([&]()
+			{
+				if (Get<SceneService>()->IsLoading())
+					return true;
 
-	Get<FrameManagementService>()->SetCommandExecutionCallback([&]()
-		{
-			if (Get<SceneService>()->IsLoading())
+				if (m_pImpl->m_RenderingClient) {
+					m_pImpl->m_RenderingClient->PrepareCommands();
+				}
 				return true;
+			});
 
-			if (m_pImpl->m_RenderingClient) {
-				m_pImpl->m_RenderingClient->ExecuteCommands();
-			}
-			return true;
-		});
+		Get<FrameManagementService>()->SetCommandExecutionCallback([&]()
+			{
+				if (Get<SceneService>()->IsLoading())
+					return true;
+
+				if (m_pImpl->m_RenderingClient) {
+					m_pImpl->m_RenderingClient->ExecuteCommands();
+				}
+				return true;
+			});
+	}
 
 	// Only setup rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
@@ -638,21 +572,24 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		}
 	}
 
-	m_pImpl->m_RenderingExecutionTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Execution Task", ITask::Type::Recurrent, 2), [&]()
-		{
-			if (Get<HIDService>()->IsResizing())
+	if (!m_pImpl->m_initConfig.isHeadless)
+	{
+		m_pImpl->m_RenderingExecutionTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Rendering Execution Task", ITask::Type::Recurrent, 2), [&]()
+			{
+				if (Get<HIDService>()->IsResizing())
+					return true;
+
+				auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
+
+				Get<FrameManagementService>()->Update();
+
+				auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch();
+
+				m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+
 				return true;
-
-			auto l_tickStartTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-
-			m_pImpl->m_GraphicsService->Update();
-
-			auto l_tickEndTime = Get<Timer>()->GetCurrentTimeFromEpoch();
-
-			m_pImpl->m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
-
-			return true;
-		});
+			});
+	}
 
 	m_pImpl->m_ObjectStatus = ObjectStatus::Created;
 	Log(Success, "Engine setup finished.");
@@ -673,10 +610,10 @@ bool Engine::Initialize()
 
 	SystemInit(LightSimulationService);
 	SystemInit(CameraService);
-	m_pImpl->m_GraphicsService->Initialize();
 
 	// Only initialize rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
+		Get<FrameManagementService>()->Initialize();
 		SystemInit(TemplateAssetService);
 		SystemInit(PerFrameDataService);
 		SystemInit(LightDataService);
@@ -789,12 +726,9 @@ bool Engine::Terminate()
 		SystemTerm(LightDataService);
 		SystemTerm(PerFrameDataService);
 		SystemTerm(TemplateAssetService);
-	}
-	
-	if (!m_pImpl->m_GraphicsService->Terminate())
-	{
-		Log(Error, "GraphicsService can't be terminated!");
-		return false;
+
+		Get<FrameManagementService>()->Terminate();
+		Get<GraphicsResourceService>()->Terminate();
 	}
 
 	SystemTerm(CameraService);
@@ -843,11 +777,6 @@ ObjectStatus Engine::GetStatus()
 InitConfig Engine::getInitConfig()
 {
 	return m_pImpl->m_initConfig;
-}
-
-IGraphicsService* Engine::getGraphicsService()
-{
-	return m_pImpl->m_GraphicsService.get();
 }
 
 IWindowService* Engine::getWindowService()

@@ -59,7 +59,7 @@ namespace Inno
 	
 	class DX12DescriptorHeapAccessor
 	{
-		friend class DX12GraphicsService;
+		friend struct DX12Context;
 		
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetHeap() const { return m_Heap; }
@@ -67,6 +67,7 @@ namespace Inno
 		const DX12DescriptorHeapAccessorDesc& GetDesc() const { return m_Desc; }
 		const DescriptorHandle& GetFirstHandle() const { return m_FirstHandle; }
 		DescriptorHandle GetNewHandle();
+		void Reset() { m_Heap = nullptr; }
 
 	private:
 		ComPtr<ID3D12DescriptorHeap> m_Heap = 0;

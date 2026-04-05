@@ -25,7 +25,6 @@ namespace Inno
 	};
 
 	class IWindowService;
-	class IGraphicsService;
 
 	class EngineImpl;
 	class Engine
@@ -75,8 +74,6 @@ namespace Inno
 		}
 
 	private:
-		IGraphicsService* getGraphicsService();
-
 		InitConfig ParseInitConfig(const std::string& arg);
 		bool CreateServices(void* appHook, void* extraHook, char* pScmdline);
 		bool ExecuteDefaultTask();
@@ -84,10 +81,9 @@ namespace Inno
 		template<typename T>
 		T* GetSystemWithDependencies();
 		void ResolveDependencies(const std::vector<std::type_index>& dependencies);
-		
+
 		// Platform-specific system creation helpers
 		IWindowService* CreateWindowSystem(bool isHeadless);
-		IGraphicsService* CreateGraphicsService(bool isHeadless, GraphicsService graphicsServiceType);
 
 		EngineImpl* m_pImpl;
 

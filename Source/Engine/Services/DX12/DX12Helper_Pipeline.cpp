@@ -3,7 +3,7 @@
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/IOService.h"
-#include "DX12GraphicsService.h"
+#include "DX12Headers.h"
 
 #include "../../Engine.h"
 

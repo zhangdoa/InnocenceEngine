@@ -15,7 +15,6 @@ target_link_libraries(Engine GraphicsServiceCommon)
 
 # Always link headless systems (platform-agnostic)
 target_link_libraries(Engine HeadlessWindowService)
-target_link_libraries(Engine HeadlessGraphicsService)
 
 if (INNO_RENDERER_DIRECTX)
 target_link_libraries(Engine DX12GraphicsService)
