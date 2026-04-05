@@ -48,6 +48,18 @@ void TextureResourceService::Initialize(TextureComponent* texture, void* texture
 	Log(Verbose, "TextureComponent ", texture->m_InstanceName, " queued for deferred initialization");
 }
 
+bool TextureResourceService::InitializeSynchronous(TextureComponent* texture, void* textureData)
+{
+	if (texture->m_ObjectStatus == ObjectStatus::Activated)
+		return true;
+
+	bool l_result = InitializeImpl(texture, textureData);
+	if (l_result)
+		texture->m_ObjectStatus = ObjectStatus::Activated;
+
+	return l_result;
+}
+
 bool TextureResourceService::InitializeComponents()
 {
 	while (m_DeferredQueue.size() > 0)

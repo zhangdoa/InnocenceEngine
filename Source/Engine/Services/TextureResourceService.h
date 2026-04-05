@@ -27,6 +27,7 @@ namespace Inno
 		TextureComponent* Find(const char* name);
 
 		void Initialize(TextureComponent* texture, void* textureData = nullptr, EntityID owner = INVALID_ENTITY);
+		bool InitializeSynchronous(TextureComponent* texture, void* textureData);
 		bool InitializeComponents();
 		bool OnSceneUnloading();
 
