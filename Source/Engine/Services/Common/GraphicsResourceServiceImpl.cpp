@@ -80,7 +80,6 @@ bool GraphicsResourceService::Terminate()
 
 bool GraphicsResourceService::InitializeImpl(MaterialComponent* material)
 {
-	material->m_GPUResourceType = GPUResourceType::Material;
 	return true;
 }
 
