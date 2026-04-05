@@ -858,10 +858,18 @@ bool DX12FrameManagementService::CreateSwapChain()
 
     m_swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
+    auto l_windowService = g_Engine->getWindowService();
+    auto l_winWindowService = dynamic_cast<WinWindowService*>(l_windowService);
+    if (!l_winWindowService)
+    {
+        Log(Error, "CreateSwapChain: Window service is not a WinWindowService! Can't create swap chain for HWND.");
+        return false;
+    }
+
     IDXGISwapChain1* l_swapChain1;
     auto l_hResult = m_ctx->m_factory->CreateSwapChainForHwnd(
         m_ctx->m_directCommandQueue.Get(),
-        reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle(),
+        l_winWindowService->GetWindowHandle(),
         &m_swapChainDesc,
         nullptr,
         nullptr,
@@ -988,16 +996,7 @@ bool DX12FrameManagementService::BeginFrame()
 
     g_Engine->Get<CommandListResourceService>()->ForEach([this](CommandListComponent* cl)
     {
-        if (cl && cl->m_ObjectStatus == ObjectStatus::Activated)
-        {
-            Open(cl, cl->m_Type, nullptr);
-            Close(cl, cl->m_Type);
-        }
-    });
-
-    g_Engine->Get<CommandListResourceService>()->ForEach([this](CommandListComponent* cl)
-    {
-        if (cl && cl->m_ObjectStatus == ObjectStatus::Activated)
+        if (cl && cl->m_ObjectStatus == ObjectStatus::Activated && cl->m_CommandList)
         {
             Open(cl, cl->m_Type, nullptr);
             Close(cl, cl->m_Type);
