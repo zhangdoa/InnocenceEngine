@@ -10,61 +10,34 @@ This plan implements the Sidecar Editor architecture, enabling a modern web-base
 ### Phase 1: Engine Integration & Shared Memory
 
 - [x] **Task 1: Engine "Sidecar" Mode**
-    - [x] Step 1: Add `Sidecar` to `EngineMode` enum in `Source/Engine/Engine.h`.
-    - [x] Step 2: Update command line parsing for `-sidecar` flag in `Source/Engine/Engine.cpp`.
-    - [x] Step 3: Run regression tests to ensure no regressions.
-    - [x] Step 4: Commit.
-
 - [x] **Task 2: Electron + Vue 3 Boilerplate**
-    - [x] Step 1: Initialize NPM project in `Source/Editor-Next`.
-    - [x] Step 2: Install `electron`, `vue`, `vite`.
-    - [x] Step 3: Create basic `main.js` (spawn engine) and `App.vue`.
-    - [x] Step 4: Commit.
-
 - [x] **Task 3: EditorService Interface**
-    - [x] Step 1: Create `EditorService` class in `Source/Engine/Services/EditorService.h`.
-    - [x] Step 2: Implement stubs in `Source/Engine/Services/EditorService.cpp`.
-    - [x] Step 3: Register service in `Source/Engine/Engine.cpp` (only if `engineMode == Sidecar`).
-    - [x] Step 4: Update `Source/Engine/CMakeLists.txt` to include new files.
-    - [x] Step 5: Commit.
-
 - [x] **Task 4: Shared Handle for DX12**
-    - [x] Step 1: Update `DX12FrameManagementService.cpp` to generate shared handles.
-    - [x] Step 2: Commit.
 
 ### Phase 2: Inter-Process Communication (IPC)
 
-- [ ] **Task 5: WebSocket Server in Engine**
-    - [ ] Step 1: Add `ixwebsocket` (already in `Source/External/GitSubmodules/ixwebsocket`) to project.
-    - [ ] Step 2: Implement `EditorService::Initialize()` to start a WS server on port 8081.
-    - [ ] Step 3: Implement JSON message dispatcher.
-    - [ ] Step 4: Commit.
+- [x] **Task 5: WebSocket Server in Engine**
+- [x] **Task 6: Handshake Protocol**
 
-- [ ] **Task 6: Handshake Protocol**
-    - [ ] Step 1: Implement `HELO` message in Editor (Vue) to connect to Engine.
-    - [ ] Step 2: Engine replies with `HELLO_REPLY` containing the `sharedHandle` address.
-    - [ ] Step 3: Commit.
+### Phase 3: Resource Sharing & Layout (Current)
 
-### Phase 3: Resource Sharing (GPU)
+- [x] **Task 7: DX12 Shared Texture in Electron**
+- [x] **Task 8: Dock-Based Panel System**
+    - [x] Step 1: Install `dockview-vue`.
+    - [x] Step 2: Implement `HierarchyPanel` with engine syncing.
+    - [x] Step 3: Implement `AssetPanel` with native FS access.
+    - [x] Step 4: Implement `PropertyPanel` shell.
+    - [x] Step 5: Implement `ViewportPanel` with shared texture rendering.
 
-- [ ] **Task 7: DX12 Shared Texture in Electron**
-    - [ ] Step 1: Use `electron-directx-sharing` or implement a small native node module to open the shared handle.
-    - [ ] Step 2: Render the shared texture into a Vue component.
-    - [ ] Step 3: Commit.
+### Phase 4: Advanced Features (Next)
 
-## Task Details (Selected)
-
-### Task 4 Step 1: Shared Handle Generation
-```cpp
-// Source/Engine/Services/DX12/DX12FrameManagementService.cpp
-#include <d3d12.h>
-// ... in AssignSwapChainImages or similar ...
-HANDLE sharedHandle = nullptr;
-m_ctx->m_device->CreateSharedHandle(m_ViewportTexture.Get(), nullptr, GENERIC_ALL, nullptr, &sharedHandle);
-```
-
-- [x] **Step 2: Commit**
-```bash
-git add Source/Engine/Services/DX12/DX12FrameManagementService.cpp
-git commit -m "feat: add shared handle generation for dx12"
-```
+- [ ] **Task 9: Component Serialization**
+    - [ ] Step 1: Implement generic component serialization in `EditorService`.
+    - [ ] Step 2: Sync selected entity properties to `PropertyPanel`.
+- [ ] **Task 10: Input Redirection**
+    - [ ] Step 1: Capture mouse/keyboard in `ViewportPanel`.
+    - [ ] Step 2: Forward events via WebSocket to `HIDService`.
+- [ ] **Task 11: Scene Manipulation**
+    - [ ] Step 1: Implement `UPDATE_ENTITY` message to change transforms from UI.
+- [ ] **Task 12: Distribution**
+    - [ ] Step 1: Add `electron-builder` for standalone EXE.

@@ -1,6 +1,7 @@
 #include "EditorService.h"
 #include "../Engine.h"
 #include "../Common/LogService.h"
+#include "EntityRegistry.h"
 #include "FrameManagementService.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 
@@ -58,6 +59,48 @@ bool EditorService::Initialize()
 
 							webSocket.send(l_reply.dump());
 							Log(Success, "EditorService: Sent HELLO_REPLY with sharedHandle: ", l_sharedHandle, " size: ", l_width, "x", l_height);
+						}
+						else if (l_type == "GET_SCENE")
+						{
+							auto l_registry = g_Engine->Get<EntityRegistry>();
+							auto l_ids = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+							
+							json l_entities = json::array();
+							for (auto l_id : l_ids)
+							{
+								json l_entity;
+								l_entity["id"] = (uint32_t)l_id;
+								l_entity["name"] = l_registry->GetName(l_id);
+								l_entities.push_back(l_entity);
+							}
+
+							json l_reply;
+							l_reply["type"] = "SCENE_DATA";
+							l_reply["entities"] = l_entities;
+							webSocket.send(l_reply.dump());
+						}
+						else if (l_type == "GET_ENTITY_DETAILS")
+						{
+							if (l_json.contains("id"))
+							{
+								EntityID l_id = (EntityID)l_json["id"].get<uint32_t>();
+								auto l_registry = g_Engine->Get<EntityRegistry>();
+								
+								if (l_registry->IsValid(l_id))
+								{
+									json l_details;
+									l_details["id"] = (uint32_t)l_id;
+									l_details["name"] = l_registry->GetName(l_id);
+									
+									// Placeholder for components
+									l_details["components"] = json::array();
+									
+									json l_reply;
+									l_reply["type"] = "ENTITY_DETAILS";
+									l_reply["details"] = l_details;
+									webSocket.send(l_reply.dump());
+								}
+							}
 						}					}
 				}
 				catch (const std::exception& e)
