@@ -1,6 +1,14 @@
 #include "../FrameManagementService.h"
-#include "../GraphicsResourceService.h"
 #include "../GraphicsHardwareService.h"
+#include "../GraphicsResourceService.h"
+#include "../CommandListResourceService.h"
+#include "../SamplerResourceService.h"
+#include "../ShaderProgramResourceService.h"
+#include "../TextureResourceService.h"
+#include "../GPUBufferResourceService.h"
+#include "../MeshResourceService.h"
+#include "../MaterialResourceService.h"
+#include "../RenderPassResourceService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -27,16 +35,16 @@ bool FrameManagementService::Setup(IServiceConfig* systemConfig)
 	m_GlobalGraphicsCommandLists.resize(m_swapChainImageCount);
 	for (size_t i = 0; i < m_GlobalGraphicsCommandLists.size(); i++)
 	{
-		auto l_commandList = m_ResourceService->AddCommandListComponent(("GlobalGraphicsCommandList_" + std::to_string(i)).c_str());
-		m_ResourceService->Initialize(l_commandList);
+		auto l_commandList = g_Engine->Get<CommandListResourceService>()->Add(("GlobalGraphicsCommandList_" + std::to_string(i)).c_str());
+		g_Engine->Get<CommandListResourceService>()->Initialize(l_commandList);
 		m_GlobalGraphicsCommandLists[i] = l_commandList;
 	}
 
 	Log(Success, "Global Graphics CommandLists have been created.");
 
-	m_SwapChainRenderPassComp = m_ResourceService->AddRenderPassComponent("SwapChain/");
-	m_SwapChainShaderProgramComp = m_ResourceService->AddShaderProgramComponent("SwapChain/");
-	m_SwapChainSamplerComp = m_ResourceService->AddSamplerComponent("SwapChain/");
+	m_SwapChainRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SwapChain/");
+	m_SwapChainShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SwapChain/");
+	m_SwapChainSamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SwapChain/");
 
 	// m_GlobalSemaphore is created by the DX12 backend during CreateHardwareResources
 	// (CreateSyncPrimitives sets up fence events on it), so we don't create a new one here.
@@ -57,8 +65,8 @@ bool FrameManagementService::Initialize()
 	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
 
-	m_ResourceService->Initialize(m_SwapChainShaderProgramComp);
-	m_ResourceService->Initialize(m_SwapChainSamplerComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_SwapChainShaderProgramComp);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SwapChainSamplerComp);
 
 	InitializeSwapChainRenderPassComponent();
 
@@ -110,7 +118,7 @@ bool FrameManagementService::InitializeSwapChainRenderPassComponent()
 
 	l_swapChainRP->m_ShaderProgram = m_SwapChainShaderProgramComp;
 
-	m_ResourceService->Initialize(l_swapChainRP);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(l_swapChainRP);
 
 	return true;
 }
@@ -125,7 +133,12 @@ bool FrameManagementService::Update()
 
 	BeginFrame();
 
-	m_ResourceService->InitializeComponents();
+	g_Engine->Get<GraphicsResourceService>()->InitializeComponents();
+	g_Engine->Get<MeshResourceService>()->InitializeComponents();
+	g_Engine->Get<TextureResourceService>()->InitializeComponents();
+	g_Engine->Get<MaterialResourceService>()->InitializeComponents();
+	g_Engine->Get<GPUBufferResourceService>()->InitializeComponents();
+	g_Engine->Get<RenderPassResourceService>()->InitializeComponents();
 
 	m_UploadHeapPreparationCallback();
 
@@ -174,9 +187,9 @@ bool FrameManagementService::Update()
 bool FrameManagementService::Terminate()
 {
 	auto l_result = true;
-	l_result &= m_ResourceService->Delete(m_SwapChainSamplerComp);
-	l_result &= m_ResourceService->Delete(m_SwapChainShaderProgramComp);
-	l_result &= m_ResourceService->Delete(m_SwapChainRenderPassComp);
+	l_result &= g_Engine->Get<SamplerResourceService>()->Delete(m_SwapChainSamplerComp);
+	l_result &= g_Engine->Get<ShaderProgramResourceService>()->Delete(m_SwapChainShaderProgramComp);
+	l_result &= g_Engine->Get<RenderPassResourceService>()->Delete(m_SwapChainRenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -288,7 +301,25 @@ bool FrameManagementService::PrepareGlobalCommands()
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	Open(l_commandList, GPUEngineType::Graphics);
 
-	for (auto i : m_ResourceService->GetGPUBufferPointers())
+	auto l_gpuBufferService = g_Engine->Get<GPUBufferResourceService>();
+	l_gpuBufferService->ForEach([&](GPUBufferComponent* i)
+	{
+		if (i->m_ObjectStatus != ObjectStatus::Activated)
+			return;
+		if (i->m_MappedMemories.size() == 0)
+			return;
+
+		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
+		if (l_mappedMemory->m_NeedUploadToGPU)
+		{
+			TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
+			l_gpuBufferService->UploadToGPU(l_commandList, i);
+			TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
+			l_mappedMemory->m_NeedUploadToGPU = false;
+		}
+	});
+
+	for (auto i : g_Engine->Get<GraphicsResourceService>()->GetGPUBufferPointers())
 	{
 		if (i->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
@@ -299,7 +330,7 @@ bool FrameManagementService::PrepareGlobalCommands()
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
 			TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
-			m_ResourceService->UploadToGPU(l_commandList, i);
+			g_Engine->Get<GraphicsResourceService>()->UploadToGPU(l_commandList, i);
 			TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
 			l_mappedMemory->m_NeedUploadToGPU = false;
 		}
@@ -390,18 +421,31 @@ bool FrameManagementService::ExecuteResize()
 
 bool FrameManagementService::PreResize()
 {
-	for (auto i : m_ResourceService->GetRenderPassPointers())
+	bool l_result = true;
+
+	g_Engine->Get<RenderPassResourceService>()->ForEach([&](RenderPassComponent* i)
+	{
+		if (i->m_ObjectStatus != ObjectStatus::Activated)
+			return;
+		if (!PreResize(i))
+		{
+			Log(Error, "Can't delete resources for ", i->m_InstanceName, " when resizing.");
+			l_result = false;
+		}
+	});
+
+	for (auto i : g_Engine->Get<GraphicsResourceService>()->GetRenderPassPointers())
 	{
 		if (i->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 		if (!PreResize(i))
 		{
 			Log(Error, "Can't delete resources for ", i->m_InstanceName, " when resizing.");
-			return false;
+			l_result = false;
 		}
 	}
 
-	return true;
+	return l_result;
 }
 
 bool FrameManagementService::PreResize(RenderPassComponent* renderPass)
@@ -409,7 +453,7 @@ bool FrameManagementService::PreResize(RenderPassComponent* renderPass)
 	if (!renderPass->m_RenderPassDesc.m_Resizable)
 		return true;
 
-	m_ResourceService->DeleteRenderTargets(renderPass);
+	g_Engine->Get<GraphicsResourceService>()->DeleteRenderTargets(renderPass);
 
 	return true;
 }
@@ -417,18 +461,31 @@ bool FrameManagementService::PreResize(RenderPassComponent* renderPass)
 bool FrameManagementService::PostResize()
 {
 	auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	for (auto i : m_ResourceService->GetRenderPassPointers())
+	bool l_result = true;
+
+	g_Engine->Get<RenderPassResourceService>()->ForEach([&](RenderPassComponent* i)
+	{
+		if (i->m_ObjectStatus != ObjectStatus::Activated)
+			return;
+		if (!PostResize(l_screenResolution, i))
+		{
+			Log(Error, "Can't resize ", i->m_InstanceName);
+			l_result = false;
+		}
+	});
+
+	for (auto i : g_Engine->Get<GraphicsResourceService>()->GetRenderPassPointers())
 	{
 		if (i->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
 		if (!PostResize(l_screenResolution, i))
 		{
 			Log(Error, "Can't resize ", i->m_InstanceName);
-			return false;
+			l_result = false;
 		}
 	}
 
-	return true;
+	return l_result;
 }
 
 bool FrameManagementService::PostResize(const TVec2<uint32_t>& screenResolution, RenderPassComponent* renderPass)
@@ -442,14 +499,14 @@ bool FrameManagementService::PostResize(const TVec2<uint32_t>& screenResolution,
 	renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)screenResolution.x;
 	renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)screenResolution.y;
 
-	m_ResourceService->CreateOutputMergerTargets(renderPass);
-	m_ResourceService->InitializeOutputMergerTargets(renderPass);
+	auto l_grsService = g_Engine->Get<GraphicsResourceService>();
+	l_grsService->CreateOutputMergerTargets(renderPass);
+	l_grsService->InitializeOutputMergerTargets(renderPass);
+	l_grsService->OnOutputMergerTargetsCreated(renderPass);
 
-	m_ResourceService->OnOutputMergerTargetsCreated(renderPass);
+	renderPass->m_PipelineStateObject = l_grsService->AddPipelineStateObject();
 
-	renderPass->m_PipelineStateObject = m_ResourceService->AddPipelineStateObject();
-
-	m_ResourceService->CreatePipelineStateObject(renderPass);
+	l_grsService->CreatePipelineStateObject(renderPass);
 
 	if (renderPass->m_OnResize)
 		renderPass->m_OnResize();

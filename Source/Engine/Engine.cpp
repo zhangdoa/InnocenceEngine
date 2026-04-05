@@ -384,7 +384,6 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 
 		l_hwService->SetResourceService(l_rsService);
 		l_hwService->SetFrameManagementService(l_fmService);
-		l_fmService->SetResourceService(l_rsService);
 		l_fmService->SetHardwareService(l_hwService);
 
 		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;

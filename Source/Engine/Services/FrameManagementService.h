@@ -9,7 +9,6 @@
 
 namespace Inno
 {
-	class GraphicsResourceService;
 	class GraphicsHardwareService;
 	struct GPUResourceComponent;
 	class TextureComponent;
@@ -27,7 +26,6 @@ namespace Inno
 		bool Terminate() override;
 		ObjectStatus GetStatus() override { return m_ObjectStatus; }
 
-		void SetResourceService(GraphicsResourceService* resourceService) { m_ResourceService = resourceService; }
 		void SetHardwareService(GraphicsHardwareService* hardwareService) { m_HardwareService = hardwareService; }
 
 		// Frame queries (concrete - reads local data)
@@ -89,7 +87,6 @@ namespace Inno
 		virtual bool PrepareRayTracing(CommandListComponent* commandList) { return false; }
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
-		GraphicsResourceService* m_ResourceService = nullptr;
 		GraphicsHardwareService* m_HardwareService = nullptr;
 
 		// Frame counters (moved from IGraphicsService)

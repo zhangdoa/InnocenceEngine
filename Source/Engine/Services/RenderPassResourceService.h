@@ -42,9 +42,10 @@ namespace Inno
 
 		virtual Math::Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) { return Math::Vec4(); }
 
-	protected:
 		virtual bool OnOutputMergerTargetsCreated(RenderPassComponent* renderPass) { return false; }
 		virtual bool CreatePipelineStateObject(RenderPassComponent* renderPass) { return false; }
+
+	protected:
 		virtual bool CreateFenceEvents(RenderPassComponent* renderPass) { return false; }
 
 		NamedObjectPool<RenderPassComponent> m_Pool;
