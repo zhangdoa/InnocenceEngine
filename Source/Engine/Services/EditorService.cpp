@@ -3,6 +3,8 @@
 #include "../Common/LogService.h"
 #include "EntityRegistry.h"
 #include "FrameManagementService.h"
+#include "../Component/TransformComponent.h"
+#include "../Component/LightComponent.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 
 #include <ixwebsocket/IXWebSocketServer.h>
@@ -12,6 +14,10 @@ using namespace Inno;
 
 EditorService::EditorService() = default;
 EditorService::~EditorService() = default;
+
+// Helper to serialize Vec3/Vec4
+static json SerializeVec(const Vec3& v) { return { v.x, v.y, v.z }; }
+static json SerializeVec(const Vec4& v) { return { v.x, v.y, v.z, v.w }; }
 
 bool EditorService::Setup(IServiceConfig* config)
 {
@@ -92,8 +98,34 @@ bool EditorService::Initialize()
 									l_details["id"] = (uint32_t)l_id;
 									l_details["name"] = l_registry->GetName(l_id);
 									
-									// Placeholder for components
-									l_details["components"] = json::array();
+									json l_components = json::array();
+									
+									// Transform
+									auto l_transform = l_registry->Get<TransformComponent>(l_id);
+									if (l_transform)
+									{
+										json l_comp;
+										l_comp["type"] = "TransformComponent";
+										l_comp["pos"] = SerializeVec(l_transform->m_LocalPos);
+										l_comp["rot"] = SerializeVec(l_transform->m_LocalRot);
+										l_comp["scale"] = SerializeVec(l_transform->m_LocalScale);
+										l_components.push_back(l_comp);
+									}
+
+									// Light
+									auto l_light = l_registry->Get<LightComponent>(l_id);
+									if (l_light)
+									{
+										json l_comp;
+										l_comp["type"] = "LightComponent";
+										l_comp["color"] = SerializeVec(l_light->m_RGBColor);
+										l_comp["shape"] = SerializeVec(l_light->m_Shape);
+										l_comp["lightType"] = (int)l_light->m_LightType;
+										l_comp["intensity"] = l_light->m_LuminousFlux;
+										l_components.push_back(l_comp);
+									}
+									
+									l_details["components"] = l_components;
 									
 									json l_reply;
 									l_reply["type"] = "ENTITY_DETAILS";
@@ -101,7 +133,42 @@ bool EditorService::Initialize()
 									webSocket.send(l_reply.dump());
 								}
 							}
-						}					}
+						}
+						else if (l_type == "UPDATE_ENTITY_PROPERTY")
+						{
+							if (l_json.contains("id") && l_json.contains("component") && l_json.contains("property") && l_json.contains("value"))
+							{
+								EntityID l_id = (EntityID)l_json["id"].get<uint32_t>();
+								std::string l_compType = l_json["component"];
+								std::string l_prop = l_json["property"];
+								auto l_val = l_json["value"];
+
+								auto l_registry = g_Engine->Get<EntityRegistry>();
+								if (l_registry->IsValid(l_id))
+								{
+									if (l_compType == "TransformComponent")
+									{
+										auto l_transform = l_registry->Get<TransformComponent>(l_id);
+										if (l_transform)
+										{
+											if (l_prop == "pos") { l_transform->m_LocalPos = Vec3(l_val[0], l_val[1], l_val[2]); }
+											else if (l_prop == "scale") { l_transform->m_LocalScale = Vec3(l_val[0], l_val[1], l_val[2]); }
+											// TODO: Rotation (Quat)
+										}
+									}
+									else if (l_compType == "LightComponent")
+									{
+										auto l_light = l_registry->Get<LightComponent>(l_id);
+										if (l_light)
+										{
+											if (l_prop == "intensity") { l_light->m_LuminousFlux = l_val.get<float>(); }
+											else if (l_prop == "color") { l_light->m_RGBColor = Vec4(l_val[0], l_val[1], l_val[2], 1.0f); }
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 				catch (const std::exception& e)
 				{

@@ -10,68 +10,71 @@
         <span class="id">ID: {{ selectedEntity.id }}</span>
       </div>
 
-      <!-- Transform Component -->
-      <div class="component-section">
-        <div class="component-header">Transform</div>
-        <div class="property-group">
-          <label>Position</label>
-          <div class="vector3">
-            <div class="input-field"><span>X</span><input type="number" v-model="transform.pos.x" /></div>
-            <div class="input-field"><span>Y</span><input type="number" v-model="transform.pos.y" /></div>
-            <div class="input-field"><span>Z</span><input type="number" v-model="transform.pos.z" /></div>
-          </div>
-        </div>
-        <div class="property-group">
-          <label>Rotation</label>
-          <div class="vector3">
-            <div class="input-field"><span>X</span><input type="number" v-model="transform.rot.x" /></div>
-            <div class="input-field"><span>Y</span><input type="number" v-model="transform.rot.y" /></div>
-            <div class="input-field"><span>Z</span><input type="number" v-model="transform.rot.z" /></div>
-          </div>
-        </div>
-        <div class="property-group">
-          <label>Scale</label>
-          <div class="vector3">
-            <div class="input-field"><span>X</span><input type="number" v-model="transform.scale.x" /></div>
-            <div class="input-field"><span>Y</span><input type="number" v-model="transform.scale.y" /></div>
-            <div class="input-field"><span>Z</span><input type="number" v-model="transform.scale.z" /></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Placeholder for other components -->
-      <div v-for="comp in components" :key="comp.type" class="component-section">
+      <div v-for="comp in selectedEntity.components" :key="comp.type" class="component-section">
         <div class="component-header">{{ comp.type }}</div>
-        <div class="no-props">Component data loading...</div>
+        
+        <!-- Transform Component -->
+        <template v-if="comp.type === 'TransformComponent'">
+          <div class="property-group">
+            <label>Position</label>
+            <div class="vector3">
+              <div class="input-field"><span>X</span><input type="number" v-model="comp.pos[0]" @change="updateProp(comp.type, 'pos', comp.pos)" step="0.1" /></div>
+              <div class="input-field"><span>Y</span><input type="number" v-model="comp.pos[1]" @change="updateProp(comp.type, 'pos', comp.pos)" step="0.1" /></div>
+              <div class="input-field"><span>Z</span><input type="number" v-model="comp.pos[2]" @change="updateProp(comp.type, 'pos', comp.pos)" step="0.1" /></div>
+            </div>
+          </div>
+          <div class="property-group">
+            <label>Scale</label>
+            <div class="vector3">
+              <div class="input-field"><span>X</span><input type="number" v-model="comp.scale[0]" @change="updateProp(comp.type, 'scale', comp.scale)" step="0.1" /></div>
+              <div class="input-field"><span>Y</span><input type="number" v-model="comp.scale[1]" @change="updateProp(comp.type, 'scale', comp.scale)" step="0.1" /></div>
+              <div class="input-field"><span>Z</span><input type="number" v-model="comp.scale[2]" @change="updateProp(comp.type, 'scale', comp.scale)" step="0.1" /></div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Light Component -->
+        <template v-else-if="comp.type === 'LightComponent'">
+          <div class="property-group">
+            <label>Color (RGB)</label>
+            <div class="vector3">
+              <div class="input-field"><span>R</span><input type="number" v-model="comp.color[0]" @change="updateProp(comp.type, 'color', comp.color)" min="0" max="1" step="0.05" /></div>
+              <div class="input-field"><span>G</span><input type="number" v-model="comp.color[1]" @change="updateProp(comp.type, 'color', comp.color)" min="0" max="1" step="0.05" /></div>
+              <div class="input-field"><span>B</span><input type="number" v-model="comp.color[2]" @change="updateProp(comp.type, 'color', comp.color)" min="0" max="1" step="0.05" /></div>
+            </div>
+          </div>
+          <div class="property-group">
+            <label>Intensity (lm)</label>
+            <div class="input-field full">
+              <input type="number" v-model="comp.intensity" @change="updateProp(comp.type, 'intensity', comp.intensity)" step="10" />
+            </div>
+          </div>
+        </template>
+
+        <div v-else class="no-props">Component properties not yet implemented</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, defineProps, reactive, watch } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 
 const props = defineProps({
-  selectedEntity: Object
+  selectedEntity: Object,
+  onUpdateProperty: Function
 })
 
-const transform = reactive({
-  pos: { x: 0, y: 0, z: 0 },
-  rot: { x: 0, y: 0, z: 0 },
-  scale: { x: 1, y: 1, z: 1 }
-})
-
-const components = ref([
-  { type: 'MeshComponent' },
-  { type: 'MaterialComponent' }
-])
-
-watch(() => props.selectedEntity, (newVal) => {
-  if (newVal) {
-    // In a real impl, we would fetch this data from the engine
-    console.log('Fetching properties for', newVal.id)
+const updateProp = (component, property, value) => {
+  if (props.onUpdateProperty) {
+    props.onUpdateProperty({
+      id: props.selectedEntity.id,
+      component,
+      property,
+      value
+    })
   }
-})
+}
 </script>
 
 <style scoped>
@@ -82,6 +85,7 @@ watch(() => props.selectedEntity, (newVal) => {
   background: #252526;
   color: #ccc;
   overflow-y: auto;
+  font-family: sans-serif;
 }
 
 .panel-header {
@@ -111,14 +115,14 @@ watch(() => props.selectedEntity, (newVal) => {
 }
 
 .entity-info h2 {
-  font-size: 16px;
+  font-size: 14px;
   margin: 0;
   color: #fff;
 }
 
 .entity-info .id {
-  font-size: 10px;
-  opacity: 0.5;
+  font-size: 9px;
+  opacity: 0.4;
 }
 
 .component-section {
@@ -126,14 +130,16 @@ watch(() => props.selectedEntity, (newVal) => {
   background: #2d2d2d;
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid #333;
 }
 
 .component-header {
   padding: 6px 10px;
   background: #37373d;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   color: #eee;
+  border-bottom: 1px solid #333;
 }
 
 .property-group {
@@ -142,9 +148,10 @@ watch(() => props.selectedEntity, (newVal) => {
 
 .property-group label {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   margin-bottom: 4px;
-  opacity: 0.8;
+  opacity: 0.6;
+  text-transform: uppercase;
 }
 
 .vector3 {
@@ -161,12 +168,15 @@ watch(() => props.selectedEntity, (newVal) => {
   padding: 2px 4px;
 }
 
+.input-field.full { width: 100%; }
+
 .input-field span {
   font-size: 9px;
   font-weight: bold;
   margin-right: 4px;
-  opacity: 0.5;
+  opacity: 0.3;
   width: 10px;
+  text-align: center;
 }
 
 .input-field input {
@@ -178,9 +188,16 @@ watch(() => props.selectedEntity, (newVal) => {
   outline: none;
 }
 
+.input-field input::-webkit-inner-spin-button,
+.input-field input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .no-props {
   padding: 10px;
-  font-size: 11px;
-  opacity: 0.5;
+  font-size: 10px;
+  opacity: 0.4;
+  text-align: center;
 }
 </style>

@@ -19,25 +19,30 @@ This plan implements the Sidecar Editor architecture, enabling a modern web-base
 - [x] **Task 5: WebSocket Server in Engine**
 - [x] **Task 6: Handshake Protocol**
 
-### Phase 3: Resource Sharing & Layout (Current)
+### Phase 3: Resource Sharing & Layout
 
 - [x] **Task 7: DX12 Shared Texture in Electron**
 - [x] **Task 8: Dock-Based Panel System**
-    - [x] Step 1: Install `dockview-vue`.
-    - [x] Step 2: Implement `HierarchyPanel` with engine syncing.
-    - [x] Step 3: Implement `AssetPanel` with native FS access.
-    - [x] Step 4: Implement `PropertyPanel` shell.
-    - [x] Step 5: Implement `ViewportPanel` with shared texture rendering.
 
-### Phase 4: Advanced Features (Next)
+### Phase 4: Migration of Features (Current)
 
-- [ ] **Task 9: Component Serialization**
-    - [ ] Step 1: Implement generic component serialization in `EditorService`.
-    - [ ] Step 2: Sync selected entity properties to `PropertyPanel`.
-- [ ] **Task 10: Input Redirection**
-    - [ ] Step 1: Capture mouse/keyboard in `ViewportPanel`.
-    - [ ] Step 2: Forward events via WebSocket to `HIDService`.
-- [ ] **Task 11: Scene Manipulation**
-    - [ ] Step 1: Implement `UPDATE_ENTITY` message to change transforms from UI.
-- [ ] **Task 12: Distribution**
+- [x] **Task 9: Scene Hierarchy Syncing**
+    - [x] Step 1: Implement `GET_SCENE` in `EditorService`.
+    - [x] Step 2: Implement `HierarchyPanel` with real-time entity list.
+- [x] **Task 10: Property Editor Syncing**
+    - [x] Step 1: Implement `GET_ENTITY_DETAILS` in `EditorService`.
+    - [x] Step 2: Serialize `TransformComponent` and `LightComponent`.
+    - [x] Step 3: Implement `PropertyPanel` with two-way binding.
+- [x] **Task 11: Real Asset Browser**
+    - [x] Step 1: Implement `AssetPanel` using Node.js `fs` module to browse `Data/`.
+- [ ] **Task 12: Viewport Refinement & Input**
+    - [ ] Step 1: Fix shared texture stability/crashes.
+    - [ ] Step 2: Capture mouse/keyboard in `ViewportPanel` and forward to `HIDService`.
+
+### Phase 5: Polish & Distribution
+
+- [ ] **Task 13: Generic Component Reflection**
+    - [ ] Step 1: Leverage `Reflector` tool to generate JSON metadata for all components.
+    - [ ] Step 2: Auto-generate UI fields in `PropertyPanel` based on metadata.
+- [ ] **Task 14: Distribution**
     - [ ] Step 1: Add `electron-builder` for standalone EXE.
