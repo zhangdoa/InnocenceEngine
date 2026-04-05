@@ -11,13 +11,14 @@
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderStage = ShaderStage::RayGen | ShaderStage::ClosestHit | ShaderStage::AnyHit | ShaderStage::Miss;
 
@@ -178,7 +179,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 bool GPUPathTracerPass::Initialize()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	l_rsService->Initialize(m_RayTracingSPC);
@@ -232,7 +233,7 @@ bool GPUPathTracerPass::Initialize()
 bool GPUPathTracerPass::Update()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	const auto& l_perFrameCB = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 
@@ -264,7 +265,7 @@ bool GPUPathTracerPass::Update()
 bool GPUPathTracerPass::Terminate()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_MeshOffsetBuffer)
 		l_rsService->Delete(m_MeshOffsetBuffer);
@@ -314,47 +315,47 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 		return false;
 
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_perFrameBuffer  = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_materialBuffer  = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 	auto l_resolution      = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
 	// Graphics CL: transition AccumulationBuffer to ReadWrite
-	l_hwService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Graphics, 0);
-	l_hwService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
-	l_hwService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Graphics);
+	l_fmService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Graphics, 0);
+	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Graphics);
 
 	// Compute CL: bind and dispatch rays
-	l_hwService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Compute, 0);
-	l_hwService->BindRenderPassComponent(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
+	l_fmService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Compute, 0);
+	l_fmService->BindRenderPassComponent(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
 
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_perFrameBuffer,                 0);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_FrameCountCB,                   1);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_rsService->GetTLASBuffer(), 2);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_materialBuffer,                  3);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaVertexBuffer,                4);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaIndexBuffer,                 5);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MeshOffsetBuffer,                6);
-	l_hwService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_AccumulationBuffer,              7);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_perFrameBuffer,                 0);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_FrameCountCB,                   1);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_rsService->GetTLASBuffer(), 2);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_materialBuffer,                  3);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaVertexBuffer,                4);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaIndexBuffer,                 5);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MeshOffsetBuffer,                6);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_AccumulationBuffer,              7);
 
-	l_hwService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
-	l_hwService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
+	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
+	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
 
 	// ToneMap CL
-	l_hwService->CommandListBegin(m_ToneMapRenderPassComp, m_ToneMapCommandList, 0);
-	l_hwService->TryToTransitState(m_AccumulationBuffer, m_ToneMapCommandList, Accessibility::ReadWrite, Accessibility::ReadOnly);
-	l_hwService->TryToTransitState(m_ToneMapOutput, m_ToneMapCommandList, Accessibility::ReadOnly, Accessibility::ReadWrite);
-	l_hwService->BindRenderPassComponent(m_ToneMapRenderPassComp, m_ToneMapCommandList);
+	l_fmService->CommandListBegin(m_ToneMapRenderPassComp, m_ToneMapCommandList, 0);
+	l_fmService->TryToTransitState(m_AccumulationBuffer, m_ToneMapCommandList, Accessibility::ReadWrite, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(m_ToneMapOutput, m_ToneMapCommandList, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	l_fmService->BindRenderPassComponent(m_ToneMapRenderPassComp, m_ToneMapCommandList);
 
-	l_hwService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, l_perFrameBuffer,    0);
-	l_hwService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, m_AccumulationBuffer, 1);
-	l_hwService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, m_ToneMapOutput,     2);
+	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, l_perFrameBuffer,    0);
+	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, m_AccumulationBuffer, 1);
+	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, m_ToneMapOutput,     2);
 
 	const uint32_t l_tileSize = 8;
 	uint32_t l_groupX = (l_resolution.x + l_tileSize - 1) / l_tileSize;
 	uint32_t l_groupY = (l_resolution.y + l_tileSize - 1) / l_tileSize;
-	l_hwService->Dispatch(m_ToneMapRenderPassComp, m_ToneMapCommandList, l_groupX, l_groupY, 1);
-	l_hwService->CommandListEnd(m_ToneMapRenderPassComp, m_ToneMapCommandList);
+	l_fmService->Dispatch(m_ToneMapRenderPassComp, m_ToneMapCommandList, l_groupX, l_groupY, 1);
+	l_fmService->CommandListEnd(m_ToneMapRenderPassComp, m_ToneMapCommandList);
 
 	return true;
 }
@@ -382,7 +383,7 @@ void GPUPathTracerPass::ResetAccumulation()
 void GPUPathTracerPass::RebuildGeometryBuffers()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_registry        = g_Engine->Get<EntityRegistry>();
 
 	auto& l_meshStorage = l_registry->Storage<MeshComponent>();

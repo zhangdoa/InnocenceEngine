@@ -18,9 +18,9 @@ bool FrameManagementService::Setup(IServiceConfig* systemConfig)
 {
 	m_swapChainImageCount = 3;
 
-	if (!CreateHardwareResources())
+	if (!CreateSwapChainResources())
 	{
-		Log(Error, "FrameManagementService: CreateHardwareResources() failed.");
+		Log(Error, "FrameManagementService: CreateSwapChainResources() failed.");
 		return false;
 	}
 
@@ -286,7 +286,7 @@ bool FrameManagementService::PrepareGlobalCommands()
 	auto l_currentFrame = m_CurrentFrame;
 
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
-	m_HardwareService->Open(l_commandList, GPUEngineType::Graphics);
+	Open(l_commandList, GPUEngineType::Graphics);
 
 	for (auto i : m_ResourceService->GetGPUBufferPointers())
 	{
@@ -298,16 +298,16 @@ bool FrameManagementService::PrepareGlobalCommands()
 		auto l_mappedMemory = i->m_MappedMemories[l_currentFrame];
 		if (l_mappedMemory->m_NeedUploadToGPU)
 		{
-			m_HardwareService->TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
+			TryToTransitState(i, l_commandList, Accessibility::ReadOnly, Accessibility::CopyDestination);
 			m_ResourceService->UploadToGPU(l_commandList, i);
-			m_HardwareService->TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
+			TryToTransitState(i, l_commandList, Accessibility::CopyDestination, Accessibility::ReadOnly);
 			l_mappedMemory->m_NeedUploadToGPU = false;
 		}
 	}
 
 	PrepareRayTracing(l_commandList);
 
-	m_HardwareService->Close(l_commandList, GPUEngineType::Graphics);
+	Close(l_commandList, GPUEngineType::Graphics);
 
 	return true;
 }
@@ -339,23 +339,23 @@ bool FrameManagementService::PrepareSwapChainCommands()
 	auto l_commandList = m_GlobalGraphicsCommandLists[l_currentFrame];
 	auto l_swapChainRP = m_SwapChainRenderPassComp;
 
-	m_HardwareService->CommandListBegin(l_swapChainRP, l_commandList, l_currentFrame);
+	CommandListBegin(l_swapChainRP, l_commandList, l_currentFrame);
 
-	m_HardwareService->TryToTransitState(reinterpret_cast<TextureComponent*>(l_userPipelineOutput), l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	m_HardwareService->BindRenderPassComponent(l_swapChainRP, l_commandList);
+	TryToTransitState(reinterpret_cast<TextureComponent*>(l_userPipelineOutput), l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	BindRenderPassComponent(l_swapChainRP, l_commandList);
 
-	m_HardwareService->ClearRenderTargets(l_swapChainRP, l_commandList);
+	ClearRenderTargets(l_swapChainRP, l_commandList);
 
-	m_HardwareService->BindGPUResource(l_swapChainRP, l_commandList, ShaderStage::Pixel, l_userPipelineOutput, 0);
-	m_HardwareService->BindGPUResource(l_swapChainRP, l_commandList, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
+	BindGPUResource(l_swapChainRP, l_commandList, ShaderStage::Pixel, l_userPipelineOutput, 0);
+	BindGPUResource(l_swapChainRP, l_commandList, ShaderStage::Pixel, m_SwapChainSamplerComp, 1);
 
 	auto l_mesh = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(MeshShape::Square);
 
-	m_HardwareService->DrawIndexedInstanced(l_swapChainRP, l_commandList, l_mesh, 1);
+	DrawIndexedInstanced(l_swapChainRP, l_commandList, l_mesh, 1);
 
-	m_HardwareService->TryToTransitState(l_swapChainRP->m_OutputMergerTarget->m_ColorOutputs[0], l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	TryToTransitState(l_swapChainRP->m_OutputMergerTarget->m_ColorOutputs[0], l_commandList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 
-	m_HardwareService->CommandListEnd(l_swapChainRP, l_commandList);
+	CommandListEnd(l_swapChainRP, l_commandList);
 
 	return true;
 }

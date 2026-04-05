@@ -5,14 +5,14 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
-#include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("TiledFrustumGenerationPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";
@@ -59,7 +59,7 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 bool TiledFrustumGenerationPass::Initialize()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_DispatchParamsGPUBufferComp->m_ElementCount = 1;
 	m_DispatchParamsGPUBufferComp->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
@@ -78,7 +78,7 @@ bool TiledFrustumGenerationPass::Initialize()
 bool TiledFrustumGenerationPass::Update()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	DispatchParamsConstantBuffer l_tiledFrustumWorkload;
 	l_tiledFrustumWorkload.numThreadGroups = m_numThreadGroups;
@@ -92,7 +92,7 @@ bool TiledFrustumGenerationPass::Update()
 bool TiledFrustumGenerationPass::Terminate()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Delete(m_TiledFrustum);
 	l_rsService->Delete(m_DispatchParamsGPUBufferComp);
@@ -118,20 +118,20 @@ bool TiledFrustumGenerationPass::PrepareCommandList(IRenderingContext* rendering
 		return false;
 
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
-	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
-	l_hwService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
-	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
-	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 1);
-	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_TiledFrustum, 2);
+	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_fmService->ClearRenderTargets(m_RenderPassComp, m_CommandListComp_Compute);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 0);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_DispatchParamsGPUBufferComp, 1);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_TiledFrustum, 2);
 
-	l_hwService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
+	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
-	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 	
 	m_ObjectStatus = ObjectStatus::Activated;
 	return true;
@@ -150,7 +150,7 @@ GPUResourceComponent* TiledFrustumGenerationPass::GetTiledFrustum()
 bool Inno::TiledFrustumGenerationPass::RenderTargetsCreationFunc()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 

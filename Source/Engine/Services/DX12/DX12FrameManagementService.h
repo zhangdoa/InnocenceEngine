@@ -11,43 +11,53 @@ namespace Inno
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(DX12FrameManagementService);
 
-		DX12Context* GetDX12Context() { return &m_DX12Context; }
+		void SetDX12Context(DX12Context* ctx) { m_ctx = ctx; }
+
+		// Command list lifecycle
+		bool Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject = nullptr) override;
+		bool Close(CommandListComponent* commandList, GPUEngineType engineType) override;
+
+		// Command recording
+		bool CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex) override;
+		bool BindRenderPassComponent(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
+		bool ClearRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t index = SIZE_MAX) override;
+		bool BindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
+		bool UnbindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
+		bool TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility) override;
+		bool TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility) override;
+		bool DrawIndexedInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, MeshComponent* mesh, size_t instanceCount = 1) override;
+		bool DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount = 1) override;
+		bool Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
+		bool DispatchRays(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t dimensionX, uint32_t dimensionY, uint32_t dimensionZ) override;
+		bool ExecuteIndirect(RenderPassComponent* renderPass, CommandListComponent* commandList, GPUBufferComponent* indirectDrawCommand) override;
+		void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) override;
+		bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
 
 	protected:
-		// DX12-specific frame lifecycle
+		bool CreateSwapChainResources() override;
 		bool BeginFrame() override;
 		bool EndFrame() override;
 		bool PresentImpl() override;
 		bool ResizeImpl() override;
 		bool WaitAllOnCPU() override;
 
-		// DX12-specific swap chain
 		bool GetSwapChainImages() override;
 		bool AssignSwapChainImages() override;
 		bool ReleaseSwapChainImages() override;
-
-		// DX12-specific raytracing prep
 		bool PrepareRayTracing(CommandListComponent* commandList) override;
 
-		// DX12-specific hardware init/teardown
-		bool CreateHardwareResources() override;
-		bool ReleaseHardwareResources() override;
-
 	private:
-		// DX12 hardware initialization functions
-		bool CreateDebugCallback();
-		bool CreatePhysicalDevices();
-		bool CreateGlobalCommandQueues();
-		bool CreateGlobalCommandAllocators();
-		bool CreateSyncPrimitives();
-		bool CreateGlobalDescriptorHeaps();
+		// Command recording helpers
+		bool BindComputeResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
+		bool BindGraphicsResource(CommandListComponent* commandList, uint32_t rootParameterIndex, const ResourceBindingLayoutDesc& resourceBindingLayoutDesc, GPUResourceComponent* resource);
+		bool SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList);
+		bool SetRenderTargets(RenderPassComponent* renderPass, CommandListComponent* commandList);
+		bool PreparePipeline(RenderPassComponent* renderPass, CommandListComponent* commandList, DX12PipelineStateObject* PSO);
+		bool ChangeRenderTargetStates(RenderPassComponent* renderPass, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility);
+
 		bool CreateSwapChain();
 
-		template <typename U, typename T>
-		bool SetObjectName(U* owner, const T& rhs, const char* objectTypeSuffix);
-
-		// DX12 context (owned by this service, shared with other DX12 services)
-		DX12Context m_DX12Context;
+		DX12Context* m_ctx = nullptr;
 
 		// Swap chain
 		std::vector<ComPtr<ID3D12Resource>> m_swapChainImages;

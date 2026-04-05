@@ -5,6 +5,17 @@
 
 using namespace Inno;
 
+bool GraphicsHardwareService::Setup(IServiceConfig* systemConfig)
+{
+	if (!CreateHardwareResources())
+	{
+		Log(Error, "GraphicsHardwareService: CreateHardwareResources() failed.");
+		return false;
+	}
+
+	return true;
+}
+
 bool GraphicsHardwareService::SignalOnGPU(RenderPassComponent* renderPass, GPUEngineType queueType)
 {
 	if (renderPass == nullptr)

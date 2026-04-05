@@ -9,14 +9,14 @@
 
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/GraphicsResourceService.h"
-#include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("RadianceCacheIntegrationPass/");
 
@@ -69,7 +69,7 @@ bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 bool RadianceCacheIntegrationPass::Initialize()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Initialize(m_ShaderProgramComp);
 	l_rsService->Initialize(m_RenderPassComp);
@@ -95,7 +95,7 @@ bool RadianceCacheIntegrationPass::Update()
 bool RadianceCacheIntegrationPass::Terminate()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	l_rsService->Delete(m_Result);	
 	l_rsService->Delete(m_RenderPassComp);
@@ -120,7 +120,7 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 		return false;
 
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	// Use filtered radiance cache instead of raw raytracing result
 	auto l_readTexture = RadianceCacheFilterVerticalPass::Get().GetResult();
@@ -128,22 +128,22 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 
 	// Use graphics command list to transition resources to shader resource state
-	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_hwService->TryToTransitState(l_readTexture, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_hwService->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_fmService->TryToTransitState(l_readTexture, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
-	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
-	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
+	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_readTexture, 0);
-	l_hwService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_Result, 1);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_readTexture, 0);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_Result, 1);
 
 	auto dispatch_x = (l_readTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto dispatch_y = (l_readTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
 
-	l_hwService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
-	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
+	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -163,7 +163,7 @@ GPUResourceComponent* RadianceCacheIntegrationPass::GetResult()
 bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 {
 	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_Result)
 		l_rsService->Delete(m_Result);

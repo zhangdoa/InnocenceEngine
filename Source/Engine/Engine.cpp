@@ -365,15 +365,17 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 #if defined INNO_RENDERER_DIRECTX
 	if (!m_pImpl->m_initConfig.isHeadless)
 	{
-		auto* l_fmService = new DX12FrameManagementService();
-		auto* l_ctx = l_fmService->GetDX12Context();
+		auto* l_hwService = new DX12GraphicsHardwareService();
+		auto* l_ctx = l_hwService->GetDX12Context();
 
 		auto* l_rsService = new DX12GraphicsResourceService();
 		l_rsService->SetDX12Context(l_ctx);
 
-		auto* l_hwService = new DX12GraphicsHardwareService();
-		l_hwService->SetDX12Context(l_ctx);
+		auto* l_fmService = new DX12FrameManagementService();
+		l_fmService->SetDX12Context(l_ctx);
 
+		l_hwService->SetResourceService(l_rsService);
+		l_hwService->SetFrameManagementService(l_fmService);
 		l_fmService->SetResourceService(l_rsService);
 		l_fmService->SetHardwareService(l_hwService);
 
@@ -462,6 +464,12 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		if (!Get<GraphicsResourceService>()->Setup())
 		{
 			Log(Error, "GraphicsResourceService can't be setup!");
+			return false;
+		}
+
+		if (!Get<GraphicsHardwareService>()->Setup())
+		{
+			Log(Error, "GraphicsHardwareService can't be setup!");
 			return false;
 		}
 

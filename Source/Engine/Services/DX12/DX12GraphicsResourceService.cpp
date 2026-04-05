@@ -373,7 +373,8 @@ bool DX12GraphicsResourceService::InitializeImpl(MeshAssetHandle handle, std::ve
 		l_defaultHeapBuffer_VB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-	l_hwService->Close(&l_commandList, GPUEngineType::Graphics);
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	l_fmService->Close(&l_commandList, GPUEngineType::Graphics);
 	l_hwService->Execute(&l_commandList, GPUEngineType::Graphics);
 	auto l_globalSemaphore = g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore();
 	l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);
@@ -462,6 +463,7 @@ bool DX12GraphicsResourceService::InitializeImpl(TextureComponent* texture, void
 
 	auto l_currentFrame = g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_globalSemaphore = g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore();
 
 	// Phase 1: Upload texture data with direct command list
@@ -509,7 +511,7 @@ bool DX12GraphicsResourceService::InitializeImpl(TextureComponent* texture, void
 		}
 
 		// Execute and wait for upload phase
-		l_hwService->Close(&l_uploadCommandList, GPUEngineType::Graphics);
+		l_fmService->Close(&l_uploadCommandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_uploadCommandList, GPUEngineType::Graphics);
 		l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);
 		auto l_uploadSemaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
@@ -582,7 +584,7 @@ bool DX12GraphicsResourceService::InitializeImpl(TextureComponent* texture, void
 		}
 
 		// Execute and wait for transition
-		l_hwService->Close(&l_transitionCommandList, GPUEngineType::Graphics);
+		l_fmService->Close(&l_transitionCommandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_transitionCommandList, GPUEngineType::Graphics);
 		l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);
 		auto l_transitionSemaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
@@ -914,8 +916,9 @@ bool DX12GraphicsResourceService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 		}
 
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 		auto l_globalSemaphore = g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore();
-		l_hwService->Close(&l_commandList, GPUEngineType::Graphics);
+		l_fmService->Close(&l_commandList, GPUEngineType::Graphics);
 		l_hwService->Execute(&l_commandList, GPUEngineType::Graphics);
 		l_hwService->SignalOnGPU(l_globalSemaphore, GPUEngineType::Graphics);
 		auto l_semaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
@@ -1276,6 +1279,7 @@ std::vector<Vec4> DX12GraphicsResourceService::ReadTextureBackToCPU(RenderPassCo
         l_dx12CommandList->Close();
 
         auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
         auto l_globalSemaphore = g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore();
 
         CommandListComponent l_commandListComp = {};

@@ -148,11 +148,11 @@ bool TestRenderingClient::PrepareCommands_DrawInstanced()
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
 
-    l_hwService->CommandListBegin(l_rp, l_cl, l_fmService->GetCurrentFrame());
-    l_hwService->BindRenderPassComponent(l_rp, l_cl);
-    l_hwService->ClearRenderTargets(l_rp, l_cl);
-    l_hwService->DrawInstanced(l_rp, l_cl, 3);
-    l_hwService->CommandListEnd(l_rp, l_cl);
+    l_fmService->CommandListBegin(l_rp, l_cl, l_fmService->GetCurrentFrame());
+    l_fmService->BindRenderPassComponent(l_rp, l_cl);
+    l_fmService->ClearRenderTargets(l_rp, l_cl);
+    l_fmService->DrawInstanced(l_rp, l_cl, 3);
+    l_fmService->CommandListEnd(l_rp, l_cl);
 
     return true;
 }

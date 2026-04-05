@@ -97,7 +97,7 @@ bool ImGuiRenderPass::Initialize()
 				l_swapChainRenderPassComp->m_OutputMergerTarget && 
 				!l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs.empty())
 			{
-				l_hwService->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
+				l_fmService->TryToTransitState(l_swapChainRenderPassComp->m_OutputMergerTarget->m_ColorOutputs[0], dx12CmdList, Accessibility::WriteOnly, Accessibility::ReadOnly);
 			}
 		};
 
@@ -130,12 +130,11 @@ bool ImGuiRenderPass::PrepareCommandList(IRenderingContext* /*renderingContext*/
 		return true;
 	}
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_hwService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_hwService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
-	l_hwService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Graphics);
+	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	return true;
 }
