@@ -33,10 +33,13 @@ function createWindow() {
     engineExeName = engineArg.split('=')[1] + '.exe';
   }
 
-  const enginePath = path.join(__dirname, '../../Bin/RelWithDebInfo/', engineExeName);
+  const binDir = path.join(__dirname, '../../Bin');
+  const enginePath = path.join(binDir, 'RelWithDebInfo/', engineExeName);
   console.log(`Main: Spawning engine at ${enginePath}`);
   
-  engineProcess = spawn(enginePath, ['-sidecar', '-renderer 0', '-loglevel 0', '-offscreen', '-test draw_instanced']);
+  engineProcess = spawn(enginePath, ['-sidecar', '-renderer 0', '-loglevel 0', '-offscreen', '-test draw_instanced'], {
+    cwd: binDir
+  });
 
   engineProcess.stdout.on('data', (data) => {
     console.log(`Engine: ${data}`);
