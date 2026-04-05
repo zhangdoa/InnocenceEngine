@@ -162,7 +162,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	// --- Scene callbacks ---
 	f_sceneLoadedCallback = [this]()
 	{
-		RebuildGeometryBuffers();
+		m_PendingGeometryRebuild = true;
 		m_FrameCount = 1;
 	};
 
@@ -235,6 +235,12 @@ bool GPUPathTracerPass::Initialize()
 bool GPUPathTracerPass::Update()
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
+
+	if (m_PendingGeometryRebuild && AreMeshesGPUReady())
+	{
+		RebuildGeometryBuffers();
+		m_PendingGeometryRebuild = false;
+	}
 
 	const auto& l_perFrameCB = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
 
@@ -509,4 +515,26 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 
 	Log(Success, "GPUPathTracerPass: Geometry buffers rebuilt. Meshes: ", l_offsets.size(),
 		" Vertices: ", l_vertices.size(), " Indices: ", l_indices.size());
+}
+
+bool GPUPathTracerPass::AreMeshesGPUReady()
+{
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto& l_meshStorage = l_registry->Storage<MeshComponent>();
+	const auto& l_meshes = l_meshStorage.All();
+
+	if (l_meshes.empty())
+		return false;
+
+	for (const auto& l_mesh : l_meshes)
+	{
+		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
+			return false;
+
+		const auto* l_resource = AssetService::GetMeshAsset(l_mesh.m_Asset);
+		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
+			return false;
+	}
+
+	return true;
 }

@@ -305,15 +305,27 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
-	auto l_framesArgPos = arg.find("-frames");
+	auto l_framesArgPos = arg.find("-total_frames");
 	if (l_framesArgPos != std::string::npos)
 	{
-		std::string l_remainder = arg.substr(l_framesArgPos + 7);
+		std::string l_remainder = arg.substr(l_framesArgPos + 13);
 		auto l_start = l_remainder.find_first_not_of(' ');
 		if (l_start != std::string::npos)
 		{
-			l_result.maxFrames = std::stoi(l_remainder.substr(l_start));
-			Log(Success, "Auto-terminate after ", l_result.maxFrames, " frames post-GI-scene-load.");
+			l_result.totalFrames = std::stoi(l_remainder.substr(l_start));
+			Log(Success, "Auto-terminate after ", l_result.totalFrames, " frames.");
+		}
+	}
+
+	auto l_reloadArgPos = arg.find("-reload_at_frame");
+	if (l_reloadArgPos != std::string::npos)
+	{
+		std::string l_remainder = arg.substr(l_reloadArgPos + 16);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			l_result.reloadAtFrame = std::stoi(l_remainder.substr(l_start));
+			Log(Success, "Scene reload at frame ", l_result.reloadAtFrame, ".");
 		}
 	}
 
@@ -329,6 +341,8 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	// Essential Services (always created, low-level)
 	Get<Timer>();
 	Get<LogService>();
+	if (m_pImpl->m_initConfig.totalFrames > 0)
+		Get<LogService>()->SetFatalOnError(true);
 	Get<Memory>();
 	Get<TaskScheduler>();
 	Get<IOService>()->setupWorkingDirectory();

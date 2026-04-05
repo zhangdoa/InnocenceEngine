@@ -678,11 +678,11 @@ namespace Inno
 			m_saveScreenCapture = false;
 		}
 
-		auto l_maxFrames = g_Engine->getInitConfig().maxFrames;
-		if (l_maxFrames > 0 && !m_autoCaptureWritten)
+		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
+		if (l_totalFrames > 0 && !m_autoCaptureWritten)
 		{
 			m_autoCaptureFrameCount++;
-			if (m_autoCaptureFrameCount >= static_cast<uint32_t>(l_maxFrames))
+			if (m_autoCaptureFrameCount >= static_cast<uint32_t>(l_totalFrames))
 			{
 				l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
 
@@ -712,11 +712,11 @@ namespace Inno
 					if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
 						Log(Success, "Auto-capture: gpu_output.png written.");
 					else
-						Log(Error, "Auto-capture: failed to write gpu_output.png.");
+						Log(Warning, "Auto-capture: failed to write gpu_output.png.");
 				}
 				else
 				{
-					Log(Error, "Auto-capture: ReadTextureBackToCPU returned empty, writing 1x1 black PNG.");
+					Log(Warning, "Auto-capture: ReadTextureBackToCPU returned empty, writing 1x1 black PNG.");
 					uint8_t l_black[4] = {0, 0, 0, 255};
 					TextureDesc l_desc = {};
 					l_desc.Width = 1; l_desc.Height = 1;

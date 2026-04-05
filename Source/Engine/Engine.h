@@ -21,7 +21,8 @@ namespace Inno
 		bool isOffscreen = false;
 		bool isAudit = false;
 		char testCase[64] = {};
-		int maxFrames = 0;  // >0: auto-terminate after this many frames post-GI-scene-load
+		int totalFrames = 0;  // >0: auto-terminate after this many frames
+		int reloadAtFrame = 0;  // >0: trigger scene reload at this frame
 	};
 
 	class IWindowService;

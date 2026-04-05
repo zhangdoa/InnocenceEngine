@@ -21,7 +21,17 @@ namespace Inno {
 			LogStartOfLine(logLevel, context);
 			LogContent(std::forward<Args>(values)...);
 			LogEndOfLine();
+
+			if (logLevel == LogLevel::Error && m_FatalOnError)
+			{
+				LogStartOfLine(LogLevel::Warning, "LogService");
+				LogContent("Fatal error in test mode, exiting with code 1.");
+				LogEndOfLine();
+				std::exit(1);
+			}
 		}
+
+		void SetFatalOnError(bool fatal) { m_FatalOnError = fatal; }
 
 		void SetDefaultLogLevel(LogLevel logLevel);
 		LogLevel GetDefaultLogLevel();
@@ -69,6 +79,7 @@ namespace Inno {
 		std::ofstream m_LogFile;
 		std::mutex m_Mutex;
 		LogLevel m_LogLevel;
+		bool m_FatalOnError = false;
 	};
 
 #define Log(level, ...) g_Engine->Get<LogService>()->Print(LogLevel::level, __FUNCTION__, __VA_ARGS__)

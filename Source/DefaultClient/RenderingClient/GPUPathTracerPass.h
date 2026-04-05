@@ -69,7 +69,9 @@ namespace Inno
 		std::function<void()> f_sceneUnloadingCallback;
 
 		ShaderStage m_ShaderStage = ShaderStage::Invalid;
+		bool m_PendingGeometryRebuild = false;
 
 		void RebuildGeometryBuffers();
+		bool AreMeshesGPUReady();
 	};
 }
