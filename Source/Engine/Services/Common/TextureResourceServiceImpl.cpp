@@ -1,5 +1,6 @@
 #include "../TextureResourceService.h"
 #include "../../Common/LogService.h"
+#include "../../Common/LogServiceSpecialization.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/EntityRegistry.h"

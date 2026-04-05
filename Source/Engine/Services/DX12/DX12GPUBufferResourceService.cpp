@@ -4,6 +4,7 @@
 #include "../FrameManagementService.h"
 #include "../GraphicsHardwareService.h"
 #include "../../Common/LogService.h"
+#include "../../Common/LogServiceSpecialization.h"
 #include "../../Engine.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../Component/WorldTransformComponent.h"

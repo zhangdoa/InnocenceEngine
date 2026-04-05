@@ -1,5 +1,6 @@
 #include "../CommandListResourceService.h"
 #include "../../Common/LogService.h"
+#include "../../Common/LogServiceSpecialization.h"
 #include "../../Engine.h"
 
 using namespace Inno;

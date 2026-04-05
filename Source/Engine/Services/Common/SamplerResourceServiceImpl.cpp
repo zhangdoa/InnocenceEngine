@@ -1,5 +1,6 @@
 #include "../SamplerResourceService.h"
 #include "../../Common/LogService.h"
+#include "../../Engine.h"
 
 using namespace Inno;
 

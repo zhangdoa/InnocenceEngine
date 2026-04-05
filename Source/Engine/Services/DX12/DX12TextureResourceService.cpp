@@ -6,6 +6,7 @@
 #include "../FrameManagementService.h"
 #include "../GraphicsHardwareService.h"
 #include "../../Common/LogService.h"
+#include "../../Common/LogServiceSpecialization.h"
 #include "../../Common/MathHelper.h"
 #include "../../Engine.h"
 

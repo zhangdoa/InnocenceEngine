@@ -3,6 +3,7 @@
 #include "DX12Helper_Common.h"
 #include "../FrameManagementService.h"
 #include "../../Common/LogService.h"
+#include "../../Common/LogServiceSpecialization.h"
 #include "../../Engine.h"
 
 using namespace Inno;

@@ -18,7 +18,7 @@ namespace Inno
 		bool Copy(CommandListComponent* commandList, TextureComponent* src, TextureComponent* dst) override;
 		bool GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList = nullptr) override;
 		std::optional<uint32_t> GetIndex(TextureComponent* texture, Accessibility bindingAccessibility) override;
-		std::vector<Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* textureComp) override;
+		std::vector<Math::Vec4> ReadTextureBackToCPU(RenderPassComponent* canvas, TextureComponent* textureComp) override;
 
 		bool CreateMipmapGenerator();
 		bool ReleaseMipmapGenerator();

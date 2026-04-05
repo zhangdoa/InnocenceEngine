@@ -9,7 +9,7 @@ using namespace Inno;
 
 bool RenderPassResourceService::Setup(IServiceConfig* systemConfig)
 {
-	m_Pool.Setup(128);
+	m_Pool.Initialize(128);
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }

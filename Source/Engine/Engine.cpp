@@ -43,6 +43,14 @@
 #include "Services/DX12/DX12GraphicsHardwareService.h"
 #include "Services/DX12/DX12GraphicsResourceService.h"
 #include "Services/DX12/DX12FrameManagementService.h"
+#include "Services/DX12/DX12CommandListResourceService.h"
+#include "Services/DX12/DX12SamplerResourceService.h"
+#include "Services/DX12/DX12ShaderProgramResourceService.h"
+#include "Services/DX12/DX12TextureResourceService.h"
+#include "Services/DX12/DX12GPUBufferResourceService.h"
+#include "Services/DX12/DX12MeshResourceService.h"
+#include "Services/DX12/DX12MaterialResourceService.h"
+#include "Services/DX12/DX12RenderPassResourceService.h"
 #endif
 
 // Headless window stub
@@ -382,6 +390,32 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 		singletons_[std::type_index(typeid(GraphicsHardwareService))] = l_hwService;
 		singletons_[std::type_index(typeid(GraphicsResourceService))] = l_rsService;
 		singletons_[std::type_index(typeid(FrameManagementService))] = l_fmService;
+
+		auto* l_cmdListService = new DX12CommandListResourceService();
+		l_cmdListService->SetDX12Context(l_ctx);
+		auto* l_samplerService = new DX12SamplerResourceService();
+		l_samplerService->SetDX12Context(l_ctx);
+		auto* l_shaderService = new DX12ShaderProgramResourceService();
+		l_shaderService->SetDX12Context(l_ctx);
+		auto* l_textureService = new DX12TextureResourceService();
+		l_textureService->SetDX12Context(l_ctx);
+		auto* l_gpuBufferService = new DX12GPUBufferResourceService();
+		l_gpuBufferService->SetDX12Context(l_ctx);
+		auto* l_meshService = new DX12MeshResourceService();
+		l_meshService->SetDX12Context(l_ctx);
+		auto* l_materialService = new DX12MaterialResourceService();
+		l_materialService->SetDX12Context(l_ctx);
+		auto* l_renderPassService = new DX12RenderPassResourceService();
+		l_renderPassService->SetDX12Context(l_ctx);
+
+		singletons_[std::type_index(typeid(CommandListResourceService))] = l_cmdListService;
+		singletons_[std::type_index(typeid(SamplerResourceService))] = l_samplerService;
+		singletons_[std::type_index(typeid(ShaderProgramResourceService))] = l_shaderService;
+		singletons_[std::type_index(typeid(TextureResourceService))] = l_textureService;
+		singletons_[std::type_index(typeid(GPUBufferResourceService))] = l_gpuBufferService;
+		singletons_[std::type_index(typeid(MeshResourceService))] = l_meshService;
+		singletons_[std::type_index(typeid(MaterialResourceService))] = l_materialService;
+		singletons_[std::type_index(typeid(RenderPassResourceService))] = l_renderPassService;
 	}
 #endif
 
@@ -464,6 +498,47 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		if (!Get<GraphicsResourceService>()->Setup())
 		{
 			Log(Error, "GraphicsResourceService can't be setup!");
+			return false;
+		}
+
+		if (!Get<CommandListResourceService>()->Setup())
+		{
+			Log(Error, "CommandListResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<SamplerResourceService>()->Setup())
+		{
+			Log(Error, "SamplerResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<ShaderProgramResourceService>()->Setup())
+		{
+			Log(Error, "ShaderProgramResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<TextureResourceService>()->Setup())
+		{
+			Log(Error, "TextureResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<GPUBufferResourceService>()->Setup())
+		{
+			Log(Error, "GPUBufferResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<MeshResourceService>()->Setup())
+		{
+			Log(Error, "MeshResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<MaterialResourceService>()->Setup())
+		{
+			Log(Error, "MaterialResourceService can't be setup!");
+			return false;
+		}
+		if (!Get<RenderPassResourceService>()->Setup())
+		{
+			Log(Error, "RenderPassResourceService can't be setup!");
 			return false;
 		}
 
@@ -736,6 +811,14 @@ bool Engine::Terminate()
 		SystemTerm(TemplateAssetService);
 
 		Get<FrameManagementService>()->Terminate();
+		Get<RenderPassResourceService>()->Terminate();
+		Get<MaterialResourceService>()->Terminate();
+		Get<MeshResourceService>()->Terminate();
+		Get<GPUBufferResourceService>()->Terminate();
+		Get<TextureResourceService>()->Terminate();
+		Get<ShaderProgramResourceService>()->Terminate();
+		Get<SamplerResourceService>()->Terminate();
+		Get<CommandListResourceService>()->Terminate();
 		Get<GraphicsResourceService>()->Terminate();
 	}
 

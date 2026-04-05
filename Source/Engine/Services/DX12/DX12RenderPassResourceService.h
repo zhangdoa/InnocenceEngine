@@ -26,7 +26,7 @@ namespace Inno
 		bool Delete(ISemaphore* rhs) override;
 		bool Delete(IOutputMergerTarget* rhs) override;
 
-		Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) override;
+		Math::Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) override;
 
 	protected:
 		bool OnOutputMergerTargetsCreated(RenderPassComponent* renderPass) override;

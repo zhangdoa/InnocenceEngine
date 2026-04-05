@@ -40,7 +40,7 @@ namespace Inno
 		virtual bool Delete(ISemaphore* rhs) = 0;
 		virtual bool Delete(IOutputMergerTarget* rhs) = 0;
 
-		virtual Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) { return Vec4(); }
+		virtual Math::Vec4 ReadRenderTargetSample(RenderPassComponent* renderPass, size_t renderTargetIndex, size_t x, size_t y) { return Math::Vec4(); }
 
 	protected:
 		virtual bool OnOutputMergerTargetsCreated(RenderPassComponent* renderPass) { return false; }
