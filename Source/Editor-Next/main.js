@@ -26,8 +26,8 @@ function createWindow() {
     win.loadFile('index.html');
   }
   
-  // Determine engine path from args or default to RenderTest
-  let engineExeName = 'RenderTest.exe';
+  // Determine engine path from args or default to Main
+  let engineExeName = 'Main.exe';
   const engineArg = process.argv.find(arg => arg.startsWith('--engine='));
   if (engineArg) {
     engineExeName = engineArg.split('=')[1] + '.exe';
@@ -36,8 +36,9 @@ function createWindow() {
   const binDir = path.join(__dirname, '../../Bin');
   const enginePath = path.join(binDir, 'RelWithDebInfo/', engineExeName);
   console.log(`Main: Spawning engine at ${enginePath}`);
-  
-  engineProcess = spawn(enginePath, ['-sidecar', '-renderer 0', '-loglevel 0', '-test draw_instanced'], {
+
+  // Standard editor session parameters
+  engineProcess = spawn(enginePath, ['-mode', '2', '-renderer', '0', '-loglevel', '1'], {
     cwd: binDir
   });
 
@@ -55,7 +56,7 @@ function createWindow() {
 
 function connectToEngine() {
   console.log('Main: Connecting to Engine WS...');
-  socket = new WebSocket('ws://localhost:8081');
+  socket = new WebSocket('ws://127.0.0.1:8081');
 
   socket.on('open', () => {
     console.log('Main: Connected to Engine');
@@ -121,5 +122,11 @@ app.on('window-all-closed', () => {
   }
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
   }
 });

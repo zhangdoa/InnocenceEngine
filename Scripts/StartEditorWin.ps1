@@ -4,7 +4,7 @@
 param (
     [Parameter(Mandatory=$false)]
     [ValidateSet("RenderTest", "Main")]
-    [string]$EngineType = "RenderTest",
+    [string]$EngineType = "Main",
 
     [Parameter(Mandatory=$false)]
     [switch]$BuildOnly
