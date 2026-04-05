@@ -87,3 +87,6 @@ test*.log
 test*.txt
 gpu_test*.txt
 *.Log
+
+.worktrees/
+
