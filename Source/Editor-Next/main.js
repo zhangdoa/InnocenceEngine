@@ -18,11 +18,24 @@ function createWindow() {
     }
   });
   
-  win.loadFile('index.html');
+  // Load the app - check if we are in production (dist) or dev
+  const indexPath = path.join(__dirname, 'dist/index.html');
+  if (require('fs').existsSync(indexPath)) {
+    win.loadFile(indexPath);
+  } else {
+    win.loadFile('index.html');
+  }
   
-  // Spawn Engine Sidecar
-  const enginePath = path.join(__dirname, '../../Bin/RelWithDebInfo/RenderTest.exe');
-  // Use RenderTest for now as it has our test case
+  // Determine engine path from args or default to RenderTest
+  let engineExeName = 'RenderTest.exe';
+  const engineArg = process.argv.find(arg => arg.startsWith('--engine='));
+  if (engineArg) {
+    engineExeName = engineArg.split('=')[1] + '.exe';
+  }
+
+  const enginePath = path.join(__dirname, '../../Bin/RelWithDebInfo/', engineExeName);
+  console.log(`Main: Spawning engine at ${enginePath}`);
+  
   engineProcess = spawn(enginePath, ['-sidecar', '-renderer 0', '-loglevel 0', '-offscreen', '-test draw_instanced']);
 
   engineProcess.stdout.on('data', (data) => {
