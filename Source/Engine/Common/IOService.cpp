@@ -16,7 +16,10 @@ bool IOService::setupWorkingDirectory()
 	m_workingDir = fs::current_path().generic_string();
 	m_workingDir = m_workingDir + "//";
 
+	m_dataDir = m_workingDir + "..//Data//";
+
 	Log(Verbose, "current working directory is ", m_workingDir.c_str());
+	Log(Verbose, "data directory is ", m_dataDir.c_str());
 
 	return true;
 }
@@ -120,6 +123,11 @@ std::string IOService::getFileName(const char* filePath)
 std::string IOService::getWorkingDirectory()
 {
 	return m_workingDir;
+}
+
+std::string IOService::getDataDirectory()
+{
+	return m_dataDir;
 }
 
 std::string IOService::validateFileName(const char* filePath)

@@ -34,11 +34,11 @@ namespace Inno
 			m_Entity = l_Entity;
 
 			std::function<void()> f_idle = [&]() {
-				g_Engine->Get<AnimationSimulationService>()->PlayAnimation(m_Entity, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+				g_Engine->Get<AnimationSimulationService>()->PlayAnimation(m_Entity, "ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
 			};
 
 			std::function<void()> f_run = [&]() {
-				g_Engine->Get<AnimationSimulationService>()->PlayAnimation(m_Entity, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+				g_Engine->Get<AnimationSimulationService>()->PlayAnimation(m_Entity, "ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
 			};
 
 			m_states.emplace("Idle", f_idle);

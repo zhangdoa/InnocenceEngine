@@ -54,7 +54,7 @@ QString DirectoryListViewer::GetSelectionPath()
     {
     auto l_fileInfo = m_fileModel->fileInfo(index);
 
-    auto l_relativeRoot = g_Engine->Get<IOService>()->getWorkingDirectory() + "..//Res//";
+    auto l_relativeRoot = g_Engine->Get<IOService>()->getDataDirectory();
 
     if (l_fileInfo.isDir())
     {
@@ -70,7 +70,7 @@ QString DirectoryListViewer::GetSelectionPath()
              )
     {
         QDir l_RootDir(l_relativeRoot.c_str());
-        auto l_relativePath = "..//Res//" + l_RootDir.relativeFilePath(l_fileInfo.filePath());
+        auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
         switch (QMessageBox::question(
                     this,
                     tr(""),
@@ -97,7 +97,7 @@ QString DirectoryListViewer::GetSelectionPath()
     else if (l_fileInfo.suffix().toStdString() == "InnoScene")
     {
         QDir l_RootDir(l_relativeRoot.c_str());
-        auto l_relativePath = "..//Res//" + l_RootDir.relativeFilePath(l_fileInfo.filePath());
+        auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
 
         switch (QMessageBox::question(
                     this,

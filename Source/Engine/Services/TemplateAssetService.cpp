@@ -109,11 +109,11 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 return true;
                 };
 
-            if (!loadOrCreateTexture("BasicNormalTexture", "../Res/Textures/basic_normal.png", m_basicNormalTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicAlbedoTexture", "../Res/Textures/basic_albedo.png", m_basicAlbedoTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicMetallicTexture", "../Res/Textures/basic_metallic.png", m_basicMetallicTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicRoughnessTexture", "../Res/Textures/basic_roughness.png", m_basicRoughnessTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicAOTexture", "../Res/Textures/basic_ao.png", m_basicAOTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicNormalTexture", "Textures/basic_normal.png", m_basicNormalTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicAlbedoTexture", "Textures/basic_albedo.png", m_basicAlbedoTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicMetallicTexture", "Textures/basic_metallic.png", m_basicMetallicTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicRoughnessTexture", "Textures/basic_roughness.png", m_basicRoughnessTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicAOTexture", "Textures/basic_ao.png", m_basicAOTextureEntity)) return false;
 
             if (m_defaultMaterialEntity == INVALID_ENTITY)
             {
@@ -183,9 +183,9 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 
             m_terrainMeshEntity = INVALID_ENTITY;
 
-            if (!loadOrCreateTexture("DirectionalLightIcon", "../Res/Textures/WorldEditorIcons_DirectionalLight.png", m_iconTemplate_DirectionalLightEntity)) return false;
-            if (!loadOrCreateTexture("PointLightIcon", "../Res/Textures/WorldEditorIcons_PointLight.png", m_iconTemplate_PointLightEntity)) return false;
-            if (!loadOrCreateTexture("SphereLightIcon", "../Res/Textures/WorldEditorIcons_SphereLight.png", m_iconTemplate_SphereLightEntity)) return false;
+            if (!loadOrCreateTexture("DirectionalLightIcon", "Textures/WorldEditorIcons_DirectionalLight.png", m_iconTemplate_DirectionalLightEntity)) return false;
+            if (!loadOrCreateTexture("PointLightIcon", "Textures/WorldEditorIcons_PointLight.png", m_iconTemplate_PointLightEntity)) return false;
+            if (!loadOrCreateTexture("SphereLightIcon", "Textures/WorldEditorIcons_SphereLight.png", m_iconTemplate_SphereLightEntity)) return false;
 
             return true;
         });

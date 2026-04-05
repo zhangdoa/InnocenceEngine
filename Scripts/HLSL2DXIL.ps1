@@ -1,7 +1,7 @@
 # Set script paths.
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$dxilOutputDir = Join-Path $scriptRoot "..\Res\Shaders\DXIL"
-$hlslSourceDir = Join-Path $scriptRoot "..\Res\Shaders\HLSL"
+$dxilOutputDir = Join-Path $scriptRoot "..\Bin\Shaders\DXIL"
+$hlslSourceDir = Join-Path $scriptRoot "..\Source\Shaders\HLSL"
 $dxcExePath = Join-Path $scriptRoot "../build/Tools/dxc/bin/x64/dxc.exe"
 
 # Ensure the DXIL output directory exists.

@@ -421,25 +421,25 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneService>()->Load("..//Res//Scenes//UnitTest.InnoScene");
+		g_Engine->Get<SceneService>()->Load("Scenes//UnitTest.InnoScene");
 
-		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene");
-		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene");
-		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene");
-		//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("Scenes//GITestBox.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("Scenes//GITestSibenik.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("Scenes//GITestSponza_PBR.InnoScene");
+		//g_Engine->Get<SceneService>()->Load("Scenes//GITestFireplaceRoom.InnoScene");
 
 		f_loadTestScene = []() {
 			// AsyncLoad=true: HIDService fires this on the main thread, but LoadSync must only run
 			// on the render thread. Deferring via async lets SceneService::Update() on the render
 			// thread call LoadSync, eliminating the cross-thread data race in the DX12 backend.
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSponza_PBR.InnoScene", true);
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestSibenik.InnoScene", true);
-			g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene", true);
-			//g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestFireplaceRoom.InnoScene", true);
+			//g_Engine->Get<SceneService>()->Load("Scenes//GITestSponza_PBR.InnoScene", true);
+			//g_Engine->Get<SceneService>()->Load("Scenes//GITestSibenik.InnoScene", true);
+			g_Engine->Get<SceneService>()->Load("Scenes//GITestBox.InnoScene", true);
+			//g_Engine->Get<SceneService>()->Load("Scenes//GITestFireplaceRoom.InnoScene", true);
 			};
 
 		f_convertModel = []() {
-			g_Engine->Get<AssetService>()->Import("..//Res//Models//Sponza_PBR//NewSponza_Merged.fbx");
+			g_Engine->Get<AssetService>()->Import("Models//Sponza_PBR//NewSponza_Merged.fbx");
 			};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
@@ -489,7 +489,7 @@ namespace Inno
 			if (!m_AutoGISceneTriggered)
 			{
 				m_AutoGISceneTriggered = true;
-				g_Engine->Get<SceneService>()->Load("..//Res//Scenes//GITestBox.InnoScene", true);
+				g_Engine->Get<SceneService>()->Load("Scenes//GITestBox.InnoScene", true);
 				Log(Success, "Auto-test: loaded GITestBox scene.");
 			}
 			else if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_maxFrames))

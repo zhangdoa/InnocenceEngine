@@ -331,7 +331,7 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<LogService>();
 	Get<Memory>();
 	Get<TaskScheduler>();
-	Get<IOService>();
+	Get<IOService>()->setupWorkingDirectory();
 	Get<HIDService>();
 
 	// Create WindowSystem based on headless/offscreen mode

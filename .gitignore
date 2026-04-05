@@ -43,8 +43,6 @@ xcuserdata/
 
 /Res/Logs/*
 /Res/ConvertedAssets/*
-/Res/Shaders/Parsed/*
-/Res/Shaders/Converted/*
 /Res/Intermediate/*
 
 *.refl
@@ -58,8 +56,9 @@ xcuserdata/
 *.InnoProbeInfo
 *.InnoSurfel
 
-# Data folders
+# Data folders (track Scenes, ignore the rest)
 /Data/*
+!/Data/Scenes/
 
 # Large binary assets
 /Res/Fonts/*
