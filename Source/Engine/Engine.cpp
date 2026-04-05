@@ -294,7 +294,6 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	if (l_sidecarArgPos != std::string::npos)
 	{
 		l_result.engineMode = EngineMode::Sidecar;
-		l_result.isOffscreen = true;
 		Log(Success, "Launch in sidecar mode, engine will be controlled by external process.");
 	}
 
