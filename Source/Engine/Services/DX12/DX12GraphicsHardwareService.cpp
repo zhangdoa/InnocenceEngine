@@ -1,5 +1,11 @@
 #include "DX12GraphicsHardwareService.h"
 #include "DX12GraphicsResourceService.h"
+#include "DX12TextureResourceService.h"
+#include "DX12GPUBufferResourceService.h"
+#include "DX12RenderPassResourceService.h"
+#include "../TextureResourceService.h"
+#include "../GPUBufferResourceService.h"
+#include "../RenderPassResourceService.h"
 #include "../FrameManagementService.h"
 #include "../GraphicsResourceService.h"
 #include "../../Engine.h"
@@ -626,7 +632,7 @@ bool DX12GraphicsHardwareService::CreateSyncPrimitives()
 
     Log(Verbose, "Fences for global CommandQueues have been created.");
 
-    auto l_GlobalSemaphore = static_cast<DX12Semaphore*>(m_ResourceService->AddSemaphore());
+    auto l_GlobalSemaphore = static_cast<DX12Semaphore*>(g_Engine->Get<RenderPassResourceService>()->AddSemaphore());
     l_GlobalSemaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
     l_GlobalSemaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
     l_GlobalSemaphore->m_CopyCommandQueueFenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
@@ -912,18 +918,20 @@ bool DX12GraphicsHardwareService::CreateHardwareResources()
     l_result &= CreateSyncPrimitives();
     l_result &= CreateGlobalDescriptorHeaps();
 
-    auto l_resourceService = static_cast<DX12GraphicsResourceService*>(m_ResourceService);
-    l_result &= l_resourceService->CreateMipmapGenerator();
-    l_result &= l_resourceService->CreateRaytracingResources();
+    auto l_textureService = static_cast<DX12TextureResourceService*>(g_Engine->Get<TextureResourceService>());
+    auto l_gpuBufferService = static_cast<DX12GPUBufferResourceService*>(g_Engine->Get<GPUBufferResourceService>());
+    l_result &= l_textureService->CreateMipmapGenerator();
+    l_result &= l_gpuBufferService->CreateRaytracingResources();
 
     return l_result;
 }
 
 bool DX12GraphicsHardwareService::ReleaseHardwareResources()
 {
-    auto l_resourceService = static_cast<DX12GraphicsResourceService*>(m_ResourceService);
-    l_resourceService->ReleaseRaytracingResources();
-    l_resourceService->ReleaseMipmapGenerator();
+    auto l_gpuBufferService = static_cast<DX12GPUBufferResourceService*>(g_Engine->Get<GPUBufferResourceService>());
+    auto l_textureService = static_cast<DX12TextureResourceService*>(g_Engine->Get<TextureResourceService>());
+    l_gpuBufferService->ReleaseRaytracingResources();
+    l_textureService->ReleaseMipmapGenerator();
 
     m_DX12Context.m_SamplerDescHeapAccessor.Reset();
     m_DX12Context.m_SamplerDescHeap = nullptr;

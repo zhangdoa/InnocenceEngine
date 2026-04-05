@@ -1,7 +1,7 @@
 ﻿#include "AnimationDrawCallService.h"
 #include "../Common/LogService.h"
 #include "../Engine.h"
-#include "GraphicsResourceService.h"
+#include "GPUBufferResourceService.h"
 
 using namespace Inno;
 
@@ -27,9 +27,9 @@ namespace Inno
 
 bool AnimationDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_AnimationGPUBufferComp = l_rsService->AddGPUBufferComponent("AnimationCBuffer/");
+	m_AnimationGPUBufferComp = l_rsService->Add("AnimationCBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -39,7 +39,7 @@ bool AnimationDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		m_AnimationGPUBufferComp->m_ElementCount = 512;
 		m_AnimationGPUBufferComp->m_ElementSize = sizeof(AnimationConstantBuffer);
@@ -73,7 +73,7 @@ bool AnimationDrawCallServiceImpl::Update()
 
 		if (m_AnimationCBVector.size() > 0)
 		{
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 			l_rsService->Upload(m_AnimationGPUBufferComp, m_AnimationCBVector, 0, m_AnimationCBVector.size());
 		}
 
@@ -88,7 +88,7 @@ bool AnimationDrawCallServiceImpl::Update()
 
 bool AnimationDrawCallServiceImpl::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 	l_rsService->Delete(m_AnimationGPUBufferComp);
 

@@ -9,7 +9,8 @@
 #include "../Component/WorldTransformComponent.h"
 #include "../Component/VisibilityComponent.h"
 #include "../Engine.h"
-#include "GraphicsResourceService.h"
+#include "GPUBufferResourceService.h"
+#include "TextureResourceService.h"
 #include "FrameManagementService.h"
 
 using namespace Inno;
@@ -59,12 +60,12 @@ GPUBufferComponent* DrawCallServiceImpl::GetPreviousFrameTransformBuffer()
 
 bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_GPUModelDataBufferComp = l_rsService->AddGPUBufferComponent("GPUModelDataBuffer/");
-	m_TransformBufferComp = l_rsService->AddGPUBufferComponent("TransformBuffer/");
-	m_TransformPrevBufferComp = l_rsService->AddGPUBufferComponent("TransformPrevBuffer/");
-	m_MaterialGPUBufferComp = l_rsService->AddGPUBufferComponent("MaterialCBuffer/");
+	m_GPUModelDataBufferComp = l_rsService->Add("GPUModelDataBuffer/");
+	m_TransformBufferComp = l_rsService->Add("TransformBuffer/");
+	m_TransformPrevBufferComp = l_rsService->Add("TransformPrevBuffer/");
+	m_MaterialGPUBufferComp = l_rsService->Add("MaterialCBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -74,7 +75,7 @@ bool DrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -123,7 +124,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	m_TransformBufferVector.clear();
 	m_MaterialCBVector.clear();
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_textureService = g_Engine->Get<TextureResourceService>();
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_Meshes = l_MeshStorage.All();
@@ -239,11 +240,11 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 				if (l_textureName.empty())
 					continue;
 
-				auto l_texture = l_rsService->FindTextureByName(l_textureName.c_str());
+				auto l_texture = l_textureService->Find(l_textureName.c_str());
 				if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
 					continue;
 
-				auto textureIndex = l_rsService->GetIndex(l_texture, Accessibility::ReadOnly);
+				auto textureIndex = l_textureService->GetIndex(l_texture, Accessibility::ReadOnly);
 				l_materialCB.m_TextureIndices[j] = textureIndex.value_or(INVALID_TEXTURE_INDEX);
 			}
 		}
@@ -263,7 +264,7 @@ bool DrawCallServiceImpl::Update()
 
 		UpdateDrawCalls();
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		if (m_GPUModelDataVector.size() > 0)
 		{
@@ -290,7 +291,7 @@ bool DrawCallServiceImpl::Update()
 
 bool DrawCallServiceImpl::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 	l_rsService->Delete(m_GPUModelDataBufferComp);
 	l_rsService->Delete(m_TransformBufferComp);

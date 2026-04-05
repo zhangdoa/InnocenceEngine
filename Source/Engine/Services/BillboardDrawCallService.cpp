@@ -6,7 +6,7 @@
 #include "TemplateAssetService.h"
 #include "RenderingConfigurationService.h"
 #include "../Engine.h"
-#include "GraphicsResourceService.h"
+#include "GPUBufferResourceService.h"
 
 using namespace Inno;
 
@@ -41,9 +41,9 @@ namespace Inno
 
 bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_BillboardGPUBufferComp = l_rsService->AddGPUBufferComponent("BillboardCBuffer/");
+	m_BillboardGPUBufferComp = l_rsService->Add("BillboardCBuffer/");
 
 	OnSceneLoaded();
 
@@ -63,7 +63,7 @@ bool BillboardDrawCallServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
@@ -155,7 +155,7 @@ bool BillboardDrawCallServiceImpl::Update()
 
 		UpdateBillboardPassData();
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		if (m_BillboardPassPerObjectCB.size() > 0)
 		{
@@ -173,7 +173,7 @@ bool BillboardDrawCallServiceImpl::Update()
 
 bool BillboardDrawCallServiceImpl::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 	l_rsService->Delete(m_BillboardGPUBufferComp);
 

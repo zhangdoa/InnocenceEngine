@@ -5,7 +5,7 @@
 
 #include "../Services/CameraService.h"
 #include "../Services/AssetService.h"
-#include "../Services/GraphicsResourceService.h"
+#include "../Services/TextureResourceService.h"
 #include "../Services/RenderingConfigurationService.h"
 #include "../Services/EntityRegistry.h"
 
@@ -16,7 +16,7 @@
 #include "../Component/LightComponent.h"
 
 #include "../Engine.h"
-#include "../Services/GraphicsResourceService.h"
+#include "../Services/TextureResourceService.h"
 using namespace Inno;
 
 namespace RayTracerNS
@@ -558,7 +558,7 @@ bool RayTracer::Initialize()
 		RayTracerNS::m_outputHeight = l_res.y / RayTracerNS::m_downsampleDenominator;
 	}
 
-	m_TextureComp = g_Engine->Get<GraphicsResourceService>()->AddTextureComponent("RayTracingResult/");
+	m_TextureComp = g_Engine->Get<TextureResourceService>()->Add("RayTracingResult/");
 
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;

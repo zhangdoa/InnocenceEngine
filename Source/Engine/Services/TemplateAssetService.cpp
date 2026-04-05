@@ -6,7 +6,9 @@
 #include "../Common/IOService.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../Engine.h"
-#include "GraphicsResourceService.h"
+#include "TextureResourceService.h"
+#include "MeshResourceService.h"
+#include "MaterialResourceService.h"
 using namespace Inno;
 
 namespace Inno
@@ -73,7 +75,6 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
     ITask::Desc taskDesc("Template Assets Initialization Task", ITask::Type::Once, 2);
     auto l_DefaultAssetInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc,
         [&]() {
-            auto graphicsService = g_Engine->Get<GraphicsResourceService>();
             auto l_registry = g_Engine->Get<EntityRegistry>();
 
             auto loadOrCreateTexture = [&](const char* name, const char* texturePath, EntityID& entityIDRef) -> bool {
@@ -103,7 +104,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 l_texturePtr->m_ObjectStatus = ObjectStatus::Created;
                 AssetService::Save(*l_texturePtr, m_textureData[l_texturePtr]);
 
-                graphicsService->Initialize(l_texturePtr, m_textureData[l_texturePtr], l_entityID);
+                g_Engine->Get<TextureResourceService>()->Initialize(l_texturePtr, m_textureData[l_texturePtr], l_entityID);
                 entityIDRef = l_entityID;
                 return true;
                 };
@@ -139,7 +140,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                     l_matAsset->m_Residency = AssetResidency::Resident;
                     AssetService::Save(*l_materialPtr);
 
-                    graphicsService->Initialize(l_materialPtr, l_entityID);
+                    g_Engine->Get<MaterialResourceService>()->Initialize(l_materialPtr, l_entityID);
                 }
                 m_defaultMaterialEntity = l_entityID;
             }
@@ -165,7 +166,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 
                 GenerateMesh(shape, l_meshPtr);
                 AssetService::Save(*l_meshPtr, m_meshVertices[l_meshPtr], m_meshIndices[l_meshPtr]);
-                graphicsService->Initialize(l_meshPtr, m_meshVertices[l_meshPtr], m_meshIndices[l_meshPtr], l_entityID);
+                g_Engine->Get<MeshResourceService>()->Initialize(l_meshPtr, m_meshVertices[l_meshPtr], m_meshIndices[l_meshPtr], l_entityID);
                 entityIDRef = l_entityID;
                 };
 

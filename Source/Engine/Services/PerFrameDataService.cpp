@@ -8,7 +8,7 @@
 #include "DrawCallService.h"
 
 #include "../Engine.h"
-#include "GraphicsResourceService.h"
+#include "GPUBufferResourceService.h"
 #include "FrameManagementService.h"
 using namespace Inno;
 
@@ -70,10 +70,10 @@ GPUBufferComponent* PerFrameDataServiceImpl::GetPreviousFramePerFrameBuffer()
 
 bool PerFrameDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_PerFrameCBufferGPUBufferComp = l_rsService->AddGPUBufferComponent("PerFrameCBuffer/");
-	m_PerFrameCBufferPrevGPUBufferComp = l_rsService->AddGPUBufferComponent("PerFrameCBufferPrev/");
+	m_PerFrameCBufferGPUBufferComp = l_rsService->Add("PerFrameCBuffer/");
+	m_PerFrameCBufferPrevGPUBufferComp = l_rsService->Add("PerFrameCBufferPrev/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -85,7 +85,7 @@ bool PerFrameDataServiceImpl::Initialize()
 	{
 		m_perFrameCBs.resize(g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount());
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		m_PerFrameCBufferGPUBufferComp->m_GPUAccessibility = Accessibility::ReadOnly;
 		m_PerFrameCBufferGPUBufferComp->m_ElementCount = 1;
@@ -196,7 +196,7 @@ bool PerFrameDataServiceImpl::Update()
 
 		UpdatePerFrameConstantBuffer();
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 		auto l_fmService = g_Engine->Get<FrameManagementService>();
 		auto l_currentFramePerFrameBuffer = GetCurrentFramePerFrameBuffer();
 		l_rsService->Upload(l_currentFramePerFrameBuffer, &m_perFrameCBs[l_fmService->GetCurrentFrame()]);
@@ -212,7 +212,7 @@ bool PerFrameDataServiceImpl::Update()
 
 bool PerFrameDataServiceImpl::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 	l_rsService->Delete(m_PerFrameCBufferGPUBufferComp);
 	l_rsService->Delete(m_PerFrameCBufferPrevGPUBufferComp);

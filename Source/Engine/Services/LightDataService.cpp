@@ -10,7 +10,7 @@
 #include "../Component/TransformComponent.h"
 #include "../Component/CameraComponent.h"
 #include "../Engine.h"
-#include "GraphicsResourceService.h"
+#include "GPUBufferResourceService.h"
 
 using namespace Inno;
 
@@ -67,12 +67,12 @@ namespace Inno
 
 bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_PointLightGPUBufferComp = l_rsService->AddGPUBufferComponent("PointLightCBuffer/");
-	m_SphereLightGPUBufferComp = l_rsService->AddGPUBufferComponent("SphereLightCBuffer/");
-	m_CSMGPUBufferComp = l_rsService->AddGPUBufferComponent("CSMCBuffer/");
-	m_GICBufferGPUBufferComp = l_rsService->AddGPUBufferComponent("GICBuffer/");
+	m_PointLightGPUBufferComp = l_rsService->Add("PointLightCBuffer/");
+	m_SphereLightGPUBufferComp = l_rsService->Add("SphereLightCBuffer/");
+	m_CSMGPUBufferComp = l_rsService->Add("CSMCBuffer/");
+	m_GICBufferGPUBufferComp = l_rsService->Add("GICBuffer/");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -82,7 +82,7 @@ bool LightDataServiceImpl::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 		auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 
 		m_PointLightGPUBufferComp->m_ElementCount = l_RenderingCapability.maxPointLights;
@@ -280,7 +280,7 @@ bool LightDataServiceImpl::Update()
 		UpdateLightData();
 		UpdateCSMData();
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		if (m_PointLightCBVector.size() > 0)
 		{
@@ -306,7 +306,7 @@ bool LightDataServiceImpl::Update()
 
 bool LightDataServiceImpl::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
+	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 	l_rsService->Delete(m_PointLightGPUBufferComp);
 	l_rsService->Delete(m_SphereLightGPUBufferComp);

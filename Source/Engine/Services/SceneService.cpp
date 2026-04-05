@@ -2,7 +2,9 @@
 #include "../Common/LogService.h"
 #include "AssetService.h"
 #include "EntityRegistry.h"
-#include "GraphicsResourceService.h"
+#include "MeshResourceService.h"
+#include "TextureResourceService.h"
+#include "MaterialResourceService.h"
 #include "TransformService.h"
 #include "PhysicsSimulationService.h"
 #include "BillboardDrawCallService.h"
@@ -31,7 +33,9 @@ bool SceneService::LoadSync(const char* fileName)
 
 	// Unloading phase — order is critical:
 	// 1. Free GPU resources first (while component pointers still valid)
-	g_Engine->Get<GraphicsResourceService>()->OnSceneUnloading();
+	g_Engine->Get<MeshResourceService>()->OnSceneUnloading();
+	g_Engine->Get<TextureResourceService>()->OnSceneUnloading();
+	g_Engine->Get<MaterialResourceService>()->OnSceneUnloading();
 
 	// 2. Destroy scene-scoped components
 	g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
