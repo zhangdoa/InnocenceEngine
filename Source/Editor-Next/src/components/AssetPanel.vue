@@ -65,6 +65,13 @@ const navigateUp = () => {
 const onItemDblClick = (item) => {
   if (item.isDir) {
     loadDirectory(path.join(currentPath.value, item.name))
+  } else if (item.name.endsWith('.InnoScene')) {
+    // Request engine to load scene
+    if (window.require) {
+      const relPath = path.join(currentPath.value, item.name)
+      // Dispatch event or call a global handler to send over WS
+      window.dispatchEvent(new CustomEvent('load-scene', { detail: relPath }))
+    }
   }
 }
 </script>

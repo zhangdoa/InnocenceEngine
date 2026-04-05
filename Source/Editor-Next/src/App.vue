@@ -61,6 +61,15 @@ let socket = null
 // Dockview
 const dockviewApi = shallowRef()
 
+const onUpdateProperty = (data) => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      type: 'UPDATE_ENTITY_PROPERTY',
+      ...data
+    }))
+  }
+}
+
 const onDockviewReady = (event) => {
   dockviewApi.value = event.api
 
@@ -75,7 +84,11 @@ const onDockviewReady = (event) => {
     id: 'hierarchy_panel',
     component: 'hierarchy',
     title: 'Hierarchy',
-    params: { entities: entities.value, selectedEntityId: selectedEntityId.value },
+    params: { 
+      entities: entities.value, 
+      selectedEntityId: selectedEntityId.value,
+      onSelectEntity: selectEntity 
+    },
     position: { direction: 'left', width: 300 }
   })
 
@@ -90,7 +103,10 @@ const onDockviewReady = (event) => {
     id: 'properties_panel',
     component: 'properties',
     title: 'Properties',
-    params: { selectedEntity: selectedEntity.value },
+    params: { 
+      selectedEntity: selectedEntity.value,
+      onUpdateProperty: onUpdateProperty 
+    },
     position: { direction: 'right', referencePanel: viewportPane, width: 350 }
   })
 
@@ -112,9 +128,9 @@ const connect = () => {
   }
 
   socket.onmessage = (event) => {
-    lastMessage.value = event.data
     try {
       const msg = JSON.parse(event.data)
+      lastMessage.value = `Received: ${msg.type}`
       if (msg.type === 'HELLO_REPLY') {
         sharedHandle.value = BigInt(msg.sharedHandle)
         updatePanelParams('viewport_panel', { sharedHandle: sharedHandle.value })
@@ -151,17 +167,27 @@ const updatePanelParams = (id, params) => {
 
 const selectEntity = (id) => {
   selectedEntityId.value = id
-  selectedEntity.value = entities.value.find(e => e.id === id)
   updatePanelParams('hierarchy_panel', { selectedEntityId: id })
-  updatePanelParams('properties_panel', { selectedEntity: selectedEntity.value })
+  // Request details from engine
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'GET_ENTITY_DETAILS', id: id }))
+  }
+}
+
+const loadScene = (path) => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'LOAD_SCENE', path: path }))
+  }
 }
 
 onMounted(() => {
   connect()
+  window.addEventListener('load-scene', (e) => loadScene(e.detail))
 })
 
 onUnmounted(() => {
   if (socket) socket.close()
+  // Note: actual cleanup would need the same function ref
 })
 </script>
 

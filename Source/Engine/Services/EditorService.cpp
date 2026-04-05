@@ -2,6 +2,7 @@
 #include "../Engine.h"
 #include "../Common/LogService.h"
 #include "EntityRegistry.h"
+#include "SceneService.h"
 #include "FrameManagementService.h"
 #include "../Component/TransformComponent.h"
 #include "../Component/LightComponent.h"
@@ -132,6 +133,15 @@ bool EditorService::Initialize()
 									l_reply["details"] = l_details;
 									webSocket.send(l_reply.dump());
 								}
+							}
+						}
+						else if (l_type == "LOAD_SCENE")
+						{
+							if (l_json.contains("path"))
+							{
+								std::string l_path = l_json["path"];
+								Log(Success, "EditorService: Requesting scene load: ", l_path.c_str());
+								g_Engine->Get<SceneService>()->Load(l_path.c_str());
 							}
 						}
 						else if (l_type == "UPDATE_ENTITY_PROPERTY")
