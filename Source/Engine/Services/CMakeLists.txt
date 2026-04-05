@@ -9,6 +9,7 @@ target_link_libraries(Services AssimpWrapper)
 target_link_libraries(Services STBWrapper)
 target_link_libraries(Services JSONWrapper)
 target_link_libraries(Services ImGuiWrapper)
+target_link_libraries(Services IXWebSocketWrapper)
 
 if (INNO_PLATFORM_WIN)
 target_link_libraries(Services PhysXWrapper)
