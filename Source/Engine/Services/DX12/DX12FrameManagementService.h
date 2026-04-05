@@ -31,6 +31,8 @@ namespace Inno
 		void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) override;
 		bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
 
+		void* GetViewportSharedHandle() override { return (void*)m_ViewportSharedHandle; }
+
 	protected:
 		bool CreateSwapChainResources() override;
 		bool BeginFrame() override;
@@ -61,6 +63,9 @@ namespace Inno
 		std::vector<ComPtr<ID3D12Resource>> m_swapChainImages;
 		DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 		ComPtr<IDXGISwapChain4> m_swapChain = nullptr;
+
+		// Sidecar
+		HANDLE m_ViewportSharedHandle = nullptr;
 
 		// Debug capture
 		bool m_BeginCapture = false;

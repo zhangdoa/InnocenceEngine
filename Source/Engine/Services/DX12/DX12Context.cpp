@@ -134,13 +134,13 @@ ComPtr<ID3D12Resource> DX12Context::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* 
 	return l_uploadHeapBuffer;
 }
 
-ComPtr<ID3D12Resource> DX12Context::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue, const char* name)
+ComPtr<ID3D12Resource> DX12Context::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue, bool isShared, const char* name)
 {
 	ComPtr<ID3D12Resource> l_defaultHeapBuffer;
 
 	auto l_HResult = m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
+		isShared ? D3D12_HEAP_FLAG_SHARED : D3D12_HEAP_FLAG_NONE,
 		resourceDesc,
 		initialState,
 		clearValue,

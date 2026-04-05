@@ -123,12 +123,22 @@ bool TestRenderingClient::Setup_DrawInstanced()
     l_desc.m_RenderTargetCount = 1;
     l_desc.m_UseDepthBuffer    = false;
     l_desc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_PrimitiveTopology = PrimitiveTopology::Point;
+	l_desc.m_RenderTargetDesc.UseSharedHandle = true;
 
     m_DrawInstanced->RenderPass->m_RenderPassDesc = l_desc;
     m_DrawInstanced->RenderPass->m_ShaderProgram  = m_DrawInstanced->ShaderProgram;
 
     m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestDrawInstanced/Graphics/");
     m_DrawInstanced->CommandList->m_Type = GPUEngineType::Graphics;
+
+	g_Engine->Get<FrameManagementService>()->SetUserPipelineOutput([this]() -> GPUResourceComponent*
+	{
+		if (m_DrawInstanced && m_DrawInstanced->RenderPass && m_DrawInstanced->RenderPass->m_OutputMergerTarget)
+		{
+			return m_DrawInstanced->RenderPass->m_OutputMergerTarget->m_ColorOutputs[0];
+		}
+		return nullptr;
+	});
 
     return true;
 }

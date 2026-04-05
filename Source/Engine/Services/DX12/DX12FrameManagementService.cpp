@@ -920,6 +920,27 @@ bool DX12FrameManagementService::AssignSwapChainImages()
 {
     if (g_Engine->getInitConfig().isOffscreen)
     {
+		if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar && m_GetUserPipelineOutputFunc && !m_ViewportSharedHandle)
+		{
+			auto l_viewportTextureComponent = GetUserPipelineOutput();
+			if (l_viewportTextureComponent)
+			{
+				auto l_viewportTexture = reinterpret_cast<TextureComponent*>(l_viewportTextureComponent);
+				auto l_resource = static_cast<ID3D12Resource*>(l_viewportTexture->GetGPUResource(0));
+				if (l_resource)
+				{
+					auto l_hResult = m_ctx->m_device->CreateSharedHandle(l_resource, nullptr, GENERIC_ALL, nullptr, &m_ViewportSharedHandle);
+					if (SUCCEEDED(l_hResult))
+					{
+						Log(Success, "Viewport shared handle created: ", (void*)m_ViewportSharedHandle);
+					}
+					else
+					{
+						Log(Error, "Failed to create viewport shared handle, HRESULT=", l_hResult);
+					}
+				}
+			}
+		}
         return true;
     }
 

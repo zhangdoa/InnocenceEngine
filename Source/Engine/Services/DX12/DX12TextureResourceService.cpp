@@ -92,9 +92,9 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 	{
 		ComPtr<ID3D12Resource> defaultHeapBuffer;
 		if (useClearValue)
-			defaultHeapBuffer = m_ctx->CreateDefaultHeapBuffer(&l_textureDesc, l_initialState, &l_clearValue);
+			defaultHeapBuffer = m_ctx->CreateDefaultHeapBuffer(&l_textureDesc, l_initialState, &l_clearValue, texture->m_TextureDesc.UseSharedHandle);
 		else
-			defaultHeapBuffer = m_ctx->CreateDefaultHeapBuffer(&l_textureDesc, l_initialState);
+			defaultHeapBuffer = m_ctx->CreateDefaultHeapBuffer(&l_textureDesc, l_initialState, nullptr, texture->m_TextureDesc.UseSharedHandle);
 
 		if (!defaultHeapBuffer)
 		{
