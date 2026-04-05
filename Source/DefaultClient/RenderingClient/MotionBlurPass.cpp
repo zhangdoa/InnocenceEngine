@@ -6,24 +6,22 @@
 #include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
-
-
-
 bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("MotionBlurPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("MotionBlurPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "motionBlurPass.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("MotionBlurPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("MotionBlurPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -64,7 +62,7 @@ bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_rsService->AddSamplerComponent("MotionBlurPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("MotionBlurPass/");
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Border;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Border;
 
@@ -75,12 +73,11 @@ bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 
 bool MotionBlurPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_SamplerComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -89,10 +86,9 @@ bool MotionBlurPass::Initialize()
 
 bool MotionBlurPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_RenderPassComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -106,7 +102,6 @@ ObjectStatus MotionBlurPass::GetStatus()
 
 bool MotionBlurPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_renderingContext = reinterpret_cast<MotionBlurPassRenderingContext*>(renderingContext);	
@@ -147,7 +142,6 @@ GPUResourceComponent* MotionBlurPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 

@@ -6,27 +6,29 @@
 #include "../../Engine/Services/DrawCallService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool OpaquePass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("OpaquePass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("OpaquePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "opaqueGeometryProcessPass.frag/";
 
-	m_SamplerComp = l_rsService->AddSamplerComponent("OpaquePass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("OpaquePass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("OpaquePass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("OpaquePass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -100,7 +102,7 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("OpaquePass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("OpaquePass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 	
 	m_ObjectStatus = ObjectStatus::Created;
@@ -110,13 +112,12 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 bool OpaquePass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_SamplerComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -125,12 +126,11 @@ bool OpaquePass::Initialize()
 
 bool OpaquePass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_SamplerComp);	
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp);	
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -147,7 +147,6 @@ bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();
 
@@ -192,7 +191,6 @@ GPUResourceComponent* OpaquePass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return nullptr;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 

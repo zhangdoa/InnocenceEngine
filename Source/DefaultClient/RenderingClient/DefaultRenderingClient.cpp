@@ -43,7 +43,7 @@
 #include "../../Engine/Common/TaskScheduler.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 #include <cstdlib>
@@ -181,7 +181,6 @@ namespace Inno
 				return m_Canvas;
 			};
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 		l_fmService->SetUserPipelineOutput(std::move(f_getUserPipelineOutputFunc));
@@ -193,7 +192,6 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::Initialize()
 	{
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		BRDFLUTPass::Get().Initialize();
 		BRDFLUTMSPass::Get().Initialize();
@@ -259,8 +257,6 @@ namespace Inno
 
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
-
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 		if (m_ExecuteOneShotCommands)
 		{
@@ -331,7 +327,6 @@ namespace Inno
 	bool DefaultRenderingClientImpl::ExecuteCommands(IRenderingConfig* renderingConfig)
 	{
 		auto l_renderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 		auto l_fmService = g_Engine->Get<FrameManagementService>();
 		GPUResourceComponent* l_canvas;
@@ -678,7 +673,7 @@ namespace Inno
 		if (m_saveScreenCapture)
 		{
 			auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-			auto l_textureData = l_rsService->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
+			auto l_textureData = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
 			g_Engine->Get<AssetService>()->Save("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
 			m_saveScreenCapture = false;
 		}
@@ -694,7 +689,7 @@ namespace Inno
 				auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
 				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
 				l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
-				auto l_floatPixels = l_rsService->ReadTextureBackToCPU(
+				auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
 					FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
 
 				if (!l_floatPixels.empty())
@@ -747,15 +742,14 @@ namespace Inno
 	void DefaultRenderingClientImpl::AuditDump()
 	{
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-		auto l_rsService2 = g_Engine->Get<GraphicsResourceService>();
-
+		
 		l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
 		l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
 
 		auto Dump = [&](const char* filename, RenderPassComponent* rp, TextureComponent* tc)
 		{
 			if (!tc) { Log(Warning, "AuditDump: null TextureComponent for ", filename); return; }
-			auto l_pixels = l_rsService2->ReadTextureBackToCPU(rp, tc);
+			auto l_pixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(rp, tc);
 			if (l_pixels.empty()) { Log(Error, "AuditDump: empty readback for ", filename); return; }
 			for (size_t pi = 0; pi < l_pixels.size(); pi++) {
 				if (l_pixels[pi].x != 0.0f || l_pixels[pi].y != 0.0f || l_pixels[pi].z != 0.0f) {

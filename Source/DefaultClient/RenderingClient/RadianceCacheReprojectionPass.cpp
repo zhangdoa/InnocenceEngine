@@ -8,20 +8,23 @@
 #include "RadianceCacheRaytracingPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
+#include "../../Engine/Services/GPUBufferResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("RadianceCacheReprojectionPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheReprojectionPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheReprojection.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("RadianceCacheReprojectionPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheReprojectionPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -101,10 +104,10 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("RadianceCacheReprojectionPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("RadianceCacheReprojectionPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -114,12 +117,11 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheReprojectionPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -128,18 +130,17 @@ bool RadianceCacheReprojectionPass::Initialize()
 
 bool RadianceCacheReprojectionPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_rsService->Delete(m_WorldProbeGrid);
-	l_rsService->Delete(m_ProbePosition_Even);
-	l_rsService->Delete(m_ProbePosition_Odd);
-	l_rsService->Delete(m_ProbeNormal_Even);
-	l_rsService->Delete(m_ProbeNormal_Odd);
-	l_rsService->Delete(m_RadianceCache_Even);
-	l_rsService->Delete(m_RadianceCache_Odd);
+	g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
+	g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Even);
+	g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Odd);
+	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Even);
+	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Odd);
+	g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Even);
+	g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Odd);
 	
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -160,7 +161,6 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 		|| m_RadianceCache_Odd->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_readTexture = GetPreviousFrameResult();
@@ -180,7 +180,7 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 	l_fmService->TryToTransitState(l_probePosition, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_probeNormal, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_writeTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_rsService->Clear(m_CommandListComp_Graphics, l_writeTexture);
+	g_Engine->Get<TextureResourceService>()->Clear(m_CommandListComp_Graphics, l_writeTexture);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -214,77 +214,75 @@ RenderPassComponent* RadianceCacheReprojectionPass::GetRenderPassComp()
 
 bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_RadianceCache_Even)
-		l_rsService->Delete(m_RadianceCache_Even);
+		g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Even);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::ComputeOnly;
-	m_RadianceCache_Even = l_rsService->AddTextureComponent("Radiance Cache Result (Even)/");
+	m_RadianceCache_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Result (Even)/");
 	m_RadianceCache_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	l_rsService->Initialize(m_RadianceCache_Even);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_RadianceCache_Even);
 
 	if (m_RadianceCache_Odd)
-		l_rsService->Delete(m_RadianceCache_Odd);
+		g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Odd);
 
-	m_RadianceCache_Odd = l_rsService->AddTextureComponent("Radiance Cache Result (Odd)/");
+	m_RadianceCache_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Result (Odd)/");
 	m_RadianceCache_Odd->m_TextureDesc = m_RadianceCache_Even->m_TextureDesc;
 
-	l_rsService->Initialize(m_RadianceCache_Odd);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_RadianceCache_Odd);
 
 	if (m_ProbePosition_Odd)
-		l_rsService->Delete(m_ProbePosition_Odd);
+		g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Odd);
 
 	auto l_probeTextureWidth = (l_RenderPassDesc.m_RenderTargetDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto l_probeTextureHeight = (l_RenderPassDesc.m_RenderTargetDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
-	m_ProbePosition_Odd = l_rsService->AddTextureComponent("Radiance Cache Probe Position (Odd)/");
+	m_ProbePosition_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Odd)/");
 	m_ProbePosition_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_ProbePosition_Odd->m_TextureDesc.Width = l_probeTextureWidth;
 	m_ProbePosition_Odd->m_TextureDesc.Height = l_probeTextureHeight;
 
-	l_rsService->Initialize(m_ProbePosition_Odd);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbePosition_Odd);
 
 	if (m_ProbePosition_Even)
-		l_rsService->Delete(m_ProbePosition_Even);
+		g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Even);
 
-	m_ProbePosition_Even = l_rsService->AddTextureComponent("Radiance Cache Probe Position (Even)/");
+	m_ProbePosition_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Even)/");
 	m_ProbePosition_Even->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
 
-	l_rsService->Initialize(m_ProbePosition_Even);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbePosition_Even);
 
 	if (m_ProbeNormal_Odd)
-		l_rsService->Delete(m_ProbeNormal_Odd);
+		g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Odd);
 
-	m_ProbeNormal_Odd = l_rsService->AddTextureComponent("Radiance Cache Probe Normal (Odd)/");
+	m_ProbeNormal_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Normal (Odd)/");
 	m_ProbeNormal_Odd->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
 
-	l_rsService->Initialize(m_ProbeNormal_Odd);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeNormal_Odd);
 
 	if (m_ProbeNormal_Even)
-		l_rsService->Delete(m_ProbeNormal_Even);
+		g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Even);
 
-	m_ProbeNormal_Even = l_rsService->AddTextureComponent("Radiance Cache Probe Normal (Even)/");
+	m_ProbeNormal_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Normal (Even)/");
 	m_ProbeNormal_Even->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
 
-	l_rsService->Initialize(m_ProbeNormal_Even);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeNormal_Even);
 
 	if (m_WorldProbeGrid)
-		l_rsService->Delete(m_WorldProbeGrid);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
 
-	m_WorldProbeGrid = l_rsService->AddGPUBufferComponent("Radiance Cache World Probe Grid/");
+	m_WorldProbeGrid = g_Engine->Get<GPUBufferResourceService>()->Add("Radiance Cache World Probe Grid/");
 	m_WorldProbeGrid->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_WorldProbeGrid->m_ElementCount = 256 * 1024;
 	m_WorldProbeGrid->m_ElementSize = sizeof(float) * 3 + sizeof(float) * 3 + sizeof(float);
-	l_rsService->Initialize(m_WorldProbeGrid);
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_WorldProbeGrid);
 
 	return true;
 }
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -294,7 +292,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentFrameResult()
 
 TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -304,7 +301,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetPreviousFrameResult()
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -314,7 +310,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbePosition()
 
 TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -324,7 +319,6 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbePosition(
 
 TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -334,7 +328,6 @@ TextureComponent* RadianceCacheReprojectionPass::GetCurrentProbeNormal()
 
 TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbeNormal()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;

@@ -15,21 +15,24 @@
 #include "VolumetricPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool LightPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LightPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LightPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightPass.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("LightPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LightPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -181,15 +184,15 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp_Linear = l_rsService->AddSamplerComponent("LightPass/LinearSampler/");
-	m_SamplerComp_Point = l_rsService->AddSamplerComponent("LightPass/PointSampler/");
+	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler/");
+	m_SamplerComp_Point = g_Engine->Get<SamplerResourceService>()->Add("LightPass/PointSampler/");
 	m_SamplerComp_Point->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_Point->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("LightPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LightPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("LightPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("LightPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -199,15 +202,14 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 bool LightPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Compute);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_SamplerComp_Linear);
-	l_rsService->Initialize(m_SamplerComp_Point);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp_Linear);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp_Point);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -216,16 +218,15 @@ bool LightPass::Initialize()
 
 bool LightPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_LuminanceResult);
-	l_rsService->Delete(m_IlluminanceResult);
+	g_Engine->Get<TextureResourceService>()->Delete(m_LuminanceResult);
+	g_Engine->Get<TextureResourceService>()->Delete(m_IlluminanceResult);
 	
-	l_rsService->Delete(m_SamplerComp_Point);
-	l_rsService->Delete(m_SamplerComp_Linear);
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_Point);
+	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_Linear);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -254,7 +255,6 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (BRDFLUTMSPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 
@@ -328,29 +328,28 @@ TextureComponent* LightPass::GetIlluminanceResult()
 
 bool LightPass::RenderTargetsCreationFunc()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_LuminanceResult)
-		l_rsService->Delete(m_LuminanceResult);
+		g_Engine->Get<TextureResourceService>()->Delete(m_LuminanceResult);
 
 	if (m_IlluminanceResult)
-		l_rsService->Delete(m_IlluminanceResult);
+		g_Engine->Get<TextureResourceService>()->Delete(m_IlluminanceResult);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_LuminanceResult = l_rsService->AddTextureComponent("LightPass Luminance Result/");
+	m_LuminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Luminance Result/");
 	m_LuminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_LuminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_rsService->Initialize(m_LuminanceResult);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_LuminanceResult);
 
-	m_IlluminanceResult = l_rsService->AddTextureComponent("LightPass Illuminance Result/");
+	m_IlluminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Illuminance Result/");
 	m_IlluminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_IlluminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_rsService->Initialize(m_IlluminanceResult);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_IlluminanceResult);
 
 	return true;
 }

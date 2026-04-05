@@ -5,22 +5,24 @@
 #include "../../Engine/Services/AnimationDrawCallService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool AnimationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("AnimationPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("AnimationPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("AnimationPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("AnimationPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -101,12 +103,12 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp = l_rsService->AddSamplerComponent("AnimationPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("AnimationPass/");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("AnimationPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("AnimationPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -116,13 +118,12 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 bool AnimationPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_SamplerComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -131,12 +132,11 @@ bool AnimationPass::Initialize()
 
 bool AnimationPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_SamplerComp);
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -150,7 +150,6 @@ ObjectStatus AnimationPass::GetStatus()
 
 bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
@@ -217,10 +216,9 @@ RenderPassComponent* AnimationPass::GetRenderPassComp()
 
 bool AnimationPass::RenderTargetsReservationFunc()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	if (m_RenderPassComp->m_OutputMergerTarget == nullptr)
-		l_rsService->Add(m_RenderPassComp->m_OutputMergerTarget);
+		g_Engine->Get<RenderPassResourceService>()->Add(m_RenderPassComp->m_OutputMergerTarget);
 
 	auto l_outputMergerTarget = m_RenderPassComp->m_OutputMergerTarget;
 	l_outputMergerTarget->m_ColorOutputs.resize(m_RenderPassComp->m_RenderPassDesc.m_RenderTargetCount);

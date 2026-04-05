@@ -9,25 +9,25 @@
 #include "BRDFLUTMSPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
+#include "../../Engine/Services/GPUBufferResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
-
-
-
 bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("BSDFTestPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BSDFTestPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("BSDFTestPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BSDFTestPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -81,10 +81,10 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("BSDFTestPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BSDFTestPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_SamplerComp = l_rsService->AddSamplerComponent("BSDFTestPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("BSDFTestPass/");
 
 	//
 	auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
@@ -124,13 +124,12 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 
 bool BSDFTestPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_SamplerComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -139,10 +138,9 @@ bool BSDFTestPass::Initialize()
 
 bool BSDFTestPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_RenderPassComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -156,15 +154,14 @@ ObjectStatus BSDFTestPass::GetStatus()
 
 bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_MeshGPUBufferComp = g_Engine->Get<DrawCallService>()->GetGPUModelDataBuffer();
 	auto l_MaterialGPUBufferComp = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
 
-	l_rsService->Upload(l_MeshGPUBufferComp, m_transformConstantBuffer);
-	l_rsService->Upload(l_MaterialGPUBufferComp, m_materialConstantBuffer);
+	g_Engine->Get<GPUBufferResourceService>()->Upload(l_MeshGPUBufferComp, m_transformConstantBuffer);
+	g_Engine->Get<GPUBufferResourceService>()->Upload(l_MaterialGPUBufferComp, m_materialConstantBuffer);
 
     // m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResource = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 

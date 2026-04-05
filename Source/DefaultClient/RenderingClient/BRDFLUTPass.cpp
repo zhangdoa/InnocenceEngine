@@ -3,21 +3,23 @@
 #include "../../Engine/Services/RenderingConfigurationService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("BRDFLUTPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BRDFLUTPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("BRDFLUTPass/");
-	m_Result = l_rsService->AddTextureComponent("BRDF LUT/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BRDFLUTPass/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("BRDF LUT/");
 	m_Result->m_TextureDesc.Width = 512;
 	m_Result->m_TextureDesc.Height = 512;
 	m_Result->m_TextureDesc.DepthOrArraySize = 1;
@@ -46,10 +48,10 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("BRDFLUTPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("BRDFLUTPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("BRDFLUTPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BRDFLUTPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -59,14 +61,13 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 
 bool BRDFLUTPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Compute);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_Result);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -75,14 +76,13 @@ bool BRDFLUTPass::Initialize()
 
 bool BRDFLUTPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_Result);
-	l_rsService->Delete(m_CommandListComp_Compute);
-	l_rsService->Delete(m_CommandListComp_Graphics);	
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<TextureResourceService>()->Delete(m_Result);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);	
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -99,7 +99,6 @@ bool BRDFLUTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 	
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);

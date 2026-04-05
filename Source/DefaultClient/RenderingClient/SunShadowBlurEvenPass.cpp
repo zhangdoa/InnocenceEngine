@@ -7,17 +7,14 @@
 #include "SunShadowBlurOddPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
-
-
-
 bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
@@ -38,10 +35,10 @@ bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[2] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[3] = 1.0f;
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("SunShadowBlurEvenPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowBlurEvenPass/");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowBlurPassEven.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("SunShadowBlurEvenPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowBlurEvenPass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -78,11 +75,10 @@ bool SunShadowBlurEvenPass::Setup(IServiceConfig *systemConfig)
 
 bool SunShadowBlurEvenPass::Initialize()
 {	
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -91,10 +87,9 @@ bool SunShadowBlurEvenPass::Initialize()
 
 bool SunShadowBlurEvenPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_RenderPassComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -108,7 +103,6 @@ ObjectStatus SunShadowBlurEvenPass::GetStatus()
 
 bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_shadowMapResolution = SunShadowGeometryProcessPass::Get().GetShadowMapResolution();	
@@ -144,7 +138,6 @@ GPUResourceComponent* SunShadowBlurEvenPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 

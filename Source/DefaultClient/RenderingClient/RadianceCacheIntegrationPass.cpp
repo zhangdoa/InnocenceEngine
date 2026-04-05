@@ -8,21 +8,23 @@
 #include "RadianceCacheFilterVerticalPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("RadianceCacheIntegrationPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheIntegrationPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheIntegration.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("RadianceCacheIntegrationPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheIntegrationPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -55,10 +57,10 @@ bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("RadianceCacheIntegrationPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheIntegrationPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("RadianceCacheIntegrationPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheIntegrationPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -68,13 +70,12 @@ bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 
 bool RadianceCacheIntegrationPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -94,12 +95,11 @@ bool RadianceCacheIntegrationPass::Update()
 
 bool RadianceCacheIntegrationPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_Result);	
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<TextureResourceService>()->Delete(m_Result);	
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -119,7 +119,6 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	// Use filtered radiance cache instead of raw raytracing result
@@ -162,15 +161,14 @@ GPUResourceComponent* RadianceCacheIntegrationPass::GetResult()
 
 bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_Result)
-		l_rsService->Delete(m_Result);
+		g_Engine->Get<TextureResourceService>()->Delete(m_Result);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_Result = l_rsService->AddTextureComponent("Radiance Cache Integration Result/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Integration Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
@@ -181,7 +179,7 @@ bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 	m_Result->m_TextureDesc.Width *= SH_TILE_SIZE;
 	m_Result->m_TextureDesc.Height *= SH_TILE_SIZE;
 
-	l_rsService->Initialize(m_Result);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 
 	return true;
 }

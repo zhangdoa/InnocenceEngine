@@ -4,20 +4,22 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool TAAPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("TAAPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TAAPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "TAAPass.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("TAAPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TAAPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -63,10 +65,10 @@ bool TAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("TAAPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("TAAPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("TAAPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("TAAPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -76,12 +78,11 @@ bool TAAPass::Setup(IServiceConfig* systemConfig)
 
 bool TAAPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -90,14 +91,13 @@ bool TAAPass::Initialize()
 
 bool TAAPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_rsService->Delete(m_OddTextureComp);
-	l_rsService->Delete(m_EvenTextureComp);
-	l_rsService->Delete(m_CommandListComp_Compute);
-	l_rsService->Delete(m_CommandListComp_Graphics);
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<TextureResourceService>()->Delete(m_OddTextureComp);
+	g_Engine->Get<TextureResourceService>()->Delete(m_EvenTextureComp);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -118,7 +118,6 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 		|| m_OddTextureComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 			
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -153,7 +152,6 @@ bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
-
 	return true;
 }
 
@@ -164,7 +162,6 @@ RenderPassComponent* TAAPass::GetRenderPassComp()
 
 GPUResourceComponent* TAAPass::GetResult()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -176,7 +173,6 @@ GPUResourceComponent* TAAPass::GetResult()
 // texture is the ping-pong read source for the frame that just ran.
 GPUResourceComponent* TAAPass::GetHistory()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	auto l_isOddFrame = l_frameCount % 2 == 1;
@@ -186,27 +182,26 @@ GPUResourceComponent* TAAPass::GetHistory()
 
 bool TAAPass::RenderTargetsCreationFunc()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	if (m_EvenTextureComp)
-		l_rsService->Delete(m_EvenTextureComp);
+		g_Engine->Get<TextureResourceService>()->Delete(m_EvenTextureComp);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_EvenTextureComp = l_rsService->AddTextureComponent("TAA Pass Result (Even)/");
+	m_EvenTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Even)/");
 	m_EvenTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_EvenTextureComp->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_rsService->Initialize(m_EvenTextureComp);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_EvenTextureComp);
 
 	if (m_OddTextureComp)
-		l_rsService->Delete(m_OddTextureComp);
+		g_Engine->Get<TextureResourceService>()->Delete(m_OddTextureComp);
 
-	m_OddTextureComp = l_rsService->AddTextureComponent("TAA Pass Result (Odd)/");
+	m_OddTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Odd)/");
 	m_OddTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_OddTextureComp->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
 
-	l_rsService->Initialize(m_OddTextureComp);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_OddTextureComp);
 
 	return true;
 }

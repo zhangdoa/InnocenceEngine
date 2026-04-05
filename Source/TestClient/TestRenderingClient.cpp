@@ -5,7 +5,10 @@
 #include "../Engine/Services/RenderingConfigurationService.h"
 #include "../Engine/Services/AssetService.h"
 #include "../Engine/Services/GraphicsHardwareService.h"
-#include "../Engine/Services/GraphicsResourceService.h"
+#include "../Engine/Services/ShaderProgramResourceService.h"
+#include "../Engine/Services/RenderPassResourceService.h"
+#include "../Engine/Services/TextureResourceService.h"
+#include "../Engine/Services/CommandListResourceService.h"
 #include "../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
@@ -107,15 +110,14 @@ bool TestRenderingClient::Setup_BareBoot() { return true; }
 
 bool TestRenderingClient::Setup_DrawInstanced()
 {
-    auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-
+    
     m_DrawInstanced = new DrawInstancedResources();
 
-    m_DrawInstanced->ShaderProgram = l_rsService->AddShaderProgramComponent("TestDrawInstanced/");
+    m_DrawInstanced->ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add("TestDrawInstanced/");
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_VSPath = "drawInstanced.vert/";
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_PSPath = "drawInstanced.frag/";
 
-    m_DrawInstanced->RenderPass = l_rsService->AddRenderPassComponent("TestDrawInstanced/");
+    m_DrawInstanced->RenderPass = g_Engine->Get<RenderPassResourceService>()->Add("TestDrawInstanced/");
 
     auto l_desc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
     l_desc.m_RenderTargetCount = 1;
@@ -125,7 +127,7 @@ bool TestRenderingClient::Setup_DrawInstanced()
     m_DrawInstanced->RenderPass->m_RenderPassDesc = l_desc;
     m_DrawInstanced->RenderPass->m_ShaderProgram  = m_DrawInstanced->ShaderProgram;
 
-    m_DrawInstanced->CommandList = l_rsService->AddCommandListComponent("TestDrawInstanced/Graphics/");
+    m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestDrawInstanced/Graphics/");
     m_DrawInstanced->CommandList->m_Type = GPUEngineType::Graphics;
 
     return true;
@@ -133,17 +135,15 @@ bool TestRenderingClient::Setup_DrawInstanced()
 
 bool TestRenderingClient::Initialize_DrawInstanced()
 {
-    auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-    l_rsService->Initialize(m_DrawInstanced->ShaderProgram);
-    l_rsService->Initialize(m_DrawInstanced->RenderPass);
-    l_rsService->Initialize(m_DrawInstanced->CommandList);
+        g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_DrawInstanced->ShaderProgram);
+    g_Engine->Get<RenderPassResourceService>()->Initialize(m_DrawInstanced->RenderPass);
+    g_Engine->Get<CommandListResourceService>()->Initialize(m_DrawInstanced->CommandList);
     return true;
 }
 
 bool TestRenderingClient::PrepareCommands_DrawInstanced()
 {
-    auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-    auto l_fmService = g_Engine->Get<FrameManagementService>();
+        auto l_fmService = g_Engine->Get<FrameManagementService>();
     auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
@@ -172,26 +172,24 @@ bool TestRenderingClient::ExecuteCommands_DrawInstanced()
 
 bool TestRenderingClient::Terminate_DrawInstanced()
 {
-    auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-    auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+        auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
-    l_rsService->Delete(m_DrawInstanced->CommandList);
-    l_rsService->Delete(m_DrawInstanced->RenderPass);
-    l_rsService->Delete(m_DrawInstanced->ShaderProgram);
+    g_Engine->Get<CommandListResourceService>()->Delete(m_DrawInstanced->CommandList);
+    g_Engine->Get<RenderPassResourceService>()->Delete(m_DrawInstanced->RenderPass);
+    g_Engine->Get<ShaderProgramResourceService>()->Delete(m_DrawInstanced->ShaderProgram);
     return true;
 }
 
 bool TestRenderingClient::Setup_PixelReadback()
 {
-    auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-
+    
     m_DrawInstanced = new DrawInstancedResources();
 
-    m_DrawInstanced->ShaderProgram = l_rsService->AddShaderProgramComponent("TestPixelReadback/");
+    m_DrawInstanced->ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add("TestPixelReadback/");
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_VSPath = "drawInstanced.vert/";
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_PSPath = "drawInstanced.frag/";
 
-    m_DrawInstanced->RenderPass = l_rsService->AddRenderPassComponent("TestPixelReadback/");
+    m_DrawInstanced->RenderPass = g_Engine->Get<RenderPassResourceService>()->Add("TestPixelReadback/");
 
     auto l_desc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
     l_desc.m_RenderTargetCount = 1;
@@ -207,7 +205,7 @@ bool TestRenderingClient::Setup_PixelReadback()
     m_DrawInstanced->RenderPass->m_RenderPassDesc = l_desc;
     m_DrawInstanced->RenderPass->m_ShaderProgram  = m_DrawInstanced->ShaderProgram;
 
-    m_DrawInstanced->CommandList = l_rsService->AddCommandListComponent("TestPixelReadback/Graphics/");
+    m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestPixelReadback/Graphics/");
     m_DrawInstanced->CommandList->m_Type = GPUEngineType::Graphics;
 
     return true;
@@ -220,8 +218,7 @@ bool TestRenderingClient::Initialize_PixelReadback()
 
 bool TestRenderingClient::ExecuteCommands_PixelReadback()
 {
-    auto l_rsService = g_Engine->Get<GraphicsResourceService>();
-    auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+        auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
     auto l_rp = m_DrawInstanced->RenderPass;
     auto l_cl = m_DrawInstanced->CommandList;
 
@@ -238,7 +235,7 @@ bool TestRenderingClient::ExecuteCommands_PixelReadback()
         l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
 
         auto* l_renderTarget = l_rp->m_OutputMergerTarget->m_ColorOutputs[0];
-        auto l_pixels = l_rsService->ReadTextureBackToCPU(l_rp, l_renderTarget);
+        auto l_pixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(l_rp, l_renderTarget);
 
         if (l_pixels.empty())
         {

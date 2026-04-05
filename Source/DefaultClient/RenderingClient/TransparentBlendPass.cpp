@@ -6,26 +6,23 @@
 #include "TransparentGeometryProcessPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
-
-
-
 bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("TransparentBlendPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TransparentBlendPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "transparentBlendPass.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("TransparentBlendPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TransparentBlendPass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -74,11 +71,10 @@ bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 
 bool TransparentBlendPass::Initialize()
 {	
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -87,10 +83,9 @@ bool TransparentBlendPass::Initialize()
 
 bool TransparentBlendPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_RenderPassComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -104,7 +99,6 @@ ObjectStatus TransparentBlendPass::GetStatus()
 
 bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	GPUResourceComponent* l_canvas = nullptr;
@@ -158,7 +152,6 @@ GPUResourceComponent* TransparentBlendPass::GetResult()
 	if (!m_RenderPassComp->m_OutputMergerTarget)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 

@@ -8,22 +8,23 @@
 #include "OpaquePass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
-
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 using namespace Inno;
 
 bool BillboardPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	m_SamplerComp = l_rsService->AddSamplerComponent("BillboardPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("BillboardPass/");
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("BillboardPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BillboardPass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "billboardPass.vert/";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "billboardPass.frag/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("BillboardPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BillboardPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -64,7 +65,7 @@ bool BillboardPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("BillboardPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BillboardPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -74,12 +75,11 @@ bool BillboardPass::Setup(IServiceConfig* systemConfig)
 
 bool BillboardPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_SamplerComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -88,11 +88,10 @@ bool BillboardPass::Initialize()
 
 bool BillboardPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
-	l_rsService->Delete(m_SamplerComp);
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -106,7 +105,6 @@ ObjectStatus BillboardPass::GetStatus()
 
 bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_BillboardGPUBufferComp = g_Engine->Get<BillboardDrawCallService>()->GetBillboardBuffer();

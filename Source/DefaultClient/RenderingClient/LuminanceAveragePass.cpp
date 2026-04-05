@@ -6,14 +6,16 @@
 #include "LuminanceHistogramPass.h"
 
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/GPUBufferResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
 using namespace Inno;
 
 bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
@@ -23,11 +25,11 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = l_rsService->AddShaderProgramComponent("LuminanceAveragePass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LuminanceAveragePass/");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
 
-	m_RenderPassComp = l_rsService->AddRenderPassComponent("LuminanceAveragePass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LuminanceAveragePass/");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -54,10 +56,10 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("LuminanceAveragePass/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LuminanceAveragePass/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_luminanceAverage = l_rsService->AddGPUBufferComponent("LuminanceAverageGPUBuffer/");
+	m_luminanceAverage = g_Engine->Get<GPUBufferResourceService>()->Add("LuminanceAverageGPUBuffer/");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceAverage->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceAverage->m_ElementCount = m_MaxResultToKeep;
@@ -70,14 +72,13 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 bool LuminanceAveragePass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Initialize(m_ShaderProgramComp);
-	l_rsService->Initialize(m_RenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
-	l_rsService->Initialize(m_luminanceAverage);
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_luminanceAverage);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -92,13 +93,12 @@ bool LuminanceAveragePass::Update()
 
 bool LuminanceAveragePass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	l_rsService->Delete(m_luminanceAverage);
-	l_rsService->Delete(m_CommandListComp_Compute);
-	l_rsService->Delete(m_RenderPassComp);
-	l_rsService->Delete(m_ShaderProgramComp);
+	g_Engine->Get<GPUBufferResourceService>()->Delete(m_luminanceAverage);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -121,7 +121,6 @@ bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContex
 	if (m_luminanceAverage->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();

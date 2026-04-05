@@ -9,7 +9,11 @@
 #include "../../Engine/Component/MeshComponent.h"
 #include "../../Engine/Common/LogService.h"
 #include "../../Engine/Engine.h"
-#include "../../Engine/Services/GraphicsResourceService.h"
+#include "../../Engine/Services/ShaderProgramResourceService.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/TextureResourceService.h"
+#include "../../Engine/Services/GPUBufferResourceService.h"
+#include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 
@@ -17,13 +21,12 @@ using namespace Inno;
 
 bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderStage = ShaderStage::RayGen | ShaderStage::ClosestHit | ShaderStage::AnyHit | ShaderStage::Miss;
 
 	// --- Ray Tracing SPC ---
-	m_RayTracingSPC = l_rsService->AddShaderProgramComponent("GPUPathTracerPass/");
+	m_RayTracingSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("GPUPathTracerPass/");
 	m_RayTracingSPC->m_ShaderFilePaths.m_RayGenPath     = "GPUPathTracerRayGen.hlsl/";
 	m_RayTracingSPC->m_ShaderFilePaths.m_ClosestHitPath = "GPUPathTracerClosestHit.hlsl/";
 	m_RayTracingSPC->m_ShaderFilePaths.m_AnyHitPath     = "GPUPathTracerAnyHit.hlsl/";
@@ -31,7 +34,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingSPC->m_ShaderFilePaths.m_ShadowMissPath = "GPUPathTracerShadowMiss.hlsl/";
 
 	// --- Ray Tracing Render Pass ---
-	m_RayTracingRenderPassComp = l_rsService->AddRenderPassComponent("GPUPathTracerPass/");
+	m_RayTracingRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("GPUPathTracerPass/");
 
 	auto l_rtDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_rtDesc.m_GPUEngineType    = GPUEngineType::Compute;
@@ -109,18 +112,18 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	m_RayTracingRenderPassComp->m_ShaderProgram = m_RayTracingSPC;
 
-	m_CommandListComp_Graphics = l_rsService->AddCommandListComponent("GPUPathTracerPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Graphics/");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = l_rsService->AddCommandListComponent("GPUPathTracerPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	// --- ToneMap SPC ---
-	m_ToneMapSPC = l_rsService->AddShaderProgramComponent("GPUPathTracerToneMapPass/");
+	m_ToneMapSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("GPUPathTracerToneMapPass/");
 	m_ToneMapSPC->m_ShaderFilePaths.m_CSPath = "GPUPathTracerToneMap.comp/";
 
 	// --- ToneMap Render Pass ---
-	m_ToneMapRenderPassComp = l_rsService->AddRenderPassComponent("GPUPathTracerToneMapPass/");
+	m_ToneMapRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("GPUPathTracerToneMapPass/");
 
 	auto l_tmDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_tmDesc.m_GPUEngineType    = GPUEngineType::Compute;
@@ -153,7 +156,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	m_ToneMapRenderPassComp->m_ShaderProgram = m_ToneMapSPC;
 
-	m_ToneMapCommandList = l_rsService->AddCommandListComponent("GPUPathTracerToneMapPass/");
+	m_ToneMapCommandList = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerToneMapPass/");
 	m_ToneMapCommandList->m_Type = GPUEngineType::Compute;
 
 	// --- Scene callbacks ---
@@ -178,21 +181,20 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 bool GPUPathTracerPass::Initialize()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	l_rsService->Initialize(m_RayTracingSPC);
-	l_rsService->Initialize(m_RayTracingRenderPassComp);
-	l_rsService->Initialize(m_CommandListComp_Graphics);
-	l_rsService->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_RayTracingSPC);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RayTracingRenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
-	l_rsService->Initialize(m_ToneMapSPC);
-	l_rsService->Initialize(m_ToneMapRenderPassComp);
-	l_rsService->Initialize(m_ToneMapCommandList);
+	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ToneMapSPC);
+	g_Engine->Get<RenderPassResourceService>()->Initialize(m_ToneMapRenderPassComp);
+	g_Engine->Get<CommandListResourceService>()->Initialize(m_ToneMapCommandList);
 
 	// AccumulationBuffer: HDR RGBA float32, ComputeOnly UAV
-	m_AccumulationBuffer = l_rsService->AddTextureComponent("GPUPathTracerAccumBuffer/");
+	m_AccumulationBuffer = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerAccumBuffer/");
 	m_AccumulationBuffer->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
 	m_AccumulationBuffer->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
 	m_AccumulationBuffer->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
@@ -202,10 +204,10 @@ bool GPUPathTracerPass::Initialize()
 	m_AccumulationBuffer->m_TextureDesc.DepthOrArraySize = 1;
 	m_AccumulationBuffer->m_CPUAccessibility             = Accessibility::Immutable;
 	m_AccumulationBuffer->m_GPUAccessibility             = Accessibility::ReadWrite;
-	l_rsService->Initialize(m_AccumulationBuffer);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_AccumulationBuffer);
 
 	// ToneMapOutput: LDR RGBA UByte, ComputeOnly UAV
-	m_ToneMapOutput = l_rsService->AddTextureComponent("GPUPathTracerToneMapOutput/");
+	m_ToneMapOutput = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerToneMapOutput/");
 	m_ToneMapOutput->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
 	m_ToneMapOutput->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
 	m_ToneMapOutput->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
@@ -215,15 +217,15 @@ bool GPUPathTracerPass::Initialize()
 	m_ToneMapOutput->m_TextureDesc.DepthOrArraySize = 1;
 	m_ToneMapOutput->m_CPUAccessibility             = Accessibility::Immutable;
 	m_ToneMapOutput->m_GPUAccessibility             = Accessibility::ReadWrite;
-	l_rsService->Initialize(m_ToneMapOutput);
+	g_Engine->Get<TextureResourceService>()->Initialize(m_ToneMapOutput);
 
 	// FrameCountCB: single uint32
-	m_FrameCountCB = l_rsService->AddGPUBufferComponent("GPUPathTracerFrameCountCB/");
+	m_FrameCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerFrameCountCB/");
 	m_FrameCountCB->m_ElementCount      = 1;
 	m_FrameCountCB->m_ElementSize       = sizeof(uint32_t);
 	m_FrameCountCB->m_CPUAccessibility  = Accessibility::WriteOnly;
 	m_FrameCountCB->m_GPUAccessibility  = Accessibility::ReadOnly;
-	l_rsService->Initialize(m_FrameCountCB);
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_FrameCountCB);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -232,7 +234,6 @@ bool GPUPathTracerPass::Initialize()
 
 bool GPUPathTracerPass::Update()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	const auto& l_perFrameCB = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
@@ -249,7 +250,7 @@ bool GPUPathTracerPass::Update()
 
 	if (m_FrameCountCB && m_FrameCountCB->m_ObjectStatus == ObjectStatus::Activated)
 	{
-		l_rsService->Upload(m_FrameCountCB, &m_FrameCount);
+		g_Engine->Get<GPUBufferResourceService>()->Upload(m_FrameCountCB, &m_FrameCount);
 	}
 
 	const bool l_geometryReady =
@@ -264,31 +265,30 @@ bool GPUPathTracerPass::Update()
 
 bool GPUPathTracerPass::Terminate()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	if (m_MeshOffsetBuffer)
-		l_rsService->Delete(m_MeshOffsetBuffer);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MeshOffsetBuffer);
 	if (m_MegaIndexBuffer)
-		l_rsService->Delete(m_MegaIndexBuffer);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MegaIndexBuffer);
 	if (m_MegaVertexBuffer)
-		l_rsService->Delete(m_MegaVertexBuffer);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MegaVertexBuffer);
 
 	if (m_FrameCountCB)
-		l_rsService->Delete(m_FrameCountCB);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_FrameCountCB);
 	if (m_ToneMapOutput)
-		l_rsService->Delete(m_ToneMapOutput);
+		g_Engine->Get<TextureResourceService>()->Delete(m_ToneMapOutput);
 	if (m_AccumulationBuffer)
-		l_rsService->Delete(m_AccumulationBuffer);
+		g_Engine->Get<TextureResourceService>()->Delete(m_AccumulationBuffer);
 
-	l_rsService->Delete(m_ToneMapCommandList);
-	l_rsService->Delete(m_ToneMapRenderPassComp);
-	l_rsService->Delete(m_ToneMapSPC);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_ToneMapCommandList);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_ToneMapRenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ToneMapSPC);
 
-	l_rsService->Delete(m_CommandListComp_Compute);
-	l_rsService->Delete(m_CommandListComp_Graphics);
-	l_rsService->Delete(m_RayTracingRenderPassComp);
-	l_rsService->Delete(m_RayTracingSPC);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
+	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);
+	g_Engine->Get<RenderPassResourceService>()->Delete(m_RayTracingRenderPassComp);
+	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_RayTracingSPC);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -314,7 +314,6 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (!m_MeshOffsetBuffer || m_MeshOffsetBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_perFrameBuffer  = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_materialBuffer  = g_Engine->Get<DrawCallService>()->GetMaterialBuffer();
@@ -331,7 +330,7 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_perFrameBuffer,                 0);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_FrameCountCB,                   1);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_rsService->GetTLASBuffer(), 2);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 2);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_materialBuffer,                  3);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaVertexBuffer,                4);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaIndexBuffer,                 5);
@@ -382,7 +381,6 @@ void GPUPathTracerPass::ResetAccumulation()
 
 void GPUPathTracerPass::RebuildGeometryBuffers()
 {
-	auto l_rsService = g_Engine->Get<GraphicsResourceService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_registry        = g_Engine->Get<EntityRegistry>();
 
@@ -468,46 +466,46 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 	// Delete old buffers
 	if (m_MegaVertexBuffer)
 	{
-		l_rsService->Delete(m_MegaVertexBuffer);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MegaVertexBuffer);
 		m_MegaVertexBuffer = nullptr;
 	}
 	if (m_MegaIndexBuffer)
 	{
-		l_rsService->Delete(m_MegaIndexBuffer);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MegaIndexBuffer);
 		m_MegaIndexBuffer = nullptr;
 	}
 	if (m_MeshOffsetBuffer)
 	{
-		l_rsService->Delete(m_MeshOffsetBuffer);
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MeshOffsetBuffer);
 		m_MeshOffsetBuffer = nullptr;
 	}
 
 	// Create and upload mega vertex buffer
-	m_MegaVertexBuffer = l_rsService->AddGPUBufferComponent("GPUPathTracerMegaVB/");
+	m_MegaVertexBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerMegaVB/");
 	m_MegaVertexBuffer->m_ElementCount     = l_vertices.size();
 	m_MegaVertexBuffer->m_ElementSize      = sizeof(GPUPathTracerVertex);
 	m_MegaVertexBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
 	m_MegaVertexBuffer->m_GPUAccessibility = Accessibility::ReadOnly;
 	m_MegaVertexBuffer->m_InitialData      = l_vertices.data();
-	l_rsService->Initialize(m_MegaVertexBuffer);
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_MegaVertexBuffer);
 
 	// Create and upload mega index buffer
-	m_MegaIndexBuffer = l_rsService->AddGPUBufferComponent("GPUPathTracerMegaIB/");
+	m_MegaIndexBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerMegaIB/");
 	m_MegaIndexBuffer->m_ElementCount     = l_indices.size();
 	m_MegaIndexBuffer->m_ElementSize      = sizeof(uint32_t);
 	m_MegaIndexBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
 	m_MegaIndexBuffer->m_GPUAccessibility = Accessibility::ReadOnly;
 	m_MegaIndexBuffer->m_InitialData      = l_indices.data();
-	l_rsService->Initialize(m_MegaIndexBuffer);
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_MegaIndexBuffer);
 
 	// Create and upload mesh offset buffer
-	m_MeshOffsetBuffer = l_rsService->AddGPUBufferComponent("GPUPathTracerMeshOffsets/");
+	m_MeshOffsetBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerMeshOffsets/");
 	m_MeshOffsetBuffer->m_ElementCount     = l_offsets.size();
 	m_MeshOffsetBuffer->m_ElementSize      = sizeof(MeshOffsetData);
 	m_MeshOffsetBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
 	m_MeshOffsetBuffer->m_GPUAccessibility = Accessibility::ReadOnly;
 	m_MeshOffsetBuffer->m_InitialData      = l_offsets.data();
-	l_rsService->Initialize(m_MeshOffsetBuffer);
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_MeshOffsetBuffer);
 
 	Log(Success, "GPUPathTracerPass: Geometry buffers rebuilt. Meshes: ", l_offsets.size(),
 		" Vertices: ", l_vertices.size(), " Indices: ", l_indices.size());
