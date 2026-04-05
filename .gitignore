@@ -40,31 +40,18 @@ xcuserdata/
 
 # Intermediate code and assets
 /Source/Engine/Common/Config.h
-
-/Res/Logs/*
-/Res/ConvertedAssets/*
-/Res/Shaders/Parsed/*
-/Res/Shaders/Converted/*
-/Res/Intermediate/*
-
 *.refl
 
+# Generated shader binaries
 *.spv
 *.dxil
 
-*.InnoBrick
-*.InnoBrickFactor
-*.InnoProbe
-*.InnoProbeInfo
-*.InnoSurfel
-
-# Data folders
+# Data folders (track Scenes, ignore the rest)
 /Data/*
+!/Data/Scenes/
 
 # Large binary assets
-/Res/Fonts/*
-/Res/Models/*
-/Res/Textures/*
+/OriginalAssets/*
 
 # For Qt
 /Source/Editor/qdarkstyle/
@@ -76,9 +63,6 @@ xcuserdata/
 
 #Packaged files
 /Package/*
-
-# AI Agent Team coordination files
-AI Agent Team/
 
 # Transient build/test output (never commit these)
 build*.log

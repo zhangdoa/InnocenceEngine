@@ -14,9 +14,9 @@ namespace Inno
 	namespace DX12Helper
 	{
 #ifdef USE_DXIL
-		const char* m_shaderRelativePath = "..//Res//Shaders//DXIL//";
+		const char* m_shaderRelativePath = "Shaders//DXIL//";
 #else
-		const wchar_t* m_shaderRelativePath = L"..//Res//Shaders//HLSL//";
+		const wchar_t* m_shaderRelativePath = L"Shaders//HLSL//";
 #endif
 	}
 }

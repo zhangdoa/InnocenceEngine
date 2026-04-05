@@ -10,7 +10,7 @@
 > -- Richard Feynman, 1963
 
 ## Architecture
-![Architecture](https://github.com/zhangdoa/InnocenceEngine/blob/master/architecture.svg)
+![Architecture](./architecture.svg)
 
 ## Features
 

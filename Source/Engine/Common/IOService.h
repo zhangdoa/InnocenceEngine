@@ -19,6 +19,7 @@ namespace Inno
 		std::string getFileExtension(const char* filePath);
 		std::string getFileName(const char* filePath);
 		std::string getWorkingDirectory();
+		std::string getDataDirectory();
 		std::string validateFileName(const char* filePath);
 
 		inline bool serialize(std::ostream& os, void* ptr, size_t size)
@@ -121,5 +122,6 @@ namespace Inno
 
 	private:
 		std::string m_workingDir;
+		std::string m_dataDir;
 	};
 }

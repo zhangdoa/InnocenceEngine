@@ -31,7 +31,7 @@ namespace Inno
 {
 	namespace VKHelper
 	{
-		const char *m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
+		const char *m_shaderRelativePath = "Shaders//SPIRV//";
 	}
 } // namespace Inno
 

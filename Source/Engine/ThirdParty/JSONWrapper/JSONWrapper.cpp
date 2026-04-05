@@ -16,7 +16,7 @@ bool JSONWrapper::Load(const char* fileName, json& data)
 {
 	std::ifstream i;
 
-	i.open(g_Engine->Get<IOService>()->getWorkingDirectory() + fileName);
+	i.open(g_Engine->Get<IOService>()->getDataDirectory() + fileName);
 
 	if (!i.is_open())
 	{
@@ -33,7 +33,7 @@ bool JSONWrapper::Load(const char* fileName, json& data)
 bool JSONWrapper::Save(const char* fileName, const json& data)
 {
 	std::ofstream o;
-	o.open(g_Engine->Get<IOService>()->getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
+	o.open(g_Engine->Get<IOService>()->getDataDirectory() + fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
 

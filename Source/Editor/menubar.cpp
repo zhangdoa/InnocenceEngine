@@ -17,7 +17,7 @@ void MenuBar::openScene()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
         tr("Open Scene"), 
-        QString::fromStdString("..//Res//Scenes//"),
+        QString::fromStdString("Scenes//"),
         tr("InnoScene Files (*.InnoScene);;All Files (*)"));
     
     if (!fileName.isEmpty())
@@ -52,7 +52,7 @@ void MenuBar::saveScene()
     // Then open file dialog with the entered scene name
     QString fileName = QFileDialog::getSaveFileName(this,
         tr("Save Scene"), 
-        QString::fromStdString("..//Res//Scenes//") + sceneName + ".InnoScene",
+        QString::fromStdString("Scenes//") + sceneName + ".InnoScene",
         tr("InnoScene Files (*.InnoScene);;All Files (*)"));
     
     if (!fileName.isEmpty())
