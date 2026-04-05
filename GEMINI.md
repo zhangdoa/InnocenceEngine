@@ -1,0 +1,102 @@
+# InnocenceEngine — Gemini Instructions
+
+## Project
+- 8-year solo C++ game engine, active refactoring toward GPU-driven rendering and modern C++ standards
+- Source: `Source/` — never touch `Source/External/`
+- Build: `Build/` (RelWithDebInfo only)
+- Run: `Bin/` — always invoke executables from this directory
+
+## Standards
+- Code conventions: `Documents/code-standards.md` — reference before every code change
+- Commit format: `Documents/commit-message-policy.md` — reference before every commit
+
+## Build & Test Commands
+```bash
+# Build — use the tracked script, never improvise a build command
+powershell.exe -NoProfile -NonInteractive -File "./Scripts/BuildWin.ps1"
+
+# Check build result
+tail -5 Build/msbuild_out.txt
+grep -i "error" Build/msbuild_out.txt | grep -v ZERO_CHECK
+
+# GPU validation — autonomous test, exits 0=pass, 1=GPU error, 2=crash
+powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-Process -FilePath 'RelWithDebInfo/RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode"
+
+# Shader compilation
+powershell.exe -File "./Scripts/HLSL2DXIL.ps1"
+
+# CMake regeneration (needed after adding/removing source files)
+cd Build && cmake .. && cd ..
+```
+
+**Why Scripts/BuildWin.ps1:** `cmd.exe /c msbuild` from git bash swallows output. Inline PowerShell `-Command` breaks on bash `$` expansion. The script lives in `Scripts/` (tracked) so it survives `git clean` and Build directory wipes.
+
+## Workflow
+**Implementation -> Build -> Runtime test -> Shader test (if shaders changed) -> Peer review -> User approval**
+
+Every step is mandatory. Any build error, RenderTest.exe crash, D3D12 validation error, or shader failure = stop and fix before proceeding.
+
+## Skill Usage
+| Situation | Skill |
+|-----------|-------|
+| Before any new feature or non-trivial change | `superpowers:brainstorming` |
+| Planning multi-step implementation | `superpowers:writing-plans` -> `superpowers:executing-plans` |
+| Bug or unexpected behavior | `superpowers:systematic-debugging` |
+| After implementation, before merge | `superpowers:requesting-code-review` |
+| Before claiming work is done | `superpowers:verification-before-completion` |
+
+## Architecture Overview
+
+### Service Pattern
+The engine uses a service-oriented architecture. Services are registered as singletons accessed via `g_Engine->Get<ServiceType>()`. Each service implements `IService` (Setup/Initialize/Update/Terminate lifecycle).
+
+### Per-Type Resource Services (recently refactored)
+GPU resources are managed by 8 focused services, each with a base class and DX12 backend:
+
+| Service | Owns | Deferred Init |
+|---------|------|---------------|
+| MeshResourceService | Mesh pool, GPUMeshResource slots | Yes |
+| TextureResourceService | Texture pool, SRV/UAV, mipmaps | Yes |
+| MaterialResourceService | Material pool | Yes |
+| GPUBufferResourceService | GPU buffer pool, raytracing buffers | Yes |
+| RenderPassResourceService | Render pass pool, PSO, semaphores, fences | Yes |
+| ShaderProgramResourceService | Shader pool | No (sync) |
+| SamplerResourceService | Sampler pool | No (sync) |
+| CommandListResourceService | Command list pool | No (sync) |
+
+Each service uses `NamedObjectPool<T>` for pool allocation with name-indexed dedup and live-object tracking. DX12 implementations are in `Source/Engine/Services/DX12/` and inherit from the base service.
+
+### Key Patterns
+- `NamedObjectPool<T>`: Wraps `TObjectPool<T>` + `ThreadSafeUnorderedMap` + `ThreadSafeVector`
+- `DX12Context`: Shared struct owned by `DX12GraphicsHardwareService`, passed to each DX12 service via `SetDX12Context()`
+- Deferred init: Services with deferred init queue work via `Initialize()` and drain per frame via `InitializeComponents()`
+- `FrameManagementService`: Coordinates per-frame initialization and command execution
+- `INNO_CLASS_INTERFACE_NON_COPYABLE`: Used on base service classes
+- `INNO_CLASS_CONCRETE_NON_COPYABLE`: Used on DX12 derived classes
+
+### Editor
+The editor is a Qt-based application in `Source/Editor/`. It uses Qt widgets (QTreeWidget, QDockWidget, etc.) and communicates with the engine through the service layer.
+
+## Core Principles
+- Systemic — never patch locally; trace and fix root causes
+- Expert quality — think before every change; no mediocre solutions
+- No workarounds — low-quality patches are forbidden
+- No assumptions — verify with tools; hallucination is a real risk
+- Minimal cognitive complexity — code must be readable, not just correct
+- No explanatory comments — only comment when the code itself is not obvious
+- Validate everything — build and runtime test before any commit
+- Services own operation domains, not component types — a FooComponent does not imply a FooSystem; multiple services may operate on the same component type independently
+
+## Workspace Hygiene
+- Never produce scratch files in the repo root or any tracked directory
+- Transient output (build logs, test captures) goes to `Build/` (gitignored) only
+- Scripts belong in `Scripts/` (tracked) — never in `Build/`
+- "Go ahead" means implement — do not ask follow-up questions
+
+## Forbidden
+- Direct STL includes — use engine wrappers (`STL14.h`, `STL17.h`)
+- Raw `malloc`/`free`/`new[]` — use the engine memory system
+- Inline functions that call engine APIs (`Log`, `g_Engine`) in headers
+- `std::cout` — use engine logging
+- Committing without a full test pass
+- Touching `Source/External/`
