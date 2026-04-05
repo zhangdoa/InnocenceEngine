@@ -172,10 +172,14 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	}
 
 	auto l_engineModeArgPos = arg.find("mode");
+	auto l_sidecarArgPos = arg.find("sidecar");
 
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		Log(Warning, "No engine mode argument found, use default game mode.");
+		if (l_sidecarArgPos == std::string::npos)
+		{
+			Log(Warning, "No engine mode argument found, use default game mode.");
+		}
 	}
 	else
 	{
@@ -191,6 +195,12 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		{
 			l_result.engineMode = EngineMode::Slave;
 			Log(Success, "Launch in slave mode, engine requires client handle OS event.");
+		}
+		else if (l_engineModeArguments == "2")
+		{
+			l_result.engineMode = EngineMode::Sidecar;
+			l_result.isOffscreen = true;
+			Log(Success, "Launch in sidecar mode, engine will be controlled by external process.");
 		}
 		else
 		{
@@ -236,7 +246,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	}
 
 	auto l_logLevelArgPos = arg.find("loglevel");
-	if (l_engineModeArgPos == std::string::npos)
+	if (l_logLevelArgPos == std::string::npos)
 	{
 		Get<LogService>()->SetDefaultLogLevel(LogLevel::Success);
 	}
@@ -281,7 +291,6 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "Launch in offscreen mode, no windowing but real rendering server for testing.");
 	}
 
-	auto l_sidecarArgPos = arg.find("sidecar");
 	if (l_sidecarArgPos != std::string::npos)
 	{
 		l_result.engineMode = EngineMode::Sidecar;
