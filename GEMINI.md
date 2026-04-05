@@ -19,8 +19,12 @@ powershell.exe -NoProfile -NonInteractive -File "./Scripts/BuildWin.ps1"
 tail -5 Build/msbuild_out.txt
 grep -i "error" Build/msbuild_out.txt | grep -v ZERO_CHECK
 
-# GPU validation — autonomous test, exits 0=pass, 1=GPU error, 2=crash
+# Regression test — lightweight, single draw call, exits 0=pass, 1=GPU error, 2=crash
 powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-Process -FilePath 'RelWithDebInfo/RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait -PassThru -NoNewWindow).ExitCode"
+
+# Full integration test — loads GI scene, renders 10 frames, runs CPU ray tracer, exits 0=pass
+# Use this for heavy changes (service refactors, resource management, render pipeline)
+powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-Process -FilePath 'RelWithDebInfo/Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -frames 10' -Wait -PassThru -NoNewWindow).ExitCode"
 
 # Shader compilation
 powershell.exe -File "./Scripts/HLSL2DXIL.ps1"
@@ -30,6 +34,8 @@ cd Build && cmake .. && cd ..
 ```
 
 **Why Scripts/BuildWin.ps1:** `cmd.exe /c msbuild` from git bash swallows output. Inline PowerShell `-Command` breaks on bash `$` expansion. The script lives in `Scripts/` (tracked) so it survives `git clean` and Build directory wipes.
+
+**Testing policy:** RenderTest is a regression test (single draw call). For anything that touches services, resource management, or the render pipeline, also run the Main.exe integration test — it exercises scene loading, all render passes, material/texture/mesh initialization, and the full frame loop.
 
 ## Workflow
 **Implementation -> Build -> Runtime test -> Shader test (if shaders changed) -> Peer review -> User approval**
