@@ -74,6 +74,8 @@ namespace Inno
 		virtual void PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants) {}
 		virtual bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) { return false; }
 
+		bool WaitForGPUIdle();
+
 	protected:
 		virtual bool CreateSwapChainResources() { return true; }
 		virtual bool BeginFrame() { return false; }
