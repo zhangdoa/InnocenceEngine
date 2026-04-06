@@ -119,50 +119,6 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Compute/");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	// --- ToneMap SPC ---
-	m_ToneMapSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("GPUPathTracerToneMapPass/");
-	m_ToneMapSPC->m_ShaderFilePaths.m_CSPath = "GPUPathTracerToneMap.comp/";
-
-	// --- ToneMap Render Pass ---
-	m_ToneMapRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("GPUPathTracerToneMapPass/");
-
-	auto l_tmDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
-	l_tmDesc.m_GPUEngineType    = GPUEngineType::Compute;
-	l_tmDesc.m_RenderTargetCount = 0;
-	l_tmDesc.m_UseOutputMerger  = false;
-
-	m_ToneMapRenderPassComp->m_RenderPassDesc = l_tmDesc;
-
-	// Binding layout: b0=PerFrameCB, t0=AccumBuffer(read), u0=ToneMapOutput(write)
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs.resize(3);
-
-	// b0 - PerFrameCB (set 0, binding 0)
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex   = 0;
-
-	// t0 - AccumulationBuffer read (set 1, binding 0)
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[1].m_GPUResourceType   = GPUResourceType::Image;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex   = 0;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[1].m_TextureUsage      = TextureUsage::ComputeOnly;
-
-	// u0 - ToneMapOutput write (set 2, binding 0)
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType        = GPUResourceType::Image;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex      = 2;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex        = 0;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[2].m_TextureUsage           = TextureUsage::ComputeOnly;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility   = Accessibility::ReadWrite;
-	m_ToneMapRenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility  = Accessibility::ReadWrite;
-
-	m_ToneMapRenderPassComp->m_ShaderProgram = m_ToneMapSPC;
-
-	m_ToneMapCommandList_Graphics = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerToneMapPass/Graphics/");
-	m_ToneMapCommandList_Graphics->m_Type = GPUEngineType::Graphics;
-
-	m_ToneMapCommandList = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerToneMapPass/Compute/");
-	m_ToneMapCommandList->m_Type = GPUEngineType::Compute;
-
 	// --- Scene callbacks ---
 	f_sceneLoadedCallback = [this]()
 	{
@@ -193,10 +149,6 @@ bool GPUPathTracerPass::Initialize()
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 
-	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ToneMapSPC);
-	g_Engine->Get<RenderPassResourceService>()->Initialize(m_ToneMapRenderPassComp);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_ToneMapCommandList_Graphics);
-	g_Engine->Get<CommandListResourceService>()->Initialize(m_ToneMapCommandList);
 
 	// AccumulationBuffer: HDR RGBA float32, ComputeOnly UAV
 	m_AccumulationBuffer = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerAccumBuffer/");
@@ -210,19 +162,6 @@ bool GPUPathTracerPass::Initialize()
 	m_AccumulationBuffer->m_CPUAccessibility             = Accessibility::Immutable;
 	m_AccumulationBuffer->m_GPUAccessibility             = Accessibility::ReadWrite;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_AccumulationBuffer);
-
-	// ToneMapOutput: LDR RGBA UByte, ComputeOnly UAV
-	m_ToneMapOutput = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerToneMapOutput/");
-	m_ToneMapOutput->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
-	m_ToneMapOutput->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
-	m_ToneMapOutput->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
-	m_ToneMapOutput->m_TextureDesc.PixelDataType    = TexturePixelDataType::UByte;
-	m_ToneMapOutput->m_TextureDesc.Width            = l_resolution.x;
-	m_ToneMapOutput->m_TextureDesc.Height           = l_resolution.y;
-	m_ToneMapOutput->m_TextureDesc.DepthOrArraySize = 1;
-	m_ToneMapOutput->m_CPUAccessibility             = Accessibility::Immutable;
-	m_ToneMapOutput->m_GPUAccessibility             = Accessibility::ReadWrite;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_ToneMapOutput);
 
 	// FrameCountCB: single uint32
 	m_FrameCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerFrameCountCB/");
@@ -300,15 +239,8 @@ bool GPUPathTracerPass::Terminate()
 
 	if (m_FrameCountCB)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_FrameCountCB);
-	if (m_ToneMapOutput)
-		g_Engine->Get<TextureResourceService>()->Delete(m_ToneMapOutput);
 	if (m_AccumulationBuffer)
 		g_Engine->Get<TextureResourceService>()->Delete(m_AccumulationBuffer);
-
-	g_Engine->Get<CommandListResourceService>()->Delete(m_ToneMapCommandList);
-	g_Engine->Get<CommandListResourceService>()->Delete(m_ToneMapCommandList_Graphics);
-	g_Engine->Get<RenderPassResourceService>()->Delete(m_ToneMapRenderPassComp);
-	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ToneMapSPC);
 
 	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
 	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);
@@ -367,26 +299,6 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
 
-	// ToneMap Graphics CL: transitions only
-	l_fmService->CommandListBegin(m_ToneMapRenderPassComp, m_ToneMapCommandList_Graphics, 0);
-	l_fmService->TryToTransitState(m_AccumulationBuffer, m_ToneMapCommandList_Graphics, Accessibility::ReadWrite, Accessibility::ReadOnly);
-	l_fmService->TryToTransitState(m_ToneMapOutput, m_ToneMapCommandList_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
-	l_fmService->CommandListEnd(m_ToneMapRenderPassComp, m_ToneMapCommandList_Graphics);
-
-	// ToneMap Compute CL: bind and dispatch
-	l_fmService->CommandListBegin(m_ToneMapRenderPassComp, m_ToneMapCommandList, 0);
-	l_fmService->BindRenderPassComponent(m_ToneMapRenderPassComp, m_ToneMapCommandList);
-
-	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, l_perFrameBuffer,    0);
-	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, m_AccumulationBuffer, 1);
-	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, m_ToneMapOutput,     2);
-
-	const uint32_t l_tileSize = 8;
-	uint32_t l_groupX = (l_resolution.x + l_tileSize - 1) / l_tileSize;
-	uint32_t l_groupY = (l_resolution.y + l_tileSize - 1) / l_tileSize;
-	l_fmService->Dispatch(m_ToneMapRenderPassComp, m_ToneMapCommandList, l_groupX, l_groupY, 1);
-	l_fmService->CommandListEnd(m_ToneMapRenderPassComp, m_ToneMapCommandList);
-
 	return true;
 }
 
@@ -397,22 +309,7 @@ RenderPassComponent* GPUPathTracerPass::GetRenderPassComp()
 
 GPUResourceComponent* GPUPathTracerPass::GetResult()
 {
-	return m_ToneMapOutput;
-}
-
-GPUResourceComponent* GPUPathTracerPass::GetAccumulationBuffer()
-{
 	return m_AccumulationBuffer;
-}
-
-CommandListComponent* GPUPathTracerPass::GetToneMapCommandList()
-{
-	return m_ToneMapCommandList;
-}
-
-CommandListComponent* GPUPathTracerPass::GetToneMapCommandList_Graphics()
-{
-	return m_ToneMapCommandList_Graphics;
 }
 
 void GPUPathTracerPass::ResetAccumulation()
