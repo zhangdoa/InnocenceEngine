@@ -18,10 +18,10 @@ namespace Inno
 
 		bool CreateRaytracingResources();
 		bool ReleaseRaytracingResources();
+		bool UpdateRaytracingInstances() override;
 
 	protected:
 		bool InitializeImpl(GPUBufferComponent* gpuBuffer) override;
-		bool InitializeImpl(EntityID entity) override;
 		bool OnSceneLoadingStart() override;
 
 	private:
@@ -31,5 +31,6 @@ namespace Inno
 		bool UploadToGPU(CommandListComponent* commandList, DX12MappedMemory* mappedMemory, DX12DeviceMemory* deviceMemory, GPUBufferComponent* gpuBuffer);
 
 		DX12Context* m_ctx = nullptr;
+		size_t m_PrevInstanceCount = 0;
 	};
 }

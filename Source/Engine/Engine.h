@@ -23,6 +23,7 @@ namespace Inno
 		char testCase[64] = {};
 		int totalFrames = 0;  // >0: auto-terminate after this many frames
 		int reloadAtFrame = 0;  // >0: trigger scene reload at this frame
+		int captureFrame = -1;  // >=0: trigger RenderDoc/PIX capture at this frame
 	};
 
 	class IWindowService;

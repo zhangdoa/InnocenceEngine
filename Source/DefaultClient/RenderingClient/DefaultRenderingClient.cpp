@@ -83,6 +83,9 @@ namespace Inno
 		bool m_saveScreenCapture = false;
 		bool m_drawBRDFTest = false;
 		bool m_GPUPathTracerActive = false;
+		bool m_GPUPathTracerPendingToggle = false;
+		uint32_t m_GPUPathTracerFrameCount = 0;
+		bool m_GPUPathTracerValidated = false;
 		uint32_t m_autoCaptureFrameCount = 0;
 		bool m_autoCaptureWritten = false;
 
@@ -118,9 +121,7 @@ namespace Inno
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
 		f_toggleGPUPathTracer = [&]() {
-			m_GPUPathTracerActive = !m_GPUPathTracerActive;
-			if (m_GPUPathTracerActive)
-				GPUPathTracerPass::Get().ResetAccumulation();
+			m_GPUPathTracerPendingToggle = true;
 		};
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleGPUPathTracer });
 
@@ -247,6 +248,14 @@ namespace Inno
 
 	bool DefaultRenderingClientImpl::PrepareCommands()
 	{
+		if (m_GPUPathTracerPendingToggle)
+		{
+			m_GPUPathTracerPendingToggle = false;
+			m_GPUPathTracerActive = !m_GPUPathTracerActive;
+			if (m_GPUPathTracerActive)
+				GPUPathTracerPass::Get().ResetAccumulation();
+		}
+
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			GPUPathTracerPass::Get().PrepareCommandList();
@@ -372,11 +381,84 @@ namespace Inno
 			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 
-			// Tonemap CL: transition accum to SRV + dispatch
-			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Compute);
+			// Tonemap Graphics CL: transition accum to SRV, tonemap output to UAV
+			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
+			auto l_toneMapGraphicsCL = GPUPathTracerPass::Get().GetToneMapCommandList_Graphics();
+			l_hwService->Execute(l_toneMapGraphicsCL, GPUEngineType::Graphics);
+			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+
+			// Tonemap Compute CL: bind and dispatch
+			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 			auto l_toneMapCL = GPUPathTracerPass::Get().GetToneMapCommandList();
 			l_hwService->Execute(l_toneMapCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+
+			++m_GPUPathTracerFrameCount;
+			if (!m_GPUPathTracerValidated && m_GPUPathTracerFrameCount == 5)
+				{
+					m_GPUPathTracerValidated = true;
+					l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+					l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+
+					auto* l_toneMapOutput = static_cast<TextureComponent*>(GPUPathTracerPass::Get().GetResult());
+					auto l_texFrameIndex = l_toneMapOutput->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
+
+					// After path tracer CLs execute, the GPU state on the graphics queue is UAV
+					// (from ToneMapGraphicsCL's SRV→UAV barrier). But tracked state was already
+					// advanced to SRV by PrepareSwapChainCommands. Save/restore tracked state
+					// around readback so ReadTextureBackToCPU uses the correct actual GPU state.
+					auto l_savedTrackedState = l_toneMapOutput->GetCurrentState(l_texFrameIndex);
+					l_toneMapOutput->SetCurrentState(l_texFrameIndex, l_toneMapOutput->m_WriteState);
+					auto l_pixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(l_renderPass, l_toneMapOutput);
+					l_toneMapOutput->SetCurrentState(l_texFrameIndex, l_savedTrackedState);
+
+					if (!l_pixels.empty())
+					{
+						uint32_t l_w = l_toneMapOutput->m_TextureDesc.Width;
+						uint32_t l_h = l_toneMapOutput->m_TextureDesc.Height;
+						uint32_t l_zero = 0, l_white = 0, l_valid = 0;
+						for (size_t i = 0; i < l_pixels.size(); i += l_pixels.size() / 64 + 1)
+						{
+							const auto& p = l_pixels[i];
+							if (p.x == 0.0f && p.y == 0.0f && p.z == 0.0f) l_zero++;
+							else if (p.x >= 0.99f && p.y >= 0.99f && p.z >= 0.99f) l_white++;
+							else l_valid++;
+						}
+						Log(Success, "PathTracer ToneMap readback: ", l_w, "x", l_h, " total=", l_pixels.size(),
+							" sampled: zero=", l_zero, " white=", l_white, " valid=", l_valid);
+
+						auto l_logPx = [&](const char* label, uint32_t x, uint32_t y) {
+							auto idx = y * l_w + x;
+							if (idx < l_pixels.size()) {
+								const auto& p = l_pixels[idx];
+								Log(Verbose, "  ", label, "(", x, ",", y, "): ", p.x, " ", p.y, " ", p.z, " ", p.w);
+							}
+						};
+						l_logPx("center", l_w/2, l_h/2);
+						l_logPx("TL", 10, 10);
+						l_logPx("TR", l_w-10, 10);
+						l_logPx("BL", 10, l_h-10);
+						l_logPx("BR", l_w-10, l_h-10);
+
+						std::vector<uint8_t> l_uint8;
+						l_uint8.reserve(l_pixels.size() * 4);
+						for (const auto& px : l_pixels) {
+							l_uint8.push_back(uint8_t(255.99f * std::min(std::max(px.x, 0.0f), 1.0f)));
+							l_uint8.push_back(uint8_t(255.99f * std::min(std::max(px.y, 0.0f), 1.0f)));
+							l_uint8.push_back(uint8_t(255.99f * std::min(std::max(px.z, 0.0f), 1.0f)));
+							l_uint8.push_back(uint8_t(255));
+						}
+						TextureDesc l_desc = l_toneMapOutput->m_TextureDesc;
+						l_desc.PixelDataType = TexturePixelDataType::UByte;
+						l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+						g_Engine->Get<AssetService>()->Save("pt_output.png", l_desc, l_uint8.data());
+						Log(Success, "PathTracer: saved pt_output.png");
+					}
+					else
+					{
+						Log(Error, "PathTracer: ReadTextureBackToCPU returned empty");
+					}
+				}
 
 			return true;
 		}

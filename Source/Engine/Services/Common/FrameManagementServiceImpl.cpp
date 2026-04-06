@@ -127,6 +127,11 @@ bool FrameManagementService::Update()
 {
 	auto l_currentFrame = m_CurrentFrame;
 
+	auto l_captureFrame = g_Engine->getInitConfig().captureFrame;
+	bool l_isCapturing = (l_captureFrame >= 0 && m_FrameCountSinceLaunch == static_cast<uint32_t>(l_captureFrame));
+	if (l_isCapturing)
+		m_HardwareService->BeginCapture();
+
 	m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
 	m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
@@ -177,6 +182,9 @@ bool FrameManagementService::Update()
 	m_CopySemaphoreValues[l_currentFrame] = m_HardwareService->GetSemaphoreValue(GPUEngineType::Copy);
 
 	Present();
+
+	if (l_isCapturing)
+		m_HardwareService->EndCapture();
 
 	EndFrame();
 
@@ -332,6 +340,8 @@ bool FrameManagementService::PrepareGlobalCommands()
 			l_mappedMemory->m_NeedUploadToGPU = false;
 		}
 	});
+
+	l_gpuBufferService->UpdateRaytracingInstances();
 
 	PrepareRayTracing(l_commandList);
 

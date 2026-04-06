@@ -51,26 +51,47 @@ bool TransformService::Update()
 		Mat4 l_S = Math::toScaleMatrix(Vec4(l_Local->m_LocalScale, 1.0f));
 		Mat4 l_LocalTRS = l_T * l_R * l_S;
 
+		Mat4 l_NewWorld;
+		Mat4 l_NewWorldRot;
+
 		EntityID l_Parent = m_Nodes[l_Entity].m_Parent;
 		if (l_Parent == INVALID_ENTITY)
 		{
-			l_World->m_WorldMatrix         = l_LocalTRS;
-			l_World->m_WorldRotationMatrix = l_R;
+			l_NewWorld    = l_LocalTRS;
+			l_NewWorldRot = l_R;
 		}
 		else
 		{
 			auto* l_ParentWorld = l_Registry->Get<WorldTransformComponent>(l_Parent);
 			if (l_ParentWorld)
 			{
-				l_World->m_WorldMatrix         = l_ParentWorld->m_WorldMatrix * l_LocalTRS;
-				l_World->m_WorldRotationMatrix = l_ParentWorld->m_WorldRotationMatrix * l_R;
+				l_NewWorld    = l_ParentWorld->m_WorldMatrix * l_LocalTRS;
+				l_NewWorldRot = l_ParentWorld->m_WorldRotationMatrix * l_R;
 			}
 			else
 			{
-				l_World->m_WorldMatrix         = l_LocalTRS;
-				l_World->m_WorldRotationMatrix = l_R;
+				l_NewWorld    = l_LocalTRS;
+				l_NewWorldRot = l_R;
 			}
 		}
+
+		const float* l_Old = &l_World->m_WorldMatrix.m00;
+		const float* l_New = &l_NewWorld.m00;
+		constexpr float l_Epsilon = 1e-6f;
+		bool l_Changed = false;
+		for (int k = 0; k < 16; k++)
+		{
+			float l_Diff = l_Old[k] - l_New[k];
+			if (l_Diff > l_Epsilon || l_Diff < -l_Epsilon)
+			{
+				l_Changed = true;
+				break;
+			}
+		}
+
+		l_World->m_Dirty = l_Changed;
+		l_World->m_WorldMatrix         = l_NewWorld;
+		l_World->m_WorldRotationMatrix = l_NewWorldRot;
 	}
 
 	return true;

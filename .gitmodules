@@ -31,3 +31,6 @@
 	path = Source/External/GitSubmodules/DirectX-Headers
 	url = https://github.com/microsoft/DirectX-Headers
 	ignore = dirty
+[submodule "Source/External/GitSubmodules/renderdoc"]
+	path = Source/External/GitSubmodules/renderdoc
+	url = https://github.com/baldurk/renderdoc.git

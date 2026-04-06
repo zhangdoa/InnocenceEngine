@@ -221,3 +221,11 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, std::vector
 
 	return true;
 }
+
+uint64_t DX12MeshResourceService::GetBLASAddress(MeshAssetHandle handle) const
+{
+	auto it = m_DX12MeshResources.find(handle.m_Index);
+	if (it == m_DX12MeshResources.end() || !it->second.m_BLAS)
+		return 0;
+	return it->second.m_BLAS->GetGPUVirtualAddress();
+}

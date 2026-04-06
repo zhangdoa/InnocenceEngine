@@ -4,7 +4,6 @@
 #include "../Common/ThreadSafeQueue.h"
 #include "../Component/GPUBufferComponent.h"
 #include "../Component/CommandListComponent.h"
-#include "../Common/EntityID.h"
 
 namespace Inno
 {
@@ -25,7 +24,6 @@ namespace Inno
 		void ForEach(std::function<void(GPUBufferComponent*)> func);
 
 		void Initialize(GPUBufferComponent* gpuBuffer);
-		void Initialize(EntityID entity);
 		bool InitializeComponents();
 
 		virtual bool UploadToGPU(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer) { return false; }
@@ -50,9 +48,10 @@ namespace Inno
 		bool IsTLASReady() const { return m_TLASReady; }
 		void SetTLASReady(bool ready) { m_TLASReady = ready; }
 
+		virtual bool UpdateRaytracingInstances() { return false; }
+
 	protected:
 		virtual bool InitializeImpl(GPUBufferComponent* gpuBuffer) { return false; }
-		virtual bool InitializeImpl(EntityID entity) { return false; }
 		virtual bool OnSceneLoadingStart() { return false; }
 
 		NamedObjectPool<GPUBufferComponent> m_Pool;
@@ -63,13 +62,11 @@ namespace Inno
 		GPUBufferComponent* m_RaytracingInstanceBufferComponent = nullptr;
 		bool m_TLASReady = false;
 		std::vector<IRaytracingInstanceDescList*> m_RaytracingInstanceDescs;
-		std::unordered_set<EntityID> m_initializedEntities;
 
 	private:
 		uint32_t GetCurrentFrameIndex();
 
 		ThreadSafeQueue<GPUBufferComponent*> m_DeferredQueue;
-		ThreadSafeQueue<EntityID> m_DeferredEntityQueue;
 	};
 
 	template<typename T>

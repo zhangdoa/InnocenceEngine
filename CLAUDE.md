@@ -32,14 +32,21 @@ powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
 
 **Why Scripts/BuildWin.ps1:** `cmd.exe /c msbuild` from git bash swallows output. Inline PowerShell `-Command` breaks on bash `$` expansion. `/t:Main` on the `.sln` targets a folder, not a project. The script lives in `Scripts/` (tracked) so it survives `git clean` and Build directory wipes.
 
-**Testing policy:** Three tiers of testing:
+**Testing policy:** Four tiers of testing:
 1. **RenderTest** — regression test (single draw call). Use for any code change.
 2. **Main.exe integration** — loads GI scene, renders 10 frames. Use for service refactors, resource management, render pipeline changes.
 3. **Scene reload test** — loads GI scene, reloads UnitTest scene at specified frame, renders remaining frames. Catches device-removed crashes from in-flight resource destruction. Use for changes that affect scene lifecycle, GPU resource teardown, or deferred init.
+4. **Interactive test** — launches Main.exe windowed and sends keystrokes via Win32 PostMessage to exercise runtime toggles (path tracer on/off, scene reload, camera movement). Catches crashes that only occur in windowed mode with user interaction. Use for rendering pipeline changes, HID-triggered features, or any toggle/mode-switch logic.
 
 ```
 # Scene reload test
 powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -reload_at_frame 10' -Wait -PassThru -NoNewWindow).ExitCode"
+
+# Interactive test — full scenario (camera + path tracer toggle + scene reload)
+powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scripts/InteractiveTest.ps1" -Scenario full
+
+# Interactive test — specific scenarios: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload
+powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scripts/InteractiveTest.ps1" -Scenario toggle_pathtracer
 ```
 
 ## Workflow
@@ -81,3 +88,32 @@ Every step is mandatory. Any build error, Test.exe crash, D3D12 validation error
 - `std::cout` — use engine logging
 - Committing without a full test pass
 - Touching `Source\External\`
+
+<!-- BACKLOG.MD MCP GUIDELINES START -->
+
+<CRITICAL_INSTRUCTION>
+
+## BACKLOG WORKFLOW INSTRUCTIONS
+
+This project uses Backlog.md MCP for all task and project management activities.
+
+**CRITICAL GUIDANCE**
+
+- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
+- If your client only supports tools or the above request fails, call `backlog.get_backlog_instructions()` to load the tool-oriented overview. Use the `instruction` selector when you need `task-creation`, `task-execution`, or `task-finalization`.
+
+- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
+- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
+- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
+
+These guides cover:
+- Decision framework for when to create tasks
+- Search-first workflow to avoid duplicates
+- Links to detailed guides for task creation, execution, and finalization
+- MCP tools reference
+
+You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
+
+</CRITICAL_INSTRUCTION>
+
+<!-- BACKLOG.MD MCP GUIDELINES END -->
