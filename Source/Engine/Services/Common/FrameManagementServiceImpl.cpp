@@ -8,6 +8,7 @@
 #include "../MeshResourceService.h"
 #include "../MaterialResourceService.h"
 #include "../RenderPassResourceService.h"
+#include "../SceneService.h"
 
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -142,6 +143,8 @@ bool FrameManagementService::Update()
 	g_Engine->Get<MaterialResourceService>()->InitializeComponents();
 	g_Engine->Get<GPUBufferResourceService>()->InitializeComponents();
 	g_Engine->Get<RenderPassResourceService>()->InitializeComponents();
+
+	g_Engine->Get<SceneService>()->ClearLoadingFlag();
 
 	m_UploadHeapPreparationCallback();
 
@@ -287,6 +290,19 @@ bool FrameManagementService::Present()
 
 		m_needResize = false;
 	}
+
+	return true;
+}
+
+bool FrameManagementService::WaitForGPUIdle()
+{
+	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
+	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Copy);
+
+	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Copy), GPUEngineType::Copy);
 
 	return true;
 }

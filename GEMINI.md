@@ -24,7 +24,7 @@ powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-P
 
 # Full integration test — loads GI scene, renders 10 frames, runs CPU ray tracer, exits 0=pass
 # Use this for heavy changes (service refactors, resource management, render pipeline)
-powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-Process -FilePath 'RelWithDebInfo/Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -frames 10' -Wait -PassThru -NoNewWindow).ExitCode"
+powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-Process -FilePath 'RelWithDebInfo/Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 10' -Wait -PassThru -NoNewWindow).ExitCode"
 
 # Shader compilation
 powershell.exe -File "./Scripts/HLSL2DXIL.ps1"
@@ -35,7 +35,15 @@ cd Build && cmake .. && cd ..
 
 **Why Scripts/BuildWin.ps1:** `cmd.exe /c msbuild` from git bash swallows output. Inline PowerShell `-Command` breaks on bash `$` expansion. The script lives in `Scripts/` (tracked) so it survives `git clean` and Build directory wipes.
 
-**Testing policy:** RenderTest is a regression test (single draw call). For anything that touches services, resource management, or the render pipeline, also run the Main.exe integration test — it exercises scene loading, all render passes, material/texture/mesh initialization, and the full frame loop.
+**Testing policy:** Three tiers of testing:
+1. **RenderTest** — regression test (single draw call). Use for any code change.
+2. **Main.exe integration** — loads GI scene, renders 10 frames. Use for service refactors, resource management, render pipeline changes.
+3. **Scene reload test** — loads GI scene, reloads UnitTest scene at specified frame, renders remaining frames. Catches device-removed crashes from in-flight resource destruction. Use for changes that affect scene lifecycle, GPU resource teardown, or deferred init.
+
+```bash
+# Scene reload test
+powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-Process -FilePath 'RelWithDebInfo/Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -reload_at_frame 10' -Wait -PassThru -NoNewWindow).ExitCode"
+```
 
 ## Workflow
 **Implementation -> Build -> Runtime test -> Shader test (if shaders changed) -> Peer review -> User approval**

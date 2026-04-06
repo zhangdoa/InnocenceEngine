@@ -8,6 +8,7 @@
 #include "TransformService.h"
 #include "PhysicsSimulationService.h"
 #include "BillboardDrawCallService.h"
+#include "FrameManagementService.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -32,6 +33,9 @@ bool SceneService::LoadSync(const char* fileName)
 	Log(Verbose, "Loading scene ", fileName, "...");
 
 	// Unloading phase — order is critical:
+	// 0. Flush all GPU work before destroying resources that may still be in flight
+	g_Engine->Get<FrameManagementService>()->WaitForGPUIdle();
+
 	// 1. Free GPU resources first (while component pointers still valid)
 	g_Engine->Get<MeshResourceService>()->OnSceneUnloading();
 	g_Engine->Get<TextureResourceService>()->OnSceneUnloading();
@@ -65,7 +69,6 @@ bool SceneService::LoadSync(const char* fileName)
 		(*cb)();
 
 	m_needUpdate = true;
-	m_IsLoading = false;
 
 	Log(Success, "Scene ", fileName, " has been loaded.");
 
@@ -193,6 +196,11 @@ bool SceneService::Save(const char* fileName)
 bool SceneService::IsLoading()
 {
 	return m_IsLoading;
+}
+
+void SceneService::ClearLoadingFlag()
+{
+	m_IsLoading = false;
 }
 
 bool SceneService::AddSceneUnloadingCallback(std::function<void()>* functor)

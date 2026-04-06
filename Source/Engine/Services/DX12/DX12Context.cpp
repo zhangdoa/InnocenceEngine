@@ -148,7 +148,10 @@ ComPtr<ID3D12Resource> DX12Context::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC*
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create default heap buffer ", name);
+		auto l_removeReason = m_device->GetDeviceRemovedReason();
+		Log(Error, "Can't create default heap buffer ", name,
+			" HRESULT=", static_cast<int32_t>(l_HResult),
+			" DeviceRemovedReason=", static_cast<int32_t>(l_removeReason));
 		return nullptr;
 	}
 
@@ -169,7 +172,7 @@ ComPtr<ID3D12Resource> DX12Context::CreateReadBackHeapBuffer(UINT64 size, const 
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create read-back heap buffer ", name);
+		Log(Warning, "Can't create read-back heap buffer ", name);
 		return nullptr;
 	}
 

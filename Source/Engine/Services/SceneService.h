@@ -20,6 +20,7 @@ namespace Inno
 		bool Load(const char* fileName, bool AsyncLoad = false);
 		bool Save(const char* fileName);
 		bool IsLoading();
+		void ClearLoadingFlag();
 
 		bool AddSceneUnloadingCallback(std::function<void()>* functor);
 		bool AddSceneLoadedCallback(std::function<void()>* functor);

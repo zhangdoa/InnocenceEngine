@@ -78,6 +78,7 @@ namespace Inno
 
 		uint32_t m_AutoFrameCount = 0;
 		bool m_AutoGISceneTriggered = false;
+		bool m_AutoReloadTriggered = false;
 		bool m_AutoTerminateCalled = false;
 	};
 
@@ -482,20 +483,30 @@ namespace Inno
 
 		processPendingMeshSetups();
 
-		auto l_maxFrames = g_Engine->getInitConfig().maxFrames;
-		if (l_maxFrames > 0)
+		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
+		if (l_totalFrames > 0)
 		{
 			m_AutoFrameCount++;
-			if (!m_AutoGISceneTriggered)
+
+			if (!m_AutoGISceneTriggered && m_AutoFrameCount >= 5)
 			{
 				m_AutoGISceneTriggered = true;
 				g_Engine->Get<SceneService>()->Load("Scenes//GITestBox.InnoScene", true);
-				Log(Success, "Auto-test: loaded GITestBox scene.");
+				Log(Success, "Auto-test: loaded GITestBox scene at frame ", m_AutoFrameCount, ".");
 			}
-			else if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_maxFrames))
+
+			auto l_reloadAtFrame = g_Engine->getInitConfig().reloadAtFrame;
+			if (l_reloadAtFrame > 0 && !m_AutoReloadTriggered && m_AutoFrameCount >= static_cast<uint32_t>(l_reloadAtFrame))
+			{
+				m_AutoReloadTriggered = true;
+				g_Engine->Get<SceneService>()->Load("Scenes//UnitTest.InnoScene", true);
+				Log(Success, "Auto-test: reload triggered at frame ", m_AutoFrameCount, ", switching back to UnitTest scene.");
+			}
+
+			if (!m_AutoTerminateCalled && m_AutoFrameCount >= static_cast<uint32_t>(l_totalFrames))
 			{
 				m_AutoTerminateCalled = true;
-				Log(Success, "Auto-test: ", l_maxFrames, " frames rendered, terminating.");
+				Log(Success, "Auto-test: ", l_totalFrames, " frames rendered, terminating.");
 				g_Engine->Get<IWindowService>()->Terminate();
 			}
 		}
@@ -525,7 +536,7 @@ namespace Inno
 			delete m_player;
 		}
 
-		if (g_Engine->getInitConfig().maxFrames > 0)
+		if (g_Engine->getInitConfig().totalFrames > 0)
 		{
 			Log(Verbose, "Auto-test: running CPU path tracer reference render...");
 			g_Engine->Get<RayTracer>()->Execute();

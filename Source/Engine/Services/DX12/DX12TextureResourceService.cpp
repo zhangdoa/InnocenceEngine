@@ -588,7 +588,7 @@ std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
     auto l_readBackHeapBuffer = m_ctx->CreateReadBackHeapBuffer(l_bufferSize);
     if (!l_readBackHeapBuffer)
     {
-        Log(Error, TextureComp, " failed to create readback heap buffer");
+        Log(Warning, TextureComp, " failed to create readback heap buffer");
         return {};
     }
 
