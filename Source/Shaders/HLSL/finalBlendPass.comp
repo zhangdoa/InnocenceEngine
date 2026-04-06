@@ -60,10 +60,10 @@ void main(ComputeInputType input)
 	float exposure = ConvertEV100ToExposure(EV100);
 #endif
 
-	float3 bassPassxyY = RGB_XYY(basePass);
-	bassPassxyY.z *= exposure;
+	float3 basePassxyY = RGB_XYY(basePass);
+	basePassxyY.z *= exposure;
 
-	basePass = XYY_RGB(bassPassxyY);
+	basePass = XYY_RGB(basePassxyY);
 
 	// Tone Mapping
 	float3 finalColor = TonemapACES(basePass);

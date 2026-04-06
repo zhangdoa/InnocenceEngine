@@ -52,19 +52,20 @@ void main(ComputeInputType input)
 		float range = g_Frame.maxLogLuminance - g_Frame.minLogLuminance;
 		float weightedAverageLuminance = exp2(weightedLogAverage / 254.0 * range + g_Frame.minLogLuminance);
 
-		// Store new luminance value in cyclic buffer
-		uint bufferIndex = g_Frame.frameIndex % numHistoryFrames;
+		// Store new luminance value in cyclic buffer (indices 1..numHistoryFrames-1)
+		// Index 0 is reserved for the adapted average output
+		uint bufferIndex = (g_Frame.frameIndex % (numHistoryFrames - 1)) + 1;
 		out_average[bufferIndex] = weightedAverageLuminance;
 
-		// Compute moving average over last `numHistoryFrames`
+		// Compute moving average over history slots
 		float sumLuminance = 0.0;
-		for (uint i = 0; i < numHistoryFrames; i++)
+		for (uint i = 1; i < numHistoryFrames; i++)
 		{
 			sumLuminance += out_average[i];
 		}
-		float adaptedLuminance = sumLuminance / numHistoryFrames;
+		float adaptedLuminance = sumLuminance / (numHistoryFrames - 1);
 
-		// Store result at index 0 for easy access
+		// Store adapted average at index 0 (read by FinalBlend)
 		out_average[0] = adaptedLuminance;
 	}
 }

@@ -38,15 +38,9 @@ uint ComputeBinIndex(float3 hdrColor, float minLogLum, float invLogLumRange)
 [numthreads(16, 16, 1)]
 void main(ComputeInputType input)
 {
-	// Use one thread per group to clear the shared histogram.
-	if (input.groupThreadID.x == 0 && input.groupThreadID.y == 0)
-	{
-		[unroll]
-		for (uint i = 0; i < 256; i++)
-		{
-			sharedHistogram[i] = 0;
-		}
-	}
+	// Each thread clears one bin (16x16 = 256 threads = 256 bins)
+	uint threadIndex = input.groupThreadID.y * 16 + input.groupThreadID.x;
+	sharedHistogram[threadIndex] = 0;
 	GroupMemoryBarrierWithGroupSync();
 
 	// Fetch texture dimensions (each thread can do this; alternatively, precompute and pass via a constant buffer)
