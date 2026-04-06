@@ -397,9 +397,11 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 
 			// Post-processing: PostTAA -> LuminanceHistogram -> LuminanceAverage -> FinalBlend
+			// Wait for ray tracing compute to finish before post-processing touches AccumulationBuffer
+			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
+
 			// PostTAA
 			auto l_postTAARenderPass = PostTAAPass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_postTAARenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_postTAAGraphicsCL = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_postTAAGraphicsCL, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_postTAARenderPass, GPUEngineType::Graphics);
@@ -410,7 +412,7 @@ namespace Inno
 
 			// LuminanceHistogram
 			auto l_lumHistRenderPass = LuminanceHistogramPass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_lumHistRenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(l_postTAARenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_lumHistGraphicsCL = LuminanceHistogramPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_lumHistGraphicsCL, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_lumHistRenderPass, GPUEngineType::Graphics);
@@ -421,14 +423,15 @@ namespace Inno
 
 			// LuminanceAverage
 			auto l_lumAvgRenderPass = LuminanceAveragePass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_lumAvgRenderPass, GPUEngineType::Compute, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(l_lumHistRenderPass, GPUEngineType::Compute, GPUEngineType::Compute);
 			auto l_lumAvgComputeCL = LuminanceAveragePass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_lumAvgComputeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_lumAvgRenderPass, GPUEngineType::Compute);
 
 			// FinalBlend
 			auto l_finalBlendRenderPass = FinalBlendPass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_finalBlendRenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(l_postTAARenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(l_lumAvgRenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_finalBlendGraphicsCL = FinalBlendPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_finalBlendGraphicsCL, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_finalBlendRenderPass, GPUEngineType::Graphics);
