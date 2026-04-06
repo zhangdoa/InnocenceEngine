@@ -1,7 +1,7 @@
 <template>
   <div class="viewport-panel">
-    <div class="viewport-info" v-if="sharedHandle">
-      Handle: 0x{{ sharedHandle.toString(16).toUpperCase() }}
+    <div class="viewport-info" v-if="props.params?.sharedHandle">
+      Handle: 0x{{ props.params.sharedHandle.toString(16).toUpperCase() }}
     </div>
     <canvas ref="viewportCanvas" class="viewport-canvas"></canvas>
   </div>
@@ -11,34 +11,62 @@
 import { ref, onMounted, defineProps, watch } from 'vue'
 
 const props = defineProps({
-  sharedHandle: BigInt,
+  params: Object
 })
 
 const viewportCanvas = ref(null)
 
 onMounted(() => {
+  console.log('ViewportPanel mounted');
   if (window.require) {
-    const { sharedTexture } = window.require('electron')
-    
-    sharedTexture.setSharedTextureReceiver(async (data) => {
-      const { importedSharedTexture } = data
-      const videoFrame = importedSharedTexture.getVideoFrame()
+    try {
+      const { sharedTexture, ipcRenderer } = window.require('electron')
+      console.log('ViewportPanel: Got sharedTexture from electron', !!sharedTexture);
       
-      if (viewportCanvas.value) {
-        const canvas = viewportCanvas.value
-        const ctx = canvas.getContext('2d')
-        
-        if (canvas.width !== videoFrame.displayWidth || canvas.height !== videoFrame.displayHeight) {
-          canvas.width = videoFrame.displayWidth
-          canvas.height = videoFrame.displayHeight
-        }
-        
-        ctx.drawImage(videoFrame, 0, 0)
+      if (sharedTexture && sharedTexture.setSharedTextureReceiver) {
+        console.log('ViewportPanel: Setting receiver...');
+        sharedTexture.setSharedTextureReceiver(async (data) => {
+          console.log('ViewportPanel: Received shared texture data', !!data.importedSharedTexture);
+          const { importedSharedTexture } = data
+          const videoFrame = importedSharedTexture.getVideoFrame()
+          
+          if (viewportCanvas.value) {
+            const canvas = viewportCanvas.value
+            const ctx = canvas.getContext('2d')
+            
+            if (canvas.width !== videoFrame.displayWidth || canvas.height !== videoFrame.displayHeight) {
+              canvas.width = videoFrame.displayWidth
+              canvas.height = videoFrame.displayHeight
+            }
+            
+            ctx.drawImage(videoFrame, 0, 0)
+          }
+
+          videoFrame.close()
+          importedSharedTexture.release()
+        })
+        console.log('ViewportPanel: Receiver set.');
+      } else {
+        console.warn('ViewportPanel: sharedTexture or setSharedTextureReceiver is missing!', sharedTexture);
+      }
+      
+      // Request texture immediately if handle is already there
+      if (props.params && props.params.sharedHandle) {
+        console.log('ViewportPanel: Initial handle present. Asking main process to send texture.');
+        ipcRenderer.send('renderer-ready-for-texture')
       }
 
-      videoFrame.close()
-      importedSharedTexture.release()
-    })
+      // Also listen to IPC directly to know when the texture is imported by main
+      ipcRenderer.on('viewport-ready', (event, info) => {
+        console.log('ViewportPanel: Received viewport-ready from main. Asking main process to send texture.');
+        ipcRenderer.send('renderer-ready-for-texture')
+      })
+      
+    } catch (e) {
+      console.error('ViewportPanel: Error setting up shared texture:', e);
+    }
+  } else {
+    console.warn('ViewportPanel: window.require is not available!');
   }
 })
 </script>

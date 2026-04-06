@@ -1,45 +1,54 @@
 <template>
   <div class="hierarchy-panel">
-    <div class="panel-header">Scene Hierarchy</div>
+    <div class="panel-header">
+      <n-text depth="3" strong>Scene Hierarchy</n-text>
+    </div>
     <div class="search-bar">
-      <input type="text" placeholder="Search entities..." v-model="searchQuery" />
+      <n-input size="small" placeholder="Search entities..." v-model:value="searchQuery" clearable>
+        <template #prefix>
+          <span>🔍</span>
+        </template>
+      </n-input>
     </div>
-    <div class="entity-list">
-      <div 
-        v-for="entity in filteredEntities" 
-        :key="entity.id"
-        class="entity-item"
-        :class="{ selected: selectedEntityId === entity.id }"
-        @click="selectEntity(entity.id)"
-      >
-        <span class="icon">📦</span>
-        <span class="name">{{ entity.name }}</span>
-      </div>
-    </div>
+    <n-scrollbar class="entity-list">
+      <n-list hoverable clickable size="small">
+        <n-list-item 
+          v-for="entity in filteredEntities" 
+          :key="entity.id"
+          :class="['entity-item', props.params?.selectedEntityId === entity.id ? 'selected' : '']"
+          @click="selectEntity(entity.id)"
+        >
+          <n-space align="center" :size="8">
+            <n-text depth="3" style="font-size: 14px;">📦</n-text>
+            <n-text style="font-size: 13px;">{{ entity.name }}</n-text>
+          </n-space>
+        </n-list-item>
+      </n-list>
+    </n-scrollbar>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, defineProps, defineEmits } from 'vue'
+import { ref, computed, defineProps } from 'vue'
+import { NList, NListItem, NInput, NScrollbar, NText, NSpace } from 'naive-ui'
 
 const props = defineProps({
-  entities: Array,
-  selectedEntityId: Number,
-  onSelectEntity: Function
+  params: Object
 })
 
 const searchQuery = ref('')
 
 const filteredEntities = computed(() => {
-  if (!searchQuery.value) return props.entities
-  return props.entities.filter(e => 
+  const entities = props.params?.entities || []
+  if (!searchQuery.value) return entities
+  return entities.filter(e => 
     e.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
 const selectEntity = (id) => {
-  if (props.onSelectEntity) {
-    props.onSelectEntity(id)
+  if (props.params?.onSelectEntity) {
+    props.params.onSelectEntity(id)
   }
 }
 </script>
@@ -49,15 +58,13 @@ const selectEntity = (id) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #252526;
-  color: #ccc;
-  font-family: sans-serif;
+  background: #18181c;
 }
 
 .panel-header {
   padding: 8px 12px;
-  background: #2d2d2d;
-  font-size: 11px;
+  background: #262629;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid #333;
@@ -65,44 +72,23 @@ const selectEntity = (id) => {
 
 .search-bar {
   padding: 8px;
-}
-
-.search-bar input {
-  width: 100%;
-  background: #3c3c3c;
-  border: 1px solid #555;
-  color: #fff;
-  padding: 4px 8px;
-  font-size: 12px;
-  outline: none;
+  background: #18181c;
 }
 
 .entity-list {
   flex: 1;
-  overflow-y: auto;
 }
 
 .entity-item {
-  padding: 4px 12px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-}
-
-.entity-item:hover {
-  background: #2a2d2e;
+  padding: 4px 12px !important;
+  transition: background 0.2s ease;
 }
 
 .entity-item.selected {
-  background: #094771;
-  color: #fff;
+  background: #1a3a5a !important;
 }
 
-.entity-item .icon {
-  margin-right: 8px;
-  font-size: 12px;
-  opacity: 0.7;
+.entity-item.selected :deep(.n-text) {
+  color: #fff !important;
 }
 </style>

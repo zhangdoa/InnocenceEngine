@@ -126,18 +126,9 @@ bool FrameManagementService::Update()
 {
 	auto l_currentFrame = m_CurrentFrame;
 
-	if (m_GraphicsSemaphoreValues[l_currentFrame] > 0)
-	{
-		m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
-	}
-	if (m_ComputeSemaphoreValues[l_currentFrame] > 0)
-	{
-		m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
-	}
-	if (m_CopySemaphoreValues[l_currentFrame] > 0)
-	{
-		m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
-	}
+	m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
+	m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
+	m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
 
 	BeginFrame();
 

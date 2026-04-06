@@ -94,6 +94,9 @@ ObjectStatus TestRenderingClient::GetStatus() { return m_ObjectStatus; }
 
 void TestRenderingClient::CountFrameAndTerminateIfDone()
 {
+    if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
+        return;
+
     if (g_Engine->Get<SceneService>()->IsLoading())
         return;
 

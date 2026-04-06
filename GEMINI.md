@@ -92,6 +92,7 @@ The editor is a Qt-based application in `Source/Editor/`. It uses Qt widgets (QT
 - No explanatory comments — only comment when the code itself is not obvious
 - Validate everything — build and runtime test before any commit
 - Services own operation domains, not component types — a FooComponent does not imply a FooSystem; multiple services may operate on the same component type independently
+- IPC Synchronization — Data must only be transferred or accessed when both the owner and the receiver are fully ready. A clear handshake/ready-signal must occur to prevent race conditions (e.g., transferring shared GPU textures before the receiving UI canvas is mounted).
 
 ## Workspace Hygiene
 - Never produce scratch files in the repo root or any tracked directory

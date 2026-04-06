@@ -59,6 +59,12 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 	auto l_swapChainImageCount = g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount();
 	auto stateFrameCount = texture->m_TextureDesc.IsMultiBuffer ? l_swapChainImageCount : 1;
 	auto l_initialState = static_cast<D3D12_RESOURCE_STATES>(texture->m_TextureDesc.Usage == TextureUsage::Sample ? texture->m_ReadState : texture->m_WriteState);
+	
+	if (texture->m_TextureDesc.UseSharedHandle)
+	{
+		l_initialState = D3D12_RESOURCE_STATE_COMMON;
+	}
+
 	texture->m_CurrentState.resize(stateFrameCount, l_initialState);
 
 	D3D12_CLEAR_VALUE l_clearValue = {};

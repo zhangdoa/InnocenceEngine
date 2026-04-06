@@ -2,6 +2,7 @@
 #include "../GraphicsHardwareService.h"
 #include "../CommandListResourceService.h"
 #include "../GPUBufferResourceService.h"
+#include "../EditorService.h"
 #include "../../Engine.h"
 #include "../../Platform/WinWindow/WinWindowService.h"
 #include "../../Services/RenderingConfigurationService.h"
@@ -932,6 +933,8 @@ bool DX12FrameManagementService::AssignSwapChainImages()
 		if (l_viewportTextureComponent)
 		{
 			auto l_viewportTexture = reinterpret_cast<TextureComponent*>(l_viewportTextureComponent);
+			Log(Success, "Sidecar: Viewport texture found: ", l_viewportTexture->m_InstanceName, " UseSharedHandle: ", l_viewportTexture->m_TextureDesc.UseSharedHandle);
+			
 			auto l_resource = static_cast<ID3D12Resource*>(l_viewportTexture->GetGPUResource(0));
 			if (l_resource)
 			{
@@ -939,11 +942,47 @@ bool DX12FrameManagementService::AssignSwapChainImages()
 				if (SUCCEEDED(l_hResult))
 				{
 					Log(Success, "Viewport shared handle created: ", (void*)m_ViewportSharedHandle);
+					
+					// Duplicate handle for parent process if requested (e.g. Electron sidecar)
+					uint32_t l_parentPID = g_Engine->getInitConfig().parentPID;
+					if (l_parentPID > 0)
+					{
+						HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, l_parentPID);
+						if (hProcess)
+						{
+							HANDLE duplicateHandle = NULL;
+							if (DuplicateHandle(GetCurrentProcess(), m_ViewportSharedHandle, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
+							{
+								Log(Success, "Sidecar: Duplicated shared handle for parent process (PID ", l_parentPID, "): ", (uint64_t)duplicateHandle);
+								// We need to send the duplicated handle to the parent, not our local one.
+								// However, we still need to close our local handle eventually.
+								// For now, let's just overwrite m_ViewportSharedHandle with the duplicate so EditorService sends it.
+								// Note: We leak the original m_ViewportSharedHandle here, but typically it lives for the app lifetime.
+								m_ViewportSharedHandle = duplicateHandle;
+							}
+							else
+							{
+								Log(Error, "Sidecar: Failed to duplicate handle. GetLastError=", (uint64_t)GetLastError());
+							}
+							CloseHandle(hProcess);
+						}
+						else
+						{
+							Log(Error, "Sidecar: Failed to open parent process (PID ", l_parentPID, ") for handle duplication. GetLastError=", (uint64_t)GetLastError());
+						}
+					}
+
+					// Notify EditorService
+					g_Engine->Get<EditorService>()->NotifyViewportReady(m_ViewportSharedHandle);
 				}
 				else
 				{
-					Log(Error, "Failed to create viewport shared handle, HRESULT=", l_hResult);
+					Log(Error, "Failed to create viewport shared handle, HRESULT=", (uint64_t)l_hResult);
 				}
+			}
+			else
+			{
+				Log(Warning, "Sidecar: Viewport texture resource is null.");
 			}
 		}
 	}
@@ -953,8 +992,22 @@ bool DX12FrameManagementService::AssignSwapChainImages()
         return true;
     }
 
+    if (!m_SwapChainRenderPassComp)
+    {
+        return false;
+    }
+
     auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTarget;
+    if (!l_outputMergerTarget)
+    {
+        return false;
+    }
+
     auto l_textureComp = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
+    if (!l_textureComp)
+    {
+        return false;
+    }
 
     l_textureComp->m_GPUResources.resize(m_swapChainImageCount);
     l_textureComp->m_CurrentState.resize(m_swapChainImageCount, D3D12_RESOURCE_STATE_PRESENT);

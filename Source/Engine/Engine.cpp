@@ -199,7 +199,6 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		else if (l_engineModeArguments == "2")
 		{
 			l_result.engineMode = EngineMode::Sidecar;
-			l_result.isOffscreen = true;
 			Log(Success, "Launch in sidecar mode, engine will be controlled by external process.");
 		}
 		else
@@ -331,6 +330,18 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		{
 			l_result.maxFrames = std::stoi(l_remainder.substr(l_start));
 			Log(Success, "Auto-terminate after ", l_result.maxFrames, " frames post-GI-scene-load.");
+		}
+	}
+
+	auto l_parentPidArgPos = arg.find("-parent_pid");
+	if (l_parentPidArgPos != std::string::npos)
+	{
+		auto l_remainder = arg.substr(l_parentPidArgPos + 12);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			l_result.parentPID = std::stoul(l_remainder.substr(l_start));
+			Log(Success, "Parent PID set to: ", l_result.parentPID);
 		}
 	}
 

@@ -22,6 +22,7 @@ namespace Inno
 		bool isAudit = false;
 		char testCase[64] = {};
 		int maxFrames = 0;  // >0: auto-terminate after this many frames post-GI-scene-load
+		uint32_t parentPID = 0; // if >0, we duplicate handles to this process
 	};
 
 	class IWindowService;

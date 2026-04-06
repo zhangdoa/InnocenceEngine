@@ -215,6 +215,12 @@ bool GPUPathTracerPass::Initialize()
 	m_ToneMapOutput->m_TextureDesc.Width            = l_resolution.x;
 	m_ToneMapOutput->m_TextureDesc.Height           = l_resolution.y;
 	m_ToneMapOutput->m_TextureDesc.DepthOrArraySize = 1;
+
+	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
+	{
+		m_ToneMapOutput->m_TextureDesc.UseSharedHandle = true;
+	}
+
 	m_ToneMapOutput->m_CPUAccessibility             = Accessibility::Immutable;
 	m_ToneMapOutput->m_GPUAccessibility             = Accessibility::ReadWrite;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ToneMapOutput);

@@ -24,8 +24,11 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
+		void NotifyViewportReady(void* sharedHandle);
+
 	private:
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 		std::unique_ptr<ix::WebSocketServer> m_Server;
+		uint32_t m_clientPID = 0;
 	};
 }
