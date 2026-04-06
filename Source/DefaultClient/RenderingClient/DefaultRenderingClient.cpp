@@ -24,7 +24,6 @@
 #include "TransparentBlendPass.h"
 #include "VolumetricPass.h"
 #include "TAAPass.h"
-#include "PostTAAPass.h"
 #include "LuminanceHistogramPass.h"
 #include "LuminanceAveragePass.h"
 #include "MotionBlurPass.h"
@@ -154,7 +153,6 @@ namespace Inno
 
 		PreTAAPass::Get().Setup();
 		TAAPass::Get().Setup();
-		PostTAAPass::Get().Setup();
 
 		LuminanceHistogramPass::Get().Setup();
 		LuminanceAveragePass::Get().Setup();
@@ -220,7 +218,6 @@ namespace Inno
 
 		PreTAAPass::Get().Initialize();
 		TAAPass::Get().Initialize();
-		PostTAAPass::Get().Initialize();
 
 		LuminanceHistogramPass::Get().Initialize();
 		LuminanceAveragePass::Get().Initialize();
@@ -260,18 +257,16 @@ namespace Inno
 		{
 			GPUPathTracerPass::Get().PrepareCommandList();
 
-			PostTAAPassRenderingContext l_PostTAAPassRenderingContext;
-			l_PostTAAPassRenderingContext.m_input = GPUPathTracerPass::Get().GetResult();
-			PostTAAPass::Get().PrepareCommandList(&l_PostTAAPassRenderingContext);
+			auto l_ptResult = GPUPathTracerPass::Get().GetResult();
 
 			LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
-			l_LuminanceHistogramPassRenderingContext.m_input = PostTAAPass::Get().GetResult();
+			l_LuminanceHistogramPassRenderingContext.m_input = l_ptResult;
 			LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
 
 			LuminanceAveragePass::Get().PrepareCommandList();
 
 			FinalBlendPassRenderingContext l_FinalBlendPassRenderingContext;
-			l_FinalBlendPassRenderingContext.m_input = PostTAAPass::Get().GetResult();
+			l_FinalBlendPassRenderingContext.m_input = l_ptResult;
 			FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
 
 			m_Canvas = FinalBlendPass::Get().GetResult();
@@ -331,18 +326,16 @@ namespace Inno
 
 		TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
 
-		PostTAAPassRenderingContext l_PostTAAPassRenderingContext;
-		l_PostTAAPassRenderingContext.m_input = TAAPass::Get().GetResult();
-		PostTAAPass::Get().PrepareCommandList(&l_PostTAAPassRenderingContext);
+		auto l_taaResult = TAAPass::Get().GetResult();
 
 		LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
-		l_LuminanceHistogramPassRenderingContext.m_input = PostTAAPass::Get().GetResult();
+		l_LuminanceHistogramPassRenderingContext.m_input = l_taaResult;
 		LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
 
 		LuminanceAveragePass::Get().PrepareCommandList();
 
 		FinalBlendPassRenderingContext l_FinalBlendPassRenderingContext;
-		l_FinalBlendPassRenderingContext.m_input = PostTAAPass::Get().GetResult();
+		l_FinalBlendPassRenderingContext.m_input = l_taaResult;
 		FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
 
 		return true;
@@ -396,23 +389,12 @@ namespace Inno
 			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 
-			// Post-processing: PostTAA -> LuminanceHistogram -> LuminanceAverage -> FinalBlend
+			// Post-processing: LuminanceHistogram -> LuminanceAverage -> FinalBlend
 			// Wait for ray tracing compute to finish before post-processing touches AccumulationBuffer
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			// PostTAA
-			auto l_postTAARenderPass = PostTAAPass::Get().GetRenderPassComp();
-			auto l_postTAAGraphicsCL = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_hwService->Execute(l_postTAAGraphicsCL, GPUEngineType::Graphics);
-			l_hwService->SignalOnGPU(l_postTAARenderPass, GPUEngineType::Graphics);
-			l_hwService->WaitOnGPU(l_postTAARenderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			auto l_postTAAComputeCL = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_postTAAComputeCL, GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_postTAARenderPass, GPUEngineType::Compute);
-
 			// LuminanceHistogram
 			auto l_lumHistRenderPass = LuminanceHistogramPass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_postTAARenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_lumHistGraphicsCL = LuminanceHistogramPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_lumHistGraphicsCL, GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_lumHistRenderPass, GPUEngineType::Graphics);
@@ -430,7 +412,7 @@ namespace Inno
 
 			// FinalBlend
 			auto l_finalBlendRenderPass = FinalBlendPass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_postTAARenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_hwService->WaitOnGPU(l_lumAvgRenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_finalBlendGraphicsCL = FinalBlendPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_finalBlendGraphicsCL, GPUEngineType::Graphics);
@@ -737,25 +719,9 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (PostTAAPass::Get().GetStatus() == ObjectStatus::Activated)
-		{
-			l_hwService->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-
-			auto l_renderPass = PostTAAPass::Get().GetRenderPassComp();
-
-			auto l_graphicsCommandList = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-
-			auto l_computeCommandList = PostTAAPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
-		}
-
 		if (LuminanceHistogramPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_hwService->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = LuminanceHistogramPass::Get().GetRenderPassComp();
 
@@ -780,7 +746,7 @@ namespace Inno
 
 		if (FinalBlendPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_hwService->WaitOnGPU(PostTAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(TAAPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_hwService->WaitOnGPU(LuminanceAveragePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			auto l_renderPass = FinalBlendPass::Get().GetRenderPassComp();
@@ -953,7 +919,6 @@ namespace Inno
 		LuminanceAveragePass::Get().Terminate();
 		LuminanceHistogramPass::Get().Terminate();
 
-		PostTAAPass::Get().Terminate();
 		TAAPass::Get().Terminate();
 		PreTAAPass::Get().Terminate();
 
