@@ -73,6 +73,19 @@ test('editor launches and connects to engine', async () => {
 
   log('E2E verification complete, editor stack is healthy');
 
+  log('Waiting for UI to stabilize before screenshot...');
+  // A small hard sleep to ensure any Vue transitions or initial layouts have settled
+  await window.waitForTimeout(2000);
+
+  log('Capturing full-window visual regression screenshot (masking viewport)...');
+  await expect(window).toHaveScreenshot('editor-layout.png', {
+    mask: [window.locator('.viewport-canvas')],
+    fullPage: true,
+    maxDiffPixelRatio: 0.05 // Allow a tiny bit of variance for font rendering differences
+  });
+
+  log('Visual regression test passed');
+
   await electronApp.close();
 });
 
