@@ -61,38 +61,53 @@ float DistributionGGX(float3 N, float3 H, float roughness)
     return a2 / (3.14159265f * denom * denom);
 }
 
-float GeometrySchlickGGX(float NdotV, float roughness)
+float GeometrySmithGGXCorrelated(float NdotL, float NdotV, float alpha)
 {
-    float r = roughness + 1.0f;
-    float k = (r * r) / 8.0f;
-    return NdotV / (NdotV * (1.0f - k) + k);
+    float alpha2 = alpha * alpha;
+    float lambdaV = NdotL * sqrt(NdotV * NdotV * (1.0f - alpha2) + alpha2);
+    float lambdaL = NdotV * sqrt(NdotL * NdotL * (1.0f - alpha2) + alpha2);
+    return 0.5f / max(lambdaV + lambdaL, 0.0001f);
 }
 
-float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
+float3 FresnelSchlick(float cosTheta, float3 F0, float F90)
 {
-    float NdotV = max(dot(N, V), 0.0f);
-    float NdotL = max(dot(N, L), 0.0f);
-    return GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
+    return F0 + (F90 - F0) * pow(saturate(1.0f - cosTheta), 5.0f);
 }
 
-float3 FresnelSchlick(float cosTheta, float3 F0)
+float DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
-    return F0 + (1.0f - F0) * pow(saturate(1.0f - cosTheta), 5.0f);
+    float F_l = pow(1.0f - NdotL, 5.0f);
+    float F_v = pow(1.0f - NdotV, 5.0f);
+    float retroReflect = 2.0f * LdotH * LdotH * linearRoughness;
+    float FLambert = (1.0f - 0.5f * F_l) * (1.0f - 0.5f * F_v);
+    float FRetroReflection = retroReflect * (F_l + F_v + F_l * F_v * (retroReflect - 1.0f));
+    return FLambert + FRetroReflection;
 }
 
 float3 CookTorranceGGX(float3 N, float3 V, float3 L, float3 albedo, float metalness, float roughness)
 {
+    float3 H = normalize(V + L);
+    float NdotL = max(dot(N, L), 0.0f);
+    float NdotV = max(dot(N, V), 0.0f);
+    float NdotH = max(dot(N, H), 0.0f);
+    float LdotH = max(dot(L, H), 0.0f);
+
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
-    float3 H  = normalize(V + L);
+    float alpha = roughness * roughness;
 
-    float D  = DistributionGGX(N, H, roughness);
-    float G  = GeometrySmith(N, V, L, roughness);
-    float3 F = FresnelSchlick(max(dot(H, V), 0.0f), F0);
+    float  D = DistributionGGX(N, H, roughness);
+    float  G = GeometrySmithGGXCorrelated(NdotL, NdotV, alpha);
+    float3 F = FresnelSchlick(LdotH, F0, 1.0f);
 
-    float3 specular = (D * G * F) / max(4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f), 0.001f);
-    float3 diffuse  = (1.0f - F) * (1.0f - metalness) * albedo / 3.14159265f;
+    // Specular: D * G * F (correlated Smith already includes 1/(4*NdotL*NdotV) denominator)
+    float3 specular = D * G * F;
 
-    return (diffuse + specular) * max(dot(N, L), 0.0f);
+    // Diffuse: Disney 2015 Burley with energy conservation
+    float3 kD = (1.0f - F) * (1.0f - metalness);
+    float  diffuseTerm = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness);
+    float3 diffuse = kD * albedo * diffuseTerm / 3.14159265f;
+
+    return (diffuse + specular) * NdotL;
 }
 
 float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
@@ -170,8 +185,8 @@ void RayGenShader()
         float  metalness = payload.metalness;
         float  roughness = max(payload.roughness, 0.04f);
 
-        float3 lightDir = normalize(float3(0.5f, 1.0f, 0.3f));
-        float  lightIntensity = 3.0f;
+        float3 lightDir = normalize(g_Frame.sun_direction.xyz);
+        float3 lightIlluminance = g_Frame.sun_illuminance.xyz;
 
         ShadowPayload shadow;
         shadow.isShadowed = true;
@@ -185,7 +200,7 @@ void RayGenShader()
 
         if (!shadow.isShadowed)
         {
-            radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIntensity;
+            radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
         }
 
         float2 xi = Rand2(rng);
@@ -195,14 +210,16 @@ void RayGenShader()
         if (NdotL <= 0.0f) break;
 
         float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
-        float3 F  = FresnelSchlick(max(dot(H, V), 0.0f), F0);
+        float3 F  = FresnelSchlick(max(dot(H, V), 0.0f), F0, 1.0f);
         float  D  = DistributionGGX(N, H, roughness);
-        float  G  = GeometrySmith(N, V, L, roughness);
+        float  alpha = roughness * roughness;
+        float  G  = GeometrySmithGGXCorrelated(NdotL, max(dot(N, V), 0.0f), alpha);
         float  NdotH = max(dot(N, H), 0.0f);
         float  VdotH = max(dot(V, H), 0.0f);
         float  pdf   = (D * NdotH) / (4.0f * VdotH + 0.0001f);
 
-        float3 specular = (D * G * F) / max(4.0f * max(dot(N, V), 0.0f) * NdotL, 0.001f);
+        // Correlated Smith G already includes 1/(4*NdotL*NdotV)
+        float3 specular = D * G * F;
         throughput *= specular * NdotL / max(pdf, 0.0001f);
 
         float maxComp = max(throughput.x, max(throughput.y, throughput.z));
