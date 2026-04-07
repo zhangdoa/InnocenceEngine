@@ -42,7 +42,10 @@ function Download-Asset {
         return
     }
 
-    $fileName = Split-Path -Leaf $Url
+    # Extract a safe filename from the URL (handle query params like ?fileName=foo.zip)
+    if ($Url -match '[?&]fileName=([^&]+)') { $fileName = $Matches[1] }
+    else { $fileName = (Split-Path -Leaf ([System.Uri]$Url).LocalPath) }
+    if ([string]::IsNullOrEmpty($fileName)) { $fileName = ($Name -replace '\s+', '_') + ".download" }
     $downloadPath = Join-Path $tempDir $fileName
 
     Write-Host "[DOWNLOAD] $Name from $Url ..." -ForegroundColor Cyan
