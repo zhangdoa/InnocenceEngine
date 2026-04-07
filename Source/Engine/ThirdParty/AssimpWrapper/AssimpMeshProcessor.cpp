@@ -24,9 +24,9 @@ bool AssimpMeshProcessor::CreateMeshComponent(const aiScene* Scene, const char* 
 	ConvertMeshData(l_Mesh, l_Vertices, l_Indices);
 
 	OutMesh = {};
+	auto l_Name = std::string(BaseName) + "." + std::to_string(MeshIndex) + ".MeshComponent/";
+	OutMesh.m_InstanceName = l_Name.c_str();
 	bool l_Result = AssetService::Save(OutMesh, l_Vertices, l_Indices);
-
-	auto l_Name = std::string(BaseName) + "." + std::to_string(MeshIndex) + "/";
 	if (l_Result)
 	{
 		Log(Success, "Created and saved MeshComponent: ", l_Name.c_str());

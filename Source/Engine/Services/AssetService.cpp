@@ -370,7 +370,7 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	
+
 	// Add binary-specific fields
 	j["VerticesNumber"] = vertices.size();
 	j["IndicesNumber"] = indices.size();
@@ -378,7 +378,7 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	auto l_workingDir = "../Data/Components/";
 	std::filesystem::create_directories(l_workingDir);
 
-	std::string l_baseName;
+	std::string l_baseName = component.m_InstanceName.c_str();
 	auto l_binaryFileName = l_baseName + ".innobin";
 	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
 
@@ -395,7 +395,7 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	g_Engine->Get<IOService>()->serializeVector(l_binaryFile, indices);
 	l_binaryFile.close();
 
-	auto filePath = std::string();
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
 
@@ -403,7 +403,7 @@ bool AssetService::Save(const MaterialComponent& component)
 {
 	json j;
 	JSONWrapper::to_json(j, component);
-	auto filePath = GetAssetFilePath("MaterialComponent");
+	auto filePath = GetAssetFilePath(component.m_InstanceName.c_str());
 	return JSONWrapper::Save(filePath.c_str(), j);
 }
 

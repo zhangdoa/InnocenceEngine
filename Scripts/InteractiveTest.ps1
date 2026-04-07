@@ -22,8 +22,10 @@ public class Win32 {
     public static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")]
     public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-    public const uint WM_KEYDOWN = 0x0100;
-    public const uint WM_KEYUP   = 0x0101;
+    public const uint WM_KEYDOWN     = 0x0100;
+    public const uint WM_KEYUP       = 0x0101;
+    public const uint WM_RBUTTONDOWN = 0x0204;
+    public const uint WM_RBUTTONUP   = 0x0205;
 }
 "@
 
@@ -135,6 +137,11 @@ function Run-SceneReload {
 function Run-CameraMovement {
     Write-Host "`n--- Camera Movement ---"
 
+    # Hold right mouse button to unlock camera movement (m_CanMove gate)
+    Write-Host "  Right mouse button DOWN (enable camera movement)"
+    [Win32]::PostMessage($hwnd, [Win32]::WM_RBUTTONDOWN, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds 200
+
     foreach ($key in @($VK_W, $VK_A, $VK_S, $VK_D)) {
         $name = @{ $VK_W="W"; $VK_A="A"; $VK_S="S"; $VK_D="D" }[$key]
         Write-Host "  Moving camera: $name"
@@ -143,6 +150,11 @@ function Run-CameraMovement {
         }
         Wait-AndCheck 1 "Camera $name"
     }
+
+    # Release right mouse button
+    Write-Host "  Right mouse button UP (disable camera movement)"
+    [Win32]::PostMessage($hwnd, [Win32]::WM_RBUTTONUP, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds 200
 }
 
 # --- Scenario: Path tracer + scene reload (the dangerous combo) ---
