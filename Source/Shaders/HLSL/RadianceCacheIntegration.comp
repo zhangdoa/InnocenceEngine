@@ -36,8 +36,8 @@ void main(ComputeInputType input)
     float3 radiance = max(in_RadianceCacheResults_Input.Load(int3(readCoord, 0)).xyz, float3(0, 0, 0));
 
     float radianceMagnitude = length(radiance);
-    if (radianceMagnitude > 10.0)
-        radiance = normalize(radiance) * 10.0;
+    if (radianceMagnitude > 1000.0)
+        radiance = normalize(radiance) * 1000.0;
 
     float2 uv = float2(x, y) / TILE_SIZE;
     float3 sampleDir = DecodeOctahedral(uv);

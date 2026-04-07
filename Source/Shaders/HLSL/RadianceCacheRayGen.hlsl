@@ -17,14 +17,20 @@ float3 CosineWeightedHemisphereSample(float2 Xi, float3 N)
     return normalize(mul(H, basis));
 }
 
+// R2 quasi-random sequence (generalized golden ratio, Martin Roberts 2018)
+// Produces well-stratified 2D samples with minimal clumping
+float2 R2Sequence(uint index)
+{
+    static const float g = 1.32471795724; // Plastic constant
+    static const float a1 = 1.0 / g;
+    static const float a2 = 1.0 / (g * g);
+    return frac(float2(a1 * index, a2 * index) + 0.5);
+}
+
 float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
 {
-    uint n = pixelID.x * 73856093u ^ pixelID.y * 19349663u ^ sampleIndex * 83492791u ^ frameIndex * 2654435761u;
-    n = (n << 13u) ^ n;
-    return float2(
-        (n * (n * n * 15731u + 789221u) + 1376312589u) & 0x7fffffff,
-        (n * (n * n * 12347u + 45679u) + 987654321u) & 0x7fffffff
-    ) / float(0x7fffffff);
+    uint baseIndex = pixelID.x * 73u + pixelID.y * 157u + frameIndex * 13u;
+    return R2Sequence(baseIndex * 4u + sampleIndex);
 }
 
 // Sample from cumulative distribution function of reprojected radiance
