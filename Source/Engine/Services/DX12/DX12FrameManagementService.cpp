@@ -534,13 +534,13 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 		auto& l_UAV = l_deviceMemory->m_UAV;
 		if (resourceBindingLayoutDesc.m_BindingAccessibility == Accessibility::ReadOnly)
 		{
-			if (l_buffer->m_GPUAccessibility == Accessibility::ReadOnly)
+			if (resourceBindingLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 			{
 				auto l_GPUVirtualAddress = l_mappedMemory->m_UploadHeapBuffer->GetGPUVirtualAddress();
 				l_commandList->SetComputeRootConstantBufferView(rootParameterIndex, l_GPUVirtualAddress);
 				return true;
 			}
-			else if ((l_buffer->m_GPUAccessibility.CanWrite()))
+			else if (resourceBindingLayoutDesc.m_ResourceAccessibility.CanWrite())
 			{
 				if (l_buffer->m_Usage == GPUBufferUsage::TLAS)
 				{
@@ -557,7 +557,7 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 		}
 		else if (resourceBindingLayoutDesc.m_BindingAccessibility.CanWrite())
 		{
-			if (l_buffer->m_GPUAccessibility.CanWrite())
+			if (resourceBindingLayoutDesc.m_ResourceAccessibility.CanWrite())
 			{
 				l_commandList->SetComputeRootDescriptorTable(rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE{ l_UAV.Handle.m_GPUHandle });
 				return true;
@@ -949,35 +949,6 @@ bool DX12FrameManagementService::AssignSwapChainImages()
 				{
 					Log(Success, "Viewport shared handle created: ", (void*)m_ViewportSharedHandle);
 					
-					// Duplicate handle for parent process if requested (e.g. Electron sidecar)
-					uint32_t l_parentPID = g_Engine->getInitConfig().parentPID;
-					if (l_parentPID > 0)
-					{
-						HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, l_parentPID);
-						if (hProcess)
-						{
-							HANDLE duplicateHandle = NULL;
-							if (DuplicateHandle(GetCurrentProcess(), m_ViewportSharedHandle, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
-							{
-								Log(Success, "Sidecar: Duplicated shared handle for parent process (PID ", l_parentPID, "): ", (uint64_t)duplicateHandle);
-								// We need to send the duplicated handle to the parent, not our local one.
-								// However, we still need to close our local handle eventually.
-								// For now, let's just overwrite m_ViewportSharedHandle with the duplicate so EditorService sends it.
-								// Note: We leak the original m_ViewportSharedHandle here, but typically it lives for the app lifetime.
-								m_ViewportSharedHandle = duplicateHandle;
-							}
-							else
-							{
-								Log(Error, "Sidecar: Failed to duplicate handle. GetLastError=", (uint64_t)GetLastError());
-							}
-							CloseHandle(hProcess);
-						}
-						else
-						{
-							Log(Error, "Sidecar: Failed to open parent process (PID ", l_parentPID, ") for handle duplication. GetLastError=", (uint64_t)GetLastError());
-						}
-					}
-
 					// Notify EditorService
 					g_Engine->Get<EditorService>()->NotifyViewportReady(m_ViewportSharedHandle);
 				}

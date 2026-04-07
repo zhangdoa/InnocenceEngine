@@ -1,253 +1,299 @@
 <template>
-  <n-layout class="editor-shell" position="absolute">
-    <n-layout-header bordered class="editor-header">
+  <div class="editor-shell">
+    <header class="editor-header">
       <div class="header-left">
-        <div class="logo">InnocenceEngine</div>
-        <n-menu mode="horizontal" :options="menuOptions" class="menu-bar" />
+        <n-menu mode="horizontal" :options="menuOptions" class="menu-bar" @update:value="handleMenuClick" />
       </div>
       <div class="header-right">
-        <n-space align="center">
+        <n-space align="center" :size="20">
           <n-button-group size="small">
-            <n-button @click="saveScene" secondary title="Save current scene">Save Scene</n-button>
-            <n-button @click="restartEngine" secondary title="Restart Engine sidecar">Restart</n-button>
-            <n-button @click="stopEngine" type="error" secondary title="Stop Engine sidecar">Stop</n-button>
+            <n-button @click="saveScene" secondary title="Save current scene">
+              <template #icon><n-icon><component :is="icons.save" /></n-icon></template>
+              Save
+            </n-button>
+            <n-button @click="restartEngine" secondary title="Restart Engine sidecar">
+              <template #icon><n-icon><component :is="icons.refresh" /></n-icon></template>
+              Restart
+            </n-button>
+            <n-button @click="stopEngine" type="error" ghost title="Stop Engine sidecar">
+              <template #icon><n-icon><component :is="icons.power" /></n-icon></template>
+              Stop
+            </n-button>
           </n-button-group>
-          <n-tag :type="isConnected ? 'success' : 'error'" size="small" round>
+          <n-tag :type="editorState.isConnected ? 'success' : 'error'" size="small" round ghost>
             <template #icon>
-              <div :class="['status-dot', isConnected ? 'connected' : '']"></div>
+              <n-icon>
+                <component :is="editorState.isConnected ? icons.checkmark : icons.close" />
+              </n-icon>
             </template>
-            {{ isConnected ? 'Connected' : 'Disconnected' }}
+            {{ editorState.isConnected ? 'Live' : 'Offline' }}
           </n-tag>
         </n-space>
       </div>
-    </n-layout-header>
+    </header>
 
-    <n-layout-content content-style="padding: 0;" class="dock-container">
+    <main class="dock-container">
       <dockview-vue
         class="dockview-theme-abyssal"
+        style="width: 100%; height: 100%;"
         @ready="onDockviewReady"
-        :components="dockviewComponents"
       >
       </dockview-vue>
-    </n-layout-content>
+    </main>
 
-    <n-layout-footer bordered class="editor-footer">
-      <n-space justify="space-between" align="center" style="width: 100%; height: 100%; padding: 0 10px;">
-        <n-text depth="3" style="font-size: 11px;">Ready</n-text>
-        <n-text depth="3" class="flex-grow" style="font-size: 11px;">Console: {{ lastMessage || 'No engine output' }}</n-text>
-        <n-text depth="3" style="font-size: 11px;">FPS: 60</n-text>
+    <footer class="editor-footer">
+      <n-space justify="space-between" align="center" style="width: 100%; height: 100%; padding: 0 12px;">
+        <n-text depth="3" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Ready</n-text>
+        <n-text depth="3" class="flex-grow" style="font-size: 11px; font-family: monospace;">
+          <n-icon style="vertical-align: middle; margin-right: 4px;"><component :is="icons.terminal" /></n-icon>
+          {{ editorState.lastMessage || 'System Idle' }}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px;">v0.0.9</n-text>
       </n-space>
-    </n-layout-footer>
-  </n-layout>
+    </footer>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, shallowRef, markRaw } from 'vue'
+import { ref, onMounted, onUnmounted, shallowRef, markRaw, h } from 'vue'
 import { 
-  NLayout, NLayoutHeader, NLayoutContent, NLayoutFooter,
-  NMenu, NButton, NButtonGroup, NTag, NSpace, NText, useMessage
+  NMenu, NButton, NButtonGroup, NTag, NSpace, NText, useMessage, NIcon
 } from 'naive-ui'
+import { 
+  Power, Refresh, SaveOutline, TerminalOutline,
+  CheckmarkCircle, CloseCircle, ColorPaletteOutline,
+  SettingsOutline, FlaskOutline, SunnyOutline, MoonOutline
+} from '@vicons/ionicons5'
 import { DockviewVue } from 'dockview-vue'
-import ViewportPanel from './ViewportPanel.vue'
-import HierarchyPanel from './HierarchyPanel.vue'
-import PropertyPanel from './PropertyPanel.vue'
-import AssetPanel from './AssetPanel.vue'
+import { editorState } from '../store'
 
 import 'dockview-vue/dist/styles/dockview.css'
 
+const renderIcon = (icon) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
+
 // Menu Options
 const menuOptions = [
-  { label: 'File', key: 'file' },
-  { label: 'Edit', key: 'edit' },
-  { label: 'View', key: 'view' },
-  { label: 'Engine', key: 'engine' },
-  { label: 'Help', key: 'help' }
+  { 
+    label: 'Editor', 
+    key: 'editor',
+    icon: renderIcon(SettingsOutline),
+    children: [
+      {
+        label: 'Theme',
+        key: 'theme',
+        icon: renderIcon(ColorPaletteOutline),
+        children: [
+          { label: 'Latte (Light)', key: 'theme-latte', icon: renderIcon(SunnyOutline) },
+          { label: 'Frappé', key: 'theme-frappe', icon: renderIcon(FlaskOutline) },
+          { label: 'Macchiato', key: 'theme-macchiato', icon: renderIcon(MoonOutline) },
+          { label: 'Mocha (Dark)', key: 'theme-mocha', icon: renderIcon(MoonOutline) }
+        ]
+      }
+    ]
+  },
+  { 
+    label: 'Engine', 
+    key: 'engine',
+    icon: renderIcon(Power),
+    children: [
+      { label: 'Restart', key: 'engine-restart', icon: renderIcon(Refresh) },
+      { label: 'Stop', key: 'engine-stop', icon: renderIcon(Power) }
+    ]
+  }
 ]
 
-// State
-const isConnected = ref(false)
-const sharedHandle = ref(null)
-const lastMessage = ref('')
-const entities = ref([])
-const selectedEntityId = ref(null)
-const selectedEntity = ref(null)
+const handleMenuClick = (key) => {
+  if (key.startsWith('theme-')) {
+    const flavor = key.replace('theme-', '');
+    editorState.setTheme(flavor);
+    message.info(`Theme changed to ${flavor}`);
+  } else if (key === 'engine-restart') {
+    restartEngine();
+  } else if (key === 'engine-stop') {
+    stopEngine();
+  }
+}
 
-const { ipcRenderer } = require('electron')
+// Icon mapping for template
+const icons = {
+  power: Power,
+  refresh: Refresh,
+  save: SaveOutline,
+  terminal: TerminalOutline,
+  checkmark: CheckmarkCircle,
+  close: CloseCircle
+}
+
+const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
 const message = useMessage()
+
+// Track if we have ever connected to avoid first-launch error popup
+const hasEverConnected = ref(false)
 
 // Dockview
 const dockviewApi = shallowRef()
 
 const setupIpc = () => {
-  ipcRenderer.on('engine-connected', (event, connected) => {
-    isConnected.value = connected
-    if (connected) {
-      lastMessage.value = 'Engine connected'
-      ipcRenderer.send('engine-message', { type: 'GET_SCENE' })
-    } else {
-      lastMessage.value = 'Engine disconnected'
-      sharedHandle.value = null
-      updatePanelParams('viewport_panel', { sharedHandle: null })
-    }
-  })
+  if (!ipcRenderer) return;
 
-  ipcRenderer.on('viewport-ready', (event, info) => {
-    lastMessage.value = 'Viewport ready'
-    if (info.sharedHandle) {
-      sharedHandle.value = BigInt(info.sharedHandle)
-      updatePanelParams('viewport_panel', { sharedHandle: sharedHandle.value })
+  ipcRenderer.on('engine-connected', (event, connected) => {
+    const wasConnected = editorState.isConnected;
+    editorState.isConnected = connected
+    
+    if (connected) {
+      hasEverConnected.value = true;
+      editorState.isUserInitiatedShutdown = false
+      editorState.lastMessage = 'Engine Handshake Successful'
+      ipcRenderer.send('engine-message', { type: 'GET_SCENE' })
+      message.success('System Online')
+    } else {
+      editorState.lastMessage = 'Engine Connection Lost'
+      editorState.reset()
+      
+      // Only show error if we were previously connected and it wasn't a planned stop
+      if (wasConnected && !editorState.isUserInitiatedShutdown) {
+        message.error('Engine Connection Interrupted')
+      }
     }
   })
 
   ipcRenderer.on('engine-message', (event, msg) => {
-    lastMessage.value = `Received: ${msg.type}`
+    console.log(`AppLayout: Received engine message: ${msg.type}`);
+    editorState.lastMessage = `Last Msg: ${msg.type}`
     if (msg.type === 'SCENE_DATA') {
-      entities.value = msg.entities
-      updatePanelParams('hierarchy_panel', { entities: entities.value })
+      editorState.entities = msg.entities
     } else if (msg.type === 'ENTITY_DETAILS') {
-      selectedEntity.value = msg.details
-      updatePanelParams('properties_panel', { selectedEntity: selectedEntity.value })
+      console.log('AppLayout: Setting selectedEntity details');
+      editorState.selectedEntity = msg.details
     }
   })
 }
 
-const onUpdateProperty = (data) => {
-  ipcRenderer.send('engine-message', {
-    type: 'UPDATE_ENTITY_PROPERTY',
-    ...data
-  })
-}
-
-// Dockview components definition for v5.2.0 API
-const dockviewComponents = {
-  viewport: markRaw(ViewportPanel),
-  hierarchy: markRaw(HierarchyPanel),
-  properties: markRaw(PropertyPanel),
-  assets: markRaw(AssetPanel)
-}
-
 const onDockviewReady = (event) => {
   dockviewApi.value = event.api
+  console.log('Dockview ready, creating panels...');
 
-  // Create default layout
+  // Create detached layout
   const hierarchyPane = event.api.addPanel({
     id: 'hierarchy_panel',
     component: 'hierarchy',
-    title: 'Hierarchy',
-    params: { 
-      entities: entities.value, 
-      selectedEntityId: selectedEntityId.value,
-      onSelectEntity: selectEntity 
-    },
-    position: { direction: 'left', width: 300 }
-  })
-
-  const viewportPane = event.api.addPanel({
-    id: 'viewport_panel',
-    component: 'viewport',
-    title: 'Viewport',
-    params: { sharedHandle: sharedHandle.value }
+    title: 'Outliner'
   })
 
   const propertiesPane = event.api.addPanel({
     id: 'properties_panel',
     component: 'properties',
-    title: 'Properties',
-    params: { 
-      selectedEntity: selectedEntity.value,
-      onUpdateProperty: onUpdateProperty 
-    },
-    position: { direction: 'right', referencePanel: viewportPane, width: 350 }
+    title: 'Inspector',
+    position: { direction: 'right', referencePanel: hierarchyPane, width: 450 }
   })
 
   const assetsPane = event.api.addPanel({
     id: 'assets_panel',
     component: 'assets',
-    title: 'Assets',
-    position: { direction: 'below', referencePanel: viewportPane, height: 250 }
+    title: 'Workspace',
+    position: { direction: 'below', referencePanel: hierarchyPane, height: 350 }
   })
-}
-
-const updatePanelParams = (id, params) => {
-  if (dockviewApi.value) {
-    const panel = dockviewApi.value.getPanel(id)
-    if (panel) {
-      panel.update({ params: { ...panel.params, ...params } })
-    }
-  }
-}
-
-const selectEntity = (id) => {
-  selectedEntityId.value = id
-  updatePanelParams('hierarchy_panel', { selectedEntityId: id })
-  ipcRenderer.send('engine-message', { type: 'GET_ENTITY_DETAILS', id: id })
-}
-
-const loadScene = (path) => {
-  ipcRenderer.send('engine-message', { type: 'LOAD_SCENE', path: path })
+  
+  console.log('All panels created.');
 }
 
 const saveScene = () => {
-  ipcRenderer.send('engine-message', { type: 'SAVE_SCENE' })
-  message.success('Scene save request sent to engine')
+  editorState.saveScene()
+  message.success('State persistent')
 }
 
 const restartEngine = () => {
-  ipcRenderer.send('engine-restart')
-  message.info('Engine restart requested')
+  editorState.restartEngine()
+  message.info('Rebooting Engine...')
 }
 
 const stopEngine = () => {
-  ipcRenderer.send('engine-stop')
-  message.warning('Engine stop requested')
+  editorState.stopEngine()
+  message.warning('Engine Terminated')
 }
 
 onMounted(() => {
   setupIpc()
-  window.addEventListener('load-scene', (e) => loadScene(e.detail))
+  window.addEventListener('load-scene', (e) => {
+    ipcRenderer.send('engine-message', { type: 'LOAD_SCENE', path: e.detail })
+  })
 })
 
 onUnmounted(() => {
-  ipcRenderer.removeAllListeners('engine-connected')
-  ipcRenderer.removeAllListeners('viewport-ready')
-  ipcRenderer.removeAllListeners('engine-message')
+  if (ipcRenderer) {
+    ipcRenderer.removeAllListeners('engine-connected')
+    ipcRenderer.removeAllListeners('engine-message')
+  }
 })
 </script>
 
 <style scoped>
+.editor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--ctp-base);
+  color: var(--ctp-text);
+}
+
 .editor-header {
-  height: 40px;
+  height: 52px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
+  padding: 0 20px;
+  background: var(--ctp-mantle);
+  border-bottom: 1px solid var(--ctp-surface1);
   user-select: none;
 }
 
-.header-left { display: flex; align-items: center; gap: 20px; }
-.logo { font-weight: bold; font-size: 13px; color: #fff; }
-.menu-bar { width: 300px; height: 100%; border: none !important; }
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ff4d4f;
-  margin-right: 4px;
+.header-left { 
+  display: flex; 
+  align-items: center; 
+  gap: 32px;
+  flex: 1;
 }
-.status-dot.connected {
-  background: #18a058;
-  box-shadow: 0 0 4px #18a058;
+
+.menu-bar { 
+  flex: 1;
+  min-width: 300px;
+  border: none !important; 
+  background: transparent !important;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  min-width: 400px;
+  justify-content: flex-end;
 }
 
 .dock-container {
   flex: 1;
   position: relative;
+  overflow: hidden;
+  background: var(--ctp-base);
 }
 
 .editor-footer {
-  height: 24px;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--ctp-mantle);
+  border-top: 1px solid var(--ctp-surface1);
 }
 
 .flex-grow { flex: 1; text-align: center; }
+
+/* Naive UI Theme Fixes */
+:deep(.n-menu-item-content-header) {
+  font-weight: 500;
+  font-size: 13px;
+}
 </style>

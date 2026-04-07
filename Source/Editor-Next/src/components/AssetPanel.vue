@@ -1,13 +1,9 @@
 <template>
   <div class="asset-panel">
-    <div class="panel-header">
-      <n-text depth="3" strong>Asset Browser</n-text>
-    </div>
-    
     <div class="toolbar">
       <n-space align="center" :size="12">
         <n-button size="tiny" quaternary @click="navigateUp" :disabled="isRoot">
-          <template #icon><span>⬆️</span></template>
+          <template #icon><n-icon><arrow-up-outline /></n-icon></template>
         </n-button>
         <n-breadcrumb separator=">">
           <n-breadcrumb-item>Data</n-breadcrumb-item>
@@ -25,9 +21,11 @@
             @dblclick="onItemDblClick(item)"
           >
             <div class="icon-wrapper">
-              <span v-if="item.isDir" style="font-size: 32px;">📁</span>
-              <span v-else-if="item.name.endsWith('.InnoScene')" style="font-size: 32px;">🌍</span>
-              <span v-else style="font-size: 32px;">📄</span>
+              <n-icon size="32" :color="item.isDir ? 'var(--ctp-yellow)' : item.name.endsWith('.InnoScene') ? 'var(--ctp-blue)' : 'var(--ctp-subtext0)'">
+                <folder-outline v-if="item.isDir" />
+                <planet-outline v-else-if="item.name.endsWith('.InnoScene')" />
+                <document-outline v-else />
+              </n-icon>
             </div>
             <n-text class="asset-name">{{ item.name }}</n-text>
           </div>
@@ -41,8 +39,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { 
   NGrid, NGridItem, NBreadcrumb, NBreadcrumbItem, NButton, 
-  NSpace, NText, NScrollbar 
+  NSpace, NText, NScrollbar, NIcon
 } from 'naive-ui'
+import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline } from '@vicons/ionicons5'
 
 const currentPath = ref('')
 const items = ref([])
@@ -99,22 +98,13 @@ const onItemDblClick = (item) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #18181c;
-}
-
-.panel-header {
-  padding: 8px 12px;
-  background: #262629;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid #333;
+  background: var(--ctp-base);
 }
 
 .toolbar {
-  padding: 6px 12px;
-  background: #1e1e22;
-  border-bottom: 1px solid #222;
+  padding: 8px 16px;
+  background: var(--ctp-mantle);
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 
 .asset-content {
@@ -126,19 +116,18 @@ const onItemDblClick = (item) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px;
-  border-radius: 4px;
+  padding: 12px 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .asset-item:hover {
-  background: #2a2d2e;
+  background: var(--ctp-surface0);
 }
 
 .icon-wrapper {
   margin-bottom: 8px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .asset-name {
@@ -150,5 +139,6 @@ const onItemDblClick = (item) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-width: 100%;
+  color: var(--ctp-text);
 }
 </style>

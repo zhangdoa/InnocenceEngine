@@ -1,98 +1,22 @@
-<template>
-  <div class="property-panel">
-    <div class="panel-header">
-      <n-text depth="3" strong>Properties</n-text>
-    </div>
-    
-    <div v-if="!props.params?.selectedEntity" class="no-selection">
-      <n-empty description="Select an entity to view properties" />
-    </div>
-    
-    <n-scrollbar v-else class="properties-content">
-      <div class="entity-info">
-        <n-h3 style="margin: 0;">{{ props.params.selectedEntity.name }}</n-h3>
-        <n-text depth="3" style="font-size: 10px;">ID: {{ props.params.selectedEntity.id }}</n-text>
-      </div>
-
-      <n-collapse :default-expanded-names="['TransformComponent', 'LightComponent']">
-        <n-collapse-item 
-          v-for="comp in props.params.selectedEntity.components" 
-          :key="comp.type" 
-          :title="comp.type" 
-          :name="comp.type"
-        >
-          <!-- Transform Component -->
-          <template v-if="comp.type === 'TransformComponent'">
-            <n-form label-placement="left" label-width="60" size="small">
-              <n-form-item label="Position">
-                <n-grid :cols="3" :x-gap="4">
-                  <n-grid-item><n-input-number v-model:value="comp.pos[0]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false" placeholder="X"><template #prefix><n-text depth="3">X</n-text></template></n-input-number></n-grid-item>
-                  <n-grid-item><n-input-number v-model:value="comp.pos[1]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false" placeholder="Y"><template #prefix><n-text depth="3">Y</n-text></template></n-input-number></n-grid-item>
-                  <n-grid-item><n-input-number v-model:value="comp.pos[2]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false" placeholder="Z"><template #prefix><n-text depth="3">Z</n-text></template></n-input-number></n-grid-item>
-                </n-grid>
-              </n-form-item>
-              <n-form-item label="Scale">
-                <n-grid :cols="3" :x-gap="4">
-                  <n-grid-item><n-input-number v-model:value="comp.scale[0]" @update:value="updateProp(comp.type, 'scale', comp.scale)" :show-button="false" placeholder="X"><template #prefix><n-text depth="3">X</n-text></template></n-input-number></n-grid-item>
-                  <n-grid-item><n-input-number v-model:value="comp.scale[1]" @update:value="updateProp(comp.type, 'scale', comp.scale)" :show-button="false" placeholder="Y"><template #prefix><n-text depth="3">Y</n-text></template></n-input-number></n-grid-item>
-                  <n-grid-item><n-input-number v-model:value="comp.scale[2]" @update:value="updateProp(comp.type, 'scale', comp.scale)" :show-button="false" placeholder="Z"><template #prefix><n-text depth="3">Z</n-text></template></n-input-number></n-grid-item>
-                </n-grid>
-              </n-form-item>
-            </n-form>
-          </template>
-
-          <!-- Light Component -->
-          <template v-else-if="comp.type === 'LightComponent'">
-            <n-form label-placement="left" label-width="60" size="small">
-              <n-form-item label="Color">
-                <n-color-picker 
-                  :value="rgbToHex(comp.color)" 
-                  @update:value="(hex) => updateColor(comp, hex)"
-                  :modes="['hex']"
-                />
-              </n-form-item>
-              <n-form-item label="Intensity">
-                <n-input-number 
-                  v-model:value="comp.intensity" 
-                  @update:value="updateProp(comp.type, 'intensity', comp.intensity)" 
-                  :step="10"
-                />
-              </n-form-item>
-            </n-form>
-          </template>
-
-          <div v-else>
-            <n-text depth="3" style="font-size: 11px;">Component fields not yet implemented</n-text>
-          </div>
-        </n-collapse-item>
-      </n-collapse>
-    </n-scrollbar>
-  </div>
-</template>
-
 <script setup>
-import { defineProps } from 'vue'
 import { 
   NCollapse, NCollapseItem, NForm, NFormItem, NGrid, NGridItem, 
-  NInputNumber, NColorPicker, NText, NScrollbar, NEmpty, NH3 
+  NInputNumber, NColorPicker, NText, NScrollbar, NEmpty, NH3, NIcon, NSpace
 } from 'naive-ui'
-
-const props = defineProps({
-  params: Object
-})
+import { CubeOutline, BulbOutline, SettingsOutline } from '@vicons/ionicons5'
+import { editorState } from '../store'
 
 const updateProp = (component, property, value) => {
-  if (props.params?.onUpdateProperty && props.params?.selectedEntity) {
-    props.params.onUpdateProperty({
-      id: props.params.selectedEntity.id,
-      component,
-      property,
-      value
-    })
-  }
+  editorState.updateProperty({
+    id: editorState.selectedEntity.id,
+    component,
+    property,
+    value
+  })
 }
 
 const rgbToHex = (rgb) => {
+  if (!rgb) return '#FFFFFF'
   const r = Math.round(rgb[0] * 255).toString(16).padStart(2, '0')
   const g = Math.round(rgb[1] * 255).toString(16).padStart(2, '0')
   const b = Math.round(rgb[2] * 255).toString(16).padStart(2, '0')
@@ -108,21 +32,124 @@ const updateColor = (comp, hex) => {
 }
 </script>
 
+<template>
+  <div class="property-panel">
+    <div v-if="!editorState.selectedEntity" class="no-selection">
+      <n-empty description="No Selection" size="small" />
+    </div>
+    
+    <n-scrollbar v-else class="properties-content">
+      <div class="entity-info">
+        <n-space align="center" :size="8">
+          <n-icon size="20" color="var(--ctp-blue)"><cube-outline /></n-icon>
+          <n-h3 style="margin: 0; color: var(--ctp-text);">{{ editorState.selectedEntity.name }}</n-h3>
+        </n-space>
+        <n-text depth="3" style="font-size: 10px; font-family: monospace; margin-left: 28px;">
+          UID: {{ editorState.selectedEntity.id }}
+        </n-text>
+      </div>
+
+      <n-collapse :default-expanded-names="['TransformComponent', 'LightComponent']" arrow-placement="right">
+        <n-collapse-item 
+          v-for="comp in editorState.selectedEntity.components" 
+          :key="comp.type" 
+          :name="comp.type"
+        >
+          <template #header>
+            <n-space align="center" :size="8">
+              <n-icon v-if="comp.type === 'TransformComponent'" color="var(--ctp-sky)"><settings-outline /></n-icon>
+              <n-icon v-else-if="comp.type === 'LightComponent'" color="var(--ctp-yellow)"><bulb-outline /></n-icon>
+              <n-text strong style="color: var(--ctp-text);">{{ comp.type }}</n-text>
+            </n-space>
+          </template>
+
+          <!-- Transform Component -->
+          <template v-if="comp.type === 'TransformComponent'">
+            <n-form label-placement="left" label-width="75" size="small" :show-feedback="false">
+              <n-form-item label="Position">
+                <n-grid :cols="3" :x-gap="6">
+                  <n-grid-item>
+                    <n-input-number v-model:value="comp.pos[0]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: var(--ctp-red);">X</n-text></template>
+                    </n-input-number>
+                  </n-grid-item>
+                  <n-grid-item>
+                    <n-input-number v-model:value="comp.pos[1]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: var(--ctp-green);">Y</n-text></template>
+                    </n-input-number>
+                  </n-grid-item>
+                  <n-grid-item>
+                    <n-input-number v-model:value="comp.pos[2]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: var(--ctp-blue);">Z</n-text></template>
+                    </n-input-number>
+                  </n-grid-item>
+                </n-grid>
+              </n-form-item>
+              
+              <n-form-item label="Rotation" style="margin-top: 12px;">
+                <n-text depth="3" style="font-size: 10px; font-family: monospace;">
+                  {{ comp.rot.map(v => v.toFixed(3)).join(', ') }}
+                </n-text>
+              </n-form-item>
+
+              <n-form-item label="Scale" style="margin-top: 12px;">
+                <n-grid :cols="3" :x-gap="6">
+                  <n-grid-item>
+                    <n-input-number v-model:value="comp.scale[0]" @update:value="updateProp(comp.type, 'scale', comp.scale)" :show-button="false">
+                      <template #prefix><n-text depth="3" style="font-size: 10px;">X</n-text></template>
+                    </n-input-number>
+                  </n-grid-item>
+                  <n-grid-item>
+                    <n-input-number v-model:value="comp.scale[1]" @update:value="updateProp(comp.type, 'scale', comp.scale)" :show-button="false">
+                      <template #prefix><n-text depth="3" style="font-size: 10px;">Y</n-text></template>
+                    </n-input-number>
+                  </n-grid-item>
+                  <n-grid-item>
+                    <n-input-number v-model:value="comp.scale[2]" @update:value="updateProp(comp.type, 'scale', comp.scale)" :show-button="false">
+                      <template #prefix><n-text depth="3" style="font-size: 10px;">Z</n-text></template>
+                    </n-input-number>
+                  </n-grid-item>
+                </n-grid>
+              </n-form-item>
+            </n-form>
+          </template>
+
+          <!-- Light Component -->
+          <template v-else-if="comp.type === 'LightComponent'">
+            <n-form label-placement="left" label-width="75" size="small" :show-feedback="false">
+              <n-form-item label="Color">
+                <n-color-picker 
+                  :value="rgbToHex(comp.color)" 
+                  @update:value="(hex) => updateColor(comp, hex)"
+                  :modes="['hex']"
+                  :show-alpha="false"
+                />
+              </n-form-item>
+              <n-form-item label="Luminous" style="margin-top: 12px;">
+                <n-input-number 
+                  v-model:value="comp.intensity" 
+                  @update:value="updateProp(comp.type, 'intensity', comp.intensity)" 
+                  :step="10"
+                />
+              </n-form-item>
+            </n-form>
+          </template>
+
+          <div v-else>
+            <n-text depth="3" style="font-size: 11px; font-style: italic;">No editable properties for this component.</n-text>
+          </div>
+        </n-collapse-item>
+      </n-collapse>
+    </n-scrollbar>
+  </div>
+</template>
+
 <style scoped>
 .property-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #18181c;
-}
-
-.panel-header {
-  padding: 8px 12px;
-  background: #262629;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid #333;
+  background: var(--ctp-base);
 }
 
 .no-selection {
@@ -130,28 +157,43 @@ const updateColor = (comp, hex) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--ctp-base);
 }
 
 .properties-content {
   flex: 1;
-  padding: 12px;
+  padding: 24px 20px;
 }
 
 .entity-info {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #333;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 
 :deep(.n-collapse-item) {
-  margin-bottom: 4px;
+  margin-bottom: 16px;
+  background: var(--ctp-surface0);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ctp-surface1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+:deep(.n-collapse-item__header) {
+  padding: 10px 0 !important;
 }
 
 :deep(.n-collapse-item__content-inner) {
-  padding-top: 12px !important;
+  padding: 16px 0 12px 0 !important;
 }
 
-:deep(.n-form-item) {
-  margin-bottom: 8px;
+:deep(.n-input-number) {
+  background: var(--ctp-base);
+}
+
+:deep(.n-form-item-label) {
+  color: var(--ctp-subtext0) !important;
+  font-size: 12px;
 }
 </style>

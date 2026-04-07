@@ -99,6 +99,7 @@ The editor is a Qt-based application in `Source/Editor/`. It uses Qt widgets (QT
 - Minimal cognitive complexity — code must be readable, not just correct
 - No explanatory comments — only comment when the code itself is not obvious
 - Validate everything — build and runtime test before any commit
+- **UX-First Design:** Every UI change must be validated with an E2E test from a designer's perspective. Audit for contrast, readability, spacing, and clear feedback (e.g., progress indicators).
 - Services own operation domains, not component types — a FooComponent does not imply a FooSystem; multiple services may operate on the same component type independently
 - IPC Synchronization — Data must only be transferred or accessed when both the owner and the receiver are fully ready. A clear handshake/ready-signal must occur to prevent race conditions (e.g., transferring shared GPU textures before the receiving UI canvas is mounted).
 
@@ -106,6 +107,7 @@ The editor is a Qt-based application in `Source/Editor/`. It uses Qt widgets (QT
 - Never produce scratch files in the repo root or any tracked directory
 - Transient output (build logs, test captures) goes to `Build/` (gitignored) only
 - Scripts belong in `Scripts/` (tracked) — never in `Build/`
+- **Documentation Persistence:** Always commit brainstorming specs (`docs/superpowers/specs/`) and implementation plans (`docs/superpowers/plans/`) to the repository. These are valuable technical artifacts and must not be discarded.
 - "Go ahead" means implement — do not ask follow-up questions
 
 ## Forbidden

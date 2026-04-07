@@ -1,45 +1,21 @@
-<template>
-  <div class="hierarchy-panel">
-    <div class="panel-header">
-      <n-text depth="3" strong>Scene Hierarchy</n-text>
-    </div>
-    <div class="search-bar">
-      <n-input size="small" placeholder="Search entities..." v-model:value="searchQuery" clearable>
-        <template #prefix>
-          <span>🔍</span>
-        </template>
-      </n-input>
-    </div>
-    <n-scrollbar class="entity-list">
-      <n-list hoverable clickable size="small">
-        <n-list-item 
-          v-for="entity in filteredEntities" 
-          :key="entity.id"
-          :class="['entity-item', props.params?.selectedEntityId === entity.id ? 'selected' : '']"
-          @click="selectEntity(entity.id)"
-        >
-          <n-space align="center" :size="8">
-            <n-text depth="3" style="font-size: 14px;">📦</n-text>
-            <n-text style="font-size: 13px;">{{ entity.name }}</n-text>
-          </n-space>
-        </n-list-item>
-      </n-list>
-    </n-scrollbar>
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, defineProps } from 'vue'
-import { NList, NListItem, NInput, NScrollbar, NText, NSpace } from 'naive-ui'
+import { ref, computed, onMounted, watch } from 'vue'
+import { NList, NListItem, NInput, NScrollbar, NText, NSpace, NIcon, NEmpty } from 'naive-ui'
+import { CubeOutline, SearchOutline } from '@vicons/ionicons5'
+import { editorState } from '../store'
 
-const props = defineProps({
-  params: Object
+onMounted(() => {
+  console.log('HierarchyPanel mounted');
 })
+
+watch(() => editorState.entities, (newEntities) => {
+  console.log(`HierarchyPanel: entities updated, count: ${newEntities?.length || 0}`);
+}, { deep: true, immediate: true })
 
 const searchQuery = ref('')
 
 const filteredEntities = computed(() => {
-  const entities = props.params?.entities || []
+  const entities = editorState.entities || []
   if (!searchQuery.value) return entities
   return entities.filter(e => 
     e.name.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -47,48 +23,100 @@ const filteredEntities = computed(() => {
 })
 
 const selectEntity = (id) => {
-  if (props.params?.onSelectEntity) {
-    props.params.onSelectEntity(id)
-  }
+  editorState.selectEntity(id)
 }
 </script>
+
+<template>
+  <div class="hierarchy-panel">
+    <div class="search-bar">
+      <n-input size="small" placeholder="Search outliner..." v-model:value="searchQuery" clearable>
+        <template #prefix>
+          <n-icon><search-outline /></n-icon>
+        </template>
+      </n-input>
+    </div>
+
+    <div v-if="!editorState.isConnected && editorState.entities.length === 0" class="empty-container">
+      <n-empty description="System Offline" size="small" />
+    </div>
+
+    <n-scrollbar v-else class="entity-list">
+      <n-list hoverable clickable size="small" :show-divider="false">
+        <n-list-item 
+          v-for="entity in filteredEntities" 
+          :key="entity.id"
+          :class="['entity-item', editorState.selectedEntityId === entity.id ? 'selected' : '']"
+          @click="selectEntity(entity.id)"
+        >
+          <n-space align="center" :size="8">
+            <n-icon size="16" :color="editorState.selectedEntityId === entity.id ? 'var(--ctp-mauve)' : 'var(--ctp-subtext0)'">
+              <cube-outline />
+            </n-icon>
+            <n-text :strong="editorState.selectedEntityId === entity.id" 
+                    :style="{ color: editorState.selectedEntityId === entity.id ? 'var(--ctp-text)' : 'var(--ctp-subtext1)' }">
+              {{ entity.name }}
+            </n-text>
+          </n-space>
+        </n-list-item>
+      </n-list>
+    </n-scrollbar>
+  </div>
+</template>
 
 <style scoped>
 .hierarchy-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #18181c;
-}
-
-.panel-header {
-  padding: 8px 12px;
-  background: #262629;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid #333;
+  background: var(--ctp-base);
 }
 
 .search-bar {
-  padding: 8px;
-  background: #18181c;
+  padding: 12px;
+  background: var(--ctp-base);
+  border-bottom: 1px solid var(--ctp-mantle);
+}
+
+.empty-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .entity-list {
   flex: 1;
 }
 
-.entity-item {
-  padding: 4px 12px !important;
-  transition: background 0.2s ease;
+:deep(.n-list) {
+  background: transparent;
+}
+
+:deep(.n-list-item) {
+  padding: 6px 16px !important;
+  background: transparent !important;
+  transition: all 0.15s ease;
+  border: none !important;
+  cursor: pointer;
+}
+
+:deep(.n-list-item:hover) {
+  background: var(--ctp-surface0) !important;
 }
 
 .entity-item.selected {
-  background: #1a3a5a !important;
+  background: var(--ctp-surface0) !important;
+  position: relative;
 }
 
-.entity-item.selected :deep(.n-text) {
-  color: #fff !important;
+.entity-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--ctp-mauve);
 }
 </style>
