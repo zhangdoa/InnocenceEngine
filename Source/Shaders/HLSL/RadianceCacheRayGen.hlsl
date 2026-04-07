@@ -157,17 +157,11 @@ void RayGenShader()
     in_ProbePosition[probeIndex] = float4(positionWS, 1);
     in_ProbeNormal[probeIndex] = float4(normalWS, 1);
 
-    // Stable temporal sampling without rotation - key fix for flickering
-    const int NUM_SAMPLES = 4; // Reduced for better temporal distribution
-    float3 totalRadiance = 0;
+    const int NUM_SAMPLES = 4;
 
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
-        // CRITICAL FIX: Use stable sampling without frame rotation
-        // This prevents the temporal instability that caused flickering
         float2 randVal = StableHash2D(samplingScreenPos, i);
-        
-        // Use importance sampling from reprojected radiance when available
         float3 sampleDir = ImportanceSampleFromCDF(randVal, normalWS, probeIndex);
 
         RayDesc ray;
@@ -180,7 +174,7 @@ void RayGenShader()
         tempPayload.radiance = float3(0, 0, 0);
 
         TraceRay(SceneAS, RAY_FLAG_NONE, 0xFF, 0, 1, 2, ray, tempPayload);
-        float3 NdotL = saturate(dot(normalWS, sampleDir));
+        float NdotL = saturate(dot(normalWS, sampleDir));
         float3 radiance = tempPayload.radiance * NdotL;
 
         // Store in radiance cache with improved temporal accumulation

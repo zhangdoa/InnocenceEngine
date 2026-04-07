@@ -254,28 +254,25 @@ void main(ComputeInputType input)
 	float3 l_Luminance_ForDirectLight = float3(0.0, 0.0, 0.0);
 	float3 l_Luminance_ForIndirectLight = float3(0.0, 0.0, 0.0);
 
-	/// Indirect light from radiance cache
-	float3 l_LuminanceIndirectLight_FromCache = SampleRadianceCache(l_ScreenCoord, N);
-
-	if (any(isnan(l_LuminanceIndirectLight_FromCache)))
-		l_LuminanceIndirectLight_FromCache = float3(0.0, 0.0, 0.0);
-
-	// SH irradiance is view-independent; clamp energy to prevent over-brightening
-	float giIntensityLimit = 2.0;
-	float currentIntensity = length(l_LuminanceIndirectLight_FromCache);
-	if (currentIntensity > giIntensityLimit)
-		l_LuminanceIndirectLight_FromCache *= giIntensityLimit / currentIntensity;
-
-	// GI feeds RT0 (visual output) only. RT1 (illuminance) carries direct lighting only
-	// so that next-frame ray hits do not re-accumulate already-accumulated indirect energy.
-	l_Luminance_ForDirectLight += l_LuminanceIndirectLight_FromCache;
-
 	float4 GPassRT2 = in_opaquePassRT2[l_ScreenCoord];
 
 	MaterialAttributes l_MaterialAttributes;
 	l_MaterialAttributes.m_Metallic = GPassRT1.w;
 	l_MaterialAttributes.m_Roughness = GPassRT2.w;
 	l_MaterialAttributes.m_Albedo = GPassRT2.xyz;
+
+	/// Indirect light from radiance cache
+	float3 l_IrradianceFromCache = SampleRadianceCache(l_ScreenCoord, N);
+
+	if (any(isnan(l_IrradianceFromCache)))
+		l_IrradianceFromCache = float3(0.0, 0.0, 0.0);
+
+	// Convert SH irradiance to Lambertian outgoing radiance: albedo * (1 - metallic) * E / PI
+	float3 l_LuminanceIndirectLight_FromCache = l_MaterialAttributes.m_Albedo * (1.0 - l_MaterialAttributes.m_Metallic) * l_IrradianceFromCache / PI;
+
+	// GI feeds RT0 (visual output) only. RT1 (illuminance) carries direct lighting only
+	// so that next-frame ray hits do not re-accumulate already-accumulated indirect energy.
+	l_Luminance_ForDirectLight += l_LuminanceIndirectLight_FromCache;
 
 	/// Sun light
 	float3 D = normalize(g_Frame.sun_direction.xyz);
