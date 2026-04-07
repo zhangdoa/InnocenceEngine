@@ -17,11 +17,9 @@ float3 CosineWeightedHemisphereSample(float2 Xi, float3 N)
     return normalize(mul(H, basis));
 }
 
-// Generate stable random values without temporal rotation
-float2 StableHash2D(uint2 pixelID, uint sampleIndex)
+float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
 {
-    // Use stable hash without frame dependency
-    uint n = pixelID.x * 73856093u ^ pixelID.y * 19349663u ^ sampleIndex * 83492791u;
+    uint n = pixelID.x * 73856093u ^ pixelID.y * 19349663u ^ sampleIndex * 83492791u ^ frameIndex * 2654435761u;
     n = (n << 13u) ^ n;
     return float2(
         (n * (n * n * 15731u + 789221u) + 1376312589u) & 0x7fffffff,
@@ -161,7 +159,7 @@ void RayGenShader()
 
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
-        float2 randVal = StableHash2D(samplingScreenPos, i);
+        float2 randVal = Hash2D(samplingScreenPos, i, g_Frame.frameIndex);
         float3 sampleDir = ImportanceSampleFromCDF(randVal, normalWS, probeIndex);
 
         RayDesc ray;
