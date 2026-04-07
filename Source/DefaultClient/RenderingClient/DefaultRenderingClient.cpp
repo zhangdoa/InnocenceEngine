@@ -256,73 +256,81 @@ namespace Inno
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			GPUPathTracerPass::Get().PrepareCommandList();
-			m_Canvas = GPUPathTracerPass::Get().GetResult();
-			m_CanvasOwner = GPUPathTracerPass::Get().GetRenderPassComp();
-			return true;
 		}
 
 		m_Canvas = FinalBlendPass::Get().GetResult();
 		m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 
-		if (m_ExecuteOneShotCommands)
+		if (!m_GPUPathTracerActive)
 		{
-			BRDFLUTPass::Get().PrepareCommandList();
-			BRDFLUTMSPass::Get().PrepareCommandList();
+			if (m_ExecuteOneShotCommands)
+			{
+				BRDFLUTPass::Get().PrepareCommandList();
+				BRDFLUTMSPass::Get().PrepareCommandList();
+			}
+
+			SunShadowCullingPass::Get().PrepareCommandList();
+			SunShadowGeometryProcessPass::Get().PrepareCommandList();
+
+			OpaqueCullingPass::Get().PrepareCommandList();
+			OpaquePass::Get().PrepareCommandList();
+
+			RadianceCacheReprojectionPass::Get().PrepareCommandList();
+			RadianceCacheRaytracingPass::Get().PrepareCommandList();
+			RadianceCacheFilterHorizontalPass::Get().PrepareCommandList();
+			RadianceCacheFilterVerticalPass::Get().PrepareCommandList();
+			RadianceCacheIntegrationPass::Get().PrepareCommandList();
+
+			SSAOPass::Get().PrepareCommandList();
+
+			TiledFrustumGenerationPass::Get().PrepareCommandList();
+
+			LightCullingPass::Get().PrepareCommandList();
+
+			LightPass::Get().PrepareCommandList();
+
+			SkyPass::Get().PrepareCommandList();
+
+			PreTAAPass::Get().PrepareCommandList();
+
+			TAAPassRenderingContext l_TAAPassRenderingContext;
+
+			if (m_showLightHeatmap)
+			{
+				l_TAAPassRenderingContext.m_input = LightCullingPass::Get().GetHeatMap();
+			}
+			else if (m_showProbe)
+			{
+				l_TAAPassRenderingContext.m_input = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
+			}
+			else
+			{
+				l_TAAPassRenderingContext.m_input = PreTAAPass::Get().GetResult();
+			}
+
+			l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3];
+
+			TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
 		}
 
-		SunShadowCullingPass::Get().PrepareCommandList();
-		SunShadowGeometryProcessPass::Get().PrepareCommandList();
-
-		OpaqueCullingPass::Get().PrepareCommandList();
-		OpaquePass::Get().PrepareCommandList();
-
-		RadianceCacheReprojectionPass::Get().PrepareCommandList();
-		RadianceCacheRaytracingPass::Get().PrepareCommandList();
-		RadianceCacheFilterHorizontalPass::Get().PrepareCommandList();
-		RadianceCacheFilterVerticalPass::Get().PrepareCommandList();
-		RadianceCacheIntegrationPass::Get().PrepareCommandList();
-
-		SSAOPass::Get().PrepareCommandList();
-
-		TiledFrustumGenerationPass::Get().PrepareCommandList();
-
-		LightCullingPass::Get().PrepareCommandList();
-
-		LightPass::Get().PrepareCommandList();
-
-		SkyPass::Get().PrepareCommandList();
-
-		PreTAAPass::Get().PrepareCommandList();
-
-		TAAPassRenderingContext l_TAAPassRenderingContext;
-
-		if (m_showLightHeatmap)
+		GPUResourceComponent* l_hdrSource = nullptr;
+		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_TAAPassRenderingContext.m_input = LightCullingPass::Get().GetHeatMap();
-		}
-		else if (m_showProbe)
-		{
-			l_TAAPassRenderingContext.m_input = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
+			l_hdrSource = GPUPathTracerPass::Get().GetResult();
 		}
 		else
 		{
-			l_TAAPassRenderingContext.m_input = PreTAAPass::Get().GetResult();
+			l_hdrSource = TAAPass::Get().GetResult();
 		}
 
-		l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3];
-
-		TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
-
-		auto l_taaResult = TAAPass::Get().GetResult();
-
 		LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
-		l_LuminanceHistogramPassRenderingContext.m_input = l_taaResult;
+		l_LuminanceHistogramPassRenderingContext.m_input = l_hdrSource;
 		LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
 
 		LuminanceAveragePass::Get().PrepareCommandList();
 
 		FinalBlendPassRenderingContext l_FinalBlendPassRenderingContext;
-		l_FinalBlendPassRenderingContext.m_input = l_taaResult;
+		l_FinalBlendPassRenderingContext.m_input = l_hdrSource;
 		FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
 
 		return true;
