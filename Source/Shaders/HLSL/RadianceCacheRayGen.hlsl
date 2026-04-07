@@ -30,34 +30,24 @@ float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
 // Sample from cumulative distribution function of reprojected radiance
 float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex)
 {
-    // Try to find valid reprojected radiance data
     float totalLuminance = 0.0;
-    float maxLuminance = 0.0;
-    
-    // Calculate luminance for each octahedral cell from previous frame
     const int OCTAHEDRAL_SIZE = 8;
-    float cellLuminance[64]; // 8x8 octahedral grid
-    
+    float cellLuminance[64];
+
     for (int y = 0; y < OCTAHEDRAL_SIZE; y++)
     {
         for (int x = 0; x < OCTAHEDRAL_SIZE; x++)
         {
             int cellIndex = y * OCTAHEDRAL_SIZE + x;
-            
-            // Convert cell to direction
             float2 octUV = (float2(x, y) + 0.5) / OCTAHEDRAL_SIZE;
             float3 cellDirection = DecodeOctahedral(octUV);
-            
-            // Only consider hemisphere above surface
+
             if (dot(cellDirection, normalWS) > 0.0)
             {
                 uint2 atlasCoord = GetAtlasTextureCoordinates(float2(probeIndex * TILE_SIZE), cellDirection);
-                float3 reprojectedRadiance = in_RadianceCacheResults_Prev[atlasCoord].rgb;
-                
-                float luminance = GetLuma(reprojectedRadiance);
+                float luminance = GetLuma(in_RadianceCacheResults_Prev[atlasCoord].rgb);
                 cellLuminance[cellIndex] = luminance;
                 totalLuminance += luminance;
-                maxLuminance = max(maxLuminance, luminance);
             }
             else
             {
@@ -90,11 +80,9 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex)
         }
     }
     
-    // Sample from CDF
     float randomValue = Xi.x;
     int selectedCell = 0;
-    
-    // Find cell using binary search
+
     for (int i = 0; i < 64; i++)
     {
         if (randomValue <= cdf[i])
