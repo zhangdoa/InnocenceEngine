@@ -33,6 +33,7 @@ function Download-Asset {
     param(
         [string]$Name,
         [string]$Url,
+        [string]$OutFile,
         [string]$TargetDir,
         [scriptblock]$PostProcess
     )
@@ -42,11 +43,8 @@ function Download-Asset {
         return
     }
 
-    # Extract a safe filename from the URL (handle query params like ?fileName=foo.zip)
-    if ($Url -match '[?&]fileName=([^&]+)') { $fileName = $Matches[1] }
-    else { $fileName = (Split-Path -Leaf ([System.Uri]$Url).LocalPath) }
-    if ([string]::IsNullOrEmpty($fileName)) { $fileName = ($Name -replace '\s+', '_') + ".download" }
-    $downloadPath = Join-Path $tempDir $fileName
+    if ([string]::IsNullOrEmpty($OutFile)) { $OutFile = Split-Path -Leaf ([System.Uri]$Url).LocalPath }
+    $downloadPath = Join-Path $tempDir $OutFile
 
     Write-Host "[DOWNLOAD] $Name from $Url ..." -ForegroundColor Cyan
     Invoke-WebRequest -Uri $Url -OutFile $downloadPath -UseBasicParsing
@@ -135,7 +133,8 @@ Download-Asset -Name "ShaderBall (Material Orb)" `
 # Intel Sponza Base
 # ---------------------------------------------------------------------------
 Download-Asset -Name "Intel Sponza Base" `
-    -Url "https://cdrdv2.intel.com/v1/dl/getContent/830833?fileName=main1_sponza.zip" `
+    -Url "https://cdrdv2.intel.com/v1/dl/getContent/830833" `
+    -OutFile "main1_sponza.zip" `
     -TargetDir (Join-Path $modelsDir "Sponza_PBR") `
     -PostProcess {
         param($archive, $dest)
@@ -146,7 +145,8 @@ Download-Asset -Name "Intel Sponza Base" `
 # Intel Colorful Curtains
 # ---------------------------------------------------------------------------
 Download-Asset -Name "Intel Colorful Curtains" `
-    -Url "https://cdrdv2.intel.com/v1/dl/getContent/726650?explicitVersion=true&fileName=PKG_A_Curtains.zip" `
+    -Url "https://cdrdv2.intel.com/v1/dl/getContent/726650" `
+    -OutFile "PKG_A_Curtains.zip" `
     -TargetDir (Join-Path $modelsDir "Sponza_Curtains") `
     -PostProcess {
         param($archive, $dest)
