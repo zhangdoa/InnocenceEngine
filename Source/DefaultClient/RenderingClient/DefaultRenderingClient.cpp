@@ -256,21 +256,6 @@ namespace Inno
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			GPUPathTracerPass::Get().PrepareCommandList();
-
-			auto l_ptResult = GPUPathTracerPass::Get().GetResult();
-
-			LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
-			l_LuminanceHistogramPassRenderingContext.m_input = l_ptResult;
-			LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
-
-			LuminanceAveragePass::Get().PrepareCommandList();
-
-			FinalBlendPassRenderingContext l_FinalBlendPassRenderingContext;
-			l_FinalBlendPassRenderingContext.m_input = l_ptResult;
-			FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
-
-			m_Canvas = FinalBlendPass::Get().GetResult();
-			m_CanvasOwner = FinalBlendPass::Get().GetRenderPassComp();
 			return true;
 		}
 
@@ -395,39 +380,6 @@ namespace Inno
 			l_hwService->Execute(l_toneMapCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 
-			// Post-processing: LuminanceHistogram -> LuminanceAverage -> FinalBlend
-			// Wait for tonemap compute to finish before post-processing
-			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
-
-			// LuminanceHistogram
-			auto l_lumHistRenderPass = LuminanceHistogramPass::Get().GetRenderPassComp();
-			auto l_lumHistGraphicsCL = LuminanceHistogramPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_hwService->Execute(l_lumHistGraphicsCL, GPUEngineType::Graphics);
-			l_hwService->SignalOnGPU(l_lumHistRenderPass, GPUEngineType::Graphics);
-			l_hwService->WaitOnGPU(l_lumHistRenderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			auto l_lumHistComputeCL = LuminanceHistogramPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_lumHistComputeCL, GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_lumHistRenderPass, GPUEngineType::Compute);
-
-			// LuminanceAverage
-			auto l_lumAvgRenderPass = LuminanceAveragePass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_lumHistRenderPass, GPUEngineType::Compute, GPUEngineType::Compute);
-			auto l_lumAvgComputeCL = LuminanceAveragePass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_lumAvgComputeCL, GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_lumAvgRenderPass, GPUEngineType::Compute);
-
-			// FinalBlend
-			auto l_finalBlendRenderPass = FinalBlendPass::Get().GetRenderPassComp();
-			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
-			l_hwService->WaitOnGPU(l_lumAvgRenderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
-			auto l_finalBlendGraphicsCL = FinalBlendPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_hwService->Execute(l_finalBlendGraphicsCL, GPUEngineType::Graphics);
-			l_hwService->SignalOnGPU(l_finalBlendRenderPass, GPUEngineType::Graphics);
-			l_hwService->WaitOnGPU(l_finalBlendRenderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			auto l_finalBlendComputeCL = FinalBlendPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_finalBlendComputeCL, GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_finalBlendRenderPass, GPUEngineType::Compute);
-
 			++m_GPUPathTracerFrameCount;
 			if (!m_GPUPathTracerValidated && m_GPUPathTracerFrameCount == 5)
 				{
@@ -435,12 +387,12 @@ namespace Inno
 					l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
 					l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
 
-					auto* l_toneMapOutput = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+					auto* l_toneMapOutput = static_cast<TextureComponent*>(GPUPathTracerPass::Get().GetResult());
 					auto l_texFrameIndex = l_toneMapOutput->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
 
 					auto l_savedTrackedState = l_toneMapOutput->GetCurrentState(l_texFrameIndex);
 					l_toneMapOutput->SetCurrentState(l_texFrameIndex, l_toneMapOutput->m_WriteState);
-					auto l_pixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(l_finalBlendRenderPass, l_toneMapOutput);
+					auto l_pixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(l_renderPass, l_toneMapOutput);
 					l_toneMapOutput->SetCurrentState(l_texFrameIndex, l_savedTrackedState);
 
 					if (!l_pixels.empty())
