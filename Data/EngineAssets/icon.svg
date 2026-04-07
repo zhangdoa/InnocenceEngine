@@ -1,0 +1,10 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Professional minimalist Engine Icon -->
+  <path d="M128 32L211.138 80V176L128 224L44.8615 176V80L128 32Z" fill="#1e2030" stroke="#8aadf4" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M128 32V128L211.138 176" stroke="#8aadf4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 128L44.8615 176" stroke="#8aadf4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="128" cy="128" r="20" fill="#8aadf4"/>
+  <path d="M128 70V90" stroke="#8aadf4" stroke-width="6" stroke-linecap="round"/>
+  <path d="M178 157L161 147" stroke="#8aadf4" stroke-width="6" stroke-linecap="round"/>
+  <path d="M78 157L95 147" stroke="#8aadf4" stroke-width="6" stroke-linecap="round"/>
+</svg>

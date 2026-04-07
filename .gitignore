@@ -46,9 +46,10 @@ xcuserdata/
 *.spv
 *.dxil
 
-# Data folders (track Scenes, ignore the rest)
+# Data folders (track Scenes and EngineAssets, ignore the rest)
 /Data/*
 !/Data/Scenes/
+!/Data/EngineAssets/
 
 # Large binary assets
 /OriginalAssets/*
