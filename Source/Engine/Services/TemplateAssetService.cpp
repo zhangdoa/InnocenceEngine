@@ -77,7 +77,32 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
         [&]() {
             auto l_registry = g_Engine->Get<EntityRegistry>();
 
-            auto loadOrCreateTexture = [&](const char* name, const char* texturePath, EntityID& entityIDRef) -> bool {
+            using TexGenFn = void(*)(uint8_t* pixels, uint32_t size);
+
+            auto generateCheckerboard = [](uint8_t* pixels, uint32_t size) {
+                uint32_t cellSize = size / 8;
+                if (cellSize == 0) cellSize = 1;
+                for (uint32_t y = 0; y < size; y++)
+                    for (uint32_t x = 0; x < size; x++)
+                    {
+                        uint32_t idx = (y * size + x) * 4;
+                        bool isWhite = ((x / cellSize) + (y / cellSize)) % 2 == 0;
+                        uint8_t v = isWhite ? 230 : 180;
+                        pixels[idx] = v; pixels[idx+1] = v; pixels[idx+2] = v; pixels[idx+3] = 255;
+                    }
+            };
+
+            auto generateFlatNormal = [](uint8_t* pixels, uint32_t size) {
+                for (uint32_t i = 0; i < size * size * 4; i += 4)
+                { pixels[i] = 128; pixels[i+1] = 128; pixels[i+2] = 255; pixels[i+3] = 255; }
+            };
+
+            auto generateSolid = [](uint8_t* pixels, uint32_t size, uint8_t v) {
+                for (uint32_t i = 0; i < size * size * 4; i += 4)
+                { pixels[i] = v; pixels[i+1] = v; pixels[i+2] = v; pixels[i+3] = 255; }
+            };
+
+            auto loadOrCreateTexture = [&](const char* name, std::function<void(uint8_t*, uint32_t)> generator, EntityID& entityIDRef) -> bool {
                 if (entityIDRef != INVALID_ENTITY)
                     return true;
 
@@ -90,30 +115,37 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 auto* l_texturePtr = &l_texture;
 
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
-                if (AssetService::Load(l_filePath.c_str(), *l_texturePtr, l_entityID))
+                auto l_fullPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
+                std::ifstream l_probe(l_fullPath);
+                if (l_probe.good() && (l_probe.close(), AssetService::Load(l_filePath.c_str(), *l_texturePtr, l_entityID)))
                 {
                     entityIDRef = l_entityID;
                     return true;
                 }
 
-                m_textureData[l_texturePtr] = STBWrapper::Load(texturePath, *l_texturePtr);
-                if (!m_textureData[l_texturePtr])
-                    return false;
+                const uint32_t l_size = 64;
                 l_texturePtr->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
                 l_texturePtr->m_TextureDesc.Usage = TextureUsage::Sample;
+                l_texturePtr->m_TextureDesc.Width = l_size;
+                l_texturePtr->m_TextureDesc.Height = l_size;
+                l_texturePtr->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+                l_texturePtr->m_TextureDesc.PixelDataType = TexturePixelDataType::UByte;
                 l_texturePtr->m_ObjectStatus = ObjectStatus::Created;
-                AssetService::Save(*l_texturePtr, m_textureData[l_texturePtr]);
 
-                g_Engine->Get<TextureResourceService>()->Initialize(l_texturePtr, m_textureData[l_texturePtr], l_entityID);
+                auto* l_pixels = new uint8_t[l_size * l_size * 4];
+                generator(l_pixels, l_size);
+                m_textureData[l_texturePtr] = l_pixels;
+
+                g_Engine->Get<TextureResourceService>()->Initialize(l_texturePtr, l_pixels, l_entityID);
                 entityIDRef = l_entityID;
                 return true;
                 };
 
-            if (!loadOrCreateTexture("BasicNormalTexture", "Textures/basic_normal.png", m_basicNormalTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicAlbedoTexture", "Textures/basic_albedo.png", m_basicAlbedoTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicMetallicTexture", "Textures/basic_metallic.png", m_basicMetallicTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicRoughnessTexture", "Textures/basic_roughness.png", m_basicRoughnessTextureEntity)) return false;
-            if (!loadOrCreateTexture("BasicAOTexture", "Textures/basic_ao.png", m_basicAOTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicAlbedoTexture",    generateCheckerboard, m_basicAlbedoTextureEntity))    return false;
+            if (!loadOrCreateTexture("BasicNormalTexture",     generateFlatNormal,   m_basicNormalTextureEntity))    return false;
+            if (!loadOrCreateTexture("BasicMetallicTexture",   [&](uint8_t* p, uint32_t s) { generateSolid(p, s, 0);   }, m_basicMetallicTextureEntity))  return false;
+            if (!loadOrCreateTexture("BasicRoughnessTexture",  [&](uint8_t* p, uint32_t s) { generateSolid(p, s, 128); }, m_basicRoughnessTextureEntity)) return false;
+            if (!loadOrCreateTexture("BasicAOTexture",         [&](uint8_t* p, uint32_t s) { generateSolid(p, s, 255); }, m_basicAOTextureEntity))        return false;
 
             if (m_defaultMaterialEntity == INVALID_ENTITY)
             {
@@ -125,7 +157,9 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 auto* l_materialPtr = &l_material;
 
                 auto l_filePath = AssetService::GetAssetFilePath(l_materialName.c_str());
-                if (!AssetService::Load(l_filePath.c_str(), *l_materialPtr, l_entityID))
+                auto l_fullMatPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
+                std::ifstream l_matProbe(l_fullMatPath);
+                if (!(l_matProbe.good() && (l_matProbe.close(), AssetService::Load(l_filePath.c_str(), *l_materialPtr, l_entityID))))
                 {
                     auto l_matHandle = AssetService::AllocateMaterialAsset(l_materialName.c_str(), ObjectLifespan::Persistence);
                     l_materialPtr->m_Asset = l_matHandle;
@@ -183,9 +217,9 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
 
             m_terrainMeshEntity = INVALID_ENTITY;
 
-            if (!loadOrCreateTexture("DirectionalLightIcon", "Textures/WorldEditorIcons_DirectionalLight.png", m_iconTemplate_DirectionalLightEntity)) return false;
-            if (!loadOrCreateTexture("PointLightIcon", "Textures/WorldEditorIcons_PointLight.png", m_iconTemplate_PointLightEntity)) return false;
-            if (!loadOrCreateTexture("SphereLightIcon", "Textures/WorldEditorIcons_SphereLight.png", m_iconTemplate_SphereLightEntity)) return false;
+            if (!loadOrCreateTexture("DirectionalLightIcon", [&](uint8_t* p, uint32_t s) { generateSolid(p, s, 255); }, m_iconTemplate_DirectionalLightEntity)) return false;
+            if (!loadOrCreateTexture("PointLightIcon",       [&](uint8_t* p, uint32_t s) { generateSolid(p, s, 200); }, m_iconTemplate_PointLightEntity))       return false;
+            if (!loadOrCreateTexture("SphereLightIcon",      [&](uint8_t* p, uint32_t s) { generateSolid(p, s, 150); }, m_iconTemplate_SphereLightEntity))      return false;
 
             return true;
         });

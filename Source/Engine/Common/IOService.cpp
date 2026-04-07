@@ -13,10 +13,8 @@ using namespace Inno;
 
 bool IOService::setupWorkingDirectory()
 {
-	m_workingDir = fs::current_path().generic_string();
-	m_workingDir = m_workingDir + "//";
-
-	m_dataDir = m_workingDir + "..//Data//";
+	m_workingDir = fs::current_path().generic_string() + "/";
+	m_dataDir = m_workingDir + "../Data/";
 
 	Log(Verbose, "current working directory is ", m_workingDir.c_str());
 	Log(Verbose, "data directory is ", m_dataDir.c_str());
@@ -128,6 +126,31 @@ std::string IOService::getWorkingDirectory()
 std::string IOService::getDataDirectory()
 {
 	return m_dataDir;
+}
+
+std::string IOService::getEngineDirectory()
+{
+	return m_dataDir + "Engine/";
+}
+
+std::string IOService::getProjectName()
+{
+	return INNO_PROJECT_NAME;
+}
+
+std::string IOService::getProjectDirectory()
+{
+	return m_dataDir + INNO_PROJECT_NAME + std::string("/");
+}
+
+std::string IOService::getGeneratedDirectory()
+{
+	return m_dataDir + "Generated/";
+}
+
+std::string IOService::getComponentDirectory()
+{
+	return m_dataDir + "Generated/Components/";
 }
 
 std::string IOService::validateFileName(const char* filePath)

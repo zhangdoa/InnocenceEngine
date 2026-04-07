@@ -42,6 +42,41 @@ bool JSONWrapper::Save(const char* fileName, const json& data)
 	return true;
 }
 
+bool JSONWrapper::SaveChildScene(const char* exportName, const std::vector<std::pair<std::string, std::string>>& drawCalls)
+{
+	json topLevel;
+	topLevel["Name"] = exportName;
+	topLevel["DefaultComponentPath"] = "Generated/Components/";
+	topLevel["Entities"] = json::array();
+
+	for (size_t i = 0; i < drawCalls.size(); i++)
+	{
+		auto& [meshName, materialName] = drawCalls[i];
+
+		json entityJson;
+		entityJson["Name"] = std::string(exportName) + "." + std::to_string(i);
+		entityJson["Components"] = json::array();
+
+		entityJson["Components"].push_back({
+			{"Type", MeshComponent::GetTypeID()},
+			{"Name", meshName}
+		});
+
+		if (!materialName.empty())
+		{
+			entityJson["Components"].push_back({
+				{"Type", MaterialComponent::GetTypeID()},
+				{"Name", materialName}
+			});
+		}
+
+		topLevel["Entities"].emplace_back(entityJson);
+	}
+
+	auto l_scenePath = std::string("Generated/Scenes/") + exportName + ".InnoScene";
+	return Save(l_scenePath.c_str(), topLevel);
+}
+
 bool JSONWrapper::SaveScene(const char* fileName)
 {
 	auto l_registry = g_Engine->Get<EntityRegistry>();
@@ -49,6 +84,7 @@ bool JSONWrapper::SaveScene(const char* fileName)
 
 	json topLevel;
 	topLevel["Name"] = g_Engine->Get<IOService>()->getFileName(fileName);
+	topLevel["DefaultComponentPath"] = g_Engine->Get<IOService>()->getProjectName() + std::string("/Components/");
 	topLevel["Entities"] = json::array();
 
 	for (auto l_EntityID : l_EntityIDs)
@@ -130,6 +166,10 @@ bool JSONWrapper::LoadScene(const char* fileName)
 
 	auto l_registry = g_Engine->Get<EntityRegistry>();
 
+	std::string l_DefaultPath;
+	if (j.find("DefaultComponentPath") != j.end())
+		l_DefaultPath = j["DefaultComponentPath"].get<std::string>();
+
 	for (auto& entityJson : j["Entities"])
 	{
 		std::string l_EntityName = entityJson["Name"];
@@ -140,7 +180,14 @@ bool JSONWrapper::LoadScene(const char* fileName)
 		{
 			uint32_t    l_TypeID   = compJson["Type"];
 			std::string l_CompName = compJson["Name"];
-			std::string l_FilePath = AssetService::GetAssetFilePath(l_CompName.c_str());
+
+			std::string l_FilePath;
+			if (compJson.find("Path") != compJson.end())
+				l_FilePath = compJson["Path"].get<std::string>() + l_CompName + ".json";
+			else if (!l_DefaultPath.empty())
+				l_FilePath = l_DefaultPath + l_CompName + ".json";
+			else
+				l_FilePath = AssetService::GetAssetFilePath(l_CompName.c_str());
 
 			if (l_TypeID == TransformComponent::GetTypeID())
 			{
@@ -170,72 +217,107 @@ bool JSONWrapper::LoadScene(const char* fileName)
 				l_Material.m_InstanceName = l_CompName.c_str();
 				AssetService::Load(l_FilePath.c_str(), l_Material, l_EntityID);
 			}
-			else if (l_TypeID == 2) // ModelComponent — expand DrawCallComponents into mesh+material sub-entities
-			{
-				json l_ModelJson;
-				if (!Load(l_FilePath.c_str(), l_ModelJson))
-				{
-					Log(Warning, "LoadScene: failed to load ModelComponent ", l_CompName.c_str());
-					continue;
-				}
-
-				// Get the parent entity's transform as a template for sub-entities
-				auto* l_ParentTransform = l_registry->Get<TransformComponent>(l_EntityID);
-
-				for (auto& dcEntry : l_ModelJson["DrawCallComponents"])
-				{
-					std::string l_dcName = dcEntry["Name"];
-					auto l_dcPath = AssetService::GetAssetFilePath(l_dcName.c_str());
-
-					json l_dcJson;
-					if (!Load(l_dcPath.c_str(), l_dcJson))
-					{
-						Log(Warning, "LoadScene: failed to load DrawCallComponent ", l_dcName.c_str());
-						continue;
-					}
-
-					std::string l_meshName = l_dcJson["MeshComponent"]["Name"];
-					std::string l_materialName = l_dcJson["MaterialComponent"]["Name"];
-
-					// Create sub-entity for this draw call
-					auto l_subName = l_EntityName + l_dcName + "/";
-					auto l_SubEntityID = l_registry->Spawn(ObjectLifespan::Scene, l_subName.c_str());
-
-					// Copy parent transform to sub-entity
-					auto& l_SubTransform = l_registry->Emplace<TransformComponent>(l_SubEntityID);
-					if (l_ParentTransform)
-					{
-						l_SubTransform.m_LocalPos = l_ParentTransform->m_LocalPos;
-						l_SubTransform.m_LocalRot = l_ParentTransform->m_LocalRot;
-						l_SubTransform.m_LocalScale = l_ParentTransform->m_LocalScale;
-					}
-
-					// Load mesh
-					auto l_meshPath = AssetService::GetAssetFilePath(l_meshName.c_str());
-					auto& l_Mesh = l_registry->Emplace<MeshComponent>(l_SubEntityID);
-					l_Mesh.m_InstanceName = l_meshName.c_str();
-					AssetService::Load(l_meshPath.c_str(), l_Mesh, l_SubEntityID);
-					l_Mesh.m_InstanceName = l_meshName.c_str();
-
-					// Load material
-					if (!l_materialName.empty())
-					{
-						auto l_materialPath = AssetService::GetAssetFilePath(l_materialName.c_str());
-						auto& l_Material = l_registry->Emplace<MaterialComponent>(l_SubEntityID);
-						l_Material.m_InstanceName = l_materialName.c_str();
-						AssetService::Load(l_materialPath.c_str(), l_Material, l_SubEntityID);
-					}
-				}
-			}
 			else
 			{
 				Log(Warning, "LoadScene: skipping unknown component type ", l_TypeID,
 					" (", l_CompName.c_str(), ")");
 			}
 		}
+
+		// Load child scene if referenced
+		if (entityJson.find("ChildScene") != entityJson.end())
+		{
+			std::string l_childScenePath = entityJson["ChildScene"];
+			LoadChildScene(l_childScenePath.c_str(), l_EntityID);
+		}
 	}
 
 	Log(Success, "Scene loading finished.");
 
+	return true;
+}
+
+bool JSONWrapper::LoadChildScene(const char* sceneFilePath, EntityID parentEntity)
+{
+	json j;
+	if (!Load(sceneFilePath, j))
+	{
+		Log(Warning, "LoadChildScene: failed to load ", sceneFilePath);
+		return false;
+	}
+
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto* l_ParentTransform = l_registry->Get<TransformComponent>(parentEntity);
+	std::string l_ParentName = l_registry->GetName(parentEntity);
+
+	std::string l_DefaultPath;
+	if (j.find("DefaultComponentPath") != j.end())
+		l_DefaultPath = j["DefaultComponentPath"].get<std::string>();
+
+	for (auto& entityJson : j["Entities"])
+	{
+		std::string l_EntityName = l_ParentName + entityJson["Name"].get<std::string>() + "/";
+		auto l_EntityID = l_registry->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
+
+		// Inherit parent transform
+		auto& l_Transform = l_registry->Emplace<TransformComponent>(l_EntityID);
+		if (l_ParentTransform)
+		{
+			l_Transform.m_LocalPos = l_ParentTransform->m_LocalPos;
+			l_Transform.m_LocalRot = l_ParentTransform->m_LocalRot;
+			l_Transform.m_LocalScale = l_ParentTransform->m_LocalScale;
+		}
+
+		for (auto& compJson : entityJson["Components"])
+		{
+			uint32_t    l_TypeID   = compJson["Type"];
+			std::string l_CompName = compJson["Name"];
+
+			std::string l_FilePath;
+			if (compJson.find("Path") != compJson.end())
+				l_FilePath = compJson["Path"].get<std::string>() + l_CompName + ".json";
+			else if (!l_DefaultPath.empty())
+				l_FilePath = l_DefaultPath + l_CompName + ".json";
+			else
+				l_FilePath = AssetService::GetAssetFilePath(l_CompName.c_str());
+
+			if (l_TypeID == MeshComponent::GetTypeID())
+			{
+				auto& l_Mesh = l_registry->Emplace<MeshComponent>(l_EntityID);
+				l_Mesh.m_InstanceName = l_CompName.c_str();
+				AssetService::Load(l_FilePath.c_str(), l_Mesh, l_EntityID);
+				l_Mesh.m_InstanceName = l_CompName.c_str();
+			}
+			else if (l_TypeID == MaterialComponent::GetTypeID())
+			{
+				auto& l_Material = l_registry->Emplace<MaterialComponent>(l_EntityID);
+				l_Material.m_InstanceName = l_CompName.c_str();
+				AssetService::Load(l_FilePath.c_str(), l_Material, l_EntityID);
+			}
+			else if (l_TypeID == TransformComponent::GetTypeID())
+			{
+				AssetService::Load(l_FilePath.c_str(), l_Transform);
+			}
+			else if (l_TypeID == LightComponent::GetTypeID())
+			{
+				auto& l_Light = l_registry->Emplace<LightComponent>(l_EntityID);
+				AssetService::Load(l_FilePath.c_str(), l_Light);
+			}
+			else if (l_TypeID == CameraComponent::GetTypeID())
+			{
+				auto& l_Camera = l_registry->Emplace<CameraComponent>(l_EntityID);
+				AssetService::Load(l_FilePath.c_str(), l_Camera);
+			}
+		}
+
+		// Recursive child scene support
+		if (entityJson.find("ChildScene") != entityJson.end())
+		{
+			std::string l_childScenePath = entityJson["ChildScene"];
+			LoadChildScene(l_childScenePath.c_str(), l_EntityID);
+		}
+	}
+
+	Log(Verbose, "Loaded child scene: ", sceneFilePath);
 	return true;
 }

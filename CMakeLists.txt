@@ -64,6 +64,9 @@ endif()
 unset(Python_EXECUTABLE)
 set(Python_EXECUTABLE ${PYTHON_VENV_PATH}/Scripts/python)
 
+# Project name for Data/<project>/ directory (configurable by downstream projects)
+set(INNO_PROJECT_NAME "ExampleProject" CACHE STRING "Name of the active project (maps to Data/<name>/)")
+
 option(FORCE_REBUILD_THIRD_PARTY "Force rebuild of all third-party libraries" OFF)
 
 option(PREPARE_ENV "Prepare the environment" ON)
@@ -74,6 +77,10 @@ endif()
 
 option(BUILD_THIRD_PARTY "Build third-party libraries" ON)
 include(CMake/BuildThirdPartyLibs.cmake)
+
+# Create Data/Generated directory structure (not version-controlled)
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Components")
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Scenes")
 
 # Add subdirectories
 add_subdirectory("Source")

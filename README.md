@@ -156,6 +156,42 @@ bash Scripts/BuildEngineMac-Xcode.sh
 bash Scripts/PostBuildMac.sh
 ```
 
+## Sample assets
+
+Test scenes require models in `OriginalAssets/Models/` (gitignored). Run the download script to fetch them:
+
+```powershell
+Scripts/DownloadAssets.ps1
+```
+
+This automatically downloads:
+
+| Asset | Source | Format | License |
+| --- | --- | --- | --- |
+| Stanford Bunny | [Stanford 3D Scanning Repository](https://graphics.stanford.edu/data/3Dscanrep/) | PLY | Stanford (non-commercial) |
+| Stanford Dragon | [Stanford 3D Scanning Repository](https://graphics.stanford.edu/data/3Dscanrep/) | PLY | Stanford (non-commercial) |
+| ShaderBall (material orb) | [derkreature/ShaderBall](https://github.com/derkreature/ShaderBall) | FBX | Public domain (Unlicense) |
+
+The script will also print instructions for two assets that require manual download (Intel browser sign-in):
+
+| Asset | Source | Format |
+| --- | --- | --- |
+| Sponza Base Scene | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/830833/sponza-base-scene.html) | glTF / FBX |
+| Colorful Curtains | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/726650/colorful-curtains.html) | glTF / FBX |
+
+After downloading, launch the engine and press **Y** to import models into engine format.
+
+### Expected directory structure
+
+```
+OriginalAssets/Models/
+  bunny/          # bunny.ply (or bunny.obj)
+  dragon/         # dragon.ply
+  orb/            # ShaderBall.fbx (or orb.obj)
+  Sponza_PBR/     # NewSponza_Merged.fbx (Intel Sponza Base)
+  Sponza_Curtains/  # Colorful Curtains glTF/FBX
+```
+
 ## How to use?
 
 1. Implement `ILogicClient` and `IRenderingClient` and place source files under `Source/Client/LogicClient` and `Source/Client/RenderingClient`

@@ -1,6 +1,7 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(Services ${HEADERS} ${SOURCES})
+target_compile_definitions(Services PRIVATE INNO_PROJECT_NAME="${INNO_PROJECT_NAME}")
 set_property(TARGET Services PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(Services PROPERTIES FOLDER Engine)
 target_include_directories(Services PRIVATE "${INNO_GITSUBMODULE_DIRECTORIES}/json/include")

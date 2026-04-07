@@ -173,37 +173,25 @@ void RayGenShader()
         uint2 texIndex = GetAtlasTextureCoordinates(float2(probeScreenPos), sampleDir);
         float3 oldScreenSpaceRadiance = in_RadianceCacheResults[texIndex].xyz;
 
-        // Adaptive temporal blending based on luminance
+        // Temporal blending
         float currentLuminance = GetLuma(radiance);
         float oldLuminance = GetLuma(oldScreenSpaceRadiance);
-        
-        // Aggressive denoising for dark areas
-        float baseTemporal = 0.15;
-        if (currentLuminance < 0.1) // Dark areas need more aggressive filtering
+        float maxLuminance = max(currentLuminance, oldLuminance);
+
+        float temporalWeight = 0.15;
+
+        // Relative variance firefly suppression (scale-invariant for HDR)
+        float relativeChange = (maxLuminance > 0.001)
+            ? abs(currentLuminance - oldLuminance) / maxLuminance
+            : 0.0;
+
+        if (relativeChange > 3.0)
         {
-            baseTemporal = 0.05; // Much slower convergence but smoother
+            temporalWeight *= 0.1;
+            float maxAllowedRadiance = max(oldLuminance * 4.0, 1.0);
+            radiance = min(radiance, float3(maxAllowedRadiance, maxAllowedRadiance, maxAllowedRadiance));
         }
-        else if (currentLuminance > 2.0) // Bright areas can converge faster
-        {
-            baseTemporal = 0.25;
-        }
-        
-        float temporalWeight = baseTemporal;
-        
-        // Variance-based adjustment
-        float3 radianceDiff = abs(radiance - oldScreenSpaceRadiance);
-        float variance = (radianceDiff.r + radianceDiff.g + radianceDiff.b) / 3.0;
-        
-        // Enhanced firefly suppression with luminance-based clamping
-        if (variance > 0.5)
-        {
-            temporalWeight *= 0.2; // Strong suppression for high variance
-            
-            // Adaptive clamping based on old luminance
-            float maxAllowedChange = max(oldLuminance * 1.5, 0.5);
-            radiance = min(radiance, float3(maxAllowedChange, maxAllowedChange, maxAllowedChange));
-        }
-        
+
         // NaN protection
         if (any(isnan(radiance)) || any(isinf(radiance)))
         {

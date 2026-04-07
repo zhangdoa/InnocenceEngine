@@ -289,12 +289,52 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 	}
 }
 
+std::string AssetService::GetAssetFilePath(const char* componentName)
+{
+	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_name = std::string(componentName) + ".json";
+
+	// Search order: project components, then generated (imported) components
+	auto l_projectPath = std::string(INNO_PROJECT_NAME) + "/Components/" + l_name;
+	if (std::filesystem::exists(l_dataDir + l_projectPath))
+		return l_projectPath;
+
+	auto l_generatedPath = "Generated/Components/" + l_name;
+	if (std::filesystem::exists(l_dataDir + l_generatedPath))
+		return l_generatedPath;
+
+	// Default to generated (where imports write to)
+	return l_generatedPath;
+}
+
+std::string AssetService::GetBinaryFilePath(const char* binaryFileName)
+{
+	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+
+	// Search order: project components, then generated (imported) components
+	auto l_projectPath = l_dataDir + INNO_PROJECT_NAME + std::string("/Components/") + binaryFileName;
+	if (std::filesystem::exists(l_projectPath))
+		return l_projectPath;
+
+	auto l_generatedPath = l_dataDir + "Generated/Components/" + binaryFileName;
+	if (std::filesystem::exists(l_generatedPath))
+		return l_generatedPath;
+
+	// Default to generated (where imports write to)
+	return l_generatedPath;
+}
+
+std::string AssetService::GetComponentDirectory()
+{
+	return g_Engine->Get<IOService>()->getComponentDirectory();
+}
+
 bool AssetService::Import(const char* fileName)
 {
 	auto l_extension = g_Engine->Get<IOService>()->getFileExtension(fileName);
 	std::string l_fileName = fileName;
 
-	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".md5mesh")
+	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
 	{
 		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Import Model Task", ITask::Type::Once), [=]()
 			{
@@ -375,12 +415,12 @@ bool AssetService::Save(const MeshComponent& component, std::vector<Vertex>& ver
 	j["VerticesNumber"] = vertices.size();
 	j["IndicesNumber"] = indices.size();
 
-	auto l_workingDir = "../Data/Components/";
-	std::filesystem::create_directories(l_workingDir);
+	auto l_componentDir = GetComponentDirectory();
+	std::filesystem::create_directories(l_componentDir);
 
 	std::string l_baseName = component.m_InstanceName.c_str();
 	auto l_binaryFileName = l_baseName + ".innobin";
-	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
+	auto l_binaryFilePath = l_componentDir + l_binaryFileName;
 
 	j["File"] = l_binaryFileName;
 
@@ -412,10 +452,10 @@ bool AssetService::Save(const TextureComponent& component, void* textureData)
 	json j;
 	JSONWrapper::to_json(j, component);
 
-	auto l_workingDir = "../Data/Components/";
+	auto l_componentDir = GetComponentDirectory();
 	std::string l_baseName = component.m_InstanceName.c_str();
 	auto l_binaryFileName = l_baseName + ".innobin";
-	auto l_binaryFilePath = l_workingDir + l_binaryFileName;
+	auto l_binaryFilePath = l_componentDir + l_binaryFileName;
 
 	j["File"] = l_binaryFileName;
 

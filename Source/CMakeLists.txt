@@ -45,7 +45,7 @@ configure_file ("${CMAKE_SOURCE_DIR}/Source/Engine/Common/Config.h.in" "${CMAKE_
 set(INNO_BUILD_TOOLS OFF)
 add_subdirectory("Engine")
 add_subdirectory("TestSuite")
-add_subdirectory("DefaultClient")
+add_subdirectory("ExampleProject")
 add_subdirectory("TestClient")
 if(INNO_BUILD_TOOLS)
 add_subdirectory("Tool")

@@ -66,9 +66,19 @@ void main(ComputeInputType input)
     if (threadIndex == 0)
     {
         uint2 writeCoord = probeIndex * SH_TILE_SIZE;
-        in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)] = float4(gs_SH_L0[0], 1.0);
-        in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)] = float4(gs_SH_L1_x[0], 1.0);
-        in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(gs_SH_L1_y[0], 1.0);
-        in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(gs_SH_L1_z[0], 1.0);
+
+        // Read previous frame's SH (persists in the output UAV)
+        float3 prevSH_L0   = in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)].rgb;
+        float3 prevSH_L1_x = in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)].rgb;
+        float3 prevSH_L1_y = in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)].rgb;
+        float3 prevSH_L1_z = in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)].rgb;
+
+        // Temporal blend: 90% history, 10% current. Use 100% current when no history.
+        float blend = (dot(prevSH_L0, prevSH_L0) < 0.001) ? 1.0 : 0.1;
+
+        in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)] = float4(lerp(prevSH_L0,   gs_SH_L0[0],   blend), 1.0);
+        in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)] = float4(lerp(prevSH_L1_x, gs_SH_L1_x[0], blend), 1.0);
+        in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(lerp(prevSH_L1_y, gs_SH_L1_y[0], blend), 1.0);
+        in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(lerp(prevSH_L1_z, gs_SH_L1_z[0], blend), 1.0);
     }
 }

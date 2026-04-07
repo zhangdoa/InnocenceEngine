@@ -134,13 +134,15 @@ void main(ComputeInputType input)
         }
         
         float4 sampleRadiance = in_RadianceCacheResults.Load(int3(sampleCoord, 0));
-        
-        // Bilateral weight based on radiance similarity
-        float radianceDiff = length(sampleRadiance.rgb - currentRadiance.rgb);
-        float bilateralWeight = exp(-radianceDiff * radianceDiff / (2.0 * 0.1));
-        
-        // Final weight combines Gaussian and bilateral
-        float weight = weights[i] * bilateralWeight;
+
+        // Depth-based bilateral weight (geometry-aware, not circular)
+        uint2 sampleProbeForDepth = sampleCoord / 8;
+        float4 sampleProbePos = in_ProbePosition.Load(int3(sampleProbeForDepth, 0));
+        float sampleDepth = length(sampleProbePos.xyz - g_Frame.camera_posWS.xyz);
+        float depthWeight = 1.0 / (1.0 + abs(currentDepth - sampleDepth) / cellSize);
+
+        // Final weight combines Gaussian and depth-based bilateral
+        float weight = weights[i] * depthWeight;
         
         filteredRadiance += sampleRadiance * weight;
         totalWeight += weight;
@@ -156,9 +158,8 @@ void main(ComputeInputType input)
         filteredRadiance = currentRadiance;
     }
     
-    // Prevent fireflies and negative values
+    // Prevent negative values
     filteredRadiance.rgb = max(filteredRadiance.rgb, float3(0.0, 0.0, 0.0));
-    filteredRadiance.rgb = min(filteredRadiance.rgb, currentRadiance.rgb * 2.0 + 0.5);
     
     out_FilteredRadianceCache[screenCoord] = filteredRadiance;
 }

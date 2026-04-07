@@ -1,0 +1,138 @@
+{
+    "Name": "GITestBox",
+    "DefaultComponentPath": "ExampleProject/Components/",
+    "Entities": [
+        {
+            "Name": "Sun",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Sun.TransformComponent"},
+                {"Type": 3, "Name": "GITestBox.Sun.LightComponent"}
+            ]
+        },
+        {
+            "Name": "Main Camera",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Camera.TransformComponent"},
+                {"Type": 4, "Name": "GITestBox.Camera.CameraComponent"}
+            ]
+        },
+        {
+            "Name": "pointLight",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.PointLight.TransformComponent"},
+                {"Type": 3, "Name": "GITestBox.PointLight.LightComponent"}
+            ]
+        },
+        {
+            "Name": "sphereLight",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.SphereLight.TransformComponent"},
+                {"Type": 3, "Name": "GITestBox.SphereLight.LightComponent"}
+            ]
+        },
+        {
+            "Name": "landscape",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Landscape.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Landscape.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building1",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Building1.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building1.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building2",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Building2.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building2.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building3",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Building3.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building3.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "building4",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Building4.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building4.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "wall1",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Wall1.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building1.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "wall2",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Wall2.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building2.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "wall3",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Wall3.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building3.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "wall4",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Wall4.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building3.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "wall5",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Wall5.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Building3.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "ceiling",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Ceiling.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.Ceiling.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "ceiling_middle",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.CeilingMiddle.TransformComponent"},
+                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
+                {"Type": 7, "Name": "GITestBox.CeilingMiddle.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Player Character",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Player.TransformComponent"},
+                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
+                {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
+            ]
+        }
+    ]
+}

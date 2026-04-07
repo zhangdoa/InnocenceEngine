@@ -1,0 +1,6 @@
+add_subdirectory("RenderingClient")
+add_subdirectory("LogicClient")
+
+add_library(ExampleProjectFactory ExampleProjectFactory.cpp)
+set_target_properties(ExampleProjectFactory PROPERTIES FOLDER ExampleProject)
+target_link_libraries(ExampleProjectFactory ExampleRenderingClient ExampleLogicClient)

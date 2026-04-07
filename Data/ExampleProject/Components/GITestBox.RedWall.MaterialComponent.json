@@ -1,0 +1,31 @@
+{
+    "ComponentType": 7,
+    "ShaderModel": 1,
+    "Albedo": {
+        "R": 0.75,
+        "G": 0.25,
+        "B": 0.25,
+        "A": 1.0
+    },
+    "Metallic": 0.0,
+    "Roughness": 0.9,
+    "AO": 0.0,
+    "Thickness": 1.0,
+    "TextureComponents": [
+        {
+            "Name": "BasicNormalTexture.TextureComponent"
+        },
+        {
+            "Name": "BasicAlbedoTexture.TextureComponent"
+        },
+        {
+            "Name": "BasicMetallicTexture.TextureComponent"
+        },
+        {
+            "Name": "BasicRoughnessTexture.TextureComponent"
+        },
+        {
+            "Name": "BasicAOTexture.TextureComponent"
+        }
+    ]
+}

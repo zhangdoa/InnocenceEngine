@@ -36,6 +36,13 @@ function Send-Key($hwnd, [int]$vk) {
     Start-Sleep -Milliseconds 100
 }
 
+function Hold-Key($hwnd, [int]$vk, [int]$durationMs = 500) {
+    [Win32]::PostMessage($hwnd, [Win32]::WM_KEYDOWN, [IntPtr]$vk, [IntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds $durationMs
+    [Win32]::PostMessage($hwnd, [Win32]::WM_KEYUP, [IntPtr]$vk, [IntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds 100
+}
+
 # Virtual key codes for engine keybindings
 $VK_W = 0x57; $VK_A = 0x41; $VK_S = 0x53; $VK_D = 0x44
 $VK_B = 0x42  # Toggle path tracer
@@ -144,11 +151,9 @@ function Run-CameraMovement {
 
     foreach ($key in @($VK_W, $VK_A, $VK_S, $VK_D)) {
         $name = @{ $VK_W="W"; $VK_A="A"; $VK_S="S"; $VK_D="D" }[$key]
-        Write-Host "  Moving camera: $name"
-        for ($i = 0; $i -lt 5; $i++) {
-            Send-Key $hwnd $key
-        }
-        Wait-AndCheck 1 "Camera $name"
+        Write-Host "  Moving camera: $name (holding 500ms)"
+        Hold-Key $hwnd $key 500
+        if (-not (Test-ProcessAlive)) { exit 1 }
     }
 
     # Release right mouse button

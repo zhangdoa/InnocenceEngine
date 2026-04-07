@@ -38,10 +38,9 @@ namespace Inno
 		static bool SaveScene(const char* fileName);
 		static bool LoadScene(const char* fileName);
 
-		static std::string GetAssetFilePath(const char* componentName)
-		{
-			return "../Data/Components/" + std::string(componentName) + ".json";
-		}
+		static std::string GetAssetFilePath(const char* componentName);
+		static std::string GetBinaryFilePath(const char* binaryFileName);
+		static std::string GetComponentDirectory();
 
 		static bool Load(const char* fileName, TransformComponent& component);
 		static bool Load(const char* fileName, MeshComponent& component, EntityID owner = INVALID_ENTITY);

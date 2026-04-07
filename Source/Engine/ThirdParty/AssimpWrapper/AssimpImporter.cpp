@@ -61,14 +61,13 @@ bool AssimpImporter::Import(const char* FileName)
 		return false;
 	}
 
-	nlohmann::json l_Json;
-	ProcessAssimpScene(l_Json, l_Scene, l_ExportFileName.c_str());
+	ProcessAssimpScene(l_Scene, l_ExportFileName.c_str());
 
 	Log(Success, FileName, " has been imported.");
 	return true;
 }
 
-void AssimpImporter::ProcessAssimpScene(nlohmann::json& J, const aiScene* Scene, const char* ExportName)
+void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* ExportName)
 {
 	Log(Verbose, "Processing scene: ", ExportName);
 
@@ -76,35 +75,9 @@ void AssimpImporter::ProcessAssimpScene(nlohmann::json& J, const aiScene* Scene,
 	std::vector<std::pair<std::string, std::string>> l_DrawCalls;
 	ProcessAssimpNode(Scene->mRootNode, Scene, ExportName, l_DrawCalls);
 
-	// Save DrawCallComponent files and build ModelComponent
-	auto l_workingDir = std::string("../Data/Components/");
-	nlohmann::json l_ModelJson;
-	l_ModelJson["ComponentType"] = 2;
-	l_ModelJson["DrawCallComponents"] = nlohmann::json::array();
-
-	for (auto& [meshName, materialName] : l_DrawCalls)
-	{
-		auto l_dcName = meshName;
-		// Replace .MeshComponent with .DrawCallComponent in the name
-		auto l_pos = l_dcName.find(".MeshComponent");
-		if (l_pos != std::string::npos)
-			l_dcName.replace(l_pos, 14, ".DrawCallComponent");
-
-		nlohmann::json l_dcJson;
-		l_dcJson["ComponentType"] = 200;
-		l_dcJson["MeshComponent"]["Name"] = meshName;
-		l_dcJson["MaterialComponent"]["Name"] = materialName;
-
-		auto l_dcPath = l_workingDir + l_dcName + ".json";
-		JSONWrapper::Save(l_dcPath.c_str(), l_dcJson);
-
-		l_ModelJson["DrawCallComponents"].push_back({{"Name", l_dcName}});
-		Log(Verbose, "Saved DrawCallComponent: ", l_dcName.c_str());
-	}
-
-	auto l_modelPath = l_workingDir + std::string(ExportName) + ".ModelComponent.json";
-	JSONWrapper::Save(l_modelPath.c_str(), l_ModelJson);
-	Log(Success, "Saved ModelComponent: ", ExportName, " with ", l_DrawCalls.size(), " draw calls.");
+	// Build a child .InnoScene with one entity per draw call
+	JSONWrapper::SaveChildScene(ExportName, l_DrawCalls);
+	Log(Success, "Saved child scene: Scenes/", ExportName, ".InnoScene with ", l_DrawCalls.size(), " entities.");
 }
 
 // AssimpWrapper is an offline asset converter (Baker tool).

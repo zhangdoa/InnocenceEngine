@@ -147,7 +147,7 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
     }
 
     auto l_meshFileName = j["File"].get<std::string>();
-    std::ifstream l_meshFile("../Data/Components/" + l_meshFileName, std::ios::binary);
+    std::ifstream l_meshFile(AssetService::GetBinaryFilePath(l_meshFileName.c_str()), std::ios::binary);
     if (!l_meshFile.is_open())
     {
         Log(Error, "Can't open file ", l_meshFileName.c_str(), "!");
@@ -232,7 +232,7 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
     component.m_TextureDesc.Usage = TextureUsage(j["Usage"]);
     component.m_TextureDesc.IsSRGB = j["IsSRGB"];
 
-    void* textureData = STBWrapper::Load(("../Data/Components/" + j["File"].get<std::string>()).c_str(), component);
+    void* textureData = STBWrapper::Load(AssetService::GetBinaryFilePath(j["File"].get<std::string>().c_str()).c_str(), component);
 
     g_Engine->Get<TextureResourceService>()->Initialize(&component, textureData, owner);
     return true;

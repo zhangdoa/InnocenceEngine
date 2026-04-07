@@ -179,9 +179,9 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 				continue;
 			}
 
-			auto l_textureComponent = AssimpTextureProcessor::CreateTextureComponent(l_localPath, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
-			if (l_textureComponent)
-				assetData->m_TextureNames.emplace_back(l_textureComponent->m_InstanceName.c_str());
+			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
+			if (!l_textureName.empty())
+				assetData->m_TextureNames.emplace_back(l_textureName);
 		}
 	}
 }

@@ -1,6 +1,0 @@
-add_subdirectory("RenderingClient")
-add_subdirectory("LogicClient")
-
-add_library(DefaultClientFactory DefaultClientFactory.cpp)
-set_target_properties(DefaultClientFactory PROPERTIES FOLDER DefaultClient)
-target_link_libraries(DefaultClientFactory DefaultRenderingClient DefaultLogicClient)

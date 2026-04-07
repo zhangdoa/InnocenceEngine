@@ -1,5 +1,6 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(Common ${HEADERS} ${SOURCES})
+target_compile_definitions(Common PRIVATE INNO_PROJECT_NAME="${INNO_PROJECT_NAME}")
 set_property(TARGET Common PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(Common PROPERTIES FOLDER Engine)

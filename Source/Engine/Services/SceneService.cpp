@@ -142,17 +142,9 @@ std::string SceneService::GetCurrentSceneName()
 		l_SceneName = l_SceneName.substr(0, l_ExtensionPos);
 	}
 
-	auto l_LastSlashPos = l_SceneName.rfind("//");
+	auto l_LastSlashPos = l_SceneName.rfind('/');
 	if (l_LastSlashPos != std::string::npos)
-	{
-		l_SceneName = l_SceneName.substr(l_LastSlashPos + 2);
-	}
-	else
-	{
-		l_LastSlashPos = l_SceneName.rfind('/');
-		if (l_LastSlashPos != std::string::npos)
-			l_SceneName = l_SceneName.substr(l_LastSlashPos + 1);
-	}
+		l_SceneName = l_SceneName.substr(l_LastSlashPos + 1);
 
 	return l_SceneName.empty() ? "Untitled" : l_SceneName;
 }

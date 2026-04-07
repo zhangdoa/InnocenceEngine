@@ -20,6 +20,11 @@ namespace Inno
 		std::string getFileName(const char* filePath);
 		std::string getWorkingDirectory();
 		std::string getDataDirectory();
+		std::string getEngineDirectory();
+		std::string getProjectName();
+		std::string getProjectDirectory();
+		std::string getGeneratedDirectory();
+		std::string getComponentDirectory();
 		std::string validateFileName(const char* filePath);
 
 		inline bool serialize(std::ostream& os, void* ptr, size_t size)

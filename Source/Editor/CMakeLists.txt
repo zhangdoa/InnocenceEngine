@@ -62,8 +62,8 @@ if(Qt6_FOUND)
     # Link engine libraries
     target_link_libraries(Editor 
         Engine
-        DefaultRenderingClient
-        DefaultLogicClient
+        ExampleRenderingClient
+        ExampleLogicClient
     )
     
     # Include directories

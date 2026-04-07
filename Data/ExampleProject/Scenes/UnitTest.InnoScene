@@ -1,0 +1,42 @@
+{
+    "Name": "UnitTest",
+    "DefaultComponentPath": "ExampleProject/Components/",
+    "Entities": [
+        {
+            "Name": "Sun",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Sun.TransformComponent"},
+                {"Type": 3, "Name": "GITestBox.Sun.LightComponent"}
+            ]
+        },
+        {
+            "Name": "Main Camera",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Camera.TransformComponent"},
+                {"Type": 4, "Name": "GITestBox.Camera.CameraComponent"}
+            ]
+        },
+        {
+            "Name": "Test Point Light",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.PointLight.TransformComponent"},
+                {"Type": 3, "Name": "UnitTest.PointLight.LightComponent"}
+            ]
+        },
+        {
+            "Name": "Test Sphere Light",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.SphereLight.TransformComponent"},
+                {"Type": 3, "Name": "UnitTest.SphereLight.LightComponent"}
+            ]
+        },
+        {
+            "Name": "Player Character",
+            "Components": [
+                {"Type": 1, "Name": "GITestBox.Player.TransformComponent"},
+                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
+                {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
+            ]
+        }
+    ]
+}

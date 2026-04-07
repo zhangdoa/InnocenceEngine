@@ -12,8 +12,7 @@ endif()
 message(STATUS "Creating necessary directories...")
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/Build)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/Bin)
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/Res/ConvertedAssets)
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/Res/Intermediate)
+file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/OriginalAssets)
 
 # Copy ImGui files
 message(STATUS "Copying ImGui files...")

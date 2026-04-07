@@ -678,7 +678,7 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		SystemSetup(AnimationResourceService);
 
 		ITask::Desc taskDesc("Default Rendering Client Setup Task", ITask::Type::Once, 2);
-		auto l_DefaultRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		auto l_ExampleRenderingClientSetupTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
 			if (m_pImpl->m_RenderingClient) {
 				if (!m_pImpl->m_RenderingClient->Setup())
 				{
@@ -693,8 +693,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 			return true;
 			});
 
-		l_DefaultRenderingClientSetupTask->Activate();
-		l_DefaultRenderingClientSetupTask->Wait();
+		l_ExampleRenderingClientSetupTask->Activate();
+		l_ExampleRenderingClientSetupTask->Wait();
 	}
 
 	// Only setup LogicClient if it exists
@@ -764,7 +764,7 @@ bool Engine::Initialize()
 		SystemInit(AnimationResourceService);
 
 		ITask::Desc taskDesc("Default Rendering Client Initialization Task", ITask::Type::Once, 2);
-		auto l_DefaultRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		auto l_ExampleRenderingClientInitializationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
 			if (m_pImpl->m_RenderingClient) {
 				if (!m_pImpl->m_RenderingClient->Initialize())
 				{
@@ -779,8 +779,8 @@ bool Engine::Initialize()
 			return true;
 			});
 
-		l_DefaultRenderingClientInitializationTask->Activate();
-		l_DefaultRenderingClientInitializationTask->Wait();
+		l_ExampleRenderingClientInitializationTask->Activate();
+		l_ExampleRenderingClientInitializationTask->Wait();
 
 		// Check if m_RenderingExecutionTask exists before activating
 		if (m_pImpl->m_RenderingExecutionTask)
@@ -842,7 +842,7 @@ bool Engine::Terminate()
 	// Only terminate rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		ITask::Desc taskDesc("Default Rendering Client Termination Task", ITask::Type::Once, 2);
-		auto l_DefaultRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
+		auto l_ExampleRenderingClientTerminationTask = g_Engine->Get<TaskScheduler>()->Submit(taskDesc, [=]() {
 			if (!m_pImpl->m_initConfig.isOffscreen)
 				SystemTerm(GUIService);
 
@@ -853,8 +853,8 @@ bool Engine::Terminate()
 			}
 			return true;
 			});
-		l_DefaultRenderingClientTerminationTask->Activate();
-		l_DefaultRenderingClientTerminationTask->Wait();
+		l_ExampleRenderingClientTerminationTask->Activate();
+		l_ExampleRenderingClientTerminationTask->Wait();
 
 		SystemTerm(AnimationResourceService);
 		SystemTerm(AnimationSimulationService);
