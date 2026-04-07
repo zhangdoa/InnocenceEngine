@@ -6,11 +6,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
-            "args": [
-                "-mode 0",
-                "-renderer 0",
-                "-loglevel 0",
-            ],
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
@@ -21,17 +17,45 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
-            "args": [
-                "-mode 0",
-                "-renderer 0",
-                "-loglevel 0",
-                "-offscreen",
-            ],
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
             "externalConsole": false
-        },        
+        },
+        {
+            "name": "(Windows) Integration Test: 30 frames",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-total_frames", "30"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) Integration Test: Scene Reload",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-total_frames", "40", "-reload_at_frame", "20"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) RenderDoc Capture: Frame 15",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Main.exe",
+            "args": ["-mode", "0", "-renderer", "0", "-loglevel", "0", "-offscreen", "-total_frames", "20", "-capture_frame", "15"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        },
         {
             "name": "(Windows) TestSuite",
             "type": "cppvsdbg",
@@ -52,7 +76,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
-            "preLaunchTask": "Build RenderTest",
+            "preLaunchTask": "Build",
             "externalConsole": false
         },
         {
@@ -64,35 +88,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Bin",
             "environment": [],
-            "preLaunchTask": "Build RenderTest",
-            "externalConsole": false
-        },
-        {
-            "name": "(Windows) Launch Baker",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Baker.exe",
-            "args": [
-                "-mode 0",
-                "-renderer 0",
-                "-loglevel 1"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Bin",
-            "environment": [],
-            "externalConsole": false
-        },
-        {
-            "name": "(Windows) Launch Reflector",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Reflector.exe",
-            "args": [
-                "../Source/Engine/Common/GPUDataStructure.h"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Bin",
-            "environment": [],
+            "preLaunchTask": "Build",
             "externalConsole": false
         },
         {

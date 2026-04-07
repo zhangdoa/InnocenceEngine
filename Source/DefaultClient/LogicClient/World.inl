@@ -440,7 +440,10 @@ namespace Inno
 			};
 
 		f_convertModel = []() {
-			g_Engine->Get<AssetService>()->Import("Models//Sponza_PBR//NewSponza_Merged.fbx");
+			g_Engine->Get<AssetService>()->Import("..//OriginalAssets//Models//sibenik//sibenik.obj");
+			g_Engine->Get<AssetService>()->Import("..//OriginalAssets//Models//Sponza_PBR//NewSponza_Merged.fbx");
+			g_Engine->Get<AssetService>()->Import("..//OriginalAssets//Models//orb//orb.obj");
+			g_Engine->Get<AssetService>()->Import("..//OriginalAssets//Models//bunny//bunny.obj");
 			};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });

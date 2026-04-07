@@ -165,5 +165,5 @@
         "stdfloat": "cpp",
         "*.rh": "cpp",
         "*.def": "cpp"
-    },
+    }
 }

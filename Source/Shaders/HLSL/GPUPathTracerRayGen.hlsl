@@ -61,38 +61,53 @@ float DistributionGGX(float3 N, float3 H, float roughness)
     return a2 / (3.14159265f * denom * denom);
 }
 
-float GeometrySchlickGGX(float NdotV, float roughness)
+float GeometrySmithGGXCorrelated(float NdotL, float NdotV, float alpha)
 {
-    float r = roughness + 1.0f;
-    float k = (r * r) / 8.0f;
-    return NdotV / (NdotV * (1.0f - k) + k);
+    float alpha2 = alpha * alpha;
+    float lambdaV = NdotL * sqrt(NdotV * NdotV * (1.0f - alpha2) + alpha2);
+    float lambdaL = NdotV * sqrt(NdotL * NdotL * (1.0f - alpha2) + alpha2);
+    return 0.5f / max(lambdaV + lambdaL, 0.0001f);
 }
 
-float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
+float3 FresnelSchlick(float cosTheta, float3 F0, float F90)
 {
-    float NdotV = max(dot(N, V), 0.0f);
-    float NdotL = max(dot(N, L), 0.0f);
-    return GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
+    return F0 + (F90 - F0) * pow(saturate(1.0f - cosTheta), 5.0f);
 }
 
-float3 FresnelSchlick(float cosTheta, float3 F0)
+float DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
-    return F0 + (1.0f - F0) * pow(saturate(1.0f - cosTheta), 5.0f);
+    float F_l = pow(1.0f - NdotL, 5.0f);
+    float F_v = pow(1.0f - NdotV, 5.0f);
+    float retroReflect = 2.0f * LdotH * LdotH * linearRoughness;
+    float FLambert = (1.0f - 0.5f * F_l) * (1.0f - 0.5f * F_v);
+    float FRetroReflection = retroReflect * (F_l + F_v + F_l * F_v * (retroReflect - 1.0f));
+    return FLambert + FRetroReflection;
 }
 
 float3 CookTorranceGGX(float3 N, float3 V, float3 L, float3 albedo, float metalness, float roughness)
 {
+    float3 H = normalize(V + L);
+    float NdotL = max(dot(N, L), 0.0f);
+    float NdotV = max(dot(N, V), 0.0f);
+    float NdotH = max(dot(N, H), 0.0f);
+    float LdotH = max(dot(L, H), 0.0f);
+
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
-    float3 H  = normalize(V + L);
+    float alpha = roughness * roughness;
 
-    float D  = DistributionGGX(N, H, roughness);
-    float G  = GeometrySmith(N, V, L, roughness);
-    float3 F = FresnelSchlick(max(dot(H, V), 0.0f), F0);
+    float  D = DistributionGGX(N, H, roughness);
+    float  G = GeometrySmithGGXCorrelated(NdotL, NdotV, alpha);
+    float3 F = FresnelSchlick(LdotH, F0, 1.0f);
 
-    float3 specular = (D * G * F) / max(4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f), 0.001f);
-    float3 diffuse  = (1.0f - F) * (1.0f - metalness) * albedo / 3.14159265f;
+    // Specular: D * G * F (correlated Smith already includes 1/(4*NdotL*NdotV) denominator)
+    float3 specular = D * G * F;
 
-    return (diffuse + specular) * max(dot(N, L), 0.0f);
+    // Diffuse: Disney 2015 Burley with energy conservation
+    float3 kD = (1.0f - F) * (1.0f - metalness);
+    float  diffuseTerm = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness);
+    float3 diffuse = kD * albedo * diffuseTerm / 3.14159265f;
+
+    return (diffuse + specular) * NdotL;
 }
 
 float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
@@ -122,9 +137,9 @@ RayDesc GenerateCameraRay(uint2 pixel, float2 jitter, uint2 resolution)
     uv.y = 1.0f - uv.y;
     float2 ndc = uv * 2.0f - 1.0f;
 
-    float4 viewPos = mul(g_Frame.p_inv, float4(ndc.x, ndc.y, 1.0f, 1.0f));
+    float4 viewPos = mul(float4(ndc.x, ndc.y, 1.0f, 1.0f), g_Frame.p_inv);
     viewPos /= viewPos.w;
-    float3 worldPos = mul(g_Frame.v_inv, float4(viewPos.xyz, 0.0f)).xyz;
+    float3 worldPos = mul(float4(viewPos.xyz, 0.0f), g_Frame.v_inv).xyz;
 
     RayDesc ray;
     ray.Origin    = g_Frame.camera_posWS.xyz;
@@ -148,12 +163,14 @@ void RayGenShader()
     float3 throughput = float3(1.0f, 1.0f, 1.0f);
     float3 radiance   = float3(0.0f, 0.0f, 0.0f);
 
-    for (int bounce = 0; bounce <= 40; ++bounce)
-    {
-        PathTracerPayload payload;
-        payload.missed = false;
+    const uint MAX_BOUNCES = 4;
 
-        TraceRay(SceneAS, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray, payload);
+    for (uint bounce = 0; bounce < MAX_BOUNCES; bounce++)
+    {
+        PathTracerPayload payload = (PathTracerPayload)0;
+        payload.missed = true;
+
+        TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE, 0xFF, 0, 0, 0, ray, payload);
 
         if (payload.missed)
         {
@@ -161,63 +178,59 @@ void RayGenShader()
             break;
         }
 
-        float3 N  = payload.normal;
-        float3 V  = -ray.Direction;
-        float3 sunDir = normalize(g_Frame.sun_direction.xyz);
+        float3 N = normalize(payload.normal);
+        float3 V = -ray.Direction;
 
-        // NEE: shadow ray toward sun
-        ShadowPayload shadowPayload;
-        shadowPayload.isShadowed = true;
+        float3 albedo    = payload.albedo;
+        float  metalness = payload.metalness;
+        float  roughness = max(payload.roughness, 0.04f);
 
+        float3 lightDir = normalize(g_Frame.sun_direction.xyz);
+        float3 lightIlluminance = g_Frame.sun_illuminance.xyz;
+
+        ShadowPayload shadow;
+        shadow.isShadowed = true;
         RayDesc shadowRay;
         shadowRay.Origin    = payload.hitPos + N * 0.001f;
-        shadowRay.Direction = sunDir;
+        shadowRay.Direction = lightDir;
         shadowRay.TMin      = 0.001f;
         shadowRay.TMax      = 1e6f;
+        TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+                 0xFF, 0, 0, 1, shadowRay, shadow);
 
-        TraceRay(SceneAS,
-                 RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
-                 0xFF,
-                 0,    // RayContributionToHitGroupIndex (unused — closest hit skipped)
-                 1,
-                 1,    // MissShaderIndex = 1 → ShadowMissShader
-                 shadowRay, shadowPayload);
-
-        if (!shadowPayload.isShadowed)
+        if (!shadow.isShadowed)
         {
-            float3 brdf = CookTorranceGGX(N, V, sunDir, payload.albedo, payload.metalness, payload.roughness);
-            radiance += throughput * brdf * g_Frame.sun_illuminance.xyz;
+            radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
         }
 
         float2 xi = Rand2(rng);
-        float3 H  = ImportanceSampleGGX(xi, N, payload.roughness);
-        float3 L  = reflect(-V, H);
-
+        float3 H = ImportanceSampleGGX(xi, N, roughness);
+        float3 L = reflect(-V, H);
         float NdotL = dot(N, L);
-        if (NdotL <= 0.0f)
-            break;
+        if (NdotL <= 0.0f) break;
 
-        float3 brdfSample = CookTorranceGGX(N, V, L, payload.albedo, payload.metalness, payload.roughness);
+        float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
+        float3 F  = FresnelSchlick(max(dot(H, V), 0.0f), F0, 1.0f);
+        float  D  = DistributionGGX(N, H, roughness);
+        float  alpha = roughness * roughness;
+        float  G  = GeometrySmithGGXCorrelated(NdotL, max(dot(N, V), 0.0f), alpha);
         float  NdotH = max(dot(N, H), 0.0f);
         float  VdotH = max(dot(V, H), 0.0f);
-        float  pdf   = DistributionGGX(N, H, payload.roughness) * NdotH / max(4.0f * VdotH, 0.001f);
-        throughput *= brdfSample * NdotL / max(pdf, 0.001f);
+        float  pdf   = (D * NdotH) / (4.0f * VdotH + 0.0001f);
 
-        if (bounce >= 3)
-        {
-            float q = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.05f, 0.95f);
-            if (Rand(rng) > q)
-                break;
-            throughput /= q;
-        }
+        // Correlated Smith G already includes 1/(4*NdotL*NdotV)
+        float3 specular = D * G * F;
+        throughput *= specular * NdotL / max(pdf, 0.0001f);
+
+        float maxComp = max(throughput.x, max(throughput.y, throughput.z));
+        if (maxComp < 0.01f) break;
 
         ray.Origin    = payload.hitPos + N * 0.001f;
         ray.Direction = L;
-        ray.TMin      = 0.001f;
-        ray.TMax      = 1e6f;
     }
 
-    float w = 1.0f / float(g_FrameCount);
-    float3 prev = AccumBuffer[pixel].rgb;
-    AccumBuffer[pixel] = float4(lerp(prev, radiance, w), 1.0f);
+    float4 prev = AccumBuffer[pixel];
+    float  t    = 1.0f / float(g_FrameCount);
+    float3 clampedRadiance = min(radiance, 100.0f);
+    AccumBuffer[pixel] = lerp(prev, float4(clampedRadiance, 1.0f), t);
 }

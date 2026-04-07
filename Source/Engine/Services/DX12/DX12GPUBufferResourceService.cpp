@@ -1,7 +1,9 @@
 #include "DX12GPUBufferResourceService.h"
+#include "DX12MeshResourceService.h"
 #include "DX12Context.h"
 #include "DX12Helper_Common.h"
 #include "../FrameManagementService.h"
+#include "../MeshResourceService.h"
 #include "../GraphicsHardwareService.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -9,6 +11,7 @@
 #include "../../Services/EntityRegistry.h"
 #include "../../Component/WorldTransformComponent.h"
 #include "../../Component/MeshComponent.h"
+#include "../../Common/MathHelper.h"
 
 #ifdef max
 #undef max
@@ -133,6 +136,7 @@ bool DX12GPUBufferResourceService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 
 	if (gpuBuffer->m_InitialData)
 	{
+
 		auto l_currentFrame = g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
 
 		CommandListComponent l_commandList = {};
@@ -144,7 +148,7 @@ bool DX12GPUBufferResourceService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 		{
 			auto l_mappedMemory = reinterpret_cast<DX12MappedMemory*>(gpuBuffer->m_MappedMemories[i]);
 			auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(gpuBuffer->m_DeviceMemories[i]);
-			WriteMappedMemory(gpuBuffer, l_mappedMemory, gpuBuffer->m_InitialData, 0, gpuBuffer->m_TotalSize);
+			std::memcpy(l_mappedMemory->m_Address, gpuBuffer->m_InitialData, gpuBuffer->m_TotalSize);
 			l_mappedMemory->m_NeedUploadToGPU = false;
 
 			if (l_deviceMemory->m_DefaultHeapBuffer)
@@ -157,8 +161,12 @@ bool DX12GPUBufferResourceService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 
 			if (l_deviceMemory->m_DefaultHeapBuffer)
 			{
+				// Transition to the buffer's read state (not COMMON) because buffers
+				// with ALLOW_UNORDERED_ACCESS do not support implicit promotion from COMMON.
+				auto l_readState = static_cast<D3D12_RESOURCE_STATES>(gpuBuffer->m_ReadState);
 				l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-					l_deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_initialState));
+					l_deviceMemory->m_DefaultHeapBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_readState));
+				gpuBuffer->m_CurrentState[i] = gpuBuffer->m_ReadState;
 			}
 		}
 
@@ -184,12 +192,6 @@ bool DX12GPUBufferResourceService::InitializeImpl(GPUBufferComponent* gpuBuffer)
 	return true;
 }
 
-bool DX12GPUBufferResourceService::InitializeImpl(EntityID entity)
-{
-	Log(Warning, "RT instance initialization not yet available in GPUBufferResourceService.");
-	return false;
-}
-
 bool DX12GPUBufferResourceService::OnSceneLoadingStart()
 {
 	for (size_t i = 0; i < m_RaytracingInstanceDescs.size(); i++)
@@ -198,10 +200,101 @@ bool DX12GPUBufferResourceService::OnSceneLoadingStart()
 		l_descList->m_Descs.clear();
 	}
 
-	m_initializedEntities.clear();
 	m_TLASReady = false;
+	m_PrevInstanceCount = 0;
 
 	Log(Verbose, "Raytracing instance descriptions have been cleared.");
+
+	return true;
+}
+
+bool DX12GPUBufferResourceService::UpdateRaytracingInstances()
+{
+	if (m_RaytracingInstanceDescs.empty())
+		return true;
+
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto& l_meshStorage = l_registry->Storage<MeshComponent>();
+	const auto& l_meshOwners = l_meshStorage.AllOwners();
+
+	if (l_meshOwners.empty())
+		return true;
+
+	auto l_meshService = static_cast<DX12MeshResourceService*>(g_Engine->Get<MeshResourceService>());
+
+	bool l_needRebuild = false;
+
+	if (l_meshOwners.size() != m_PrevInstanceCount)
+		l_needRebuild = true;
+
+	if (!l_needRebuild)
+	{
+		for (EntityID l_entity : l_meshOwners)
+		{
+			auto* l_world = l_registry->Get<WorldTransformComponent>(l_entity);
+			if (l_world && l_world->m_Dirty)
+			{
+				l_needRebuild = true;
+				break;
+			}
+		}
+	}
+
+	if (!l_needRebuild)
+		return true;
+
+	auto l_swapChainImageCount = g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount();
+
+	for (size_t frameIndex = 0; frameIndex < l_swapChainImageCount; frameIndex++)
+	{
+		auto l_descList = reinterpret_cast<DX12RaytracingInstanceDescList*>(m_RaytracingInstanceDescs[frameIndex]);
+		l_descList->m_Descs.clear();
+
+		for (EntityID l_entity : l_meshOwners)
+		{
+			auto* l_mesh = l_registry->Get<MeshComponent>(l_entity);
+			if (!l_mesh || !l_mesh->m_Asset.IsValid())
+				continue;
+
+			if (l_mesh->m_ObjectStatus != ObjectStatus::Activated)
+				continue;
+
+			uint64_t l_blasAddress = l_meshService->GetBLASAddress(l_mesh->m_Asset);
+			if (l_blasAddress == 0)
+				continue;
+
+			auto* l_world = l_registry->Get<WorldTransformComponent>(l_entity);
+			Mat4 l_transform = l_world ? l_world->m_WorldMatrix : Math::generateIdentityMatrix<float>();
+
+			D3D12_RAYTRACING_INSTANCE_DESC l_instanceDesc = {};
+
+			l_instanceDesc.Transform[0][0] = l_transform.m00;
+			l_instanceDesc.Transform[0][1] = l_transform.m01;
+			l_instanceDesc.Transform[0][2] = l_transform.m02;
+			l_instanceDesc.Transform[0][3] = l_transform.m03;
+
+			l_instanceDesc.Transform[1][0] = l_transform.m10;
+			l_instanceDesc.Transform[1][1] = l_transform.m11;
+			l_instanceDesc.Transform[1][2] = l_transform.m12;
+			l_instanceDesc.Transform[1][3] = l_transform.m13;
+
+			l_instanceDesc.Transform[2][0] = l_transform.m20;
+			l_instanceDesc.Transform[2][1] = l_transform.m21;
+			l_instanceDesc.Transform[2][2] = l_transform.m22;
+			l_instanceDesc.Transform[2][3] = l_transform.m23;
+
+			l_instanceDesc.InstanceID = static_cast<UINT>(l_descList->m_Descs.size());
+			l_instanceDesc.InstanceMask = 0xFF;
+			l_instanceDesc.InstanceContributionToHitGroupIndex = 0;
+			l_instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+			l_instanceDesc.AccelerationStructure = l_blasAddress;
+
+			l_descList->m_Descs.emplace_back(l_instanceDesc);
+		}
+	}
+
+	m_PrevInstanceCount = l_meshOwners.size();
+	m_TLASReady = false;
 
 	return true;
 }

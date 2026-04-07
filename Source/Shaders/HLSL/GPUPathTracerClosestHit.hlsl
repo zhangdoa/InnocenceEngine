@@ -11,7 +11,23 @@ struct PathTracerPayload
     bool   missed;
 };
 
-// MaterialCB matches MaterialConstantBuffer in GPUDataStructure.h
+// Matches GPUPathTracerVertex in GPUPathTracerPass.h
+struct PTVertex
+{
+    float posX, posY, posZ;
+    float normX, normY, normZ;
+};
+
+// Matches MeshOffsetData in GPUPathTracerPass.h
+struct MeshOffsetData
+{
+    uint vertexOffset;
+    uint indexOffset;
+    uint vertexCount;
+    uint indexCount;
+};
+
+// Matches MaterialConstantBuffer in GPUDataStructure.h
 struct MaterialCB
 {
     float AlbedoR, AlbedoG, AlbedoB, Alpha;
@@ -21,61 +37,52 @@ struct MaterialCB
 };
 
 [[vk::binding(2, 1)]]
-ByteAddressBuffer in_MegaVertexBuffer : register(t2);   // PTVertex = {float3 pos, float3 normal}
+StructuredBuffer<PTVertex> in_MegaVertexBuffer : register(t2);
 
 [[vk::binding(3, 1)]]
-ByteAddressBuffer in_MegaIndexBuffer  : register(t3);   // uint32 indices
+StructuredBuffer<uint> in_MegaIndexBuffer : register(t3);
 
 [[vk::binding(4, 1)]]
-ByteAddressBuffer in_MeshOffsets      : register(t4);
+StructuredBuffer<MeshOffsetData> in_MeshOffsets : register(t4);
 
 [[vk::binding(1, 1)]]
 StructuredBuffer<MaterialCB> in_MaterialBuffer : register(t1);
 
 uint3 LoadTriangleIndices(uint baseIndex, uint primitiveIndex)
 {
-    uint byteOffset = (baseIndex + primitiveIndex * 3) * 4;
+    uint i0 = baseIndex + primitiveIndex * 3;
     return uint3(
-        in_MegaIndexBuffer.Load(byteOffset + 0),
-        in_MegaIndexBuffer.Load(byteOffset + 4),
-        in_MegaIndexBuffer.Load(byteOffset + 8));
+        in_MegaIndexBuffer[i0 + 0],
+        in_MegaIndexBuffer[i0 + 1],
+        in_MegaIndexBuffer[i0 + 2]);
 }
 
 float3 LoadVertexNormal(uint baseVertex, uint vertexIndex)
 {
-    // PTVertex layout: {float3 pos (12B), float3 normal (12B)} = 24B per vertex
-    uint byteOffset = (baseVertex + vertexIndex) * 24 + 12;  // skip pos
-    float nx = asfloat(in_MegaVertexBuffer.Load(byteOffset + 0));
-    float ny = asfloat(in_MegaVertexBuffer.Load(byteOffset + 4));
-    float nz = asfloat(in_MegaVertexBuffer.Load(byteOffset + 8));
-    return float3(nx, ny, nz);
+    PTVertex v = in_MegaVertexBuffer[baseVertex + vertexIndex];
+    return float3(v.normX, v.normY, v.normZ);
 }
 
 [shader("closesthit")]
 void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleIntersectionAttributes attr)
 {
-    uint instanceID = InstanceID();
-
-    // Load mesh offsets for this instance
-    uint2 offsets = uint2(
-        in_MeshOffsets.Load(instanceID * 8 + 0),   // vertexOffset (bytes: instanceID*2 uints * 4B)
-        in_MeshOffsets.Load(instanceID * 8 + 4));   // indexOffset
-
-    // Interpolate normal
-    uint3 tri = LoadTriangleIndices(offsets.y, PrimitiveIndex());
-    float3 n0 = LoadVertexNormal(offsets.x, tri.x);
-    float3 n1 = LoadVertexNormal(offsets.x, tri.y);
-    float3 n2 = LoadVertexNormal(offsets.x, tri.z);
-
-    float2 bary = attr.barycentrics;
-    float3 localNormal = n0 * (1.0f - bary.x - bary.y) + n1 * bary.x + n2 * bary.y;
-    payload.normal = normalize(mul((float3x3)ObjectToWorld3x4(), localNormal));
     payload.hitPos = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+    payload.missed = false;
 
-    // Material lookup
+    uint instanceID = InstanceID();
+    MeshOffsetData offsets = in_MeshOffsets[instanceID];
+
+    float2 barycentrics = attr.barycentrics;
+    uint3 indices = LoadTriangleIndices(offsets.indexOffset, PrimitiveIndex());
+
+    float3 n0 = LoadVertexNormal(offsets.vertexOffset, indices.x);
+    float3 n1 = LoadVertexNormal(offsets.vertexOffset, indices.y);
+    float3 n2 = LoadVertexNormal(offsets.vertexOffset, indices.z);
+    float3 normal = n0 * (1.0f - barycentrics.x - barycentrics.y) + n1 * barycentrics.x + n2 * barycentrics.y;
+    payload.normal = normalize(mul((float3x3)ObjectToWorld3x4(), normal));
+
     MaterialCB mat = in_MaterialBuffer[instanceID];
     payload.albedo    = float3(mat.AlbedoR, mat.AlbedoG, mat.AlbedoB);
     payload.metalness = mat.Metallic;
-    payload.roughness = max(mat.Roughness, 0.04f);
-    payload.missed    = false;
+    payload.roughness = mat.Roughness;
 }

@@ -14,6 +14,8 @@
 #include "DX12Helper_Pipeline.h"
 #include "DX12Helper_Texture.h"
 
+#include "../../../External/GitSubmodules/renderdoc/renderdoc/api/app/renderdoc_app.h"
+
 #ifdef _WIN32
 #include <Windows.h>
 #include <DbgHelp.h>
@@ -333,8 +335,50 @@ bool DX12GraphicsHardwareService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineTy
 
 // --- Debug/capture ---
 
+bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
+{
+#ifdef _WIN32
+	HMODULE l_RenderDocModule = GetModuleHandleA("renderdoc.dll");
+	if (l_RenderDocModule == nullptr)
+		return false;
+
+	auto l_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(l_RenderDocModule, "RENDERDOC_GetAPI");
+	if (l_GetAPI == nullptr)
+		return false;
+
+	RENDERDOC_API_1_6_0* l_API = nullptr;
+	int l_Result = l_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&l_API);
+	if (l_Result != 1 || l_API == nullptr)
+		return false;
+
+	m_RenderDocAPI = l_API;
+
+	auto l_initConfig = g_Engine->getInitConfig();
+	if (l_initConfig.captureFrame >= 0)
+	{
+		std::string l_captureDir = "C:/GitRepo/InnocenceEngine/Build/captures/frame";
+		l_API->SetCaptureFilePathTemplate(l_captureDir.c_str());
+		l_API->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, 1);
+		l_API->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, 1);
+	}
+
+	Log(Success, "RenderDoc API loaded.");
+	return true;
+#else
+	return false;
+#endif
+}
+
 bool DX12GraphicsHardwareService::BeginCapture()
 {
+	if (m_RenderDocAPI != nullptr)
+	{
+		auto l_API = static_cast<RENDERDOC_API_1_6_0*>(m_RenderDocAPI);
+		l_API->StartFrameCapture(nullptr, nullptr);
+		Log(Success, "RenderDoc: frame capture started.");
+		return true;
+	}
+
 	if (m_DX12Context.m_graphicsAnalysis != nullptr)
 	{
 		m_DX12Context.m_graphicsAnalysis->BeginCapture();
@@ -346,6 +390,25 @@ bool DX12GraphicsHardwareService::BeginCapture()
 
 bool DX12GraphicsHardwareService::EndCapture()
 {
+	if (m_RenderDocAPI != nullptr)
+	{
+		auto l_API = static_cast<RENDERDOC_API_1_6_0*>(m_RenderDocAPI);
+		uint32_t l_Result = l_API->EndFrameCapture(nullptr, nullptr);
+		if (l_Result == 1)
+		{
+			uint32_t l_NumCaptures = l_API->GetNumCaptures();
+			if (l_NumCaptures > 0)
+			{
+				char l_Path[512] = {};
+				uint32_t l_PathLen = sizeof(l_Path);
+				uint64_t l_Timestamp = 0;
+				l_API->GetCapture(l_NumCaptures - 1, l_Path, &l_PathLen, &l_Timestamp);
+				Log(Success, "RenderDoc: frame capture saved to ", l_Path);
+			}
+		}
+		return l_Result == 1;
+	}
+
 	if (m_DX12Context.m_graphicsAnalysis != nullptr)
 	{
 		m_DX12Context.m_graphicsAnalysis->EndCapture();
@@ -912,6 +975,8 @@ bool DX12GraphicsHardwareService::CreateGlobalDescriptorHeaps()
 bool DX12GraphicsHardwareService::CreateHardwareResources()
 {
     bool l_result = true;
+
+    TryLoadRenderDocAPI();
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     l_result &= CreateDebugCallback();

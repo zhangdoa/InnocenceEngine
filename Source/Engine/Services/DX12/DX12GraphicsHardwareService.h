@@ -45,7 +45,11 @@ namespace Inno
 		template <typename U, typename T>
 		bool SetObjectName(U* owner, const T& rhs, const char* objectTypeSuffix);
 
+		bool TryLoadRenderDocAPI();
+
 		// DX12 context (owned by this service, shared with other DX12 services)
 		DX12Context m_DX12Context;
+
+		void* m_RenderDocAPI = nullptr;
 	};
 }

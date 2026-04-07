@@ -54,11 +54,6 @@ void GPUBufferResourceService::Initialize(GPUBufferComponent* gpuBuffer)
 	Log(Verbose, "GPUBufferComponent ", gpuBuffer->m_InstanceName, " queued for deferred initialization");
 }
 
-void GPUBufferResourceService::Initialize(EntityID entity)
-{
-	m_DeferredEntityQueue.push(entity);
-}
-
 bool GPUBufferResourceService::InitializeComponents()
 {
 	while (m_DeferredQueue.size() > 0)
@@ -76,28 +71,16 @@ bool GPUBufferResourceService::InitializeComponents()
 			m_DeferredQueue.push(std::move(l_component));
 	}
 
-	while (m_DeferredEntityQueue.size() > 0)
-	{
-		EntityID l_entity;
-		m_DeferredEntityQueue.tryPop(l_entity);
-
-		if (l_entity == INVALID_ENTITY)
-			continue;
-
-		if (m_initializedEntities.count(l_entity) > 0)
-			continue;
-
-		if (!InitializeImpl(l_entity))
-			m_DeferredEntityQueue.push(l_entity);
-	}
-
 	return true;
 }
 
 bool GPUBufferResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
 {
 	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "WriteMappedMemory rejected for [", gpuBuffer->m_InstanceName, "]: ObjectStatus is ", static_cast<int>(gpuBuffer->m_ObjectStatus), ", expected Activated(4).");
 		return false;
+	}
 
 	auto l_size = gpuBuffer->m_TotalSize;
 	if (range != SIZE_MAX)

@@ -345,6 +345,18 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	auto l_captureArgPos = arg.find("-capture_frame");
+	if (l_captureArgPos != std::string::npos)
+	{
+		std::string l_remainder = arg.substr(l_captureArgPos + 14);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			l_result.captureFrame = std::stoi(l_remainder.substr(l_start));
+			Log(Success, "RenderDoc capture at frame ", l_result.captureFrame, ".");
+		}
+	}
+
 	auto l_parentPidArgPos = arg.find("-parent_pid");
 	if (l_parentPidArgPos != std::string::npos)
 	{

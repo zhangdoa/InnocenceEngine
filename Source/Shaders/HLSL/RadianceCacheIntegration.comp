@@ -17,56 +17,58 @@ Texture2D<float4> in_RadianceCacheResults_Input : register(t0);
 RWTexture2D<float4> in_RadianceCacheResults_Output : register(u0);
 
 static const float SH_NORMALIZE_FACTOR = 4.0 * PI / float(TILE_SIZE * TILE_SIZE);
+static const uint THREAD_COUNT = TILE_SIZE * TILE_SIZE; // 64
 
-// Only thread 0 accumulates and writes the result
-// @TODO: Optimize this by using shared memory to accumulate the SH coefficients
+groupshared float3 gs_SH_L0[THREAD_COUNT];
+groupshared float3 gs_SH_L1_x[THREAD_COUNT];
+groupshared float3 gs_SH_L1_y[THREAD_COUNT];
+groupshared float3 gs_SH_L1_z[THREAD_COUNT];
+
 [numthreads(TILE_SIZE, TILE_SIZE, 1)]
 void main(ComputeInputType input)
 {
-    if (input.groupIndex != 0)
-        return;
+    uint2 probeIndex = input.groupID.xy;
+    uint threadIndex = input.groupIndex;
+    uint x = input.groupThreadID.x;
+    uint y = input.groupThreadID.y;
 
-    uint2 probeIndex = input.groupID.xy; // Probe index
-    float3 SH_L0 = float3(0, 0, 0);
-    float3 SH_L1_x = float3(0, 0, 0);
-    float3 SH_L1_y = float3(0, 0, 0);
-    float3 SH_L1_z = float3(0, 0, 0);
+    uint2 readCoord = probeIndex * TILE_SIZE + uint2(x, y);
+    float3 radiance = max(in_RadianceCacheResults_Input.Load(int3(readCoord, 0)).xyz, float3(0, 0, 0));
 
-    // Iterate over the entire 8×8 probe tile with improved filtering
-    for (uint y = 0; y < TILE_SIZE; y++)
+    float radianceMagnitude = length(radiance);
+    if (radianceMagnitude > 10.0)
+        radiance = normalize(radiance) * 10.0;
+
+    float2 uv = float2(x, y) / TILE_SIZE;
+    float3 sampleDir = DecodeOctahedral(uv);
+
+    float shWeight = SH_NORMALIZE_FACTOR;
+    gs_SH_L0[threadIndex] = radiance * Y_00() * shWeight;
+    gs_SH_L1_x[threadIndex] = radiance * Y_11(sampleDir) * shWeight;
+    gs_SH_L1_y[threadIndex] = radiance * Y_1_1(sampleDir) * shWeight;
+    gs_SH_L1_z[threadIndex] = radiance * Y_10(sampleDir) * shWeight;
+
+    GroupMemoryBarrierWithGroupSync();
+
+    // Parallel reduction
+    for (uint stride = THREAD_COUNT / 2; stride > 0; stride >>= 1)
     {
-        for (uint x = 0; x < TILE_SIZE; x++)
+        if (threadIndex < stride)
         {
-            uint2 readCoord = probeIndex * TILE_SIZE + uint2(x, y);
-            float4 radianceSample = in_RadianceCacheResults_Input.Load(int3(readCoord, 0));
-            float3 radiance = radianceSample.xyz;
-
-            // Temporal stability: clamp to prevent negative values
-            radiance = max(radiance, float3(0.0, 0.0, 0.0));
-            
-            // Apply adaptive filtering for noisy samples
-            float radianceMagnitude = length(radiance);
-            if (radianceMagnitude > 10.0) // Clamp extremely bright samples
-            {
-                radiance = normalize(radiance) * 10.0;
-            }
-
-            float2 uv = float2(x, y) / TILE_SIZE; // Normalize to [0,1]
-            float3 sampleDir = DecodeOctahedral(uv);
-
-            // Compute SH weights with improved normalization
-            float shWeight = SH_NORMALIZE_FACTOR;
-            SH_L0 += radiance * Y_00() * shWeight;
-            SH_L1_x += radiance * Y_11(sampleDir) * shWeight;
-            SH_L1_y += radiance * Y_1_1(sampleDir) * shWeight;
-            SH_L1_z += radiance * Y_10(sampleDir) * shWeight;
+            gs_SH_L0[threadIndex] += gs_SH_L0[threadIndex + stride];
+            gs_SH_L1_x[threadIndex] += gs_SH_L1_x[threadIndex + stride];
+            gs_SH_L1_y[threadIndex] += gs_SH_L1_y[threadIndex + stride];
+            gs_SH_L1_z[threadIndex] += gs_SH_L1_z[threadIndex + stride];
         }
+        GroupMemoryBarrierWithGroupSync();
     }
 
-    // Store SH coefficients into a 2×2 tile
-    uint2 writeCoord = probeIndex * SH_TILE_SIZE;
-    in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)] = float4(SH_L0, 1.0);
-    in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)] = float4(SH_L1_x, 1.0);
-    in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(SH_L1_y, 1.0);
-    in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(SH_L1_z, 1.0);
+    if (threadIndex == 0)
+    {
+        uint2 writeCoord = probeIndex * SH_TILE_SIZE;
+        in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)] = float4(gs_SH_L0[0], 1.0);
+        in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)] = float4(gs_SH_L1_x[0], 1.0);
+        in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(gs_SH_L1_y[0], 1.0);
+        in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(gs_SH_L1_z[0], 1.0);
+    }
 }

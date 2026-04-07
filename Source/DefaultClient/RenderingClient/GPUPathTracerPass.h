@@ -2,6 +2,7 @@
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Component/TextureComponent.h"
 #include "../../Engine/Component/GPUBufferComponent.h"
+#include "../../Engine/Common/GPUDataStructure.h"
 
 namespace Inno
 {
@@ -20,7 +21,7 @@ namespace Inno
 		RenderPassComponent* GetRenderPassComp() override;
 
 		GPUResourceComponent* GetResult();
-		CommandListComponent* GetToneMapCommandList();
+	
 
 		void ResetAccumulation();
 
@@ -45,20 +46,15 @@ namespace Inno
 		RenderPassComponent*    m_RayTracingRenderPassComp = nullptr;
 		ShaderProgramComponent* m_RayTracingSPC            = nullptr;
 
-		// Tonemap compute pass
-		RenderPassComponent*    m_ToneMapRenderPassComp = nullptr;
-		ShaderProgramComponent* m_ToneMapSPC            = nullptr;
-		CommandListComponent*   m_ToneMapCommandList    = nullptr;
-
 		// Owned GPU resources
 		TextureComponent*   m_AccumulationBuffer = nullptr;
-		TextureComponent*   m_ToneMapOutput      = nullptr;
 		GPUBufferComponent* m_FrameCountCB       = nullptr;
 
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;
 		GPUBufferComponent* m_MegaIndexBuffer  = nullptr;
 		GPUBufferComponent* m_MeshOffsetBuffer = nullptr;
+		GPUBufferComponent* m_MaterialBuffer   = nullptr;
 
 		// Camera movement detection
 		Math::Mat4 m_PrevViewMatrix = {};
@@ -70,6 +66,13 @@ namespace Inno
 
 		ShaderStage m_ShaderStage = ShaderStage::Invalid;
 		bool m_PendingGeometryRebuild = false;
+		size_t m_BuiltMeshCount = 0;
+
+		// Persistent storage for deferred GPU upload (m_InitialData points here)
+		std::vector<GPUPathTracerVertex>    m_PendingVertices;
+		std::vector<uint32_t>               m_PendingIndices;
+		std::vector<MeshOffsetData>         m_PendingOffsets;
+		std::vector<MaterialConstantBuffer> m_PendingMaterials;
 
 		void RebuildGeometryBuffers();
 		bool AreMeshesGPUReady();

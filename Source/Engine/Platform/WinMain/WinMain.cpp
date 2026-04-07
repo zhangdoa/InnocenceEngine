@@ -101,6 +101,10 @@ LONG WINAPI UnhandledExceptionHandler(EXCEPTION_POINTERS* exceptionInfo)
 
     Log(Error, errorMsg);
 
+    // Write crash info to stderr as fallback since Log may not flush
+    fprintf(stderr, "%s\n", errorMsg);
+    fflush(stderr);
+
     ExitProcess(2);
     return EXCEPTION_EXECUTE_HANDLER; // unreachable, satisfies return type
 }

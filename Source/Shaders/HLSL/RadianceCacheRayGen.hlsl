@@ -17,11 +17,9 @@ float3 CosineWeightedHemisphereSample(float2 Xi, float3 N)
     return normalize(mul(H, basis));
 }
 
-// Generate stable random values without temporal rotation
-float2 StableHash2D(uint2 pixelID, uint sampleIndex)
+float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
 {
-    // Use stable hash without frame dependency
-    uint n = pixelID.x * 73856093u ^ pixelID.y * 19349663u ^ sampleIndex * 83492791u;
+    uint n = pixelID.x * 73856093u ^ pixelID.y * 19349663u ^ sampleIndex * 83492791u ^ frameIndex * 2654435761u;
     n = (n << 13u) ^ n;
     return float2(
         (n * (n * n * 15731u + 789221u) + 1376312589u) & 0x7fffffff,
@@ -32,34 +30,24 @@ float2 StableHash2D(uint2 pixelID, uint sampleIndex)
 // Sample from cumulative distribution function of reprojected radiance
 float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex)
 {
-    // Try to find valid reprojected radiance data
     float totalLuminance = 0.0;
-    float maxLuminance = 0.0;
-    
-    // Calculate luminance for each octahedral cell from previous frame
     const int OCTAHEDRAL_SIZE = 8;
-    float cellLuminance[64]; // 8x8 octahedral grid
-    
+    float cellLuminance[64];
+
     for (int y = 0; y < OCTAHEDRAL_SIZE; y++)
     {
         for (int x = 0; x < OCTAHEDRAL_SIZE; x++)
         {
             int cellIndex = y * OCTAHEDRAL_SIZE + x;
-            
-            // Convert cell to direction
             float2 octUV = (float2(x, y) + 0.5) / OCTAHEDRAL_SIZE;
             float3 cellDirection = DecodeOctahedral(octUV);
-            
-            // Only consider hemisphere above surface
+
             if (dot(cellDirection, normalWS) > 0.0)
             {
                 uint2 atlasCoord = GetAtlasTextureCoordinates(float2(probeIndex * TILE_SIZE), cellDirection);
-                float3 reprojectedRadiance = in_RadianceCacheResults_Prev[atlasCoord].rgb;
-                
-                float luminance = GetLuma(reprojectedRadiance);
+                float luminance = GetLuma(in_RadianceCacheResults_Prev[atlasCoord].rgb);
                 cellLuminance[cellIndex] = luminance;
                 totalLuminance += luminance;
-                maxLuminance = max(maxLuminance, luminance);
             }
             else
             {
@@ -92,11 +80,9 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex)
         }
     }
     
-    // Sample from CDF
     float randomValue = Xi.x;
     int selectedCell = 0;
-    
-    // Find cell using binary search
+
     for (int i = 0; i < 64; i++)
     {
         if (randomValue <= cdf[i])
@@ -157,17 +143,11 @@ void RayGenShader()
     in_ProbePosition[probeIndex] = float4(positionWS, 1);
     in_ProbeNormal[probeIndex] = float4(normalWS, 1);
 
-    // Stable temporal sampling without rotation - key fix for flickering
-    const int NUM_SAMPLES = 4; // Reduced for better temporal distribution
-    float3 totalRadiance = 0;
+    const int NUM_SAMPLES = 4;
 
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
-        // CRITICAL FIX: Use stable sampling without frame rotation
-        // This prevents the temporal instability that caused flickering
-        float2 randVal = StableHash2D(samplingScreenPos, i);
-        
-        // Use importance sampling from reprojected radiance when available
+        float2 randVal = Hash2D(samplingScreenPos, i, g_Frame.frameIndex);
         float3 sampleDir = ImportanceSampleFromCDF(randVal, normalWS, probeIndex);
 
         RayDesc ray;
@@ -180,7 +160,7 @@ void RayGenShader()
         tempPayload.radiance = float3(0, 0, 0);
 
         TraceRay(SceneAS, RAY_FLAG_NONE, 0xFF, 0, 1, 2, ray, tempPayload);
-        float3 NdotL = saturate(dot(normalWS, sampleDir));
+        float NdotL = saturate(dot(normalWS, sampleDir));
         float3 radiance = tempPayload.radiance * NdotL;
 
         // Store in radiance cache with improved temporal accumulation

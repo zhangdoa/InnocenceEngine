@@ -2,29 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "CMake: Configure",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S", ".",
-                "-B", "build",
-                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-                "-DPREPARE_ENV=ON",
-                "-DBUILD_THIRD_PARTY=ON"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "Build",
             "type": "shell",
             "command": "powershell.exe",
@@ -36,67 +13,6 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": ["$msCompile"]
-        },
-        {
-            "label": "CMake: Build Engine",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build", "build",
-                "--config", "RelWithDebInfo",
-                "--target", "InnocenceEngine",
-                "-j"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "dependsOn": "CMake: Configure",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": ["$msCompile"]
-        },
-        {
-            "label": "CMake: Build Editor",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build", "build",
-                "--config", "RelWithDebInfo",
-                "--target", "Editor",
-                "-j"
-            ],
-            "group": "build",
-            "dependsOn": "CMake: Configure",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": ["$msCompile"]
-        },
-        {
-            "label": "Build RenderTest",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-NoProfile", "-NonInteractive",
-                "-Command",
-                "msbuild.exe '${workspaceFolder}/Build/Source/Engine/Platform/WinMain/RenderTest.vcxproj' /p:Configuration=RelWithDebInfo /m /nologo /v:minimal"
-            ],
-            "group": "build",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -166,11 +82,42 @@
             "problemMatcher": []
         },
         {
+            "label": "Test: Interactive (full)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-NonInteractive", "-File", "${workspaceFolder}/Scripts/InteractiveTest.ps1", "-Scenario", "full"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "test", "isDefault": false },
+            "presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: Interactive (path tracer toggle)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-NonInteractive", "-File", "${workspaceFolder}/Scripts/InteractiveTest.ps1", "-Scenario", "toggle_pathtracer"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "test", "isDefault": false },
+            "presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: Interactive (path tracer + reload)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-NonInteractive", "-File", "${workspaceFolder}/Scripts/InteractiveTest.ps1", "-Scenario", "pathtracer_reload"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "test", "isDefault": false },
+            "presentation": { "echo": true, "reveal": "always", "focus": true, "panel": "shared" },
+            "problemMatcher": []
+        },
+        {
             "label": "Test: All",
             "dependsOn": [
                 "Test: TestSuite",
                 "Test: RenderTest draw_instanced",
-                "Test: RenderTest pixel_readback"
+                "Test: RenderTest pixel_readback",
+                "Test: Interactive (full)"
             ],
             "dependsOrder": "sequence",
             "group": {

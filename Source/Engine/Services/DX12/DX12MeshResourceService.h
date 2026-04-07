@@ -15,6 +15,8 @@ namespace Inno
 
 		bool Delete(MeshComponent* mesh) override;
 
+		uint64_t GetBLASAddress(MeshAssetHandle handle) const;
+
 	protected:
 		bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
 		void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;

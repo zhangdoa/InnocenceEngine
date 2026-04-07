@@ -675,7 +675,10 @@ std::vector<Vec4> DX12TextureResourceService::ReadTextureBackToCPU(RenderPassCom
     auto l_hResult = l_readBackHeapBuffer->Map(0, &l_readRange, &l_pData);
     if (FAILED(l_hResult))
     {
-        Log(Error, TextureComp, " failed to map readback heap buffer");
+        Log(Error, TextureComp, " failed to map readback heap buffer HRESULT=", l_hResult,
+            " bufferSize=", l_rawResult.size(), " readRange=", l_readRange.End);
+        auto l_drr = m_ctx->m_device->GetDeviceRemovedReason();
+        Log(Error, "DeviceRemovedReason=", l_drr);
         return {};
     }
     std::memcpy(l_rawResult.data(), l_pData, l_rawResult.size());

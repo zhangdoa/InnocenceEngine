@@ -170,6 +170,63 @@ bool JSONWrapper::LoadScene(const char* fileName)
 				l_Material.m_InstanceName = l_CompName.c_str();
 				AssetService::Load(l_FilePath.c_str(), l_Material, l_EntityID);
 			}
+			else if (l_TypeID == 2) // ModelComponent — expand DrawCallComponents into mesh+material sub-entities
+			{
+				json l_ModelJson;
+				if (!Load(l_FilePath.c_str(), l_ModelJson))
+				{
+					Log(Warning, "LoadScene: failed to load ModelComponent ", l_CompName.c_str());
+					continue;
+				}
+
+				// Get the parent entity's transform as a template for sub-entities
+				auto* l_ParentTransform = l_registry->Get<TransformComponent>(l_EntityID);
+
+				for (auto& dcEntry : l_ModelJson["DrawCallComponents"])
+				{
+					std::string l_dcName = dcEntry["Name"];
+					auto l_dcPath = AssetService::GetAssetFilePath(l_dcName.c_str());
+
+					json l_dcJson;
+					if (!Load(l_dcPath.c_str(), l_dcJson))
+					{
+						Log(Warning, "LoadScene: failed to load DrawCallComponent ", l_dcName.c_str());
+						continue;
+					}
+
+					std::string l_meshName = l_dcJson["MeshComponent"]["Name"];
+					std::string l_materialName = l_dcJson["MaterialComponent"]["Name"];
+
+					// Create sub-entity for this draw call
+					auto l_subName = l_EntityName + l_dcName + "/";
+					auto l_SubEntityID = l_registry->Spawn(ObjectLifespan::Scene, l_subName.c_str());
+
+					// Copy parent transform to sub-entity
+					auto& l_SubTransform = l_registry->Emplace<TransformComponent>(l_SubEntityID);
+					if (l_ParentTransform)
+					{
+						l_SubTransform.m_LocalPos = l_ParentTransform->m_LocalPos;
+						l_SubTransform.m_LocalRot = l_ParentTransform->m_LocalRot;
+						l_SubTransform.m_LocalScale = l_ParentTransform->m_LocalScale;
+					}
+
+					// Load mesh
+					auto l_meshPath = AssetService::GetAssetFilePath(l_meshName.c_str());
+					auto& l_Mesh = l_registry->Emplace<MeshComponent>(l_SubEntityID);
+					l_Mesh.m_InstanceName = l_meshName.c_str();
+					AssetService::Load(l_meshPath.c_str(), l_Mesh, l_SubEntityID);
+					l_Mesh.m_InstanceName = l_meshName.c_str();
+
+					// Load material
+					if (!l_materialName.empty())
+					{
+						auto l_materialPath = AssetService::GetAssetFilePath(l_materialName.c_str());
+						auto& l_Material = l_registry->Emplace<MaterialComponent>(l_SubEntityID);
+						l_Material.m_InstanceName = l_materialName.c_str();
+						AssetService::Load(l_materialPath.c_str(), l_Material, l_SubEntityID);
+					}
+				}
+			}
 			else
 			{
 				Log(Warning, "LoadScene: skipping unknown component type ", l_TypeID,

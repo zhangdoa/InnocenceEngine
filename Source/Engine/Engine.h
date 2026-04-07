@@ -25,6 +25,7 @@ namespace Inno
 		uint32_t parentPID = 0; // if >0, we duplicate handles to this process
 		int totalFrames = 0;  // >0: auto-terminate after this many frames
 		int reloadAtFrame = 0;  // >0: trigger scene reload at this frame
+		int captureFrame = -1;  // >=0: trigger RenderDoc/PIX capture at this frame
 	};
 
 	class IWindowService;

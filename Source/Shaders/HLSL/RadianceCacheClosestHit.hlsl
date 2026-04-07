@@ -47,21 +47,12 @@ void ClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAt
     bool withinBounds = all(prevScreenCoord >= float2(0, 0)) && all(prevScreenCoord <= g_Frame.viewportSize.xy);
     if (withinBounds)
     {
-        float3 hitNormal = normalize(in_opaquePassRT1.Load(int3(prevScreenCoord, 0)).xyz);
-
-        // The outgoing luminance is illuminance times albedo and divided by PI — a simple Lambertian diffuse model
+        // Read the Lambertian diffuse outgoing radiance (albedo * E / PI) from the previous frame.
+        // Lambertian radiance is view-independent, so no NdotV factor.
+        // Radiance is constant along a ray, so no distance attenuation.
         hitRadiance = in_LightPassOutgoingLuminance.Load(int3(prevScreenCoord, 0)).rgb;
-        float3 V = -WorldRayDirection();
-        float3 NdotV = saturate(dot(hitNormal, V));
-        hitRadiance *= NdotV;
 
-        float l_LightAttenuationRadius = length(RayTCurrent());
-        float l_InvertedSquareAttenuationRadius = 1.0 / max(l_LightAttenuationRadius * l_LightAttenuationRadius, EPSILON);
-        // The unnormalized light direction is the ray direction since it is about evaluating the radiance at the ray origin, and the hit point acts as the light source
-        float attenuation = CalculateDistanceAttenuation(WorldRayDirection(), l_InvertedSquareAttenuationRadius);
-        hitRadiance *= attenuation;
-
-        if (isnan(hitRadiance.x) || isnan(hitRadiance.y) || isnan(hitRadiance.z))
+        if (any(isnan(hitRadiance)) || any(isinf(hitRadiance)))
         {
             hitRadiance = float3(0, 0, 0);
         }

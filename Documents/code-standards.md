@@ -295,6 +295,51 @@ inline void BadFunction()
 
 ---
 
-**🎯 ENFORCEMENT:** Code reviews will check compliance with these standards.  
-**📋 UPDATES:** Standards evolve - check for updates before major changes.  
-**🤝 QUESTIONS:** Ask Code Architect for clarification on edge cases.
+## GPU / DXR GUIDELINES
+
+### Matrix Multiplication Convention
+The engine uploads **row-major** matrices from C++ to GPU constant buffers. HLSL's default storage is **column-major**, which means the GPU sees the transpose of what was uploaded. To get the correct result:
+
+```hlsl
+// CORRECT - matches engine convention (row-vector * matrix)
+float4 viewPos = mul(myVector, g_Frame.p_inv);
+
+// WRONG - transposes the operation
+float4 viewPos = mul(g_Frame.p_inv, myVector);
+```
+
+Reference: `common/skyResolver.hlsl` uses `mul(vector, matrix)` consistently. All new shaders must follow this convention.
+
+### Default Transform Must Be Identity, Not Zero
+When a transform matrix is unavailable (e.g. an entity lacks `WorldTransformComponent`), the fallback must be an **identity matrix**, never `Mat4{}` (which is all zeros and collapses geometry to a degenerate point):
+
+```cpp
+// CORRECT
+Mat4 l_transform = l_world ? l_world->m_WorldMatrix : Math::generateIdentityMatrix<float>();
+
+// WRONG - zero matrix destroys geometry
+Mat4 l_transform = l_world ? l_world->m_WorldMatrix : Mat4{};
+```
+
+### Silent Failures Must Log
+Guard clauses that reject work (e.g. wrong `ObjectStatus`, null pointer, empty data) must **always log a warning** so the caller can diagnose issues. A silent `return false` hides bugs:
+
+```cpp
+// CORRECT
+if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
+{
+    Log(Warning, "WriteMappedMemory rejected for [", gpuBuffer->m_InstanceName,
+        "]: ObjectStatus is ", static_cast<int>(gpuBuffer->m_ObjectStatus), ", expected Activated.");
+    return false;
+}
+
+// WRONG - silent rejection hides bugs for weeks
+if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
+    return false;
+```
+
+---
+
+**ENFORCEMENT:** Code reviews will check compliance with these standards.  
+**UPDATES:** Standards evolve - check for updates before major changes.  
+**QUESTIONS:** Ask Code Architect for clarification on edge cases.
