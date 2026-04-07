@@ -19,8 +19,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
-$modelsDir = Join-Path $repoRoot "OriginalAssets" "Models"
-$tempDir = Join-Path $repoRoot "Build" "asset_download_tmp"
+$modelsDir = Join-Path (Join-Path $repoRoot "OriginalAssets") "Models"
+$tempDir = Join-Path (Join-Path $repoRoot "Build") "asset_download_tmp"
 
 if (-not (Test-Path $modelsDir)) {
     New-Item -ItemType Directory -Path $modelsDir -Force | Out-Null
@@ -59,7 +59,7 @@ function Download-Asset {
 # ---------------------------------------------------------------------------
 # GNU FreeFont (engine UI font)
 # ---------------------------------------------------------------------------
-$fontsDir = Join-Path $repoRoot "Data" "Generated" "Fonts"
+$fontsDir = Join-Path (Join-Path (Join-Path $repoRoot "Data") "Generated") "Fonts"
 if ((Test-Path (Join-Path $fontsDir "FreeSans.otf")) -and -not $Force) {
     Write-Host "[SKIP] FreeSans.otf already exists" -ForegroundColor Yellow
 } else {
@@ -70,7 +70,7 @@ if ((Test-Path (Join-Path $fontsDir "FreeSans.otf")) -and -not $Force) {
     if (-not (Test-Path $fontsDir)) {
         New-Item -ItemType Directory -Path $fontsDir -Force | Out-Null
     }
-    Copy-Item (Join-Path $tempDir "freefont-20120503" "FreeSans.otf") (Join-Path $fontsDir "FreeSans.otf") -Force
+    Copy-Item (Join-Path (Join-Path $tempDir "freefont-20120503") "FreeSans.otf") (Join-Path $fontsDir "FreeSans.otf") -Force
     Write-Host "[OK] FreeSans.otf -> $fontsDir" -ForegroundColor Green
 }
 
@@ -129,35 +129,26 @@ Download-Asset -Name "ShaderBall (Material Orb)" `
     }
 
 # ---------------------------------------------------------------------------
-# Intel Sponza + Curtains (manual — requires browser)
+# Intel Sponza Base
 # ---------------------------------------------------------------------------
-Write-Host ""
-Write-Host "========================================================================" -ForegroundColor Magenta
-Write-Host " MANUAL DOWNLOADS REQUIRED (Intel requires browser sign-in)" -ForegroundColor Magenta
-Write-Host "========================================================================" -ForegroundColor Magenta
-Write-Host ""
+Download-Asset -Name "Intel Sponza Base" `
+    -Url "https://cdrdv2.intel.com/v1/dl/getContent/830833?fileName=main1_sponza.zip" `
+    -TargetDir (Join-Path $modelsDir "Sponza_PBR") `
+    -PostProcess {
+        param($archive, $dest)
+        Expand-Archive -Path $archive -DestinationPath $dest -Force
+    }
 
-$sponzaDir = Join-Path $modelsDir "Sponza_PBR"
-if ((Test-Path $sponzaDir) -and -not $Force) {
-    Write-Host "[SKIP] Intel Sponza Base already exists at $sponzaDir" -ForegroundColor Yellow
-} else {
-    Write-Host "[TODO] Intel Sponza Base Scene" -ForegroundColor Yellow
-    Write-Host "  1. Open: https://www.intel.com/content/www/us/en/content-details/830833/sponza-base-scene.html"
-    Write-Host "  2. Download the zip (glTF or FBX format)"
-    Write-Host "  3. Extract to: $sponzaDir"
-    Write-Host ""
-}
-
-$curtainsDir = Join-Path $modelsDir "Sponza_Curtains"
-if ((Test-Path $curtainsDir) -and -not $Force) {
-    Write-Host "[SKIP] Intel Colorful Curtains already exists at $curtainsDir" -ForegroundColor Yellow
-} else {
-    Write-Host "[TODO] Intel Colorful Curtains" -ForegroundColor Yellow
-    Write-Host "  1. Open: https://www.intel.com/content/www/us/en/content-details/726650/colorful-curtains.html"
-    Write-Host "  2. Download the zip (glTF or FBX format)"
-    Write-Host "  3. Extract to: $curtainsDir"
-    Write-Host ""
-}
+# ---------------------------------------------------------------------------
+# Intel Colorful Curtains
+# ---------------------------------------------------------------------------
+Download-Asset -Name "Intel Colorful Curtains" `
+    -Url "https://cdrdv2.intel.com/v1/dl/getContent/726650?explicitVersion=true&fileName=PKG_A_Curtains.zip" `
+    -TargetDir (Join-Path $modelsDir "Sponza_Curtains") `
+    -PostProcess {
+        param($archive, $dest)
+        Expand-Archive -Path $archive -DestinationPath $dest -Force
+    }
 
 # ---------------------------------------------------------------------------
 # Cleanup

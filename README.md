@@ -172,12 +172,13 @@ This automatically downloads:
 | Stanford Dragon | [Stanford 3D Scanning Repository](https://graphics.stanford.edu/data/3Dscanrep/) | PLY | Stanford (non-commercial) |
 | ShaderBall (material orb) | [derkreature/ShaderBall](https://github.com/derkreature/ShaderBall) | FBX | Public domain (Unlicense) |
 
-The script will also print instructions for two assets that require manual download (Intel browser sign-in):
+The script also downloads:
 
-| Asset | Source | Format |
-| --- | --- | --- |
-| Sponza Base Scene | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/830833/sponza-base-scene.html) | glTF / FBX |
-| Colorful Curtains | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/726650/colorful-curtains.html) | glTF / FBX |
+| Asset | Source | Format | License |
+| --- | --- | --- | --- |
+| Sponza Base Scene | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/830833/sponza-base-scene.html) | glTF / FBX | Intel EULA |
+| Colorful Curtains | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/726650/colorful-curtains.html) | glTF / FBX | Intel EULA |
+| GNU FreeFont | [GNU FreeFont](https://ftp.gnu.org/gnu/freefont/) | OTF | GPLv3 |
 
 After downloading, launch the engine and press **Y** to import models into engine format.
 
