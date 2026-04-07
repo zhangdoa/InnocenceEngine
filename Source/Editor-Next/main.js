@@ -1,4 +1,4 @@
-const { app, BrowserWindow, sharedTexture, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const WebSocket = require('ws');
@@ -6,7 +6,6 @@ const WebSocket = require('ws');
 let engineProcess;
 let win;
 let socket;
-let importedTexture;
 
 function spawnEngine() {
   if (engineProcess) {
@@ -26,6 +25,7 @@ function spawnEngine() {
   console.log(`Main: Spawning engine at ${enginePath}`);
 
   // Standard editor session parameters
+  // Detached mode: Engine runs in its own window, no shared texture.
   engineProcess = spawn(enginePath, ['-mode', '2', '-renderer', '0', '-loglevel', '1', '-parent_pid', process.pid.toString()], {
     cwd: binDir
   });
@@ -61,48 +61,6 @@ function restartEngine() {
   setTimeout(spawnEngine, 1000);
 }
 
-function createMenu() {
-  const template = [
-    {
-      label: 'File',
-      submenu: [
-        { role: 'quit' }
-      ]
-    },
-    {
-      label: 'Engine',
-      submenu: [
-        {
-          label: 'Restart Engine',
-          accelerator: 'CmdOrCtrl+R',
-          click: () => { restartEngine(); }
-        },
-        {
-          label: 'Stop Engine',
-          click: () => { stopEngine(); }
-        }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    }
-  ];
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
-}
-
 function createWindow() {
   win = new BrowserWindow({ 
     width: 1600, 
@@ -113,6 +71,9 @@ function createWindow() {
     }
   });
   
+  // Disable native menu bar in favor of Naive UI menu
+  Menu.setApplicationMenu(null);
+
   // Load the app - check if we are in production (dist) or dev
   const indexPath = path.join(__dirname, 'dist/index.html');
   if (require('fs').existsSync(indexPath)) {
@@ -126,7 +87,6 @@ function createWindow() {
     console.log(`[RENDERER] ${message}`);
   });
 
-  createMenu();
   spawnEngine();
 }
 
@@ -144,16 +104,7 @@ function connectToEngine() {
     const msg = JSON.parse(data);
     console.log('Main: Message from Engine:', msg);
 
-    if (msg.type === 'HELLO_REPLY') {
-      if (msg.sharedHandle && msg.sharedHandle !== 0) {
-        setupSharedTexture(msg);
-      }
-    } else if (msg.type === 'VIEWPORT_READY') {
-      setupSharedTexture(msg);
-      if (win) win.webContents.send('viewport-ready', msg);
-    }
-    
-    // Proxy other messages to renderer if needed
+    // Proxy other messages to renderer
     if (win) win.webContents.send('engine-message', msg);
   });
 
@@ -164,68 +115,9 @@ function connectToEngine() {
   });
 }
 
-function setupSharedTexture(info) {
-  if (!info.sharedHandle || info.sharedHandle === 0) {
-    console.log('Main: Skipping shared texture import (handle is 0)');
-    return;
-  }
-
-  if (process.env.E2E_TEST) {
-    console.log('Main: Skipping shared texture import due to E2E_TEST environment variable.');
-    return;
-  }
-
-  if (importedTexture) {
-    importedTexture.release();
-  }
-
-  const handleBigInt = BigInt(info.sharedHandle);
-  console.log(`Main: Importing Shared Texture 0x${handleBigInt.toString(16).toUpperCase()} (${info.width}x${info.height})`);
-
-  try {
-    // Windows HANDLE is 64-bit on x64, convert BigInt to Little-Endian Buffer
-    const handleBuffer = Buffer.alloc(8);
-    handleBuffer.writeBigUInt64LE(handleBigInt, 0);
-
-    importedTexture = sharedTexture.importSharedTexture({
-      textureInfo: {
-        handle: {
-          ntHandle: handleBuffer
-        },
-        pixelFormat: info.format === 'rgba' ? 'rgba' : 'bgra',
-        codedSize: { width: info.width, height: info.height },
-        visibleRect: { x: 0, y: 0, width: info.width, height: info.height }
-      },
-      allReferencesReleased: () => {
-        console.log('Main: All references to shared texture released');
-      }
-    });
-
-    console.log('Main: Shared texture imported successfully. Waiting for renderer to request it...');
-  } catch (e) {
-    console.error('Main: Failed to import shared texture:', e);
-  }
-}
-
 app.whenReady().then(() => {
   createWindow();
   
-  ipcMain.on('renderer-ready-for-texture', () => {
-    if (importedTexture && win) {
-      console.log('Main: Renderer requested texture, sending now...');
-      sharedTexture.sendSharedTexture({
-        frame: win.webContents.mainFrame,
-        importedSharedTexture: importedTexture
-      }).then(() => {
-        console.log('Main: Shared texture sent to renderer successfully');
-      }).catch(e => {
-        console.error('Main: Failed to send shared texture to renderer:', e.message);
-      });
-    } else {
-      console.log('Main: Renderer requested texture, but none is imported yet.');
-    }
-  });
-
   ipcMain.on('engine-stop', () => {
     stopEngine();
   });
