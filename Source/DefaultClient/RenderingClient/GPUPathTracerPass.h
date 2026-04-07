@@ -21,7 +21,7 @@ namespace Inno
 		RenderPassComponent* GetRenderPassComp() override;
 
 		GPUResourceComponent* GetResult();
-		CommandListComponent* GetToneMapCommandList();
+	
 
 		void ResetAccumulation();
 
@@ -46,14 +46,8 @@ namespace Inno
 		RenderPassComponent*    m_RayTracingRenderPassComp = nullptr;
 		ShaderProgramComponent* m_RayTracingSPC            = nullptr;
 
-		// Tonemap compute pass
-		RenderPassComponent*    m_ToneMapRenderPassComp = nullptr;
-		ShaderProgramComponent* m_ToneMapSPC            = nullptr;
-		CommandListComponent*   m_ToneMapCommandList    = nullptr;
-
 		// Owned GPU resources
 		TextureComponent*   m_AccumulationBuffer = nullptr;
-		TextureComponent*   m_ToneMapOutput      = nullptr;
 		GPUBufferComponent* m_FrameCountCB       = nullptr;
 
 		// Geometry mega-buffers (rebuilt on scene load)
