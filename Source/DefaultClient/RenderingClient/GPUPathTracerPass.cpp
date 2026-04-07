@@ -374,9 +374,12 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_perFrameBuffer  = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_resolution      = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	// Graphics CL: transition AccumulationBuffer to ReadWrite
+	// Graphics CL: transition textures to compute-writable states.
+	// Must happen on Graphics because tracked state may include PIXEL_SHADER_RESOURCE
+	// (set by swap chain presentation), which is invalid on compute command lists.
 	l_fmService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Graphics, 0);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	l_fmService->TryToTransitState(m_ToneMapOutput, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Graphics);
 
 	// Compute CL: bind and dispatch rays
@@ -395,10 +398,9 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
 
-	// ToneMap CL
+	// ToneMap CL: ToneMapOutput already in ReadWrite (UAV) from Graphics CL
 	l_fmService->CommandListBegin(m_ToneMapRenderPassComp, m_ToneMapCommandList, 0);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_ToneMapCommandList, Accessibility::ReadWrite, Accessibility::ReadOnly);
-	l_fmService->TryToTransitState(m_ToneMapOutput, m_ToneMapCommandList, Accessibility::ReadOnly, Accessibility::ReadWrite);
 	l_fmService->BindRenderPassComponent(m_ToneMapRenderPassComp, m_ToneMapCommandList);
 
 	l_fmService->BindGPUResource(m_ToneMapRenderPassComp, m_ToneMapCommandList, ShaderStage::Compute, l_perFrameBuffer,    0);

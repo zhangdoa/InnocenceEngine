@@ -266,6 +266,12 @@ bool DX12FrameManagementService::TryToTransitState(TextureComponent* texture, Co
 	if (targetAccessibility.IsCopyDestination())
 		l_newState = D3D12_RESOURCE_STATE_COPY_DEST;
 
+	// Compute command lists cannot use PIXEL_SHADER_RESOURCE state in barriers.
+	// Strip it from the target state; the source state must be compute-compatible
+	// (caller is responsible for doing cross-queue transitions on Graphics).
+	if (commandList->m_Type == GPUEngineType::Compute)
+		l_newState &= ~D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
 	if (l_oldState != l_newState)
 	{
 		auto l_transition = CD3DX12_RESOURCE_BARRIER::Transition(

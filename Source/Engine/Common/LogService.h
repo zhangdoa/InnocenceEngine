@@ -32,6 +32,7 @@ namespace Inno {
 		}
 
 		void SetFatalOnError(bool fatal) { m_FatalOnError = fatal; }
+		void Flush() { m_LogFile.flush(); }
 
 		void SetDefaultLogLevel(LogLevel logLevel);
 		LogLevel GetDefaultLogLevel();

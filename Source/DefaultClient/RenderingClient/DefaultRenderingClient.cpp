@@ -256,6 +256,8 @@ namespace Inno
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			GPUPathTracerPass::Get().PrepareCommandList();
+			m_Canvas = GPUPathTracerPass::Get().GetResult();
+			m_CanvasOwner = GPUPathTracerPass::Get().GetRenderPassComp();
 			return true;
 		}
 
