@@ -21,7 +21,7 @@
             @dblclick="onItemDblClick(item)"
           >
             <div class="icon-wrapper">
-              <n-icon size="32" :color="item.isDir ? '#eed49f' : item.name.endsWith('.InnoScene') ? '#8aadf4' : '#a5adcb'">
+              <n-icon size="32" :color="item.isDir ? 'var(--ctp-yellow)' : item.name.endsWith('.InnoScene') ? 'var(--ctp-blue)' : 'var(--ctp-subtext0)'">
                 <folder-outline v-if="item.isDir" />
                 <planet-outline v-else-if="item.name.endsWith('.InnoScene')" />
                 <document-outline v-else />
@@ -98,13 +98,13 @@ const onItemDblClick = (item) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #24273a; /* Catppuccin Base */
+  background: var(--ctp-base);
 }
 
 .toolbar {
   padding: 8px 16px;
-  background: #1e2030; /* Catppuccin Mantle */
-  border-bottom: 1px solid #494d64;
+  background: var(--ctp-mantle);
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 
 .asset-content {
@@ -123,7 +123,7 @@ const onItemDblClick = (item) => {
 }
 
 .asset-item:hover {
-  background: #363a4f; /* Catppuccin Surface0 */
+  background: var(--ctp-surface0);
 }
 
 .icon-wrapper {
@@ -139,6 +139,6 @@ const onItemDblClick = (item) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-width: 100%;
-  color: #cad3f5;
+  color: var(--ctp-text);
 }
 </style>

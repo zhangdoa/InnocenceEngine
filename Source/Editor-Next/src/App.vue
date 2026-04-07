@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides" style="height: 100%">
+  <n-config-provider :theme="activeTheme" :theme-overrides="themeOverrides" style="height: 100%">
     <n-message-provider>
       <app-layout />
     </n-message-provider>
@@ -7,60 +7,83 @@
 </template>
 
 <script setup>
-import { NConfigProvider, NMessageProvider, darkTheme } from 'naive-ui'
+import { computed, watch } from 'vue'
+import { NConfigProvider, NMessageProvider, darkTheme, lightTheme } from 'naive-ui'
 import AppLayout from './components/AppLayout.vue'
+import { palette } from './palette'
+import { editorState } from './store'
+
+const activeTheme = computed(() => editorState.themeFlavor === 'latte' ? lightTheme : darkTheme)
+const currentPalette = computed(() => palette[editorState.themeFlavor])
 
 /**
- * Catppuccin Macchiato Theme Overrides for Naive UI
+ * Catppuccin Theme Overrides for Naive UI
  */
-const themeOverrides = {
+const themeOverrides = computed(() => ({
   common: {
-    primaryColor: '#8aadf4', // Blue
-    primaryColorHover: '#91d7e3', // Sky
-    primaryColorPressed: '#7dc4e4', // Sapphire
-    bodyColor: '#24273a', // Base
-    cardColor: '#363a4f', // Surface0
-    modalColor: '#1e2030', // Mantle
-    popoverColor: '#1e2030', // Mantle
-    textColorBase: '#cad3f5', // Text
-    textColor1: '#cad3f5',
-    textColor2: '#b8c0e0', // Subtext1
-    textColor3: '#a5adcb', // Subtext0
-    dividerColor: '#494d64', // Surface1
-    borderColor: '#494d64',
+    primaryColor: currentPalette.value.blue,
+    primaryColorHover: currentPalette.value.sky,
+    primaryColorPressed: currentPalette.value.sapphire,
+    bodyColor: currentPalette.value.base,
+    cardColor: currentPalette.value.surface0,
+    modalColor: currentPalette.value.mantle,
+    popoverColor: currentPalette.value.mantle,
+    textColorBase: currentPalette.value.text,
+    textColor1: currentPalette.value.text,
+    textColor2: currentPalette.value.subtext1,
+    textColor3: currentPalette.value.subtext0,
+    dividerColor: currentPalette.value.surface1,
+    borderColor: currentPalette.value.surface1,
   },
   Button: {
-    textColorText: '#cad3f5',
+    textColorText: currentPalette.value.text,
   },
   Input: {
-    color: '#1e2030',
-    colorFocus: '#1e2030',
-    border: '1px solid #494d64',
+    color: currentPalette.value.mantle,
+    colorFocus: currentPalette.value.mantle,
+    textColor: currentPalette.value.text,
+    border: `1px solid ${currentPalette.value.surface1}`,
+    placeholderColor: currentPalette.value.overlay0,
+  },
+  InputNumber: {
+    color: currentPalette.value.mantle,
+    textColor: currentPalette.value.text,
   },
   Menu: {
-    itemColorActive: '#363a4f',
-    itemTextColorActive: '#8aadf4',
-    itemIconColorActive: '#8aadf4',
+    itemColorActive: currentPalette.value.surface0,
+    itemTextColorActive: currentPalette.value.blue,
+    itemIconColorActive: currentPalette.value.blue,
   },
   Tag: {
-    colorSuccess: '#a6da95',
-    colorError: '#ed8796',
-    colorInfo: '#8aadf4',
-    colorWarning: '#eed49f',
+    colorSuccess: currentPalette.value.green,
+    colorError: currentPalette.value.red,
+    colorInfo: currentPalette.value.blue,
+    colorWarning: currentPalette.value.yellow,
   }
-}
+}))
+
+// Update global CSS variables dynamically when theme changes
+watch(() => editorState.themeFlavor, (newFlavor) => {
+  const p = palette[newFlavor];
+  const root = document.documentElement;
+  Object.keys(p).forEach(key => {
+    root.style.setProperty(`--ctp-${key}`, p[key]);
+  });
+}, { immediate: true });
 </script>
 
 <style>
-/* Global Catppuccin Macchiato theme overrides for dockview */
+/* Base Catppuccin variables will be managed by the watch effect above */
+
+/* Global Catppuccin theme overrides for dockview */
 .dockview-theme-abyssal {
-  --dv-pane-background-color: #24273a;
-  --dv-tabs-and-actions-container-background-color: #1e2030;
-  --dv-activegroup-visiblepanel-tab-background-color: #24273a;
-  --dv-inactivegroup-visiblepanel-tab-background-color: #363a4f;
-  --dv-tab-text-color: #a5adcb;
-  --dv-active-tab-text-color: #cad3f5;
-  --dv-separator-color: #494d64;
+  --dv-pane-background-color: var(--ctp-base);
+  --dv-tabs-and-actions-container-background-color: var(--ctp-mantle);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--ctp-base);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--ctp-surface0);
+  --dv-tab-text-color: var(--ctp-subtext0);
+  --dv-active-tab-text-color: var(--ctp-text);
+  --dv-separator-color: var(--ctp-surface1);
   --dv-group-view-drop-target-color: rgba(138, 173, 244, 0.2);
 }
 
@@ -68,13 +91,20 @@ html, body, #app {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #1e2030; /* Mantle */
+  background: var(--ctp-mantle);
+  transition: background 0.3s ease;
 }
 
 body {
   overflow: hidden;
-  color: #cad3f5;
+  color: var(--ctp-text);
   font-family: v-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Force consistency on all inputs/widgets to prevent white background leaks */
+input, select, textarea {
+  background-color: var(--ctp-mantle) !important;
+  color: var(--ctp-text) !important;
 }
 
 /* Scrollbar styling for Catppuccin */
@@ -83,13 +113,13 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #1e2030;
+  background: var(--ctp-mantle);
 }
 ::-webkit-scrollbar-thumb {
-  background: #494d64;
+  background: var(--ctp-surface1);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5b6078;
+  background: var(--ctp-surface2);
 }
 </style>

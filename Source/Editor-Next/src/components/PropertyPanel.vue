@@ -41,8 +41,8 @@ const updateColor = (comp, hex) => {
     <n-scrollbar v-else class="properties-content">
       <div class="entity-info">
         <n-space align="center" :size="8">
-          <n-icon size="20" color="#8aadf4"><cube-outline /></n-icon>
-          <n-h3 style="margin: 0; color: #cad3f5;">{{ editorState.selectedEntity.name }}</n-h3>
+          <n-icon size="20" color="var(--ctp-blue)"><cube-outline /></n-icon>
+          <n-h3 style="margin: 0; color: var(--ctp-text);">{{ editorState.selectedEntity.name }}</n-h3>
         </n-space>
         <n-text depth="3" style="font-size: 10px; font-family: monospace; margin-left: 28px;">
           UID: {{ editorState.selectedEntity.id }}
@@ -57,9 +57,9 @@ const updateColor = (comp, hex) => {
         >
           <template #header>
             <n-space align="center" :size="8">
-              <n-icon v-if="comp.type === 'TransformComponent'" color="#91d7e3"><settings-outline /></n-icon>
-              <n-icon v-else-if="comp.type === 'LightComponent'" color="#eed49f"><bulb-outline /></n-icon>
-              <n-text strong style="color: #cad3f5;">{{ comp.type }}</n-text>
+              <n-icon v-if="comp.type === 'TransformComponent'" color="var(--ctp-sky)"><settings-outline /></n-icon>
+              <n-icon v-else-if="comp.type === 'LightComponent'" color="var(--ctp-yellow)"><bulb-outline /></n-icon>
+              <n-text strong style="color: var(--ctp-text);">{{ comp.type }}</n-text>
             </n-space>
           </template>
 
@@ -70,17 +70,17 @@ const updateColor = (comp, hex) => {
                 <n-grid :cols="3" :x-gap="6">
                   <n-grid-item>
                     <n-input-number v-model:value="comp.pos[0]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
-                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #ed8796;">X</n-text></template>
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: var(--ctp-red);">X</n-text></template>
                     </n-input-number>
                   </n-grid-item>
                   <n-grid-item>
                     <n-input-number v-model:value="comp.pos[1]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
-                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #a6da95;">Y</n-text></template>
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: var(--ctp-green);">Y</n-text></template>
                     </n-input-number>
                   </n-grid-item>
                   <n-grid-item>
                     <n-input-number v-model:value="comp.pos[2]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
-                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #8aadf4;">Z</n-text></template>
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: var(--ctp-blue);">Z</n-text></template>
                     </n-input-number>
                   </n-grid-item>
                 </n-grid>
@@ -149,7 +149,7 @@ const updateColor = (comp, hex) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #24273a; /* Catppuccin Base */
+  background: var(--ctp-base);
 }
 
 .no-selection {
@@ -157,26 +157,26 @@ const updateColor = (comp, hex) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #24273a;
+  background: var(--ctp-base);
 }
 
 .properties-content {
   flex: 1;
-  padding: 24px 20px; /* Increased padding to avoid sticking to edges */
+  padding: 24px 20px;
 }
 
 .entity-info {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #494d64;
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 
 :deep(.n-collapse-item) {
   margin-bottom: 16px;
-  background: #363a4f; /* Catppuccin Surface0 */
+  background: var(--ctp-surface0);
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid #494d64;
+  border: 1px solid var(--ctp-surface1);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
@@ -189,11 +189,11 @@ const updateColor = (comp, hex) => {
 }
 
 :deep(.n-input-number) {
-  background: #24273a;
+  background: var(--ctp-base);
 }
 
 :deep(.n-form-item-label) {
-  color: #a5adcb !important; /* Catppuccin Subtext0 */
+  color: var(--ctp-subtext0) !important;
   font-size: 12px;
 }
 </style>

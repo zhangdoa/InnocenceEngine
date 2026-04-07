@@ -9,8 +9,15 @@ export const editorState = reactive({
   isConnected: false,
   isUserInitiatedShutdown: false,
   lastMessage: '',
+  themeFlavor: 'macchiato', // Default flavor
 
   // Actions
+  setTheme(flavor) {
+    if (['latte', 'frappe', 'macchiato', 'mocha'].includes(flavor)) {
+      this.themeFlavor = flavor;
+    }
+  },
+
   reset() {
     console.log('Store: Resetting state...');
     this.entities = [];

@@ -50,11 +50,11 @@ const selectEntity = (id) => {
           @click="selectEntity(entity.id)"
         >
           <n-space align="center" :size="8">
-            <n-icon size="16" :color="editorState.selectedEntityId === entity.id ? '#c6a0f6' : '#a5adcb'">
+            <n-icon size="16" :color="editorState.selectedEntityId === entity.id ? 'var(--ctp-mauve)' : 'var(--ctp-subtext0)'">
               <cube-outline />
             </n-icon>
             <n-text :strong="editorState.selectedEntityId === entity.id" 
-                    :style="{ color: editorState.selectedEntityId === entity.id ? '#cad3f5' : '#b8c0e0' }">
+                    :style="{ color: editorState.selectedEntityId === entity.id ? 'var(--ctp-text)' : 'var(--ctp-subtext1)' }">
               {{ entity.name }}
             </n-text>
           </n-space>
@@ -69,13 +69,13 @@ const selectEntity = (id) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #24273a; /* Catppuccin Base */
+  background: var(--ctp-base);
 }
 
 .search-bar {
   padding: 12px;
-  background: #24273a;
-  border-bottom: 1px solid #1e2030;
+  background: var(--ctp-base);
+  border-bottom: 1px solid var(--ctp-mantle);
 }
 
 .empty-container {
@@ -102,11 +102,11 @@ const selectEntity = (id) => {
 }
 
 :deep(.n-list-item:hover) {
-  background: #363a4f !important; /* Catppuccin Surface0 */
+  background: var(--ctp-surface0) !important;
 }
 
 .entity-item.selected {
-  background: #363a4f !important; /* Catppuccin Surface0 */
+  background: var(--ctp-surface0) !important;
   position: relative;
 }
 
@@ -117,6 +117,6 @@ const selectEntity = (id) => {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: #c6a0f6; /* Catppuccin Mauve */
+  background: var(--ctp-mauve);
 }
 </style>

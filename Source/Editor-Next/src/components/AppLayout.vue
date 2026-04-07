@@ -2,7 +2,7 @@
   <div class="editor-shell">
     <header class="editor-header">
       <div class="header-left">
-        <n-menu mode="horizontal" :options="menuOptions" class="menu-bar" />
+        <n-menu mode="horizontal" :options="menuOptions" class="menu-bar" @update:value="handleMenuClick" />
       </div>
       <div class="header-right">
         <n-space align="center" :size="20">
@@ -45,6 +45,7 @@
       <n-space justify="space-between" align="center" style="width: 100%; height: 100%; padding: 0 12px;">
         <n-text depth="3" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Ready</n-text>
         <n-text depth="3" class="flex-grow" style="font-size: 11px; font-family: monospace;">
+          <n-icon style="vertical-align: middle; margin-right: 4px;"><component :is="icons.terminal" /></n-icon>
           {{ editorState.lastMessage || 'System Idle' }}
         </n-text>
         <n-text depth="3" style="font-size: 10px;">v0.0.9</n-text>
@@ -54,26 +55,66 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, shallowRef, markRaw } from 'vue'
+import { ref, onMounted, onUnmounted, shallowRef, markRaw, h } from 'vue'
 import { 
   NMenu, NButton, NButtonGroup, NTag, NSpace, NText, useMessage, NIcon
 } from 'naive-ui'
 import { 
   Power, Refresh, SaveOutline, TerminalOutline,
-  CheckmarkCircle, CloseCircle
+  CheckmarkCircle, CloseCircle, ColorPaletteOutline,
+  SettingsOutline, FlaskOutline, SunnyOutline, MoonOutline
 } from '@vicons/ionicons5'
 import { DockviewVue } from 'dockview-vue'
 import { editorState } from '../store'
 
 import 'dockview-vue/dist/styles/dockview.css'
 
+const renderIcon = (icon) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
+
 // Menu Options
 const menuOptions = [
-  { label: 'Project', key: 'file' },
-  { label: 'Scene', key: 'edit' },
-  { label: 'Tools', key: 'view' },
-  { label: 'Engine', key: 'engine' }
+  { 
+    label: 'Editor', 
+    key: 'editor',
+    icon: renderIcon(SettingsOutline),
+    children: [
+      {
+        label: 'Theme',
+        key: 'theme',
+        icon: renderIcon(ColorPaletteOutline),
+        children: [
+          { label: 'Latte (Light)', key: 'theme-latte', icon: renderIcon(SunnyOutline) },
+          { label: 'Frappé', key: 'theme-frappe', icon: renderIcon(FlaskOutline) },
+          { label: 'Macchiato', key: 'theme-macchiato', icon: renderIcon(MoonOutline) },
+          { label: 'Mocha (Dark)', key: 'theme-mocha', icon: renderIcon(MoonOutline) }
+        ]
+      }
+    ]
+  },
+  { 
+    label: 'Engine', 
+    key: 'engine',
+    icon: renderIcon(Power),
+    children: [
+      { label: 'Restart', key: 'engine-restart', icon: renderIcon(Refresh) },
+      { label: 'Stop', key: 'engine-stop', icon: renderIcon(Power) }
+    ]
+  }
 ]
+
+const handleMenuClick = (key) => {
+  if (key.startsWith('theme-')) {
+    const flavor = key.replace('theme-', '');
+    editorState.setTheme(flavor);
+    message.info(`Theme changed to ${flavor}`);
+  } else if (key === 'engine-restart') {
+    restartEngine();
+  } else if (key === 'engine-stop') {
+    stopEngine();
+  }
+}
 
 // Icon mapping for template
 const icons = {
@@ -124,6 +165,7 @@ const setupIpc = () => {
     if (msg.type === 'SCENE_DATA') {
       editorState.entities = msg.entities
     } else if (msg.type === 'ENTITY_DETAILS') {
+      console.log('AppLayout: Setting selectedEntity details');
       editorState.selectedEntity = msg.details
     }
   })
@@ -194,8 +236,8 @@ onUnmounted(() => {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #24273a; /* Catppuccin Macchiato Base */
-  color: #cad3f5; /* Catppuccin Macchiato Text */
+  background: var(--ctp-base);
+  color: var(--ctp-text);
 }
 
 .editor-header {
@@ -205,8 +247,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: #1e2030; /* Catppuccin Macchiato Mantle */
-  border-bottom: 1px solid #494d64; /* Catppuccin Macchiato Surface1 */
+  background: var(--ctp-mantle);
+  border-bottom: 1px solid var(--ctp-surface1);
   user-select: none;
 }
 
@@ -237,14 +279,14 @@ onUnmounted(() => {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #24273a;
+  background: var(--ctp-base);
 }
 
 .editor-footer {
   height: 28px;
   flex-shrink: 0;
-  background: #1e2030;
-  border-top: 1px solid #494d64;
+  background: var(--ctp-mantle);
+  border-top: 1px solid var(--ctp-surface1);
 }
 
 .flex-grow { flex: 1; text-align: center; }
