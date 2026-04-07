@@ -126,6 +126,39 @@ float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
     return normalize(tangent * H.x + bitangent * H.y + N * H.z);
 }
 
+float3 CosineSampleHemisphere(float2 xi, float3 N)
+{
+    float phi = 2.0f * 3.14159265f * xi.x;
+    float cosTheta = sqrt(1.0f - xi.y);
+    float sinTheta = sqrt(xi.y);
+
+    float3 H = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+    float3 up    = abs(N.z) < 0.999f ? float3(0, 0, 1) : float3(1, 0, 0);
+    float3 tangent   = normalize(cross(up, N));
+    float3 bitangent = cross(N, tangent);
+
+    return normalize(tangent * H.x + bitangent * H.y + N * H.z);
+}
+
+float3 SampleSunDirection(float3 sunDir, float2 xi)
+{
+    float r = sin(SUN_ANGULAR_RADIUS);
+    float d = cos(SUN_ANGULAR_RADIUS);
+
+    float phi = 2.0f * 3.14159265f * xi.x;
+    float cosTheta = 1.0f - xi.y * (1.0f - d);
+    float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
+
+    float3 H = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+    float3 up    = abs(sunDir.z) < 0.999f ? float3(0, 0, 1) : float3(1, 0, 0);
+    float3 tangent   = normalize(cross(up, sunDir));
+    float3 bitangent = cross(sunDir, tangent);
+
+    return normalize(tangent * H.x + bitangent * H.y + sunDir * H.z);
+}
+
 float3 SkyColor(float3 dir)
 {
     return lerp(float3(0.1f, 0.15f, 0.2f), float3(0.5f, 0.7f, 1.0f), saturate(dir.y));
@@ -185,7 +218,8 @@ void RayGenShader()
         float  metalness = payload.metalness;
         float  roughness = max(payload.roughness, 0.04f);
 
-        float3 lightDir = normalize(g_Frame.sun_direction.xyz);
+        // Direct sun lighting with soft shadow (jittered sun disk)
+        float3 lightDir = SampleSunDirection(normalize(g_Frame.sun_direction.xyz), Rand2(rng));
         float3 lightIlluminance = g_Frame.sun_illuminance.xyz;
 
         ShadowPayload shadow;
@@ -203,27 +237,74 @@ void RayGenShader()
             radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
         }
 
-        float2 xi = Rand2(rng);
-        float3 H = ImportanceSampleGGX(xi, N, roughness);
-        float3 L = reflect(-V, H);
-        float NdotL = dot(N, L);
-        if (NdotL <= 0.0f) break;
-
+        // Multi-lobe importance sampling: choose diffuse or specular path
         float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
-        float3 F  = FresnelSchlick(max(dot(H, V), 0.0f), F0, 1.0f);
-        float  D  = DistributionGGX(N, H, roughness);
-        float  alpha = roughness * roughness;
-        float  G  = GeometrySmithGGXCorrelated(NdotL, max(dot(N, V), 0.0f), alpha);
-        float  NdotH = max(dot(N, H), 0.0f);
-        float  VdotH = max(dot(V, H), 0.0f);
-        float  pdf   = (D * NdotH) / (4.0f * VdotH + 0.0001f);
+        float NdotV = max(dot(N, V), 0.0f);
+        float3 F_approx = FresnelSchlick(NdotV, F0, 1.0f);
+        float specWeight = saturate(max(F_approx.x, max(F_approx.y, F_approx.z)) + metalness);
+        float diffWeight = (1.0f - specWeight) * (1.0f - metalness);
+        float totalWeight = diffWeight + specWeight;
+        float pDiffuse = diffWeight / max(totalWeight, 0.0001f);
 
-        // Correlated Smith G already includes 1/(4*NdotL*NdotV)
-        float3 specular = D * G * F;
-        throughput *= specular * NdotL / max(pdf, 0.0001f);
+        float lobeSample = Rand(rng);
+        float2 xi = Rand2(rng);
+        float3 L;
+        float pdf;
 
+        if (lobeSample < pDiffuse)
+        {
+            // Diffuse path: cosine-weighted hemisphere sampling
+            L = CosineSampleHemisphere(xi, N);
+            float NdotL = max(dot(N, L), 0.0f);
+            float cosinePdf = NdotL / 3.14159265f;
+
+            // Evaluate full BRDF for this direction
+            float3 H = normalize(V + L);
+            float LdotH = max(dot(L, H), 0.0f);
+            float3 F = FresnelSchlick(LdotH, F0, 1.0f);
+            float3 kD = (1.0f - F) * (1.0f - metalness);
+            float3 brdfDiffuse = kD * albedo / 3.14159265f;
+
+            pdf = pDiffuse * cosinePdf;
+            throughput *= brdfDiffuse * NdotL / max(pdf, 0.0001f);
+        }
+        else
+        {
+            // Specular path: GGX importance sampling
+            float3 H = ImportanceSampleGGX(xi, N, roughness);
+            L = reflect(-V, H);
+            float NdotL = dot(N, L);
+            if (NdotL <= 0.0f) break;
+
+            float  D     = DistributionGGX(N, H, roughness);
+            float  alpha = roughness * roughness;
+            float  G     = GeometrySmithGGXCorrelated(NdotL, NdotV, alpha);
+            float  NdotH = max(dot(N, H), 0.0f);
+            float  VdotH = max(dot(V, H), 0.0f);
+            float3 F     = FresnelSchlick(VdotH, F0, 1.0f);
+
+            float ggxPdf = (D * NdotH) / (4.0f * VdotH + 0.0001f);
+            pdf = (1.0f - pDiffuse) * ggxPdf;
+
+            float3 specular = D * G * F;
+            throughput *= specular * NdotL / max(pdf, 0.0001f);
+        }
+
+        // Russian roulette
         float maxComp = max(throughput.x, max(throughput.y, throughput.z));
-        if (maxComp < 0.01f) break;
+        if (maxComp < 0.01f)
+        {
+            if (bounce >= 2)
+            {
+                float survivalProb = max(maxComp, 0.05f);
+                if (Rand(rng) > survivalProb) break;
+                throughput /= survivalProb;
+            }
+            else
+            {
+                break;
+            }
+        }
 
         ray.Origin    = payload.hitPos + N * 0.001f;
         ray.Direction = L;
