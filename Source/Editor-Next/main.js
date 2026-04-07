@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const WebSocket = require('ws');
@@ -62,13 +62,16 @@ function restartEngine() {
 }
 
 function createWindow() {
-  const iconPath = path.join(__dirname, '../../Data/EngineAssets/icon.png');
+  // Use absolute path for icon
+  const iconPath = path.resolve(__dirname, '../../Data/EngineAssets/icon.png');
   console.log(`Main: Loading application icon from ${iconPath}`);
+  
+  const icon = nativeImage.createFromPath(iconPath);
 
   win = new BrowserWindow({ 
     width: 1600, 
     height: 900,
-    icon: iconPath,
+    icon: icon,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -133,6 +136,21 @@ app.whenReady().then(() => {
   ipcMain.on('engine-message', (event, msg) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(msg));
+    }
+  });
+
+  ipcMain.on('select-files', async (event) => {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(win, {
+      title: 'Select 3D Models to Import',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: '3D Models', extensions: ['obj', 'fbx', 'gltf', 'glb'] }
+      ]
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      event.reply('files-selected', result.filePaths);
     }
   });
 });

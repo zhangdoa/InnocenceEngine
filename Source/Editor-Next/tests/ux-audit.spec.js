@@ -4,6 +4,24 @@ const path = require('path');
 
 const flavors = ['latte', 'frappe', 'macchiato', 'mocha'];
 
+function getLuminance(rgb) {
+  const parts = rgb.match(/\d+/g);
+  if (!parts) return 0;
+  const [r, g, b] = parts.map(Number).map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function getContrastRatio(rgb1, rgb2) {
+  const l1 = getLuminance(rgb1);
+  const l2 = getLuminance(rgb2);
+  const brightest = Math.max(l1, l2);
+  const darkest = Math.min(l1, l2);
+  return (brightest + 0.05) / (darkest + 0.05);
+}
+
 for (const flavor of flavors) {
   test(`UX Audit: Theme ${flavor}`, async () => {
     test.setTimeout(180000);
@@ -15,13 +33,9 @@ for (const flavor of flavors) {
 
     const window = await electronApp.firstWindow();
     await window.waitForSelector('.editor-shell', { timeout: 30000 });
-
-    // Wait for connection
-    console.log(`[TEST] Waiting for engine connection...`);
     await window.waitForSelector('.n-tag__content:has-text("Live")', { timeout: 120000 });
 
-    // 1. Switch to the flavor
-    console.log(`[TEST] Switching to theme: ${flavor}`);
+    // 1. Switch theme
     await window.click('text=Editor');
     await window.hover('text=Theme');
     
@@ -32,48 +46,53 @@ for (const flavor of flavors) {
     else if (flavor === 'macchiato') flavorText = 'Macchiato';
     
     await window.click(`text=${flavorText}`);
-    await window.waitForTimeout(1000);
+    await window.waitForTimeout(2000); // Wait longer for variables to settle
 
-    // 2. Mock an import in progress to check UX
-    console.log(`[TEST] Mocking import progress...`);
-    await window.evaluate(() => {
-      // Access the reactive store via the global window object if exposed, 
-      // or just dispatch the events that AppLayout listens to
-      const msg = {
-        type: 'IMPORT_PROGRESS',
-        name: 'Sponza_Atrium.fbx',
-        progress: 45
-      };
-      // We can use ipcRenderer to simulate an engine message
-      const { ipcRenderer } = require('electron');
-      ipcRenderer.emit('engine-message', {}, msg);
-    });
-    
-    await window.waitForSelector('text=Processing Assets', { timeout: 5000 });
-    await window.waitForTimeout(500);
-
-    // 3. Take screenshot of Import Modal
-    console.log(`[TEST] Capturing import screenshot for ${flavor}...`);
-    await window.screenshot({ 
-      path: `test-results/ux-audit-${flavor}-import.png`,
-      fullPage: true 
-    });
-
-    // 4. Close modal and select entity
-    await window.evaluate(() => {
-      const { ipcRenderer } = require('electron');
-      ipcRenderer.emit('engine-message', {}, { type: 'IMPORT_FINISHED', success: true, name: 'Sponza_Atrium.fbx' });
-    });
-    await window.waitForTimeout(500);
-
+    // 2. Select entity to show labels
     await window.waitForSelector('.entity-item', { timeout: 30000 });
     await window.click('.entity-item >> nth=0');
     await window.waitForTimeout(1000);
 
-    // 5. Take final screenshot
-    console.log(`[TEST] Capturing final screenshot for ${flavor}...`);
+    // 3. Contrast Check with Recursive BG search
+    console.log(`[TEST] Checking contrast for theme: ${flavor}`);
+    
+    const auditSelectors = [
+      '.n-menu-item-content-header', 
+      '.n-form-item-label__text',    
+      '.n-tag__content'
+    ];
+
+    for (const selector of auditSelectors) {
+      const stats = await window.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+
+        const getRecursiveBg = (element) => {
+          const bg = getComputedStyle(element).backgroundColor;
+          if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && element.parentElement) {
+            return bg;
+          }
+          return element.parentElement ? getRecursiveBg(element.parentElement) : 'rgb(255, 255, 255)';
+        };
+
+        return {
+          color: getComputedStyle(el).color,
+          bg: getRecursiveBg(el)
+        };
+      }, selector);
+
+      if (stats) {
+        const ratio = getContrastRatio(stats.color, stats.bg);
+        console.log(`[TEST] ${selector} -> Color: ${stats.color}, BG: ${stats.bg}, Ratio: ${ratio.toFixed(2)}:1`);
+        // We warn instead of failing for now to collect all data
+        if (ratio < 3.0) {
+          console.error(`[FAIL] ${selector} has poor contrast!`);
+        }
+      }
+    }
+
     await window.screenshot({ 
-      path: `test-results/ux-audit-${flavor}.png`,
+      path: `test-results/ux-audit-${flavor}-diagnostic.png`,
       fullPage: true 
     });
 

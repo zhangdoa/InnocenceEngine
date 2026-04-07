@@ -33,7 +33,8 @@ namespace Inno
 		static void ReleaseAssetsByLifespan(ObjectLifespan lifespan);
 
 		// Serialization
-		static bool Import(const char* fileName);
+		typedef std::function<void(float progress, const char* filename)> AssetImportProgressCallback;
+		static bool Import(const char* fileName, AssetImportProgressCallback callback = nullptr);
 
 		static bool SaveScene(const char* fileName);
 		static bool LoadScene(const char* fileName);

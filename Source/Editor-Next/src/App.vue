@@ -31,12 +31,12 @@ const themeOverrides = computed(() => ({
     textColorBase: currentPalette.value.text,
     textColor1: currentPalette.value.text,
     textColor2: currentPalette.value.subtext1,
-    textColor3: currentPalette.value.subtext0,
+    textColor3: editorState.themeFlavor === 'latte' ? '#5c5f77' : currentPalette.value.subtext0,
     dividerColor: currentPalette.value.surface1,
     borderColor: currentPalette.value.surface1,
   },
-  Button: {
-    textColorText: currentPalette.value.text,
+  Form: {
+    labelTextColor: currentPalette.value.text,
   },
   Input: {
     color: currentPalette.value.mantle,
@@ -53,12 +53,26 @@ const themeOverrides = computed(() => ({
     itemColorActive: currentPalette.value.surface0,
     itemTextColorActive: currentPalette.value.blue,
     itemIconColorActive: currentPalette.value.blue,
+    itemTextColor: currentPalette.value.text,
+    itemIconColor: currentPalette.value.text,
   },
   Tag: {
     colorSuccess: currentPalette.value.green,
     colorError: currentPalette.value.red,
     colorInfo: currentPalette.value.blue,
     colorWarning: currentPalette.value.yellow,
+    textColorSuccess: '#11111b',
+    textColorError: '#11111b',
+    textColorInfo: '#11111b',
+    textColorWarning: '#11111b',
+  },
+  Collapse: {
+    titleTextColor: currentPalette.value.text,
+    contentTextColor: currentPalette.value.text,
+  },
+  List: {
+    color: 'transparent',
+    textColor: currentPalette.value.text,
   }
 }))
 
@@ -73,8 +87,6 @@ watch(() => editorState.themeFlavor, (newFlavor) => {
 </script>
 
 <style>
-/* Base Catppuccin variables will be managed by the watch effect above */
-
 /* Global Catppuccin theme overrides for dockview */
 .dockview-theme-abyssal {
   --dv-pane-background-color: var(--ctp-base);
@@ -101,9 +113,27 @@ body {
   font-family: v-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Force consistency on all inputs/widgets to prevent white background leaks */
+/* Force consistency on all native inputs to prevent white background leaks */
 input, select, textarea {
   background-color: var(--ctp-mantle) !important;
+  color: var(--ctp-text) !important;
+  border: 1px solid var(--ctp-surface1) !important;
+}
+
+/* 
+ * CRITICAL UX FIX: Target Naive UI internal elements with extreme precision.
+ * These selectors are based on the diagnostic audit failures.
+ */
+.n-form-item-label .n-form-item-label__text {
+  color: var(--ctp-text) !important;
+}
+
+.n-tag .n-tag__content {
+  color: #11111b !important; /* Always dark text on bright tags for contrast */
+}
+
+/* Fix for menu headers which were failing in some dark themes */
+.n-menu-item-content-header {
   color: var(--ctp-text) !important;
 }
 

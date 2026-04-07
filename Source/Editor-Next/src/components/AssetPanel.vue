@@ -1,14 +1,21 @@
 <template>
   <div class="asset-panel">
     <div class="toolbar">
-      <n-space align="center" :size="12">
-        <n-button size="tiny" quaternary @click="navigateUp" :disabled="isRoot">
-          <template #icon><n-icon><arrow-up-outline /></n-icon></template>
+      <n-space align="center" justify="space-between" style="width: 100%;">
+        <n-space align="center" :size="12">
+          <n-button size="tiny" quaternary @click="navigateUp" :disabled="isRoot">
+            <template #icon><n-icon><arrow-up-outline /></n-icon></template>
+          </n-button>
+          <n-breadcrumb separator=">">
+            <n-breadcrumb-item>Data</n-breadcrumb-item>
+            <n-breadcrumb-item v-for="(part, i) in pathParts" :key="i">{{ part }}</n-breadcrumb-item>
+          </n-breadcrumb>
+        </n-space>
+        
+        <n-button size="small" secondary @click="triggerImport" type="primary">
+          <template #icon><n-icon><add-outline /></n-icon></template>
+          Import
         </n-button>
-        <n-breadcrumb separator=">">
-          <n-breadcrumb-item>Data</n-breadcrumb-item>
-          <n-breadcrumb-item v-for="(part, i) in pathParts" :key="i">{{ part }}</n-breadcrumb-item>
-        </n-breadcrumb>
       </n-space>
     </div>
 
@@ -36,12 +43,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { 
   NGrid, NGridItem, NBreadcrumb, NBreadcrumbItem, NButton, 
   NSpace, NText, NScrollbar, NIcon
 } from 'naive-ui'
-import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline } from '@vicons/ionicons5'
+import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline, AddOutline } from '@vicons/ionicons5'
 
 const currentPath = ref('')
 const items = ref([])
@@ -50,6 +57,8 @@ const pathParts = computed(() => currentPath.value.split(/[\\\/]/).filter(p => p
 
 let fs, path, baseDir
 
+const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
+
 onMounted(() => {
   if (window.require) {
     fs = window.require('fs')
@@ -57,9 +66,15 @@ onMounted(() => {
     baseDir = path.join(window.process.cwd(), '../../Data')
     loadDirectory('')
   }
+  window.addEventListener('refresh-assets', () => loadDirectory(currentPath.value))
+})
+
+onUnmounted(() => {
+  window.removeEventListener('refresh-assets', () => loadDirectory(currentPath.value))
 })
 
 const loadDirectory = (relPath) => {
+  if (!fs) return;
   const fullPath = path.join(baseDir, relPath)
   if (!fs.existsSync(fullPath)) return
 
@@ -89,6 +104,12 @@ const onItemDblClick = (item) => {
       const relPath = path.join(currentPath.value, item.name)
       window.dispatchEvent(new CustomEvent('load-scene', { detail: relPath }))
     }
+  }
+}
+
+const triggerImport = () => {
+  if (ipcRenderer) {
+    ipcRenderer.send('select-files');
   }
 }
 </script>
@@ -139,6 +160,5 @@ const onItemDblClick = (item) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-width: 100%;
-  color: var(--ctp-text);
 }
 </style>

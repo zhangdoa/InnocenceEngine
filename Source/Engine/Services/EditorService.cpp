@@ -194,6 +194,36 @@ bool EditorService::Initialize()
 							auto sceneService = g_Engine->Get<SceneService>();
 							sceneService->Save(sceneService->GetCurrentSceneName().c_str());
 						}
+						else if (l_type == "IMPORT_ASSET")
+						{
+							if (l_json.contains("path"))
+							{
+								std::string l_path = l_json["path"];
+								Log(Success, "EditorService: Requesting asset import: ", l_path.c_str());
+								
+								g_Engine->Get<AssetService>()->Import(l_path.c_str(), [this](float progress, const char* name) {
+									json l_reply;
+									if (progress >= 1.0f) {
+										l_reply["type"] = "IMPORT_FINISHED";
+										l_reply["success"] = true;
+										l_reply["name"] = name;
+									} else if (progress < 0.0f) {
+										l_reply["type"] = "IMPORT_FINISHED";
+										l_reply["success"] = false;
+										l_reply["name"] = name;
+									} else {
+										l_reply["type"] = "IMPORT_PROGRESS";
+										l_reply["progress"] = (int)(progress * 100);
+										l_reply["name"] = name;
+									}
+									
+									// We need to be careful with thread safety here as this callback 
+									// runs on a task thread, not the EditorService update thread.
+									// For now, assuming IXWebSocket is thread-safe for send().
+									m_Server->broadcast(l_reply.dump());
+								});
+							}
+						}
 						else if (l_type == "UPDATE_ENTITY_PROPERTY")
 						{
 							if (l_json.contains("id") && l_json.contains("component") && l_json.contains("property") && l_json.contains("value"))

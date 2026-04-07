@@ -41,6 +41,28 @@
       </dockview-vue>
     </main>
 
+    <!-- Global Import Progress Overlay -->
+    <n-modal :show="editorState.isImporting" :mask-closable="false" transform-origin="center">
+      <n-card
+        style="width: 400px"
+        title="Processing Assets"
+        :bordered="false"
+        size="huge"
+        role="dialog"
+        aria-modal="true"
+      >
+        <n-space vertical>
+          <n-text depth="3">Converting: {{ editorState.currentImportName }}</n-text>
+          <n-progress
+            type="line"
+            :percentage="editorState.importProgress"
+            :indicator-placement="'inside'"
+            processing
+          />
+        </n-space>
+      </n-card>
+    </n-modal>
+
     <footer class="editor-footer">
       <n-space justify="space-between" align="center" style="width: 100%; height: 100%; padding: 0 12px;">
         <n-text depth="3" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Ready</n-text>
@@ -57,7 +79,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, shallowRef, markRaw, h } from 'vue'
 import { 
-  NMenu, NButton, NButtonGroup, NTag, NSpace, NText, useMessage, NIcon
+  NMenu, NButton, NButtonGroup, NTag, NSpace, NText, useMessage, NIcon,
+  NModal, NCard, NProgress
 } from 'naive-ui'
 import { 
   Power, Refresh, SaveOutline, TerminalOutline,
@@ -161,13 +184,37 @@ const setupIpc = () => {
 
   ipcRenderer.on('engine-message', (event, msg) => {
     console.log(`AppLayout: Received engine message: ${msg.type}`);
-    editorState.lastMessage = `Last Msg: ${msg.type}`
+    
     if (msg.type === 'SCENE_DATA') {
       editorState.entities = msg.entities
     } else if (msg.type === 'ENTITY_DETAILS') {
-      console.log('AppLayout: Setting selectedEntity details');
       editorState.selectedEntity = msg.details
+    } else if (msg.type === 'IMPORT_PROGRESS') {
+      editorState.isImporting = true
+      editorState.importProgress = msg.progress
+      editorState.currentImportName = msg.name
+      editorState.lastMessage = `Importing: ${msg.name} (${msg.progress}%)`
+    } else if (msg.type === 'IMPORT_FINISHED') {
+      editorState.isImporting = false
+      editorState.importProgress = 0
+      if (msg.success) {
+        message.success(`Import complete: ${msg.name}`)
+        editorState.lastMessage = `Successfully imported ${msg.name}`
+        // Refresh asset list
+        window.dispatchEvent(new CustomEvent('refresh-assets'))
+      } else {
+        message.error(`Import failed: ${msg.name}`)
+        editorState.lastMessage = `Failed to import ${msg.name}`
+      }
+    } else {
+      editorState.lastMessage = `Last Msg: ${msg.type}`
     }
+  })
+
+  ipcRenderer.on('files-selected', (event, filePaths) => {
+    filePaths.forEach(path => {
+      editorState.importAsset(path);
+    });
   })
 }
 
@@ -225,6 +272,7 @@ onUnmounted(() => {
   if (ipcRenderer) {
     ipcRenderer.removeAllListeners('engine-connected')
     ipcRenderer.removeAllListeners('engine-message')
+    ipcRenderer.removeAllListeners('files-selected')
   }
 })
 </script>
@@ -238,6 +286,7 @@ onUnmounted(() => {
   overflow: hidden;
   background: var(--ctp-base);
   color: var(--ctp-text);
+  transition: all 0.3s ease;
 }
 
 .editor-header {

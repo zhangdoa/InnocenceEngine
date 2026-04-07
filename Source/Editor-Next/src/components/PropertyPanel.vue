@@ -42,7 +42,7 @@ const updateColor = (comp, hex) => {
       <div class="entity-info">
         <n-space align="center" :size="8">
           <n-icon size="20" color="var(--ctp-blue)"><cube-outline /></n-icon>
-          <n-h3 style="margin: 0; color: var(--ctp-text);">{{ editorState.selectedEntity.name }}</n-h3>
+          <n-h3 style="margin: 0;">{{ editorState.selectedEntity.name }}</n-h3>
         </n-space>
         <n-text depth="3" style="font-size: 10px; font-family: monospace; margin-left: 28px;">
           UID: {{ editorState.selectedEntity.id }}
@@ -59,7 +59,7 @@ const updateColor = (comp, hex) => {
             <n-space align="center" :size="8">
               <n-icon v-if="comp.type === 'TransformComponent'" color="var(--ctp-sky)"><settings-outline /></n-icon>
               <n-icon v-else-if="comp.type === 'LightComponent'" color="var(--ctp-yellow)"><bulb-outline /></n-icon>
-              <n-text strong style="color: var(--ctp-text);">{{ comp.type }}</n-text>
+              <n-text strong>{{ comp.type }}</n-text>
             </n-space>
           </template>
 
@@ -157,7 +157,6 @@ const updateColor = (comp, hex) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ctp-base);
 }
 
 .properties-content {
@@ -189,11 +188,6 @@ const updateColor = (comp, hex) => {
 }
 
 :deep(.n-input-number) {
-  background: var(--ctp-base);
-}
-
-:deep(.n-form-item-label) {
-  color: var(--ctp-subtext0) !important;
-  font-size: 12px;
+  background: var(--ctp-mantle);
 }
 </style>

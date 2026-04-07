@@ -10,11 +10,21 @@ export const editorState = reactive({
   isUserInitiatedShutdown: false,
   lastMessage: '',
   themeFlavor: 'macchiato', // Default flavor
+  isImporting: false,
+  importProgress: 0,
+  currentImportName: '',
 
   // Actions
   setTheme(flavor) {
     if (['latte', 'frappe', 'macchiato', 'mocha'].includes(flavor)) {
       this.themeFlavor = flavor;
+    }
+  },
+
+  importAsset(filePath) {
+    if (!this.isConnected) return;
+    if (ipcRenderer) {
+      ipcRenderer.send('engine-message', { type: 'IMPORT_ASSET', path: filePath });
     }
   },
 

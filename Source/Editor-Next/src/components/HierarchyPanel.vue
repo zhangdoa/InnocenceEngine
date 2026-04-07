@@ -53,8 +53,7 @@ const selectEntity = (id) => {
             <n-icon size="16" :color="editorState.selectedEntityId === entity.id ? 'var(--ctp-mauve)' : 'var(--ctp-subtext0)'">
               <cube-outline />
             </n-icon>
-            <n-text :strong="editorState.selectedEntityId === entity.id" 
-                    :style="{ color: editorState.selectedEntityId === entity.id ? 'var(--ctp-text)' : 'var(--ctp-subtext1)' }">
+            <n-text :strong="editorState.selectedEntityId === entity.id">
               {{ entity.name }}
             </n-text>
           </n-space>
@@ -74,8 +73,7 @@ const selectEntity = (id) => {
 
 .search-bar {
   padding: 12px;
-  background: var(--ctp-base);
-  border-bottom: 1px solid var(--ctp-mantle);
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 
 .empty-container {
@@ -90,7 +88,7 @@ const selectEntity = (id) => {
 }
 
 :deep(.n-list) {
-  background: transparent;
+  background: transparent !important;
 }
 
 :deep(.n-list-item) {
