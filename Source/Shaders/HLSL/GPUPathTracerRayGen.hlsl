@@ -1,5 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
+#include "common/skyResolver.hlsl"
 
 [[vk::binding(0, 0)]]
 cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
@@ -161,7 +162,12 @@ float3 SampleSunDirection(float3 sunDir, float2 xi)
 
 float3 SkyColor(float3 dir)
 {
-    return lerp(float3(0.1f, 0.15f, 0.2f), float3(0.5f, 0.7f, 1.0f), saturate(dir.y));
+    float3 lightdir = normalize(g_Frame.sun_direction.xyz);
+    float planetRadius = 6371e3;
+    float atmosphereHeight = 100e3;
+    float3 eye_position = g_Frame.camera_posWS.xyz + float3(0.0f, planetRadius, 0.0f);
+
+    return getSkyColor(dir, eye_position, lightdir, g_Frame.sun_illuminance.xyz, planetRadius, atmosphereHeight);
 }
 
 RayDesc GenerateCameraRay(uint2 pixel, float2 jitter, uint2 resolution)
