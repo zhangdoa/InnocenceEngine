@@ -57,6 +57,24 @@ function Download-Asset {
 }
 
 # ---------------------------------------------------------------------------
+# GNU FreeFont (engine UI font)
+# ---------------------------------------------------------------------------
+$fontsDir = Join-Path $repoRoot "Data" "Engine" "Fonts"
+if ((Test-Path (Join-Path $fontsDir "FreeSans.otf")) -and -not $Force) {
+    Write-Host "[SKIP] FreeSans.otf already exists" -ForegroundColor Yellow
+} else {
+    Write-Host "[DOWNLOAD] GNU FreeFont ..." -ForegroundColor Cyan
+    $fontArchive = Join-Path $tempDir "freefont-otf.tar.gz"
+    Invoke-WebRequest -Uri "https://ftp.gnu.org/gnu/freefont/freefont-otf-20120503.tar.gz" -OutFile $fontArchive -UseBasicParsing
+    tar -xzf $fontArchive -C $tempDir 2>$null
+    if (-not (Test-Path $fontsDir)) {
+        New-Item -ItemType Directory -Path $fontsDir -Force | Out-Null
+    }
+    Copy-Item (Join-Path $tempDir "freefont-20120503" "FreeSans.otf") (Join-Path $fontsDir "FreeSans.otf") -Force
+    Write-Host "[OK] FreeSans.otf -> $fontsDir" -ForegroundColor Green
+}
+
+# ---------------------------------------------------------------------------
 # Stanford Bunny (PLY)
 # ---------------------------------------------------------------------------
 Download-Asset -Name "Stanford Bunny" `
