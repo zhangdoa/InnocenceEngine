@@ -59,7 +59,7 @@ function Download-Asset {
 # ---------------------------------------------------------------------------
 # GNU FreeFont (engine UI font)
 # ---------------------------------------------------------------------------
-$fontsDir = Join-Path $repoRoot "Data" "Engine" "Fonts"
+$fontsDir = Join-Path $repoRoot "Data" "Generated" "Fonts"
 if ((Test-Path (Join-Path $fontsDir "FreeSans.otf")) -and -not $Force) {
     Write-Host "[SKIP] FreeSans.otf already exists" -ForegroundColor Yellow
 } else {

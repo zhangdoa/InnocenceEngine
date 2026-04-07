@@ -80,6 +80,7 @@ include(CMake/BuildThirdPartyLibs.cmake)
 
 # Create Data/Generated directory structure (not version-controlled)
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Components")
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Fonts")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Data/Generated/Scenes")
 
 # Add subdirectories
