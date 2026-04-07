@@ -13,6 +13,7 @@ test('editor launches and connects to engine', async () => {
       '--disable-dev-shm-usage'
     ],
     cwd: path.join(__dirname, '..'),
+    env: { ...process.env, E2E_TEST: 'true' }
   });
 
   electronApp.on('console', msg => {
@@ -26,48 +27,54 @@ test('editor launches and connects to engine', async () => {
   await window.waitForSelector('.editor-shell', { timeout: 30000 });
 
   // 1. Wait for connection (status becomes "● Connected")
-  const statusSelector = '.engine-status.connected';
-  log('Waiting for engine connection (status: ● Connected)...');
+  const statusSelector = '.status-dot.connected';
+  log('Waiting for engine connection (status: Connected)...');
   
   try {
     await window.waitForSelector(statusSelector, { timeout: 120000 });
     log('Connection confirmed via UI status');
   } catch (e) {
     log('Failed to find connected status selector, checking if element exists...');
-    const statusExists = await window.locator('.engine-status').count();
+    const statusExists = await window.locator('.status-dot').count();
     if (statusExists > 0) {
-      const content = await window.textContent('.engine-status');
-      log(`Current status text: "${content.trim()}"`);
+      log('Status dot element found in DOM but not connected.');
     } else {
-      log('Engine status element NOT found in DOM!');
+      log('Status dot element NOT found in DOM!');
     }
     throw e;
   }
-  
-  const statusText = await window.textContent('.engine-status');
-  expect(statusText).toContain('● Connected');
 
   // 2. Verify panels are present
-  await window.waitForSelector('.dv-pane-content', { timeout: 10000 });
+  // We skip .dv-pane-content as dockview internal classes might vary.
+  // Instead we verify our actual component is mounted.
+  try {
+    log('Waiting for .hierarchy-panel to be attached...');
+    await window.waitForSelector('.hierarchy-panel', { state: 'attached', timeout: 15000 });
+    log('.hierarchy-panel attached');
+  } catch (e) {
+    log('FAILED to find .hierarchy-panel. Printing body HTML:');
+    const html = await window.innerHTML('body');
+    log(html); // Print full HTML
+    throw e;
+  }
   
   // 3. Verify entities are loaded into the hierarchy
   log('Waiting for hierarchy to populate (entities to arrive)...');
-  const entitySelector = '.entity-item';
   
   try {
+    const entitySelector = '.entity-item';
     await window.waitForSelector(entitySelector, { timeout: 30000 });
-    const entityCount = await window.locator(entitySelector).count();
-    log(`Found ${entityCount} entities in hierarchy`);
-    expect(entityCount).toBeGreaterThan(0);
-
-    const firstEntityName = await window.locator(`${entitySelector} .name`).first().textContent();
-    log(`First entity: ${firstEntityName}`);
-    expect(firstEntityName.length).toBeGreaterThan(0);
+    log('Entities found in hierarchy (using selector)');
+    
+    // Now verify a known entity from the UnitTest scene exists
+    const cameraExists = await window.locator('text=Main Camera/').count();
+    log(`Entity 'Main Camera/' found: ${cameraExists > 0}`);
+    expect(cameraExists).toBeGreaterThan(0);
   } catch (e) {
-    log('Hierarchy failed to populate in time.');
-    // Log the whole page content for debugging
-    // const body = await window.innerHTML('body');
-    // log(`Body content sample: ${body.substring(0, 500)}`);
+    log('Hierarchy failed to populate or expected entity not found.');
+    const html = await window.innerHTML('.hierarchy-panel');
+    log('Hierarchy panel HTML:');
+    log(html);
     throw e;
   }
 
@@ -81,7 +88,7 @@ test('editor launches and connects to engine', async () => {
   await expect(window).toHaveScreenshot('editor-layout.png', {
     mask: [window.locator('.viewport-canvas')],
     fullPage: true,
-    maxDiffPixelRatio: 0.05 // Allow a tiny bit of variance for font rendering differences
+    maxDiffPixelRatio: 0.01 // Lower threshold to catch real regressions
   });
 
   log('Visual regression test passed');

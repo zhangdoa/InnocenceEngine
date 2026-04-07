@@ -1,22 +1,61 @@
+<script setup>
+import { defineProps } from 'vue'
+import { 
+  NCollapse, NCollapseItem, NForm, NFormItem, NGrid, NGridItem, 
+  NInputNumber, NColorPicker, NText, NScrollbar, NEmpty, NH3 
+} from 'naive-ui'
+import { editorState } from '../store'
+
+const props = defineProps({
+  params: Object
+})
+
+const updateProp = (component, property, value) => {
+  if (props.params?.onUpdateProperty && editorState.selectedEntity) {
+    props.params.onUpdateProperty({
+      id: editorState.selectedEntity.id,
+      component,
+      property,
+      value
+    })
+  }
+}
+
+const rgbToHex = (rgb) => {
+  const r = Math.round(rgb[0] * 255).toString(16).padStart(2, '0')
+  const g = Math.round(rgb[1] * 255).toString(16).padStart(2, '0')
+  const b = Math.round(rgb[2] * 255).toString(16).padStart(2, '0')
+  return `#${r}${g}${b}`
+}
+
+const updateColor = (comp, hex) => {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  comp.color = [r, g, b]
+  updateProp(comp.type, 'color', comp.color)
+}
+</script>
+
 <template>
   <div class="property-panel">
     <div class="panel-header">
       <n-text depth="3" strong>Properties</n-text>
     </div>
     
-    <div v-if="!props.params?.selectedEntity" class="no-selection">
+    <div v-if="!editorState.selectedEntity" class="no-selection">
       <n-empty description="Select an entity to view properties" />
     </div>
     
     <n-scrollbar v-else class="properties-content">
       <div class="entity-info">
-        <n-h3 style="margin: 0;">{{ props.params.selectedEntity.name }}</n-h3>
-        <n-text depth="3" style="font-size: 10px;">ID: {{ props.params.selectedEntity.id }}</n-text>
+        <n-h3 style="margin: 0;">{{ editorState.selectedEntity.name }}</n-h3>
+        <n-text depth="3" style="font-size: 10px;">ID: {{ editorState.selectedEntity.id }}</n-text>
       </div>
 
       <n-collapse :default-expanded-names="['TransformComponent', 'LightComponent']">
         <n-collapse-item 
-          v-for="comp in props.params.selectedEntity.components" 
+          v-for="comp in editorState.selectedEntity.components" 
           :key="comp.type" 
           :title="comp.type" 
           :name="comp.type"
@@ -69,44 +108,6 @@
     </n-scrollbar>
   </div>
 </template>
-
-<script setup>
-import { defineProps } from 'vue'
-import { 
-  NCollapse, NCollapseItem, NForm, NFormItem, NGrid, NGridItem, 
-  NInputNumber, NColorPicker, NText, NScrollbar, NEmpty, NH3 
-} from 'naive-ui'
-
-const props = defineProps({
-  params: Object
-})
-
-const updateProp = (component, property, value) => {
-  if (props.params?.onUpdateProperty && props.params?.selectedEntity) {
-    props.params.onUpdateProperty({
-      id: props.params.selectedEntity.id,
-      component,
-      property,
-      value
-    })
-  }
-}
-
-const rgbToHex = (rgb) => {
-  const r = Math.round(rgb[0] * 255).toString(16).padStart(2, '0')
-  const g = Math.round(rgb[1] * 255).toString(16).padStart(2, '0')
-  const b = Math.round(rgb[2] * 255).toString(16).padStart(2, '0')
-  return `#${r}${g}${b}`
-}
-
-const updateColor = (comp, hex) => {
-  const r = parseInt(hex.slice(1, 3), 16) / 255
-  const g = parseInt(hex.slice(3, 5), 16) / 255
-  const b = parseInt(hex.slice(5, 7), 16) / 255
-  comp.color = [r, g, b]
-  updateProp(comp.type, 'color', comp.color)
-}
-</script>
 
 <style scoped>
 .property-panel {

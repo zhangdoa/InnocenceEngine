@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="darkTheme">
+  <n-config-provider :theme="darkTheme" style="height: 100%">
     <n-message-provider>
       <app-layout />
     </n-message-provider>
@@ -23,9 +23,13 @@ import AppLayout from './components/AppLayout.vue'
   --dv-separator-color: #333;
 }
 
-body {
+html, body, #app {
+  height: 100%;
   margin: 0;
   padding: 0;
+}
+
+body {
   overflow: hidden;
   background: #18181c;
   color: #ccc;

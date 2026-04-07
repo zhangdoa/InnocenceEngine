@@ -1,5 +1,5 @@
 <template>
-  <n-layout class="editor-shell" position="absolute">
+  <n-layout class="editor-shell" style="height: 100vh; width: 100vw;">
     <n-layout-header bordered class="editor-header">
       <div class="header-left">
         <div class="logo">InnocenceEngine</div>
@@ -12,11 +12,11 @@
             <n-button @click="restartEngine" secondary title="Restart Engine sidecar">Restart</n-button>
             <n-button @click="stopEngine" type="error" secondary title="Stop Engine sidecar">Stop</n-button>
           </n-button-group>
-          <n-tag :type="isConnected ? 'success' : 'error'" size="small" round>
+          <n-tag :type="editorState.isConnected ? 'success' : 'error'" size="small" round>
             <template #icon>
-              <div :class="['status-dot', isConnected ? 'connected' : '']"></div>
+              <div :class="['status-dot', editorState.isConnected ? 'connected' : '']"></div>
             </template>
-            {{ isConnected ? 'Connected' : 'Disconnected' }}
+            {{ editorState.isConnected ? 'Connected' : 'Disconnected' }}
           </n-tag>
         </n-space>
       </div>
@@ -25,6 +25,7 @@
     <n-layout-content content-style="padding: 0;" class="dock-container">
       <dockview-vue
         class="dockview-theme-abyssal"
+        style="width: 100%; height: 100%;"
         @ready="onDockviewReady"
         :components="dockviewComponents"
       >
@@ -34,7 +35,7 @@
     <n-layout-footer bordered class="editor-footer">
       <n-space justify="space-between" align="center" style="width: 100%; height: 100%; padding: 0 10px;">
         <n-text depth="3" style="font-size: 11px;">Ready</n-text>
-        <n-text depth="3" class="flex-grow" style="font-size: 11px;">Console: {{ lastMessage || 'No engine output' }}</n-text>
+        <n-text depth="3" class="flex-grow" style="font-size: 11px;">Console: {{ editorState.lastMessage || 'No engine output' }}</n-text>
         <n-text depth="3" style="font-size: 11px;">FPS: 60</n-text>
       </n-space>
     </n-layout-footer>
@@ -52,6 +53,7 @@ import ViewportPanel from './ViewportPanel.vue'
 import HierarchyPanel from './HierarchyPanel.vue'
 import PropertyPanel from './PropertyPanel.vue'
 import AssetPanel from './AssetPanel.vue'
+import { editorState } from '../store'
 
 import 'dockview-vue/dist/styles/dockview.css'
 
@@ -64,14 +66,6 @@ const menuOptions = [
   { label: 'Help', key: 'help' }
 ]
 
-// State
-const isConnected = ref(false)
-const sharedHandle = ref(null)
-const lastMessage = ref('')
-const entities = ref([])
-const selectedEntityId = ref(null)
-const selectedEntity = ref(null)
-
 const { ipcRenderer } = require('electron')
 const message = useMessage()
 
@@ -80,33 +74,29 @@ const dockviewApi = shallowRef()
 
 const setupIpc = () => {
   ipcRenderer.on('engine-connected', (event, connected) => {
-    isConnected.value = connected
+    editorState.isConnected = connected
     if (connected) {
-      lastMessage.value = 'Engine connected'
+      editorState.lastMessage = 'Engine connected'
       ipcRenderer.send('engine-message', { type: 'GET_SCENE' })
     } else {
-      lastMessage.value = 'Engine disconnected'
-      sharedHandle.value = null
-      updatePanelParams('viewport_panel', { sharedHandle: null })
+      editorState.lastMessage = 'Engine disconnected'
+      editorState.sharedHandle = null
     }
   })
 
   ipcRenderer.on('viewport-ready', (event, info) => {
-    lastMessage.value = 'Viewport ready'
+    editorState.lastMessage = 'Viewport ready'
     if (info.sharedHandle) {
-      sharedHandle.value = BigInt(info.sharedHandle)
-      updatePanelParams('viewport_panel', { sharedHandle: sharedHandle.value })
+      editorState.sharedHandle = BigInt(info.sharedHandle)
     }
   })
 
   ipcRenderer.on('engine-message', (event, msg) => {
-    lastMessage.value = `Received: ${msg.type}`
+    editorState.lastMessage = `Received: ${msg.type}`
     if (msg.type === 'SCENE_DATA') {
-      entities.value = msg.entities
-      updatePanelParams('hierarchy_panel', { entities: entities.value })
+      editorState.entities = msg.entities
     } else if (msg.type === 'ENTITY_DETAILS') {
-      selectedEntity.value = msg.details
-      updatePanelParams('properties_panel', { selectedEntity: selectedEntity.value })
+      editorState.selectedEntity = msg.details
     }
   })
 }
@@ -128,6 +118,7 @@ const dockviewComponents = {
 
 const onDockviewReady = (event) => {
   dockviewApi.value = event.api
+  console.log('Dockview ready, creating panels...');
 
   // Create default layout
   const hierarchyPane = event.api.addPanel({
@@ -135,18 +126,15 @@ const onDockviewReady = (event) => {
     component: 'hierarchy',
     title: 'Hierarchy',
     params: { 
-      entities: entities.value, 
-      selectedEntityId: selectedEntityId.value,
       onSelectEntity: selectEntity 
-    },
-    position: { direction: 'left', width: 300 }
+    }
   })
 
   const viewportPane = event.api.addPanel({
     id: 'viewport_panel',
     component: 'viewport',
     title: 'Viewport',
-    params: { sharedHandle: sharedHandle.value }
+    position: { direction: 'right', referencePanel: hierarchyPane }
   })
 
   const propertiesPane = event.api.addPanel({
@@ -154,7 +142,6 @@ const onDockviewReady = (event) => {
     component: 'properties',
     title: 'Properties',
     params: { 
-      selectedEntity: selectedEntity.value,
       onUpdateProperty: onUpdateProperty 
     },
     position: { direction: 'right', referencePanel: viewportPane, width: 350 }
@@ -166,20 +153,26 @@ const onDockviewReady = (event) => {
     title: 'Assets',
     position: { direction: 'below', referencePanel: viewportPane, height: 250 }
   })
+  
+  console.log('All panels created.');
 }
 
 const updatePanelParams = (id, params) => {
   if (dockviewApi.value) {
     const panel = dockviewApi.value.getPanel(id)
     if (panel) {
+      console.log(`Updating panel ${id} with params:`, Object.keys(params));
       panel.update({ params: { ...panel.params, ...params } })
+    } else {
+      console.warn(`Panel ${id} not found for update!`);
     }
+  } else {
+    console.warn('dockviewApi not ready for updatePanelParams');
   }
 }
 
 const selectEntity = (id) => {
-  selectedEntityId.value = id
-  updatePanelParams('hierarchy_panel', { selectedEntityId: id })
+  editorState.selectedEntityId = id
   ipcRenderer.send('engine-message', { type: 'GET_ENTITY_DETAILS', id: id })
 }
 

@@ -1,3 +1,37 @@
+<script setup>
+import { ref, computed, defineProps, onMounted, watch } from 'vue'
+import { NList, NListItem, NInput, NScrollbar, NText, NSpace } from 'naive-ui'
+import { editorState } from '../store'
+
+const props = defineProps({
+  params: Object
+})
+
+onMounted(() => {
+  console.log('HierarchyPanel mounted');
+})
+
+watch(() => editorState.entities, (newEntities) => {
+  console.log(`HierarchyPanel: entities updated, count: ${newEntities?.length || 0}`);
+}, { deep: true, immediate: true })
+
+const searchQuery = ref('')
+
+const filteredEntities = computed(() => {
+  const entities = editorState.entities || []
+  if (!searchQuery.value) return entities
+  return entities.filter(e => 
+    e.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
+
+const selectEntity = (id) => {
+  if (props.params?.onSelectEntity) {
+    props.params.onSelectEntity(id)
+  }
+}
+</script>
+
 <template>
   <div class="hierarchy-panel">
     <div class="panel-header">
@@ -15,7 +49,7 @@
         <n-list-item 
           v-for="entity in filteredEntities" 
           :key="entity.id"
-          :class="['entity-item', props.params?.selectedEntityId === entity.id ? 'selected' : '']"
+          :class="['entity-item', editorState.selectedEntityId === entity.id ? 'selected' : '']"
           @click="selectEntity(entity.id)"
         >
           <n-space align="center" :size="8">
@@ -27,31 +61,6 @@
     </n-scrollbar>
   </div>
 </template>
-
-<script setup>
-import { ref, computed, defineProps } from 'vue'
-import { NList, NListItem, NInput, NScrollbar, NText, NSpace } from 'naive-ui'
-
-const props = defineProps({
-  params: Object
-})
-
-const searchQuery = ref('')
-
-const filteredEntities = computed(() => {
-  const entities = props.params?.entities || []
-  if (!searchQuery.value) return entities
-  return entities.filter(e => 
-    e.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
-const selectEntity = (id) => {
-  if (props.params?.onSelectEntity) {
-    props.params.onSelectEntity(id)
-  }
-}
-</script>
 
 <style scoped>
 .hierarchy-panel {

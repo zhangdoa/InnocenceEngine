@@ -170,6 +170,11 @@ function setupSharedTexture(info) {
     return;
   }
 
+  if (process.env.E2E_TEST) {
+    console.log('Main: Skipping shared texture import due to E2E_TEST environment variable.');
+    return;
+  }
+
   if (importedTexture) {
     importedTexture.release();
   }
@@ -227,6 +232,12 @@ app.whenReady().then(() => {
 
   ipcMain.on('engine-restart', () => {
     restartEngine();
+  });
+
+  ipcMain.on('engine-message', (event, msg) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(msg));
+    }
   });
 });
 

@@ -1,14 +1,15 @@
 <template>
   <div class="viewport-panel">
-    <div class="viewport-info" v-if="props.params?.sharedHandle">
-      Handle: 0x{{ props.params.sharedHandle.toString(16).toUpperCase() }}
+    <div class="viewport-info" v-if="editorState.sharedHandle">
+      Handle: 0x{{ editorState.sharedHandle.toString(16).toUpperCase() }}
     </div>
     <canvas ref="viewportCanvas" class="viewport-canvas"></canvas>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, defineProps, watch } from 'vue'
+import { ref, onMounted, defineProps, watch, inject } from 'vue'
+import { editorState } from '../store'
 
 const props = defineProps({
   params: Object
@@ -50,11 +51,13 @@ onMounted(() => {
         console.warn('ViewportPanel: sharedTexture or setSharedTextureReceiver is missing!', sharedTexture);
       }
       
-      // Request texture immediately if handle is already there
-      if (props.params && props.params.sharedHandle) {
-        console.log('ViewportPanel: Initial handle present. Asking main process to send texture.');
-        ipcRenderer.send('renderer-ready-for-texture')
-      }
+      // Watch for handle updates from editorState and request the texture from the main process
+      watch(() => editorState.sharedHandle, (newHandle) => {
+        if (newHandle) {
+          console.log(`ViewportPanel: Handle updated to 0x${newHandle.toString(16).toUpperCase()}. Asking main process to send texture.`);
+          ipcRenderer.send('renderer-ready-for-texture')
+        }
+      }, { immediate: true })
 
       // Also listen to IPC directly to know when the texture is imported by main
       ipcRenderer.on('viewport-ready', (event, info) => {
@@ -84,8 +87,8 @@ onMounted(() => {
 }
 
 .viewport-canvas {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
