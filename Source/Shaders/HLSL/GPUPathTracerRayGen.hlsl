@@ -318,6 +318,6 @@ void RayGenShader()
 
     float4 prev = AccumBuffer[pixel];
     float  t    = 1.0f / float(g_FrameCount);
-    float3 clampedRadiance = min(radiance, 100.0f);
+    float3 clampedRadiance = min(radiance, 100000.0f);
     AccumBuffer[pixel] = lerp(prev, float4(clampedRadiance, 1.0f), t);
 }
