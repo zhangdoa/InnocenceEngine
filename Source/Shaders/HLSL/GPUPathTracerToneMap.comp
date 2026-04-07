@@ -28,11 +28,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint2 pixel = DTid.xy;
     float3 hdr = in_AccumBuffer[pixel].rgb;
 
-    float exposure = g_Frame.aperture != 0.0f
-        ? (g_Frame.ISO / (g_Frame.aperture * g_Frame.aperture * g_Frame.shutterTime * 100.0f))
-        : 1.0f;
-
-    float3 exposed    = hdr * exposure;
+    float3 exposed    = hdr;
     float3 tonemapped = ACESFilmic(exposed);
     float3 srgb       = LinearToSRGB(tonemapped);
 
