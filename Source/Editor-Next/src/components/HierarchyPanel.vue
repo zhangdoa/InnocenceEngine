@@ -29,12 +29,8 @@ const selectEntity = (id) => {
 
 <template>
   <div class="hierarchy-panel">
-    <div class="panel-header">
-      <n-text depth="3" strong>Scene Outliner</n-text>
-    </div>
-    
     <div class="search-bar">
-      <n-input size="small" placeholder="Search entities..." v-model:value="searchQuery" clearable>
+      <n-input size="small" placeholder="Search outliner..." v-model:value="searchQuery" clearable>
         <template #prefix>
           <n-icon><search-outline /></n-icon>
         </template>
@@ -54,11 +50,11 @@ const selectEntity = (id) => {
           @click="selectEntity(entity.id)"
         >
           <n-space align="center" :size="8">
-            <n-icon size="16" :color="editorState.selectedEntityId === entity.id ? '#63e2b7' : '#a1a1aa'">
+            <n-icon size="16" :color="editorState.selectedEntityId === entity.id ? '#c6a0f6' : '#a5adcb'">
               <cube-outline />
             </n-icon>
             <n-text :strong="editorState.selectedEntityId === entity.id" 
-                    :style="{ color: editorState.selectedEntityId === entity.id ? '#fff' : '#d4d4d8' }">
+                    :style="{ color: editorState.selectedEntityId === entity.id ? '#cad3f5' : '#b8c0e0' }">
               {{ entity.name }}
             </n-text>
           </n-space>
@@ -73,21 +69,13 @@ const selectEntity = (id) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #09090b; /* Zinc 950 */
-}
-
-.panel-header {
-  padding: 10px 16px;
-  background: #18181b; /* Zinc 900 */
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid #27272a;
+  background: #24273a; /* Catppuccin Base */
 }
 
 .search-bar {
   padding: 12px;
-  background: #09090b;
+  background: #24273a;
+  border-bottom: 1px solid #1e2030;
 }
 
 .empty-container {
@@ -95,7 +83,6 @@ const selectEntity = (id) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #09090b;
 }
 
 .entity-list {
@@ -115,11 +102,11 @@ const selectEntity = (id) => {
 }
 
 :deep(.n-list-item:hover) {
-  background: #18181b !important;
+  background: #363a4f !important; /* Catppuccin Surface0 */
 }
 
 .entity-item.selected {
-  background: #1e1e2e !important; /* Slightly distinct blue-grey */
+  background: #363a4f !important; /* Catppuccin Surface0 */
   position: relative;
 }
 
@@ -130,6 +117,6 @@ const selectEntity = (id) => {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: #63e2b7;
+  background: #c6a0f6; /* Catppuccin Mauve */
 }
 </style>

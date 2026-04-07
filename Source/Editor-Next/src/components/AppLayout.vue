@@ -2,12 +2,6 @@
   <div class="editor-shell">
     <header class="editor-header">
       <div class="header-left">
-        <div class="logo">
-          <n-icon size="20" color="#3b82f6" style="vertical-align: middle; margin-right: 8px;">
-            <component :is="icons.terminal" />
-          </n-icon>
-          InnoEngine Control
-        </div>
         <n-menu mode="horizontal" :options="menuOptions" class="menu-bar" />
       </div>
       <div class="header-right">
@@ -49,11 +43,11 @@
 
     <footer class="editor-footer">
       <n-space justify="space-between" align="center" style="width: 100%; height: 100%; padding: 0 12px;">
-        <n-text depth="3" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Status: Ready</n-text>
+        <n-text depth="3" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Ready</n-text>
         <n-text depth="3" class="flex-grow" style="font-size: 11px; font-family: monospace;">
-          {{ editorState.lastMessage || 'Waiting for engine...' }}
+          {{ editorState.lastMessage || 'System Idle' }}
         </n-text>
-        <n-text depth="3" style="font-size: 10px;">V2.0.0-BETA</n-text>
+        <n-text depth="3" style="font-size: 10px;">v0.0.9</n-text>
       </n-space>
     </footer>
   </div>
@@ -200,8 +194,8 @@ onUnmounted(() => {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #09090b; /* Zinc 950 */
-  color: #fafafa; /* Zinc 50 */
+  background: #24273a; /* Catppuccin Macchiato Base */
+  color: #cad3f5; /* Catppuccin Macchiato Text */
 }
 
 .editor-header {
@@ -211,8 +205,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: #18181b; /* Zinc 900 */
-  border-bottom: 1px solid #27272a; /* Zinc 800 */
+  background: #1e2030; /* Catppuccin Macchiato Mantle */
+  border-bottom: 1px solid #494d64; /* Catppuccin Macchiato Surface1 */
   user-select: none;
 }
 
@@ -223,19 +217,11 @@ onUnmounted(() => {
   flex: 1;
 }
 
-.logo { 
-  font-weight: 800; 
-  font-size: 14px; 
-  color: #fff; 
-  white-space: nowrap;
-  letter-spacing: -0.025em;
-  text-transform: uppercase;
-}
-
 .menu-bar { 
   flex: 1;
   min-width: 300px;
   border: none !important; 
+  background: transparent !important;
 }
 
 .header-right {
@@ -251,14 +237,14 @@ onUnmounted(() => {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #09090b;
+  background: #24273a;
 }
 
 .editor-footer {
   height: 28px;
   flex-shrink: 0;
-  background: #18181b;
-  border-top: 1px solid #27272a;
+  background: #1e2030;
+  border-top: 1px solid #494d64;
 }
 
 .flex-grow { flex: 1; text-align: center; }

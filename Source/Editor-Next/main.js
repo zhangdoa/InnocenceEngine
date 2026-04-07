@@ -62,9 +62,13 @@ function restartEngine() {
 }
 
 function createWindow() {
+  const iconPath = path.join(__dirname, '../../Data/EngineAssets/icon.svg');
+  console.log(`Main: Loading application icon from ${iconPath}`);
+
   win = new BrowserWindow({ 
     width: 1600, 
     height: 900,
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false

@@ -25,10 +25,6 @@ test('editor launches and connects to engine', async () => {
   // Wait for the UI to be loaded
   log('Waiting for UI shell to be ready...');
   await window.waitForSelector('.editor-shell', { timeout: 30000 });
-  
-  const logoText = await window.textContent('.logo');
-  log(`Logo text: ${logoText}`);
-  expect(logoText.trim()).toBe('InnoEngine Control');
 
   // 1. Wait for connection (status becomes "Live")
   log('Waiting for engine connection (status: Live)...');

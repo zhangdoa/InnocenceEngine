@@ -34,10 +34,6 @@ const updateColor = (comp, hex) => {
 
 <template>
   <div class="property-panel">
-    <div class="panel-header">
-      <n-text depth="3" strong>Inspector</n-text>
-    </div>
-    
     <div v-if="!editorState.selectedEntity" class="no-selection">
       <n-empty description="No Selection" size="small" />
     </div>
@@ -45,8 +41,8 @@ const updateColor = (comp, hex) => {
     <n-scrollbar v-else class="properties-content">
       <div class="entity-info">
         <n-space align="center" :size="8">
-          <n-icon size="20" color="#3b82f6"><cube-outline /></n-icon>
-          <n-h3 style="margin: 0; color: #fff;">{{ editorState.selectedEntity.name }}</n-h3>
+          <n-icon size="20" color="#8aadf4"><cube-outline /></n-icon>
+          <n-h3 style="margin: 0; color: #cad3f5;">{{ editorState.selectedEntity.name }}</n-h3>
         </n-space>
         <n-text depth="3" style="font-size: 10px; font-family: monospace; margin-left: 28px;">
           UID: {{ editorState.selectedEntity.id }}
@@ -61,9 +57,9 @@ const updateColor = (comp, hex) => {
         >
           <template #header>
             <n-space align="center" :size="8">
-              <n-icon v-if="comp.type === 'TransformComponent'" color="#a1a1aa"><settings-outline /></n-icon>
-              <n-icon v-else-if="comp.type === 'LightComponent'" color="#fbbf24"><bulb-outline /></n-icon>
-              <n-text strong style="color: #e4e4e7;">{{ comp.type }}</n-text>
+              <n-icon v-if="comp.type === 'TransformComponent'" color="#91d7e3"><settings-outline /></n-icon>
+              <n-icon v-else-if="comp.type === 'LightComponent'" color="#eed49f"><bulb-outline /></n-icon>
+              <n-text strong style="color: #cad3f5;">{{ comp.type }}</n-text>
             </n-space>
           </template>
 
@@ -74,17 +70,17 @@ const updateColor = (comp, hex) => {
                 <n-grid :cols="3" :x-gap="6">
                   <n-grid-item>
                     <n-input-number v-model:value="comp.pos[0]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
-                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #ef4444;">X</n-text></template>
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #ed8796;">X</n-text></template>
                     </n-input-number>
                   </n-grid-item>
                   <n-grid-item>
                     <n-input-number v-model:value="comp.pos[1]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
-                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #22c55e;">Y</n-text></template>
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #a6da95;">Y</n-text></template>
                     </n-input-number>
                   </n-grid-item>
                   <n-grid-item>
                     <n-input-number v-model:value="comp.pos[2]" @update:value="updateProp(comp.type, 'pos', comp.pos)" :show-button="false">
-                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #3b82f6;">Z</n-text></template>
+                      <template #prefix><n-text depth="3" style="font-size: 10px; color: #8aadf4;">Z</n-text></template>
                     </n-input-number>
                   </n-grid-item>
                 </n-grid>
@@ -153,16 +149,7 @@ const updateColor = (comp, hex) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #09090b; /* Zinc 950 */
-}
-
-.panel-header {
-  padding: 10px 16px;
-  background: #18181b; /* Zinc 900 */
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid #27272a;
+  background: #24273a; /* Catppuccin Base */
 }
 
 .no-selection {
@@ -170,26 +157,27 @@ const updateColor = (comp, hex) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #09090b;
+  background: #24273a;
 }
 
 .properties-content {
   flex: 1;
-  padding: 16px;
+  padding: 24px 20px; /* Increased padding to avoid sticking to edges */
 }
 
 .entity-info {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid #494d64;
 }
 
 :deep(.n-collapse-item) {
-  margin-bottom: 12px;
-  background: #18181b;
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px solid #27272a;
+  margin-bottom: 16px;
+  background: #363a4f; /* Catppuccin Surface0 */
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #494d64;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 :deep(.n-collapse-item__header) {
@@ -201,11 +189,11 @@ const updateColor = (comp, hex) => {
 }
 
 :deep(.n-input-number) {
-  background: #09090b;
+  background: #24273a;
 }
 
 :deep(.n-form-item-label) {
-  color: #a1a1aa !important; /* Zinc 400 */
+  color: #a5adcb !important; /* Catppuccin Subtext0 */
   font-size: 12px;
 }
 </style>
