@@ -106,6 +106,7 @@ The editor is a Qt-based application in `Source/Editor/`. It uses Qt widgets (QT
 - Never produce scratch files in the repo root or any tracked directory
 - Transient output (build logs, test captures) goes to `Build/` (gitignored) only
 - Scripts belong in `Scripts/` (tracked) — never in `Build/`
+- **Documentation Persistence:** Always commit brainstorming specs (`docs/superpowers/specs/`) and implementation plans (`docs/superpowers/plans/`) to the repository. These are valuable technical artifacts and must not be discarded.
 - "Go ahead" means implement — do not ask follow-up questions
 
 ## Forbidden

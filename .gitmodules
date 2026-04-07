@@ -37,3 +37,6 @@
 [submodule "Source/External/GitSubmodules/ixwebsocket"]
 	path = Source/External/GitSubmodules/ixwebsocket
 	url = https://github.com/machinezone/IXWebSocket.git
+[submodule "Source/External/GitSubmodules/catppuccin-palette"]
+	path = Source/External/GitSubmodules/catppuccin-palette
+	url = https://github.com/catppuccin/palette.git
