@@ -138,6 +138,11 @@ bool FrameManagementService::Update()
 
 	BeginFrame();
 
+	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
+	{
+		AssignSwapChainImages();
+	}
+
 	g_Engine->Get<MeshResourceService>()->InitializeComponents();
 	g_Engine->Get<TextureResourceService>()->InitializeComponents();
 	g_Engine->Get<MaterialResourceService>()->InitializeComponents();

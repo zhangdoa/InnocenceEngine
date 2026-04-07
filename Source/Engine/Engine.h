@@ -8,7 +8,7 @@
 
 namespace Inno
 {
-	enum EngineMode { Host, Slave };
+	enum EngineMode { Host, Slave, Sidecar };
 
 	enum GraphicsService { DX12, VK, MT };
 
@@ -21,6 +21,8 @@ namespace Inno
 		bool isOffscreen = false;
 		bool isAudit = false;
 		char testCase[64] = {};
+		int maxFrames = 0;  // >0: auto-terminate after this many frames post-GI-scene-load
+		uint32_t parentPID = 0; // if >0, we duplicate handles to this process
 		int totalFrames = 0;  // >0: auto-terminate after this many frames
 		int reloadAtFrame = 0;  // >0: trigger scene reload at this frame
 		int captureFrame = -1;  // >=0: trigger RenderDoc/PIX capture at this frame

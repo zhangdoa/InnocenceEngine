@@ -194,6 +194,9 @@ bool DX12GraphicsHardwareService::WaitOnGPU(ISemaphore* semaphore, GPUEngineType
 		semaphoreValue = l_semaphore->m_CopyCommandQueueSemaphore;
 	}
 
+	if (semaphoreValue == 0)
+		return true;
+
 	if (commandQueue && fence)
 		commandQueue->Wait(fence, semaphoreValue);
 
@@ -232,6 +235,9 @@ uint64_t DX12GraphicsHardwareService::GetSemaphoreValue(GPUEngineType queueType)
 
 bool DX12GraphicsHardwareService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineType queueType)
 {
+	if (semaphoreValue == 0)
+		return true;
+
 	auto l_semaphore = reinterpret_cast<DX12Semaphore*>(g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore());
 	HANDLE* fenceEvent = nullptr;
 

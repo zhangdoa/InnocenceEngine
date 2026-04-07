@@ -53,6 +53,7 @@ namespace Inno
 		ISemaphore* GetGlobalSemaphore();
 		void SetGlobalSemaphore(ISemaphore* semaphore) { m_GlobalSemaphore = semaphore; }
 		std::vector<CommandListComponent*>& GetGlobalGraphicsCommandLists() { return m_GlobalGraphicsCommandLists; }
+		virtual void* GetViewportSharedHandle() { return nullptr; }
 
 		// Command list lifecycle
 		virtual bool Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }
@@ -109,6 +110,9 @@ namespace Inno
 		// Swap chain render pass
 		RenderPassComponent* m_SwapChainRenderPassComp = nullptr;
 
+		// Callbacks
+		std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;
+
 	private:
 		bool InitializeSwapChainRenderPassComponent();
 		bool PrepareGlobalCommands();
@@ -125,8 +129,6 @@ namespace Inno
 		ShaderProgramComponent* m_SwapChainShaderProgramComp = nullptr;
 		SamplerComponent* m_SwapChainSamplerComp = nullptr;
 
-		// Callbacks
-		std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;
 		std::function<bool()> m_UploadHeapPreparationCallback;
 		std::function<bool()> m_CommandPreparationCallback;
 		std::function<bool()> m_CommandExecutionCallback;

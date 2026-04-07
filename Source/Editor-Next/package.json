@@ -1,0 +1,27 @@
+{
+  "name": "editor-next",
+  "version": "1.0.0",
+  "description": "Next generation editor for InnocenceEngine",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "npx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@rollup/rollup-win32-x64-msvc": "^4.60.1",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "electron": "^41.1.1",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "dockview-vue": "^5.2.0",
+    "naive-ui": "^2.44.1",
+    "vfonts": "^0.0.3",
+    "vue": "^3.4.0",
+    "ws": "^8.20.0"
+  }
+}

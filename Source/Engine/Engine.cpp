@@ -25,6 +25,7 @@
 #include "Services/AnimationResourceService.h"
 #include "Services/AnimationSimulationService.h"
 #include "Services/GUIService.h"
+#include "Services/EditorService.h"
 #include "Services/GraphicsHardwareService.h"
 
 // Platform-specific systems
@@ -171,10 +172,14 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	}
 
 	auto l_engineModeArgPos = arg.find("mode");
+	auto l_sidecarArgPos = arg.find("sidecar");
 
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		Log(Warning, "No engine mode argument found, use default game mode.");
+		if (l_sidecarArgPos == std::string::npos)
+		{
+			Log(Warning, "No engine mode argument found, use default game mode.");
+		}
 	}
 	else
 	{
@@ -190,6 +195,11 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		{
 			l_result.engineMode = EngineMode::Slave;
 			Log(Success, "Launch in slave mode, engine requires client handle OS event.");
+		}
+		else if (l_engineModeArguments == "2")
+		{
+			l_result.engineMode = EngineMode::Sidecar;
+			Log(Success, "Launch in sidecar mode, engine will be controlled by external process.");
 		}
 		else
 		{
@@ -235,7 +245,7 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	}
 
 	auto l_logLevelArgPos = arg.find("loglevel");
-	if (l_engineModeArgPos == std::string::npos)
+	if (l_logLevelArgPos == std::string::npos)
 	{
 		Get<LogService>()->SetDefaultLogLevel(LogLevel::Success);
 	}
@@ -278,6 +288,12 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 	{
 		l_result.isOffscreen = true;
 		Log(Success, "Launch in offscreen mode, no windowing but real rendering server for testing.");
+	}
+
+	if (l_sidecarArgPos != std::string::npos)
+	{
+		l_result.engineMode = EngineMode::Sidecar;
+		Log(Success, "Launch in sidecar mode, engine will be controlled by external process.");
 	}
 
 	if (arg.find("audit") != std::string::npos)
@@ -338,6 +354,18 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		{
 			l_result.captureFrame = std::stoi(l_remainder.substr(l_start));
 			Log(Success, "RenderDoc capture at frame ", l_result.captureFrame, ".");
+		}
+	}
+
+	auto l_parentPidArgPos = arg.find("-parent_pid");
+	if (l_parentPidArgPos != std::string::npos)
+	{
+		auto l_remainder = arg.substr(l_parentPidArgPos + 12);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			l_result.parentPID = std::stoul(l_remainder.substr(l_start));
+			Log(Success, "Parent PID set to: ", l_result.parentPID);
 		}
 	}
 
@@ -456,6 +484,11 @@ bool Engine::CreateServices(void* appHook, void* extraHook, char* pScmdline)
 	Get<LightSimulationService>();
 	Get<CameraService>();
 
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		Get<EditorService>();
+	}
+
 	return true;
 }
 
@@ -509,6 +542,11 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 	SystemSetup(LightSimulationService);
 	SystemSetup(CameraService);
+
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		SystemSetup(EditorService);
+	}
 
 	SystemSetup(TemplateAssetService);
 
@@ -707,6 +745,11 @@ bool Engine::Initialize()
 	SystemInit(LightSimulationService);
 	SystemInit(CameraService);
 
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		SystemInit(EditorService);
+	}
+
 	// Only initialize rendering-related services if not headless
 	if (!m_pImpl->m_initConfig.isHeadless) {
 		Get<FrameManagementService>()->Initialize();
@@ -836,6 +879,11 @@ bool Engine::Terminate()
 
 	SystemTerm(CameraService);
 	SystemTerm(LightSimulationService);
+
+	if (m_pImpl->m_initConfig.engineMode == EngineMode::Sidecar)
+	{
+		SystemTerm(EditorService);
+	}
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);

@@ -56,6 +56,11 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDesc(TextureDesc textureDesc)
 		l_result.SampleDesc.Quality = 0;
 		l_result.Dimension = GetTextureDimension(textureDesc);
 		l_result.Flags = GetTextureBindFlags(textureDesc);
+
+		if (textureDesc.UseSharedHandle)
+		{
+			l_result.Flags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
+		}
 	}
 
 	return l_result;

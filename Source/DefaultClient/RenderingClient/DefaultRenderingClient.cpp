@@ -389,8 +389,14 @@ namespace Inno
 			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 
+			// ToneMap CL: transition accum to SRV + dispatch
+			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Compute);
+			auto l_toneMapCL = GPUPathTracerPass::Get().GetToneMapCommandList();
+			l_hwService->Execute(l_toneMapCL, GPUEngineType::Compute);
+			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+
 			// Post-processing: LuminanceHistogram -> LuminanceAverage -> FinalBlend
-			// Wait for ray tracing compute to finish before post-processing touches AccumulationBuffer
+			// Wait for tonemap compute to finish before post-processing
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			// LuminanceHistogram

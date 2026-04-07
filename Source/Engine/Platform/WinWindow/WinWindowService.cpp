@@ -22,6 +22,9 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 
 	m_ApplicationName = g_Engine->GetApplicationName().c_str();
 	m_InitConfig = g_Engine->getInitConfig();
+
+	Log(Success, "WinWindowService::Setup: engineMode=", (int)m_InitConfig.engineMode);
+
 	switch (m_InitConfig.graphicsService)
 	{
 	case GraphicsService::DX12:
@@ -38,7 +41,7 @@ bool WinWindowService::Setup(IServiceConfig* systemConfig)
 		break;
 	}
 
-	if (m_InitConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
 	{
 		// Setup the windows class with default settings.
 		auto l_windowName = g_Engine->GetApplicationName();
@@ -97,7 +100,7 @@ bool WinWindowService::Initialize()
 {
 	m_WindowSurface->Initialize();
 
-	if (m_InitConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
 	{
 		// Bring the window up on the screen and set it as main focus.
 		ShowWindow(reinterpret_cast<WinWindowService*>(g_Engine->getWindowService())->GetWindowHandle(), true);
@@ -113,7 +116,7 @@ bool WinWindowService::Initialize()
 
 bool WinWindowService::Update()
 {
-	if (m_InitConfig.engineMode != EngineMode::Host)
+	if (m_InitConfig.engineMode != EngineMode::Host && m_InitConfig.engineMode != EngineMode::Sidecar)
 		return true;
 
 	MSG msg = { 0 };
@@ -130,7 +133,7 @@ bool WinWindowService::Terminate()
 {
 	m_WindowSurface->Terminate();
 
-	if (m_InitConfig.engineMode == EngineMode::Host)
+	if (m_InitConfig.engineMode == EngineMode::Host || m_InitConfig.engineMode == EngineMode::Sidecar)
 	{
 		// Show the mouse cursor.
 		ShowCursor(true);

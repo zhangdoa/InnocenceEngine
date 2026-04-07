@@ -204,6 +204,11 @@ bool FinalBlendPass::RenderTargetsCreationFunc()
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
+	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
+	{
+		m_Result->m_TextureDesc.UseSharedHandle = true;
+	}
+
 	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 
 	return true;
