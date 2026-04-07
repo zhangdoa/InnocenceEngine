@@ -128,7 +128,34 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	f_sceneUnloadingCallback = [this]()
 	{
+		// GPU is guaranteed idle here (WaitForGPUIdle called before unloading callbacks).
+		// Release geometry buffers now so they aren't deleted mid-frame in RebuildGeometryBuffers.
+		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
+
+		if (m_MegaVertexBuffer)
+		{
+			l_bufService->Delete(m_MegaVertexBuffer);
+			m_MegaVertexBuffer = nullptr;
+		}
+		if (m_MegaIndexBuffer)
+		{
+			l_bufService->Delete(m_MegaIndexBuffer);
+			m_MegaIndexBuffer = nullptr;
+		}
+		if (m_MeshOffsetBuffer)
+		{
+			l_bufService->Delete(m_MeshOffsetBuffer);
+			m_MeshOffsetBuffer = nullptr;
+		}
+		if (m_MaterialBuffer)
+		{
+			l_bufService->Delete(m_MaterialBuffer);
+			m_MaterialBuffer = nullptr;
+		}
+
+		m_BuiltMeshCount = 0;
 		m_FrameCount = 1;
+		m_ObjectStatus = ObjectStatus::Suspended;
 	};
 
 	g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadedCallback);
