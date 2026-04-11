@@ -101,11 +101,43 @@ bool MeshResourceService::InitializeComponents()
 			continue;
 		}
 
-		Log(Verbose, "Processing deferred mesh initialization for: ", l_meshComp->m_InstanceName);
-		if (InitializeImpl(l_meshComp->m_Asset, l_task.m_Vertices, l_task.m_Indices))
+		// If the asset is already resident (built by a previous task sharing this handle),
+		// just activate the component without re-running GPU init — re-initializing a mapped
+		// upload buffer while it is still in use causes heap corruption.
+		if (l_resource->m_Residency == AssetResidency::Resident)
 		{
-			l_resource->m_Residency = AssetResidency::Resident;
 			l_meshComp->m_ObjectStatus = ObjectStatus::Activated;
+			continue;
+		}
+
+		// Tasks with no vertex data are activation-only: they share a handle with another mesh
+		// whose primary init task has not yet been processed. Re-queue and wait.
+		if (l_task.m_Vertices.empty())
+		{
+			m_DeferredQueue.push(std::move(l_task));
+			continue;
+		}
+
+		// Save before InitializeImpl: the GPU wait inside may stall for ms, during which
+		// the main thread emplaces more components or assets — reallocation of those
+		// std::vectors would make l_meshComp and l_resource dangling.
+		auto l_assetHandle = l_meshComp->m_Asset;
+		Log(Verbose, "Processing deferred mesh initialization for: ", l_meshComp->m_InstanceName);
+		if (InitializeImpl(l_assetHandle, l_task.m_Vertices, l_task.m_Indices))
+		{
+			// Re-fetch pointers: std::vector backing may have been reallocated.
+			auto* l_freshResource = AssetService::GetMeshAsset(l_assetHandle);
+			if (l_freshResource)
+				l_freshResource->m_Residency = AssetResidency::Resident;
+
+			MeshComponent* l_activateTarget = l_task.m_Component;
+			if (l_task.m_Owner != INVALID_ENTITY)
+			{
+				MeshComponent* l_current = g_Engine->Get<EntityRegistry>()->Get<MeshComponent>(l_task.m_Owner);
+				if (l_current)
+					l_activateTarget = l_current;
+			}
+			l_activateTarget->m_ObjectStatus = ObjectStatus::Activated;
 		}
 		else
 			m_DeferredQueue.push(std::move(l_task));

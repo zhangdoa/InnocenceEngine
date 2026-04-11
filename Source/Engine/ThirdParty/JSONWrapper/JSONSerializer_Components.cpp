@@ -142,7 +142,20 @@ bool JSONWrapper::Load(const char* fileName, MeshComponent& component, EntityID 
     MeshShape l_meshShape = MeshShape(j["MeshShape"]);
     if (l_meshShape != MeshShape::Customized)
     {
-        component = *g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_meshShape);
+        auto* l_template = g_Engine->Get<TemplateAssetService>()->GetMeshComponent(l_meshShape);
+        if (!l_template)
+        {
+            // TemplateAssetService not yet initialized (called during its own init).
+            // Return false so the caller regenerates the mesh procedurally.
+            return false;
+        }
+        // Copy the template component so this component shares its asset handle and GPU resources.
+        component = *l_template;
+        // Queue for deferred activation: the asset may not be Resident yet (BLAS still building).
+        // InitializeComponents will activate this component once the shared handle is Resident.
+        std::vector<Vertex> l_emptyVerts;
+        std::vector<Index>  l_emptyIndices;
+        g_Engine->Get<MeshResourceService>()->Initialize(&component, l_emptyVerts, l_emptyIndices, owner);
         return true;
     }
 
