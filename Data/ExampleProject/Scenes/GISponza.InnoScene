@@ -1,0 +1,34 @@
+{
+    "Name": "GISponza",
+    "DefaultComponentPath": "ExampleProject/Components/",
+    "Entities": [
+        {
+            "Name": "Sun",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Sun.TransformComponent"},
+                {"Type": 3, "Name": "GISponza.Sun.LightComponent"}
+            ]
+        },
+        {
+            "Name": "Main Camera",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Camera.TransformComponent"},
+                {"Type": 4, "Name": "GISponza.Camera.CameraComponent"}
+            ]
+        },
+        {
+            "Name": "Sponza",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Sponza.TransformComponent"}
+            ],
+            "ChildScene": "Generated/Scenes/NewSponza_Main_glTF_003.InnoScene"
+        },
+        {
+            "Name": "SponzaCurtains",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Sponza.TransformComponent"}
+            ],
+            "ChildScene": "Generated/Scenes/NewSponza_Curtains_glTF.InnoScene"
+        }
+    ]
+}

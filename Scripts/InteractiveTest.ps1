@@ -36,16 +36,10 @@ function Send-Key($hwnd, [int]$vk) {
     Start-Sleep -Milliseconds 100
 }
 
-function Hold-Key($hwnd, [int]$vk, [int]$durationMs = 500) {
-    [Win32]::PostMessage($hwnd, [Win32]::WM_KEYDOWN, [IntPtr]$vk, [IntPtr]::Zero) | Out-Null
-    Start-Sleep -Milliseconds $durationMs
-    [Win32]::PostMessage($hwnd, [Win32]::WM_KEYUP, [IntPtr]$vk, [IntPtr]::Zero) | Out-Null
-    Start-Sleep -Milliseconds 100
-}
-
 # Virtual key codes for engine keybindings
 $VK_W = 0x57; $VK_A = 0x41; $VK_S = 0x53; $VK_D = 0x44
 $VK_B = 0x42  # Toggle path tracer
+$VK_G = 0x47  # Load GISponza scene
 $VK_R = 0x52  # Load test scene
 $VK_N = 0x4E  # Run ray tracing
 $VK_E = 0x45  # Add force
@@ -151,15 +145,44 @@ function Run-CameraMovement {
 
     foreach ($key in @($VK_W, $VK_A, $VK_S, $VK_D)) {
         $name = @{ $VK_W="W"; $VK_A="A"; $VK_S="S"; $VK_D="D" }[$key]
-        Write-Host "  Moving camera: $name (holding 500ms)"
-        Hold-Key $hwnd $key 500
-        if (-not (Test-ProcessAlive)) { exit 1 }
+        Write-Host "  Moving camera: $name"
+        for ($i = 0; $i -lt 5; $i++) {
+            Send-Key $hwnd $key
+        }
+        Wait-AndCheck 1 "Camera $name"
     }
 
     # Release right mouse button
     Write-Host "  Right mouse button UP (disable camera movement)"
     [Win32]::PostMessage($hwnd, [Win32]::WM_RBUTTONUP, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
     Start-Sleep -Milliseconds 200
+}
+
+# --- Scenario: GISponza scene load and camera walkthrough ---
+function Run-GISponza {
+    Write-Host "`n--- GISponza Scene Load ---"
+
+    Write-Host "  Pressing G (load GISponza scene)"
+    Send-Key $hwnd $VK_G
+    Wait-AndCheck 20 "GISponza loading"
+
+    Write-Host "`n--- Camera walkthrough in Sponza ---"
+    [Win32]::PostMessage($hwnd, [Win32]::WM_RBUTTONDOWN, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds 200
+
+    foreach ($key in @($VK_W, $VK_W, $VK_W, $VK_A, $VK_D, $VK_S)) {
+        $name = @{ $VK_W="W"; $VK_A="A"; $VK_S="S"; $VK_D="D" }[$key]
+        Write-Host "  Moving camera: $name"
+        for ($i = 0; $i -lt 5; $i++) {
+            Send-Key $hwnd $key
+        }
+        Wait-AndCheck 1 "Camera $name"
+    }
+
+    [Win32]::PostMessage($hwnd, [Win32]::WM_RBUTTONUP, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds 200
+
+    Wait-AndCheck 3 "GISponza stable"
 }
 
 # --- Scenario: Path tracer + scene reload (the dangerous combo) ---
@@ -185,6 +208,7 @@ switch ($Scenario) {
     "scene_reload"       { Run-SceneReload }
     "camera_movement"    { Run-CameraMovement }
     "pathtracer_reload"  { Run-PathTracerWithReload }
+    "gi_sponza"          { Run-GISponza }
     "full" {
         Run-CameraMovement
         Run-TogglePathTracer
@@ -193,7 +217,7 @@ switch ($Scenario) {
     }
     default {
         Write-Host "Unknown scenario: $Scenario"
-        Write-Host "Valid: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, full"
+        Write-Host "Valid: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, gi_sponza, full"
         Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
         exit 2
     }

@@ -67,6 +67,7 @@ namespace Inno
 
 		std::function<void()> f_sceneLoadingFinishedCallback;
 		std::function<void()> f_loadTestScene;
+		std::function<void()> f_loadGISponza;
 		std::function<void()> f_convertModel;
 
 		std::function<void()> f_runRayTracing;
@@ -428,15 +429,20 @@ namespace Inno
 			g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GITestBox.InnoScene", true);
 			};
 
+		f_loadGISponza = []() {
+			g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GISponza.InnoScene", true);
+			};
+
 		f_convertModel = []() {
-			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/sibenik/sibenik.obj");
-			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/Sponza_PBR/NewSponza_Merged.fbx");
-			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/orb/orb.obj");
-			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/bunny/bunny.obj");
+			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/Sponza_PBR/main1_sponza/NewSponza_Main_glTF_003.gltf");
+			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/Sponza_Curtains/pkg_a_curtains/NewSponza_Curtains_glTF.gltf");
+			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/orb/ShaderBall.fbx");
+			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/bunny/bunny.ply");
 			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/dragon/dragon.ply");
 			};
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadGISponza });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 		  RayTracerConfig l_cfg;
