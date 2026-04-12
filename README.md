@@ -171,26 +171,25 @@ This automatically downloads:
 | Stanford Bunny | [Stanford 3D Scanning Repository](https://graphics.stanford.edu/data/3Dscanrep/) | PLY | Stanford (non-commercial) |
 | Stanford Dragon | [Stanford 3D Scanning Repository](https://graphics.stanford.edu/data/3Dscanrep/) | PLY | Stanford (non-commercial) |
 | ShaderBall (material orb) | [derkreature/ShaderBall](https://github.com/derkreature/ShaderBall) | FBX | Public domain (Unlicense) |
-
-The script also downloads:
-
-| Asset | Source | Format | License |
-| --- | --- | --- | --- |
-| Sponza Base Scene | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/830833/sponza-base-scene.html) | glTF / FBX | Intel EULA |
-| Colorful Curtains | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/726650/colorful-curtains.html) | glTF / FBX | Intel EULA |
+| Intel Sponza Base | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/830833/sponza-base-scene.html) | glTF | Intel |
+| Intel Colorful Curtains | [Intel GPU Research Samples](https://www.intel.com/content/www/us/en/content-details/726650/colorful-curtains.html) | glTF | Intel |
 | GNU FreeFont | [GNU FreeFont](https://ftp.gnu.org/gnu/freefont/) | OTF | GPLv3 |
 
-After downloading, launch the engine and press **Y** to import models into engine format.
+> **Note:** Intel assets are served behind a CDN redirect. If the script fails for those, download them manually and extract into the paths shown below.
 
-### Expected directory structure
+After downloading, build and launch the engine, then press **Y** to import models into engine format. Press **G** to load the GISponza scene.
+
+### Expected directory structure after download + import
 
 ```
 OriginalAssets/Models/
-  bunny/          # bunny.ply (or bunny.obj)
-  dragon/         # dragon.ply
-  orb/            # ShaderBall.fbx (or orb.obj)
-  Sponza_PBR/     # NewSponza_Merged.fbx (Intel Sponza Base)
-  Sponza_Curtains/  # Colorful Curtains glTF/FBX
+  bunny/                    # bunny.ply
+  dragon/                   # dragon.ply
+  orb/                      # ShaderBall.fbx
+  Sponza_PBR/
+    main1_sponza/           # NewSponza_Main_glTF_003.gltf
+  Sponza_Curtains/
+    pkg_a_curtains/         # NewSponza_Curtains_glTF.gltf
 ```
 
 ## How to use?
