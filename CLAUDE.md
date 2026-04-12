@@ -49,6 +49,14 @@ powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scri
 powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scripts/InteractiveTest.ps1" -Scenario toggle_pathtracer
 ```
 
+## RenderDoc
+RenderDoc is available as a git submodule at `Source/External/GitSubmodules/renderdoc/`. The engine has built-in frame capture support via the `-capture_frame N` CLI argument (see `.vscode/launch.json` "RenderDoc Capture" config). An MCP server is also available for programmatic capture and analysis. Use RenderDoc to diagnose texture binding, shader inputs, draw call state, and GPU resource issues.
+
+```
+# Capture frame 15 offscreen (writes .rdc to Bin/)
+powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -capture_frame 15' -Wait -PassThru -NoNewWindow).ExitCode"
+```
+
 ## Workflow
 **Implementation → Build → Runtime test → Shader test (if shaders changed) → Peer review → User approval**
 
