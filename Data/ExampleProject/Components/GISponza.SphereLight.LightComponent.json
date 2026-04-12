@@ -1,0 +1,9 @@
+{
+    "ComponentType": 3,
+    "LightType": 3,
+    "LuminousFlux": 60.0,
+    "ColorTemperature": 12000.0,
+    "UseColorTemperature": true,
+    "RGBColor": {"X": 0.7494089603424072, "Y": 0.8293917179107666, "Z": 1.0, "W": 1.0},
+    "Shape": {"X": 3.2, "Y": 0.0, "Z": 0.0, "W": 1.0}
+}

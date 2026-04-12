@@ -31,6 +31,14 @@
             ]
         },
         {
+            "Name": "Landscape",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Landscape.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Landscape.MaterialComponent"}
+            ]
+        },
+        {
             "Name": "Player Character",
             "Components": [
                 {"Type": 1, "Name": "GITestBox.Player.TransformComponent"},

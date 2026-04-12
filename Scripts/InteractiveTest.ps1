@@ -39,7 +39,7 @@ function Send-Key($hwnd, [int]$vk) {
 # Virtual key codes for engine keybindings
 $VK_W = 0x57; $VK_A = 0x41; $VK_S = 0x53; $VK_D = 0x44
 $VK_B = 0x42  # Toggle path tracer
-$VK_G = 0x47  # Load GISponza scene
+$VK_L = 0x4C  # Load GISponza scene
 $VK_R = 0x52  # Load test scene
 $VK_N = 0x4E  # Run ray tracing
 $VK_E = 0x45  # Add force
@@ -162,8 +162,8 @@ function Run-CameraMovement {
 function Run-GISponza {
     Write-Host "`n--- GISponza Scene Load ---"
 
-    Write-Host "  Pressing G (load GISponza scene)"
-    Send-Key $hwnd $VK_G
+    Write-Host "  Pressing L (load GISponza scene)"
+    Send-Key $hwnd $VK_L
     Wait-AndCheck 20 "GISponza loading"
 
     Write-Host "`n--- Camera walkthrough in Sponza ---"

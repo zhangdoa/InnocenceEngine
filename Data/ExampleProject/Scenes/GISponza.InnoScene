@@ -29,6 +29,48 @@
                 {"Type": 1, "Name": "GISponza.Sponza.TransformComponent"}
             ],
             "ChildScene": "Generated/Scenes/NewSponza_Curtains_glTF.InnoScene"
+        },
+        {
+            "Name": "Orb",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Orb.TransformComponent"}
+            ],
+            "ChildScene": "Generated/Scenes/ShaderBall.InnoScene"
+        },
+        {
+            "Name": "Bunny",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Bunny.TransformComponent"}
+            ],
+            "ChildScene": "Generated/Scenes/bunny.InnoScene"
+        },
+        {
+            "Name": "Dragon",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.Dragon.TransformComponent"}
+            ],
+            "ChildScene": "Generated/Scenes/dragon.InnoScene"
+        },
+        {
+            "Name": "PointLight",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.PointLight.TransformComponent"},
+                {"Type": 3, "Name": "GISponza.PointLight.LightComponent"}
+            ]
+        },
+        {
+            "Name": "PointLight2",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.PointLight2.TransformComponent"},
+                {"Type": 3, "Name": "GISponza.PointLight2.LightComponent"}
+            ]
+        },
+        {
+            "Name": "SphereLight",
+            "Components": [
+                {"Type": 1, "Name": "GISponza.SphereLight.TransformComponent"},
+                {"Type": 3, "Name": "GISponza.SphereLight.LightComponent"}
+            ]
         }
     ]
 }

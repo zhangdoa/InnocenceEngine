@@ -61,19 +61,20 @@ bool AssimpImporter::Import(const char* FileName)
 		return false;
 	}
 
-	ProcessAssimpScene(l_Scene, l_ExportFileName.c_str());
+	auto l_ModelBaseDir = g_Engine->Get<IOService>()->getFilePath(FileName);
+	ProcessAssimpScene(l_Scene, l_ExportFileName.c_str(), l_ModelBaseDir.c_str());
 
 	Log(Success, FileName, " has been imported.");
 	return true;
 }
 
-void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* ExportName)
+void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* ExportName, const char* ModelBaseDir)
 {
 	Log(Verbose, "Processing scene: ", ExportName);
 
 	// Collect mesh→material pairs during node processing
 	std::vector<std::pair<std::string, std::string>> l_DrawCalls;
-	ProcessAssimpNode(Scene->mRootNode, Scene, ExportName, l_DrawCalls);
+	ProcessAssimpNode(Scene->mRootNode, Scene, ExportName, ModelBaseDir, l_DrawCalls);
 
 	// Build a child .InnoScene with one entity per draw call
 	JSONWrapper::SaveChildScene(ExportName, l_DrawCalls);
@@ -83,7 +84,7 @@ void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* Export
 // AssimpWrapper is an offline asset converter (Baker tool).
 // Components are populated from Assimp data and saved to disk by the processors.
 // EntityRegistry entity creation happens at runtime load time in AssetService.
-void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene, const char* BaseName,
+void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene, const char* BaseName, const char* ModelBaseDir,
 	std::vector<std::pair<std::string, std::string>>& drawCalls)
 {
 	if (Node->mNumMeshes)
@@ -102,7 +103,7 @@ void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene,
 			if (l_AiMesh->mMaterialIndex < Scene->mNumMaterials)
 			{
 				MaterialComponent l_Material = {};
-				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_AiMesh->mMaterialIndex], BaseName, l_Material);
+				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_AiMesh->mMaterialIndex], BaseName, ModelBaseDir, l_Material);
 				l_MaterialName = l_Material.m_InstanceName.c_str();
 			}
 
@@ -114,7 +115,7 @@ void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene,
 	{
 		for (uint32_t i = 0; i < Node->mNumChildren; i++)
 		{
-			ProcessAssimpNode(Node->mChildren[i], Scene, BaseName, drawCalls);
+			ProcessAssimpNode(Node->mChildren[i], Scene, BaseName, ModelBaseDir, drawCalls);
 		}
 	}
 }

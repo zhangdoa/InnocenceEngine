@@ -8,13 +8,18 @@
 
 using namespace Inno;
 
-std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName, TextureSampler Sampler, TextureUsage Usage, bool IsSRGB, uint32_t TextureSlotIndex, const char* BaseName)
+std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName, const char* ModelBaseDir, TextureSampler Sampler, TextureUsage Usage, bool IsSRGB, uint32_t TextureSlotIndex, const char* BaseName)
 {
-	Log(Verbose, "Creating TextureComponent for: ", FileName);
+	// Resolve the texture path relative to the model's directory.
+	// FileName is relative to the model file; ModelBaseDir is the model's directory
+	// relative to the engine working directory.
+	auto l_ResolvedPath = std::string(ModelBaseDir) + FileName;
 
-	if (!g_Engine->Get<IOService>()->isFileExist(FileName))
+	Log(Verbose, "Creating TextureComponent for: ", l_ResolvedPath.c_str());
+
+	if (!g_Engine->Get<IOService>()->isFileExist(l_ResolvedPath.c_str()))
 	{
-		Log(Warning, "Texture file not found: ", FileName);
+		Log(Warning, "Texture file not found: ", l_ResolvedPath.c_str());
 		return {};
 	}
 
@@ -26,10 +31,10 @@ std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName,
 	l_Texture.m_TextureDesc.Usage = Usage;
 	l_Texture.m_TextureDesc.IsSRGB = IsSRGB;
 
-	void* l_TextureData = STBWrapper::Load(FileName, l_Texture);
+	void* l_TextureData = STBWrapper::Load(l_ResolvedPath.c_str(), l_Texture);
 	if (!l_TextureData)
 	{
-		Log(Error, "Failed to load texture data: ", FileName);
+		Log(Error, "Failed to load texture data: ", l_ResolvedPath.c_str());
 		return {};
 	}
 
@@ -37,10 +42,10 @@ std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName,
 
 	if (l_Result)
 	{
-		Log(Success, "Created and saved TextureComponent: ", FileName);
+		Log(Success, "Created and saved TextureComponent: ", l_ResolvedPath.c_str());
 		return l_Name;
 	}
 
-	Log(Error, "Failed to save TextureComponent: ", FileName);
+	Log(Error, "Failed to save TextureComponent: ", l_ResolvedPath.c_str());
 	return {};
 }

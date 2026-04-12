@@ -10,7 +10,7 @@
 
 using namespace Inno;
 
-bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, const char* BaseName, MaterialComponent& OutMaterial)
+bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial)
 {
 	auto l_MaterialName = Material->GetName().C_Str();
 	Log(Verbose, "Creating MaterialComponent for: ", l_MaterialName);
@@ -31,7 +31,7 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 
 	ProcessMaterialProperties(Material, l_assetData);
 
-	ProcessMaterialTextures(Material, BaseName, l_assetData);
+	ProcessMaterialTextures(Material, BaseName, ModelBaseDir, l_assetData);
 
 	l_assetData->m_Residency = AssetResidency::Resident;
 
@@ -114,7 +114,7 @@ void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* materi
 	}
 }
 
-void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, MaterialAssetData* assetData)
+void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, const char* modelBaseDir, MaterialAssetData* assetData)
 {
 	assetData->m_TextureNames.clear();
 
@@ -179,7 +179,7 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 				continue;
 			}
 
-			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
+			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, modelBaseDir, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
 			if (!l_textureName.empty())
 				assetData->m_TextureNames.emplace_back(l_textureName);
 		}
