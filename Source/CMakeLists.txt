@@ -37,7 +37,6 @@ endif (VULKAN_FOUND)
 endif ()
 
 option(INNO_BUILD_TOOLS OFF)
-option(INNO_BUILD_EDITOR OFF)
 
 configure_file ("${CMAKE_SOURCE_DIR}/Source/Engine/Common/Config.h.in" "${CMAKE_SOURCE_DIR}/Source/Engine/Common/Config.h" @ONLY)
 
@@ -50,8 +49,3 @@ add_subdirectory("TestClient")
 if(INNO_BUILD_TOOLS)
 add_subdirectory("Tool")
 endif (INNO_BUILD_TOOLS)
-
-# Add Qt Editor (optional, requires Qt6)
-if(INNO_BUILD_EDITOR)
-add_subdirectory("Editor")
-endif(INNO_BUILD_EDITOR)
