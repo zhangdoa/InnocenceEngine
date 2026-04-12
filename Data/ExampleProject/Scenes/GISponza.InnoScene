@@ -26,7 +26,7 @@
         {
             "Name": "SponzaCurtains",
             "Components": [
-                {"Type": 1, "Name": "GISponza.Sponza.TransformComponent"}
+                {"Type": 1, "Name": "GISponza.Curtains.TransformComponent"}
             ],
             "ChildScene": "Generated/Scenes/NewSponza_Curtains_glTF.InnoScene"
         },
