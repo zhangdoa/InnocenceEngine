@@ -423,10 +423,10 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GITestBox.InnoScene");
+		g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/UnitTest.InnoScene");
 
 		f_loadTestScene = []() {
-			g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GITestBox.InnoScene", true);
+			g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/UnitTest.InnoScene", true);
 			};
 
 		f_loadGISponza = []() {
@@ -490,8 +490,8 @@ namespace Inno
 			if (!m_AutoGISceneTriggered && m_AutoFrameCount >= 5)
 			{
 				m_AutoGISceneTriggered = true;
-				g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GITestBox.InnoScene", true);
-				Log(Success, "Auto-test: loaded GITestBox scene at frame ", m_AutoFrameCount, ".");
+				g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GISponza.InnoScene", true);
+				Log(Success, "Auto-test: loaded GISponza scene at frame ", m_AutoFrameCount, ".");
 			}
 
 			auto l_reloadAtFrame = g_Engine->getInitConfig().reloadAtFrame;
