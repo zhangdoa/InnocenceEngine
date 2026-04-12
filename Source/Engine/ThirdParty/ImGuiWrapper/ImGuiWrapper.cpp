@@ -33,8 +33,6 @@
 #include "../../Common/TaskScheduler.h"
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/SceneService.h"
-#include "../../Services/EntityRegistry.h"
-#include "../../Services/AssetService.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../RayTracer/RayTracer.h"
 
@@ -47,9 +45,6 @@ namespace ImGuiWrapperNS
 {
 	void showApplicationProfiler();
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);
-
-	void showWorldExplorer();
-	void showLightComponentPropertyEditor(void* rhs);
 	void showConcurrencyProfiler();
 
 	bool m_isParity = true;
@@ -200,8 +195,6 @@ bool ImGuiWrapper::Prepare()
 		ImGui::NewFrame();
 		{
 			ImGuiWrapperNS::showApplicationProfiler();
-			//ImGuiWrapperNS::showFileExplorer();
-			ImGuiWrapperNS::showWorldExplorer();
 			ImGuiWrapperNS::showConcurrencyProfiler();
 		}
 		ImGui::Render();
@@ -237,7 +230,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 {
 	ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Culling result: %d", g_Engine->Get<PhysicsSimulationService>()->GetCullingResult().size());
+	ImGui::Text("Culling result: %zu", g_Engine->Get<PhysicsSimulationService>()->GetCullingResult().size());
 	ImGui::Checkbox("Show concurrency profiler", &m_showConcurrencyProfiler);
 	ImGui::Checkbox("Use Motion Blur", &m_renderingConfig.useMotionBlur);
 	ImGui::Checkbox("Use TAA", &m_renderingConfig.useTAA);
@@ -307,93 +300,6 @@ void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetS
 			ImGui::EndTooltip();
 		}
 	}
-}
-
-void ImGuiWrapperNS::showWorldExplorer()
-{
-	static void* selectedComponent = nullptr;
-	static uint32_t selectedComponentType;
-
-	ImGui::Begin("World Explorer", 0);
-	{
-		auto l_registry = g_Engine->Get<EntityRegistry>();
-		auto l_entities = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
-		for (auto entity : l_entities)
-		{
-			if (l_registry->IsValid(entity))
-			{
-				ImGui::Text("%s", l_registry->GetName(entity));
-			}
-		}
-	}
-	ImGui::End();
-
-	ImGui::Begin("Properties", 0);
-	{
-		if (selectedComponent)
-		{
-			if (selectedComponentType == 1)
-			{
-			// Transform editing no longer available
-			}
-			else if (selectedComponentType == 3)
-			{
-				showLightComponentPropertyEditor(selectedComponent);
-			}
-		}
-	}
-	ImGui::End();
-}
-
-void ImGuiWrapperNS::showLightComponentPropertyEditor(void* rhs)
-{
-	auto l_rhs = reinterpret_cast<LightComponent*>(rhs);
-
-	ImGui::BeginChild("LightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-	{
-		static ImVec4 radiance = ImColor(l_rhs->m_RGBColor.x, l_rhs->m_RGBColor.y, l_rhs->m_RGBColor.z, l_rhs->m_RGBColor.w);
-
-		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_DisplayRGB))
-		{
-			l_rhs->m_RGBColor.x = radiance.x;
-			l_rhs->m_RGBColor.y = radiance.y;
-			l_rhs->m_RGBColor.z = radiance.z;
-			l_rhs->m_RGBColor.w = radiance.w;
-		}
-		static float colorTemperature = l_rhs->m_ColorTemperature;
-		if (ImGui::DragFloat("Color temperature", &colorTemperature, 0.01f, 1000.0f, 16000.0f))
-		{
-			l_rhs->m_ColorTemperature = colorTemperature;
-		}
-		static float luminousFlux = l_rhs->m_LuminousFlux;
-		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
-		{
-			l_rhs->m_LuminousFlux = luminousFlux;
-		}
-		static bool useColorTemperature = l_rhs->m_UseColorTemperature;
-		if (ImGui::Checkbox("Use color temperature", &useColorTemperature))
-		{
-			l_rhs->m_UseColorTemperature = useColorTemperature;
-		}
-
-		static float float_min = std::numeric_limits<float>::min();
-		static float float_max = std::numeric_limits<float>::max();
-
-		static float pos[4];
-		pos[0] = l_rhs->m_Shape.x;
-		pos[1] = l_rhs->m_Shape.y;
-		pos[2] = l_rhs->m_Shape.z;
-		pos[3] = l_rhs->m_Shape.w;
-
-		if (ImGui::DragFloat3("Shape", pos, 0.01f, float_min, float_max))
-		{
-			l_rhs->m_Shape.x = pos[0];
-			l_rhs->m_Shape.y = pos[1];
-			l_rhs->m_Shape.z = pos[2];
-			l_rhs->m_Shape.w = pos[3];
-		}
-	}
-	ImGui::EndChild();
 }
 
 ImVec4 generateButtonColor(const char* name)
