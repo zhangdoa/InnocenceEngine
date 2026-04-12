@@ -50,6 +50,22 @@ powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'Bin'; (Start-P
 
 Every step is mandatory. Any build error, RenderTest.exe crash, D3D12 validation error, or shader failure = stop and fix before proceeding.
 
+## Regression Debugging Policy
+When a regression is found, do NOT guess at the cause or add speculative fixes. Instead:
+1. Reset to the last known working commit and verify the feature works there (e.g. `git stash && git checkout <known-good-sha>`)
+2. Apply changes incrementally (commit-by-commit or file-by-file) from the working baseline toward HEAD
+3. Build and test after each incremental step to isolate the exact change that introduced the regression
+4. Only after identifying the offending change, analyze and fix the root cause
+
+## Merge Policy
+Never blindly merge branches or accept incoming changes. Always:
+1. Review every incoming change for correctness and compatibility with the current codebase
+2. Build and run the full test suite after merging — treat a merge like any other code change
+3. If tests fail post-merge, bisect the merged commits to find the offending change before attempting fixes
+
+## Bug Vigilance
+Be vigilant about any unexpected behavior, warnings, or anomalies during testing. When you observe a potential bug — even if it seems minor or intermittent — backlog it immediately so it is tracked and not forgotten.
+
 ## Skill Usage
 | Situation | Skill |
 |-----------|-------|

@@ -58,8 +58,6 @@ bool SceneService::LoadSync(const char* fileName)
 	// Load the new scene
 	AssetService::LoadScene(fileName);
 
-	Log(Verbose, "Scene ", fileName, " has been loaded.");
-
 	// Loaded phase:
 	// 6. Refresh engine service state that depends on loaded scene data
 	g_Engine->Get<BillboardDrawCallService>()->OnSceneLoaded();
