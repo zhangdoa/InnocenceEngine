@@ -40,6 +40,14 @@ namespace Inno
 			uint32_t m_IndexCount;
 		};
 
+		struct PathTracerLightCountData
+		{
+			uint32_t pointLightCount;
+			uint32_t sphereLightCount;
+			uint32_t pad0;
+			uint32_t pad1;
+		};
+
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 		// DXR ray tracing pass
@@ -49,6 +57,7 @@ namespace Inno
 		// Owned GPU resources
 		TextureComponent*   m_AccumulationBuffer = nullptr;
 		GPUBufferComponent* m_FrameCountCB       = nullptr;
+		GPUBufferComponent* m_LightCountCB       = nullptr;
 
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;

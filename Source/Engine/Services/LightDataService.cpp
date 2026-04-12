@@ -366,3 +366,13 @@ GPUBufferComponent* LightDataService::GetGIBuffer()
 {
 	return m_Impl->m_GICBufferGPUBufferComp;
 }
+
+uint32_t LightDataService::GetPointLightCount()
+{
+	return static_cast<uint32_t>(m_Impl->m_PointLightCBVector.size());
+}
+
+uint32_t LightDataService::GetSphereLightCount()
+{
+	return static_cast<uint32_t>(m_Impl->m_SphereLightCBVector.size());
+}

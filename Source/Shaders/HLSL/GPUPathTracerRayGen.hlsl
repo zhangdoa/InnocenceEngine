@@ -8,8 +8,17 @@ cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
 [[vk::binding(1, 0)]]
 cbuffer FrameCountCB : register(b1) { uint g_FrameCount; }
 
+[[vk::binding(2, 0)]]
+cbuffer LightCountCB : register(b2) { uint g_PointLightCount; uint g_SphereLightCount; uint g_LightCountPad0; uint g_LightCountPad1; }
+
 [[vk::binding(0, 1)]]
 RaytracingAccelerationStructure SceneAS : register(t0);
+
+[[vk::binding(5, 1)]]
+StructuredBuffer<PointLight_CB> g_PointLights : register(t5);
+
+[[vk::binding(6, 1)]]
+StructuredBuffer<SphereLight_CB> g_SphereLights : register(t6);
 
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> AccumBuffer : register(u0);
@@ -241,6 +250,73 @@ void RayGenShader()
         if (!shadow.isShadowed)
         {
             radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
+        }
+
+        // Point light NEE
+        for (uint ptIdx = 0; ptIdx < g_PointLightCount; ptIdx++)
+        {
+            float3 ptPos     = g_PointLights[ptIdx].position.xyz;
+            float  ptRadius  = g_PointLights[ptIdx].luminousFlux.w;
+            float3 ptFlux    = g_PointLights[ptIdx].luminousFlux.xyz;
+
+            float3 toLight = ptPos - payload.hitPos;
+            float  dist    = length(toLight);
+            if (dist > ptRadius)
+                continue;
+
+            float3 L    = toLight / dist;
+            float NdotL = max(dot(N, L), 0.0f);
+            if (NdotL <= 0.0f)
+                continue;
+
+            ShadowPayload ptShadow;
+            ptShadow.isShadowed = true;
+            RayDesc ptShadowRay;
+            ptShadowRay.Origin    = payload.hitPos + N * 0.001f;
+            ptShadowRay.Direction = L;
+            ptShadowRay.TMin      = 0.001f;
+            ptShadowRay.TMax      = dist - 0.002f;
+            TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+                     0xFF, 0, 0, 1, ptShadowRay, ptShadow);
+
+            if (!ptShadow.isShadowed)
+            {
+                float  attenuation = 1.0f / max(dist * dist, 0.0001f);
+                float3 irradiance  = ptFlux * attenuation;
+                radiance += throughput * CookTorranceGGX(N, V, L, albedo, metalness, roughness) * irradiance;
+            }
+        }
+
+        // Sphere light NEE (point sample at sphere center)
+        for (uint spIdx = 0; spIdx < g_SphereLightCount; spIdx++)
+        {
+            float3 spPos        = g_SphereLights[spIdx].position.xyz;
+            float  spSphereRad  = g_SphereLights[spIdx].luminousFlux.w;
+            float3 spFlux       = g_SphereLights[spIdx].luminousFlux.xyz;
+
+            float3 toLight = spPos - payload.hitPos;
+            float  dist    = length(toLight);
+            float3 L       = toLight / dist;
+            float NdotL    = max(dot(N, L), 0.0f);
+            if (NdotL <= 0.0f)
+                continue;
+
+            ShadowPayload spShadow;
+            spShadow.isShadowed = true;
+            RayDesc spShadowRay;
+            spShadowRay.Origin    = payload.hitPos + N * 0.001f;
+            spShadowRay.Direction = L;
+            spShadowRay.TMin      = 0.001f;
+            spShadowRay.TMax      = max(dist - spSphereRad - 0.001f, 0.001f);
+            TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+                     0xFF, 0, 0, 1, spShadowRay, spShadow);
+
+            if (!spShadow.isShadowed)
+            {
+                float  attenuation = 1.0f / max(dist * dist, 0.0001f);
+                float3 irradiance  = spFlux * attenuation;
+                radiance += throughput * CookTorranceGGX(N, V, L, albedo, metalness, roughness) * irradiance;
+            }
         }
 
         // Multi-lobe importance sampling: choose diffuse or specular path

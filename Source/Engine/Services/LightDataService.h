@@ -22,6 +22,9 @@ namespace Inno
 		GPUBufferComponent* GetCSMBuffer();
 		GPUBufferComponent* GetGIBuffer();
 
+		uint32_t GetPointLightCount();
+		uint32_t GetSphereLightCount();
+
 	private:
 		LightDataServiceImpl* m_Impl;
 	};

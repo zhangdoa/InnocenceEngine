@@ -17,6 +17,7 @@
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/Services/LightDataService.h"
 
 using namespace Inno;
 
@@ -45,9 +46,11 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	m_RayTracingRenderPassComp->m_RenderPassDesc = l_rtDesc;
 
-	// Binding layout: b0=PerFrameCB, b1=FrameCountCB, t0=TLAS, t1=MaterialBuffer,
-	//                 t2=MegaVB, t3=MegaIB, t4=MeshOffsets, u0=AccumBuffer
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(8);
+	// Binding layout: b0=PerFrameCB, b1=FrameCountCB, b2=LightCountCB,
+	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
+	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
+	//                 u0=AccumBuffer
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(11);
 
 	// b0 - PerFrameCB (set 0, binding 0)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -110,6 +113,28 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility   = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_ShaderStage            = m_ShaderStage;
+
+	// b2 - LightCountCB (set 0, binding 2)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType   = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 0;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex   = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage       = m_ShaderStage;
+
+	// t5 - PointLightBuffer (set 1, binding 5, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex        = 5;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_ShaderStage            = m_ShaderStage;
+
+	// t6 - SphereLightBuffer (set 1, binding 6, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex        = 6;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage            = m_ShaderStage;
 
 	m_RayTracingRenderPassComp->m_ShaderProgram = m_RayTracingSPC;
 
@@ -199,6 +224,14 @@ bool GPUPathTracerPass::Initialize()
 	m_FrameCountCB->m_GPUAccessibility  = Accessibility::ReadOnly;
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_FrameCountCB);
 
+	// LightCountCB: two uint32 (point count, sphere count) + two padding uint32
+	m_LightCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerLightCountCB/");
+	m_LightCountCB->m_ElementCount      = 1;
+	m_LightCountCB->m_ElementSize       = sizeof(PathTracerLightCountData);
+	m_LightCountCB->m_CPUAccessibility  = Accessibility::WriteOnly;
+	m_LightCountCB->m_GPUAccessibility  = Accessibility::ReadOnly;
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_LightCountCB);
+
 	m_ObjectStatus = ObjectStatus::Suspended;
 
 	return true;
@@ -249,6 +282,17 @@ bool GPUPathTracerPass::Update()
 		g_Engine->Get<GPUBufferResourceService>()->Upload(m_FrameCountCB, &m_FrameCount);
 	}
 
+	if (m_LightCountCB && m_LightCountCB->m_ObjectStatus == ObjectStatus::Activated)
+	{
+		auto l_lightService = g_Engine->Get<LightDataService>();
+		PathTracerLightCountData l_lightCounts;
+		l_lightCounts.pointLightCount  = l_lightService->GetPointLightCount();
+		l_lightCounts.sphereLightCount = l_lightService->GetSphereLightCount();
+		l_lightCounts.pad0 = 0;
+		l_lightCounts.pad1 = 0;
+		g_Engine->Get<GPUBufferResourceService>()->Upload(m_LightCountCB, &l_lightCounts);
+	}
+
 	return true;
 }
 
@@ -267,6 +311,8 @@ bool GPUPathTracerPass::Terminate()
 
 	if (m_FrameCountCB)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_FrameCountCB);
+	if (m_LightCountCB)
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_LightCountCB);
 	if (m_AccumulationBuffer)
 		g_Engine->Get<TextureResourceService>()->Delete(m_AccumulationBuffer);
 
@@ -325,6 +371,9 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaIndexBuffer,                 5);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MeshOffsetBuffer,                6);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_AccumulationBuffer,              7);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_LightCountCB,                    8);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetPointLightBuffer(),  9);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetSphereLightBuffer(), 10);
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
