@@ -1,8 +1,0 @@
-{
-    "LightType": 0,
-    "LuminousFlux": 100000.0,
-    "ColorTemperature": 5780.0,
-    "UseColorTemperature": true,
-    "RGBColor": {"X": 1.0, "Y": 0.9507150650024414, "Z": 0.9043404459953308, "W": 1.0},
-    "Shape": {"X": 0.0, "Y": 0.0, "Z": 0.0, "W": 1.0}
-}
