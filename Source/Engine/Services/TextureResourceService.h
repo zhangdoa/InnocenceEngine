@@ -31,6 +31,10 @@ namespace Inno
 		bool InitializeComponents();
 		bool OnSceneUnloading();
 
+		// Enqueue a texture binary decode + GPU-init on the dedicated background loader thread.
+		// Safe to call from any thread; returns immediately without blocking.
+		void EnqueueBinaryLoad(const std::string& binaryPath, TextureComponent* component, EntityID owner);
+
 		virtual bool Clear(CommandListComponent* commandList, TextureComponent* texture) { return false; }
 		virtual bool Copy(CommandListComponent* commandList, TextureComponent* src, TextureComponent* dst) { return false; }
 		virtual bool GenerateMipmap(TextureComponent* texture, CommandListComponent* commandList = nullptr) { return false; }

@@ -50,12 +50,39 @@ powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scri
 ```
 
 ## RenderDoc
-RenderDoc is available as a git submodule at `Source/External/GitSubmodules/renderdoc/`. The engine has built-in frame capture support via the `-capture_frame N` CLI argument (see `.vscode/launch.json` "RenderDoc Capture" config). An MCP server is also available for programmatic capture and analysis. Use RenderDoc to diagnose texture binding, shader inputs, draw call state, and GPU resource issues.
+RenderDoc is at `C:/Program Files/RenderDoc/renderdoccmd.exe`. The engine has built-in in-process RenderDoc API (loaded via renderdoc.dll injection). Use `-capture_frame N` to trigger a capture; the .rdc file goes to `Build/captures/`.
 
+The auto-test scene schedule in World.inl:
+- Frame 5: GISponza loads (good frame range for capturing GI scene: 6–9)
+- Frame 10: UnitTest reloads
+- Frame 20: engine exits
+
+**E2E visual verification workflow** — fully autonomous, no human needed:
 ```
-# Capture frame 15 offscreen (writes .rdc to Bin/)
-powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -capture_frame 15' -Wait -PassThru -NoNewWindow).ExitCode"
+# Step 1: Create captures dir, run capture (GISponza visible at frame 8)
+mkdir -p C:/GitRepo/InnocenceEngine/Build/captures
+"C:/Program Files/RenderDoc/renderdoccmd.exe" capture -w \
+  -d "C:/GitRepo/InnocenceEngine/Bin" \
+  -c "C:/GitRepo/InnocenceEngine/Build/captures/frame" \
+  "C:/GitRepo/InnocenceEngine/Bin/RelWithDebInfo/Main.exe" \
+  "-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -capture_frame 8"
+
+# Step 2: Find the .rdc file (name is template + 8-digit frame number)
+ls C:/GitRepo/InnocenceEngine/Build/captures/
+
+# Step 3: Extract thumbnail to PNG
+"C:/Program Files/RenderDoc/renderdoccmd.exe" thumb \
+  --out="C:/GitRepo/InnocenceEngine/Build/captures/frame8.png" \
+  "C:/GitRepo/InnocenceEngine/Build/captures/frame800000000.rdc"
+
+# Step 4: View the thumbnail — use the Read tool on the .png file
+# Claude can view images and assess whether textures/lighting look correct.
 ```
+
+**SOP: When to use RenderDoc instead of asking the user**
+- Any visual rendering change (textures, lighting, shadows, materials) — capture + thumb + Read to verify
+- Shader changes — capture before and after, compare thumbnails
+- Never ask "does it look correct?" — run the capture and check yourself
 
 ## Workflow
 **Implementation → Build → Runtime test → Shader test (if shaders changed) → Peer review → User approval**

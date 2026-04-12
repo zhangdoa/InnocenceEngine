@@ -7,6 +7,7 @@
 #   powershell.exe -NoProfile -File Scripts/InteractiveTest.ps1 -Scenario toggle_pathtracer
 #   powershell.exe -NoProfile -File Scripts/InteractiveTest.ps1 -Scenario scene_reload
 #   powershell.exe -NoProfile -File Scripts/InteractiveTest.ps1 -Scenario camera_movement
+#   powershell.exe -NoProfile -File Scripts/InteractiveTest.ps1 -Scenario reimport -TimeoutSeconds 600
 #   powershell.exe -NoProfile -File Scripts/InteractiveTest.ps1 -Scenario full
 
 param(
@@ -44,6 +45,7 @@ $VK_R = 0x52  # Load test scene
 $VK_N = 0x4E  # Run ray tracing
 $VK_E = 0x45  # Add force
 $VK_H = 0x48  # Light heatmap
+$VK_Y = 0x59  # Re-import all models (writes .innobin texture/mesh files)
 $VK_SPACE = 0x20  # Speed up
 
 $binDir = Join-Path $PSScriptRoot "..\Bin"
@@ -158,6 +160,34 @@ function Run-CameraMovement {
     Start-Sleep -Milliseconds 200
 }
 
+# --- Scenario: Re-import all models (generates .innobin texture/mesh binary files) ---
+function Run-ReImport {
+    Write-Host "`n--- Model Re-Import ---"
+    Write-Host "  Pressing Y (trigger AssetService::Import for all models)"
+    Send-Key $hwnd $VK_Y
+
+    # Import of 5 large models (Sponza x2, ShaderBall, bunny, dragon) takes several minutes.
+    # Poll for .innobin files in Data/Generated/Components/ to detect completion.
+    $generatedDir = Join-Path $PSScriptRoot "..\Data\Generated\Components"
+    $pollInterval = 10
+    $maxWait = $TimeoutSeconds - 30  # leave 30s buffer for cleanup
+    $waited = 0
+
+    Write-Host "  Polling $generatedDir for .innobin files (max ${maxWait}s)..."
+    while ($waited -lt $maxWait) {
+        Start-Sleep -Seconds $pollInterval
+        $waited += $pollInterval
+        if (-not (Test-ProcessAlive)) { exit 1 }
+
+        $innobinCount = (Get-ChildItem -Path $generatedDir -Filter "*.innobin" -ErrorAction SilentlyContinue | Measure-Object).Count
+        Write-Host "  [${waited}s] .innobin files found: $innobinCount"
+        if ($innobinCount -gt 50) {
+            Write-Host "  Import appears complete ($innobinCount files). Done."
+            break
+        }
+    }
+}
+
 # --- Scenario: GISponza scene load and camera walkthrough ---
 function Run-GISponza {
     Write-Host "`n--- GISponza Scene Load ---"
@@ -209,6 +239,7 @@ switch ($Scenario) {
     "camera_movement"    { Run-CameraMovement }
     "pathtracer_reload"  { Run-PathTracerWithReload }
     "gi_sponza"          { Run-GISponza }
+    "reimport"           { Run-ReImport }
     "full" {
         Run-CameraMovement
         Run-TogglePathTracer
@@ -217,7 +248,7 @@ switch ($Scenario) {
     }
     default {
         Write-Host "Unknown scenario: $Scenario"
-        Write-Host "Valid: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, gi_sponza, full"
+        Write-Host "Valid: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, gi_sponza, reimport, full"
         Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
         exit 2
     }

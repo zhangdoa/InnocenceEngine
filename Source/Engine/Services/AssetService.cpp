@@ -336,8 +336,13 @@ bool AssetService::Import(const char* fileName)
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
 	{
+		// Imports are serialized via a static mutex: the task scheduler dispatches each to a
+		// background thread, but only one import runs at a time. This prevents data races in
+		// the Assimp pipeline and in any shared state touched during asset conversion.
+		static std::mutex s_ImportMutex;
 		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Import Model Task", ITask::Type::Once), [=]()
 			{
+				std::lock_guard<std::mutex> l_Lock(s_ImportMutex);
 				AssimpWrapper::Import(l_fileName.c_str());
 			});
 		tempTask->Activate();

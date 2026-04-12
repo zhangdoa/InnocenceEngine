@@ -4,13 +4,38 @@
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/EntityRegistry.h"
+#include "../../ThirdParty/STBWrapper/STBWrapper.h"
 
 using namespace Inno;
+
+namespace TextureResourceServiceNS
+{
+    struct BinaryLoadRequest
+    {
+        std::string m_BinaryPath;
+        TextureComponent* m_Component;
+        EntityID m_Owner;
+    };
+
+    static ThreadSafeQueue<BinaryLoadRequest> s_BinaryLoadQueue;
+    static std::thread s_BinaryLoaderThread;
+}
 
 bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 {
 	auto l_cap = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();
 	m_Pool.Initialize(l_cap.maxTextures);
+
+	TextureResourceServiceNS::s_BinaryLoaderThread = std::thread([this]()
+	{
+		TextureResourceServiceNS::BinaryLoadRequest l_req;
+		while (TextureResourceServiceNS::s_BinaryLoadQueue.waitPop(l_req))
+		{
+			void* l_textureData = STBWrapper::Load(l_req.m_BinaryPath.c_str(), *l_req.m_Component);
+			Initialize(l_req.m_Component, l_textureData, l_req.m_Owner);
+		}
+	});
+
 	m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "TextureResourceService Setup finished.");
 	return true;
@@ -18,6 +43,10 @@ bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 
 bool TextureResourceService::Terminate()
 {
+	TextureResourceServiceNS::s_BinaryLoadQueue.invalidate();
+	if (TextureResourceServiceNS::s_BinaryLoaderThread.joinable())
+		TextureResourceServiceNS::s_BinaryLoaderThread.join();
+
 	m_Pool.Terminate();
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "TextureResourceService has been terminated.");
@@ -89,6 +118,11 @@ bool TextureResourceService::InitializeComponents()
 	}
 
 	return true;
+}
+
+void TextureResourceService::EnqueueBinaryLoad(const std::string& binaryPath, TextureComponent* component, EntityID owner)
+{
+	TextureResourceServiceNS::s_BinaryLoadQueue.push({binaryPath, component, owner});
 }
 
 bool TextureResourceService::OnSceneUnloading()

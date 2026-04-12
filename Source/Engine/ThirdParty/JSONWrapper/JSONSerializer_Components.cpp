@@ -4,8 +4,6 @@
 #include "../../Services/TemplateAssetService.h"
 #include "../../Services/PhysicsSimulationService.h"
 #include "../../Services/AssetService.h"
-#include "../STBWrapper/STBWrapper.h"
-
 #include "../../Engine.h"
 #include "../../Services/TextureResourceService.h"
 #include "../../Services/MeshResourceService.h"
@@ -213,9 +211,36 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     {
         auto l_j = j["TextureComponents"];
         l_asset->m_TextureNames.reserve(l_j.size());
+        auto l_textureService = g_Engine->Get<TextureResourceService>();
         for (const auto& l_entry : l_j)
         {
-            l_asset->m_TextureNames.push_back(l_entry["Name"].get<std::string>());
+            auto l_textureName = l_entry["Name"].get<std::string>();
+            l_asset->m_TextureNames.push_back(l_textureName);
+
+            if (l_textureName.empty())
+                continue;
+
+            // Load the TextureComponent into the pool if not already resident.
+            // DrawCallService looks up textures by name (without trailing '/'); the pool
+            // normalizes keys by stripping the sacrificial '/' so both forms match.
+            auto l_existing = l_textureService->Find(l_textureName.c_str());
+            if (l_existing)
+                continue;
+
+            // Only load if the TextureComponent JSON actually exists. Basic/template textures
+            // are created procedurally and have no JSON file; skipping them here is correct —
+            // they are handled by TemplateAssetService and found via EntityRegistry.
+            auto l_filePath = AssetService::GetAssetFilePath(l_textureName.c_str());
+            auto l_fullPath = g_Engine->Get<IOService>()->getDataDirectory() + l_filePath;
+            if (!std::filesystem::exists(l_fullPath))
+                continue;
+
+            auto l_nameWithSlash = l_textureName + "/";
+            auto l_texturePtr = l_textureService->Add(l_nameWithSlash.c_str());
+            if (!l_texturePtr)
+                continue;
+
+            Load(l_filePath.c_str(), *l_texturePtr, INVALID_ENTITY);
         }
     }
 
@@ -245,9 +270,11 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
     component.m_TextureDesc.Usage = TextureUsage(j["Usage"]);
     component.m_TextureDesc.IsSRGB = j["IsSRGB"];
 
-    void* textureData = STBWrapper::Load(AssetService::GetBinaryFilePath(j["File"].get<std::string>().c_str()).c_str(), component);
+    // Off-load binary decode to the TextureResourceService background loader thread.
+    // STBWrapper::Load reads ~64 MB per 4K texture; doing it here synchronously stalls scene loading.
+    auto l_binaryPath = AssetService::GetBinaryFilePath(j["File"].get<std::string>().c_str());
+    g_Engine->Get<TextureResourceService>()->EnqueueBinaryLoad(l_binaryPath, &component, owner);
 
-    g_Engine->Get<TextureResourceService>()->Initialize(&component, textureData, owner);
     return true;
 }
 
