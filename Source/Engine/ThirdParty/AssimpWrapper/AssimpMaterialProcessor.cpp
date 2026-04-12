@@ -116,7 +116,12 @@ void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* materi
 
 void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material, const char* baseName, const char* modelBaseDir, MaterialAssetData* assetData)
 {
-	assetData->m_TextureNames.clear();
+	// Slot mapping (matches opaqueGeometryProcessPass.frag and m_TextureIndices_N in common.hlsl):
+	//   0 = normal, 1 = albedo, 2 = metallic, 3 = roughness, 4 = AO
+	// Pre-size with empty strings so absent textures leave their slot as "" and DrawCallService
+	// emits INVALID_TEXTURE_INDEX for that slot, causing the shader to fall back to material attributes.
+	constexpr uint32_t kTextureSlotCount = 5;
+	assetData->m_TextureNames.assign(kTextureSlotCount, "");
 
 	for (uint32_t i = 0; i < aiTextureType_UNKNOWN; i++)
 	{
@@ -181,7 +186,7 @@ void AssimpMaterialProcessor::ProcessMaterialTextures(const aiMaterial* material
 
 			auto l_textureName = AssimpTextureProcessor::CreateTextureComponent(l_localPath, modelBaseDir, l_sampler, l_usage, l_isSRGB, l_textureSlotIndex, baseName);
 			if (!l_textureName.empty())
-				assetData->m_TextureNames.emplace_back(l_textureName);
+				assetData->m_TextureNames[l_textureSlotIndex] = l_textureName;
 		}
 	}
 }
