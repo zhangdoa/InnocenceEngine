@@ -1,21 +1,14 @@
 #pragma once
-
 #include "../Interface/IService.h"
-#include <memory>
-
-namespace ix { class WebSocketServer; }
+#include <vector>
+#include <string>
 
 namespace Inno
 {
 	class EditorService : public IService
 	{
 	public:
-		EditorService();
-		~EditorService();
-		EditorService(const EditorService& rhs) = delete;
-		EditorService& operator=(const EditorService& rhs) = delete;
-		EditorService(EditorService&& other) = default;
-		EditorService& operator=(EditorService&& other) = default;
+		INNO_CLASS_CONCRETE_NON_COPYABLE(EditorService);
 
 		bool Setup(IServiceConfig* config) override;
 		bool Initialize() override;
@@ -28,7 +21,7 @@ namespace Inno
 
 	private:
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-		std::unique_ptr<ix::WebSocketServer> m_Server;
+		void* m_Server = nullptr; // Opaque pointer to ix::WebSocketServer
 		uint32_t m_clientPID = 0;
 	};
 }

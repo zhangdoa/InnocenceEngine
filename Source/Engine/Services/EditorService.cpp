@@ -3,6 +3,7 @@
 #include "../Common/LogService.h"
 #include "EntityRegistry.h"
 #include "SceneService.h"
+#include "AssetService.h"
 #include "RenderingConfigurationService.h"
 #include "FrameManagementService.h"
 #include "../Component/TransformComponent.h"
@@ -24,8 +25,8 @@
 
 using namespace Inno;
 
-EditorService::EditorService() = default;
-EditorService::~EditorService() = default;
+// Helper to cast opaque pointer to server
+inline ix::WebSocketServer* GetServer(void* ptr) { return static_cast<ix::WebSocketServer*>(ptr); }
 
 // Helper to serialize Vec3/Vec4
 static json SerializeVec(const Vec3& v) { return { v.x, v.y, v.z }; }
@@ -40,11 +41,24 @@ bool EditorService::Setup(IServiceConfig* config)
 
 bool EditorService::Initialize()
 {
-	m_Server = std::make_unique<ix::WebSocketServer>(8081, "127.0.0.1");
+	auto l_server = new ix::WebSocketServer(8081, "127.0.0.1");
+	m_Server = l_server;
 
-	m_Server->setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg)
+	l_server->setOnClientMessageCallback([this, l_server](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket& webSocket, const ix::WebSocketMessagePtr& msg)
 		{
-			if (msg->type == ix::WebSocketMessageType::Message)
+			if (msg->type == ix::WebSocketMessageType::Open)
+			{
+				Log(Success, "EditorService: New client connection opened.");
+			}
+			else if (msg->type == ix::WebSocketMessageType::Close)
+			{
+				Log(Success, "EditorService: Client connection closed.");
+			}
+			else if (msg->type == ix::WebSocketMessageType::Error)
+			{
+				Log(Error, "EditorService: WebSocket error: ", msg->errorInfo.reason.c_str());
+			}
+			else if (msg->type == ix::WebSocketMessageType::Message)
 			{
 				Log(Success, "EditorService: Received message: ", msg->str.c_str());
 				
@@ -200,31 +214,10 @@ bool EditorService::Initialize()
 							{
 								std::string l_path = l_json["path"];
 								Log(Success, "EditorService: Requesting asset import: ", l_path.c_str());
-								
-								g_Engine->Get<AssetService>()->Import(l_path.c_str(), [this](float progress, const char* name) {
-									json l_reply;
-									if (progress >= 1.0f) {
-										l_reply["type"] = "IMPORT_FINISHED";
-										l_reply["success"] = true;
-										l_reply["name"] = name;
-									} else if (progress < 0.0f) {
-										l_reply["type"] = "IMPORT_FINISHED";
-										l_reply["success"] = false;
-										l_reply["name"] = name;
-									} else {
-										l_reply["type"] = "IMPORT_PROGRESS";
-										l_reply["progress"] = (int)(progress * 100);
-										l_reply["name"] = name;
-									}
-									
-									// We need to be careful with thread safety here as this callback 
-									// runs on a task thread, not the EditorService update thread.
-									// For now, assuming IXWebSocket is thread-safe for send().
-									m_Server->broadcast(l_reply.dump());
-								});
+
+								g_Engine->Get<AssetService>()->Import(l_path.c_str());
 							}
-						}
-						else if (l_type == "UPDATE_ENTITY_PROPERTY")
+						}						else if (l_type == "UPDATE_ENTITY_PROPERTY")
 						{
 							if (l_json.contains("id") && l_json.contains("component") && l_json.contains("property") && l_json.contains("value"))
 							{
@@ -267,24 +260,16 @@ bool EditorService::Initialize()
 			}
 		});
 
-	auto l_res = m_Server->listen();
+	auto l_res = l_server->listen();
 	if (!l_res.first)
 	{
 		Log(Error, "EditorService: Failed to start WebSocket server: ", l_res.second.c_str());
+		delete l_server;
+		m_Server = nullptr;
 		return false;
 	}
 
-	m_Server->start();
-
-	// Create a mock entity for testing if registry is empty
-	auto l_registry = g_Engine->Get<EntityRegistry>();
-	auto l_ids = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
-	if (l_ids.empty())
-	{
-		auto l_mockId = l_registry->Spawn(ObjectLifespan::Scene, "Editor Controller");
-		l_registry->Emplace<TransformComponent>(l_mockId);
-		Log(Success, "EditorService: Created mock 'Editor Controller' entity for testing.");
-	}
+	l_server->start();
 
 	m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "EditorService: WebSocket server started on port 8081.");
@@ -300,7 +285,10 @@ bool EditorService::Terminate()
 {
 	if (m_Server)
 	{
-		m_Server->stop();
+		auto l_server = GetServer(m_Server);
+		l_server->stop();
+		delete l_server;
+		m_Server = nullptr;
 	}
 	m_ObjectStatus = ObjectStatus::Terminated;
 	Log(Success, "EditorService: Terminated.");
@@ -316,6 +304,7 @@ void EditorService::NotifyViewportReady(void* sharedHandle)
 {
 	if (m_Server)
 	{
+		auto l_server = GetServer(m_Server);
 		auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 		uint32_t l_width = l_resolution.x;
 		uint32_t l_height = l_resolution.y;
@@ -362,7 +351,7 @@ void EditorService::NotifyViewportReady(void* sharedHandle)
 		l_reply["format"] = "rgba";
 
 		auto l_msg = l_reply.dump();
-		for (auto&& client : m_Server->getClients())
+		for (auto&& client : l_server->getClients())
 		{
 			client->send(l_msg);
 		}

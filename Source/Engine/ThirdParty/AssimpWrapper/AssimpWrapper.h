@@ -1,5 +1,6 @@
 #pragma once
 #include "AssimpImporter.h"
+#include "../../Common/AssetImportData.h"
 
 namespace Inno
 {
@@ -9,4 +10,3 @@ namespace Inno
 		bool Import(const char* fileName);
 	}
 }
-

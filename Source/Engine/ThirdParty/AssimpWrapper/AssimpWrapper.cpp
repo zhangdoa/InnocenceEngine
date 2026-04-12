@@ -1,9 +1,12 @@
 #include "AssimpWrapper.h"
-#include "AssimpImporter.h"
 
-using namespace Inno;
-
-bool AssimpWrapper::Import(const char* fileName)
+namespace Inno
 {
-	return AssimpImporter::Import(fileName);
+	namespace AssimpWrapper
+	{
+		bool Import(const char* fileName)
+		{
+			return AssimpImporter::Import(fileName);
+		}
+	}
 }

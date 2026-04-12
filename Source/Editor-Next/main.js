@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, sharedTexture, ipcMain, Menu, nativeImage } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const WebSocket = require('ws');
@@ -6,6 +6,7 @@ const WebSocket = require('ws');
 let engineProcess;
 let win;
 let socket;
+let importedTexture;
 
 function spawnEngine() {
   if (engineProcess) {
@@ -25,8 +26,7 @@ function spawnEngine() {
   console.log(`Main: Spawning engine at ${enginePath}`);
 
   // Standard editor session parameters
-  // Detached mode: Engine runs in its own window, no shared texture.
-  engineProcess = spawn(enginePath, ['-mode', '2', '-renderer', '0', '-loglevel', '1', '-parent_pid', process.pid.toString()], {
+  engineProcess = spawn(enginePath, ['-mode', '2', '-renderer', '0', '-loglevel', '0', '-parent_pid', process.pid.toString()], {
     cwd: binDir
   });
 
@@ -63,7 +63,7 @@ function restartEngine() {
 
 function createWindow() {
   // Use absolute path for icon
-  const iconPath = path.resolve(__dirname, '../../Data/EngineAssets/icon.png');
+  const iconPath = path.resolve(__dirname, '../../Data/Engine/Icons/icon.png');
   console.log(`Main: Loading application icon from ${iconPath}`);
   
   const icon = nativeImage.createFromPath(iconPath);
@@ -78,15 +78,14 @@ function createWindow() {
     }
   });
   
-  // Disable native menu bar in favor of Naive UI menu
+  // Disable native menu bar
   Menu.setApplicationMenu(null);
 
-  // Load the app - check if we are in production (dist) or dev
+  // Load the app
   const indexPath = path.join(__dirname, 'dist/index.html');
   if (require('fs').existsSync(indexPath)) {
     win.loadFile(indexPath);
   } else {
-    // In dev mode, we need to load from the Vite dev server instead of raw index.html
     win.loadURL('http://localhost:5173');
   }
 
@@ -111,6 +110,12 @@ function connectToEngine() {
     const msg = JSON.parse(data);
     console.log('Main: Message from Engine:', msg);
 
+    if (msg.type === 'HELLO_REPLY' || msg.type === 'VIEWPORT_READY') {
+      if (msg.sharedHandle && msg.sharedHandle !== 0) {
+        setupSharedTexture(msg);
+      }
+    }
+
     // Proxy other messages to renderer
     if (win) win.webContents.send('engine-message', msg);
   });
@@ -118,21 +123,74 @@ function connectToEngine() {
   socket.on('close', () => {
     console.log('Main: Disconnected from Engine');
     if (win) win.webContents.send('engine-connected', false);
-    setTimeout(connectToEngine, 2000);
+    if (engineProcess) {
+      setTimeout(connectToEngine, 5000);
+    }
   });
+}
+
+function setupSharedTexture(info) {
+  if (importedTexture) {
+    importedTexture.release();
+  }
+
+  console.log('Main: sharedTexture API:', Object.keys(sharedTexture));
+  if (sharedTexture.subtle) {
+    console.log('Main: sharedTexture.subtle API:', Object.keys(sharedTexture.subtle));
+  }
+  console.log(`Main: Importing Shared Texture 0x${info.sharedHandle.toString(16)} (${info.width}x${info.height})`);
+
+  try {
+    console.log(`Main: Importing Shared Texture 0x${info.sharedHandle.toString(16)} (${info.width}x${info.height})`);
+
+    importedTexture = sharedTexture.importSharedTexture({
+      source: {
+        type: 'd3d12-shared-handle',
+        handle: BigInt(info.sharedHandle)
+      },
+      width: info.width,
+      height: info.height,
+      format: info.format === 'rgba' ? 'rgba8' : 'bgra8'
+    });
+
+    // Send to renderer
+    sharedTexture.sendSharedTexture({
+      frame: win.webContents.mainFrame,
+      importedSharedTexture: importedTexture
+    });
+
+    console.log('Main: Shared texture sent to renderer');
+  } catch (e) {
+    console.error('Main: Failed to import shared texture:', e);
+    
+    // Fallback: try the previous structure but with different format names
+    try {
+      console.log('Main: Trying fallback structure...');
+      importedTexture = sharedTexture.importSharedTexture({
+        textureInfo: {
+          handle: BigInt(info.sharedHandle),
+          pixelFormat: info.format === 'rgba' ? 'rgba8unorm' : 'bgra8unorm',
+          codedSize: { width: info.width, height: info.height },
+          visibleRect: { x: 0, y: 0, width: info.width, height: info.height }
+        }
+      });
+      
+      sharedTexture.sendSharedTexture({
+        frame: win.webContents.mainFrame,
+        importedSharedTexture: importedTexture
+      });
+      console.log('Main: Fallback import successful');
+    } catch (e2) {
+      console.error('Main: Fallback also failed:', e2);
+    }
+  }
 }
 
 app.whenReady().then(() => {
   createWindow();
   
-  ipcMain.on('engine-stop', () => {
-    stopEngine();
-  });
-
-  ipcMain.on('engine-restart', () => {
-    restartEngine();
-  });
-
+  ipcMain.on('engine-stop', () => stopEngine());
+  ipcMain.on('engine-restart', () => restartEngine());
   ipcMain.on('engine-message', (event, msg) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(msg));
@@ -144,28 +202,20 @@ app.whenReady().then(() => {
     const result = await dialog.showOpenDialog(win, {
       title: 'Select 3D Models to Import',
       properties: ['openFile', 'multiSelections'],
-      filters: [
-        { name: '3D Models', extensions: ['obj', 'fbx', 'gltf', 'glb'] }
-      ]
+      filters: [{ name: '3D Models', extensions: ['obj', 'fbx', 'gltf', 'glb'] }]
     });
 
     if (!result.canceled && result.filePaths.length > 0) {
-      event.reply('files-selected', result.filePaths);
+      win.webContents.send('files-selected', result.filePaths);
     }
   });
 });
 
 app.on('window-all-closed', () => {
-  if (engineProcess) {
-    engineProcess.kill();
-  }
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (engineProcess) engineProcess.kill();
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });

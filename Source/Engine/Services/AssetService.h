@@ -2,6 +2,7 @@
 #include "../Interface/IService.h"
 #include "../Common/ComponentHeaders.h"
 #include "../Common/AssetData.h"
+#include "../Common/AssetImportData.h"
 
 namespace Inno
 {
@@ -10,14 +11,13 @@ namespace Inno
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(AssetService);
 
-		bool Setup(IServiceConfig* systemConfig = nullptr) override;
+		bool Setup(IServiceConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
 
-		// Asset registry — allocate, query, release by lifespan
 		static MeshAssetHandle AllocateMeshAsset(const char* name, ObjectLifespan lifespan);
 		static MeshAssetData* GetMeshAsset(MeshAssetHandle handle);
 		static MeshAssetHandle FindMeshAsset(const char* name);
@@ -32,21 +32,21 @@ namespace Inno
 
 		static void ReleaseAssetsByLifespan(ObjectLifespan lifespan);
 
-		// Serialization
-		typedef std::function<void(float progress, const char* filename)> AssetImportProgressCallback;
-		static bool Import(const char* fileName, AssetImportProgressCallback callback = nullptr);
-
-		static bool SaveScene(const char* fileName);
-		static bool LoadScene(const char* fileName);
-
 		static std::string GetAssetFilePath(const char* componentName);
 		static std::string GetBinaryFilePath(const char* binaryFileName);
 		static std::string GetComponentDirectory();
 
+		static bool Import(const char* fileName);
+
+		static bool SaveScene(const char* fileName);
+		static bool LoadScene(const char* fileName);
+
 		static bool Load(const char* fileName, TransformComponent& component);
-		static bool Load(const char* fileName, MeshComponent& component, EntityID owner = INVALID_ENTITY);
-		static bool Load(const char* fileName, MaterialComponent& component, EntityID owner = INVALID_ENTITY);
-		static bool Load(const char* fileName, TextureComponent& component, EntityID owner = INVALID_ENTITY);
+		static bool Load(const char* fileName, MeshComponent& component, EntityID owner);
+		static bool Load(const char* fileName, MaterialComponent& component, EntityID owner);
+		static bool Load(const char* fileName, TextureComponent& component, EntityID owner);
+		// static bool Load(const char* fileName, SkeletonComponent& component);
+		// static bool Load(const char* fileName, AnimationComponent& component);
 		static bool Load(const char* fileName, CameraComponent& component);
 		static bool Load(const char* fileName, LightComponent& component);
 

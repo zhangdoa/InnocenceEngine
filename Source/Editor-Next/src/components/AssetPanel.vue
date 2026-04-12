@@ -28,7 +28,7 @@
             @dblclick="onItemDblClick(item)"
           >
             <div class="icon-wrapper">
-              <n-icon size="32" :color="item.isDir ? 'var(--ctp-yellow)' : item.name.endsWith('.InnoScene') ? 'var(--ctp-blue)' : 'var(--ctp-subtext0)'">
+              <n-icon size="32">
                 <folder-outline v-if="item.isDir" />
                 <planet-outline v-else-if="item.name.endsWith('.InnoScene')" />
                 <document-outline v-else />
@@ -119,13 +119,11 @@ const triggerImport = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--ctp-base);
 }
 
 .toolbar {
   padding: 8px 16px;
-  background: var(--ctp-mantle);
-  border-bottom: 1px solid var(--ctp-surface1);
+  border-bottom: 1px solid #333;
 }
 
 .asset-content {
@@ -144,7 +142,7 @@ const triggerImport = () => {
 }
 
 .asset-item:hover {
-  background: var(--ctp-surface0);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .icon-wrapper {

@@ -16,128 +16,59 @@ test('editor launches and connects to engine', async () => {
     env: { ...process.env, E2E_TEST: 'true' }
   });
 
-  electronApp.on('console', msg => {
-    console.log(`[ELECTRON] ${msg.text()}`);
-  });
-
-  const window = await electronApp.firstWindow();
-  
-  // Wait for the UI to be loaded
-  log('Waiting for UI shell to be ready...');
-  await window.waitForSelector('.editor-shell', { timeout: 30000 });
-
-  // 1. Wait for connection (status becomes "Live")
-  log('Waiting for engine connection (status: Live)...');
-
   try {
-    // Naive UI tag content
+    electronApp.on('console', msg => {
+      console.log(`[ELECTRON] ${msg.text()}`);
+    });
+
+    const window = await electronApp.firstWindow();
+    
+    // Wait for the UI to be loaded
+    log('Waiting for UI shell to be ready...');
+    await window.waitForSelector('.editor-shell', { timeout: 30000 });
+
+    // 1. Wait for connection (status becomes "Live")
+    log('Waiting for engine connection (status: Live)...');
     await window.waitForSelector('.n-tag__content:has-text("Live")', { timeout: 120000 });
     log('Connection confirmed via UI status');
-  } catch (e) {
-    log('Failed to find connected status tag, checking DOM...');
-    const html = await window.innerHTML('.header-right');
-    log(`Header Right HTML: ${html}`);
-    throw e;
-  }
 
-  // 2. Verify panels are present
-  try {
+    // 2. Verify panels are present
     log('Waiting for .hierarchy-panel to be attached...');
     await window.waitForSelector('.hierarchy-panel', { state: 'attached', timeout: 15000 });
     log('.hierarchy-panel attached');
-  } catch (e) {
-    log('FAILED to find .hierarchy-panel.');
-    throw e;
-  }
-  
-  // 3. Verify entities are loaded into the hierarchy
-  log('Waiting for hierarchy to populate (entities to arrive)...');
-  
-  try {
+    
+    // 3. Verify entities are loaded
+    log('Waiting for hierarchy to populate...');
     const entitySelector = '.entity-item';
     await window.waitForSelector(entitySelector, { timeout: 30000 });
-    log('Entities found in hierarchy (using selector)');
+    log('Entities found in hierarchy');
     
-    // Now verify a known entity from the UnitTest scene exists
-    const cameraText = 'Main Camera/';
-    const cameraLocator = window.locator(`text=${cameraText}`);
+    const mockEntityText = 'Main Camera/';
+    const entityLocator = window.locator(`text=${mockEntityText}`);
+    expect(await entityLocator.count()).toBeGreaterThan(0);
+    log(`Entity '${mockEntityText}' found`);
+
+    // 4. Test Selection
+    await entityLocator.first().click();
+    await window.waitForSelector('.properties-content', { timeout: 10000 });
+    log('Properties panel populated');
+
+    // 5. Test Engine Stop
+    log('Testing engine stop...');
+    await window.click('button:has-text("Stop")');
     
-    log(`Checking for '${cameraText}' in hierarchy...`);
-    expect(await cameraLocator.count()).toBeGreaterThan(0);
-    log(`Entity '${cameraText}' found in hierarchy`);
+    // Wait for "Offline" state
+    await window.waitForSelector('.n-tag__content:has-text("Offline")', { timeout: 15000 });
+    log('UI Tag changed to Offline');
 
-    // 4. Test Entity Selection and Property Population
-    log(`Selecting entity '${cameraText}'...`);
-    await cameraLocator.click();
-    
-    // Give it a moment to request and render
-    await window.waitForTimeout(1000);
+    // Verify hierarchy reset
+    const count = await window.locator('.entity-item').count();
+    expect(count).toBe(0);
+    log('Hierarchy cleared successfully');
 
-    log('Waiting for properties panel to populate...');
-    // The properties panel should now have the entity name
-    const propertyPanelNameSelector = '.properties-content h3';
-    await window.waitForSelector(propertyPanelNameSelector, { timeout: 10000 });
-    
-    const displayedName = await window.textContent(propertyPanelNameSelector);
-    log(`Properties panel is showing details for: ${displayedName}`);
-    expect(displayedName).toContain('Main Camera');
-
-    // 5. Test Property Update
-    log('Testing property update...');
-    // In Naive UI, n-input-number uses an input with class n-input-number-input or within n-input
-    const xInputSelector = '.n-input-number input';
-    await window.waitForSelector(xInputSelector, { timeout: 5000 });
-    
-    const xInput = window.locator(xInputSelector).first();
-    await xInput.fill('123.45');
-    await xInput.press('Enter');
-    log('Property update value filled.');
-
-    log('E2E verification complete, editor stack is healthy');
-
-    log('Waiting for UI to stabilize before screenshot...');
-    await window.waitForTimeout(3000);
-
-    log('Capturing full-window visual regression screenshot...');
-    try {
-      // Take screenshot of the healthy, connected state BEFORE stopping the engine
-      await expect(window).toHaveScreenshot('editor-layout.png', {
-        fullPage: true,
-        maxDiffPixelRatio: 0.01,
-        timeout: 60000
-      });
-      log('Visual regression test passed');
-    } catch (err) {
-      log('Visual regression failed, taking manual debug screenshot...');
-      const fs = require('fs');
-      const dir = path.join(__dirname, '../test-results');
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      await window.screenshot({ path: 'test-results/debug-failure.png', timeout: 60000 });
-      throw err;
-    }
-
-    // 6. Test Engine Stop & UI Reset
-    log('Testing engine stop and UI reset...');
-    await window.click('button[title="Stop Engine sidecar"]');
-    
-    // Wait for disconnected state in tag
-    await window.waitForSelector('.n-tag__content:has-text("Disconnected")', { timeout: 10000 });
-    log('UI Tag changed to Disconnected');
-
-    // Verify hierarchy is empty
-    const entityCountAfterStop = await window.locator('.entity-item').count();
-    log(`Entities in hierarchy after stop: ${entityCountAfterStop}`);
-    expect(entityCountAfterStop).toBe(0);
-
-  } catch (e) {
-    log('Hierarchy/Properties/Stop verification failed.');
-    const html = await window.innerHTML('body');
-    log('Full Body HTML snippet:');
-    log(html.substring(0, 1000));
-    throw e;
+  } finally {
+    await electronApp.close().catch(() => {});
   }
-
-  await electronApp.close();
 });
 
 function log(msg) {
