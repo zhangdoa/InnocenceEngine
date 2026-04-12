@@ -453,13 +453,19 @@ bool AssetService::Save(const TextureComponent& component, void* textureData)
 	JSONWrapper::to_json(j, component);
 
 	auto l_componentDir = GetComponentDirectory();
+	std::filesystem::create_directories(l_componentDir);
+
 	std::string l_baseName = component.m_InstanceName.c_str();
 	auto l_binaryFileName = l_baseName + ".innobin";
 	auto l_binaryFilePath = l_componentDir + l_binaryFileName;
 
 	j["File"] = l_binaryFileName;
 
-	bool binaryResult = STBWrapper::Save(l_binaryFilePath.c_str(), component.m_TextureDesc, textureData);
+	// STBWrapper::Save prepends getWorkingDirectory() internally, so derive a
+	// working-directory-relative path rather than passing the absolute l_binaryFilePath.
+	auto l_workDir = g_Engine->Get<IOService>()->getWorkingDirectory();
+	auto l_relBinaryPath = l_componentDir.substr(l_workDir.size()) + l_binaryFileName;
+	bool binaryResult = STBWrapper::Save(l_relBinaryPath.c_str(), component.m_TextureDesc, textureData);
 	if (!binaryResult)
 	{
 		Log(Error, "Failed to save texture binary data: ", l_binaryFilePath.c_str());
