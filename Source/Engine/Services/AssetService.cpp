@@ -20,22 +20,27 @@ namespace AssetServiceNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	// Mesh asset registry
-	std::vector<MeshAssetData> m_MeshAssets;
+	// deque guarantees reference/pointer stability on push_back, unlike vector.
+	// This allows GetMeshAsset to return stable pointers while Allocate appends concurrently.
+	std::deque<MeshAssetData> m_MeshAssets;
 	std::vector<uint32_t> m_MeshFreeSlots;
 	std::vector<uint32_t> m_MeshGenerations;
 	std::unordered_map<std::string, MeshAssetHandle> m_MeshLUT;
+	std::shared_mutex s_MeshMutex;
 
 	// Material asset registry
-	std::vector<MaterialAssetData> m_MaterialAssets;
+	std::deque<MaterialAssetData> m_MaterialAssets;
 	std::vector<uint32_t> m_MaterialFreeSlots;
 	std::vector<uint32_t> m_MaterialGenerations;
 	std::unordered_map<std::string, MaterialAssetHandle> m_MaterialLUT;
+	std::shared_mutex s_MaterialMutex;
 
 	// Texture asset registry
-	std::vector<TextureAssetData> m_TextureAssets;
+	std::deque<TextureAssetData> m_TextureAssets;
 	std::vector<uint32_t> m_TextureFreeSlots;
 	std::vector<uint32_t> m_TextureGenerations;
 	std::unordered_map<std::string, TextureAssetHandle> m_TextureLUT;
+	std::shared_mutex s_TextureMutex;
 }
 
 using namespace AssetServiceNS;
@@ -69,6 +74,8 @@ ObjectStatus AssetService::GetStatus()
 
 MeshAssetHandle AssetService::AllocateMeshAsset(const char* name, ObjectLifespan lifespan)
 {
+	std::unique_lock<std::shared_mutex> l_lock(s_MeshMutex);
+
 	auto l_existing = m_MeshLUT.find(name);
 	if (l_existing != m_MeshLUT.end())
 	{
@@ -106,6 +113,8 @@ MeshAssetHandle AssetService::AllocateMeshAsset(const char* name, ObjectLifespan
 
 MeshAssetData* AssetService::GetMeshAsset(MeshAssetHandle handle)
 {
+	std::shared_lock<std::shared_mutex> l_lock(s_MeshMutex);
+
 	if (!handle.IsValid() || handle.m_Index >= m_MeshAssets.size())
 		return nullptr;
 
@@ -121,6 +130,7 @@ MeshAssetData* AssetService::GetMeshAsset(MeshAssetHandle handle)
 
 MeshAssetHandle AssetService::FindMeshAsset(const char* name)
 {
+	std::shared_lock<std::shared_mutex> l_lock(s_MeshMutex);
 	auto l_result = m_MeshLUT.find(name);
 	if (l_result != m_MeshLUT.end())
 		return l_result->second;
@@ -129,6 +139,8 @@ MeshAssetHandle AssetService::FindMeshAsset(const char* name)
 
 MaterialAssetHandle AssetService::AllocateMaterialAsset(const char* name, ObjectLifespan lifespan)
 {
+	std::unique_lock<std::shared_mutex> l_lock(s_MaterialMutex);
+
 	auto l_existing = m_MaterialLUT.find(name);
 	if (l_existing != m_MaterialLUT.end())
 	{
@@ -166,6 +178,8 @@ MaterialAssetHandle AssetService::AllocateMaterialAsset(const char* name, Object
 
 MaterialAssetData* AssetService::GetMaterialAsset(MaterialAssetHandle handle)
 {
+	std::shared_lock<std::shared_mutex> l_lock(s_MaterialMutex);
+
 	if (!handle.IsValid() || handle.m_Index >= m_MaterialAssets.size())
 		return nullptr;
 
@@ -181,6 +195,7 @@ MaterialAssetData* AssetService::GetMaterialAsset(MaterialAssetHandle handle)
 
 MaterialAssetHandle AssetService::FindMaterialAsset(const char* name)
 {
+	std::shared_lock<std::shared_mutex> l_lock(s_MaterialMutex);
 	auto l_result = m_MaterialLUT.find(name);
 	if (l_result != m_MaterialLUT.end())
 		return l_result->second;
@@ -189,6 +204,8 @@ MaterialAssetHandle AssetService::FindMaterialAsset(const char* name)
 
 TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLifespan lifespan)
 {
+	std::unique_lock<std::shared_mutex> l_lock(s_TextureMutex);
+
 	auto l_existing = m_TextureLUT.find(name);
 	if (l_existing != m_TextureLUT.end())
 	{
@@ -226,6 +243,8 @@ TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLi
 
 TextureAssetData* AssetService::GetTextureAsset(TextureAssetHandle handle)
 {
+	std::shared_lock<std::shared_mutex> l_lock(s_TextureMutex);
+
 	if (!handle.IsValid() || handle.m_Index >= m_TextureAssets.size())
 		return nullptr;
 
@@ -241,6 +260,7 @@ TextureAssetData* AssetService::GetTextureAsset(TextureAssetHandle handle)
 
 TextureAssetHandle AssetService::FindTextureAsset(const char* name)
 {
+	std::shared_lock<std::shared_mutex> l_lock(s_TextureMutex);
 	auto l_result = m_TextureLUT.find(name);
 	if (l_result != m_TextureLUT.end())
 		return l_result->second;
@@ -249,42 +269,51 @@ TextureAssetHandle AssetService::FindTextureAsset(const char* name)
 
 void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 {
-	for (uint32_t i = 0; i < static_cast<uint32_t>(m_MeshAssets.size()); i++)
 	{
-		auto& l_asset = m_MeshAssets[i];
-		if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+		std::unique_lock<std::shared_mutex> l_lock(s_MeshMutex);
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_MeshAssets.size()); i++)
 		{
-			m_MeshLUT.erase(std::string(l_asset.m_Name.c_str()));
-			l_asset = MeshAssetData();
-			l_asset.m_Residency = AssetResidency::Released;
-			m_MeshGenerations[i]++;
-			m_MeshFreeSlots.push_back(i);
+			auto& l_asset = m_MeshAssets[i];
+			if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+			{
+				m_MeshLUT.erase(std::string(l_asset.m_Name.c_str()));
+				l_asset = MeshAssetData();
+				l_asset.m_Residency = AssetResidency::Released;
+				m_MeshGenerations[i]++;
+				m_MeshFreeSlots.push_back(i);
+			}
 		}
 	}
 
-	for (uint32_t i = 0; i < static_cast<uint32_t>(m_MaterialAssets.size()); i++)
 	{
-		auto& l_asset = m_MaterialAssets[i];
-		if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+		std::unique_lock<std::shared_mutex> l_lock(s_MaterialMutex);
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_MaterialAssets.size()); i++)
 		{
-			m_MaterialLUT.erase(std::string(l_asset.m_Name.c_str()));
-			l_asset = MaterialAssetData();
-			l_asset.m_Residency = AssetResidency::Released;
-			m_MaterialGenerations[i]++;
-			m_MaterialFreeSlots.push_back(i);
+			auto& l_asset = m_MaterialAssets[i];
+			if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+			{
+				m_MaterialLUT.erase(std::string(l_asset.m_Name.c_str()));
+				l_asset = MaterialAssetData();
+				l_asset.m_Residency = AssetResidency::Released;
+				m_MaterialGenerations[i]++;
+				m_MaterialFreeSlots.push_back(i);
+			}
 		}
 	}
 
-	for (uint32_t i = 0; i < static_cast<uint32_t>(m_TextureAssets.size()); i++)
 	{
-		auto& l_asset = m_TextureAssets[i];
-		if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+		std::unique_lock<std::shared_mutex> l_lock(s_TextureMutex);
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_TextureAssets.size()); i++)
 		{
-			m_TextureLUT.erase(std::string(l_asset.m_Name.c_str()));
-			l_asset = TextureAssetData();
-			l_asset.m_Residency = AssetResidency::Released;
-			m_TextureGenerations[i]++;
-			m_TextureFreeSlots.push_back(i);
+			auto& l_asset = m_TextureAssets[i];
+			if (l_asset.m_Lifespan == lifespan && l_asset.m_Residency != AssetResidency::Released)
+			{
+				m_TextureLUT.erase(std::string(l_asset.m_Name.c_str()));
+				l_asset = TextureAssetData();
+				l_asset.m_Residency = AssetResidency::Released;
+				m_TextureGenerations[i]++;
+				m_TextureFreeSlots.push_back(i);
+			}
 		}
 	}
 }
@@ -336,13 +365,10 @@ bool AssetService::Import(const char* fileName)
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
 	{
-		// Imports are serialized via a static mutex: the task scheduler dispatches each to a
-		// background thread, but only one import runs at a time. This prevents data races in
-		// the Assimp pipeline and in any shared state touched during asset conversion.
-		static std::mutex s_ImportMutex;
+		// Each import task runs concurrently — asset registry access is protected per-type by
+		// shared_mutex inside Allocate*/Get*/Find* functions.
 		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Import Model Task", ITask::Type::Once), [=]()
 			{
-				std::lock_guard<std::mutex> l_Lock(s_ImportMutex);
 				AssimpWrapper::Import(l_fileName.c_str());
 			});
 		tempTask->Activate();
