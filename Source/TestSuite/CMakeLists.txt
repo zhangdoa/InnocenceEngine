@@ -20,6 +20,8 @@ set(TEST_SOURCES
     StressTests/TaskSystemStressTests.cpp
     # Concurrency tests
     ConcurrencyTests/TaskSystemTests.cpp
+    # Integration tests
+    IntegrationTests/AssetConversionTests.cpp
 )
 
 add_executable(TestSuite ${TEST_SOURCES})

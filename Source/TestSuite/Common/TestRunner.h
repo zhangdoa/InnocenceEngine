@@ -13,6 +13,7 @@ namespace Inno
 		static void RunUnitTests();
 		static void RunPerformanceTests();
 		static void RunStressTests();
+		static void RunIntegrationTests();
 
 		static void StartTestSuite(const char* suiteName);
 		static void EndTestSuite();

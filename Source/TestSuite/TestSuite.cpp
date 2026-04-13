@@ -39,16 +39,21 @@ int main(int argc, char* argv[])
 		{
 			TestRunner::RunStressTests();
 		}
+		else if (l_TestType == "integration" || l_TestType == "-i")
+		{
+			TestRunner::RunIntegrationTests();
+		}
 		else if (l_TestType == "help" || l_TestType == "-h")
 		{
 			Log(Success, "InnocenceEngine Test Runner");
 			Log(Success, "Usage: Test.exe [test_type]");
 			Log(Success, "");
 			Log(Success, "Test Types:");
-			Log(Success, "  unit, -u        Run unit tests only");
-			Log(Success, "  performance, -p Run performance tests only");
-			Log(Success, "  stress, -s      Run stress tests only");
-			Log(Success, "  help, -h        Show this help message");
+			Log(Success, "  unit, -u           Run unit tests only");
+			Log(Success, "  performance, -p    Run performance tests only");
+			Log(Success, "  stress, -s         Run stress tests only");
+			Log(Success, "  integration, -i    Run integration tests (asset conversion, I/O)");
+			Log(Success, "  help, -h           Show this help message");
 			Log(Success, "");
 			Log(Success, "If no arguments provided, all tests will run.");
 			l_pEngine->Terminate();

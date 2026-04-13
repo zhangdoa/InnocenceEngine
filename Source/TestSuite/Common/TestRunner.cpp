@@ -99,6 +99,8 @@ extern void RunConcurrencyStressTests();
 extern void RunMemoryStressTests();
 extern void RunTaskSystemStressTests();
 
+extern void RunAssetConversionTests();
+
 void TestRunner::RunUnitTests()
 {
 	Log(Success, "\n========== UNIT TESTS ==========");
@@ -134,13 +136,23 @@ void TestRunner::RunStressTests()
 	Log(Success, "========== STRESS TESTS COMPLETE ==========\n");
 }
 
+void TestRunner::RunIntegrationTests()
+{
+	Log(Success, "\n========== INTEGRATION TESTS ==========");
+
+	RunAssetConversionTests();
+
+	Log(Success, "========== INTEGRATION TESTS COMPLETE ==========\n");
+}
+
 void TestRunner::RunAllTests()
 {
 	Log(Success, "\nStarting InnocenceEngine Test Suite...\n");
-	
+
 	RunUnitTests();
 	RunPerformanceTests();
 	RunStressTests();
-	
+	RunIntegrationTests();
+
 	ReportResults();
 }
