@@ -218,6 +218,7 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
+        l_asset->m_TextureNames.clear();
         l_asset->m_TextureNames.reserve(l_j.size());
         auto l_textureService = g_Engine->Get<TextureResourceService>();
         for (const auto& l_entry : l_j)

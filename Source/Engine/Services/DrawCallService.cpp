@@ -234,7 +234,7 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 
 		if (l_materialAsset)
 		{
-			for (size_t j = 0; j < l_materialAsset->m_TextureNames.size(); j++)
+			for (size_t j = 0; j < l_materialAsset->m_TextureNames.size() && j < MaxTextureSlotCount; j++)
 			{
 				const auto& l_textureName = l_materialAsset->m_TextureNames[j];
 				if (l_textureName.empty())
@@ -264,7 +264,7 @@ bool DrawCallServiceImpl::Update()
 
 		UpdateDrawCalls();
 
-	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
+		auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
 		if (m_GPUModelDataVector.size() > 0)
 		{
