@@ -3,9 +3,10 @@ id: TASK-17
 title: >-
   Add aiProcess_PreTransformVertices to Assimp importer to fix per-node
   orientation loss
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-12 23:28'
+updated_date: '2026-04-12 23:59'
 labels:
   - importer
   - assets
@@ -32,3 +33,18 @@ Current workaround: scene-level TransformComponent rotation for the curtains (TA
 - [ ] #3 GISponza curtains display correctly without a scene-level rotation hack
 - [ ] #4 Regression test and integration test pass
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added aiProcess_PreTransformVertices to AssimpImporter.cpp import flags.
+
+This bakes all per-node transforms (rotation, translation, scale) into vertex positions during import. glTF models like NewSponza_Curtains_glTF that encode fabric orientation via node transforms now import with correct geometry without requiring any scene-level rotation hack.
+
+Changes:
+- Source/Engine/ThirdParty/AssimpWrapper/AssimpImporter.cpp: added aiProcess_PreTransformVertices to ReadFile flags
+- All models re-imported via ConvertModels.ps1 (Y key trigger): Sponza main, curtains, ShaderBall, bunny, dragon
+- Data/ExampleProject/Components/GISponza.Curtains.TransformComponent.json: reverted rotation hack to identity (was -90° X / quaternion {-0.7071068, 0, 0, 0.7071068})
+
+Visual verification: curtains now hang vertically on both sides of the arch — correct orientation confirmed in gpu_output.png. All tests pass (integration exit 0, scene reload exit 0).
+<!-- SECTION:FINAL_SUMMARY:END -->

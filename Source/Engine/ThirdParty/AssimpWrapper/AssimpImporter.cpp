@@ -47,6 +47,7 @@ bool AssimpImporter::Import(const char* FileName)
 		//| aiProcess_FindInstances // Do not merge instances so the culling result could be more optimized
 		| aiProcess_OptimizeMeshes
 		| aiProcess_OptimizeGraph
+		| aiProcess_PreTransformVertices // Bake per-node transforms into vertex positions; required for glTF models where orientation is encoded in node transforms (e.g. NewSponza curtains)
 	);
 
 	if (!l_Scene)
