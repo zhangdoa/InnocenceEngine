@@ -112,6 +112,24 @@ Never blindly merge branches or accept incoming changes. Always:
 ## Bug Vigilance
 Be vigilant about any unexpected behavior, warnings, or anomalies during testing. When you observe a potential bug — even if it seems minor or intermittent — backlog it immediately so it is tracked and not forgotten.
 
+## Structural Improvement After Every CL
+
+After every non-trivial changelist (bug fix, feature, refactor), perform a brief structural retrospective:
+
+1. **What implicit contract was violated?** — identify the assumption that was not enforced
+2. **What is the structural weakness** that allowed the bug or complexity to exist?
+3. **What improvement moves the engine toward orthogonality and explicit contracts?**
+
+Then concretize each finding as a backlog task. Do not let structural observations remain as conversation; they must become tracked work.
+
+**Target qualities to drive toward:**
+- **Orthogonality** — each service/module has one responsibility; changes in one place do not silently affect another
+- **Explicit contracts** — API preconditions, postconditions, and ownership semantics are enforced (types, assertions, or documented invariants), not assumed
+- **Fail loudly** — invalid state produces an immediate, visible error at the point of violation, not a silent corruption that manifests three frames later
+- **Reload-safe by default** — any resource or asset that can be loaded more than once must handle re-initialization without accumulating stale state
+
+This is a long-horizon engineering discipline. Each CL that fixes a bug without also capturing the structural lesson is a missed opportunity to improve the architecture.
+
 ## Skill Usage
 | Situation | Skill |
 |-----------|-------|
