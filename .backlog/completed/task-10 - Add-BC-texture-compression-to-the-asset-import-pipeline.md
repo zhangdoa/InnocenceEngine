@@ -1,9 +1,10 @@
 ---
 id: TASK-10
 title: Add BC texture compression to the asset import pipeline
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-12 11:50'
+updated_date: '2026-04-13 00:36'
 labels:
   - rendering
   - assets
@@ -38,3 +39,17 @@ Currently the Assimp import pipeline resolves texture paths at import time and l
 - [ ] #5 Mipmaps are present in the DDS and uploaded to the GPU
 - [ ] #6 RenderTest and Main.exe integration tests pass after the change
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented end-to-end BC texture compression in the asset import pipeline.
+
+Offline compression (bake time): AssimpTextureProcessor now runs stb_dxt block compression after STBWrapper loads RGBA source images. Slot mapping: 0 (normal) → BC5, 1 (albedo, sRGB) → BC1, 2-4 (metallic/roughness/AO) → BC4. Compressed data is written as raw binary (.innobin) via IOService::saveFile.
+
+Runtime: TextureResourceService background loader detects PixelDataType::Compressed and reads raw bytes directly (bypassing STBWrapper PNG decode). DX12 upload uses block-based RowPitch/SlicePitch (ceil(W/4)*blockBytes instead of W*bytesPerPixel). UAV creation and mip generation are skipped for BC formats.
+
+Format support: BC1 (8B/block, RGB), BC3 (16B/block, RGBA), BC4 (8B/block, R), BC5 (16B/block, RG). DXGI format mapping respects IsSRGB for BC1/BC3.
+
+Commit: af2937ef
+<!-- SECTION:FINAL_SUMMARY:END -->
