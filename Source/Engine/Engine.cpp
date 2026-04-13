@@ -615,19 +615,13 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				if (Get<SceneService>()->IsLoading())
 					return true;
 
-				// Simulation - only if LogicClient exists
-				if (m_pImpl->m_LogicClient) {
+				if (m_pImpl->m_LogicClient)
 					m_pImpl->m_LogicClient->Update();
-				}
 
-				// Update components
 				Get<CameraService>()->Update();
 				Get<LightSimulationService>()->Update();
-
 				SystemUpdate(EntityRegistry);
-
 				Get<TransformService>()->Update();
-
 				Get<PerFrameDataService>()->Update();
 				Get<LightDataService>()->Update();
 				Get<DrawCallService>()->Update();
@@ -636,9 +630,8 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				Get<DebugDrawCallService>()->Update();
 				Get<AnimationSimulationService>()->Update();
 				Get<AnimationResourceService>()->Update();
-				if (m_pImpl->m_RenderingClient) {
+				if (m_pImpl->m_RenderingClient)
 					m_pImpl->m_RenderingClient->Update();
-				}
 
 				return true;
 			});

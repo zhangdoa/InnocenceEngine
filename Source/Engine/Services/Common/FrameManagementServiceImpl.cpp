@@ -148,13 +148,9 @@ bool FrameManagementService::Update()
 	g_Engine->Get<MaterialResourceService>()->InitializeComponents();
 	g_Engine->Get<GPUBufferResourceService>()->InitializeComponents();
 	g_Engine->Get<RenderPassResourceService>()->InitializeComponents();
-
 	g_Engine->Get<SceneService>()->ClearLoadingFlag();
-
 	m_UploadHeapPreparationCallback();
-
 	PrepareGlobalCommands();
-
 	ExecuteGlobalCommands();
 
 	if (!g_Engine->Get<SceneService>()->IsLoading())
