@@ -492,7 +492,34 @@ bool AssetService::Save(const TextureComponent& component, void* textureData)
 
 	j["File"] = l_binaryFileName;
 
-	bool binaryResult = STBWrapper::Save(l_binaryFilePath.c_str(), component.m_TextureDesc, textureData);
+	bool binaryResult;
+	if (component.m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
+	{
+		uint32_t blockBytes;
+		switch (component.m_TextureDesc.PixelDataFormat)
+		{
+		case TexturePixelDataFormat::BC1: blockBytes = 8;  break;
+		case TexturePixelDataFormat::BC4: blockBytes = 8;  break;
+		case TexturePixelDataFormat::BC3: blockBytes = 16; break;
+		case TexturePixelDataFormat::BC5: blockBytes = 16; break;
+		default:                          blockBytes = 0;  break;
+		}
+		if (blockBytes == 0)
+		{
+			Log(Error, "AssetService::Save: unknown BC format for texture: ", l_binaryFilePath.c_str());
+			return false;
+		}
+		uint32_t blocksX = (component.m_TextureDesc.Width  + 3) / 4;
+		uint32_t blocksY = (component.m_TextureDesc.Height + 3) / 4;
+		size_t dataSize  = static_cast<size_t>(blocksX) * blocksY * blockBytes;
+		auto* l_rawData = static_cast<const char*>(textureData);
+		std::vector<char> l_bytes(l_rawData, l_rawData + dataSize);
+		binaryResult = g_Engine->Get<IOService>()->saveFile(l_binaryFilePath.c_str(), l_bytes, IOMode::Binary);
+	}
+	else
+	{
+		binaryResult = STBWrapper::Save(l_binaryFilePath.c_str(), component.m_TextureDesc, textureData);
+	}
 	if (!binaryResult)
 	{
 		Log(Error, "Failed to save texture binary data: ", l_binaryFilePath.c_str());

@@ -70,7 +70,19 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDesc textureDesc)
 {
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
-	if (textureDesc.IsSRGB)
+	if (textureDesc.PixelDataType == TexturePixelDataType::Compressed)
+	{
+		switch (textureDesc.PixelDataFormat)
+		{
+		case TexturePixelDataFormat::BC1: l_internalFormat = textureDesc.IsSRGB ? DXGI_FORMAT_BC1_UNORM_SRGB : DXGI_FORMAT_BC1_UNORM; break;
+		case TexturePixelDataFormat::BC3: l_internalFormat = textureDesc.IsSRGB ? DXGI_FORMAT_BC3_UNORM_SRGB : DXGI_FORMAT_BC3_UNORM; break;
+		case TexturePixelDataFormat::BC4: l_internalFormat = DXGI_FORMAT_BC4_UNORM; break;
+		case TexturePixelDataFormat::BC5: l_internalFormat = DXGI_FORMAT_BC5_UNORM; break;
+		default: break;
+		}
+		return l_internalFormat;
+	}
+	else if (textureDesc.IsSRGB)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
@@ -297,7 +309,7 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 
 uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 {
-	if (textureDesc.MipLevels == 1)
+	if (textureDesc.MipLevels == 1 || textureDesc.PixelDataType == TexturePixelDataType::Compressed)
 	{
 		return 1;
 	}
@@ -327,6 +339,10 @@ uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 
 D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDesc textureDesc)
 {
+	// BC formats don't support UAV in D3D12
+	if (textureDesc.PixelDataType == TexturePixelDataType::Compressed)
+		return D3D12_RESOURCE_FLAG_NONE;
+
 	D3D12_RESOURCE_FLAGS l_result = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	if (textureDesc.Usage == TextureUsage::ColorAttachment)
@@ -368,6 +384,7 @@ uint32_t DX12Helper::GetTexturePixelDataSize(TextureDesc textureDesc)
 	case TexturePixelDataType::Float16:l_singlePixelSize = 2; break;
 	case TexturePixelDataType::Float32:l_singlePixelSize = 4; break;
 	case TexturePixelDataType::Double:l_singlePixelSize = 8; break;
+	default: l_singlePixelSize = 0; break;
 	}
 
 	uint32_t l_channelSize;
@@ -379,9 +396,28 @@ uint32_t DX12Helper::GetTexturePixelDataSize(TextureDesc textureDesc)
 	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
 	case TexturePixelDataFormat::Depth:l_channelSize = 1; break;
 	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
+	default: l_channelSize = 0; break;
 	}
 
 	return l_singlePixelSize * l_channelSize;
+}
+
+uint32_t DX12Helper::GetBCBlockBytes(TexturePixelDataFormat format)
+{
+	switch (format)
+	{
+	case TexturePixelDataFormat::BC1: return 8;
+	case TexturePixelDataFormat::BC4: return 8;
+	case TexturePixelDataFormat::BC3: return 16;
+	case TexturePixelDataFormat::BC5: return 16;
+	default: return 0;
+	}
+}
+
+uint32_t DX12Helper::GetBCRowPitch(TextureDesc textureDesc)
+{
+	uint32_t blocksPerRow = (textureDesc.Width + 3) / 4;
+	return blocksPerRow * GetBCBlockBytes(textureDesc.PixelDataFormat);
 }
 
 D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)

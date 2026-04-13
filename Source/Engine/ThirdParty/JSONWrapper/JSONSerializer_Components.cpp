@@ -114,6 +114,14 @@ void JSONWrapper::to_json(json& j, const TextureComponent& component)
         {"IsSRGB", component.m_TextureDesc.IsSRGB}
     };
 
+    if (component.m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
+    {
+        j["PixelDataFormat"] = component.m_TextureDesc.PixelDataFormat;
+        j["PixelDataType"]   = component.m_TextureDesc.PixelDataType;
+        j["Width"]           = component.m_TextureDesc.Width;
+        j["Height"]          = component.m_TextureDesc.Height;
+    }
+
     // Note: For binary texture data, additional fields are added by AssetService::Save
 }
 
@@ -269,6 +277,19 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
     component.m_TextureDesc.Sampler = TextureSampler(j["Sampler"]);
     component.m_TextureDesc.Usage = TextureUsage(j["Usage"]);
     component.m_TextureDesc.IsSRGB = j["IsSRGB"];
+
+    if (j.find("PixelDataType")   != j.end()
+     && j.find("PixelDataFormat") != j.end()
+     && j.find("Width")           != j.end()
+     && j.find("Height")          != j.end()
+     && TexturePixelDataType(j["PixelDataType"]) == TexturePixelDataType::Compressed)
+    {
+        component.m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(j["PixelDataFormat"]);
+        component.m_TextureDesc.PixelDataType   = TexturePixelDataType::Compressed;
+        component.m_TextureDesc.Width           = j["Width"];
+        component.m_TextureDesc.Height          = j["Height"];
+        component.m_TextureDesc.MipLevels       = 1;
+    }
 
     // Off-load binary decode to the TextureResourceService background loader thread.
     // STBWrapper::Load reads ~64 MB per 4K texture; doing it here synchronously stalls scene loading.

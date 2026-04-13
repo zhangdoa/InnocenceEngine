@@ -1,6 +1,8 @@
 #include "../TextureResourceService.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
+#include "../../Common/IOService.h"
+#include "../../Common/Memory.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/EntityRegistry.h"
@@ -31,7 +33,23 @@ bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 		TextureResourceServiceNS::BinaryLoadRequest l_req;
 		while (TextureResourceServiceNS::s_BinaryLoadQueue.waitPop(l_req))
 		{
-			void* l_textureData = STBWrapper::Load(l_req.m_BinaryPath.c_str(), *l_req.m_Component);
+			void* l_textureData = nullptr;
+			if (l_req.m_Component->m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
+			{
+				auto l_rawBytes = g_Engine->Get<IOService>()->loadFile(l_req.m_BinaryPath.c_str(), IOMode::Binary);
+				if (!l_rawBytes.empty())
+				{
+					l_textureData = Memory::Allocate(l_rawBytes.size());
+					if (l_textureData)
+						memcpy(l_textureData, l_rawBytes.data(), l_rawBytes.size());
+				}
+				if (!l_textureData)
+					Log(Error, "TextureResourceService: Failed to load BC binary: ", l_req.m_BinaryPath.c_str());
+			}
+			else
+			{
+				l_textureData = STBWrapper::Load(l_req.m_BinaryPath.c_str(), *l_req.m_Component);
+			}
 			Initialize(l_req.m_Component, l_textureData, l_req.m_Owner);
 		}
 	});

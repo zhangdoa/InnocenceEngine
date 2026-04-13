@@ -148,8 +148,17 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		m_TextureBuffers_Upload[reinterpret_cast<uint64_t>(texture)] = l_uploadHeapBuffer;
 
 		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-		l_textureSubResourceData.RowPitch = texture->m_TextureDesc.Width * GetTexturePixelDataSize(texture->m_TextureDesc);
-		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * texture->m_TextureDesc.Height;
+		if (texture->m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
+		{
+			l_textureSubResourceData.RowPitch = GetBCRowPitch(texture->m_TextureDesc);
+			uint32_t blocksPerCol = (texture->m_TextureDesc.Height + 3) / 4;
+			l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * blocksPerCol;
+		}
+		else
+		{
+			l_textureSubResourceData.RowPitch = texture->m_TextureDesc.Width * GetTexturePixelDataSize(texture->m_TextureDesc);
+			l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * texture->m_TextureDesc.Height;
+		}
 		l_textureSubResourceData.pData = (unsigned char*)textureData;
 
 		for (auto gpuResource : texture->m_GPUResources)
@@ -192,7 +201,8 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 
 	if (texture->m_TextureDesc.Usage != TextureUsage::DepthAttachment
 		&& texture->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment
-		&& !texture->m_TextureDesc.IsSRGB)
+		&& !texture->m_TextureDesc.IsSRGB
+		&& texture->m_TextureDesc.PixelDataType != TexturePixelDataType::Compressed)
 	{
 		for (uint32_t frame = 0; frame < frameCount; frame++)
 		{

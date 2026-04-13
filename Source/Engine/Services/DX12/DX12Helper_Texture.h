@@ -16,6 +16,8 @@ namespace Inno
         uint32_t GetTextureMipLevels(TextureDesc textureDesc);
         D3D12_RESOURCE_FLAGS GetTextureBindFlags(TextureDesc textureDesc);
         uint32_t GetTexturePixelDataSize(TextureDesc textureDesc);
+        uint32_t GetBCBlockBytes(TexturePixelDataFormat format);
+        uint32_t GetBCRowPitch(TextureDesc textureDesc);
         D3D12_RESOURCE_STATES GetTextureWriteState(TextureDesc textureDesc);
         D3D12_RESOURCE_STATES GetTextureReadState(TextureDesc textureDesc);
         D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDesc textureDesc, D3D12_RESOURCE_DESC D3D12TextureDesc, uint32_t mostDetailedMip);
