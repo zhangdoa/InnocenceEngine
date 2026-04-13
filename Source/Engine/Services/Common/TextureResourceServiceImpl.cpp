@@ -1,12 +1,12 @@
 #include "../TextureResourceService.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
-#include "../../Common/IOService.h"
 #include "../../Common/Memory.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
 #include "../../Services/EntityRegistry.h"
 #include "../../ThirdParty/STBWrapper/STBWrapper.h"
+#include <fstream>
 
 using namespace Inno;
 
@@ -33,24 +33,48 @@ bool TextureResourceService::Setup(IServiceConfig* systemConfig)
 		TextureResourceServiceNS::BinaryLoadRequest l_req;
 		while (TextureResourceServiceNS::s_BinaryLoadQueue.waitPop(l_req))
 		{
-			void* l_textureData = nullptr;
-			if (l_req.m_Component->m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
+			try
 			{
-				auto l_rawBytes = g_Engine->Get<IOService>()->loadFile(l_req.m_BinaryPath.c_str(), IOMode::Binary);
-				if (!l_rawBytes.empty())
+				void* l_textureData = nullptr;
+				if (l_req.m_Component->m_TextureDesc.PixelDataType == TexturePixelDataType::Compressed)
 				{
-					l_textureData = Memory::Allocate(l_rawBytes.size());
-					if (l_textureData)
-						memcpy(l_textureData, l_rawBytes.data(), l_rawBytes.size());
+					// m_BinaryPath is absolute (from AssetService::GetBinaryFilePath).
+					// Use std::ifstream directly — IOService::loadFile prepends m_workingDir
+					// which creates an invalid doubly-rooted path for absolute inputs.
+					std::ifstream l_bcFile(l_req.m_BinaryPath, std::ios::binary | std::ios::ate);
+					if (l_bcFile.is_open())
+					{
+						auto l_tellPos = l_bcFile.tellg();
+						if (l_tellPos > 0)
+						{
+							auto l_size = static_cast<size_t>(l_tellPos);
+							l_bcFile.seekg(0, std::ios::beg);
+							l_textureData = Memory::Allocate(l_size);
+							if (l_textureData)
+								l_bcFile.read(static_cast<char*>(l_textureData), static_cast<std::streamsize>(l_size));
+						}
+						else
+						{
+							Log(Error, "TextureResourceService: tellg() failed for BC binary: ", l_req.m_BinaryPath.c_str());
+						}
+					}
+					if (!l_textureData)
+						Log(Error, "TextureResourceService: Failed to load BC binary: ", l_req.m_BinaryPath.c_str());
 				}
-				if (!l_textureData)
-					Log(Error, "TextureResourceService: Failed to load BC binary: ", l_req.m_BinaryPath.c_str());
+				else
+				{
+					l_textureData = STBWrapper::Load(l_req.m_BinaryPath.c_str(), *l_req.m_Component);
+				}
+				Initialize(l_req.m_Component, l_textureData, l_req.m_Owner);
 			}
-			else
+			catch (const std::exception& e)
 			{
-				l_textureData = STBWrapper::Load(l_req.m_BinaryPath.c_str(), *l_req.m_Component);
+				Log(Error, "TextureResourceService: Exception in binary loader thread: ", e.what(), " for: ", l_req.m_BinaryPath.c_str());
 			}
-			Initialize(l_req.m_Component, l_textureData, l_req.m_Owner);
+			catch (...)
+			{
+				Log(Error, "TextureResourceService: Unknown exception in binary loader thread for: ", l_req.m_BinaryPath.c_str());
+			}
 		}
 	});
 
