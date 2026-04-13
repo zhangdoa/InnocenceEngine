@@ -1,0 +1,10 @@
+﻿{
+    "ComponentType": 7,
+    "ShaderModel": 1,
+    "Albedo": {"R": 0.35, "G": 0.33, "B": 0.3, "A": 1.0},
+    "Metallic": 0,
+    "Roughness": 0.25,
+    "AO": 1.0,
+    "Thickness": 1.0,
+    "TextureComponents": []
+}

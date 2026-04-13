@@ -45,6 +45,333 @@
                 {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
                 {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
             ]
+        },
+        {
+            "Name": "Orb",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Orb.TransformComponent"}
+            ],
+            "ChildScene": "Generated/Scenes/UnitTest.ShaderBall.InnoScene"
+        },
+        {
+            "Name": "Prim.Triangle",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Triangle.TransformComponent"},
+                {"Type": 6, "Name": "UnitTriangleMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Dielectric.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Square",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Square.TransformComponent"},
+                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Dielectric.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Pentagon",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Pentagon.TransformComponent"},
+                {"Type": 6, "Name": "UnitPentagonMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Dielectric.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Hexagon",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Hexagon.TransformComponent"},
+                {"Type": 6, "Name": "UnitHexagonMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Dielectric.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Tetrahedron",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Tetrahedron.TransformComponent"},
+                {"Type": 6, "Name": "UnitTetrahedronMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Dielectric.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Cube",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Cube.TransformComponent"},
+                {"Type": 6, "Name": "UnitCubeMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Metallic.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Octahedron",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Octahedron.TransformComponent"},
+                {"Type": 6, "Name": "UnitOctahedronMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Metallic.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Dodecahedron",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Dodecahedron.TransformComponent"},
+                {"Type": 6, "Name": "UnitDodecahedronMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Metallic.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Icosahedron",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Icosahedron.TransformComponent"},
+                {"Type": 6, "Name": "UnitIcosahedronMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Metallic.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Prim.Sphere",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Prim.Sphere.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Prim.Metallic.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.WhitePlastic.R0",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.WhitePlastic.R0.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.WhitePlastic.R0.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.WhitePlastic.R25",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.WhitePlastic.R25.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.WhitePlastic.R25.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.WhitePlastic.R50",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.WhitePlastic.R50.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.WhitePlastic.R50.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.WhitePlastic.R75",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.WhitePlastic.R75.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.WhitePlastic.R75.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.WhitePlastic.R100",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.WhitePlastic.R100.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.WhitePlastic.R100.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.RedLacquer.R0",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.RedLacquer.R0.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.RedLacquer.R0.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.RedLacquer.R25",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.RedLacquer.R25.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.RedLacquer.R25.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.RedLacquer.R50",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.RedLacquer.R50.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.RedLacquer.R50.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.RedLacquer.R75",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.RedLacquer.R75.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.RedLacquer.R75.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.RedLacquer.R100",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.RedLacquer.R100.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.RedLacquer.R100.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Concrete.R0",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Concrete.R0.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Concrete.R0.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Concrete.R25",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Concrete.R25.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Concrete.R25.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Concrete.R50",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Concrete.R50.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Concrete.R50.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Concrete.R75",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Concrete.R75.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Concrete.R75.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Concrete.R100",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Concrete.R100.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Concrete.R100.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Gold.R0",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Gold.R0.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Gold.R0.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Gold.R25",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Gold.R25.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Gold.R25.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Gold.R50",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Gold.R50.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Gold.R50.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Gold.R75",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Gold.R75.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Gold.R75.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Gold.R100",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Gold.R100.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Gold.R100.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Copper.R0",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Copper.R0.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Copper.R0.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Copper.R25",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Copper.R25.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Copper.R25.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Copper.R50",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Copper.R50.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Copper.R50.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Copper.R75",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Copper.R75.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Copper.R75.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Copper.R100",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Copper.R100.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Copper.R100.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Iron.R0",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Iron.R0.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Iron.R0.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Iron.R25",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Iron.R25.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Iron.R25.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Iron.R50",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Iron.R50.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Iron.R50.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Iron.R75",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Iron.R75.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Iron.R75.MaterialComponent"}
+            ]
+        },
+        {
+            "Name": "Mat.Iron.R100",
+            "Components": [
+                {"Type": 1, "Name": "UnitTest.Mat.Iron.R100.TransformComponent"},
+                {"Type": 6, "Name": "UnitSphereMesh.MeshComponent"},
+                {"Type": 7, "Name": "UnitTest.Mat.Iron.R100.MaterialComponent"}
+            ]
         }
     ]
 }
