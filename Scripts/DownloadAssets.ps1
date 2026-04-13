@@ -130,6 +130,59 @@ Download-Asset -Name "ShaderBall (Material Orb)" `
     }
 
 # ---------------------------------------------------------------------------
+# AmbientCG PBR texture sets (CC0) — used for textured material showcase
+# Each set contains albedo/normal/roughness/metallic/AO at 1K resolution
+# ---------------------------------------------------------------------------
+$texturesDir = Join-Path (Join-Path $repoRoot "OriginalAssets") "Textures"
+if (-not (Test-Path $texturesDir)) {
+    New-Item -ItemType Directory -Path $texturesDir -Force | Out-Null
+}
+
+$pbrSets = @(
+    @{ Name = "Concrete007";    Id = "Concrete007_1K-PNG.zip" },
+    @{ Name = "Ground037";      Id = "Ground037_1K-PNG.zip" },
+    @{ Name = "Metal032";       Id = "Metal032_1K-PNG.zip" },
+    @{ Name = "Tiles074";       Id = "Tiles074_1K-PNG.zip" }
+)
+
+foreach ($set in $pbrSets) {
+    $destDir = Join-Path $texturesDir $set.Name
+    if ((Test-Path $destDir) -and -not $Force) {
+        Write-Host "[SKIP] $($set.Name) already exists" -ForegroundColor Yellow
+        continue
+    }
+    $url = "https://ambientcg.com/get?file=$($set.Id)"
+    Download-Asset -Name "AmbientCG $($set.Name)" `
+        -Url $url `
+        -OutFile $set.Id `
+        -TargetDir $destDir `
+        -PostProcess {
+            param($archive, $dest)
+            Expand-Archive -Path $archive -DestinationPath $dest -Force
+        }
+}
+
+# ---------------------------------------------------------------------------
+# Macbeth Color Checker (CC0, from colour-science reference data)
+# ---------------------------------------------------------------------------
+$colorCheckerDir = Join-Path $texturesDir "ColorChecker"
+$colorCheckerFile = Join-Path $colorCheckerDir "ColorChecker.png"
+if ((Test-Path $colorCheckerFile) -and -not $Force) {
+    Write-Host "[SKIP] ColorChecker already exists" -ForegroundColor Yellow
+} else {
+    if (-not (Test-Path $colorCheckerDir)) {
+        New-Item -ItemType Directory -Path $colorCheckerDir -Force | Out-Null
+    }
+    Write-Host "[DOWNLOAD] Macbeth Color Checker texture ..." -ForegroundColor Cyan
+    # CC0 reference chart from the colour-science project (GitHub raw)
+    Invoke-WebRequest `
+        -Uri "https://github.com/colour-science/colour-checker-detection/raw/refs/heads/develop/colour_checker_detection/detection/datasets/colour-checker_dataset_01/00.png" `
+        -OutFile $colorCheckerFile `
+        -UseBasicParsing
+    Write-Host "[OK] ColorChecker.png -> $colorCheckerDir" -ForegroundColor Green
+}
+
+# ---------------------------------------------------------------------------
 # Intel Sponza Base
 # ---------------------------------------------------------------------------
 Download-Asset -Name "Intel Sponza Base" `

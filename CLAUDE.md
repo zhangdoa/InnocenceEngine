@@ -96,6 +96,13 @@ When a regression is found, do NOT guess at the cause or add speculative fixes. 
 3. Build and test after each incremental step to isolate the exact change that introduced the regression
 4. Only after identifying the offending change, analyze and fix the root cause
 
+## Commit Granularity
+Commits must be atomic and logically self-contained. When completing a multi-part task, split commits along natural boundaries:
+- One commit per distinct concern: engine code change, data-only change, script/tooling change
+- Do not bundle unrelated fixes into a single commit
+- Each commit must build and pass RenderTest independently (no broken-state commits)
+- Typical splits: `feat: engine code` / `data: scene and component files` / `chore: scripts and tooling`
+
 ## Merge Policy
 Never blindly merge branches or accept incoming changes. Always:
 1. Review every incoming change for correctness and compatibility with the current codebase
