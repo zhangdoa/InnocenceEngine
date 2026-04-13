@@ -76,6 +76,27 @@ static bool AnyComponentFileExists(const std::string& stemName)
 	return false;
 }
 
+// Returns true if at least one TextureComponent JSON file was produced for this stem.
+// Texture files are named like "<stem>.<textureName>.json" and live under Components/.
+static bool AnyTextureComponentExists(const std::string& stemName)
+{
+	auto l_dataDir = g_Engine->Get<IOService>()->getDataDirectory();
+	auto l_componentsDir = fs::path(l_dataDir + "Generated/Components/");
+	if (!fs::exists(l_componentsDir))
+		return false;
+	for (auto& entry : fs::recursive_directory_iterator(l_componentsDir))
+	{
+		auto l_name = entry.path().filename().string();
+		if (l_name.find(stemName) != std::string::npos &&
+		    l_name.find(".innobin") == std::string::npos &&
+		    l_name.find("MeshComponent") == std::string::npos &&
+		    l_name.find("MaterialComponent") == std::string::npos &&
+		    l_name.find(".json") != std::string::npos)
+			return true;
+	}
+	return false;
+}
+
 // ---------------------------------------------------------------------------
 // Test: unsupported extension returns false immediately
 // ---------------------------------------------------------------------------
@@ -167,6 +188,45 @@ static void TestImportPLYConditional()
 }
 
 // ---------------------------------------------------------------------------
+// Test: FBX with PBR textures (ShaderBall) — exercises the full pipeline:
+// mesh → material → texture load → BC compression → disk write.
+// This is one of the assets triggered by pressing Y in the running engine.
+// Skipped if OriginalAssets are not present.
+// ---------------------------------------------------------------------------
+static void TestImportTexturedFBXConditional()
+{
+	const char* l_relPath = "../OriginalAssets/Models/orb/ShaderBall.fbx";
+	const std::string l_stemName = "ShaderBall";
+
+	if (!g_Engine->Get<IOService>()->isFileExist(l_relPath))
+	{
+		TestRunner::StartTest("Import: FBX with textures (ShaderBall) — SKIPPED (OriginalAssets not present)");
+		TestRunner::EndTest(true);
+		return;
+	}
+
+	TestRunner::StartTest("Import: FBX with textures (ShaderBall) produces scene, mesh, material, and texture outputs");
+
+	bool l_importOk = AssetService::ImportSync(l_relPath);
+	bool l_sceneExists = SceneFileExists(l_stemName);
+	bool l_componentExists = AnyComponentFileExists(l_stemName);
+	bool l_textureExists = AnyTextureComponentExists(l_stemName);
+
+	bool l_passed = l_importOk && l_sceneExists && l_componentExists && l_textureExists;
+
+	if (!l_importOk)
+		Log(Error, "AssetConversionTests: ImportSync returned false for ShaderBall.fbx");
+	if (!l_sceneExists)
+		Log(Error, "AssetConversionTests: Generated scene file not found for: ", l_stemName.c_str());
+	if (!l_componentExists)
+		Log(Error, "AssetConversionTests: No generated component files found for: ", l_stemName.c_str());
+	if (!l_textureExists)
+		Log(Error, "AssetConversionTests: No generated texture component files found for: ", l_stemName.c_str());
+
+	TestRunner::EndTest(l_passed);
+}
+
+// ---------------------------------------------------------------------------
 // Entry point called by TestRunner
 // ---------------------------------------------------------------------------
 void RunAssetConversionTests()
@@ -177,6 +237,7 @@ void RunAssetConversionTests()
 	TestImportNonexistentFile();
 	TestImportMinimalOBJ();
 	TestImportPLYConditional();
+	TestImportTexturedFBXConditional();
 
 	TestRunner::EndTestSuite();
 }
