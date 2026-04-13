@@ -37,6 +37,9 @@ namespace Inno
 		static std::string GetComponentDirectory();
 
 		static bool Import(const char* fileName);
+		// Synchronous variant: submits the import task and blocks until it completes.
+		// Intended for offline tools and tests. Returns false for unsupported formats.
+		static bool ImportSync(const char* fileName);
 
 		static bool SaveScene(const char* fileName);
 		static bool LoadScene(const char* fileName);

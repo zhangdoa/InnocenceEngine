@@ -64,6 +64,34 @@ bool AssetService::Update()
 
 bool AssetService::Terminate()
 {
+	Log(Success, "AssetService: clearing asset registries...");
+	// Clear all asset registries before CRT static cleanup.
+	// MaterialAssetData contains std::vector<std::string> which must be freed while the
+	// heap is still valid — deferring to the static-destructor phase can cause
+	// STATUS_HEAP_CORRUPTION on exit if the deques are non-empty.
+	std::unique_lock<std::shared_mutex> l_meshLock(s_MeshMutex);
+	m_MeshAssets.clear();
+	m_MeshFreeSlots.clear();
+	m_MeshGenerations.clear();
+	m_MeshLUT.clear();
+	l_meshLock.unlock();
+
+	std::unique_lock<std::shared_mutex> l_matLock(s_MaterialMutex);
+	m_MaterialAssets.clear();
+	m_MaterialFreeSlots.clear();
+	m_MaterialGenerations.clear();
+	m_MaterialLUT.clear();
+	l_matLock.unlock();
+
+	std::unique_lock<std::shared_mutex> l_texLock(s_TextureMutex);
+	m_TextureAssets.clear();
+	m_TextureFreeSlots.clear();
+	m_TextureGenerations.clear();
+	m_TextureLUT.clear();
+	l_texLock.unlock();
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+	Log(Success, "AssetService has been terminated.");
 	return true;
 }
 
@@ -378,6 +406,23 @@ bool AssetService::Import(const char* fileName)
 	{
 		Log(Warning, fileName, " is not supported!");
 
+		return false;
+	}
+}
+
+bool AssetService::ImportSync(const char* fileName)
+{
+	auto l_extension = g_Engine->Get<IOService>()->getFileExtension(fileName);
+
+	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
+	{
+		// Offline/synchronous import: run directly on the calling thread with no scheduler involvement.
+		// This avoids task queue races during engine teardown and is the correct semantic for tools/tests.
+		return AssimpWrapper::Import(fileName);
+	}
+	else
+	{
+		Log(Warning, fileName, " is not supported!");
 		return false;
 	}
 }

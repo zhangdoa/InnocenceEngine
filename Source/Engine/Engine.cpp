@@ -887,6 +887,7 @@ bool Engine::Terminate()
 
 	SystemTerm(PhysicsSimulationService);
 	SystemTerm(SceneService);
+	SystemTerm(AssetService);
 	SystemTerm(TransformService);
 
 	SystemTerm(EntityRegistry);

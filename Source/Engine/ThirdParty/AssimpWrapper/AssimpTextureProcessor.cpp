@@ -98,7 +98,7 @@ namespace AssimpTextureProcessorNS
 		outDesc.PixelDataType   = TexturePixelDataType::Compressed;
 		outDesc.MipLevels       = 1;
 
-		Inno::Memory::Deallocate(srcRGBA);
+		STBWrapper::Free(srcRGBA);
 		return compressed;
 	}
 }

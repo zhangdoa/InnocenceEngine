@@ -46,6 +46,11 @@ void* STBWrapper::Load(const char* fileName, TextureComponent& component)
 	return l_rawData;
 }
 
+void STBWrapper::Free(void* data)
+{
+	stbi_image_free(data);
+}
+
 bool STBWrapper::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)
 {
 	int result = 1;
