@@ -248,8 +248,8 @@ namespace Inno
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
 
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_LEFT_SHIFT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_LEFT_SHIFT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
 
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });

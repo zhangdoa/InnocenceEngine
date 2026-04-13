@@ -592,8 +592,8 @@ void TemplateAssetServiceImpl::addSphere(MeshComponent* meshComponent)
     auto& indices = m_meshIndices[meshComponent];
 
     auto radius = 1.0f;
-    auto sectorCount = 16; // Reduced for simpler mesh
-    auto stackCount = 16;
+    auto sectorCount = 32;
+    auto stackCount = 32;
 
     float x, y, z, xy;
     float nx, ny, nz, lengthInv = 1.0f / radius;

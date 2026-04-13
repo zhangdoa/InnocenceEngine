@@ -184,6 +184,20 @@ void WinWindowService::ConsumeEvents(const WindowEventProcessCallback& p_Callbac
 		});
 }
 
+static uint32_t TranslateVKCode(uint32_t vk)
+{
+	switch (vk)
+	{
+	case VK_LSHIFT:   return INNO_KEY_LEFT_SHIFT;
+	case VK_RSHIFT:   return INNO_KEY_RIGHT_SHIFT;
+	case VK_LCONTROL: return INNO_KEY_LEFT_CONTROL;
+	case VK_RCONTROL: return INNO_KEY_RIGHT_CONTROL;
+	case VK_LMENU:    return INNO_KEY_LEFT_ALT;
+	case VK_RMENU:    return INNO_KEY_RIGHT_ALT;
+	default:          return vk;
+	}
+}
+
 bool WinWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wParam, int32_t lParam)
 {
 	for (auto i : m_WindowEventCallbacks)
@@ -225,7 +239,7 @@ bool WinWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wPara
 	}
 	case WM_KEYDOWN:
 	{
-		auto l_buttonState = new ButtonState((uint32_t)wParam, true);
+		auto l_buttonState = new ButtonState(TranslateVKCode((uint32_t)wParam), true);
 		m_WindowEvents.Write([&](auto& l_BackBuffer)
 			{
 				l_BackBuffer.push_back(l_buttonState);
@@ -235,7 +249,7 @@ bool WinWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wPara
 	}
 	case WM_KEYUP:
 	{
-		auto l_buttonState = new ButtonState((uint32_t)wParam, false);
+		auto l_buttonState = new ButtonState(TranslateVKCode((uint32_t)wParam), false);
 		m_WindowEvents.Write([&](auto& l_BackBuffer)
 			{
 				l_BackBuffer.push_back(l_buttonState);

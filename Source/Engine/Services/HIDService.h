@@ -69,7 +69,7 @@ namespace Inno
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-		const InputConfig m_InputConfig = { 256, 5 };
+		const InputConfig m_InputConfig = { 349, 5 };
 
 		std::vector<ButtonState> m_PreviousFrameButtonStates;
 
