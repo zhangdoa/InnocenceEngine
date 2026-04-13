@@ -558,8 +558,18 @@ bool AssetService::Save(const TextureComponent& component, void* textureData)
 		uint32_t blocksY = (component.m_TextureDesc.Height + 3) / 4;
 		size_t dataSize  = static_cast<size_t>(blocksX) * blocksY * blockBytes;
 		auto* l_rawData = static_cast<const char*>(textureData);
-		std::vector<char> l_bytes(l_rawData, l_rawData + dataSize);
-		binaryResult = g_Engine->Get<IOService>()->saveFile(l_binaryFilePath.c_str(), l_bytes, IOMode::Binary);
+		std::ofstream l_bcFile(l_binaryFilePath, std::ios::out | std::ios::trunc | std::ios::binary);
+		if (!l_bcFile.is_open())
+		{
+			Log(Error, "AssetService::Save: cannot open BC binary file: ", l_binaryFilePath.c_str());
+			binaryResult = false;
+		}
+		else
+		{
+			l_bcFile.write(l_rawData, static_cast<std::streamsize>(dataSize));
+			binaryResult = l_bcFile.good();
+			l_bcFile.close();
+		}
 	}
 	else
 	{
