@@ -10,6 +10,7 @@ set(TEST_SOURCES
     UnitTests/AtomicTests.cpp
     UnitTests/RingBufferTests.cpp
     UnitTests/EntityRegistryTests.cpp
+    UnitTests/FixedSizeStringTests.cpp
     # Performance tests
     PerformanceTests/StringConversionPerf.cpp
     PerformanceTests/ContainerPerf.cpp
