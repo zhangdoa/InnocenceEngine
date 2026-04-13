@@ -169,7 +169,18 @@ void Thread::Worker(uint32_t ThreadIndex)
 					continue;
 				}
 
-				bool l_result = ExecuteTask(task);
+				try
+				{
+					bool l_result = ExecuteTask(task);
+				}
+				catch (const std::exception& e)
+				{
+					Log(Warning, "Exception in thread ", m_ID, " task \"", task->GetName(), "\": ", e.what());
+				}
+				catch (...)
+				{
+					Log(Warning, "Unknown exception in thread ", m_ID, " task \"", task->GetName(), "\"");
+				}
 			}
 
 			std::atomic_thread_fence(std::memory_order_acquire);
