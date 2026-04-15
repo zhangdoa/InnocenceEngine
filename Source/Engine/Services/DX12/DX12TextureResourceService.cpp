@@ -116,7 +116,6 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		m_TextureBuffers_Default[reinterpret_cast<uint64_t>(texture)].push_back(std::move(defaultHeapBuffer));
 	}
 
-	auto l_currentFrame = g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_globalSemaphore = g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore();
@@ -124,9 +123,15 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 	// Phase 1: Upload texture data with direct command list
 	if (textureData)
 	{
+		ComPtr<ID3D12CommandAllocator> l_uploadAllocator;
+		if (FAILED(m_ctx->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&l_uploadAllocator))))
+		{
+			Log(Error, texture->m_InstanceName, " Failed to create temporary command allocator for texture upload!");
+			return false;
+		}
 		CommandListComponent l_uploadCommandList = {};
 		l_uploadCommandList.m_Type = GPUEngineType::Graphics;
-		auto l_dx12UploadCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_ctx->GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, l_currentFrame), L"TextureUploadCommandList");
+		auto l_dx12UploadCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_uploadAllocator, L"TextureUploadCommandList");
 		l_uploadCommandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12UploadCommandList.Get());
 
 		auto* defaultHeapBuffer_Frame0 = static_cast<ID3D12Resource*>(texture->m_GPUResources[0]);
@@ -220,9 +225,15 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 	// Phase 2: Generate mipmaps with compute command list (if needed)
 	if (texture->m_TextureDesc.MipLevels > 1 && textureData)
 	{
+		ComPtr<ID3D12CommandAllocator> l_mipmapAllocator;
+		if (FAILED(m_ctx->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&l_mipmapAllocator))))
+		{
+			Log(Error, texture->m_InstanceName, " Failed to create temporary command allocator for mipmap generation!");
+			return false;
+		}
 		CommandListComponent l_mipmapCommandList = {};
 		l_mipmapCommandList.m_Type = GPUEngineType::Compute;
-		auto l_dx12MipmapCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_ctx->GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, l_currentFrame), L"TextureMipmapCommandList");
+		auto l_dx12MipmapCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, l_mipmapAllocator, L"TextureMipmapCommandList");
 		l_mipmapCommandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12MipmapCommandList.Get());
 
 		GenerateMipmap(texture, &l_mipmapCommandList);
@@ -234,9 +245,15 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 		l_hwService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 
 		// Phase 3: Transition texture back to initial state for rendering passes
+		ComPtr<ID3D12CommandAllocator> l_transitionAllocator;
+		if (FAILED(m_ctx->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&l_transitionAllocator))))
+		{
+			Log(Error, texture->m_InstanceName, " Failed to create temporary command allocator for texture state transition!");
+			return false;
+		}
 		CommandListComponent l_transitionCommandList = {};
 		l_transitionCommandList.m_Type = GPUEngineType::Graphics;
-		auto l_dx12TransitionCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_ctx->GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, l_currentFrame), L"TextureTransitionCommandList");
+		auto l_dx12TransitionCommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_transitionAllocator, L"TextureTransitionCommandList");
 		l_transitionCommandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12TransitionCommandList.Get());
 
 		for (auto gpuResource : texture->m_GPUResources)

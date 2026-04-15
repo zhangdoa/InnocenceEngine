@@ -111,11 +111,17 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, std::vector
 	std::memcpy((char*)l_resource->m_MappedMemory_VB, &vertices[0], vertices.size() * sizeof(Vertex));
 	std::memcpy((char*)l_resource->m_MappedMemory_IB, &indices[0], indices.size() * sizeof(Index));
 
-	auto l_currentFrame = g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
+	ComPtr<ID3D12CommandAllocator> l_tempAllocator;
+	auto l_allocResult = m_ctx->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&l_tempAllocator));
+	if (FAILED(l_allocResult))
+	{
+		Log(Error, l_name, " Failed to create temporary command allocator for mesh initialization!");
+		return false;
+	}
 
 	CommandListComponent l_commandList = {};
 	l_commandList.m_Type = GPUEngineType::Graphics;
-	auto l_dx12CommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_ctx->GetGlobalCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, l_currentFrame), L"MeshInitCommandList");
+	auto l_dx12CommandList = m_ctx->CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, l_tempAllocator, L"MeshInitCommandList");
 	l_commandList.m_CommandList = reinterpret_cast<uint64_t>(l_dx12CommandList.Get());
 
 	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -193,6 +199,7 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, std::vector
 	l_dx12CommandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 
 	D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(l_BLAS.Get());
+	l_dx12CommandList->ResourceBarrier(1, &uavBarrier);
 
 	l_dx12CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		l_defaultHeapBuffer_IB.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_INDEX_BUFFER));
