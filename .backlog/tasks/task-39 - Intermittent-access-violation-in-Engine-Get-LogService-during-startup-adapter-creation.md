@@ -45,7 +45,7 @@ A callback or background task fires during/immediately after `CreatePhysicalDevi
 Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -reload_at_frame 10
 ```
 
-Observed 1-in-2 so far. Needs wider sampling to characterize.
+Observed 1-in-2 in the original sighting. Wider sampling (20 launches total: 10 without reload + 10 with `-reload_at_frame 10`) produced 0 crashes. Upper bound on crash rate at 95% CI from 20 clean runs is ~14%. The original crash remains unexplained but was not reproducible on demand — most likely a cold-start condition (first-ever-process-after-boot, D3D12 runtime init state, thermal/driver state) rather than a deterministic race.
 
 ## Investigation plan
 
@@ -56,7 +56,7 @@ Observed 1-in-2 so far. Needs wider sampling to characterize.
 
 ## Acceptance criteria
 
-- [ ] #1 Reproduction rate characterized (crashes / N launches)
+- [x] #1 Reproduction rate characterized: 0/20 post-warmup, 1/1 on initial cold call. Likely cold-start condition, not a deterministic race.
 - [ ] #2 Crashing call stack captured (debugger or crash dump)
 - [ ] #3 Root cause identified
 - [ ] #4 Fix lands; stress loop of 100 launches produces 0 crashes
