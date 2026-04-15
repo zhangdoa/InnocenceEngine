@@ -682,50 +682,7 @@ namespace Inno
 		{
 			m_autoCaptureFrameCount++;
 			if (m_autoCaptureFrameCount >= static_cast<uint32_t>(l_totalFrames))
-			{
-				l_hwService->WaitOnCPU(l_hwService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
-
-				auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
-				l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
-				auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
-					FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
-
-				if (!l_floatPixels.empty())
-				{
-					std::vector<uint8_t> l_uint8Pixels;
-					l_uint8Pixels.reserve(l_floatPixels.size() * 4);
-					for (const auto& px : l_floatPixels)
-					{
-						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.x, 0.0f)), 1.0f)));
-						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.y, 0.0f)), 1.0f)));
-						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.z, 0.0f)), 1.0f)));
-						l_uint8Pixels.push_back(uint8_t(255));
-					}
-
-					TextureDesc l_desc = l_srcTex->m_TextureDesc;
-					l_desc.PixelDataType = TexturePixelDataType::UByte;
-					l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-					l_desc.Sampler = TextureSampler::Sampler2D;
-
-					if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
-						Log(Success, "Auto-capture: gpu_output.png written.");
-					else
-						Log(Warning, "Auto-capture: failed to write gpu_output.png.");
-				}
-				else
-				{
-					Log(Warning, "Auto-capture: ReadTextureBackToCPU returned empty, writing 1x1 black PNG.");
-					uint8_t l_black[4] = {0, 0, 0, 255};
-					TextureDesc l_desc = {};
-					l_desc.Width = 1; l_desc.Height = 1;
-					l_desc.PixelDataType = TexturePixelDataType::UByte;
-					l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-					l_desc.Sampler = TextureSampler::Sampler2D;
-					g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_black);
-				}
 				m_autoCaptureWritten = true;
-			}
 		}
 
 		if (g_Engine->getInitConfig().isAudit)
@@ -821,6 +778,51 @@ namespace Inno
 		auto l_computeSemaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Compute);
 		l_hwService->WaitOnCPU(l_computeSemaphoreValue, GPUEngineType::Compute);
 		l_hwService->WaitOnCPU(l_graphicsSemaphoreValue, GPUEngineType::Graphics);
+
+		// Auto-capture: GPU is idle (Engine::Terminate called WaitForGPUIdle before us),
+		// so ReadTextureBackToCPU's SignalOnGPU + WaitOnCPU completes instantly.
+		if (m_autoCaptureWritten)
+		{
+			Log(Verbose, "Auto-capture: attempting readback in Terminate...");
+			l_hwService->SignalOnGPU(g_Engine->Get<FrameManagementService>()->GetGlobalSemaphore(), GPUEngineType::Graphics);
+			auto l_testValue = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
+			Log(Verbose, "Auto-capture: signal sent, semaphore=", l_testValue);
+			l_hwService->WaitOnCPU(l_testValue, GPUEngineType::Graphics);
+			Log(Verbose, "Auto-capture: GPU wait complete, proceeding with readback.");
+			auto l_fmService = g_Engine->Get<FrameManagementService>();
+			auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+			auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
+			l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
+			auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
+				FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
+
+			if (!l_floatPixels.empty())
+			{
+				std::vector<uint8_t> l_uint8Pixels;
+				l_uint8Pixels.reserve(l_floatPixels.size() * 4);
+				for (const auto& px : l_floatPixels)
+				{
+					l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.x, 0.0f)), 1.0f)));
+					l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.y, 0.0f)), 1.0f)));
+					l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.z, 0.0f)), 1.0f)));
+					l_uint8Pixels.push_back(uint8_t(255));
+				}
+
+				TextureDesc l_desc = l_srcTex->m_TextureDesc;
+				l_desc.PixelDataType = TexturePixelDataType::UByte;
+				l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+				l_desc.Sampler = TextureSampler::Sampler2D;
+
+				if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
+					Log(Success, "Auto-capture: gpu_output.png written.");
+				else
+					Log(Warning, "Auto-capture: failed to write gpu_output.png.");
+			}
+			else
+			{
+				Log(Warning, "Auto-capture: ReadTextureBackToCPU returned empty.");
+			}
+		}
 
 		FinalBlendPass::Get().Terminate();
 
