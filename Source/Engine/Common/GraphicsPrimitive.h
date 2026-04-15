@@ -50,18 +50,20 @@ namespace Inno
 		class Accessibility
 		{
 		public:
-			explicit Accessibility(bool read, bool write, bool copySource = false, bool copyDest = false)
+			explicit Accessibility(bool read, bool write, bool copySource = false, bool copyDest = false, bool crossQueue = false)
 				: m_Read(read)
 				, m_Write(write)
 				, m_CopySource(copySource)
 				, m_CopyDestination(copyDest)
+				, m_CrossQueue(crossQueue)
 			{
 			}
 
 			bool operator==(const Accessibility& rhs) const
 			{
-				return m_Read == rhs.m_Read && m_Write == rhs.m_Write && 
-					   m_CopySource == rhs.m_CopySource && m_CopyDestination == rhs.m_CopyDestination;
+				return m_Read == rhs.m_Read && m_Write == rhs.m_Write &&
+					   m_CopySource == rhs.m_CopySource && m_CopyDestination == rhs.m_CopyDestination &&
+					   m_CrossQueue == rhs.m_CrossQueue;
 			}
 
 			bool operator!=(const Accessibility& rhs) const
@@ -75,17 +77,22 @@ namespace Inno
 			static Accessibility ReadWrite;
 			static Accessibility CopySource;
 			static Accessibility CopyDestination;
+			// Transition to D3D12_RESOURCE_STATE_COMMON for safe cross-queue handoff.
+			// Use on the source queue's CL when the resource will next be read by a different queue type.
+			static Accessibility CrossQueueTransition;
 
 			bool CanRead() const { return m_Read; }
 			bool CanWrite() const { return m_Write; }
 			bool IsCopySource() const { return m_CopySource; }
 			bool IsCopyDestination() const { return m_CopyDestination; }
+			bool IsCrossQueue() const { return m_CrossQueue; }
 
 		private:
 			bool m_Read = false;
 			bool m_Write = false;
 			bool m_CopySource = false;
 			bool m_CopyDestination = false;
+			bool m_CrossQueue = false;
 		};
 
 		struct DescriptorHandle

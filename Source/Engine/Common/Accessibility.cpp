@@ -8,3 +8,4 @@ Accessibility Accessibility::WriteOnly = Accessibility(false, true);
 Accessibility Accessibility::ReadWrite = Accessibility(true, true);
 Accessibility Accessibility::CopySource = Accessibility(true, false, true, false);
 Accessibility Accessibility::CopyDestination = Accessibility(false, true, false, true);
+Accessibility Accessibility::CrossQueueTransition = Accessibility(false, false, false, false, true);

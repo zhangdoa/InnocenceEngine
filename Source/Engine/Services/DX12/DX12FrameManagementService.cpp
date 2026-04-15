@@ -265,6 +265,10 @@ bool DX12FrameManagementService::TryToTransitState(TextureComponent* texture, Co
 		l_newState = D3D12_RESOURCE_STATE_COPY_SOURCE;
 	if (targetAccessibility.IsCopyDestination())
 		l_newState = D3D12_RESOURCE_STATE_COPY_DEST;
+	// CrossQueueTransition: transition to COMMON so the resource can be read by a different queue type
+	// without a barrier on the receiving queue (D3D12 implicit promotion from COMMON applies).
+	if (targetAccessibility.IsCrossQueue())
+		l_newState = D3D12_RESOURCE_STATE_COMMON;
 
 	// Compute command lists cannot use PIXEL_SHADER_RESOURCE state in barriers.
 	// Strip it from the target state; the source state must be compute-compatible
