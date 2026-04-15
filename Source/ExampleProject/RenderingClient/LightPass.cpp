@@ -341,13 +341,13 @@ bool LightPass::RenderTargetsCreationFunc()
 
 	m_LuminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Luminance Result/");
 	m_LuminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_LuminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_LuminanceResult->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_LuminanceResult);
 
 	m_IlluminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Illuminance Result/");
 	m_IlluminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_IlluminanceResult->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_IlluminanceResult->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_IlluminanceResult);
 

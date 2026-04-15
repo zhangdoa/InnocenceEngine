@@ -152,7 +152,7 @@ bool PostTAAPass::RenderTargetsCreationFunc()
 
 	m_Result = g_Engine->Get<TextureResourceService>()->Add("Post-TAA Pass Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 

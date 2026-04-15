@@ -170,7 +170,7 @@ bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 
 	m_Result = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Integration Result/");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_Result->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	m_Result->m_TextureDesc.Width = (m_Result->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	m_Result->m_TextureDesc.Height = (m_Result->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;

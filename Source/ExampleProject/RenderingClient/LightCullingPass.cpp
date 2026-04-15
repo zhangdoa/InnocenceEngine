@@ -290,13 +290,13 @@ bool LightCullingPass::RenderTargetsCreationFunc()
 
 	m_lightGrid->m_TextureDesc.Width = m_numThreadGroups.x;
 	m_lightGrid->m_TextureDesc.Height = m_numThreadGroups.y;
-	m_lightGrid->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_lightGrid->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 	m_lightGrid->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
 	m_lightGrid->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 
 	m_heatMap = g_Engine->Get<TextureResourceService>()->Add("LightCullingHeatMap/");
 	m_heatMap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_heatMap->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_heatMap->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_lightIndexList);
 	g_Engine->Get<TextureResourceService>()->Initialize(m_lightGrid);

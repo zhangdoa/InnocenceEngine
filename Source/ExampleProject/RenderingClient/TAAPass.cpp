@@ -190,7 +190,7 @@ bool TAAPass::RenderTargetsCreationFunc()
 
 	m_EvenTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Even)/");
 	m_EvenTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_EvenTextureComp->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_EvenTextureComp->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_EvenTextureComp);
 
@@ -199,7 +199,7 @@ bool TAAPass::RenderTargetsCreationFunc()
 
 	m_OddTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Odd)/");
 	m_OddTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_OddTextureComp->m_TextureDesc.Usage = TextureUsage::ColorAttachment;
+	m_OddTextureComp->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_OddTextureComp);
 
