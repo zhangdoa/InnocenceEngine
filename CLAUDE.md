@@ -49,6 +49,8 @@ powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
 ### GPU validation
 Launch with `-gpu_validation` to enable D3D12 GPU-based validation + synchronized command queue validation (works even in `-offscreen`). Use when chasing silent corruption or suspected barrier/layout/resource-state bugs — validation errors surface at the point of violation instead of manifesting frames later.
 
+**Known imprecision:** Release-compiled shaders trigger "Shader Patch Mode NONE" in GBV, producing imprecise tracking. Symptom: errors citing `Layout: UNKNOWN (N)` with `N` past `D3D12_BARRIER_LAYOUT_VIDEO_QUEUE_COMMON` (30) — out-of-enum values are validator sentinels, not real states. To confirm real vs. false-positive, rebuild shaders with `/Zi /Od` or inspect the enum bound (`External/GitSubmodules/DirectX-Headers/include/directx/d3d12.h`). See TASK-37.
+
 ### RenderDoc (in-process)
 `renderdoccmd.exe` is at `C:/Program Files/RenderDoc/renderdoccmd.exe`. The engine has an in-process RenderDoc API loaded via `renderdoc.dll` injection. Use `-capture_frame N` to trigger a capture; the `.rdc` goes to `Build/captures/`.
 
