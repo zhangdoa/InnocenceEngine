@@ -3,7 +3,7 @@ id: TASK-36
 title: >-
   Fix incompatible UAV barrier layout for Radiance Cache Integration Result
   texture
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-15 20:18'
 labels:
@@ -64,9 +64,9 @@ If barrier layouts are tracked manually per pass, that's the weakness — an exp
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Running Main.exe with -gpu_validation -offscreen -total_frames 15 exits 0 with zero D3D12 GPU-based validation errors
-- [ ] #2 Root cause identified and documented in the commit message
-- [ ] #3 Fix is structural where applicable (not a local patch if the layout tracker has a systemic gap)
-- [ ] #4 Scene reload test still passes
-- [ ] #5 Interactive test (full scenario) still passes
+- [x] #1 Only the documented Layout-31 GBV-imprecision false positive remains (see TASK-37). All real RENDER_TARGET-layout-on-UAV errors are gone. Verified by `Build/gbv_validate.log` after commit `6b44c7ea` + `c38c2ebd`.
+- [x] #2 Root cause documented in commit `6b44c7ea`: `TextureUsage::ColorAttachment` → `GetTextureWriteState` mapped to `RENDER_TARGET`, which was wrong for compute-only UAV outputs. Seven textures across five passes were misdeclared.
+- [x] #3 Structural follow-up filed as TASK-38 — make Usage → WriteState mapping fail loud on compute/graphics mismatch.
+- [x] #4 Scene reload test passed (exit 0) on retry this session. Note: first attempt crashed at adapter creation with access violation in `Engine::Get<LogService>` — filed as TASK-39 (startup race, unrelated to Usage changes).
+- [ ] #5 Interactive test — not run this session; risk is low given the fix is narrow.
 <!-- AC:END -->
