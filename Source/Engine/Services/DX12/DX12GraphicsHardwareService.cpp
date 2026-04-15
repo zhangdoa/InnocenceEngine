@@ -207,6 +207,8 @@ bool DX12GraphicsHardwareService::Execute(CommandListComponent* commandList, GPU
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
+	Log(Verbose, "Execute: CL='", commandList->m_InstanceName, "' queue=", (uint32_t)queueType, " gpuErr=", g_GPUErrorDetected.load() ? 1 : 0);
+
 	ID3D12CommandList* l_commandListToExecute[] = { l_commandList };
 
 	if (queueType == GPUEngineType::Graphics)
@@ -215,6 +217,9 @@ bool DX12GraphicsHardwareService::Execute(CommandListComponent* commandList, GPU
 		m_DX12Context.m_computeCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
 	else if (queueType == GPUEngineType::Copy)
 		m_DX12Context.m_copyCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
+
+	if (g_GPUErrorDetected.load())
+		Log(Error, "Execute: GPU error detected AFTER submitting CL='", commandList->m_InstanceName, "'");
 
 	return true;
 }
@@ -374,8 +379,8 @@ bool DX12GraphicsHardwareService::BeginCapture()
 	if (m_RenderDocAPI != nullptr)
 	{
 		auto l_API = static_cast<RENDERDOC_API_1_6_0*>(m_RenderDocAPI);
-		l_API->StartFrameCapture(nullptr, nullptr);
-		Log(Success, "RenderDoc: frame capture started.");
+		l_API->TriggerCapture();
+		Log(Success, "RenderDoc: capture triggered for next present.");
 		return true;
 	}
 
@@ -393,20 +398,16 @@ bool DX12GraphicsHardwareService::EndCapture()
 	if (m_RenderDocAPI != nullptr)
 	{
 		auto l_API = static_cast<RENDERDOC_API_1_6_0*>(m_RenderDocAPI);
-		uint32_t l_Result = l_API->EndFrameCapture(nullptr, nullptr);
-		if (l_Result == 1)
+		uint32_t l_NumCaptures = l_API->GetNumCaptures();
+		if (l_NumCaptures > 0)
 		{
-			uint32_t l_NumCaptures = l_API->GetNumCaptures();
-			if (l_NumCaptures > 0)
-			{
-				char l_Path[512] = {};
-				uint32_t l_PathLen = sizeof(l_Path);
-				uint64_t l_Timestamp = 0;
-				l_API->GetCapture(l_NumCaptures - 1, l_Path, &l_PathLen, &l_Timestamp);
-				Log(Success, "RenderDoc: frame capture saved to ", l_Path);
-			}
+			char l_Path[512] = {};
+			uint32_t l_PathLen = sizeof(l_Path);
+			uint64_t l_Timestamp = 0;
+			l_API->GetCapture(l_NumCaptures - 1, l_Path, &l_PathLen, &l_Timestamp);
+			Log(Success, "RenderDoc: frame capture saved to ", l_Path);
 		}
-		return l_Result == 1;
+		return true;
 	}
 
 	if (m_DX12Context.m_graphicsAnalysis != nullptr)
@@ -469,7 +470,16 @@ bool DX12GraphicsHardwareService::CreateDebugCallback()
 
     m_DX12Context.m_debugInterface->EnableDebugLayer();
 
-    Log(Success, "Debug layer and GPU based validation has been enabled.");
+    if (g_Engine->getInitConfig().enableGPUValidation)
+    {
+        m_DX12Context.m_debugInterface->SetEnableGPUBasedValidation(true);
+        m_DX12Context.m_debugInterface->SetEnableSynchronizedCommandQueueValidation(true);
+        Log(Success, "Debug layer + GPU-based validation + synchronized command queue validation enabled.");
+    }
+    else
+    {
+        Log(Success, "Debug layer enabled (GPU-based validation off; pass -gpu_validation to enable).");
+    }
 
     l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_DX12Context.m_graphicsAnalysis));
     if (SUCCEEDED(l_HResult))
@@ -979,7 +989,10 @@ bool DX12GraphicsHardwareService::CreateHardwareResources()
     TryLoadRenderDocAPI();
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-    l_result &= CreateDebugCallback();
+    if (!g_Engine->getInitConfig().isOffscreen || g_Engine->getInitConfig().enableGPUValidation)
+        l_result &= CreateDebugCallback();
+    else
+        Log(Warning, "Offscreen mode: D3D12 debug layer disabled to avoid TDR from validation overhead. Pass -gpu_validation to force-enable.");
 #endif
     l_result &= CreatePhysicalDevices();
     l_result &= CreateGlobalCommandQueues();

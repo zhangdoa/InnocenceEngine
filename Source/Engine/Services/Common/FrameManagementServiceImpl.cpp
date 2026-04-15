@@ -129,12 +129,12 @@ bool FrameManagementService::Update()
 
 	auto l_captureFrame = g_Engine->getInitConfig().captureFrame;
 	bool l_isCapturing = (l_captureFrame >= 0 && m_FrameCountSinceLaunch == static_cast<uint32_t>(l_captureFrame));
-	if (l_isCapturing)
-		m_HardwareService->BeginCapture();
 
+	Log(Verbose, "Frame ", m_FrameCountSinceLaunch, ": WaitOnCPU gfx=", m_GraphicsSemaphoreValues[l_currentFrame], " comp=", m_ComputeSemaphoreValues[l_currentFrame], " copy=", m_CopySemaphoreValues[l_currentFrame], " frameIdx=", l_currentFrame);
 	m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
 	m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
+	Log(Verbose, "Frame ", m_FrameCountSinceLaunch, ": WaitOnCPU complete, calling BeginFrame");
 
 	BeginFrame();
 
@@ -170,7 +170,12 @@ bool FrameManagementService::Update()
 
 		ExecuteSwapChainCommands();
 
-		if (!g_Engine->getInitConfig().isOffscreen)
+		if (g_Engine->getInitConfig().isOffscreen)
+		{
+			m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
+			m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
+		}
+		else
 		{
 			m_HardwareService->SignalOnGPU(m_SwapChainRenderPassComp, GPUEngineType::Graphics);
 		}
@@ -181,6 +186,9 @@ bool FrameManagementService::Update()
 	m_GraphicsSemaphoreValues[l_currentFrame] = m_HardwareService->GetSemaphoreValue(GPUEngineType::Graphics);
 	m_ComputeSemaphoreValues[l_currentFrame] = m_HardwareService->GetSemaphoreValue(GPUEngineType::Compute);
 	m_CopySemaphoreValues[l_currentFrame] = m_HardwareService->GetSemaphoreValue(GPUEngineType::Copy);
+
+	if (l_isCapturing)
+		m_HardwareService->BeginCapture();
 
 	Present();
 
@@ -300,13 +308,18 @@ bool FrameManagementService::Present()
 
 bool FrameManagementService::WaitForGPUIdle()
 {
+	Log(Verbose, "WaitForGPUIdle: signaling all queues...");
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics);
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Compute);
 	m_HardwareService->SignalOnGPU(m_GlobalSemaphore, GPUEngineType::Copy);
 
+	Log(Verbose, "WaitForGPUIdle: waiting on Graphics...");
 	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+	Log(Verbose, "WaitForGPUIdle: waiting on Compute...");
 	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Compute), GPUEngineType::Compute);
+	Log(Verbose, "WaitForGPUIdle: waiting on Copy...");
 	m_HardwareService->WaitOnCPU(m_HardwareService->GetSemaphoreValue(GPUEngineType::Copy), GPUEngineType::Copy);
+	Log(Verbose, "WaitForGPUIdle: complete.");
 
 	return true;
 }

@@ -345,6 +345,12 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	if (arg.find("-gpu_validation") != std::string::npos)
+	{
+		l_result.enableGPUValidation = true;
+		Log(Success, "D3D12 GPU-based validation enabled.");
+	}
+
 	auto l_captureArgPos = arg.find("-capture_frame");
 	if (l_captureArgPos != std::string::npos)
 	{
@@ -821,6 +827,12 @@ bool Engine::Terminate()
 	if (m_pImpl->m_RenderingExecutionTask) {
 		m_pImpl->m_RenderingExecutionTask->Wait();
 		m_pImpl->m_RenderingExecutionTask->Deactivate();
+	}
+
+	// Drain the GPU before destroying resources — the last rendered frame's
+	// commands may still be in-flight since no subsequent BeginFrame waited.
+	if (!m_pImpl->m_initConfig.isHeadless) {
+		Get<FrameManagementService>()->WaitForGPUIdle();
 	}
 
 	// Only terminate LogicClient if it exists
