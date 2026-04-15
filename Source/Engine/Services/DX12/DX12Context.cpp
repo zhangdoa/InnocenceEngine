@@ -172,7 +172,11 @@ ComPtr<ID3D12Resource> DX12Context::CreateReadBackHeapBuffer(UINT64 size, const 
 
 	if (FAILED(l_HResult))
 	{
-		Log(Warning, "Can't create read-back heap buffer ", name);
+		auto l_removeReason = m_device->GetDeviceRemovedReason();
+		Log(Warning, "Can't create read-back heap buffer ", name,
+			" size=", size,
+			" HRESULT=", static_cast<int32_t>(l_HResult),
+			" DeviceRemovedReason=", static_cast<int32_t>(l_removeReason));
 		return nullptr;
 	}
 
