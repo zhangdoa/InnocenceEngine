@@ -165,7 +165,10 @@ ObjectStatus SunShadowGeometryProcessPass::GetStatus()
 bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 

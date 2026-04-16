@@ -85,10 +85,16 @@ bool RadianceCacheIntegrationPass::Initialize()
 bool RadianceCacheIntegrationPass::Update()
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "Result not Activated, skipping.");
 		return false;
+	}
 
 	return true;
 }

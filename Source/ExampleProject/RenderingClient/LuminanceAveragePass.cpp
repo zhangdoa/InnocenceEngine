@@ -113,7 +113,10 @@ ObjectStatus LuminanceAveragePass::GetStatus()
 bool LuminanceAveragePass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (LuminanceHistogramPass::Get().GetResult()->m_ObjectStatus != ObjectStatus::Activated)
 		return false;

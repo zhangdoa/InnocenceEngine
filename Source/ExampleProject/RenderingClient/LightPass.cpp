@@ -241,19 +241,34 @@ ObjectStatus LightPass::GetStatus()
 bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_LuminanceResult->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "LuminanceResult not Activated, skipping.");
 		return false;
+	}
 
 	if (m_IlluminanceResult->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "IlluminanceResult not Activated, skipping.");
 		return false;
+	}
 
-	if (BRDFLUTPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
+	if (BRDFLUTPass::Get().GetResult()->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "BRDFLUTPass result not Activated, skipping.");
 		return false;
+	}
 
-	if (BRDFLUTMSPass::Get().GetResult() ->m_ObjectStatus != ObjectStatus::Activated)
+	if (BRDFLUTMSPass::Get().GetResult()->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "BRDFLUTMSPass result not Activated, skipping.");
 		return false;
+	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();

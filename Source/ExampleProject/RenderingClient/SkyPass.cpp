@@ -90,10 +90,16 @@ ObjectStatus SkyPass::GetStatus()
 bool SkyPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "Result not Activated, skipping.");
 		return false;
+	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 

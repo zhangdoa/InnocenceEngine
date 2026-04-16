@@ -190,7 +190,10 @@ ObjectStatus RadianceCacheRaytracingPass::GetStatus()
 bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	auto l_result = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
 	if (l_result->m_ObjectStatus != ObjectStatus::Activated)

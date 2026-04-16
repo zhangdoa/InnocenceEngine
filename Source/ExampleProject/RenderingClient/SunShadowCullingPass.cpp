@@ -110,7 +110,10 @@ ObjectStatus SunShadowCullingPass::GetStatus()
 bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_IndirectDrawCommandBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;

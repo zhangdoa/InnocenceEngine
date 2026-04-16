@@ -145,7 +145,10 @@ ObjectStatus OpaquePass::GetStatus()
 bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_drawCallService = g_Engine->Get<DrawCallService>();

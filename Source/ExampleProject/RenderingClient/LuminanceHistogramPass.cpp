@@ -107,7 +107,10 @@ ObjectStatus LuminanceHistogramPass::GetStatus()
 bool LuminanceHistogramPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	auto l_renderingContext = reinterpret_cast<LuminanceHistogramPassRenderingContext*>(renderingContext);
 	if (l_renderingContext->m_input->m_ObjectStatus != ObjectStatus::Activated)

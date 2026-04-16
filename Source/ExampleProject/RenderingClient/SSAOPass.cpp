@@ -199,7 +199,10 @@ ObjectStatus SSAOPass::GetStatus()
 bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_Result->m_ObjectStatus != ObjectStatus::Activated)
 		return false;

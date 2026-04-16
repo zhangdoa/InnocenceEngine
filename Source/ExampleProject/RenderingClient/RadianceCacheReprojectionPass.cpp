@@ -155,11 +155,17 @@ ObjectStatus RadianceCacheReprojectionPass::GetStatus()
 bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_RadianceCache_Even->m_ObjectStatus != ObjectStatus::Activated
 		|| m_RadianceCache_Odd->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RadianceCache Even/Odd not Activated, skipping.");
 		return false;
+	}
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 

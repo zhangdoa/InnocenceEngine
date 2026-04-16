@@ -112,7 +112,10 @@ ObjectStatus TAAPass::GetStatus()
 bool TAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+	{
+		Log(Warning, "RenderPassComp not Activated, skipping.");
 		return false;
+	}
 
 	if (m_EvenTextureComp->m_ObjectStatus != ObjectStatus::Activated
 		|| m_OddTextureComp->m_ObjectStatus != ObjectStatus::Activated)
