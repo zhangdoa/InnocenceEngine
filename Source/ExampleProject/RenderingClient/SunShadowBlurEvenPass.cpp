@@ -133,10 +133,10 @@ RenderPassComponent* SunShadowBlurEvenPass::GetRenderPassComp()
 GPUResourceComponent* SunShadowBlurEvenPass::GetResult()
 {
 	if (!m_RenderPassComp)
-		return false;
+		return nullptr;
 	
 	if (!m_RenderPassComp->m_OutputMergerTarget)
-		return false;
+		return nullptr;
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
