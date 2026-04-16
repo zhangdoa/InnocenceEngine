@@ -1,10 +1,10 @@
 ---
 id: TASK-34
 title: Add post-frame device health check and enrich D3D12 failure diagnostics
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-14 14:59'
-updated_date: '2026-04-14 15:30'
+updated_date: '2026-04-16 16:13'
 labels:
   - reliability
   - diagnostics
@@ -57,3 +57,9 @@ The auto-test termination path in `ExampleRenderingClient` and `WorldSystem` sho
 - [ ] #3 Auto-test exits non-zero when device is removed during the run
 - [ ] #4 RenderTest and integration test still pass on healthy GPU
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-16:** DRED infrastructure now in place (commit 76a030dd). DRED is enabled before device creation, DumpDRED helper available, and breadcrumb logging added to CreateReadBackHeapBuffer failure path. The post-frame health check aspect of this task remains open.
+<!-- SECTION:NOTES:END -->
