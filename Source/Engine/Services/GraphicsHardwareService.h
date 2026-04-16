@@ -40,6 +40,7 @@ namespace Inno
 		virtual bool BeginCapture() { return false; }
 		virtual bool EndCapture() { return false; }
 		virtual bool HasGPUError() const { return false; }
+		virtual void DumpGPUDiagnostics() {}
 
 	protected:
 		virtual bool CreateHardwareResources() { return true; }

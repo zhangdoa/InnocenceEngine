@@ -21,6 +21,7 @@ namespace Inno
 		bool BeginCapture() override;
 		bool EndCapture() override;
 		bool HasGPUError() const override;
+		void DumpGPUDiagnostics() override;
 
 		// DX12-specific public accessors (for ImGui, window surfaces, etc.)
 		ComPtr<ID3D12Device8> GetDevice();

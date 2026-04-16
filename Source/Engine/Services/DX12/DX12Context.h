@@ -59,8 +59,8 @@ namespace Inno
 		ComPtr<ID3D12DescriptorHeap> m_SamplerDescHeap = nullptr;
 		DX12DescriptorHeapAccessor m_SamplerDescHeapAccessor;
 
-		// GPU error detection (set by debug callback, read by HasGPUError)
-		std::atomic<bool> m_GPUErrorDetected{false};
+		// GPU error detection (set by debug callback or device health check, read by HasGPUError)
+		mutable std::atomic<bool> m_GPUErrorDetected{false};
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		static constexpr bool m_enableValidationLayers = true;

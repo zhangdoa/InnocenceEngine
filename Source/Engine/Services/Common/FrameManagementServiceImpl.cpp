@@ -134,6 +134,21 @@ bool FrameManagementService::Update()
 	m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
 	m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
 
+	if (m_HardwareService->HasGPUError())
+	{
+		if (!m_DeviceErrorReported)
+		{
+			m_DeviceErrorReported = true;
+			m_HardwareService->DumpGPUDiagnostics();
+			Log(Warning, "GPU device removed detected after frame wait — skipping GPU work.");
+		}
+		// Still run CPU-side callbacks so the logic client can count frames and trigger auto-termination
+		g_Engine->Get<SceneService>()->ClearLoadingFlag();
+		m_UploadHeapPreparationCallback();
+		m_FrameCountSinceLaunch++;
+		return false;
+	}
+
 	BeginFrame();
 
 	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)

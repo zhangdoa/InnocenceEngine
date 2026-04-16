@@ -134,5 +134,6 @@ namespace Inno
 		std::function<bool()> m_CommandExecutionCallback;
 
 		std::atomic_bool m_needResize = false;
+		bool m_DeviceErrorReported = false;
 	};
 }

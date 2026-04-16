@@ -102,48 +102,52 @@ static void CALLBACK D3D12DebugMessageCallback(
 
 static void DumpDRED(ID3D12Device* device)
 {
-    ComPtr<ID3D12DeviceRemovedExtendedData1> l_pDred;
-    if (FAILED(device->QueryInterface(IID_PPV_ARGS(&l_pDred))))
+    try
     {
-        Log(Warning, "DRED: interface not available for post-mortem.");
-        return;
-    }
-
-    D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 l_breadcrumbs = {};
-    if (SUCCEEDED(l_pDred->GetAutoBreadcrumbsOutput1(&l_breadcrumbs)))
-    {
-        const D3D12_AUTO_BREADCRUMB_NODE1* l_node = l_breadcrumbs.pHeadAutoBreadcrumbNode;
-        int nodeIndex = 0;
-        while (l_node)
+        ComPtr<ID3D12DeviceRemovedExtendedData1> l_pDred;
+        if (FAILED(device->QueryInterface(IID_PPV_ARGS(&l_pDred))))
         {
-            if (l_node->pLastBreadcrumbValue && l_node->pCommandListDebugNameW)
+            Log(Warning, "DRED: interface not available for post-mortem.");
+            return;
+        }
+
+        D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 l_breadcrumbs = {};
+        if (SUCCEEDED(l_pDred->GetAutoBreadcrumbsOutput1(&l_breadcrumbs)))
+        {
+            const D3D12_AUTO_BREADCRUMB_NODE1* l_node = l_breadcrumbs.pHeadAutoBreadcrumbNode;
+            int nodeIndex = 0;
+            while (l_node)
             {
-                uint32_t lastCompleted = *l_node->pLastBreadcrumbValue;
-                Log(Error, "DRED Breadcrumb[", nodeIndex, "]: CL='",
-                    l_node->pCommandListDebugNameW ? l_node->pCommandListDebugNameW : L"(null)",
-                    "' Queue='",
-                    l_node->pCommandQueueDebugNameW ? l_node->pCommandQueueDebugNameW : L"(null)",
-                    "' LastCompleted=", lastCompleted, "/", l_node->BreadcrumbCount);
-
-                // Dump the breadcrumb operations around the failure point
-                for (uint32_t i = 0; i < l_node->BreadcrumbCount; i++)
+                if (l_node->pLastBreadcrumbValue && l_node->pCommandListDebugNameW)
                 {
-                    const char* status = (i < lastCompleted) ? "DONE" : (i == lastCompleted) ? ">>LAST>>" : "pending";
-                    Log(Error, "  [", i, "] op=", static_cast<int>(l_node->pCommandHistory[i]), " ", status);
+                    uint32_t lastCompleted = *l_node->pLastBreadcrumbValue;
+                    Log(Warning, "DRED Breadcrumb[", nodeIndex, "]: CL='",
+                        l_node->pCommandListDebugNameW ? l_node->pCommandListDebugNameW : L"(null)",
+                        "' Queue='",
+                        l_node->pCommandQueueDebugNameW ? l_node->pCommandQueueDebugNameW : L"(null)",
+                        "' LastCompleted=", lastCompleted, "/", l_node->BreadcrumbCount);
+
+                    for (uint32_t i = 0; i < l_node->BreadcrumbCount; i++)
+                    {
+                        const char* status = (i < lastCompleted) ? "DONE" : (i == lastCompleted) ? ">>LAST>>" : "pending";
+                        Log(Warning, "  [", i, "] op=", static_cast<int>(l_node->pCommandHistory[i]), " ", status);
+                    }
                 }
+                l_node = l_node->pNext;
+                nodeIndex++;
             }
-            l_node = l_node->pNext;
-            nodeIndex++;
+        }
+
+        D3D12_DRED_PAGE_FAULT_OUTPUT l_pageFault = {};
+        if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
+        {
+            if (l_pageFault.PageFaultVA != 0)
+                Log(Warning, "DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
         }
     }
-
-    D3D12_DRED_PAGE_FAULT_OUTPUT l_pageFault = {};
-    if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
+    catch (...)
     {
-        if (l_pageFault.PageFaultVA != 0)
-        {
-            Log(Error, "DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
-        }
+        Log(Warning, "DRED: exception during post-mortem query, skipping.");
     }
 }
 
@@ -463,7 +467,48 @@ bool DX12GraphicsHardwareService::EndCapture()
 
 bool DX12GraphicsHardwareService::HasGPUError() const
 {
-	return m_DX12Context.m_GPUErrorDetected.load();
+	if (m_DX12Context.m_GPUErrorDetected.load())
+		return true;
+
+	if (m_DX12Context.m_device)
+	{
+		try
+		{
+			auto hr = m_DX12Context.m_device->GetDeviceRemovedReason();
+			if (hr != S_OK)
+			{
+				m_DX12Context.m_GPUErrorDetected.store(true);
+				return true;
+			}
+		}
+		catch (...)
+		{
+			m_DX12Context.m_GPUErrorDetected.store(true);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void DX12GraphicsHardwareService::DumpGPUDiagnostics()
+{
+	if (!m_DX12Context.m_device)
+		return;
+
+	try
+	{
+		auto hr = m_DX12Context.m_device->GetDeviceRemovedReason();
+		if (hr != S_OK)
+		{
+			Log(Warning, "GPU device removed reason: HRESULT=", static_cast<int32_t>(hr));
+			DumpDRED(m_DX12Context.m_device.Get());
+		}
+	}
+	catch (...)
+	{
+		Log(Warning, "Exception while querying GPU diagnostics, device may be in unrecoverable state.");
+	}
 }
 
 // --- Public accessors ---
@@ -494,39 +539,45 @@ DX12DescriptorHeapAccessor& DX12GraphicsHardwareService::GetDescriptorHeapAccess
 
 bool DX12GraphicsHardwareService::CreateDebugCallback()
 {
-    ID3D12Debug* l_debugInterface;
-
-    auto l_HResult = D3D12GetDebugInterface(IID_PPV_ARGS(&l_debugInterface));
-    if (FAILED(l_HResult))
+    try
     {
-        Log(Error, "Can't get DirectX 12 debug interface!");
+        ID3D12Debug* l_debugInterface;
+
+        auto l_HResult = D3D12GetDebugInterface(IID_PPV_ARGS(&l_debugInterface));
+        if (FAILED(l_HResult))
+        {
+            Log(Warning, "DirectX 12 debug interface not available.");
+            return false;
+        }
+
+        l_HResult = l_debugInterface->QueryInterface(IID_PPV_ARGS(&m_DX12Context.m_debugInterface));
+        if (FAILED(l_HResult))
+        {
+            Log(Warning, "Can't query DirectX 12 debug interface.");
+            return false;
+        }
+
+        m_DX12Context.m_debugInterface->EnableDebugLayer();
+
+        if (g_Engine->getInitConfig().enableGPUValidation)
+        {
+            m_DX12Context.m_debugInterface->SetEnableGPUBasedValidation(true);
+            m_DX12Context.m_debugInterface->SetEnableSynchronizedCommandQueueValidation(true);
+            Log(Success, "Debug layer + GPU-based validation + synchronized command queue validation enabled.");
+        }
+        else
+        {
+            Log(Success, "Debug layer enabled (GPU-based validation off).");
+        }
+
+        l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_DX12Context.m_graphicsAnalysis));
+        if (SUCCEEDED(l_HResult))
+            Log(Success, "PIX attached.");
+    }
+    catch (...)
+    {
+        Log(Warning, "Debug layer initialization failed (COM exception), continuing without debug layer.");
         return false;
-    }
-
-    l_HResult = l_debugInterface->QueryInterface(IID_PPV_ARGS(&m_DX12Context.m_debugInterface));
-    if (FAILED(l_HResult))
-    {
-        Log(Error, "Can't query DirectX 12 debug interface!");
-        return false;
-    }
-
-    m_DX12Context.m_debugInterface->EnableDebugLayer();
-
-    if (g_Engine->getInitConfig().enableGPUValidation)
-    {
-        m_DX12Context.m_debugInterface->SetEnableGPUBasedValidation(true);
-        m_DX12Context.m_debugInterface->SetEnableSynchronizedCommandQueueValidation(true);
-        Log(Success, "Debug layer + GPU-based validation + synchronized command queue validation enabled.");
-    }
-    else
-    {
-        Log(Success, "Debug layer enabled (GPU-based validation off; pass -gpu_validation to enable).");
-    }
-
-    l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_DX12Context.m_graphicsAnalysis));
-    if (SUCCEEDED(l_HResult))
-    {
-        Log(Success, "PIX attached.");
     }
 
     return true;
@@ -615,6 +666,7 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
     }
 
     // Enable DRED (Device Removed Extended Data) BEFORE device creation
+    try
     {
         ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> l_pDredSettings;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&l_pDredSettings))))
@@ -628,6 +680,10 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
         {
             Log(Warning, "DRED not available on this system.");
         }
+    }
+    catch (...)
+    {
+        Log(Warning, "DRED initialization failed (COM exception), continuing without DRED.");
     }
 
     auto featureLevel = D3D_FEATURE_LEVEL_12_2;
@@ -651,20 +707,19 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
 
     Log(Success, "D3D device has been created.");
 
-    ComPtr<ID3D12InfoQueue> l_pInfoQueue;
-    l_HResult = m_DX12Context.m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
-
-    if (SUCCEEDED(l_HResult) && l_pInfoQueue)
+    try
     {
-        if (SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE))
-            && SUCCEEDED(l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE))
-            )
+        ComPtr<ID3D12InfoQueue> l_pInfoQueue;
+        l_HResult = m_DX12Context.m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
+
+        if (SUCCEEDED(l_HResult) && l_pInfoQueue)
         {
+            l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+            l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
             Log(Success, "Debug report severity has been set.");
 
             ComPtr<ID3D12InfoQueue1> l_pInfoQueue1;
-            l_HResult = l_pInfoQueue.As(&l_pInfoQueue1);
-            if (SUCCEEDED(l_HResult) && l_pInfoQueue1)
+            if (SUCCEEDED(l_pInfoQueue.As(&l_pInfoQueue1)) && l_pInfoQueue1)
             {
                 l_HResult = l_pInfoQueue1->RegisterMessageCallback(
                     D3D12DebugMessageCallback,
@@ -673,23 +728,15 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
                     &m_DX12Context.m_debugCallbackCookie);
 
                 if (SUCCEEDED(l_HResult))
-                {
                     Log(Success, "D3D12 debug message callback registered.");
-                }
                 else
-                {
                     Log(Warning, "Failed to register D3D12 debug message callback.");
-                }
-            }
-            else
-            {
-                Log(Warning, "ID3D12InfoQueue1 not available - debug message callback not supported.");
             }
         }
     }
-    else
+    catch (...)
     {
-        Log(Warning, "Debug info queue not available (debug layer not enabled).");
+        Log(Warning, "Debug info queue setup failed (COM exception), continuing without debug callbacks.");
     }
 
     return true;
@@ -1108,41 +1155,47 @@ bool DX12GraphicsHardwareService::ReleaseHardwareResources()
     m_DX12Context.m_computeCommandQueue = nullptr;
     m_DX12Context.m_copyCommandQueue = nullptr;
 
-    if (m_DX12Context.m_debugInterface && m_DX12Context.m_debugCallbackCookie != 0)
+    try
     {
-        ComPtr<ID3D12InfoQueue> l_pInfoQueue;
-        HRESULT l_HResult = m_DX12Context.m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
-        if (SUCCEEDED(l_HResult) && l_pInfoQueue)
+        if (m_DX12Context.m_debugInterface && m_DX12Context.m_debugCallbackCookie != 0)
         {
-            ComPtr<ID3D12InfoQueue1> l_pInfoQueue1;
-            l_HResult = l_pInfoQueue.As(&l_pInfoQueue1);
-            if (SUCCEEDED(l_HResult) && l_pInfoQueue1)
+            ComPtr<ID3D12InfoQueue> l_pInfoQueue;
+            if (SUCCEEDED(m_DX12Context.m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue))) && l_pInfoQueue)
             {
-                l_pInfoQueue1->UnregisterMessageCallback(m_DX12Context.m_debugCallbackCookie);
-                Log(Verbose, "D3D12 debug message callback unregistered.");
-                m_DX12Context.m_debugCallbackCookie = 0;
+                ComPtr<ID3D12InfoQueue1> l_pInfoQueue1;
+                if (SUCCEEDED(l_pInfoQueue.As(&l_pInfoQueue1)) && l_pInfoQueue1)
+                {
+                    l_pInfoQueue1->UnregisterMessageCallback(m_DX12Context.m_debugCallbackCookie);
+                    m_DX12Context.m_debugCallbackCookie = 0;
+                }
             }
         }
     }
+    catch (...)
+    {
+        Log(Warning, "Exception during debug callback cleanup, device may already be removed.");
+    }
 
     m_DX12Context.m_device = nullptr;
-
     m_DX12Context.m_adapterOutput = nullptr;
-
     m_DX12Context.m_adapter = nullptr;
-
     m_DX12Context.m_factory = nullptr;
-
     m_DX12Context.m_graphicsAnalysis = nullptr;
-
     m_DX12Context.m_debugInterface = nullptr;
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-    IDXGIDebug1* pDebug = nullptr;
-    if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
+    try
     {
-        pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-        pDebug->Release();
+        IDXGIDebug1* pDebug = nullptr;
+        if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
+        {
+            pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+            pDebug->Release();
+        }
+    }
+    catch (...)
+    {
+        Log(Warning, "Exception during DXGI debug report, skipping.");
     }
 #endif
 
