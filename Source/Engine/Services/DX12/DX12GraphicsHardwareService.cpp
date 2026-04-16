@@ -100,6 +100,53 @@ static void CALLBACK D3D12DebugMessageCallback(
     }
 }
 
+static void DumpDRED(ID3D12Device* device)
+{
+    ComPtr<ID3D12DeviceRemovedExtendedData1> l_pDred;
+    if (FAILED(device->QueryInterface(IID_PPV_ARGS(&l_pDred))))
+    {
+        Log(Warning, "DRED: interface not available for post-mortem.");
+        return;
+    }
+
+    D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 l_breadcrumbs = {};
+    if (SUCCEEDED(l_pDred->GetAutoBreadcrumbsOutput1(&l_breadcrumbs)))
+    {
+        const D3D12_AUTO_BREADCRUMB_NODE1* l_node = l_breadcrumbs.pHeadAutoBreadcrumbNode;
+        int nodeIndex = 0;
+        while (l_node)
+        {
+            if (l_node->pLastBreadcrumbValue && l_node->pCommandListDebugNameW)
+            {
+                uint32_t lastCompleted = *l_node->pLastBreadcrumbValue;
+                Log(Error, "DRED Breadcrumb[", nodeIndex, "]: CL='",
+                    l_node->pCommandListDebugNameW ? l_node->pCommandListDebugNameW : L"(null)",
+                    "' Queue='",
+                    l_node->pCommandQueueDebugNameW ? l_node->pCommandQueueDebugNameW : L"(null)",
+                    "' LastCompleted=", lastCompleted, "/", l_node->BreadcrumbCount);
+
+                // Dump the breadcrumb operations around the failure point
+                for (uint32_t i = 0; i < l_node->BreadcrumbCount; i++)
+                {
+                    const char* status = (i < lastCompleted) ? "DONE" : (i == lastCompleted) ? ">>LAST>>" : "pending";
+                    Log(Error, "  [", i, "] op=", static_cast<int>(l_node->pCommandHistory[i]), " ", status);
+                }
+            }
+            l_node = l_node->pNext;
+            nodeIndex++;
+        }
+    }
+
+    D3D12_DRED_PAGE_FAULT_OUTPUT l_pageFault = {};
+    if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
+    {
+        if (l_pageFault.PageFaultVA != 0)
+        {
+            Log(Error, "DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
+        }
+    }
+}
+
 // --- Sync primitives ---
 
 bool DX12GraphicsHardwareService::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType)
@@ -570,6 +617,22 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
     {
         Log(Error, "can't convert the name of the video card to a character array!");
         return false;
+    }
+
+    // Enable DRED (Device Removed Extended Data) BEFORE device creation
+    {
+        ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> l_pDredSettings;
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&l_pDredSettings))))
+        {
+            l_pDredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+            l_pDredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+            l_pDredSettings->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+            Log(Success, "DRED (Device Removed Extended Data) enabled.");
+        }
+        else
+        {
+            Log(Warning, "DRED not available on this system.");
+        }
     }
 
     auto featureLevel = D3D_FEATURE_LEVEL_12_2;
