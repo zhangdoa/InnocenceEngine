@@ -100,57 +100,6 @@ static void CALLBACK D3D12DebugMessageCallback(
     }
 }
 
-static void DumpDRED(ID3D12Device* device)
-{
-    try
-    {
-        ComPtr<ID3D12DeviceRemovedExtendedData1> l_pDred;
-        if (FAILED(device->QueryInterface(IID_PPV_ARGS(&l_pDred))))
-        {
-            Log(Warning, "DRED: interface not available for post-mortem.");
-            return;
-        }
-
-        D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 l_breadcrumbs = {};
-        if (SUCCEEDED(l_pDred->GetAutoBreadcrumbsOutput1(&l_breadcrumbs)))
-        {
-            const D3D12_AUTO_BREADCRUMB_NODE1* l_node = l_breadcrumbs.pHeadAutoBreadcrumbNode;
-            int nodeIndex = 0;
-            while (l_node)
-            {
-                if (l_node->pLastBreadcrumbValue && l_node->pCommandListDebugNameW)
-                {
-                    uint32_t lastCompleted = *l_node->pLastBreadcrumbValue;
-                    Log(Warning, "DRED Breadcrumb[", nodeIndex, "]: CL='",
-                        l_node->pCommandListDebugNameW ? l_node->pCommandListDebugNameW : L"(null)",
-                        "' Queue='",
-                        l_node->pCommandQueueDebugNameW ? l_node->pCommandQueueDebugNameW : L"(null)",
-                        "' LastCompleted=", lastCompleted, "/", l_node->BreadcrumbCount);
-
-                    for (uint32_t i = 0; i < l_node->BreadcrumbCount; i++)
-                    {
-                        const char* status = (i < lastCompleted) ? "DONE" : (i == lastCompleted) ? ">>LAST>>" : "pending";
-                        Log(Warning, "  [", i, "] op=", static_cast<int>(l_node->pCommandHistory[i]), " ", status);
-                    }
-                }
-                l_node = l_node->pNext;
-                nodeIndex++;
-            }
-        }
-
-        D3D12_DRED_PAGE_FAULT_OUTPUT l_pageFault = {};
-        if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
-        {
-            if (l_pageFault.PageFaultVA != 0)
-                Log(Warning, "DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
-        }
-    }
-    catch (...)
-    {
-        Log(Warning, "DRED: exception during post-mortem query, skipping.");
-    }
-}
-
 bool DX12GraphicsHardwareService::WaitOnFenceWithDiagnostics(const char* fenceName, ID3D12Fence* fence, HANDLE fenceEvent, uint64_t semaphoreValue)
 {
 	if (fence->GetCompletedValue() >= semaphoreValue)

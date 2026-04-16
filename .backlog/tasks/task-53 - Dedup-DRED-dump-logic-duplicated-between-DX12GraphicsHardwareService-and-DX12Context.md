@@ -3,9 +3,10 @@ id: TASK-53
 title: >-
   Dedup DRED dump logic duplicated between DX12GraphicsHardwareService and
   DX12Context
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 20:37'
+updated_date: '2026-04-16 20:52'
 labels:
   - refactor
   - DX12
@@ -39,3 +40,11 @@ Both walk the same `ID3D12DeviceRemovedExtendedData1` structure, print identical
 
 **Context:** Finding from TASK-34 / TASK-41 implementation — centralizing `LogD3D12CreateFailure` in `DX12Helper_Common.h` revealed the DRED dump was next in line for the same treatment but out of scope for that CL.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-16 (completion):** Moved `DumpDRED` into `DX12Helper_Common.h` as an inline function in the `Inno::DX12Helper` namespace. Removed the duplicate static implementation in `DX12GraphicsHardwareService.cpp` and the inline DRED block inside `DX12Context::CreateReadBackHeapBuffer` (replaced with a single `DumpDRED(m_device.Get())` call guarded by `GetDeviceRemovedReason()`). Output format is now uniformly `DONE/>>LAST>>/pending`; the log context label `[Inno::DX12Helper::DumpDRED]` confirms single-source-of-truth.
+
+Verified via TASK-52 TDR repro (Main.exe -offscreen -total_frames 10, exit=1): 28 DRED breadcrumb lines emitted, Breadcrumb[2] still identifies `RadianceCacheReprojectionPass/Compute_CommandList` with same page-fault VA. RenderTest regression passes (exit=0).
+<!-- SECTION:NOTES:END -->

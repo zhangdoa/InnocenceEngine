@@ -170,53 +170,8 @@ ComPtr<ID3D12Resource> DX12Context::CreateReadBackHeapBuffer(UINT64 size, const 
 	if (FAILED(l_HResult))
 	{
 		LogD3D12CreateFailure(m_device.Get(), "read-back heap buffer", name, l_HResult);
-		auto l_removeReason = m_device->GetDeviceRemovedReason();
-
-		if (l_removeReason != S_OK)
-		{
-			try
-			{
-				Log(Warning, "DRED: Device removed, querying DRED data...");
-				ComPtr<ID3D12DeviceRemovedExtendedData1> l_pDred;
-				if (SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&l_pDred))))
-				{
-					D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 l_breadcrumbs = {};
-					if (SUCCEEDED(l_pDred->GetAutoBreadcrumbsOutput1(&l_breadcrumbs)))
-					{
-						const D3D12_AUTO_BREADCRUMB_NODE1* l_node = l_breadcrumbs.pHeadAutoBreadcrumbNode;
-						int nodeIdx = 0;
-						while (l_node)
-						{
-							uint32_t lastDone = l_node->pLastBreadcrumbValue ? *l_node->pLastBreadcrumbValue : 0;
-							Log(Warning, "DRED[", nodeIdx, "] CL='",
-								l_node->pCommandListDebugNameW ? l_node->pCommandListDebugNameW : L"(null)",
-								"' Queue='",
-								l_node->pCommandQueueDebugNameW ? l_node->pCommandQueueDebugNameW : L"(null)",
-								"' done=", lastDone, "/", l_node->BreadcrumbCount);
-							if (l_node->pLastBreadcrumbValue && l_node->BreadcrumbCount > 0)
-							{
-								for (uint32_t i = 0; i < l_node->BreadcrumbCount && i < 50; i++)
-								{
-									const char* s = (i < lastDone) ? "OK" : (i == lastDone) ? ">>LAST>>" : "..";
-									Log(Warning, "  [", i, "] op=", static_cast<int>(l_node->pCommandHistory[i]), " ", s);
-								}
-							}
-							l_node = l_node->pNext;
-							nodeIdx++;
-						}
-					}
-
-					D3D12_DRED_PAGE_FAULT_OUTPUT l_pageFault = {};
-					if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
-						Log(Warning, "DRED: PageFaultVA=", l_pageFault.PageFaultVA);
-				}
-			}
-			catch (...)
-			{
-				Log(Warning, "DRED: exception during post-mortem query, skipping.");
-			}
-		}
-
+		if (m_device->GetDeviceRemovedReason() != S_OK)
+			DumpDRED(m_device.Get());
 		return nullptr;
 	}
 

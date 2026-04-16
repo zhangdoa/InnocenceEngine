@@ -63,5 +63,66 @@ namespace Inno
 				" HRESULT=", static_cast<int32_t>(hr),
 				" DeviceRemovedReason=", static_cast<int32_t>(l_drr));
 		}
+
+		// Post-mortem dump of DRED (Device Removed Extended Data) state.
+		// Safe to call with or without a removed device; emits nothing if the DRED interface is unavailable.
+		// Single implementation shared by every DX12 failure path that wants breadcrumb/page-fault context.
+		inline void DumpDRED(ID3D12Device* device)
+		{
+			if (!device)
+				return;
+			try
+			{
+				ComPtr<ID3D12DeviceRemovedExtendedData1> l_pDred;
+				if (FAILED(device->QueryInterface(IID_PPV_ARGS(&l_pDred))))
+				{
+					g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+						"DRED: interface not available for post-mortem.");
+					return;
+				}
+
+				D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 l_breadcrumbs = {};
+				if (SUCCEEDED(l_pDred->GetAutoBreadcrumbsOutput1(&l_breadcrumbs)))
+				{
+					const D3D12_AUTO_BREADCRUMB_NODE1* l_node = l_breadcrumbs.pHeadAutoBreadcrumbNode;
+					int l_nodeIndex = 0;
+					while (l_node)
+					{
+						if (l_node->pLastBreadcrumbValue && l_node->pCommandListDebugNameW)
+						{
+							uint32_t l_lastCompleted = *l_node->pLastBreadcrumbValue;
+							g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+								"DRED Breadcrumb[", l_nodeIndex, "]: CL='",
+								l_node->pCommandListDebugNameW,
+								"' Queue='",
+								l_node->pCommandQueueDebugNameW ? l_node->pCommandQueueDebugNameW : L"(null)",
+								"' LastCompleted=", l_lastCompleted, "/", l_node->BreadcrumbCount);
+
+							for (uint32_t i = 0; i < l_node->BreadcrumbCount; i++)
+							{
+								const char* l_status = (i < l_lastCompleted) ? "DONE" : (i == l_lastCompleted) ? ">>LAST>>" : "pending";
+								g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+									"  [", i, "] op=", static_cast<int>(l_node->pCommandHistory[i]), " ", l_status);
+							}
+						}
+						l_node = l_node->pNext;
+						l_nodeIndex++;
+					}
+				}
+
+				D3D12_DRED_PAGE_FAULT_OUTPUT l_pageFault = {};
+				if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
+				{
+					if (l_pageFault.PageFaultVA != 0)
+						g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+							"DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
+				}
+			}
+			catch (...)
+			{
+				g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+					"DRED: exception during post-mortem query, skipping.");
+			}
+		}
 	}
 }
