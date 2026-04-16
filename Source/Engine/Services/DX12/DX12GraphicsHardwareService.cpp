@@ -412,8 +412,9 @@ bool DX12GraphicsHardwareService::BeginCapture()
 	if (m_RenderDocAPI != nullptr)
 	{
 		auto l_API = static_cast<RENDERDOC_API_1_6_0*>(m_RenderDocAPI);
-		l_API->TriggerCapture();
-		Log(Success, "RenderDoc: capture triggered for next present.");
+		// StartFrameCapture works without a swapchain present, so it succeeds in offscreen mode.
+		l_API->StartFrameCapture(nullptr, nullptr);
+		Log(Success, "RenderDoc: frame capture started.");
 		return true;
 	}
 
@@ -431,6 +432,12 @@ bool DX12GraphicsHardwareService::EndCapture()
 	if (m_RenderDocAPI != nullptr)
 	{
 		auto l_API = static_cast<RENDERDOC_API_1_6_0*>(m_RenderDocAPI);
+		uint32_t l_Result = l_API->EndFrameCapture(nullptr, nullptr);
+		if (l_Result != 1)
+		{
+			Log(Warning, "RenderDoc: EndFrameCapture returned failure (no matching StartFrameCapture?).");
+			return false;
+		}
 		uint32_t l_NumCaptures = l_API->GetNumCaptures();
 		if (l_NumCaptures > 0)
 		{

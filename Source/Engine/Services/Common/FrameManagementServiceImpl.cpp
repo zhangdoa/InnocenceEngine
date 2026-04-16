@@ -150,6 +150,9 @@ bool FrameManagementService::Update()
 		return false;
 	}
 
+	if (l_isCapturing)
+		m_HardwareService->BeginCapture();
+
 	BeginFrame();
 
 	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
@@ -201,13 +204,16 @@ bool FrameManagementService::Update()
 	m_ComputeSemaphoreValues[l_currentFrame] = m_HardwareService->GetSemaphoreValue(GPUEngineType::Compute);
 	m_CopySemaphoreValues[l_currentFrame] = m_HardwareService->GetSemaphoreValue(GPUEngineType::Copy);
 
-	if (l_isCapturing)
-		m_HardwareService->BeginCapture();
-
 	Present();
 
 	if (l_isCapturing)
+	{
+		// Drain all queued GPU work so the capture boundary encloses a complete frame.
+		m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
+		m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
+		m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
 		m_HardwareService->EndCapture();
+	}
 
 	EndFrame();
 
