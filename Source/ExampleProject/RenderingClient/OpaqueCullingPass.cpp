@@ -25,7 +25,7 @@ bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 
 	m_IndirectDrawCommandBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("OpaqueCullingPass/IndirectDrawCommandBuffer/");
 	m_IndirectDrawCommandBuffer->m_Usage = GPUBufferUsage::IndirectDraw;
-	m_IndirectDrawCommandBuffer->m_ElementCount = 512;
+	m_IndirectDrawCommandBuffer->m_ElementCount = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability().maxMeshes;
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
