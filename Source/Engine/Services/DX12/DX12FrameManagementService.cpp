@@ -947,7 +947,10 @@ bool DX12FrameManagementService::GetSwapChainImages()
         auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
         if (FAILED(l_HResult))
         {
-            Log(Error, "Can't get pointer of swap chain image ", i, "!");
+            auto l_drr = m_ctx->m_device ? m_ctx->m_device->GetDeviceRemovedReason() : S_OK;
+            Log(Error, "Can't get pointer of swap chain image ", i,
+                " HRESULT=", static_cast<int32_t>(l_HResult),
+                " DeviceRemovedReason=", static_cast<int32_t>(l_drr));
             return false;
         }
         m_swapChainImages[i]->SetName((L"SwapChainBackBuffer_" + std::to_wstring(i)).c_str());

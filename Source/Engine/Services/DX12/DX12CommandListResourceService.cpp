@@ -55,14 +55,20 @@ bool DX12CommandListResourceService::InitializeImpl(CommandListComponent* comman
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, commandList->m_InstanceName, " Failed to create DX12 command list");
+		auto l_drr = m_ctx->m_device ? m_ctx->m_device->GetDeviceRemovedReason() : S_OK;
+		Log(Error, commandList->m_InstanceName, " Failed to create DX12 command list",
+			" HRESULT=", static_cast<int32_t>(l_HResult),
+			" DeviceRemovedReason=", static_cast<int32_t>(l_drr));
 		return false;
 	}
 
 	l_HResult = l_commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		Log(Error, commandList->m_InstanceName, " Failed to close command list after creation");
+		auto l_drr = m_ctx->m_device ? m_ctx->m_device->GetDeviceRemovedReason() : S_OK;
+		Log(Error, commandList->m_InstanceName, " Failed to close command list after creation",
+			" HRESULT=", static_cast<int32_t>(l_HResult),
+			" DeviceRemovedReason=", static_cast<int32_t>(l_drr));
 		return false;
 	}
 

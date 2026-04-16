@@ -140,7 +140,8 @@ bool FrameManagementService::Update()
 		{
 			m_DeviceErrorReported = true;
 			m_HardwareService->DumpGPUDiagnostics();
-			Log(Warning, "GPU device removed detected after frame wait — skipping GPU work.");
+			Log(Warning, "GPU device removed detected after frame wait — frame=", m_FrameCountSinceLaunch,
+				" swapIndex=", l_currentFrame, " — skipping GPU work from this point forward.");
 		}
 		// Still run CPU-side callbacks so the logic client can count frames and trigger auto-termination
 		g_Engine->Get<SceneService>()->ClearLoadingFlag();

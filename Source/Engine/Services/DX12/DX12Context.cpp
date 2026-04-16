@@ -127,7 +127,7 @@ ComPtr<ID3D12Resource> DX12Context::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* 
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create upload heap buffer ", name);
+		LogD3D12CreateFailure(m_device.Get(), "upload heap buffer", name, l_HResult);
 		return nullptr;
 	}
 
@@ -148,10 +148,7 @@ ComPtr<ID3D12Resource> DX12Context::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC*
 
 	if (FAILED(l_HResult))
 	{
-		auto l_removeReason = m_device->GetDeviceRemovedReason();
-		Log(Error, "Can't create default heap buffer ", name,
-			" HRESULT=", static_cast<int32_t>(l_HResult),
-			" DeviceRemovedReason=", static_cast<int32_t>(l_removeReason));
+		LogD3D12CreateFailure(m_device.Get(), "default heap buffer", name, l_HResult);
 		return nullptr;
 	}
 
@@ -172,11 +169,8 @@ ComPtr<ID3D12Resource> DX12Context::CreateReadBackHeapBuffer(UINT64 size, const 
 
 	if (FAILED(l_HResult))
 	{
+		LogD3D12CreateFailure(m_device.Get(), "read-back heap buffer", name, l_HResult);
 		auto l_removeReason = m_device->GetDeviceRemovedReason();
-		Log(Warning, "Can't create read-back heap buffer ", name,
-			" size=", size,
-			" HRESULT=", static_cast<int32_t>(l_HResult),
-			" DeviceRemovedReason=", static_cast<int32_t>(l_removeReason));
 
 		if (l_removeReason != S_OK)
 		{
@@ -236,7 +230,7 @@ ComPtr<ID3D12CommandQueue> DX12Context::CreateCommandQueue(D3D12_COMMAND_QUEUE_D
 	auto l_HResult = m_device->CreateCommandQueue(commandQueueDesc, IID_PPV_ARGS(&l_commandQueue));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create CommandQueue: ", name);
+		LogD3D12CreateFailure(m_device.Get(), "CommandQueue", name, l_HResult);
 		return nullptr;
 	}
 
@@ -256,7 +250,7 @@ ComPtr<ID3D12CommandAllocator> DX12Context::CreateCommandAllocator(D3D12_COMMAND
 	auto l_HResult = m_device->CreateCommandAllocator(commandListType, IID_PPV_ARGS(&l_commandAllocator));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create CommandAllocator: ", name);
+		LogD3D12CreateFailure(m_device.Get(), "CommandAllocator", name, l_HResult);
 		return nullptr;
 	}
 
@@ -276,7 +270,7 @@ ComPtr<ID3D12GraphicsCommandList7> DX12Context::CreateCommandList(D3D12_COMMAND_
 	auto l_HResult = m_device->CreateCommandList(0, commandListType, commandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create CommandList ", name);
+		LogD3D12CreateFailure(m_device.Get(), "CommandList", name, l_HResult);
 		return nullptr;
 	}
 
@@ -302,7 +296,7 @@ ComPtr<ID3D12DescriptorHeap> DX12Context::CreateDescriptorHeap(D3D12_DESCRIPTOR_
 	auto l_HResult = m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&l_descriptorHeap));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, "Can't create ", name, " descriptor heap.");
+		LogD3D12CreateFailure(m_device.Get(), "descriptor heap", name, l_HResult);
 		return 0;
 	}
 

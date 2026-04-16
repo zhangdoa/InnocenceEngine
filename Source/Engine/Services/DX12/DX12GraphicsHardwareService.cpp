@@ -151,6 +151,38 @@ static void DumpDRED(ID3D12Device* device)
     }
 }
 
+bool DX12GraphicsHardwareService::WaitOnFenceWithDiagnostics(const char* fenceName, ID3D12Fence* fence, HANDLE fenceEvent, uint64_t semaphoreValue)
+{
+	if (fence->GetCompletedValue() >= semaphoreValue)
+		return true;
+
+	fence->SetEventOnCompletion(semaphoreValue, fenceEvent);
+	DWORD l_waitResult = WaitForSingleObject(fenceEvent, 30000);
+	if (l_waitResult == WAIT_OBJECT_0)
+		return true;
+
+	auto l_drr = m_DX12Context.m_device ? m_DX12Context.m_device->GetDeviceRemovedReason() : S_OK;
+	if (l_waitResult == WAIT_TIMEOUT)
+	{
+		Log(Error, fenceName, " wait timeout (30s). Semaphore=", semaphoreValue,
+			" Completed=", fence->GetCompletedValue(),
+			" DeviceRemovedReason=", static_cast<int32_t>(l_drr));
+	}
+	else
+	{
+		Log(Error, fenceName, " wait failed. WaitResult=", static_cast<uint32_t>(l_waitResult),
+			" LastError=", static_cast<uint32_t>(GetLastError()),
+			" DeviceRemovedReason=", static_cast<int32_t>(l_drr));
+	}
+
+	if (l_drr != S_OK)
+	{
+		m_DX12Context.m_GPUErrorDetected.store(true);
+		DumpDRED(m_DX12Context.m_device.Get());
+	}
+	return false;
+}
+
 // --- Sync primitives ---
 
 bool DX12GraphicsHardwareService::SignalOnGPU(ISemaphore* semaphore, GPUEngineType queueType)
@@ -313,22 +345,7 @@ bool DX12GraphicsHardwareService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineTy
 			return false;
 		}
 
-		if (m_DX12Context.m_directCommandQueueFence->GetCompletedValue() < semaphoreValue)
-		{
-			m_DX12Context.m_directCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000);
-			if (waitResult == WAIT_TIMEOUT)
-			{
-				Log(Error, "DirectCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue,
-					", Completed value: ", m_DX12Context.m_directCommandQueueFence->GetCompletedValue());
-				return false;
-			}
-			else if (waitResult != WAIT_OBJECT_0)
-			{
-				Log(Error, "DirectCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
-				return false;
-			}
-		}
+		WaitOnFenceWithDiagnostics("DirectCommandQueueFence", m_DX12Context.m_directCommandQueueFence.Get(), *fenceEvent, semaphoreValue);
 	}
 	else if (queueType == GPUEngineType::Compute)
 	{
@@ -338,22 +355,7 @@ bool DX12GraphicsHardwareService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineTy
 			return false;
 		}
 
-		if (m_DX12Context.m_computeCommandQueueFence->GetCompletedValue() < semaphoreValue)
-		{
-			m_DX12Context.m_computeCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000);
-			if (waitResult == WAIT_TIMEOUT)
-			{
-				Log(Error, "ComputeCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue,
-					", Completed value: ", m_DX12Context.m_computeCommandQueueFence->GetCompletedValue());
-				return false;
-			}
-			else if (waitResult != WAIT_OBJECT_0)
-			{
-				Log(Error, "ComputeCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
-				return false;
-			}
-		}
+		WaitOnFenceWithDiagnostics("ComputeCommandQueueFence", m_DX12Context.m_computeCommandQueueFence.Get(), *fenceEvent, semaphoreValue);
 	}
 	else if (queueType == GPUEngineType::Copy)
 	{
@@ -363,22 +365,7 @@ bool DX12GraphicsHardwareService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineTy
 			return false;
 		}
 
-		if (m_DX12Context.m_copyCommandQueueFence->GetCompletedValue() < semaphoreValue)
-		{
-			m_DX12Context.m_copyCommandQueueFence->SetEventOnCompletion(semaphoreValue, *fenceEvent);
-			DWORD waitResult = WaitForSingleObject(*fenceEvent, 30000);
-			if (waitResult == WAIT_TIMEOUT)
-			{
-				Log(Error, "CopyCommandQueueFence wait timeout! Semaphore value: ", semaphoreValue,
-					", Completed value: ", m_DX12Context.m_copyCommandQueueFence->GetCompletedValue());
-				return false;
-			}
-			else if (waitResult != WAIT_OBJECT_0)
-			{
-				Log(Error, "CopyCommandQueueFence wait failed with error: ", static_cast<uint32_t>(GetLastError()));
-				return false;
-			}
-		}
+		WaitOnFenceWithDiagnostics("CopyCommandQueueFence", m_DX12Context.m_copyCommandQueueFence.Get(), *fenceEvent, semaphoreValue);
 	}
 
 	return true;

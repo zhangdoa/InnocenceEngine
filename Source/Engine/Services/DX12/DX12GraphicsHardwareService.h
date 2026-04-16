@@ -48,6 +48,9 @@ namespace Inno
 
 		bool TryLoadRenderDocAPI();
 
+		// Fence wait with rich diagnostics on timeout/failure (TASK-34).
+		bool WaitOnFenceWithDiagnostics(const char* fenceName, ID3D12Fence* fence, HANDLE fenceEvent, uint64_t semaphoreValue);
+
 		// DX12 context (owned by this service, shared with other DX12 services)
 		DX12Context m_DX12Context;
 

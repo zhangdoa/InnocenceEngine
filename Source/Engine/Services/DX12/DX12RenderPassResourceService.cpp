@@ -231,7 +231,7 @@ bool DX12RenderPassResourceService::CreateRootSignature(RenderPassComponent* Ren
 
 	if (FAILED(l_HResult))
 	{
-		Log(Error, RenderPassComp->m_InstanceName, " Can't create RootSignature.");
+		LogD3D12CreateFailure(m_ctx->m_device.Get(), "RootSignature", RenderPassComp->m_InstanceName.c_str(), l_HResult);
 		return false;
 	}
 
@@ -268,7 +268,7 @@ bool DX12RenderPassResourceService::CreateRootSignature(RenderPassComponent* Ren
 		l_HResult = m_ctx->m_device->CreateCommandSignature(&commandSignatureDesc, l_PSO->m_RootSignature.Get(), IID_PPV_ARGS(&l_PSO->m_IndirectCommandSignature));
 		if (FAILED(l_HResult))
 		{
-			Log(Error, RenderPassComp->m_InstanceName, " Can't create CommandSignature.");
+			LogD3D12CreateFailure(m_ctx->m_device.Get(), "CommandSignature", RenderPassComp->m_InstanceName.c_str(), l_HResult);
 			return false;
 		}
 
@@ -370,7 +370,7 @@ bool DX12RenderPassResourceService::CreatePipelineStateObject(RenderPassComponen
 
 		if (FAILED(l_HResult))
 		{
-			Log(Error, renderPass->m_InstanceName, " Can't create Compute PSO.");
+			LogD3D12CreateFailure(m_ctx->m_device.Get(), "Compute PSO", renderPass->m_InstanceName.c_str(), l_HResult);
 			return false;
 		}
 	}
@@ -434,7 +434,7 @@ bool DX12RenderPassResourceService::CreateGraphicsPipelineStateObject(RenderPass
 	auto l_HResult = m_ctx->m_device->CreateGraphicsPipelineState(&PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&PSO->m_PSO));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, RenderPassComp->m_InstanceName, " Can't create Graphics PSO.");
+		LogD3D12CreateFailure(m_ctx->m_device.Get(), "Graphics PSO", RenderPassComp->m_InstanceName.c_str(), l_HResult);
 		return false;
 	}
 
@@ -536,7 +536,7 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	HRESULT l_HResult = m_ctx->m_device->CreateStateObject(&stateObjectDesc, IID_PPV_ARGS(&PSO->m_RaytracingPSO));
 	if (FAILED(l_HResult))
 	{
-		Log(Error, RenderPassComp->m_InstanceName, " Can't create Raytracing PSO.");
+		LogD3D12CreateFailure(m_ctx->m_device.Get(), "Raytracing PSO", RenderPassComp->m_InstanceName.c_str(), l_HResult);
 		return false;
 	}
 
