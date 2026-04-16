@@ -115,6 +115,21 @@ Commits must be atomic and logically self-contained:
 - Each commit must build and pass RenderTest independently (no broken-state commits)
 - Typical splits: `feat: engine code` / `data: scene and component files` / `chore: scripts and tooling`
 
+### Sync with remote
+Pull and rebase occasionally to stay current with the remote branch. Do this:
+- Before starting a new task or feature
+- Before committing if the session has been long
+- After completing a logical unit of work
+
+```bash
+git fetch origin
+git stash  # if there are uncommitted changes
+git rebase origin/ecs-overhaul
+git stash pop  # restore changes
+```
+
+If rebase fails due to file locks (common when VS or other tools hold files open), abort and retry later — do not force or discard work.
+
 ### Merge policy
 Never blindly merge or accept incoming changes:
 1. Review every incoming change for correctness and compatibility
