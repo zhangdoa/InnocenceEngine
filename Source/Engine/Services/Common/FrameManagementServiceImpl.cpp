@@ -130,11 +130,9 @@ bool FrameManagementService::Update()
 	auto l_captureFrame = g_Engine->getInitConfig().captureFrame;
 	bool l_isCapturing = (l_captureFrame >= 0 && m_FrameCountSinceLaunch == static_cast<uint32_t>(l_captureFrame));
 
-	Log(Verbose, "Frame ", m_FrameCountSinceLaunch, ": WaitOnCPU gfx=", m_GraphicsSemaphoreValues[l_currentFrame], " comp=", m_ComputeSemaphoreValues[l_currentFrame], " copy=", m_CopySemaphoreValues[l_currentFrame], " frameIdx=", l_currentFrame);
 	m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
 	m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
 	m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
-	Log(Verbose, "Frame ", m_FrameCountSinceLaunch, ": WaitOnCPU complete, calling BeginFrame");
 
 	BeginFrame();
 

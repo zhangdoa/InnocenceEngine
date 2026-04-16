@@ -254,8 +254,6 @@ bool DX12GraphicsHardwareService::Execute(CommandListComponent* commandList, GPU
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
-	Log(Verbose, "Execute: CL='", commandList->m_InstanceName, "' queue=", (uint32_t)queueType, " gpuErr=", g_GPUErrorDetected.load() ? 1 : 0);
-
 	ID3D12CommandList* l_commandListToExecute[] = { l_commandList };
 
 	if (queueType == GPUEngineType::Graphics)
@@ -264,9 +262,6 @@ bool DX12GraphicsHardwareService::Execute(CommandListComponent* commandList, GPU
 		m_DX12Context.m_computeCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
 	else if (queueType == GPUEngineType::Copy)
 		m_DX12Context.m_copyCommandQueue->ExecuteCommandLists(1, l_commandListToExecute);
-
-	if (g_GPUErrorDetected.load())
-		Log(Error, "Execute: GPU error detected AFTER submitting CL='", commandList->m_InstanceName, "'");
 
 	return true;
 }
@@ -1052,10 +1047,10 @@ bool DX12GraphicsHardwareService::CreateHardwareResources()
     TryLoadRenderDocAPI();
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
-    if (!g_Engine->getInitConfig().isOffscreen || g_Engine->getInitConfig().enableGPUValidation)
+    if (g_Engine->getInitConfig().enableGPUValidation)
         l_result &= CreateDebugCallback();
     else
-        Log(Warning, "Offscreen mode: D3D12 debug layer disabled to avoid TDR from validation overhead. Pass -gpu_validation to force-enable.");
+        Log(Warning, "D3D12 debug layer disabled by default to avoid TDR from validation overhead. Pass -gpu_validation to enable.");
 #endif
     l_result &= CreatePhysicalDevices();
     l_result &= CreateGlobalCommandQueues();
