@@ -1,0 +1,92 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Braces & indentation: Allman style, tabs at 4-space width
+BreakBeforeBraces: Allman
+UseTab: Always
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+
+# Column limit: the codebase routinely exceeds 80; use 160 to avoid unwanted wrapping
+ColumnLimit: 160
+
+# Namespace indentation: the codebase indents namespace bodies
+NamespaceIndentation: All
+
+# Access modifiers (public/private/protected) are indented one level inside the class
+AccessModifierOffset: -4
+IndentAccessModifiers: false
+
+# Pointer and reference alignment: left-aligned (T* ptr, T& ref)
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Function declarations and calls
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Inline
+AllowShortEnumsOnASingleLine: true
+
+# Always break before else, catch, etc. (Allman)
+# (BreakBeforeBraces: Allman already handles this)
+
+# Constructor initializer lists
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 4
+
+# Template declarations: break after template<...>
+AlwaysBreakTemplateDeclarations: Yes
+
+# Include sorting: disabled to preserve manual grouping
+# (STL wrappers first, engine common second, local third)
+SortIncludes: Never
+IncludeBlocks: Preserve
+
+# Spaces
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesInAngles: Never
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# Alignment
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+
+# Penalties: prefer keeping function arguments together
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 60
+
+# Preprocessor
+IndentPPDirectives: None
+
+# Braces around single-line bodies: the codebase always uses braces
+# (clang-format can insert them on 14+)
+InsertBraces: false
+
+# Keep empty lines as-is up to a max of 2
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Lambda formatting
+LambdaBodyIndentation: Signature
+
+# Cpp standard
+Standard: c++17
+...
