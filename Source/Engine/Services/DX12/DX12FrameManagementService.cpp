@@ -69,7 +69,10 @@ bool DX12FrameManagementService::Close(CommandListComponent* commandList, GPUEng
 bool DX12FrameManagementService::CommandListBegin(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t frameIndex)
 {
 	if (!commandList || !renderPass)
+	{
+		Log(Warning, "DX12FrameManagementService::CommandListBegin: null ", (!commandList ? "commandList" : "renderPass"));
 		return false;
+	}
 
 	return Open(commandList, commandList->m_Type, renderPass->m_PipelineStateObject);
 }
@@ -243,12 +246,11 @@ bool DX12FrameManagementService::BindGPUResource(RenderPassComponent* renderPass
 		return BindComputeResource(commandList, resourceBindingLayoutDescIndex, renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
 	else
 		return BindGraphicsResource(commandList, resourceBindingLayoutDescIndex, renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
-
-	return false;
 }
 
 bool DX12FrameManagementService::UnbindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
 {
+	Log(Warning, "DX12FrameManagementService::UnbindGPUResource: not implemented");
 	return false;
 }
 
@@ -330,7 +332,10 @@ bool DX12FrameManagementService::DrawIndexedInstanced(RenderPassComponent* rende
 
 	auto* l_resource = AssetService::GetMeshAsset(mesh->m_Asset);
 	if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
+	{
+		Log(Warning, "DX12FrameManagementService::DrawIndexedInstanced: mesh asset not resident");
 		return false;
+	}
 
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
@@ -401,7 +406,10 @@ bool DX12FrameManagementService::DispatchRays(RenderPassComponent* renderPass, C
 	}
 
 	if (!g_Engine->Get<GPUBufferResourceService>()->IsTLASReady())
+	{
+		Log(Warning, "DX12FrameManagementService::DispatchRays: TLAS not ready, skipping for ", renderPass->m_InstanceName);
 		return false;
+	}
 
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
@@ -458,7 +466,10 @@ bool DX12FrameManagementService::ExecuteIndirect(RenderPassComponent* renderPass
 	UINT maxDrawCommandCount = l_modelCount < l_bufferCapacity ? l_modelCount : l_bufferCapacity;
 
 	if (maxDrawCommandCount == 0)
+	{
+		Log(Warning, "DX12FrameManagementService::ExecuteIndirect: zero draw commands for ", renderPass->m_InstanceName);
 		return false;
+	}
 
 	TryToTransitState(indirectDrawCommand, commandList, Accessibility::ReadWrite, Accessibility::ReadOnly);
 
@@ -472,7 +483,10 @@ bool DX12FrameManagementService::ExecuteIndirect(RenderPassComponent* renderPass
 void DX12FrameManagementService::PushRootConstants(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t rootConstants)
 {
 	if (!renderPass || !commandList)
+	{
+		Log(Warning, "DX12FrameManagementService::PushRootConstants: null ", (!renderPass ? "renderPass" : "commandList"));
 		return;
+	}
 
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 
@@ -525,7 +539,10 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 
 		auto l_buffer = reinterpret_cast<GPUBufferComponent*>(resource);
 		if (!l_buffer)
+		{
+			Log(Warning, "DX12FrameManagementService::BindComputeResource: null buffer at root param ", rootParameterIndex);
 			return false;
+		}
 
 		if (l_buffer->m_ObjectStatus != ObjectStatus::Activated)
 		{
@@ -641,7 +658,10 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 
 		auto l_buffer = reinterpret_cast<GPUBufferComponent*>(resource);
 		if (!l_buffer)
+		{
+			Log(Warning, "DX12FrameManagementService::BindGraphicsResource: null buffer at root param ", rootParameterIndex);
 			return false;
+		}
 
 		if (l_buffer->m_ObjectStatus != ObjectStatus::Activated)
 		{
@@ -976,18 +996,21 @@ bool DX12FrameManagementService::AssignSwapChainImages()
 
     if (!m_SwapChainRenderPassComp)
     {
+        Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: m_SwapChainRenderPassComp is null");
         return false;
     }
 
     auto l_outputMergerTarget = m_SwapChainRenderPassComp->m_OutputMergerTarget;
     if (!l_outputMergerTarget)
     {
+        Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: OutputMergerTarget is null");
         return false;
     }
 
     auto l_textureComp = reinterpret_cast<TextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);
     if (!l_textureComp)
     {
+        Log(Warning, "DX12FrameManagementService::AssignSwapChainImages: swap chain color output texture is null");
         return false;
     }
 
@@ -1023,11 +1046,20 @@ bool DX12FrameManagementService::BeginFrame()
 {
     auto l_currentFrame = m_CurrentFrame;
     if (FAILED(m_ctx->m_directCommandAllocators[l_currentFrame]->Reset()))
+    {
+        Log(Error, "DX12FrameManagementService::BeginFrame: direct command allocator Reset failed for frame ", l_currentFrame);
         return false;
+    }
     if (FAILED(m_ctx->m_computeCommandAllocators[l_currentFrame]->Reset()))
+    {
+        Log(Error, "DX12FrameManagementService::BeginFrame: compute command allocator Reset failed for frame ", l_currentFrame);
         return false;
+    }
     if (FAILED(m_ctx->m_copyCommandAllocators[l_currentFrame]->Reset()))
+    {
+        Log(Error, "DX12FrameManagementService::BeginFrame: copy command allocator Reset failed for frame ", l_currentFrame);
         return false;
+    }
 
     g_Engine->Get<CommandListResourceService>()->ForEach([this](CommandListComponent* cl)
     {
@@ -1162,7 +1194,10 @@ bool DX12FrameManagementService::WaitAllOnCPU()
 {
     auto l_semaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
     if (!l_semaphore)
+    {
+        Log(Error, "DX12FrameManagementService::WaitAllOnCPU: global semaphore is null");
         return false;
+    }
 
     auto waitFence = [&](ComPtr<ID3D12Fence>& fence, ComPtr<ID3D12CommandQueue>& queue, HANDLE fenceEvent) -> bool
     {
