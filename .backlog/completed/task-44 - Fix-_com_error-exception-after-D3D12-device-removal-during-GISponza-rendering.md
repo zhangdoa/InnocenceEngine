@@ -1,9 +1,10 @@
 ---
 id: TASK-44
 title: Fix _com_error exception after D3D12 device removal during GISponza rendering
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 16:08'
+updated_date: '2026-04-16 18:25'
 labels:
   - reliability
   - DX12
@@ -41,3 +42,24 @@ priority: high
 
 **Related:** TASK-34 (post-frame device health check), TASK-41 (COM exception safety)
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Root Cause
+GPU memory visibility race in compute→graphics indirect draw pipeline. Compute culling shader UAV writes could retire and fence could signal before writes propagated through GPU memory hierarchy (L2 cache → global memory). Graphics queue ExecuteIndirect then read stale/uninitialized indirect draw data, causing page faults at non-deterministic addresses → TDR.
+
+## Fix
+- Added `DeviceMemoryBarrier()` after UAV writes in `sunShadowCulling.comp` and `opaqueGPUCulling.comp`
+- Updated CPU-side resource state tracking in `SunShadowCullingPass.cpp` and `OpaqueCullingPass.cpp` (SetCurrentState to UAV after dispatch) so graphics passes issue correct UAV→INDIRECT_ARGUMENT barriers
+- Removed dead `IsInShadowFrustum()` placeholder and redundant GPU-side validation guards
+
+## Evidence
+- `isVisible = true` (compiler optimizes to direct stores) → TDR 100%
+- `objectIndex < 47` (keeps conditionals, delays retirement) → no TDR
+- GPU validation (slows execution) → no TDR
+- `DeviceMemoryBarrier()` after writes → no TDR 100%
+
+## Commit
+bff0931b
+<!-- SECTION:FINAL_SUMMARY:END -->
