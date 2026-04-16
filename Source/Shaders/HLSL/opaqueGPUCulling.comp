@@ -100,27 +100,7 @@ void main(uint3 id : SV_DispatchThreadID)
     float4x4 viewProjectionMatrix = mul(perFrameCB.v, perFrameCB.p_original);
     bool isVisible = IsInFrustum(modelData.m_BoundingBoxMin, modelData.m_BoundingBoxMax, viewProjectionMatrix);
 
-    // Create DirectX 12 indirect draw command
-    DX12IndirectDrawCommand drawCmd;
-
-    drawCmd.m_ObjectIndex = objectIndex;
-    drawCmd.m_Padding1 = 0;
-
-    drawCmd.m_VertexBufferLocation = modelData.m_VertexBufferAddress;
-    drawCmd.m_VertexBufferSizeInBytes = modelData.m_VertexCount * modelData.m_VertexStride;
-    drawCmd.m_VertexStride = modelData.m_VertexStride;
-    drawCmd.m_IndexBufferLocation = modelData.m_IndexBufferAddress;
-    drawCmd.m_IndexBufferSizeInBytes = modelData.m_IndexCount * modelData.m_IndexStride;
-    drawCmd.m_IndexFormat = 42;
-    drawCmd.m_IndexCountPerInstance = modelData.m_IndexCount;
-    drawCmd.m_InstanceCount = isVisible ? 1 : 0;
-    drawCmd.m_StartIndexLocation = 0;
-    drawCmd.m_BaseVertexLocation = 0;
-    drawCmd.m_StartInstanceLocation = 0;
-    drawCmd.m_Padding2 = 0;
-
-    // Store the draw command at object index (1:1 mapping)
-    u_DrawCommandBuffer[objectIndex] = drawCmd;
+    u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, modelData, isVisible);
 
     // Ensure UAV writes are globally visible before the wavefront retires,
     // preventing a race where the fence signals completion before writes

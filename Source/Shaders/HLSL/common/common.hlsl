@@ -538,7 +538,31 @@ struct DX12IndirectDrawCommand
     int m_BaseVertexLocation;        // BaseVertexLocation
     uint m_StartInstanceLocation;    // StartInstanceLocation
     
-    // Total: 8 + 16 + 16 + 20 = 60 bytes  
+    // Total: 8 + 16 + 16 + 20 = 60 bytes
     // Padding to reach 64 bytes as specified by command signature ByteStride
     uint m_Padding2;              // 4 bytes padding
 };
+
+static const uint DXGI_FORMAT_R32_UINT = 42;
+
+// Build a DX12IndirectDrawCommand from GPUModelData.
+// isVisible controls InstanceCount (0 = culled, 1 = drawn).
+DX12IndirectDrawCommand BuildIndirectDrawCommand(uint objectIndex, GPUModelData modelData, bool isVisible)
+{
+    DX12IndirectDrawCommand cmd;
+    cmd.m_ObjectIndex = objectIndex;
+    cmd.m_Padding1 = 0;
+    cmd.m_VertexBufferLocation = modelData.m_VertexBufferAddress;
+    cmd.m_VertexBufferSizeInBytes = modelData.m_VertexCount * modelData.m_VertexStride;
+    cmd.m_VertexStride = modelData.m_VertexStride;
+    cmd.m_IndexBufferLocation = modelData.m_IndexBufferAddress;
+    cmd.m_IndexBufferSizeInBytes = modelData.m_IndexCount * modelData.m_IndexStride;
+    cmd.m_IndexFormat = DXGI_FORMAT_R32_UINT;
+    cmd.m_IndexCountPerInstance = modelData.m_IndexCount;
+    cmd.m_InstanceCount = isVisible ? 1 : 0;
+    cmd.m_StartIndexLocation = 0;
+    cmd.m_BaseVertexLocation = 0;
+    cmd.m_StartInstanceLocation = 0;
+    cmd.m_Padding2 = 0;
+    return cmd;
+}

@@ -321,6 +321,28 @@ Mat4 l_transform = l_world ? l_world->m_WorldMatrix : Math::generateIdentityMatr
 Mat4 l_transform = l_world ? l_world->m_WorldMatrix : Mat4{};
 ```
 
+### No Magic Numbers
+Numeric literals with non-obvious meaning must be replaced by named constants. If a named constant is not feasible (e.g. a format enum value passed to a GPU API), a comment on the same line must explain the value. This applies to both C++ and HLSL.
+
+```hlsl
+// CORRECT
+cmd.m_IndexFormat = DXGI_FORMAT_R32_UINT; // named constant in common.hlsl
+
+// WRONG - unexplained literal
+cmd.m_IndexFormat = 42;
+```
+
+```cpp
+// CORRECT
+static constexpr uint32_t MaxCSMSplits = 4;
+
+// WRONG - unexplained literal
+for (int i = 0; i < 4; i++) { ... }
+```
+
+### No Copy-Paste — Extract Shared Logic
+When the same logic appears in two or more places, extract it into a shared function or include file. Duplication is a sign of missing abstraction. In HLSL, shared helpers belong in `common/common.hlsl` or a dedicated include. In C++, shared logic belongs in a service or utility function.
+
 ### Silent Failures Must Log
 Guard clauses that reject work (e.g. wrong `ObjectStatus`, null pointer, empty data) must **always log a warning** so the caller can diagnose issues. A silent `return false` hides bugs:
 
