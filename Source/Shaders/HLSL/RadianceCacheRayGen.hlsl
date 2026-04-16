@@ -149,7 +149,7 @@ void RayGenShader()
     in_ProbePosition[probeIndex] = float4(positionWS, 1);
     in_ProbeNormal[probeIndex] = float4(normalWS, 1);
 
-    const int NUM_SAMPLES = 4;
+    const int NUM_SAMPLES = 1;
 
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
@@ -165,7 +165,7 @@ void RayGenShader()
         RayPayload tempPayload;
         tempPayload.radiance = float3(0, 0, 0);
 
-        TraceRay(SceneAS, RAY_FLAG_NONE, 0xFF, 0, 1, 2, ray, tempPayload);
+        TraceRay(SceneAS, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray, tempPayload);
         float NdotL = saturate(dot(normalWS, sampleDir));
         float3 radiance = tempPayload.radiance * NdotL;
 
