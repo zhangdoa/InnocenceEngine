@@ -103,30 +103,27 @@ void main(uint3 id : SV_DispatchThreadID)
     // Create DirectX 12 indirect draw command
     DX12IndirectDrawCommand drawCmd;
 
-    // Root constant (object index) with alignment padding
     drawCmd.m_ObjectIndex = objectIndex;
     drawCmd.m_Padding1 = 0;
 
-    // Vertex buffer view
     drawCmd.m_VertexBufferLocation = modelData.m_VertexBufferAddress;
     drawCmd.m_VertexBufferSizeInBytes = modelData.m_VertexCount * modelData.m_VertexStride;
     drawCmd.m_VertexStride = modelData.m_VertexStride;
-
-    // Index buffer view
     drawCmd.m_IndexBufferLocation = modelData.m_IndexBufferAddress;
     drawCmd.m_IndexBufferSizeInBytes = modelData.m_IndexCount * modelData.m_IndexStride;
-    drawCmd.m_IndexFormat = 42; // DXGI_FORMAT_R32_UINT
-
-    // Draw arguments - set to zero for culled objects (must be last)
-    drawCmd.m_IndexCountPerInstance = isVisible ? modelData.m_IndexCount : 0;
-    drawCmd.m_InstanceCount = isVisible ? modelData.m_InstanceCount : 0;
+    drawCmd.m_IndexFormat = 42;
+    drawCmd.m_IndexCountPerInstance = modelData.m_IndexCount;
+    drawCmd.m_InstanceCount = isVisible ? 1 : 0;
     drawCmd.m_StartIndexLocation = 0;
     drawCmd.m_BaseVertexLocation = 0;
-    drawCmd.m_StartInstanceLocation = modelData.m_FirstInstance;
-
-    // Initialize padding to zero for consistency
+    drawCmd.m_StartInstanceLocation = 0;
     drawCmd.m_Padding2 = 0;
 
     // Store the draw command at object index (1:1 mapping)
     u_DrawCommandBuffer[objectIndex] = drawCmd;
+
+    // Ensure UAV writes are globally visible before the wavefront retires,
+    // preventing a race where the fence signals completion before writes
+    // propagate through the GPU memory hierarchy to subsequent consumers.
+    DeviceMemoryBarrier();
 }

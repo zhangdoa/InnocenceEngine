@@ -146,6 +146,13 @@ bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContex
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, l_threadGroups, 1, 1);
 
+	// Update CPU-side state tracking to UAV so the graphics pass knows to issue
+	// a UAV→INDIRECT_ARGUMENT barrier before ExecuteIndirect. The compute queue
+	// cannot issue a barrier involving INDIRECT_ARGUMENT state, and fence sync
+	// handles memory visibility — only the tracking needs updating.
+	auto l_currentFrame = l_fmService->GetCurrentFrame();
+	m_IndirectDrawCommandBuffer->SetCurrentState(l_currentFrame, m_IndirectDrawCommandBuffer->m_WriteState);
+
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
