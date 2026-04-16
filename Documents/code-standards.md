@@ -255,6 +255,32 @@ u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, modelDa
 DeviceMemoryBarrier(); // writes visible to graphics queue after fence
 ```
 
+### No early return before `GroupMemoryBarrierWithGroupSync`
+
+Every thread in a workgroup must reach every `GroupMemoryBarrierWithGroupSync` call (and every other `*WithGroupSync` variant). A thread that `return`s early while other threads block on the barrier deadlocks the group — manifesting as a GPU hang or silent corruption, never a compile error.
+
+Use an `earlyExit` flag pattern instead: compute it at the top of `main`, keep participating in barriers, then branch on the flag for the UAV-write / output phase:
+
+```hlsl
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+    bool earlyExit = <sky/oob/whatever>;
+
+    // initialise shared state — ALL threads participate
+    if (input.groupIndex == 0) sharedScore = 0xFFFFFFFF;
+    GroupMemoryBarrierWithGroupSync();          // barrier 1 — uniform
+
+    if (!earlyExit) { /* compute contribution */ }
+    GroupMemoryBarrierWithGroupSync();          // barrier 2 — uniform
+
+    if (earlyExit) { /* clear tile, return OK */ return; }
+    /* normal write path */
+}
+```
+
+Reference: `RadianceCacheReprojection.comp` uses this pattern end-to-end. `DeviceMemoryBarrier` / `GroupMemoryBarrier` (no `WithGroupSync` suffix) are memory fences only and do *not* have this uniformity constraint.
+
 ---
 
 **ENFORCEMENT:** Code reviews check compliance.

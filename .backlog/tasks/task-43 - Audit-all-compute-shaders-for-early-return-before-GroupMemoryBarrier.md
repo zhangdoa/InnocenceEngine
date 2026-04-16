@@ -1,9 +1,10 @@
 ---
 id: TASK-43
 title: Audit all compute shaders for early-return before GroupMemoryBarrier
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 16:00'
+updated_date: '2026-04-16 21:06'
 labels:
   - structural
   - shaders
@@ -23,3 +24,23 @@ priority: medium
 
 Fixed in `RadianceCacheReprojection.comp` (commit 8d1ff230). Need to check: `sunShadowCulling.comp`, `opaqueGPUCulling.comp`, `luminanceHistogramPass.comp`, `luminanceAveragePass.comp`, `lightCulling.comp`, `tileFrustum.comp`, `SSAOPass.comp`, all RadianceCache filter passes.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-16 (completion):** Audit + documentation.
+
+**Audit result (`Source/Shaders/HLSL/*.comp`):** Every shader that uses `GroupMemoryBarrierWithGroupSync` is already compliant — no early `return` before any `*WithGroupSync` call.
+
+| Shader                              | *WithGroupSync barriers | Early returns before? |
+|------------------------------------|------------------------:|----------------------|
+| RadianceCacheReprojection.comp      | 3                       | no (fixed in 8d1ff230) |
+| RadianceCacheIntegration.comp       | 2                       | no                   |
+| lightCulling.comp                   | 4                       | no                   |
+| luminanceAveragePass.comp           | 2                       | no                   |
+| luminanceHistogramPass.comp         | 2                       | no                   |
+
+Shaders listed in the task that use only `DeviceMemoryBarrier` (no `WithGroupSync`) — `sunShadowCulling.comp`, `opaqueGPUCulling.comp`, `tileFrustum.comp`, `SSAONoisePass.comp`, `RadianceCacheFilter*.comp` — are exempt because `DeviceMemoryBarrier` is a memory fence, not a cross-thread sync; early returns are legal for them.
+
+**Documentation:** added "No early return before `GroupMemoryBarrierWithGroupSync`" to `Documents/code-standards.md` §8 right after the existing DMB rule, with the `earlyExit` flag pattern and `RadianceCacheReprojection.comp` as the reference exemplar.
+<!-- SECTION:NOTES:END -->
