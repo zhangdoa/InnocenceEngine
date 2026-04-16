@@ -28,6 +28,8 @@ grep -i "error" C:/GitRepo/InnocenceEngine/Build/msbuild_out.txt | grep -v ZERO_
 powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
 ```
 
+**Always launch the build with `run_in_background: true`** — the Bash tool then auto-fires a completion notification instead of blocking with a timeout. Don't guess a timeout value, don't poll with sleep loops, don't use `TaskOutput(block=true)`. Do unrelated work while it runs (e.g. read code, draft the next edit). When the notification arrives, grep the log for errors. Same pattern applies to `HLSL2DXIL.ps1` and any long runtime test.
+
 **Why `Scripts/BuildWin.ps1`:** `cmd.exe /c msbuild` from git bash swallows output; inline PowerShell `-Command` breaks on bash `$` expansion; `/t:Main` on the `.sln` targets a folder, not a project. The script lives in `Scripts/` (tracked) so it survives `git clean` and Build wipes.
 
 ### Test tiers — pick the lightest that covers the change
