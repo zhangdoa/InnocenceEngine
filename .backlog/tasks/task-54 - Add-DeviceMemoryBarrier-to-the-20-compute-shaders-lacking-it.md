@@ -1,9 +1,10 @@
 ---
 id: TASK-54
 title: Add DeviceMemoryBarrier() to the 20 compute shaders lacking it
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 20:56'
+updated_date: '2026-04-17 01:26'
 labels:
   - GPU
   - DX12
@@ -54,3 +55,17 @@ priority: medium
 
 **Dependencies:** TASK-46 (parent audit task).
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-17 (completion):** Added `DeviceMemoryBarrier()` to all 20 shaders listed in the task description.
+
+- End-of-main placement for shaders where the UAV write is unconditional at the tail of main.
+- For shaders with early `return` paths that write a UAV (lightPass.comp sky path and DRAW_CSM_AREA path; RadianceCacheReprojection.comp earlyExit probe-clear path), inserted DMB just before the `return` as well as at the final closing brace.
+- Shaders with ALL writes inside a single `if (threadIndex == 0)` block (RadianceCacheIntegration, luminanceAveragePass, luminanceHistogramPass, tileFrustum): DMB placed after the if-block at end-of-main. `DeviceMemoryBarrier` is a memory-ordering fence (per-thread), not a sync — safe placement outside the write branch.
+
+**Validation:** HLSL2DXIL.ps1 compile clean. MSVC build clean. RenderTest exit 0.
+
+**Unexpected finding — TASK-52 TDR signature changed, but did not go away.** Integration test 3/3 still hits a GPU device-removed at frame 8, but the failing command list is now `OpaquePass/Graphics_CommandList` (Graphics queue) instead of `RadianceCacheReprojectionPass/Compute_CommandList`. PageFault VA shifted 0x197902336 → 0x198426624. Cross-queue UAV memory visibility is therefore **ruled out** as the root cause of TASK-52. The bug is upstream of reprojection — in OpaquePass itself, which suggests stale graphics-pipeline state (descriptors, IA layout, or render-target bindings) after the UnitTest→GISponza scene transition. TASK-52 to be updated with this narrowed hypothesis.
+<!-- SECTION:NOTES:END -->
