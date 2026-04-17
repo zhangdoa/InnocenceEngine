@@ -1,9 +1,10 @@
 ---
 id: TASK-28
 title: Add validation layer between CPU asset data and GPU buffer layout constraints
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-13 18:12'
+updated_date: '2026-04-17 04:12'
 labels:
   - architecture
   - explicit-contracts
@@ -31,3 +32,16 @@ MaxTextureSlotCount (currently 7) is a compile-time GPU layout constraint define
 
 The goal is that any asset that exceeds GPU layout limits is immediately visible during development, not silently corrupted in production.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-17 (completion):** Closed the silent-truncation gap at both layers.
+
+- `JSONSerializer_Components::Load(MaterialComponent)`: logs a warning at load time when the JSON declares more than `MaxTextureSlotCount` `TextureComponents`, naming the material so the offending asset is immediately visible.
+- `DrawCallServiceImpl::UpdateDrawCalls`: logs a warning per-frame when `m_TextureNames.size() > MaxTextureSlotCount` on any material, naming the material and the actual count. The existing `for (... && j < MaxTextureSlotCount)` cap still applies (truncation behaviour preserved); the change is pure observability.
+
+Deliberately kept `MaxTextureSlotCount` as a GPU-layer cap rather than an asset-layer cap: a material JSON with 9 textures is still well-formed data, and the engine may one day raise `MaxTextureSlotCount`; we don't want CPU-side truncation here to lose the original intent.
+
+**Validation:** Build clean. RenderTest exit 0. Integration run on the 10-frame UnitTest→GISponza auto-test produces zero `GPU layout` warnings, confirming no current material currently exceeds the cap. The warnings will fire immediately if a future material does.
+<!-- SECTION:NOTES:END -->

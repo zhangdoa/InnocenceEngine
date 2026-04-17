@@ -234,6 +234,16 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 
 		if (l_materialAsset)
 		{
+			// TASK-28: the CPU asset layer allows arbitrarily many texture names, but
+			// MaterialConstantBuffer::m_TextureIndices is fixed at MaxTextureSlotCount.
+			// Log once per frame when a material is over limit so silent truncation is visible.
+			if (l_materialAsset->m_TextureNames.size() > MaxTextureSlotCount)
+			{
+				Log(Warning, "Material '", l_materialAsset->m_Name.c_str(),
+					"' has ", l_materialAsset->m_TextureNames.size(),
+					" textures but GPU layout supports only ", MaxTextureSlotCount,
+					"; extra entries are ignored.");
+			}
 			for (size_t j = 0; j < l_materialAsset->m_TextureNames.size() && j < MaxTextureSlotCount; j++)
 			{
 				const auto& l_textureName = l_materialAsset->m_TextureNames[j];

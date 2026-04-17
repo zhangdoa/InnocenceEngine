@@ -227,6 +227,14 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
+        // TASK-28: loader-side visibility of GPU-layout overflow. DrawCallService truncates
+        // at upload time; we warn here so the root cause (the material JSON) is obvious.
+        if (l_j.size() > MaxTextureSlotCount)
+        {
+            Log(Warning, "Material '", component.m_InstanceName.c_str(),
+                "' loads ", l_j.size(), " TextureComponents but GPU layout allows only ",
+                MaxTextureSlotCount, "; the extra entries will be dropped at upload.");
+        }
         l_asset->m_TextureNames.reserve(l_j.size());
         auto l_textureService = g_Engine->Get<TextureResourceService>();
         for (const auto& l_entry : l_j)
