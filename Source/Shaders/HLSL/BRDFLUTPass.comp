@@ -274,4 +274,5 @@ void main(ComputeInputType input)
 
 	// Write the result into the output texture.
 	out_BRDFLUT[input.dispatchThreadID.xy] = integratedBRDF;
+	DeviceMemoryBarrier();
 }

@@ -82,4 +82,5 @@ void main(ComputeInputType input)
 	// Write the final result into the output texture.
 	// Here we store the same value in the R, G, and B channels with alpha set to 1.
 	out_BRDFLUTMSPassRT0[input.dispatchThreadID.xy] = float4(averageRsF1, averageRsF1, averageRsF1, 1.0);
+	DeviceMemoryBarrier();
 }

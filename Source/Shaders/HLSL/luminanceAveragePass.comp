@@ -68,4 +68,6 @@ void main(ComputeInputType input)
 		// Store adapted average at index 0 (read by FinalBlend)
 		out_average[0] = adaptedLuminance;
 	}
+
+	DeviceMemoryBarrier();
 }

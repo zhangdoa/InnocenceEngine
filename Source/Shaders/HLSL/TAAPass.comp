@@ -115,4 +115,5 @@ void main(ComputeInputType input)
 #endif
 
 	TAAPassRT0[pixelPos] = float4(finalColor, lumaCurrentColor);
+	DeviceMemoryBarrier();
 }

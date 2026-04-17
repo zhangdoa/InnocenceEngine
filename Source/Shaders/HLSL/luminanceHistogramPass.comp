@@ -70,4 +70,6 @@ void main(ComputeInputType input)
 			InterlockedAdd(out_Histogram[i], sharedHistogram[i]);
 		}
 	}
+
+	DeviceMemoryBarrier();
 }

@@ -51,4 +51,5 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	float4 color = SampleBilinear(SrcTexture, uv, srcSize);
 	
 	DstTexture[DTid.xy] = color;
+	DeviceMemoryBarrier();
 }

@@ -43,4 +43,5 @@ void main(ComputeInputType input)
 	writeCoord.y = g_Frame.viewportSize.y - 1 - writeCoord.y;
 
 	out_skyPassRT0[writeCoord] = float4(color, 1.0);
+	DeviceMemoryBarrier();
 }

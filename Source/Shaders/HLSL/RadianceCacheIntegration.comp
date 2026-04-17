@@ -81,4 +81,5 @@ void main(ComputeInputType input)
         in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(lerp(prevSH_L1_y, gs_SH_L1_y[0], blend), 1.0);
         in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(lerp(prevSH_L1_z, gs_SH_L1_z[0], blend), 1.0);
     }
+    DeviceMemoryBarrier();
 }

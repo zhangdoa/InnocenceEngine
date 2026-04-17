@@ -164,4 +164,6 @@ void main(ComputeInputType input)
 	{
 		g_DebugHeatMap[texCoord] = float4(0, 0, 0, 1);
 	}
+
+	DeviceMemoryBarrier();
 }

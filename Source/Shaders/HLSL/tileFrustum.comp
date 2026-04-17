@@ -72,4 +72,6 @@ void main(ComputeInputType input)
 		uint flattenedIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * numThreads.x);
 		out_Frustums[flattenedIndex] = frustum;
 	}
+
+	DeviceMemoryBarrier();
 }

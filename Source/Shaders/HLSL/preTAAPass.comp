@@ -36,4 +36,5 @@ void main(ComputeInputType input)
 	}
 
 	out_preTAAPassRT0[input.dispatchThreadID.xy] = float4(finalColor, 1.0);
+	DeviceMemoryBarrier();
 }

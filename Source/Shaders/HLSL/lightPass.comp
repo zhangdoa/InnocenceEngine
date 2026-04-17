@@ -234,7 +234,10 @@ void main(ComputeInputType input)
 
 	// No object is rendered in this pixel.
 	if (GPassRT0.a == 0.0)
+	{
+		DeviceMemoryBarrier();
 		return;
+	}
 
 	float4 GPassRT1 = in_opaquePassRT1[l_ScreenCoord];
 
@@ -246,6 +249,7 @@ void main(ComputeInputType input)
 #if DRAW_CSM_AREA
 	float4 l_CSMDebugResult = ApplyCSMArea(l_Position_WorldSpace, N);
 	out_lightPassRT0[l_ScreenCoord] = l_CSMDebugResult;
+	DeviceMemoryBarrier();
 	return;
 #endif
 
@@ -386,4 +390,5 @@ void main(ComputeInputType input)
 #endif
 
 	out_lightPassRT1[l_ScreenCoord] = float4(l_Luminance_ForIndirectLight, 1.0);
+	DeviceMemoryBarrier();
 }

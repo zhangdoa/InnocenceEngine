@@ -172,4 +172,5 @@ void main(ComputeInputType input)
 	// 9. Write the computed occlusion to the output texture.
 	// -------------------------------------------------------------------------
 	out_SSAOPassRT0[input.dispatchThreadID.xy] = float4(occlusion, occlusion, occlusion, 1.0f);
+	DeviceMemoryBarrier();
 }

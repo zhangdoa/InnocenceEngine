@@ -187,6 +187,7 @@ void main(ComputeInputType input)
                 }
             }
         }
+        DeviceMemoryBarrier();
         return;
     }
 
@@ -228,4 +229,6 @@ void main(ComputeInputType input)
             }
         }
     }
+
+    DeviceMemoryBarrier();
 }

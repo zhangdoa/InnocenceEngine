@@ -20,4 +20,5 @@ void main(ComputeInputType input)
 	float4 TAAResult = in_TAAPassRT0[input.dispatchThreadID.xy];
 
 	out_postTAAPassRT0[input.dispatchThreadID.xy] = float4(TAAResult.rgb, 1.0);
+	DeviceMemoryBarrier();
 }
