@@ -22,6 +22,18 @@ bool IOService::setupWorkingDirectory()
 	return true;
 }
 
+// TASK-30: callers historically pass either a relative path (to be resolved against the
+// working directory) or an absolute path (already fully qualified by AssetService). The
+// old unconditional `m_workingDir + filePath` produced a doubly-rooted garbage path for
+// absolute inputs; files then silently failed to open. ResolvePath keeps relative inputs
+// working while treating absolute inputs verbatim, so both regimes are safe at the API.
+static std::string ResolvePath(const std::string& workingDir, const char* filePath)
+{
+	if (filePath && fs::path(filePath).is_absolute())
+		return std::string(filePath);
+	return workingDir + (filePath ? filePath : "");
+}
+
 std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
 {
 	std::ios_base::openmode l_mode = std::ios::in;
@@ -39,11 +51,12 @@ std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
 
 	std::ifstream l_file;
 
-	l_file.open((m_workingDir + filePath).c_str(), l_mode);
+	auto l_resolved = ResolvePath(m_workingDir, filePath);
+	l_file.open(l_resolved.c_str(), l_mode);
 
 	if (!l_file.is_open())
 	{
-		Log(Error, "Can't open file : ", filePath, "!");
+		Log(Error, "Can't open file : ", filePath, " (resolved to ", l_resolved.c_str(), ")");
 		return std::vector<char>();
 	}
 
@@ -76,11 +89,12 @@ bool IOService::saveFile(const char* filePath, const std::vector<char>& content,
 
 	std::ofstream l_file;
 
-	l_file.open((m_workingDir + filePath).c_str(), l_mode);
+	auto l_resolved = ResolvePath(m_workingDir, filePath);
+	l_file.open(l_resolved.c_str(), l_mode);
 
 	if (!l_file.is_open())
 	{
-		Log(Error, "Can't open file : ", filePath, "!");
+		Log(Error, "Can't open file : ", filePath, " (resolved to ", l_resolved.c_str(), ")");
 		return false;
 	}
 
@@ -93,14 +107,7 @@ bool IOService::saveFile(const char* filePath, const std::vector<char>& content,
 
 bool IOService::isFileExist(const char* filePath)
 {
-	if (fs::exists(fs::path(m_workingDir + filePath)))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return fs::exists(fs::path(ResolvePath(m_workingDir, filePath)));
 }
 
 std::string IOService::getFilePath(const char* filePath)
