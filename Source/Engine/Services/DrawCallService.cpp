@@ -129,6 +129,13 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 	auto& l_MeshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_Meshes = l_MeshStorage.All();
 	const auto& l_Owners = l_MeshStorage.AllOwners();
+	// TASK-52 diagnostic: track VA range and skip reasons so a stale-VA leak is visible.
+	uint64_t l_vaMin = UINT64_MAX;
+	uint64_t l_vaMax = 0;
+	uint32_t l_skipNoAssetOrNotResident = 0;
+	uint32_t l_skipNotActivated = 0;
+	uint32_t l_skipNoMaterial = 0;
+	uint32_t l_skipInvisible = 0;
 	uint32_t l_drawCallIndex = 0;
 	for (size_t i = 0; i < l_Meshes.size(); i++)
 	{
@@ -136,24 +143,41 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		const MeshComponent& l_mesh = l_Meshes[i];
 
 		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
+		{
+			l_skipNotActivated++;
 			continue;
+		}
 
 		auto* l_resource = AssetService::GetMeshAsset(l_mesh.m_Asset);
 		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
+		{
+			l_skipNoAssetOrNotResident++;
 			continue;
+		}
 
 		auto* l_material = l_registry->Get<MaterialComponent>(l_Entity);
 		if (!l_material)
+		{
+			l_skipNoMaterial++;
 			continue;
+		}
 
 		auto* l_vis = l_registry->Get<VisibilityComponent>(l_Entity);
 		if (l_vis && !l_vis->m_Visible)
+		{
+			l_skipInvisible++;
 			continue;
+		}
 
 		GPUModelData l_gpuModelData = {};
 
 		l_gpuModelData.m_VertexBufferAddress = l_resource->m_VertexBufferView.m_BufferLocation;
 		l_gpuModelData.m_IndexBufferAddress = l_resource->m_IndexBufferView.m_BufferLocation;
+		if (l_gpuModelData.m_VertexBufferAddress)
+		{
+			l_vaMin = std::min(l_vaMin, l_gpuModelData.m_VertexBufferAddress);
+			l_vaMax = std::max(l_vaMax, l_gpuModelData.m_VertexBufferAddress);
+		}
 
 		if (l_resource->m_VertexBufferView.m_StrideInBytes == 0)
 		{
@@ -262,6 +286,20 @@ bool DrawCallServiceImpl::UpdateDrawCalls()
 		m_MaterialCBVector.emplace_back(l_materialCB);
 		l_drawCallIndex++;
 	}
+
+	// TASK-52 diagnostic: one-line summary per rebuild. Watch `vaMin` / `vaMax` across
+	// the UnitTest→GISponza transition — if frame N's draw count drops to zero or the
+	// range span explodes, we have a scene-boundary draw-list desync.
+	auto l_frameCount = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
+	Log(Verbose, "DrawCallService@frame=", l_frameCount,
+		" meshes=", static_cast<uint32_t>(l_Meshes.size()),
+		" drawn=", l_drawCallIndex,
+		" skip(!Activated)=", l_skipNotActivated,
+		" skip(!Resident)=", l_skipNoAssetOrNotResident,
+		" skip(!Material)=", l_skipNoMaterial,
+		" skip(!Visible)=", l_skipInvisible,
+		" vaMin=", (l_vaMin == UINT64_MAX ? 0ull : l_vaMin),
+		" vaMax=", l_vaMax);
 
 	return true;
 }
