@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-16 20:18'
-updated_date: '2026-04-17 01:27'
+updated_date: '2026-04-17 01:29'
 labels:
   - bug
   - gpu
@@ -82,4 +82,35 @@ After completing TASK-54 (adding `DeviceMemoryBarrier()` to all 20 compute shade
 - Grep OpaquePass and its dependencies for any lookup via raw pointer into a component that the SceneService unloading path may have freed.
 
 TASK-54 is now Done; TASK-52 remains open with these narrowed hypotheses.
+
+**2026-04-17 — Deeper trace points at the GPUModelData VA pipeline.**
+
+`OpaquePass` issues a single `ExecuteIndirect(m_CommandListComp_Graphics, OpaqueCullingPass::GetResult())`. The indirect draw buffer is populated by `opaqueGPUCulling.comp` via `BuildIndirectDrawCommand(objectIndex, modelData, isVisible)`, which copies into every command:
+- `cmd.m_VertexBufferLocation = modelData.m_VertexBufferAddress`  (raw GPU virtual address)
+- `cmd.m_IndexBufferLocation  = modelData.m_IndexBufferAddress`   (raw GPU virtual address)
+
+Those VAs come from `DrawCallService::UpdateDrawCalls()` (`Source/Engine/Services/DrawCallService.cpp:155-156`):
+
+```cpp
+auto* l_resource = AssetService::GetMeshAsset(l_mesh.m_Asset);
+if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
+    continue;
+l_gpuModelData.m_VertexBufferAddress = l_resource->m_VertexBufferView.m_BufferLocation;
+l_gpuModelData.m_IndexBufferAddress  = l_resource->m_IndexBufferView.m_BufferLocation;
+```
+
+**The scene-transition window is the suspect:**
+- Frame 5 (auto-test): `SceneService::Load("GISponza", true)` — async flag set.
+- Frame 6: `SceneService::Update()` calls `LoadSync` → `WaitForGPUIdle` → `MeshResourceService::OnSceneUnloading` frees UnitTest mesh GPU buffers.
+- Between unload and GISponza deferred mesh init, the MeshComponents are destroyed, but the `GPUModelDataBuffer` uploaded in frame 5 still contains the old UnitTest VAs.
+- Frame 7 or 8: `UpdateDrawCalls` reruns and re-uploads, but if any path (e.g. BillboardDrawCallService, a passthrough, or asynchronous submission) caches or retains an older snapshot, stale VAs survive.
+
+**Concrete next checks (for an interactive session):**
+1. Instrument `DrawCallService::UpdateDrawCalls` to log VA ranges per frame and confirm they actually change at frame 6/7.
+2. Check `GPUBufferResourceService::Upload` for double-buffering / frame lag — if the upload happens via the frame's copy queue and lands 1-2 frames after the write, frame 8's OpaquePass could read the frame-6 snapshot containing freed UnitTest VAs.
+3. Confirm `PerFrameCB.modelCount` (consumed by the culling shader bounds check) matches the current frame's VA upload, not a stale count.
+4. Inspect `AssetService::GetMeshAsset` behaviour when a mesh asset was just freed — does it return nullptr immediately, or is there a window where it returns a dangling pointer / a resource with stale `m_VertexBufferView.m_BufferLocation`?
+5. Grep `MeshResourceService::OnSceneUnloading` for whether it clears any per-frame CPU-side VA caches, or only frees the GPU buffers.
+
+The fundamental issue is that the engine hands raw GPU VAs to the GPU command processor without lifetime coupling — the VA outlives the buffer, and the GPU can dereference a freed address. The architectural fix category is "manage mesh GPU-address table as a GPU resource with explicit lifetime", not a one-line patch.
 <!-- SECTION:NOTES:END -->
