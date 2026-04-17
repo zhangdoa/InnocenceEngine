@@ -46,7 +46,7 @@ powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
    powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 10' -Wait -PassThru -NoNewWindow).ExitCode"
    ```
 
-3. **Scene reload** — reloads UnitTest scene at a chosen frame; catches device-removed crashes from in-flight resource destruction. Use for scene lifecycle, GPU resource teardown, deferred init.
+3. **Scene reload** — reloads UnitTest scene at a chosen frame; catches device-removed crashes from in-flight resource destruction, stale descriptors, and multi-load accumulation bugs. Use for **any** change touching asset loading, scene lifecycle, GPU resource management, deferred initialization, or any state that persists across scene boundaries (shared asset handles, component pools, descriptor heaps). The 10-frame single-load tier (tier 2) can silently green-light changes that only fail on the second or later load — texture name accumulation (aef0f866), stale GPU VAs in the GPUModelData pipeline (TASK-52), etc.
 
    ```
    powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -reload_at_frame 10' -Wait -PassThru -NoNewWindow).ExitCode"
