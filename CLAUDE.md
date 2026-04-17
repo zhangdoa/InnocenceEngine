@@ -206,6 +206,27 @@ After every non-trivial changelist, do a brief retrospective and file a backlog 
 - **Measure against the user's actual goal** — "test the path tracer" doesn't mean "obtain a capture"; it means "know whether the path tracer works and why/why not." Don't declare victory at the instrumental step. Keep going until the terminal goal is met
 - **No victory laps mid-work** — avoid long "here's what I accomplished" summaries at intermediate checkpoints; they trade momentum for performative progress. Brief status, then continue
 
+### End-of-response checklist (run before ending any turn)
+
+Prose guidance decays; behavior at turn boundaries is where drift happens. Before ending a response, verify:
+
+1. **Is the user's terminal goal met?** Not the instrumental step (build green, capture obtained, bug localized). The thing they actually asked for.
+2. **If not, am I stopping at a decision point or a phase boundary?** Only decision points (destructive action, genuinely ambiguous fork, or a question the codebase can't answer) justify stopping. Phase boundaries don't.
+3. **Did I end with a question?** If yes, can I answer it myself by reading more code or running one more test? Then do that instead.
+4. **Did I list options without picking one?** If yes, pick the highest-value one and do it. Lists-of-options are handoff disguised as helpfulness.
+
+### Banned end-of-response patterns
+
+These phrases and shapes are the "decent-but-distant" pattern — do not emit them unless a genuinely blocking decision point has been reached:
+
+- "Should I proceed?" / "Want me to continue?" / "Let me know if…"
+- "Next step: …" as a standalone trailing sentence (it's a question in disguise)
+- "We could do X or Y — which do you prefer?" at reversible forks
+- A bullet list of findings with no chosen action underneath
+- "All tests pass." / "The fix is in." followed by nothing (if there's more work, do it; if truly done, say so and commit)
+
+When tempted to emit one of these, instead: pick, act, and continue. The user can always interrupt — that's cheaper than you waiting.
+
 ### Project-level forbidden (not covered by code standards)
 
 - Committing without a full test pass
