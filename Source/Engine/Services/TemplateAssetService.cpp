@@ -161,9 +161,11 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 std::ifstream l_matProbe(l_fullMatPath);
                 if (!(l_matProbe.good() && (l_matProbe.close(), AssetService::Load(l_filePath.c_str(), *l_materialPtr, l_entityID))))
                 {
-                    auto l_matHandle = AssetService::AllocateMaterialAsset(l_materialName.c_str(), ObjectLifespan::Persistence);
-                    l_materialPtr->m_Asset = l_matHandle;
-                    auto* l_matAsset = AssetService::GetMaterialAsset(l_matHandle);
+                    // TASK-27: allocation may be recycled; resize() below handles both cases.
+                    auto l_matAllocation = AssetService::AllocateMaterialAsset(l_materialName.c_str(), ObjectLifespan::Persistence);
+                    l_materialPtr->m_Asset = l_matAllocation.m_Handle;
+                    auto* l_matAsset = AssetService::GetMaterialAsset(l_matAllocation.m_Handle);
+                    l_matAsset->m_TextureNames.clear();
                     l_matAsset->m_TextureNames.resize(5);
                     l_matAsset->m_TextureNames[0] = l_registry->Get<TextureComponent>(m_basicNormalTextureEntity)->m_InstanceName.c_str();
                     l_matAsset->m_TextureNames[1] = l_registry->Get<TextureComponent>(m_basicAlbedoTextureEntity)->m_InstanceName.c_str();

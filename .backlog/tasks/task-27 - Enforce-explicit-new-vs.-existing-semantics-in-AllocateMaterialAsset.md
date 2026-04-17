@@ -1,9 +1,10 @@
 ---
 id: TASK-27
 title: Enforce explicit "new vs. existing" semantics in AllocateMaterialAsset
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-13 18:12'
+updated_date: '2026-04-17 03:40'
 labels:
   - architecture
   - explicit-contracts
@@ -29,3 +30,18 @@ AllocateMaterialAsset silently returns an existing handle when a material with t
 
 The chosen approach must eliminate the possibility of silent data accumulation without the caller having to know the asset's history.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-17 (completion):** Changed the return type of `AssetService::AllocateMaterialAsset` from `MaterialAssetHandle` to `MaterialAssetAllocation { m_Handle, m_WasNewlyCreated }`. Callers can no longer silently ignore the recycled-vs-fresh distinction — accessing the handle is now one struct field away, and the `m_WasNewlyCreated` flag sits right next to it.
+
+All three call sites updated:
+- `JSONSerializer_Components::Load(MaterialComponent)` — unconditionally resets `m_TextureNames` (the load path fully repopulates them), and resets `m_Attributes` when the slot was recycled. Removes the duplicate clear inside the TextureComponents branch.
+- `AssimpMaterialProcessor::CreateMaterial` — when recycled, clears `m_TextureNames` and resets `m_Attributes` before `ProcessMaterialProperties` / `ProcessMaterialTextures` re-populate.
+- `TemplateAssetService` default-material branch — clears `m_TextureNames` before `resize(5)` so a recycled template slot doesn't leak old entries.
+
+The shared-by-name semantics of the allocator are preserved (two components referring to the same material name still share a slot); only the caller's responsibility to reset stale state is now explicit instead of invisible.
+
+**Validation:** Build clean. RenderTest exit 0. Integration run (which exercises `JSONSerializer_Components::Load` twice: once for UnitTest then once for GISponza) completes without new errors; TASK-52 TDR at frame 8 unchanged as expected.
+<!-- SECTION:NOTES:END -->

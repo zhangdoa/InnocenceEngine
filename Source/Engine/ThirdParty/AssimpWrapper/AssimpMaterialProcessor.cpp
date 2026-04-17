@@ -19,14 +19,22 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 	auto l_InstanceName = std::string(BaseName) + "." + l_MaterialName + ".MaterialComponent/";
 	OutMaterial.m_InstanceName = l_InstanceName.c_str();
 
-	auto l_handle = AssetService::AllocateMaterialAsset(l_MaterialName, ObjectLifespan::Scene);
-	OutMaterial.m_Asset = l_handle;
+	auto l_allocation = AssetService::AllocateMaterialAsset(l_MaterialName, ObjectLifespan::Scene);
+	OutMaterial.m_Asset = l_allocation.m_Handle;
 
-	auto* l_assetData = AssetService::GetMaterialAsset(l_handle);
+	auto* l_assetData = AssetService::GetMaterialAsset(l_allocation.m_Handle);
 	if (!l_assetData)
 	{
 		Log(Error, "Failed to allocate MaterialAsset for: ", l_MaterialName);
 		return false;
+	}
+
+	// TASK-27: recycled allocations may carry stale state from a previous import of the
+	// same material name (e.g. re-importing a model). Reset before re-populating.
+	if (!l_allocation.m_WasNewlyCreated)
+	{
+		l_assetData->m_TextureNames.clear();
+		l_assetData->m_Attributes = MaterialAttributes{};
 	}
 
 	ProcessMaterialProperties(Material, l_assetData);

@@ -22,7 +22,17 @@ namespace Inno
 		static MeshAssetData* GetMeshAsset(MeshAssetHandle handle);
 		static MeshAssetHandle FindMeshAsset(const char* name);
 
-		static MaterialAssetHandle AllocateMaterialAsset(const char* name, ObjectLifespan lifespan);
+		// TASK-27: AllocateMaterialAsset returns `{handle, wasNewlyCreated}`. Callers that
+		// need a clean slate (load paths populating the asset from a source-of-truth)
+		// must branch on `wasNewlyCreated == false` and reset the existing data
+		// themselves — the allocator itself is `get-or-create`, not `replace`, because
+		// material assets are shared by name across components.
+		struct MaterialAssetAllocation
+		{
+			MaterialAssetHandle m_Handle;
+			bool m_WasNewlyCreated;
+		};
+		static MaterialAssetAllocation AllocateMaterialAsset(const char* name, ObjectLifespan lifespan);
 		static MaterialAssetData* GetMaterialAsset(MaterialAssetHandle handle);
 		static MaterialAssetHandle FindMaterialAsset(const char* name);
 

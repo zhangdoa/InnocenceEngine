@@ -208,17 +208,25 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
     auto l_registry = g_Engine->Get<EntityRegistry>();
     auto l_lifespan = (owner != INVALID_ENTITY) ? l_registry->GetLifespan(owner) : ObjectLifespan::Persistence;
 
-    auto l_handle = AssetService::AllocateMaterialAsset(component.m_InstanceName.c_str(), l_lifespan);
-    component.m_Asset = l_handle;
+    auto l_allocation = AssetService::AllocateMaterialAsset(component.m_InstanceName.c_str(), l_lifespan);
+    component.m_Asset = l_allocation.m_Handle;
 
-    auto* l_asset = AssetService::GetMaterialAsset(l_handle);
+    auto* l_asset = AssetService::GetMaterialAsset(l_allocation.m_Handle);
     if (!l_asset)
         return false;
+
+    // TASK-27: AllocateMaterialAsset is get-or-create. When we recycle an existing asset we
+    // must clear every JSON-derived field that this loader populates; otherwise stale state
+    // accumulates across loads (the texture-name leak fixed ad-hoc in aef0f866). Always
+    // reset, even on first allocation — m_WasNewlyCreated guarantees the allocator itself
+    // already initialised the slot, so the clear is cheap in that case.
+    l_asset->m_TextureNames.clear();
+    if (!l_allocation.m_WasNewlyCreated)
+        l_asset->m_Attributes = MaterialAttributes{};
 
     if (j.find("TextureComponents") != j.end())
     {
         auto l_j = j["TextureComponents"];
-        l_asset->m_TextureNames.clear();
         l_asset->m_TextureNames.reserve(l_j.size());
         auto l_textureService = g_Engine->Get<TextureResourceService>();
         for (const auto& l_entry : l_j)

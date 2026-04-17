@@ -165,7 +165,7 @@ MeshAssetHandle AssetService::FindMeshAsset(const char* name)
 	return MeshAssetHandle{};
 }
 
-MaterialAssetHandle AssetService::AllocateMaterialAsset(const char* name, ObjectLifespan lifespan)
+AssetService::MaterialAssetAllocation AssetService::AllocateMaterialAsset(const char* name, ObjectLifespan lifespan)
 {
 	std::unique_lock<std::shared_mutex> l_lock(s_MaterialMutex);
 
@@ -174,7 +174,7 @@ MaterialAssetHandle AssetService::AllocateMaterialAsset(const char* name, Object
 	{
 		auto& l_asset = m_MaterialAssets[l_existing->second.m_Index];
 		if (l_asset.m_Residency != AssetResidency::Released)
-			return l_existing->second;
+			return { l_existing->second, false };
 	}
 
 	uint32_t l_index;
@@ -201,7 +201,7 @@ MaterialAssetHandle AssetService::AllocateMaterialAsset(const char* name, Object
 	l_handle.m_Generation = m_MaterialGenerations[l_index];
 	m_MaterialLUT[name] = l_handle;
 
-	return l_handle;
+	return { l_handle, true };
 }
 
 MaterialAssetData* AssetService::GetMaterialAsset(MaterialAssetHandle handle)
