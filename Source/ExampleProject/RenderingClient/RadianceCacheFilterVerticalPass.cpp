@@ -20,7 +20,7 @@ bool RadianceCacheFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheFilterVerticalPass/");
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterVertical.comp";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterVertical.comp/";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheFilterVerticalPass/");
 	

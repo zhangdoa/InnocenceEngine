@@ -17,7 +17,7 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("PostTAAPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp/";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("PostTAAPass/");
 

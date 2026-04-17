@@ -47,8 +47,8 @@ bool TransparentGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TransparentGeometryProcessPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "transparentGeometryProcessPass.vert";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "transparentGeometryProcessPass.frag";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "transparentGeometryProcessPass.vert/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "transparentGeometryProcessPass.frag/";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TransparentGeometryProcessPass/");
 

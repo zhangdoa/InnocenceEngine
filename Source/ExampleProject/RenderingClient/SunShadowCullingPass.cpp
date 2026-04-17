@@ -19,7 +19,7 @@ bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowCullingPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowCulling.comp";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowCulling.comp/";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowCullingPass/");
 

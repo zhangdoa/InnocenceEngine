@@ -17,7 +17,7 @@ bool TAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TAAPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "TAAPass.comp";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "TAAPass.comp/";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TAAPass/");
 
