@@ -678,10 +678,16 @@ namespace Inno
 		}
 
 		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
-		if (l_totalFrames > 0 && !m_autoCaptureWritten)
+		const bool l_isPathTracerTestMode =
+			strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0 && m_GPUPathTracerActive;
+		const uint32_t l_triggerAtFrame = l_totalFrames > 0
+			? static_cast<uint32_t>(l_totalFrames)
+			: (l_isPathTracerTestMode ? 30u : 0u);
+
+		if (l_triggerAtFrame > 0 && !m_autoCaptureWritten)
 		{
 			m_autoCaptureFrameCount++;
-			if (m_autoCaptureFrameCount >= static_cast<uint32_t>(l_totalFrames))
+			if (m_autoCaptureFrameCount >= l_triggerAtFrame)
 			{
 				m_autoCaptureWritten = true;
 
@@ -702,6 +708,27 @@ namespace Inno
 
 				if (!l_floatPixels.empty())
 				{
+					size_t l_zeroCount = 0, l_nonZeroCount = 0;
+					float l_sumR = 0, l_sumG = 0, l_sumB = 0, l_maxR = 0, l_maxG = 0, l_maxB = 0;
+					for (const auto& px : l_floatPixels)
+					{
+						const bool l_isZero = (px.x == 0.0f && px.y == 0.0f && px.z == 0.0f);
+						if (l_isZero) { l_zeroCount++; }
+						else
+						{
+							l_nonZeroCount++;
+							l_sumR += px.x; l_sumG += px.y; l_sumB += px.z;
+							if (px.x > l_maxR) l_maxR = px.x;
+							if (px.y > l_maxG) l_maxG = px.y;
+							if (px.z > l_maxB) l_maxB = px.z;
+						}
+					}
+					const float l_total = static_cast<float>(l_floatPixels.size());
+					Log(Success, "PathTracerReadback: total=", l_floatPixels.size(),
+						" zero=", l_zeroCount, " nonZero=", l_nonZeroCount,
+						" mean=(", l_sumR / l_total, ",", l_sumG / l_total, ",", l_sumB / l_total, ")",
+						" max=(", l_maxR, ",", l_maxG, ",", l_maxB, ")");
+
 					std::vector<uint8_t> l_uint8Pixels;
 					l_uint8Pixels.reserve(l_floatPixels.size() * 4);
 					for (const auto& px : l_floatPixels)
