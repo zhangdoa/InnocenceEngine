@@ -325,13 +325,32 @@ bool DX12GraphicsHardwareService::WaitOnCPU(uint64_t semaphoreValue, GPUEngineTy
 bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 {
 #ifdef _WIN32
+	auto l_initConfig = g_Engine->getInitConfig();
+	if (l_initConfig.captureFrame < 0)
+		return false;
+
 	HMODULE l_RenderDocModule = GetModuleHandleA("renderdoc.dll");
 	if (l_RenderDocModule == nullptr)
-		return false;
+	{
+		l_RenderDocModule = LoadLibraryA("C:/Program Files/RenderDoc/renderdoc.dll");
+		if (l_RenderDocModule == nullptr)
+		{
+			Log(Warning, "RenderDoc: failed to load renderdoc.dll from 'C:/Program Files/RenderDoc/'.");
+			return false;
+		}
+		Log(Success, "RenderDoc: loaded renderdoc.dll from 'C:/Program Files/RenderDoc/'.");
+	}
+	else
+	{
+		Log(Success, "RenderDoc: detected pre-injected renderdoc.dll.");
+	}
 
 	auto l_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(l_RenderDocModule, "RENDERDOC_GetAPI");
 	if (l_GetAPI == nullptr)
+	{
+		Log(Warning, "RenderDoc: RENDERDOC_GetAPI symbol not found.");
 		return false;
+	}
 
 	RENDERDOC_API_1_6_0* l_API = nullptr;
 	int l_Result = l_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&l_API);
@@ -340,14 +359,10 @@ bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 
 	m_RenderDocAPI = l_API;
 
-	auto l_initConfig = g_Engine->getInitConfig();
-	if (l_initConfig.captureFrame >= 0)
-	{
-		std::string l_captureDir = "C:/GitRepo/InnocenceEngine/Build/captures/frame";
-		l_API->SetCaptureFilePathTemplate(l_captureDir.c_str());
-		l_API->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, 1);
-		l_API->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, 1);
-	}
+	std::string l_captureDir = "C:/GitRepo/InnocenceEngine/Build/captures/frame";
+	l_API->SetCaptureFilePathTemplate(l_captureDir.c_str());
+	l_API->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, 1);
+	l_API->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, 1);
 
 	Log(Success, "RenderDoc API loaded.");
 	return true;
