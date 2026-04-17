@@ -156,6 +156,14 @@ MeshAssetData* AssetService::GetMeshAsset(MeshAssetHandle handle)
 	return &l_asset;
 }
 
+uint32_t AssetService::DebugGetMeshGeneration(uint32_t index)
+{
+	std::shared_lock<std::shared_mutex> l_lock(s_MeshMutex);
+	if (index >= m_MeshGenerations.size())
+		return UINT32_MAX;
+	return m_MeshGenerations[index];
+}
+
 MeshAssetHandle AssetService::FindMeshAsset(const char* name)
 {
 	std::shared_lock<std::shared_mutex> l_lock(s_MeshMutex);
@@ -297,6 +305,7 @@ TextureAssetHandle AssetService::FindTextureAsset(const char* name)
 
 void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 {
+	uint32_t l_meshReleased = 0, l_matReleased = 0, l_texReleased = 0;
 	{
 		std::unique_lock<std::shared_mutex> l_lock(s_MeshMutex);
 		for (uint32_t i = 0; i < static_cast<uint32_t>(m_MeshAssets.size()); i++)
@@ -309,6 +318,7 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 				l_asset.m_Residency = AssetResidency::Released;
 				m_MeshGenerations[i]++;
 				m_MeshFreeSlots.push_back(i);
+				++l_meshReleased;
 			}
 		}
 	}
@@ -325,6 +335,7 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 				l_asset.m_Residency = AssetResidency::Released;
 				m_MaterialGenerations[i]++;
 				m_MaterialFreeSlots.push_back(i);
+				++l_matReleased;
 			}
 		}
 	}
@@ -341,9 +352,13 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 				l_asset.m_Residency = AssetResidency::Released;
 				m_TextureGenerations[i]++;
 				m_TextureFreeSlots.push_back(i);
+				++l_texReleased;
 			}
 		}
 	}
+
+	Log(Verbose, "AssetService::ReleaseAssetsByLifespan(", static_cast<int>(lifespan),
+		") — released meshes=", l_meshReleased, " materials=", l_matReleased, " textures=", l_texReleased);
 }
 
 std::string AssetService::GetAssetFilePath(const char* componentName)

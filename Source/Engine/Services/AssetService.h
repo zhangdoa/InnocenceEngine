@@ -21,6 +21,7 @@ namespace Inno
 		static MeshAssetHandle AllocateMeshAsset(const char* name, ObjectLifespan lifespan);
 		static MeshAssetData* GetMeshAsset(MeshAssetHandle handle);
 		static MeshAssetHandle FindMeshAsset(const char* name);
+		static uint32_t DebugGetMeshGeneration(uint32_t index);
 
 		// TASK-27: AllocateMaterialAsset returns `{handle, wasNewlyCreated}`. Callers that
 		// need a clean slate (load paths populating the asset from a source-of-truth)

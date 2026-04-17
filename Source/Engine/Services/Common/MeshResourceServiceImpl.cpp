@@ -62,6 +62,14 @@ void MeshResourceService::Initialize(MeshComponent* mesh, std::vector<Vertex>& v
 	AllocateMeshResource(mesh->m_InstanceName.c_str(), l_lifespan);
 
 	auto* l_resource = AssetService::GetMeshAsset(l_assetHandle);
+	if (!l_resource)
+	{
+		uint32_t l_currentGen = AssetService::DebugGetMeshGeneration(l_assetHandle.m_Index);
+		Log(Error, "MeshResourceService::Initialize: AllocateMeshAsset succeeded but GetMeshAsset returned nullptr for '",
+			mesh->m_InstanceName.c_str(), "' handle(idx=", l_assetHandle.m_Index,
+			" gen=", l_assetHandle.m_Generation, ") currentGen=", l_currentGen);
+		return;
+	}
 	if (!vertices.empty())
 	{
 		l_resource->m_AABB = Math::GenerateAABB(vertices.data(), vertices.size());
