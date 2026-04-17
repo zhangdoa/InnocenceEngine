@@ -266,18 +266,33 @@ bool DrawCallServiceImpl::Update()
 
 		auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
+		// TASK-40: cap each upload at the GPU buffer's ElementCount so a CPU-side overfill
+		// cannot silently stomp past the buffer's end on the GPU. Log a warning at the
+		// first overflow per frame so the miscount is visible.
+		auto l_clamp = [](size_t produced, size_t capacity, const char* bufferName) -> size_t
+		{
+			if (produced <= capacity)
+				return produced;
+			Log(Warning, "DrawCallService: ", bufferName, " overflow — produced=", produced,
+				" capacity=", capacity, " — dropping ", (produced - capacity), " entries.");
+			return capacity;
+		};
+
 		if (m_GPUModelDataVector.size() > 0)
 		{
-			l_rsService->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, m_GPUModelDataVector.size());
+			auto l_n = l_clamp(m_GPUModelDataVector.size(), m_GPUModelDataBufferComp->m_ElementCount, "GPUModelDataBuffer");
+			l_rsService->Upload(m_GPUModelDataBufferComp, m_GPUModelDataVector, 0, l_n);
 		}
 		if (m_TransformBufferVector.size() > 0)
 		{
 			auto l_currentFrameTransformBuffer = GetCurrentFrameTransformBuffer();
-			l_rsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, m_TransformBufferVector.size());
+			auto l_n = l_clamp(m_TransformBufferVector.size(), l_currentFrameTransformBuffer->m_ElementCount, "TransformBuffer");
+			l_rsService->Upload(l_currentFrameTransformBuffer, m_TransformBufferVector, 0, l_n);
 		}
 		if (m_MaterialCBVector.size() > 0)
 		{
-			l_rsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, m_MaterialCBVector.size());
+			auto l_n = l_clamp(m_MaterialCBVector.size(), m_MaterialGPUBufferComp->m_ElementCount, "MaterialCBuffer");
+			l_rsService->Upload(m_MaterialGPUBufferComp, m_MaterialCBVector, 0, l_n);
 		}
 
 		return true;
