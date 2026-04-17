@@ -812,7 +812,7 @@ bool DX12TextureResourceService::CreateMipmapGenerator()
 		D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
 		m_ctx->m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_3DMipmapRootSignature));
 
-		ShaderFilePath l_3DPath = "mipmapGenerator3D.comp/";
+		ShaderFilePath l_3DPath = "mipmapGenerator3D.comp";
 
 		D3D12_COMPUTE_PIPELINE_STATE_DESC l_3DPSODesc = {};
 		l_3DPSODesc.pRootSignature = m_3DMipmapRootSignature;
@@ -846,7 +846,7 @@ bool DX12TextureResourceService::CreateMipmapGenerator()
 		D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
 		m_ctx->m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_2DMipmapRootSignature));
 
-		ShaderFilePath l_2DPath = "mipmapGenerator2D.comp/";
+		ShaderFilePath l_2DPath = "mipmapGenerator2D.comp";
 		D3D12_COMPUTE_PIPELINE_STATE_DESC l_2DPSODesc = {};
 		l_2DPSODesc.pRootSignature = m_2DMipmapRootSignature;
 

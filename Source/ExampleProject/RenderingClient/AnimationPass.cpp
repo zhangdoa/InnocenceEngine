@@ -19,8 +19,8 @@ bool AnimationPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("AnimationPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert/";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "animationPass.vert";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "animationPass.frag";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("AnimationPass/");
 

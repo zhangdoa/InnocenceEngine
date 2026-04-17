@@ -29,11 +29,11 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	// --- Ray Tracing SPC ---
 	m_RayTracingSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("GPUPathTracerPass/");
-	m_RayTracingSPC->m_ShaderFilePaths.m_RayGenPath     = "GPUPathTracerRayGen.hlsl/";
-	m_RayTracingSPC->m_ShaderFilePaths.m_ClosestHitPath = "GPUPathTracerClosestHit.hlsl/";
-	m_RayTracingSPC->m_ShaderFilePaths.m_AnyHitPath     = "GPUPathTracerAnyHit.hlsl/";
-	m_RayTracingSPC->m_ShaderFilePaths.m_MissPath       = "GPUPathTracerMiss.hlsl/";
-	m_RayTracingSPC->m_ShaderFilePaths.m_ShadowMissPath = "GPUPathTracerShadowMiss.hlsl/";
+	m_RayTracingSPC->m_ShaderFilePaths.m_RayGenPath     = "GPUPathTracerRayGen.hlsl";
+	m_RayTracingSPC->m_ShaderFilePaths.m_ClosestHitPath = "GPUPathTracerClosestHit.hlsl";
+	m_RayTracingSPC->m_ShaderFilePaths.m_AnyHitPath     = "GPUPathTracerAnyHit.hlsl";
+	m_RayTracingSPC->m_ShaderFilePaths.m_MissPath       = "GPUPathTracerMiss.hlsl";
+	m_RayTracingSPC->m_ShaderFilePaths.m_ShadowMissPath = "GPUPathTracerShadowMiss.hlsl";
 
 	// --- Ray Tracing Render Pass ---
 	m_RayTracingRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("GPUPathTracerPass/");

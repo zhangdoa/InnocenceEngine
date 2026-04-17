@@ -19,7 +19,7 @@ bool OpaqueCullingPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("OpaqueCullingPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "opaqueGPUCulling.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "opaqueGPUCulling.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("OpaqueCullingPass/");
 

@@ -22,7 +22,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SSAONoisePass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SSAONoisePass/");
 

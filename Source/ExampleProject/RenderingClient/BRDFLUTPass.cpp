@@ -16,7 +16,7 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BRDFLUTPass/");
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BRDFLUTPass/");
 	m_Result = g_Engine->Get<TextureResourceService>()->Add("BRDF LUT/");
