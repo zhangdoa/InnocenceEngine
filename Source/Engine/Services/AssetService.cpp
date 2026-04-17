@@ -104,17 +104,7 @@ MeshAssetHandle AssetService::AllocateMeshAsset(const char* name, ObjectLifespan
 {
 	std::unique_lock<std::shared_mutex> l_lock(s_MeshMutex);
 
-	// LUT keys must match what Release uses when erasing, which is
-	// l_asset.m_Name.c_str() — the post-truncation stored name. Assigning
-	// `name` to m_Name applies the FixedSizeString trailing-char truncation,
-	// so we look up and store under the truncated form to stay consistent
-	// with the erase path. (The sacrificial trailing char is documented in
-	// FixedSizeString tests.)
-	FixedSizeString<128> l_nameFS;
-	l_nameFS = name;
-	const char* l_canonicalName = l_nameFS.c_str();
-
-	auto l_existing = m_MeshLUT.find(l_canonicalName);
+	auto l_existing = m_MeshLUT.find(name);
 	if (l_existing != m_MeshLUT.end())
 	{
 		auto& l_asset = m_MeshAssets[l_existing->second.m_Index];
@@ -144,7 +134,7 @@ MeshAssetHandle AssetService::AllocateMeshAsset(const char* name, ObjectLifespan
 	MeshAssetHandle l_handle;
 	l_handle.m_Index = l_index;
 	l_handle.m_Generation = m_MeshGenerations[l_index];
-	m_MeshLUT[l_canonicalName] = l_handle;
+	m_MeshLUT[name] = l_handle;
 
 	return l_handle;
 }
@@ -187,13 +177,7 @@ AssetService::MaterialAssetAllocation AssetService::AllocateMaterialAsset(const 
 {
 	std::unique_lock<std::shared_mutex> l_lock(s_MaterialMutex);
 
-	// See AllocateMeshAsset: use the canonicalised (truncated) form so the
-	// LUT key matches what Release's erase produces from l_asset.m_Name.
-	FixedSizeString<128> l_nameFS;
-	l_nameFS = name;
-	const char* l_canonicalName = l_nameFS.c_str();
-
-	auto l_existing = m_MaterialLUT.find(l_canonicalName);
+	auto l_existing = m_MaterialLUT.find(name);
 	if (l_existing != m_MaterialLUT.end())
 	{
 		auto& l_asset = m_MaterialAssets[l_existing->second.m_Index];
@@ -223,7 +207,7 @@ AssetService::MaterialAssetAllocation AssetService::AllocateMaterialAsset(const 
 	MaterialAssetHandle l_handle;
 	l_handle.m_Index = l_index;
 	l_handle.m_Generation = m_MaterialGenerations[l_index];
-	m_MaterialLUT[l_canonicalName] = l_handle;
+	m_MaterialLUT[name] = l_handle;
 
 	return { l_handle, true };
 }
@@ -258,12 +242,7 @@ TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLi
 {
 	std::unique_lock<std::shared_mutex> l_lock(s_TextureMutex);
 
-	// See AllocateMeshAsset.
-	FixedSizeString<128> l_nameFS;
-	l_nameFS = name;
-	const char* l_canonicalName = l_nameFS.c_str();
-
-	auto l_existing = m_TextureLUT.find(l_canonicalName);
+	auto l_existing = m_TextureLUT.find(name);
 	if (l_existing != m_TextureLUT.end())
 	{
 		auto& l_asset = m_TextureAssets[l_existing->second.m_Index];
@@ -293,7 +272,7 @@ TextureAssetHandle AssetService::AllocateTextureAsset(const char* name, ObjectLi
 	TextureAssetHandle l_handle;
 	l_handle.m_Index = l_index;
 	l_handle.m_Generation = m_TextureGenerations[l_index];
-	m_TextureLUT[l_canonicalName] = l_handle;
+	m_TextureLUT[name] = l_handle;
 
 	return l_handle;
 }
