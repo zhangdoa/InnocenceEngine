@@ -24,8 +24,8 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BSDFTestPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BSDFTestPass/");
 

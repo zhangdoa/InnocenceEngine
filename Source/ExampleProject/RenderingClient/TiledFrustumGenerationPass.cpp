@@ -17,7 +17,7 @@ bool TiledFrustumGenerationPass::Setup(IServiceConfig* systemConfig)
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TiledFrustumGenerationPass/");
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp";
 
 	m_DispatchParamsGPUBufferComp = g_Engine->Get<GPUBufferResourceService>()->Add("TiledFrustumDispatchParams/");
 

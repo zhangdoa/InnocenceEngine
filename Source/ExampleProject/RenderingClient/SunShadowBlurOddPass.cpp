@@ -35,7 +35,7 @@ bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[3] = 1.0f;
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowBlurOddPass/");
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowBlurPassOdd.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowBlurPassOdd.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowBlurOddPass/");
 

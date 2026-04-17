@@ -62,8 +62,8 @@ bool FrameManagementService::Initialize()
 		return false;
 	}
 
-	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
-	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
+	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert";
+	m_SwapChainShaderProgramComp->m_ShaderFilePaths.m_PSPath = "swapChain.frag";
 
 	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_SwapChainShaderProgramComp);
 	g_Engine->Get<SamplerResourceService>()->Initialize(m_SwapChainSamplerComp);

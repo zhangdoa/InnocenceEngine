@@ -19,7 +19,7 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheFilterHorizontalPass/");
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterHorizontal.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterHorizontal.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheFilterHorizontalPass/");
 	

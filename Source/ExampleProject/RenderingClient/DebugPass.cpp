@@ -51,8 +51,8 @@ bool DebugPass::Setup(IServiceConfig *systemConfig)
 	////
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("DebugPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "debugPass.vert/";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "debugPass.vert";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "debugPass.frag";
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("DebugPass/");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();

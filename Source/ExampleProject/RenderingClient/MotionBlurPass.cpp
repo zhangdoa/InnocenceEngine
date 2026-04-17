@@ -19,7 +19,7 @@ bool MotionBlurPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("MotionBlurPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "motionBlurPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "motionBlurPass.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("MotionBlurPass/");
 

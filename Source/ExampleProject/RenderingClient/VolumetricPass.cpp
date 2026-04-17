@@ -65,9 +65,9 @@ bool VolumetricPass::setupGeometryProcessPass()
 
 	m_froxelizationSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("VolumetricGeometryProcessPass/");
 
-	m_froxelizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricGeometryProcessPass.vert/";
-	m_froxelizationSPC->m_ShaderFilePaths.m_GSPath = "volumetricGeometryProcessPass.geom/";
-	m_froxelizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricGeometryProcessPass.frag/";
+	m_froxelizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricGeometryProcessPass.vert";
+	m_froxelizationSPC->m_ShaderFilePaths.m_GSPath = "volumetricGeometryProcessPass.geom";
+	m_froxelizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricGeometryProcessPass.frag";
 
 	m_froxelizationRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("VolumetricGeometryProcessPass/");
 
@@ -127,7 +127,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 
 	m_irraidanceInjectionSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("VolumetricIrraidanceInjectionPass/");
 
-	m_irraidanceInjectionSPC->m_ShaderFilePaths.m_CSPath = "volumetricIrraidanceInjectionPass.comp/";
+	m_irraidanceInjectionSPC->m_ShaderFilePaths.m_CSPath = "volumetricIrraidanceInjectionPass.comp";
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -204,7 +204,7 @@ bool VolumetricPass::setupRayMarchingPass()
 
 	m_rayMarchingSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("VolumetricRayMarchingPass/");
 
-	m_rayMarchingSPC->m_ShaderFilePaths.m_CSPath = "volumetricRayMarchingPass.comp/";
+	m_rayMarchingSPC->m_ShaderFilePaths.m_CSPath = "volumetricRayMarchingPass.comp";
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -274,8 +274,8 @@ bool VolumetricPass::setupVisualizationPass()
 
 	m_visualizationSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("VolumetricVisualizationPass/");
 
-	m_visualizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricVisualizationPass.vert/";
-	m_visualizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricVisualizationPass.frag/";
+	m_visualizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricVisualizationPass.vert";
+	m_visualizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricVisualizationPass.frag";
 
 	m_visualizationRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("VolumetricVisualizationPass/");
 

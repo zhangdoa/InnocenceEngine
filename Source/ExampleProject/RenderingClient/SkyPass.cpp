@@ -18,7 +18,7 @@ bool SkyPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SkyPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "skyPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "skyPass.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SkyPass/");
 

@@ -39,7 +39,7 @@ bool LightCullingPass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_RenderTargetsInitializationFunc = std::bind(&LightCullingPass::RenderTargetsCreationFunc, this);
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LightCullingPass/");
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightCulling.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LightCullingPass/");
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;

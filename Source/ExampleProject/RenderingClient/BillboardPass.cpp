@@ -21,8 +21,8 @@ bool BillboardPass::Setup(IServiceConfig* systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BillboardPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "billboardPass.vert/";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "billboardPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "billboardPass.vert";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "billboardPass.frag";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BillboardPass/");
 

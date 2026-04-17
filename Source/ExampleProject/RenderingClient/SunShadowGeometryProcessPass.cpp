@@ -23,9 +23,9 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowGeometryProcessPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert/";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom/";
-	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag";
 
 	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SunShadowGeometryProcessPass/");
 

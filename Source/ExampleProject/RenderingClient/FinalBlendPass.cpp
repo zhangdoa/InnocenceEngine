@@ -22,7 +22,7 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("FinalBlendPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("FinalBlendPass/");
 

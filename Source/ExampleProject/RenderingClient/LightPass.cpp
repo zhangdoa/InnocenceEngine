@@ -30,7 +30,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LightPass/");
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightPass.comp/";
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightPass.comp";
 
 	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LightPass/");
 
