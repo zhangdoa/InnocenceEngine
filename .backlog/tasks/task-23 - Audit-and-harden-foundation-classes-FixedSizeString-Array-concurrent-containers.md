@@ -24,6 +24,58 @@ The goal is a systematic correctness audit of the most critical foundation class
 - **Memory** (`Memory.cpp`): `Memory::Reallocate` calls `realloc()` on a pointer allocated with `new[]` — this is UB on MSVC where `new[]` adds overhead before the user pointer. Check all callers.
 
 **Caution for FixedSizeString off-by-one**: fixing `m_content[strlen-1]` → `m_content[strlen]` changes what is stored to disk (component instance names in JSON). All generated asset files (Data/Generated/) would need to be re-imported after the fix. Existing hand-authored Res/ files must be audited to confirm they do not rely on the truncated names. Do NOT fix this without a full regression test pass.
+
+## Update 2026-04-17: second-order symptom from the sacrificial-char convention
+
+The "FixedSizeString quirk" is no longer symmetric-only. Investigation
+while fixing a ShaderBall `GetMeshAsset` nullptr-on-reload bug
+(commit 9a42a43b) found a concrete case where the truncation breaks
+cross-boundary invariants:
+
+- `AssetService::AllocateMeshAsset` inserted into `m_MeshLUT` using the
+  raw `const char*` name as the std::string key.
+- `ReleaseAssetsByLifespan` erased using `l_asset.m_Name.c_str()` — the
+  post-truncation stored name (because `l_asset.m_Name` is a
+  FixedSizeString and it truncates one character on the assignment).
+- Keys didn't match. Release silently failed to erase. The stale LUT
+  entry returned a stale handle on the next allocate; the gen-counter
+  detected the mismatch at Get, returning nullptr, which the caller
+  reported as a generic "mesh init failure" — pointing at the wrong
+  layer entirely.
+
+The narrow fix (using the post-truncation form as the canonical LUT key
+on both sides, applied to Mesh/Material/Texture allocate paths) is in
+9a42a43b. But this confirms the broader structural problem: **any code
+that mixes `const char*` and `FixedSizeString.c_str()` as interchangeable
+keys/ids will diverge**, and there is no type-level barrier to catching
+it. Other places that do the same thing (cross-boundary with raw C-string
+as key) are latent bombs.
+
+### What the "rewrite, no hidden contracts" direction looks like
+
+The user-stated goal is to eliminate the "only-I-know" nature of this
+type. Concrete paths:
+
+1. **Rename and retype**. If the truncation is the intended contract,
+   the type should announce it: e.g. `SacrificialTrailingCharString<N>`
+   or at minimum a comment block on the class *next to the code*, not
+   in a test file. Callers seeing a named type would stop assuming
+   standard-string semantics.
+
+2. **Fix the off-by-one, migrate the data**. Replace the truncation
+   with a proper null-terminated string. Requires a one-shot migration
+   pass over `Data/Generated/` to strip the (now-preserved) trailing
+   `/` from all instance names written to JSON, plus a code sweep for
+   the 30+ trailing-`/` callsites. High-impact but removes the
+   convention entirely.
+
+3. **Keep the class internal-only**. Where raw `const char*` meets
+   `FixedSizeString`, normalise through an explicit conversion function
+   (`canonicaliseName(const char*) -> std::string`) instead of
+   interchangeable `.c_str()`. Makes the boundary explicit.
+
+Option 2 is the "no more only-I-know" answer the user asked for. Gated
+on a one-shot data migration plus a regression sweep.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
