@@ -27,30 +27,22 @@ namespace Inno
 		{
 			auto l_sizeOfContent = strlen(content);
 
-			if (l_sizeOfContent > S)
-				l_sizeOfContent = S;
+			if (l_sizeOfContent >= S)
+				l_sizeOfContent = S - 1;
 
 			std::memcpy(m_content, content, l_sizeOfContent);
-
-			if (l_sizeOfContent > 0)
-				m_content[l_sizeOfContent - 1] = '\0';
-			else
-				m_content[0] = '\0';
+			m_content[l_sizeOfContent] = '\0';
 		};
 
 		FixedSizeString<S> &operator=(const char *content)
 		{
 			auto l_sizeOfContent = strlen(content);
 
-			if (l_sizeOfContent > S)
-				l_sizeOfContent = S;
+			if (l_sizeOfContent >= S)
+				l_sizeOfContent = S - 1;
 
 			std::memcpy(m_content, content, l_sizeOfContent);
-
-			if (l_sizeOfContent > 0)
-				m_content[l_sizeOfContent - 1] = '\0';
-			else
-				m_content[0] = '\0';
+			m_content[l_sizeOfContent] = '\0';
 
 			return *this;
 		}
