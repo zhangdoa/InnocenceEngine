@@ -550,6 +550,8 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	//   hasShadowMiss == false: [RayGen][Miss][HitGroup]             (3 slots)
 	//   hasShadowMiss == true:  [RayGen][Miss][ShadowMiss][HitGroup] (4 slots)
 	const uint32_t numSlots = hasShadowMiss ? 4 : 3;
+	PSO->m_RaytracingMissShaderCount = hasShadowMiss ? 2u : 1u;
+	PSO->m_RaytracingHitGroupCount   = 1u;
 	auto l_shaderIDBufferSize = numSlots * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 	auto l_shaderIDBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(l_shaderIDBufferSize);
 	PSO->m_RaytracingShaderIDBuffer = m_ctx->CreateUploadHeapBuffer(&l_shaderIDBufferDesc);

@@ -94,8 +94,14 @@ namespace Inno
 		ComPtr<ID3D12PipelineState> m_PSO = 0;
 		
 		ComPtr<ID3D12StateObject> m_RaytracingPSO = 0;
-        ComPtr<ID3D12Resource> m_RaytracingShaderIDBuffer = 0;
-        
+		ComPtr<ID3D12Resource> m_RaytracingShaderIDBuffer = 0;
+
+		// TASK-35: explicit record of the raytracing shader table layout so DispatchRays can
+		// validate against what the PSO was actually built with, instead of inferring from
+		// the shader-ID buffer size and trusting a CPU/GPU contract that has no type check.
+		uint32_t m_RaytracingMissShaderCount = 0;  // number of miss shader records written
+		uint32_t m_RaytracingHitGroupCount   = 0;  // number of hit group records written
+
 		ComPtr<ID3D12RootSignature> m_RootSignature = 0;
 		ComPtr<ID3D12CommandSignature> m_IndirectCommandSignature = 0;
 	};

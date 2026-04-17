@@ -3,9 +3,10 @@ id: TASK-35
 title: >-
   Add compile-time or load-time validation for shader table MissShaderIndex
   bounds
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-14 17:12'
+updated_date: '2026-04-17 02:34'
 labels:
   - structural
   - raytracing
@@ -44,6 +45,22 @@ Add a runtime assertion during `DispatchRays` that validates the shader table's 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Mismatched MissShaderIndex produces a visible error at dispatch time, not a silent GPU hang
-- [ ] #2 Existing valid passes (RadianceCache, GPUPathTracer) pass validation without false positives
+- [x] #1 Mismatched MissShaderIndex produces a visible error at dispatch time, not a silent GPU hang
+- [x] #2 Existing valid passes (RadianceCache, GPUPathTracer) pass validation without false positives
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-17 (completion):**
+
+- Stored the shader-table layout that the PSO was actually built with directly on `DX12PipelineStateObject` (`m_RaytracingMissShaderCount`, `m_RaytracingHitGroupCount`). Set at `CreateRaytracingPSO` time from the same `hasShadowMiss` decision that picks the record count to write.
+- `DX12FrameManagementService::DispatchRays` now runs two validations before issuing the dispatch:
+  1. Miss / hit-group counts must both be non-zero (otherwise any `TraceRay()` in the shader reads past the empty table — TASK-33 signature).
+  2. The shader-ID buffer must be at least `(1 + missCount + hitCount) * shader_table_alignment` bytes.
+- `MissShaderTable.SizeInBytes` and the hit-group offset / size are now derived from the PSO's stored counts instead of re-inferring from buffer size.
+
+Failure mode: a mismatch now logs an error citing the pass name and the exact mismatch, and skips the dispatch. The ray-tracing pass visibly degrades (no illumination update that frame) instead of causing a silent GPU TDR — exactly the "fail loudly" outcome CLAUDE.md asks for.
+
+**Validation:** Build clean. RenderTest exit 0 (no false positives on rasterisation-only passes; they never call DispatchRays). Integration run (which exercises `RadianceCacheRaytracingPass::PrepareCommandList`) completes without TASK-35 warnings, confirming the valid pass passes validation (AC#2). TDR at frame 8 is unchanged — that's TASK-52's graphics-pipeline stale-VA issue, not a ray-tracing table bug.
+<!-- SECTION:NOTES:END -->

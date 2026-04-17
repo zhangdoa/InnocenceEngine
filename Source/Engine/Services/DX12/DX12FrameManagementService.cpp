@@ -414,10 +414,29 @@ bool DX12FrameManagementService::DispatchRays(RenderPassComponent* renderPass, C
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 
+	if (l_PSO->m_RaytracingMissShaderCount == 0 || l_PSO->m_RaytracingHitGroupCount == 0)
+	{
+		Log(Error, "DispatchRays: PSO for ", renderPass->m_InstanceName,
+			" has missShaderCount=", l_PSO->m_RaytracingMissShaderCount,
+			" hitGroupCount=", l_PSO->m_RaytracingHitGroupCount,
+			" — any TraceRay() in this pass will read past the shader table. Skipping dispatch (TASK-35).");
+		return false;
+	}
+
 	auto l_shaderIDBufferVirtualAddress = l_PSO->m_RaytracingShaderIDBuffer->GetGPUVirtualAddress();
 
+	// Validate the shader-ID buffer actually holds the number of records the PSO recorded
+	// at creation (TASK-35). Layout: [RayGen][Miss × missCount][HitGroup × hitCount].
 	D3D12_RESOURCE_DESC l_bufDesc = l_PSO->m_RaytracingShaderIDBuffer->GetDesc();
-	const bool hasShadowMiss = (l_bufDesc.Width >= 4 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+	const uint32_t l_expectedSlots = 1u + l_PSO->m_RaytracingMissShaderCount + l_PSO->m_RaytracingHitGroupCount;
+	const uint64_t l_expectedBytes = static_cast<uint64_t>(l_expectedSlots) * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	if (l_bufDesc.Width < l_expectedBytes)
+	{
+		Log(Error, "DispatchRays: shader-ID buffer too small for ", renderPass->m_InstanceName,
+			" expected ", l_expectedBytes, " bytes (", l_expectedSlots, " slots)",
+			" got ", l_bufDesc.Width, " bytes. Skipping dispatch (TASK-35).");
+		return false;
+	}
 
 	D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
 
@@ -426,17 +445,13 @@ bool DX12FrameManagementService::DispatchRays(RenderPassComponent* renderPass, C
 
 	dispatchDesc.MissShaderTable.StartAddress = l_shaderIDBufferVirtualAddress + D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 	dispatchDesc.MissShaderTable.StrideInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
-	dispatchDesc.MissShaderTable.SizeInBytes = hasShadowMiss
-		? 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT
-		: D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	dispatchDesc.MissShaderTable.SizeInBytes = static_cast<uint64_t>(l_PSO->m_RaytracingMissShaderCount) * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
-	const uint64_t hitGroupOffset = hasShadowMiss
-		? 3 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT
-		: 2 * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	const uint64_t hitGroupOffset = static_cast<uint64_t>(1u + l_PSO->m_RaytracingMissShaderCount) * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
 	dispatchDesc.HitGroupTable.StartAddress = l_shaderIDBufferVirtualAddress + hitGroupOffset;
 	dispatchDesc.HitGroupTable.StrideInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
-	dispatchDesc.HitGroupTable.SizeInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+	dispatchDesc.HitGroupTable.SizeInBytes = static_cast<uint64_t>(l_PSO->m_RaytracingHitGroupCount) * D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
 	dispatchDesc.Width = dimensionX;
 	dispatchDesc.Height = dimensionY;
