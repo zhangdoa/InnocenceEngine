@@ -1,4 +1,3 @@
-    
 #pragma once
 #include "STL14.h"
 #include "IToA.h"
@@ -6,166 +5,101 @@
 namespace Inno
 {
     template <size_t S>
-	class FixedSizeString
-	{
-	public:
-		FixedSizeString() = default;
+    class FixedSizeString
+    {
+        static_assert(S > 0, "FixedSizeString size must be positive");
 
-		FixedSizeString(const FixedSizeString<S> &rhs)
-		{
-			std::memcpy(m_content, rhs.c_str(), S);
-		};
+    public:
+        FixedSizeString()                                  { m_content[0] = '\0'; }
+        FixedSizeString(const char* content)               { copy_from(content); }
+        FixedSizeString(const FixedSizeString&)            = default;
+        FixedSizeString& operator=(const char* content)    { copy_from(content); return *this; }
+        FixedSizeString& operator=(const FixedSizeString&) = default;
 
-		FixedSizeString<S> &operator=(const FixedSizeString<S> &rhs)
-		{
-			std::memcpy(m_content, rhs.c_str(), S);
+        // Integer construction goes through named factories (ToString).
+        // Implicit int->string via constructor was silent and surprising.
+        FixedSizeString(int32_t) = delete;
+        FixedSizeString(int64_t) = delete;
 
-			return *this;
-		}
+        ~FixedSizeString() = default;
 
-		FixedSizeString(const char *content)
-		{
-			auto l_sizeOfContent = strlen(content);
+        const char* c_str()  const noexcept { return m_content; }
+        const char* begin()  const noexcept { return &m_content[0]; }
+        const char* end()    const noexcept { return m_content + std::strlen(m_content); }
+        size_t      size()   const noexcept { return std::strlen(m_content); }
+        bool        empty() const noexcept  { return m_content[0] == '\0'; }
 
-			if (l_sizeOfContent > S)
-				l_sizeOfContent = S;
+        static constexpr size_t capacity() noexcept { return S - 1; }
 
-			std::memcpy(m_content, content, l_sizeOfContent);
+        const char* find(const char* rhs) const { return std::strstr(m_content, rhs); }
 
-			if (l_sizeOfContent > 0)
-				m_content[l_sizeOfContent - 1] = '\0';
-			else
-				m_content[0] = '\0';
-		};
+        bool operator==(const char* rhs) const noexcept
+        {
+            return rhs != nullptr && std::strcmp(m_content, rhs) == 0;
+        }
+        bool operator==(const FixedSizeString& rhs) const noexcept
+        {
+            return std::strcmp(m_content, rhs.m_content) == 0;
+        }
+        bool operator!=(const char* rhs) const noexcept        { return !(*this == rhs); }
+        bool operator!=(const FixedSizeString& rhs) const noexcept { return !(*this == rhs); }
 
-		FixedSizeString<S> &operator=(const char *content)
-		{
-			auto l_sizeOfContent = strlen(content);
+    private:
+        void copy_from(const char* content)
+        {
+            if (content == nullptr)
+            {
+                m_content[0] = '\0';
+                return;
+            }
+            size_t i = 0;
+            for (; i < S - 1 && content[i] != '\0'; ++i)
+                m_content[i] = content[i];
+            m_content[i] = '\0';
+        }
 
-			if (l_sizeOfContent > S)
-				l_sizeOfContent = S;
+        char m_content[S];
+    };
 
-			std::memcpy(m_content, content, l_sizeOfContent);
+    // Integer specialisations — explicit factory, no implicit conversions.
+    inline FixedSizeString<11> ToString(int32_t content)
+    {
+        FixedSizeString<11> result;
+        char buf[11] = {};
+        i32toa_countlut(content, buf);
+        return FixedSizeString<11>(buf);
+    }
 
-			if (l_sizeOfContent > 0)
-				m_content[l_sizeOfContent - 1] = '\0';
-			else
-				m_content[0] = '\0';
-
-			return *this;
-		}
-
-		FixedSizeString(int32_t content){};
-
-		FixedSizeString(int64_t content){};
-
-		~FixedSizeString() = default;
-
-		bool operator==(const char *rhs) const
-		{
-			auto l_result = strcmp(m_content, rhs);
-
-			if (l_result != 0)
-			{
-				return false;
-			}
-			else
-			{
-				return true;
-			}
-		}
-
-		bool operator==(const FixedSizeString<S> &rhs) const
-		{
-			auto l_rhsCStr = rhs.c_str();
-
-			return (*this == l_rhsCStr);
-		}
-
-		bool operator!=(const char *rhs) const
-		{
-			return !(*this == rhs);
-		}
-
-		bool operator!=(const FixedSizeString<S> &rhs) const
-		{
-			return !(*this == rhs);
-		}
-
-		const char *c_str() const
-		{
-			return &m_content[0];
-		}
-
-		const char *begin() const
-		{
-			return &m_content[0];
-		}
-
-		const char *end() const
-		{
-			return &m_content[S - 1];
-		}
-
-		const char *find(const char *rhs) const
-		{
-			return strstr(&m_content[0], rhs);
-		}
-
-		const size_t size() const
-		{
-			return strlen(m_content);
-		}
-
-	private:
-		char m_content[S];
-	};
-
-	template <>
-	inline FixedSizeString<11>::FixedSizeString(int32_t content)
-	{
-		i32toa_countlut(content, m_content);
-	};
-
-	template <>
-	inline FixedSizeString<20>::FixedSizeString(int64_t content)
-	{
-		i64toa_countlut(content, m_content);
-	};
-
-	inline FixedSizeString<11> ToString(int32_t content)
-	{
-		return FixedSizeString<11>(content);
-	}
-
-	inline FixedSizeString<20> ToString(int64_t content)
-	{
-		return FixedSizeString<20>(content);
-	}
+    inline FixedSizeString<20> ToString(int64_t content)
+    {
+        FixedSizeString<20> result;
+        char buf[20] = {};
+        i64toa_countlut(content, buf);
+        return FixedSizeString<20>(buf);
+    }
 }
 
 namespace std
 {
-	template <size_t S>
-	struct hash<Inno::FixedSizeString<S>>
-	{
-		std::size_t operator()(const Inno::FixedSizeString<S> &k) const
-		{
-			std::size_t h = 5381;
-			int32_t c;
-			auto l_cStr = k.c_str();
-			while ((c = *l_cStr++))
-				h = ((h << 5) + h) + c;
-			return h;
-		}
-	};
+    template <size_t S>
+    struct hash<Inno::FixedSizeString<S>>
+    {
+        std::size_t operator()(const Inno::FixedSizeString<S>& k) const noexcept
+        {
+            // djb2
+            std::size_t h = 5381;
+            for (const char* p = k.c_str(); *p; ++p)
+                h = ((h << 5) + h) + static_cast<unsigned char>(*p);
+            return h;
+        }
+    };
 
-	template <size_t S>
-	struct less<Inno::FixedSizeString<S>>
-	{
-		bool operator()(const Inno::FixedSizeString<S> &s1, const Inno::FixedSizeString<S> &s2) const
-		{
-			return strcmp(s1.c_str(), s2.c_str()) < 0;
-		}
-	};
+    template <size_t S>
+    struct less<Inno::FixedSizeString<S>>
+    {
+        bool operator()(const Inno::FixedSizeString<S>& a, const Inno::FixedSizeString<S>& b) const noexcept
+        {
+            return std::strcmp(a.c_str(), b.c_str()) < 0;
+        }
+    };
 }
