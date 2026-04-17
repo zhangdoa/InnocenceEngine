@@ -29,6 +29,10 @@ namespace Inno
 			, Waiting
 			, Busy
 			, Released
+			// TASK-31: thread terminated due to an unhandled exception escaping the Worker
+			// body itself (not a per-task exception — those are caught and logged per task).
+			// A Failed thread stops accepting new tasks and is visible through GetState().
+			, Failed
 		};
 
 		explicit Thread(uint32_t ThreadIndex);
@@ -46,6 +50,11 @@ namespace Inno
 
 		void AddTask(Handle<ITask> task);
 
+		// TASK-31: cumulative count of per-task exceptions caught inside the Worker loop.
+		// Non-zero means a task threw; the thread itself kept running. Exposed so a
+		// TaskScheduler-level health check can trend or alarm on it.
+		uint64_t GetCaughtExceptionCount() const;
+
 	private:
 		void Worker(uint32_t ThreadIndex);
 
@@ -55,6 +64,7 @@ namespace Inno
 		ID m_ID;
 		std::atomic<State> m_State = State::Idle;
 		std::atomic_bool m_Done = false;
+		std::atomic<uint64_t> m_CaughtExceptionCount = 0;
 
 		std::vector<Handle<ITask>> m_TaskList;
 		RingBuffer<TaskReport, true> m_TaskReport;

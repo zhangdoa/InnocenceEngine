@@ -143,64 +143,92 @@ void Thread::Worker(uint32_t ThreadIndex)
 	m_ID = std::make_pair(ThreadIndex, l_ID);
 	Log(Success, "Thread ", m_ID, " has been created.");
 
-	while (!m_Done.load(std::memory_order_acquire))
+	// TASK-31: outer try wraps the entire loop body, not just ExecuteTask. A truly
+	// unexpected exception escaping something other than a task (m_TaskList iteration,
+	// the state machine, allocators) must not kill the worker silently — we log it,
+	// transition to Failed, and exit the loop so GetState() surfaces the condition.
+	try
 	{
-		if (m_State.load(std::memory_order_acquire) == Thread::State::Waiting)
+		while (!m_Done.load(std::memory_order_acquire))
 		{
-			std::this_thread::yield();
-			continue;
-		}
-
-		State expected = Thread::State::Idle;
-		if (m_State.compare_exchange_strong(expected, Thread::State::Busy, std::memory_order_acq_rel))
-		{
-			if (m_TaskList.empty())
+			if (m_State.load(std::memory_order_acquire) == Thread::State::Waiting)
 			{
-				m_State.store(Thread::State::Idle, std::memory_order_release);
 				std::this_thread::yield();
 				continue;
 			}
 
-			for (auto& task : m_TaskList)
+			State expected = Thread::State::Idle;
+			if (m_State.compare_exchange_strong(expected, Thread::State::Busy, std::memory_order_acq_rel))
 			{
-				if (!task)
+				if (m_TaskList.empty())
 				{
-					Log(Warning, "An empty task was detected in thread ", m_ID);
+					m_State.store(Thread::State::Idle, std::memory_order_release);
+					std::this_thread::yield();
 					continue;
 				}
 
-				try
+				for (auto& task : m_TaskList)
 				{
-					bool l_result = ExecuteTask(task);
+					if (!task)
+					{
+						Log(Warning, "An empty task was detected in thread ", m_ID);
+						continue;
+					}
+
+					try
+					{
+						bool l_result = ExecuteTask(task);
+					}
+					catch (const std::exception& e)
+					{
+						m_CaughtExceptionCount.fetch_add(1, std::memory_order_relaxed);
+						Log(Warning, "Exception in thread ", m_ID, " task \"", task->GetName(), "\": ", e.what(),
+							" (cumulative exceptions on this thread: ", m_CaughtExceptionCount.load(std::memory_order_relaxed), ")");
+					}
+					catch (...)
+					{
+						m_CaughtExceptionCount.fetch_add(1, std::memory_order_relaxed);
+						Log(Warning, "Unknown exception in thread ", m_ID, " task \"", task->GetName(), "\"",
+							" (cumulative exceptions on this thread: ", m_CaughtExceptionCount.load(std::memory_order_relaxed), ")");
+					}
 				}
-				catch (const std::exception& e)
-				{
-					Log(Warning, "Exception in thread ", m_ID, " task \"", task->GetName(), "\": ", e.what());
-				}
-				catch (...)
-				{
-					Log(Warning, "Unknown exception in thread ", m_ID, " task \"", task->GetName(), "\"");
-				}
+
+				std::atomic_thread_fence(std::memory_order_acquire);
+
+				m_TaskList.erase(
+					std::remove_if(m_TaskList.begin(), m_TaskList.end(),
+						[](const Handle<ITask>& task)
+						{
+							return task->CanBeRemoved();
+						}),
+					m_TaskList.end());
+
+				m_State.store(Thread::State::Idle, std::memory_order_release);
 			}
 
-			std::atomic_thread_fence(std::memory_order_acquire);
-
-			m_TaskList.erase(
-				std::remove_if(m_TaskList.begin(), m_TaskList.end(),
-					[](const Handle<ITask>& task)
-					{
-						return task->CanBeRemoved();
-					}),
-				m_TaskList.end());
-
-			m_State.store(Thread::State::Idle, std::memory_order_release);
+			std::this_thread::yield();
 		}
 
-		std::this_thread::yield();
+		m_State.store(Thread::State::Released, std::memory_order_release);
+		Log(Success, "Thread ", m_ID, " has been released.");
 	}
+	catch (const std::exception& e)
+	{
+		m_State.store(Thread::State::Failed, std::memory_order_release);
+		Log(Error, "Thread ", m_ID, " died from an unhandled exception outside the task loop: ", e.what(),
+			" — this worker will no longer accept tasks.");
+	}
+	catch (...)
+	{
+		m_State.store(Thread::State::Failed, std::memory_order_release);
+		Log(Error, "Thread ", m_ID, " died from an unknown unhandled exception outside the task loop"
+			" — this worker will no longer accept tasks.");
+	}
+}
 
-	m_State.store(Thread::State::Released, std::memory_order_release);
-	Log(Success, "Thread ", m_ID, " has been released.");
+uint64_t Thread::GetCaughtExceptionCount() const
+{
+	return m_CaughtExceptionCount.load(std::memory_order_relaxed);
 }
 
 void Thread::Freeze()
