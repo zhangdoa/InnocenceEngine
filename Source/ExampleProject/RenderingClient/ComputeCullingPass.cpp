@@ -1,4 +1,4 @@
-﻿#include "SunShadowCullingPass.h"
+#include "ComputeCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -13,26 +13,25 @@
 
 using namespace Inno;
 
-bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
+bool ComputeCullingPass::Setup(IServiceConfig* systemConfig)
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	const char* l_passName = GetPassName();
+	const std::string l_bufferName = std::string(l_passName) + "/IndirectDrawCommandBuffer";
+	const std::string l_commandListName = std::string(l_passName) + "/Compute";
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowCullingPass");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add(l_passName);
+	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = GetComputeShaderPath();
 
-	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowCulling.comp";
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add(l_passName);
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowCullingPass");
-
-	m_IndirectDrawCommandBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("SunShadowCullingPass/IndirectDrawCommandBuffer");
+	m_IndirectDrawCommandBuffer = g_Engine->Get<GPUBufferResourceService>()->Add(l_bufferName.c_str());
 	m_IndirectDrawCommandBuffer->m_Usage = GPUBufferUsage::IndirectDraw;
 	m_IndirectDrawCommandBuffer->m_ElementCount = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability().maxMeshes;
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
-
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_UseOutputMerger = false;
-
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(4);
@@ -67,47 +66,40 @@ bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("SunShadowCullingPass/Compute");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add(l_commandListName.c_str());
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
-	
 	return true;
 }
 
-bool SunShadowCullingPass::Initialize()
+bool ComputeCullingPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-	
 	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_ShaderProgramComp);
 	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_IndirectDrawCommandBuffer);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
-
 	return true;
 }
 
-bool SunShadowCullingPass::Terminate()
+bool ComputeCullingPass::Terminate()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-
 	g_Engine->Get<GPUBufferResourceService>()->Delete(m_IndirectDrawCommandBuffer);
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
-
 	return true;
 }
 
-ObjectStatus SunShadowCullingPass::GetStatus()
+ObjectStatus ComputeCullingPass::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContext)
+bool ComputeCullingPass::PrepareCommandList(IRenderingContext* /*renderingContext*/)
 {
 	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 	{
@@ -129,46 +121,41 @@ bool SunShadowCullingPass::PrepareCommandList(IRenderingContext* renderingContex
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	// Bind resources for compute shader
-	auto l_perFrameCBuffer = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
+	auto l_perFrameCBuffer    = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_gpuModelDataBuffer = l_drawCallService->GetGPUModelDataBuffer();
-	auto l_materialBuffer = l_drawCallService->GetMaterialBuffer();
+	auto l_materialBuffer     = l_drawCallService->GetMaterialBuffer();
 
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_perFrameCBuffer, 0);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_gpuModelDataBuffer, 1);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_materialBuffer, 2);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_perFrameCBuffer,          0);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_gpuModelDataBuffer,       1);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_materialBuffer,           2);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IndirectDrawCommandBuffer, 3);
 
-	// Dispatch culling compute shader
-	// Calculate thread groups based on model count
-	uint32_t l_threadGroupSize = 64; // Must match THREAD_GROUP_SIZE in shader
-	uint32_t l_threadGroups = (l_modelCount + l_threadGroupSize - 1) / l_threadGroupSize;
-	
-	// Ensure we dispatch at least 1 thread group
-	l_threadGroups = std::max(l_threadGroups, 1u);
+	// Must match THREAD_GROUP_SIZE in the .comp shader.
+	constexpr uint32_t kThreadGroupSize = 64;
+	uint32_t l_threadGroups = (l_modelCount + kThreadGroupSize - 1) / kThreadGroupSize;
+	l_threadGroups = l_threadGroups > 0 ? l_threadGroups : 1;
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, l_threadGroups, 1, 1);
 
-	// Update CPU-side state tracking to UAV so the graphics pass knows to issue
-	// a UAV→INDIRECT_ARGUMENT barrier before ExecuteIndirect. The compute queue
-	// cannot issue a barrier involving INDIRECT_ARGUMENT state, and fence sync
-	// handles memory visibility — only the tracking needs updating.
+	// CPU-side state tracking → UAV so the downstream graphics pass emits
+	// a UAV→INDIRECT_ARGUMENT barrier before ExecuteIndirect. The compute
+	// queue itself can't emit that transition; fence sync covers memory
+	// visibility, we only need to update the tracker.
 	auto l_currentFrame = l_fmService->GetCurrentFrame();
 	m_IndirectDrawCommandBuffer->SetCurrentState(l_currentFrame, m_IndirectDrawCommandBuffer->m_WriteState);
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
-
 	return true;
 }
 
-RenderPassComponent* SunShadowCullingPass::GetRenderPassComp()
+RenderPassComponent* ComputeCullingPass::GetRenderPassComp()
 {
 	return m_RenderPassComp;
 }
 
-GPUResourceComponent* SunShadowCullingPass::GetResult()
+GPUResourceComponent* ComputeCullingPass::GetResult()
 {
 	return m_IndirectDrawCommandBuffer;
 }

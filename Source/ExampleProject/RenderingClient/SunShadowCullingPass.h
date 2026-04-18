@@ -1,27 +1,15 @@
 #pragma once
-#include "../../Engine/Interface/IRenderPass.h"
+#include "ComputeCullingPass.h"
 
 namespace Inno
 {
-	class SunShadowCullingPass : public IRenderPass
+	class SunShadowCullingPass : public ComputeCullingPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(SunShadowCullingPass)
 
-		bool Setup(IServiceConfig* systemConfig = nullptr) override;
-		bool Initialize() override;
-		bool Terminate() override;
-		ObjectStatus GetStatus() override;
-
-		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassComponent* GetRenderPassComp() override;
-
-		GPUResourceComponent* GetResult();
-
-	private:
-		ObjectStatus m_ObjectStatus;
-		RenderPassComponent* m_RenderPassComp;
-		ShaderProgramComponent* m_ShaderProgramComp;
-		GPUBufferComponent* m_IndirectDrawCommandBuffer;
+	protected:
+		const char* GetPassName() const override { return "SunShadowCullingPass"; }
+		const char* GetComputeShaderPath() const override { return "sunShadowCulling.comp"; }
 	};
-} // namespace Inno
+}

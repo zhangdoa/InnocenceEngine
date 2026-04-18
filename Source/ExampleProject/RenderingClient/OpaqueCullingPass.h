@@ -1,27 +1,15 @@
 #pragma once
-#include "../../Engine/Interface/IRenderPass.h"
+#include "ComputeCullingPass.h"
 
 namespace Inno
 {
-	class OpaqueCullingPass : public IRenderPass
+	class OpaqueCullingPass : public ComputeCullingPass
 	{
 	public:
 		INNO_CLASS_SINGLETON(OpaqueCullingPass)
 
-		bool Setup(IServiceConfig* systemConfig = nullptr) override;
-		bool Initialize() override;
-		bool Terminate() override;
-		ObjectStatus GetStatus() override;
-
-		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
-		RenderPassComponent* GetRenderPassComp() override;
-
-		GPUResourceComponent* GetResult();
-
-	private:
-		ObjectStatus m_ObjectStatus;
-		RenderPassComponent* m_RenderPassComp;
-		ShaderProgramComponent* m_ShaderProgramComp;
-		GPUBufferComponent* m_IndirectDrawCommandBuffer;
+	protected:
+		const char* GetPassName() const override { return "OpaqueCullingPass"; }
+		const char* GetComputeShaderPath() const override { return "opaqueGPUCulling.comp"; }
 	};
 }
