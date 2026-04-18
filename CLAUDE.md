@@ -196,6 +196,7 @@ After every non-trivial changelist, do a brief retrospective and file a backlog 
 - **No explanatory comments** — only comment when the code itself is not obvious
 - **Validate everything** — build and runtime test before any commit
 - **Services own operation domains, not component types** — a `FooComponent` does not imply a `FooSystem`; multiple services may operate on the same component type independently
+- **Fix at the right layer** — a high-level issue gets a high-level fix, not a low-level workaround. A generic container, pool, or base service must not carry knowledge of a caller's naming conventions, project paths, enum values, or scene assumptions. When the instinct is "add a warning / cast / special case in the foundation class", step up a layer: adjust the caller, formalise the invariant at its source, or add the overload on the owning type. Symptoms of this violation in past sessions: `NormalizeKey` popping caller slashes inside `NamedObjectPool`, hardcoded project paths in `DX12GraphicsHardwareService::TryLoadRenderDocAPI`, `static_cast<int>(lifespan)` at a log call-site instead of registering the enum with `LogService`. The correct fix is always at the layer that *owns* the concept.
 
 ### Mindset (how to think, not just what to do)
 
