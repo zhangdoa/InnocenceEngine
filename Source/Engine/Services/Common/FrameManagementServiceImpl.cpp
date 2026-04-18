@@ -130,9 +130,12 @@ bool FrameManagementService::Update()
 	auto l_captureFrame = g_Engine->getInitConfig().captureFrame;
 	bool l_isCapturing = (l_captureFrame >= 0 && m_FrameCountSinceLaunch == static_cast<uint32_t>(l_captureFrame));
 
-	m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
-	m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
-	m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
+	if (l_isCapturing)
+		m_HardwareService->BeginCapture();
+
+	// BeginFrame waits for the per-queue fences of this frame slot before resetting
+	// allocators, so HasGPUError below sees a GPU that has caught up to prior work.
+	BeginFrame();
 
 	if (m_HardwareService->HasGPUError())
 	{
@@ -149,11 +152,6 @@ bool FrameManagementService::Update()
 		m_FrameCountSinceLaunch++;
 		return false;
 	}
-
-	if (l_isCapturing)
-		m_HardwareService->BeginCapture();
-
-	BeginFrame();
 
 	if (g_Engine->getInitConfig().engineMode == EngineMode::Sidecar)
 	{

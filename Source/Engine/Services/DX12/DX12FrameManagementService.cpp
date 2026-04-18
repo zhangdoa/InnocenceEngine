@@ -1057,6 +1057,14 @@ bool DX12FrameManagementService::ReleaseSwapChainImages()
 bool DX12FrameManagementService::BeginFrame()
 {
     auto l_currentFrame = m_CurrentFrame;
+
+    // Precondition enforced here, not derived from caller ordering: the per-queue fence
+    // values stored for this frame slot must be reached before the matching allocator is
+    // safe to Reset. WaitOnCPU is idempotent when the fence is already past.
+    m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
+    m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
+    m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
+
     if (FAILED(m_ctx->m_directCommandAllocators[l_currentFrame]->Reset()))
     {
         Log(Error, "DX12FrameManagementService::BeginFrame: direct command allocator Reset failed for frame ", l_currentFrame);
