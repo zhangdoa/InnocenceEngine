@@ -453,14 +453,32 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		l_offset.m_IndexCount   = l_indexCount;
 		l_offsets.push_back(l_offset);
 
-		// Collect material for this entity (matching TLAS instance index)
+		// Collect material for this entity (matching TLAS instance index).
+		// Zero-init gives a matte-white Lambert default, which is a visible-but-not-obvious
+		// sentinel. Entities reaching this point without a MaterialComponent or without a
+		// resolvable MaterialAsset are logged once each so the silent default doesn't hide
+		// scene-import gaps or teardown-order bugs.
 		MaterialConstantBuffer l_materialCB = {};
 		auto* l_matComp = l_registry->Get<MaterialComponent>(l_entity);
-		if (l_matComp)
+		if (l_matComp == nullptr)
+		{
+			Log(Warning, "GPUPathTracer: entity '", l_registry->GetName(l_entity),
+				"' (TLAS instance ", l_materials.size(), ") has a MeshComponent but no "
+				"MaterialComponent — falling back to default white Lambert.");
+		}
+		else
 		{
 			auto* l_matAsset = AssetService::GetMaterialAsset(l_matComp->m_Asset);
-			if (l_matAsset)
+			if (l_matAsset == nullptr)
+			{
+				Log(Warning, "GPUPathTracer: entity '", l_registry->GetName(l_entity),
+					"' (TLAS instance ", l_materials.size(), ") MaterialComponent has "
+					"unresolvable asset handle — falling back to default white Lambert.");
+			}
+			else
+			{
 				l_materialCB.m_MaterialAttributes = l_matAsset->m_Attributes;
+			}
 		}
 		for (size_t j = 0; j < MaxTextureSlotCount; j++)
 			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
