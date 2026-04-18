@@ -137,7 +137,7 @@ namespace Inno
 		m_TargetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		m_TargetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		// TODO Phase2-migrate: compute camera-player distance from TransformComponents
-		m_InitialMoveSpeed = 0.05f;
+		m_InitialMoveSpeed = 0.005f;
 		m_MoveSpeed = m_InitialMoveSpeed;
 		m_RotateSpeed = 10.0f;
 

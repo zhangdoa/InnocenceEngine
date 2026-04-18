@@ -36,6 +36,7 @@ namespace Inno
 		std::function<void()> f_sceneLoadingFinishedCallback;
 		std::function<void()> f_loadTestScene;
 		std::function<void()> f_loadGISponza;
+		std::function<void()> f_loadGITestBox;
 		std::function<void()> f_convertModel;
 
 		std::function<void()> f_runRayTracing;
@@ -86,6 +87,10 @@ namespace Inno
 			g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GISponza.InnoScene", true);
 			};
 
+		f_loadGITestBox = []() {
+			g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GITestBox.InnoScene", true);
+			};
+
 		f_convertModel = []() {
 			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/Sponza_PBR/main1_sponza/NewSponza_Main_glTF_003.gltf");
 			g_Engine->Get<AssetService>()->Import("../OriginalAssets/Models/Sponza_Curtains/pkg_a_curtains/NewSponza_Curtains_glTF.gltf");
@@ -98,6 +103,7 @@ namespace Inno
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_L, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadGISponza });
+		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadGITestBox });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 		f_sceneLoadingFinishedCallback = [&]() {
