@@ -3,9 +3,10 @@ id: TASK-61
 title: >-
   Draw culling drops ground mesh at low camera pitch (both UnitTest landscape
   and Sponza)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 09:51'
+updated_date: '2026-04-18 15:08'
 labels:
   - bug
   - culling
@@ -33,3 +34,9 @@ User report (2026-04-18): when the camera pitches down past a certain angle, the
 2. Print ground's computed world-space AABB and the six frustum planes at the failing camera pose — check which plane rejects it.
 3. Repro with a simpler cuboid of known size to narrow scene-data vs code.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fixed in commit 44be771d `fix(culling): clip-space plane test handles AABBs that straddle near plane (TASK-61)` — rewrote the culling test to stay in clip space (valid for any sign of w) so AABBs that cross the near plane no longer false-negative from a perspective-divide sign flip. Status file was stale.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -3,9 +3,10 @@ id: TASK-65
 title: >-
   Move PathTracerPayload to shared .hlsli to eliminate hand-synced struct across
   raygen/miss/closesthit
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 14:36'
+updated_date: '2026-04-18 14:55'
 labels:
   - refactor
   - shader
@@ -52,9 +53,15 @@ Any future field added there automatically shows up in all stages; layout diverg
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Extract PathTracerPayload + ShadowPayload to shared hlsli
-- [ ] #2 All three shaders include the hlsli; no local duplicates remain
-- [ ] #3 MaxPayloadSizeInBytes constant is traceable to the struct size (comment references the hlsli)
-- [ ] #4 gpu_path_tracer auto-test renders Sponza geometry
-- [ ] #5 RenderTest / Main 10-frame / reload all exit 0
+- [x] #1 Extract PathTracerPayload + ShadowPayload to shared hlsli
+- [x] #2 All three shaders include the hlsli; no local duplicates remain
+- [x] #3 MaxPayloadSizeInBytes constant is traceable to the struct size (comment references the hlsli)
+- [x] #4 gpu_path_tracer auto-test renders Sponza geometry
+- [x] #5 RenderTest / Main 10-frame / reload all exit 0
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shared Source/Shaders/HLSL/common/pathTracerPayload.hlsli now holds PathTracerPayload + ShadowPayload; all five path tracer shaders (raygen, miss, closest-hit, any-hit, shadow-miss) include it. MaxPayloadSizeInBytes in DX12RenderPassResourceService.cpp has a comment pointing back to the hlsli as the single source of truth. Landed with TASK-19 in commit 930e8f10.
+<!-- SECTION:FINAL_SUMMARY:END -->

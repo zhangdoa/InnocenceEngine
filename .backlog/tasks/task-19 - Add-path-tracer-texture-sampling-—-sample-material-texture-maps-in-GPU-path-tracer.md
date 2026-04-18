@@ -3,10 +3,10 @@ id: TASK-19
 title: >-
   Add path tracer texture sampling — sample material texture maps in GPU path
   tracer
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-13 08:05'
-updated_date: '2026-04-18 11:39'
+updated_date: '2026-04-18 14:55'
 labels:
   - rendering
   - path-tracer
@@ -47,3 +47,9 @@ All three regression tiers exit 0 (no behavioural change yet — the sample is s
 - In `ClosestHitShader`, sample `in_MaterialBuffer[instanceID].TextureIndices[1]` (albedo), [0] (normal → tangent-space transform), [2] (metallic), [3] (roughness) when the index is not `INVALID_TEXTURE_INDEX`, else fall back to the scalar material attributes. Pattern: `opaqueGeometryProcessPass.frag` lines 60-105.
 - Normal-map unpacking requires a per-vertex tangent, which `GPUPathTracerVertex` doesn't carry yet; either add tangent to the vertex struct or fall back to object-space normals when no tangent is available.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Bindless material texture sampling landed in commit 930e8f10. Closest-hit samples g_MaterialTextures[TextureIndices[slot]] with NonUniformResourceIndex; scalar CB values are the fallback when a slot is PT_INVALID_TEXTURE_INDEX. Path tracer and rasterizer now share the same bindless index space, so a material maps to the same textures in both pipelines. Payload was moved to common/pathTracerPayload.hlsli alongside this change (TASK-65) so layout stays consistent across all DXR stages.
+<!-- SECTION:FINAL_SUMMARY:END -->
