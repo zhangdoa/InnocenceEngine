@@ -1,11 +1,14 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+// Must stay in layout-lockstep with the struct in GPUPathTracerRayGen.hlsl and
+// GPUPathTracerMiss.hlsl — DXR gives all three shader stages one flat payload
+// blob, so any field added here must also be added there, otherwise a write
+// here silently clobbers a different field when raygen reads it.
 struct PathTracerPayload
 {
     float3 hitPos;
     float3 normal;
-    float2 texCoord;
     float3 albedo;
     float  metalness;
     float  roughness;
@@ -93,14 +96,15 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
     float2 uv0 = LoadVertexUV(offsets.vertexOffset, indices.x);
     float2 uv1 = LoadVertexUV(offsets.vertexOffset, indices.y);
     float2 uv2 = LoadVertexUV(offsets.vertexOffset, indices.z);
-    payload.texCoord = uv0 * baryW + uv1 * barycentrics.x + uv2 * barycentrics.y;
+    float2 texCoord = uv0 * baryW + uv1 * barycentrics.x + uv2 * barycentrics.y;
 
     MaterialCB mat = in_MaterialBuffer[instanceID];
     // TODO(TASK-19): sample mat.TextureIndices[1] (albedo) / [0] (normal) / [2]
     // (metallic) / [3] (roughness) from a bindless Texture2D array once the
-    // raytracing PSO gets a bindless SRV heap + sampler bound. For now the
-    // payload carries the interpolated UV so the sample call is a one-line
-    // addition once the bindings land.
+    // raytracing PSO gets a bindless SRV heap + sampler bound. Keep texCoord
+    // local — DXR payloads are one flat blob shared across all hit/miss/gen
+    // stages, so adding fields only the hit uses wastes per-ray storage and
+    // invites layout-divergence bugs.
     payload.albedo    = float3(mat.AlbedoR, mat.AlbedoG, mat.AlbedoB);
     payload.metalness = mat.Metallic;
     payload.roughness = mat.Roughness;
