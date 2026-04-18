@@ -268,12 +268,6 @@ bool LightDataServiceImpl::UpdateCSMData()
 		l_CB.AABBMax = l_AABBWorld.m_boundMax;
 		l_CB.AABBMin = l_AABBWorld.m_boundMin;
 		m_CSMCBVector.emplace_back(l_CB);
-
-		Log(Verbose, "CSM cascade ", i,
-			" worldAABB min=(", l_AABBWorld.m_boundMin.x, ",", l_AABBWorld.m_boundMin.y, ",", l_AABBWorld.m_boundMin.z,
-			") max=(", l_AABBWorld.m_boundMax.x, ",", l_AABBWorld.m_boundMax.y, ",", l_AABBWorld.m_boundMax.z, ")",
-			" lightAABB min=(", l_AABBLight.m_boundMin.x, ",", l_AABBLight.m_boundMin.y, ",", l_AABBLight.m_boundMin.z,
-			") max=(", l_AABBLight.m_boundMax.x, ",", l_AABBLight.m_boundMax.y, ",", l_AABBLight.m_boundMax.z, ")");
 	}
 
 	return true;
