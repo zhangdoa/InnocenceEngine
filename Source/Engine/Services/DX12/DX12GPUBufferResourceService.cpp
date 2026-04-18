@@ -243,6 +243,20 @@ bool DX12GPUBufferResourceService::UpdateRaytracingInstances()
 	if (!l_needRebuild)
 		return true;
 
+	{
+		size_t l_dirtyCount = 0;
+		for (EntityID l_entity : l_meshOwners)
+		{
+			auto* l_world = l_registry->Get<WorldTransformComponent>(l_entity);
+			if (l_world && l_world->m_Dirty)
+				++l_dirtyCount;
+		}
+		Log(Verbose, "TLAS rebuild: frame=",
+			g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch(),
+			" instances=", l_meshOwners.size(), " prevCount=", m_PrevInstanceCount,
+			" dirtyTransforms=", l_dirtyCount);
+	}
+
 	auto l_swapChainImageCount = g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount();
 
 	for (size_t frameIndex = 0; frameIndex < l_swapChainImageCount; frameIndex++)

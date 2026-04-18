@@ -269,6 +269,9 @@ bool GPUPathTracerPass::Update()
 
 	if (std::memcmp(&l_perFrameCB.v, &m_PrevViewMatrix, sizeof(Math::Mat4)) != 0)
 	{
+		Log(Verbose, "GPUPathTracer: accumulation reset at frame ",
+			g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch(),
+			" after ", m_FrameCount, " accumulated samples (view matrix changed).");
 		m_FrameCount = 1;
 		m_PrevViewMatrix = l_perFrameCB.v;
 	}
