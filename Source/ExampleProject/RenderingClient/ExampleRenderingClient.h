@@ -15,6 +15,7 @@ namespace Inno
 		bool Update() override;
 		bool PrepareCommands() override;
 		bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) override;
+		bool FinalizeGPUResults() override;
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;

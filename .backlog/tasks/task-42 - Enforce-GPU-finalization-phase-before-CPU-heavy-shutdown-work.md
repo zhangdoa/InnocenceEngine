@@ -1,9 +1,10 @@
 ---
 id: TASK-42
 title: Enforce GPU finalization phase before CPU-heavy shutdown work
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 16:00'
+updated_date: '2026-04-18 17:45'
 labels:
   - structural
   - lifecycle
@@ -22,3 +23,9 @@ priority: low
 
 Immediate fix was applied in commit de88a521 — moved readback to last Update frame. This task tracks making the ordering invariant explicit.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added `IRenderingClient::FinalizeGPUResults()` as an explicit phase called by `Engine::Terminate` AFTER `WaitForGPUIdle` and BEFORE any LogicClient CPU-heavy work. ExampleRenderingClient overrides it to run the auto-capture readback as a structural fallback when the per-frame trigger in ExecuteCommands didn't fire (e.g. user exited before the trigger frame). Readback extracted into `TryWriteAutoCapture` to share between the two call sites. The "GPU alive during readback" invariant is now structural: the phase is named, doc'd in the interface, and invoked at the single correct point in shutdown — no more relying on line placement inside Terminate.
+<!-- SECTION:FINAL_SUMMARY:END -->

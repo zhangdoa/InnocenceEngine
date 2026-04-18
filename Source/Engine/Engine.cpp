@@ -866,7 +866,19 @@ bool Engine::Terminate()
 		Get<FrameManagementService>()->WaitForGPUIdle();
 	}
 
-	// Only terminate LogicClient if it exists
+	// Phase 1 of shutdown — GPU-alive finalization. Anything that needs a
+	// working GPU (readback, final flush, capture save) runs here, before
+	// LogicClient::Terminate starts any long-running CPU work. This makes
+	// the "GPU alive during readback" invariant structural instead of
+	// depending on where a line happens to sit in Terminate (see TASK-42).
+	if (!m_pImpl->m_initConfig.isHeadless && m_pImpl->m_RenderingClient) {
+		if (!m_pImpl->m_RenderingClient->FinalizeGPUResults())
+			Log(Warning, "RenderingClient::FinalizeGPUResults reported failure; continuing shutdown.");
+	}
+
+	// Phase 2 — LogicClient CPU-heavy shutdown (CPU path tracer, physics
+	// teardown, etc.). GPU may become unresponsive mid-way (TDR) during
+	// this phase; nothing here may touch GPU resources.
 	if (m_pImpl->m_LogicClient) {
 		if (!m_pImpl->m_LogicClient->Terminate())
 		{

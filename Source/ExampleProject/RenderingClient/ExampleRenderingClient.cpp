@@ -62,9 +62,16 @@ namespace Inno
 		bool Update() override;
 		bool PrepareCommands() override;
 		bool ExecuteCommands(IRenderingConfig* renderingConfig = nullptr) override;
+		bool FinalizeGPUResults() override;
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
+
+		// Readback the final blend output and save gpu_output.png. Callable
+		// from any point where the GPU is still alive (per-frame trigger or
+		// the Engine::Terminate GPU-finalization phase). Idempotent — sets
+		// m_autoCaptureWritten so later calls no-op.
+		void TryWriteAutoCapture();
 
 		std::function<void()> f_showLightHeatmap;
 		std::function<void()> f_showProbe;
@@ -687,76 +694,15 @@ namespace Inno
 			? static_cast<uint32_t>(l_totalFrames)
 			: (l_isPathTracerTestMode ? 30u : 0u);
 
+		// Per-frame trigger: mid-session snapshot (e.g. path tracer frame 30).
+		// The structural fallback is FinalizeGPUResults, which runs at shutdown
+		// after WaitForGPUIdle and catches any case the per-frame trigger missed
+		// (e.g. the user exited before the trigger frame). TASK-42.
 		if (l_triggerAtFrame > 0 && !m_autoCaptureWritten)
 		{
 			m_autoCaptureFrameCount++;
 			if (m_autoCaptureFrameCount >= l_triggerAtFrame)
-			{
-				m_autoCaptureWritten = true;
-
-				// Readback on the last rendered frame while the GPU is still alive.
-				// Deferring to Terminate() fails because the CPU path tracer runs first
-				// and the GPU device times out during the 14-second idle period.
-				auto l_fmService = g_Engine->Get<FrameManagementService>();
-				auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
-				l_hwService->SignalOnGPU(l_fmService->GetGlobalSemaphore(), GPUEngineType::Graphics);
-				auto l_semVal = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
-				l_hwService->WaitOnCPU(l_semVal, GPUEngineType::Graphics);
-
-				auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-				auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
-				l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
-				auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
-					FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
-
-				if (!l_floatPixels.empty())
-				{
-					size_t l_zeroCount = 0, l_nonZeroCount = 0;
-					float l_sumR = 0, l_sumG = 0, l_sumB = 0, l_maxR = 0, l_maxG = 0, l_maxB = 0;
-					for (const auto& px : l_floatPixels)
-					{
-						const bool l_isZero = (px.x == 0.0f && px.y == 0.0f && px.z == 0.0f);
-						if (l_isZero) { l_zeroCount++; }
-						else
-						{
-							l_nonZeroCount++;
-							l_sumR += px.x; l_sumG += px.y; l_sumB += px.z;
-							if (px.x > l_maxR) l_maxR = px.x;
-							if (px.y > l_maxG) l_maxG = px.y;
-							if (px.z > l_maxB) l_maxB = px.z;
-						}
-					}
-					const float l_total = static_cast<float>(l_floatPixels.size());
-					Log(Success, "PathTracerReadback: total=", l_floatPixels.size(),
-						" zero=", l_zeroCount, " nonZero=", l_nonZeroCount,
-						" mean=(", l_sumR / l_total, ",", l_sumG / l_total, ",", l_sumB / l_total, ")",
-						" max=(", l_maxR, ",", l_maxG, ",", l_maxB, ")");
-
-					std::vector<uint8_t> l_uint8Pixels;
-					l_uint8Pixels.reserve(l_floatPixels.size() * 4);
-					for (const auto& px : l_floatPixels)
-					{
-						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.x, 0.0f)), 1.0f)));
-						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.y, 0.0f)), 1.0f)));
-						l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.z, 0.0f)), 1.0f)));
-						l_uint8Pixels.push_back(uint8_t(255));
-					}
-
-					TextureDesc l_desc = l_srcTex->m_TextureDesc;
-					l_desc.PixelDataType = TexturePixelDataType::UByte;
-					l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-					l_desc.Sampler = TextureSampler::Sampler2D;
-
-					if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
-						Log(Success, "Auto-capture: gpu_output.png written on last frame.");
-					else
-						Log(Warning, "Auto-capture: failed to write gpu_output.png.");
-				}
-				else
-				{
-					Log(Warning, "Auto-capture: ReadTextureBackToCPU returned empty on last frame.");
-				}
-			}
+				TryWriteAutoCapture();
 		}
 
 		if (g_Engine->getInitConfig().isAudit)
@@ -766,6 +712,85 @@ namespace Inno
 				AuditDump();
 		}
 
+		return true;
+	}
+
+	void ExampleRenderingClientImpl::TryWriteAutoCapture()
+	{
+		if (m_autoCaptureWritten)
+			return;
+		m_autoCaptureWritten = true;
+
+		auto l_fmService = g_Engine->Get<FrameManagementService>();
+		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+		l_hwService->SignalOnGPU(l_fmService->GetGlobalSemaphore(), GPUEngineType::Graphics);
+		auto l_semVal = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
+		l_hwService->WaitOnCPU(l_semVal, GPUEngineType::Graphics);
+
+		auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+		auto l_texFrameIndex = l_srcTex->m_TextureDesc.IsMultiBuffer ? l_fmService->GetCurrentFrame() : 0u;
+		l_srcTex->SetCurrentState(l_texFrameIndex, l_srcTex->m_WriteState);
+		auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
+			FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
+
+		if (l_floatPixels.empty())
+		{
+			Log(Warning, "Auto-capture: ReadTextureBackToCPU returned empty.");
+			return;
+		}
+
+		size_t l_zeroCount = 0, l_nonZeroCount = 0;
+		float l_sumR = 0, l_sumG = 0, l_sumB = 0, l_maxR = 0, l_maxG = 0, l_maxB = 0;
+		for (const auto& px : l_floatPixels)
+		{
+			const bool l_isZero = (px.x == 0.0f && px.y == 0.0f && px.z == 0.0f);
+			if (l_isZero) { l_zeroCount++; }
+			else
+			{
+				l_nonZeroCount++;
+				l_sumR += px.x; l_sumG += px.y; l_sumB += px.z;
+				if (px.x > l_maxR) l_maxR = px.x;
+				if (px.y > l_maxG) l_maxG = px.y;
+				if (px.z > l_maxB) l_maxB = px.z;
+			}
+		}
+		const float l_total = static_cast<float>(l_floatPixels.size());
+		Log(Success, "PathTracerReadback: total=", l_floatPixels.size(),
+			" zero=", l_zeroCount, " nonZero=", l_nonZeroCount,
+			" mean=(", l_sumR / l_total, ",", l_sumG / l_total, ",", l_sumB / l_total, ")",
+			" max=(", l_maxR, ",", l_maxG, ",", l_maxB, ")");
+
+		std::vector<uint8_t> l_uint8Pixels;
+		l_uint8Pixels.reserve(l_floatPixels.size() * 4);
+		for (const auto& px : l_floatPixels)
+		{
+			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.x, 0.0f)), 1.0f)));
+			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.y, 0.0f)), 1.0f)));
+			l_uint8Pixels.push_back(uint8_t(255.99f * std::min(sqrtf(std::max(px.z, 0.0f)), 1.0f)));
+			l_uint8Pixels.push_back(uint8_t(255));
+		}
+
+		TextureDesc l_desc = l_srcTex->m_TextureDesc;
+		l_desc.PixelDataType = TexturePixelDataType::UByte;
+		l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+		l_desc.Sampler = TextureSampler::Sampler2D;
+
+		if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
+			Log(Success, "Auto-capture: gpu_output.png written.");
+		else
+			Log(Warning, "Auto-capture: failed to write gpu_output.png.");
+	}
+
+	bool ExampleRenderingClientImpl::FinalizeGPUResults()
+	{
+		// Structural fallback for the per-frame auto-capture trigger in
+		// ExecuteCommands. Engine::Terminate calls this AFTER WaitForGPUIdle
+		// and BEFORE the LogicClient CPU path tracer, so the GPU is guaranteed
+		// alive and a readback/PNG write here is safe. Per-frame trigger
+		// usually wins (m_autoCaptureWritten is already set); this catches
+		// the "user exited before the trigger frame fired" case.
+		if (g_Engine->getInitConfig().totalFrames > 0 && !m_autoCaptureWritten)
+			TryWriteAutoCapture();
 		return true;
 	}
 
@@ -922,6 +947,11 @@ bool ExampleRenderingClient::PrepareCommands()
 bool ExampleRenderingClient::ExecuteCommands(IRenderingConfig* renderingConfig)
 {
 	return m_Impl->ExecuteCommands(renderingConfig);
+}
+
+bool ExampleRenderingClient::FinalizeGPUResults()
+{
+	return m_Impl->FinalizeGPUResults();
 }
 
 bool ExampleRenderingClient::Terminate()
