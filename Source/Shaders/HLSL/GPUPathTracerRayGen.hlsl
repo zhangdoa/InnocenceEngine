@@ -211,7 +211,17 @@ void RayGenShader()
 
         if (payload.missed)
         {
-            radiance += throughput * SkyColor(ray.Direction);
+            // Primary miss (camera ray straight to sky): keep the full HDR
+            // value so looking at the sky is correctly bright.
+            // Indirect miss (bounce > 0): an interior bounce that escaped to
+            // sky. These are the firefly source — throughput is tiny, sky is
+            // huge, their product occasionally explodes and (even though the
+            // accumulator averages) biases the converged mean toward white
+            // over many frames. Clamp indirect sky contributions.
+            float3 skyContribution = throughput * SkyColor(ray.Direction);
+            if (bounce > 0)
+                skyContribution = min(skyContribution, float3(50.0f, 50.0f, 50.0f));
+            radiance += skyContribution;
             break;
         }
 
