@@ -93,6 +93,7 @@ namespace Inno
 		std::unordered_set<EntityID> m_WarnedMissingMaterial;
 
 		void RebuildGeometryBuffers();
+		void RefreshMaterialTextureIndices();
 		bool AreMeshesGPUReady();
 	};
 }

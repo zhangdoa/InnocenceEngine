@@ -277,6 +277,20 @@ bool GPUPathTracerPass::Update()
 		m_PendingGeometryRebuild = false;
 	}
 
+	// Texture-index refresh: deferred texture init can lag the initial
+	// RebuildGeometryBuffers by a frame or more (scene load enqueues
+	// textures; InitializeComponents promotes them to Activated next
+	// frame). Gating the one-shot rebuild on all-textures-ready doesn't
+	// work because at least one Sponza texture stays stuck in Created
+	// forever. So: re-resolve material texture indices every frame and
+	// re-upload the material buffer. Cheap (< 5 KB/frame for Sponza) and
+	// incremental — each frame any newly-Activated texture gets its
+	// bindless index written in. Was the root cause of TASK-74 (curtains
+	// rendering white: their BaseColor textures weren't Activated when
+	// the one-shot rebuild ran, so TextureIndices stayed INVALID and the
+	// shader fell back to the glTF (1,1,1) default).
+	RefreshMaterialTextureIndices();
+
 	const bool l_geometryReady =
 		m_MegaVertexBuffer && m_MegaVertexBuffer->m_ObjectStatus == ObjectStatus::Activated &&
 		m_MegaIndexBuffer  && m_MegaIndexBuffer->m_ObjectStatus  == ObjectStatus::Activated &&
@@ -662,4 +676,68 @@ bool GPUPathTracerPass::AreMeshesGPUReady()
 	}
 
 	return true;
+}
+
+void GPUPathTracerPass::RefreshMaterialTextureIndices()
+{
+	// Re-resolve every material's bindless texture indices and re-upload
+	// the material buffer. Iterates the same mesh owners in the same order
+	// as RebuildGeometryBuffers (m_BuiltMeshCount gate — skip until first
+	// rebuild completed, so TLAS instance ordering matches). Textures that
+	// were pending when the rebuild ran get their correct bindless index
+	// here on later frames once InitializeComponents Activates them.
+	if (m_BuiltMeshCount == 0) return;
+	if (!m_MaterialBuffer || m_MaterialBuffer->m_ObjectStatus != ObjectStatus::Activated) return;
+
+	auto l_registry = g_Engine->Get<EntityRegistry>();
+	auto& l_meshStorage = l_registry->Storage<MeshComponent>();
+	const auto& l_meshOwners = l_meshStorage.AllOwners();
+	auto* l_texService = g_Engine->Get<TextureResourceService>();
+
+	std::vector<MaterialConstantBuffer> l_materials;
+	l_materials.reserve(m_BuiltMeshCount);
+
+	for (EntityID l_entity : l_meshOwners)
+	{
+		auto* l_mesh = l_registry->Get<MeshComponent>(l_entity);
+		if (!l_mesh || !l_mesh->m_Asset.IsValid()) continue;
+		if (l_mesh->m_ObjectStatus != ObjectStatus::Activated) continue;
+
+		const auto* l_resource = AssetService::GetMeshAsset(l_mesh->m_Asset);
+		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident) continue;
+
+		MaterialConstantBuffer l_materialCB = {};
+		auto* l_matComp = l_registry->Get<MaterialComponent>(l_entity);
+		if (l_matComp)
+		{
+			auto* l_matAsset = AssetService::GetMaterialAsset(l_matComp->m_Asset);
+			if (l_matAsset)
+				l_materialCB.m_MaterialAttributes = l_matAsset->m_Attributes;
+		}
+		for (size_t j = 0; j < MaxTextureSlotCount; j++)
+			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
+
+		if (l_matComp)
+		{
+			auto* l_matAsset = AssetService::GetMaterialAsset(l_matComp->m_Asset);
+			if (l_matAsset)
+			{
+				for (size_t j = 0; j < l_matAsset->m_TextureNames.size() && j < MaxTextureSlotCount; j++)
+				{
+					const auto& l_textureName = l_matAsset->m_TextureNames[j];
+					if (l_textureName.empty()) continue;
+					auto l_texture = l_texService->Find(l_textureName.c_str());
+					if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated) continue;
+					auto l_idx = l_texService->GetIndex(l_texture, Accessibility::ReadOnly);
+					l_materialCB.m_TextureIndices[j] = l_idx.value_or(INVALID_TEXTURE_INDEX);
+				}
+			}
+		}
+		l_materials.push_back(l_materialCB);
+
+		if (l_materials.size() >= m_BuiltMeshCount) break;
+	}
+
+	if (l_materials.size() == m_BuiltMeshCount)
+		g_Engine->Get<GPUBufferResourceService>()->Upload(m_MaterialBuffer, l_materials.data());
 }
