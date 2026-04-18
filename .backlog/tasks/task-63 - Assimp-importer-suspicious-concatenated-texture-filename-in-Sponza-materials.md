@@ -1,9 +1,10 @@
 ---
 id: TASK-63
 title: 'Assimp importer: suspicious concatenated texture filename in Sponza materials'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 11:33'
+updated_date: '2026-04-18 11:54'
 labels:
   - bug
   - asset-pipeline
@@ -31,3 +32,19 @@ Investigate by logging raw `l_AssString.C_Str()` for every `aiTextureType` itera
 
 Not blocking TASK-60 (already closed via shadow fix) but a real data-pipeline correctness bug.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Not a bug. Verified against the source asset package at `OriginalAssets/Models/Sponza_Curtains/pkg_a_curtains/textures/`:
+
+```
+curtain_fabric_Metalness.png
+curtain_fabric_Roughness.png
+curtain_fabric_Roughnesscurtain_fabric_Metalness.png   ← the packed MR texture
+```
+
+The packed glTF metallic-roughness texture (G=roughness, B=metallic) literally ships with that concatenated basename in the upstream asset. Our importer correctly routes it to both slot 2 (metallic) and slot 3 (roughness) via the separate `aiTextureType_METALNESS` and `aiTextureType_DIFFUSE_ROUGHNESS` iterations, and the shader unpacks the channels. No code change needed.
+
+If we ever want cleaner JSON for comparison / debugging, a follow-up could rename the concatenated file on import, but that's a cosmetic preference, not a correctness issue.
+<!-- SECTION:FINAL_SUMMARY:END -->
