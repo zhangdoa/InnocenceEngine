@@ -37,6 +37,12 @@ bool AssimpImporter::Import(const char* FileName)
 #endif
 
 	Assimp::Importer l_Importer;
+	// aiProcess_OptimizeMeshes is intentionally OFF: together with PreTransformVertices
+	// it merges meshes that differ only by material into a single mesh, losing the
+	// per-material split. Concrete symptom on Sponza (glTF): the whole main model
+	// plus curtains collapse down to ~15 meshes all referencing material 0, so at
+	// runtime every surface shows whichever material happened to sort first
+	// (e.g. curtains rendered with pillar/ground texture).
 	const aiScene* l_Scene = l_Importer.ReadFile(l_FullPath.c_str(),
 		aiProcess_Triangulate
 		| aiProcess_GenSmoothNormals
@@ -45,7 +51,6 @@ bool AssimpImporter::Import(const char* FileName)
 		| aiProcess_JoinIdenticalVertices
 		| aiProcess_SplitLargeMeshes
 		//| aiProcess_FindInstances // Do not merge instances so the culling result could be more optimized
-		| aiProcess_OptimizeMeshes
 		| aiProcess_OptimizeGraph
 		| aiProcess_PreTransformVertices // Bake per-node transforms into vertex positions; required for glTF models where orientation is encoded in node transforms (e.g. NewSponza curtains)
 	);

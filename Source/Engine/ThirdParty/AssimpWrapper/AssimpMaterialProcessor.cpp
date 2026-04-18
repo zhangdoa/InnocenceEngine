@@ -12,33 +12,36 @@ using namespace Inno;
 
 bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, uint32_t MaterialIndex, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial)
 {
-	// Some glTF files (notably the Intel/Frostbite Sponza curtains pack) ship
-	// materials with empty `name` fields in the Assimp-exposed aiMaterial.
-	// Keying AllocateMaterialAsset on "" collapses every unnamed material in
-	// the file into one asset — the last import overwrites the previous, and
-	// the N distinct materials share one set of textures (the last one's).
-	// Fall back to a stable per-scene index so unnamed materials stay distinct.
-	const char* l_RawName = Material->GetName().C_Str();
-	std::string l_NameBuf;
-	if (!l_RawName || l_RawName[0] == '\0')
-	{
-		l_NameBuf = "material_" + std::to_string(MaterialIndex);
-		l_RawName = l_NameBuf.c_str();
-	}
-	auto l_MaterialName = l_RawName;
-	Log(Verbose, "Creating MaterialComponent for: ", l_MaterialName);
+	// aiMaterial::GetName() returns aiString BY VALUE. Calling .C_Str() on that
+	// temporary hands out a pointer into the temporary's inline data[] buffer,
+	// which dies at the semicolon — subsequent use is UB (and the prior code,
+	// `auto l_MaterialName = Material->GetName().C_Str();`, hit exactly this).
+	// Hold the aiString alive locally and copy into a std::string that owns
+	// its storage. Same for empty-name fallback: some glTF files (Intel Sponza
+	// curtains pack) ship materials with empty names; synthesize a unique
+	// `material_{index}` so N unnamed materials don't collapse into one asset.
+	aiString l_AiName = Material->GetName();
+	std::string l_MaterialName;
+	const bool l_WasEmpty = (l_AiName.length == 0);
+	if (l_WasEmpty)
+		l_MaterialName = "material_" + std::to_string(MaterialIndex);
+	else
+		l_MaterialName.assign(l_AiName.C_Str(), l_AiName.length);
+
+	Log(Verbose, "Creating MaterialComponent: base='", BaseName, "' idx=", MaterialIndex,
+		" name='", l_MaterialName.c_str(), "'", l_WasEmpty ? " (synthesized)" : "");
 
 	OutMaterial = {};
-	auto l_InstanceName = std::string(BaseName) + "." + l_MaterialName + ".MaterialComponent";
+	std::string l_InstanceName = std::string(BaseName) + "." + l_MaterialName + ".MaterialComponent";
 	OutMaterial.m_InstanceName = l_InstanceName.c_str();
 
-	auto l_allocation = AssetService::AllocateMaterialAsset(l_MaterialName, ObjectLifespan::Scene);
+	auto l_allocation = AssetService::AllocateMaterialAsset(l_MaterialName.c_str(), ObjectLifespan::Scene);
 	OutMaterial.m_Asset = l_allocation.m_Handle;
 
 	auto* l_assetData = AssetService::GetMaterialAsset(l_allocation.m_Handle);
 	if (!l_assetData)
 	{
-		Log(Error, "Failed to allocate MaterialAsset for: ", l_MaterialName);
+		Log(Error, "Failed to allocate MaterialAsset for: ", l_MaterialName.c_str());
 		return false;
 	}
 
@@ -60,11 +63,11 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 
 	if (l_Result)
 	{
-		Log(Success, "Created and saved MaterialComponent: ", l_MaterialName);
+		Log(Success, "Created and saved MaterialComponent: ", l_MaterialName.c_str());
 	}
 	else
 	{
-		Log(Error, "Failed to save MaterialComponent: ", l_MaterialName);
+		Log(Error, "Failed to save MaterialComponent: ", l_MaterialName.c_str());
 	}
 
 	return l_Result;
