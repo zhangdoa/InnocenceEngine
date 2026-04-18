@@ -3,9 +3,10 @@ id: TASK-74
 title: >-
   Path tracer: indirect desaturates toward white on long accumulation
   (curtain-area specific)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 19:04'
+updated_date: '2026-04-18 19:23'
 labels:
   - path-tracer
   - rendering
@@ -47,3 +48,15 @@ Interactively in GISponza, the first few path-tracer frames after a camera move 
 
 Firefly clamp / variance reduction (denoiser, MIS with balance heuristic) — separate improvements that don't address the curtain-specific desaturation.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Root-caused: `GPUPathTracerPass::RebuildGeometryBuffers` was a one-shot — ran when the scene loaded, resolved material `TextureIndices` from their names, wrote them into the material CB. But the textures it tried to resolve were still in the deferred-init queue at that moment (`TextureResourceService::Initialize` enqueues; `InitializeComponents` processes NEXT frame). Activated-guard skipped them → every albedo slot stayed INVALID → shader fell back to the scalar (1,1,1) that glTF assigns when baseColorFactor is absent → every Sponza surface untextured white. Compounded by a separate real bug I found en route (ClosestHit was reading metallic-roughness from `.r` instead of `.b`/`.g` — fixed in 61a19d9b) which kept the scalar metalness=1 even when the MR texture eventually resolved.
+
+Fix (dd926672): re-resolve every material's texture indices in `Update()` every frame and re-upload the material CB, mirroring DrawCallService's per-frame material pattern. Any texture that finishes deferred init on frame N gets its bindless index picked up on frame N+1.
+
+First attempt (reverted before commit) tried to gate the one-shot rebuild on an `AreTexturesGPUReady()` check. Permanently blocked because at least one Sponza texture (`col_head_2ndfloor_02_Normal`) stays stuck at ObjectStatus::Created forever — filed as a follow-up.
+
+Verified: 30-frame GISponza now shows distinct curtain colors with the lace pattern resolved (cyan/gold variants visible) where previously the curtains were flat white. RenderTest + Main regression green. Remaining colorspace issue (curtains appearing cyan/gold rather than the expected red/green/blue from the source PNGs) is a follow-up about sRGB view format or channel ordering.
+<!-- SECTION:FINAL_SUMMARY:END -->
