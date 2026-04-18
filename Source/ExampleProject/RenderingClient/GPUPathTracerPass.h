@@ -3,6 +3,7 @@
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Component/TextureComponent.h"
 #include "../../Engine/Component/GPUBufferComponent.h"
+#include "../../Engine/Component/SamplerComponent.h"
 #include "../../Engine/Common/EntityID.h"
 #include "../../Engine/Common/GPUDataStructure.h"
 
@@ -61,6 +62,7 @@ namespace Inno
 		TextureComponent*   m_AccumulationBuffer = nullptr;
 		GPUBufferComponent* m_FrameCountCB       = nullptr;
 		GPUBufferComponent* m_LightCountCB       = nullptr;
+		SamplerComponent*   m_MaterialSampler    = nullptr;
 
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;

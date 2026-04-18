@@ -14,6 +14,7 @@
 #include "../../Engine/Services/RenderPassResourceService.h"
 #include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/GPUBufferResourceService.h"
+#include "../../Engine/Services/SamplerResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
@@ -49,8 +50,9 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	// Binding layout: b0=PerFrameCB, b1=FrameCountCB, b2=LightCountCB,
 	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
 	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
-	//                 u0=AccumBuffer
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(11);
+	//                 t7=bindless material textures,
+	//                 u0=AccumBuffer, s0=material sampler
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(13);
 
 	// b0 - PerFrameCB (set 0, binding 0)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -136,6 +138,26 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage            = m_ShaderStage;
 
+	// t7 - bindless material textures (set 1, binding 7, unbounded Texture2D array).
+	// Engine auto-populates this descriptor table from the read-only texture heap;
+	// the closest-hit shader indexes it with MaterialCB::TextureIndices (same index
+	// space as the rasterizer's OpaquePass at register t3).
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType        = GPUResourceType::Image;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage           = TextureUsage::Sample;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex        = 7;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage            = m_ShaderStage;
+
+	// s0 - material sampler (set 3, binding 0)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType        = GPUResourceType::Sampler;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex      = 3;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex        = 0;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_ShaderStage            = m_ShaderStage;
+
+	m_MaterialSampler = g_Engine->Get<SamplerResourceService>()->Add("GPUPathTracerMaterialSampler");
+	m_MaterialSampler->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
+	m_MaterialSampler->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
+
 	m_RayTracingRenderPassComp->m_ShaderProgram = m_RayTracingSPC;
 
 	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Graphics");
@@ -200,6 +222,7 @@ bool GPUPathTracerPass::Initialize()
 	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RayTracingRenderPassComp);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
+	g_Engine->Get<SamplerResourceService>()->Initialize(m_MaterialSampler);
 
 
 
@@ -323,6 +346,8 @@ bool GPUPathTracerPass::Terminate()
 	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RayTracingRenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_RayTracingSPC);
+	if (m_MaterialSampler)
+		g_Engine->Get<SamplerResourceService>()->Delete(m_MaterialSampler);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -377,6 +402,10 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_LightCountCB,                    8);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetPointLightBuffer(),  9);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetSphereLightBuffer(), 10);
+	// nullptr for the bindless Texture2D array: engine auto-binds the read-only
+	// texture heap, same convention as OpaquePass::PrepareCommandList.
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                                                  11);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        12);
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
@@ -487,6 +516,30 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		}
 		for (size_t j = 0; j < MaxTextureSlotCount; j++)
 			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
+
+		// Resolve texture names → bindless SRV heap indices, mirroring
+		// DrawCallService so the path tracer and the rasterizer share the
+		// same index space on g_MaterialTextures.
+		if (l_matComp)
+		{
+			auto* l_matAsset = AssetService::GetMaterialAsset(l_matComp->m_Asset);
+			if (l_matAsset)
+			{
+				auto* l_texService = g_Engine->Get<TextureResourceService>();
+				for (size_t j = 0; j < l_matAsset->m_TextureNames.size() && j < MaxTextureSlotCount; j++)
+				{
+					const auto& l_textureName = l_matAsset->m_TextureNames[j];
+					if (l_textureName.empty())
+						continue;
+					auto l_texture = l_texService->Find(l_textureName.c_str());
+					if (!l_texture || l_texture->m_ObjectStatus != ObjectStatus::Activated)
+						continue;
+					auto l_idx = l_texService->GetIndex(l_texture, Accessibility::ReadOnly);
+					l_materialCB.m_TextureIndices[j] = l_idx.value_or(INVALID_TEXTURE_INDEX);
+				}
+			}
+		}
+
 		l_materials.push_back(l_materialCB);
 
 		const uint8_t* l_vbPtr = static_cast<const uint8_t*>(l_resource->m_MappedMemory_VB);

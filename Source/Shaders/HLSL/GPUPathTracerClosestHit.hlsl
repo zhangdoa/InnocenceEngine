@@ -1,19 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
-
-// Must stay in layout-lockstep with the struct in GPUPathTracerRayGen.hlsl and
-// GPUPathTracerMiss.hlsl — DXR gives all three shader stages one flat payload
-// blob, so any field added here must also be added there, otherwise a write
-// here silently clobbers a different field when raygen reads it.
-struct PathTracerPayload
-{
-    float3 hitPos;
-    float3 normal;
-    float3 albedo;
-    float  metalness;
-    float  roughness;
-    bool   missed;
-};
+#include "common/pathTracerPayload.hlsli"
 
 // Matches GPUPathTracerVertex in GPUPathTracerPass.h
 struct PTVertex
@@ -41,6 +28,13 @@ struct MaterialCB
     uint  MaterialType;
 };
 
+// TextureIndices slot conventions (match the rasterized opaque pass).
+#define PT_TEX_SLOT_NORMAL    0
+#define PT_TEX_SLOT_ALBEDO    1
+#define PT_TEX_SLOT_METALLIC  2
+#define PT_TEX_SLOT_ROUGHNESS 3
+#define PT_INVALID_TEXTURE_INDEX 0xFFFFFFFF
+
 [[vk::binding(2, 1)]]
 StructuredBuffer<PTVertex> in_MegaVertexBuffer : register(t2);
 
@@ -52,6 +46,16 @@ StructuredBuffer<MeshOffsetData> in_MeshOffsets : register(t4);
 
 [[vk::binding(1, 1)]]
 StructuredBuffer<MaterialCB> in_MaterialBuffer : register(t1);
+
+// Bindless material-texture heap. Index with mat.TextureIndices[slot];
+// PT_INVALID_TEXTURE_INDEX means "fall back to the CB scalar". Mirrors
+// g_2DTextures in opaqueGeometryProcessPass.frag so a texture index is
+// interchangeable between the rasterizer and the path tracer.
+[[vk::binding(7, 1)]]
+Texture2D g_MaterialTextures[] : register(t7);
+
+[[vk::binding(0, 3)]]
+SamplerState g_MaterialSampler : register(s0);
 
 uint3 LoadTriangleIndices(uint baseIndex, uint primitiveIndex)
 {
@@ -96,16 +100,30 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
     float2 uv0 = LoadVertexUV(offsets.vertexOffset, indices.x);
     float2 uv1 = LoadVertexUV(offsets.vertexOffset, indices.y);
     float2 uv2 = LoadVertexUV(offsets.vertexOffset, indices.z);
-    float2 texCoord = uv0 * baryW + uv1 * barycentrics.x + uv2 * barycentrics.y;
+    payload.texCoord = uv0 * baryW + uv1 * barycentrics.x + uv2 * barycentrics.y;
 
     MaterialCB mat = in_MaterialBuffer[instanceID];
-    // TODO(TASK-19): sample mat.TextureIndices[1] (albedo) / [0] (normal) / [2]
-    // (metallic) / [3] (roughness) from a bindless Texture2D array once the
-    // raytracing PSO gets a bindless SRV heap + sampler bound. Keep texCoord
-    // local — DXR payloads are one flat blob shared across all hit/miss/gen
-    // stages, so adding fields only the hit uses wastes per-ray storage and
-    // invites layout-divergence bugs.
-    payload.albedo    = float3(mat.AlbedoR, mat.AlbedoG, mat.AlbedoB);
-    payload.metalness = mat.Metallic;
-    payload.roughness = mat.Roughness;
+
+    // Scalar CB values are the fallback; bound-texture sample overrides per-slot.
+    float3 albedo    = float3(mat.AlbedoR, mat.AlbedoG, mat.AlbedoB);
+    float  metalness = mat.Metallic;
+    float  roughness = mat.Roughness;
+
+    // SampleLevel(0) because gradients aren't defined in ray-tracing shaders
+    // (no 2x2 quad neighborhood → can't derive mip level from ddx/ddy).
+    uint albedoIdx = mat.TextureIndices[PT_TEX_SLOT_ALBEDO];
+    if (albedoIdx != PT_INVALID_TEXTURE_INDEX)
+        albedo = g_MaterialTextures[NonUniformResourceIndex(albedoIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).rgb;
+
+    uint metallicIdx = mat.TextureIndices[PT_TEX_SLOT_METALLIC];
+    if (metallicIdx != PT_INVALID_TEXTURE_INDEX)
+        metalness = g_MaterialTextures[NonUniformResourceIndex(metallicIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).r;
+
+    uint roughnessIdx = mat.TextureIndices[PT_TEX_SLOT_ROUGHNESS];
+    if (roughnessIdx != PT_INVALID_TEXTURE_INDEX)
+        roughness = g_MaterialTextures[NonUniformResourceIndex(roughnessIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).r;
+
+    payload.albedo    = albedo;
+    payload.metalness = metalness;
+    payload.roughness = roughness;
 }

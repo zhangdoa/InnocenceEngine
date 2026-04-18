@@ -1,6 +1,7 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 #include "common/skyResolver.hlsl"
+#include "common/pathTracerPayload.hlsli"
 
 [[vk::binding(0, 0)]]
 cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
@@ -22,18 +23,6 @@ StructuredBuffer<SphereLight_CB> g_SphereLights : register(t6);
 
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> AccumBuffer : register(u0);
-
-struct PathTracerPayload
-{
-    float3 hitPos;
-    float3 normal;
-    float3 albedo;
-    float  metalness;
-    float  roughness;
-    bool   missed;
-};
-
-struct ShadowPayload { bool isShadowed; };
 
 uint PCG(inout uint state)
 {

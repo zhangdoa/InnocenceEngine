@@ -1,9 +1,5 @@
 // shadertype=hlsl
-
-struct ShadowPayload
-{
-    bool isShadowed;
-};
+#include "common/pathTracerPayload.hlsli"
 
 [shader("miss")]
 void ShadowMissShader(inout ShadowPayload payload)

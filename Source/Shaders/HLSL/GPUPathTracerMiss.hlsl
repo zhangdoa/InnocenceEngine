@@ -1,15 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
-
-struct PathTracerPayload
-{
-    float3 hitPos;
-    float3 normal;
-    float3 albedo;
-    float  metalness;
-    float  roughness;
-    bool   missed;
-};
+#include "common/pathTracerPayload.hlsli"
 
 [shader("miss")]
 void MissShader(inout PathTracerPayload payload)
