@@ -33,15 +33,7 @@ namespace Inno
 				return nullptr;
 			}
 
-			// Normalize the lookup key: strip trailing '/' (FixedSizeString sacrificial char).
-			// All component names are stored with a trailing '/' so FixedSizeString's
-			// operator= can overwrite it with '\0' without truncating actual content.
-			// Normalizing here lets Find("foo") and Find("foo/") both locate the same entry.
-			std::string l_key = name;
-			if (!l_key.empty() && l_key.back() == '/')
-				l_key.pop_back();
-
-			auto l_existing = m_NameIndex.find(l_key);
+			auto l_existing = m_NameIndex.find(name);
 			if (l_existing != m_NameIndex.end())
 				return l_existing->second;
 
@@ -55,7 +47,7 @@ namespace Inno
 			l_ptr->m_ObjectStatus = ObjectStatus::Created;
 			l_ptr->m_InstanceName = ObjectName(name);
 
-			m_NameIndex.emplace(l_key, l_ptr);
+			m_NameIndex.emplace(name, l_ptr);
 			m_LiveObjects.emplace_back(l_ptr);
 			return l_ptr;
 		}
@@ -63,19 +55,14 @@ namespace Inno
 		void Release(T* ptr)
 		{
 			if (!ptr) return;
-			// m_InstanceName.c_str() already returns the name without trailing '/' (FixedSizeString
-			// overwrites the sacrificial char with '\0'), matching the normalized key used in Allocate.
-			m_NameIndex.erase(std::string(ptr->m_InstanceName.c_str()));
+			m_NameIndex.erase(ptr->m_InstanceName.c_str());
 			m_LiveObjects.eraseByValue(ptr);
 			m_Pool->Destroy(ptr);
 		}
 
 		T* Find(const char* name)
 		{
-			std::string l_key = name;
-			if (!l_key.empty() && l_key.back() == '/')
-				l_key.pop_back();
-			auto l_result = m_NameIndex.find(l_key);
+			auto l_result = m_NameIndex.find(name);
 			return (l_result != m_NameIndex.end()) ? l_result->second : nullptr;
 		}
 
