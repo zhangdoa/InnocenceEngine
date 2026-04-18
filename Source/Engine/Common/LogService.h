@@ -27,7 +27,12 @@ namespace Inno {
 				LogStartOfLine(LogLevel::Warning, "LogService");
 				LogContent("Fatal error in test mode, exiting with code 1.");
 				LogEndOfLine();
-				std::exit(1);
+				Flush();
+				// _Exit skips CRT static-dtor / atexit teardown. std::exit() races with
+				// the D3D12 runtime when a fatal error is raised from inside a debug
+				// callback — static dtors run while D3D12Core.dll is still unwinding,
+				// producing a /GS stack cookie failure and obscuring the real error.
+				std::_Exit(1);
 			}
 		}
 
