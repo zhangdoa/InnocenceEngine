@@ -1,4 +1,5 @@
 ﻿#include "Engine.h"
+#include <chrono>
 #include "Common/Timer.h"
 #include "Common/LogService.h"
 #include "Common/Memory.h"
@@ -375,6 +376,37 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	// Bake mode (TASK-68): `-bake "path1.gltf;path2.fbx;..."` runs a one-shot
+	// asset-import-then-exit pass with no window or rendering services. The
+	// quoted argument is a `;`-separated list of paths relative to the
+	// working directory. Implies -headless.
+	auto l_bakeArgPos = arg.find("-bake");
+	if (l_bakeArgPos != std::string::npos)
+	{
+		auto l_remainder = arg.substr(l_bakeArgPos + 5);
+		// Accept either `-bake "a;b"` (quoted) or `-bake a;b` (unquoted, ends at next arg).
+		auto l_start = l_remainder.find_first_not_of(" \t");
+		if (l_start != std::string::npos)
+		{
+			size_t l_end = std::string::npos;
+			if (l_remainder[l_start] == '"')
+			{
+				++l_start;
+				l_end = l_remainder.find('"', l_start);
+			}
+			else
+			{
+				l_end = l_remainder.find_first_of(" \t", l_start);
+			}
+			const std::string l_list = l_remainder.substr(
+				l_start, l_end == std::string::npos ? std::string::npos : l_end - l_start);
+			strncpy(l_result.bakeInputs, l_list.c_str(), sizeof(l_result.bakeInputs) - 1);
+			l_result.isBakeMode = true;
+			l_result.isHeadless = true;
+			Log(Success, "Bake mode: will import '", l_result.bakeInputs, "' then exit.");
+		}
+	}
+
 	return l_result;
 }
 
@@ -727,8 +759,13 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 		l_ExampleRenderingClientSetupTask->Wait();
 	}
 
-	// Only setup LogicClient if it exists
-	if (m_pImpl->m_LogicClient) {
+	// Only setup LogicClient if it exists and we're not in bake mode.
+	// Bake is a one-shot asset-import-then-exit flow; LogicClient loads
+	// scenes / spawns players / runs physics — none of which the import
+	// pipeline touches, and scene loading would call WaitForGPUIdle on a
+	// FrameManagementService that has no GraphicsHardwareService wired up
+	// (headless). Skip the whole subsystem.
+	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
 		if (!m_pImpl->m_LogicClient->Setup())
 		{
 			Log(Error, "Logic Client can't be setup!");
@@ -824,8 +861,9 @@ bool Engine::Initialize()
 		}
 	}
 
-	// Only initialize LogicClient if it exists
-	if (m_pImpl->m_LogicClient) {
+	// Only initialize LogicClient if it exists and we're not in bake mode
+	// (see Setup for rationale — bake skips the game layer entirely).
+	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
 		m_pImpl->m_LogicClient->Initialize();
 	}
 
@@ -878,8 +916,9 @@ bool Engine::Terminate()
 
 	// Phase 2 — LogicClient CPU-heavy shutdown (CPU path tracer, physics
 	// teardown, etc.). GPU may become unresponsive mid-way (TDR) during
-	// this phase; nothing here may touch GPU resources.
-	if (m_pImpl->m_LogicClient) {
+	// this phase; nothing here may touch GPU resources. Skipped in bake
+	// mode (client was never Setup/Initialize'd).
+	if (m_pImpl->m_LogicClient && !m_pImpl->m_initConfig.isBakeMode) {
 		if (!m_pImpl->m_LogicClient->Terminate())
 		{
 			Log(Error, "Logic client can't be terminated!");
@@ -959,6 +998,49 @@ bool Engine::Terminate()
 
 bool Engine::Run()
 {
+	// Bake mode (TASK-68): headless, one-shot import-then-exit. The normal
+	// Run loop depends on WindowSystem being Activated; in bake mode we use
+	// the HeadlessWindowService and never enter frame pacing. Split the
+	// `;`-separated bakeInputs list and call AssetService::ImportSync per
+	// path, logging per-file and total wall-clock.
+	if (m_pImpl->m_initConfig.isBakeMode)
+	{
+		const std::string l_list(m_pImpl->m_initConfig.bakeInputs);
+		auto* l_assetService = Get<AssetService>();
+
+		const auto l_batchStart = std::chrono::steady_clock::now();
+		uint32_t l_ok = 0, l_fail = 0;
+		size_t l_pos = 0;
+		while (l_pos < l_list.size())
+		{
+			size_t l_sep = l_list.find(';', l_pos);
+			if (l_sep == std::string::npos) l_sep = l_list.size();
+			const std::string l_path = l_list.substr(l_pos, l_sep - l_pos);
+			l_pos = l_sep + 1;
+			if (l_path.empty()) continue;
+
+			const auto l_fileStart = std::chrono::steady_clock::now();
+			const bool l_result = l_assetService->ImportSync(l_path.c_str());
+			const auto l_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+				std::chrono::steady_clock::now() - l_fileStart).count();
+			if (l_result)
+			{
+				Log(Success, "Bake: ", l_path.c_str(), " imported in ", static_cast<uint64_t>(l_ms), " ms.");
+				++l_ok;
+			}
+			else
+			{
+				Log(Error, "Bake: ", l_path.c_str(), " FAILED after ", static_cast<uint64_t>(l_ms), " ms.");
+				++l_fail;
+			}
+		}
+		const auto l_totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now() - l_batchStart).count();
+		Log(Success, "Bake complete: ", l_ok, " ok, ", l_fail, " failed, total ",
+			static_cast<uint64_t>(l_totalMs), " ms.");
+		return l_fail == 0;
+	}
+
 	while (1)
 	{
 		if (!ExecuteDefaultTask())

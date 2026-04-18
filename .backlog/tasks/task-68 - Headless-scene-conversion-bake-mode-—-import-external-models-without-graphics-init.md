@@ -3,9 +3,10 @@ id: TASK-68
 title: >-
   Headless scene conversion (bake mode) — import external models without
   graphics init
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 14:58'
+updated_date: '2026-04-18 18:26'
 labels:
   - feature
   - tooling
@@ -57,3 +58,9 @@ Before implementing, verify that `AssetService::ImportSync` → `AssimpWrapper::
 - [ ] #4 Converting the 5 Y-key assets succeeds headlessly and produces byte-equivalent output
 - [ ] #5 Wall-clock faster than interactive path; logged per-asset timing
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Landed Option A from the task description: `Main.exe -bake "path1;path2;..."` runs a one-shot asset-import-then-exit pass. `-bake` sets `isBakeMode` in InitConfig and implies `isHeadless` (both in ParseInitConfig and in the early WinMain `l_isHeadless` detection, so CreateRenderingClient / CreateLogicClient are never instantiated). Engine::Run splits the `;`-separated list and calls `AssetService::ImportSync` per path, logging per-file wall-clock and a final total. LogicClient Setup / Initialize / Terminate are skipped in bake mode (they call SceneService::Load → FrameManagementService::WaitForGPUIdle, which has no hardware service wired in headless). WinMain propagates import failure as exit 1, bake success as exit 0. Verified: single-asset bake (bunny 143 ms), two-asset batch (bunny+dragon 2.4 s), nonexistent-path bake (exits 1), RenderTest + Main 3-frame regression green. Prerequisite check from the task — "Verify AssetService::ImportSync has no GPU dependencies" — confirmed by grep: no GraphicsHardwareService / TextureResourceService / etc calls in AssimpWrapper or AssetService::Import path.
+<!-- SECTION:FINAL_SUMMARY:END -->

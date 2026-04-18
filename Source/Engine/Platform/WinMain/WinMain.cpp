@@ -120,7 +120,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
     {
         std::unique_ptr<Engine> m_pEngine = std::make_unique<Engine>();
 
-        bool l_isHeadless = (pScmdline && strstr(pScmdline, "headless") != nullptr);
+        // -bake also implies headless (no rendering services, no window,
+        // no logic client). Detect here so CreateRenderingClient /
+        // CreateLogicClient aren't called just to be destroyed.
+        bool l_isHeadless = (pScmdline && (strstr(pScmdline, "headless") != nullptr
+                                        || strstr(pScmdline, "-bake") != nullptr));
 
         std::unique_ptr<IRenderingClient> l_renderingClient = l_isHeadless ? nullptr : Inno::CreateRenderingClient();
         IRenderingClient* l_renderingClientPtr = l_renderingClient.get();
@@ -134,11 +138,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
         if (!m_pEngine->Initialize())
             return 2;
 
-        m_pEngine->Run();
+        // In normal mode, Run() returns false on shutdown (WM_CLOSE, stand-by)
+        // — that's a clean exit, not an error. In bake mode Run() returns
+        // false only when an import actually failed.
+        const bool l_runOK = m_pEngine->Run();
 
         m_pEngine->Terminate();
 
-        if (m_pEngine->Get<GraphicsHardwareService>()->HasGPUError())
+        // GraphicsHardwareService only exists in non-headless mode.
+        if (!l_isHeadless && m_pEngine->Get<GraphicsHardwareService>()->HasGPUError())
+            return 1;
+
+        // Bake mode: propagate import failure as exit 1 (headless skips the
+        // GPU-error check above, so surface errors through Run's return).
+        if (l_isHeadless && !l_runOK)
             return 1;
 
         if (l_renderingClientPtr && !l_renderingClientPtr->GetValidationPassed())

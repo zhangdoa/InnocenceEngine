@@ -28,6 +28,11 @@ namespace Inno
 		int reloadAtFrame = 0;  // >0: trigger scene reload at this frame
 		int captureFrame = -1;  // >=0: trigger RenderDoc/PIX capture at this frame
 		bool enableGPUValidation = false;  // enable D3D12 GPU-based validation + sync queue validation
+		// Bake mode: run a one-shot asset-import-then-exit pass with no rendering
+		// services or window. `-bake "path1;path2;..."` sets isBakeMode=true,
+		// copies the `;`-separated list into bakeInputs, and implies isHeadless.
+		bool isBakeMode = false;
+		char bakeInputs[1024] = {};
 	};
 
 	class IWindowService;
