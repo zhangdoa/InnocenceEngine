@@ -3,10 +3,10 @@ id: TASK-52
 title: >-
   RadianceCacheReprojectionPass compute dispatch hangs GPU
   (DXGI_ERROR_DEVICE_HUNG) on GISponza auto-test
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-16 20:18'
-updated_date: '2026-04-17 11:21'
+updated_date: '2026-04-18 07:42'
 labels:
   - bug
   - gpu
@@ -113,4 +113,25 @@ l_gpuModelData.m_IndexBufferAddress  = l_resource->m_IndexBufferView.m_BufferLoc
 5. Grep `MeshResourceService::OnSceneUnloading` for whether it clears any per-frame CPU-side VA caches, or only frees the GPU buffers.
 
 The fundamental issue is that the engine hands raw GPU VAs to the GPU command processor without lifetime coupling — the VA outlives the buffer, and the GPU can dereference a freed address. The architectural fix category is "manage mesh GPU-address table as a GPU resource with explicit lifetime", not a one-line patch.
+
+## Resolution (2026-04-18)
+
+Root cause was upstream of the reprojection dispatch: `NamedObjectPool::Allocate`
+unconditionally stripped the last character of every caller-supplied name before
+using it as the LUT key. For systematic naming patterns like `*_RT_0 / _1 / _2`
+or `RadianceCache_Odd / _Even`, this collapsed multiple distinct names onto the
+same key, so second and third `Add()` calls returned the first texture. Every
+pass that allocated sibling textures with a single-character-differentiated
+suffix silently aliased them. The reprojection pass was reading from / writing
+to textures that were simultaneously bound as inputs or outputs of *other*
+passes; the GPU hit undefined state and TDR'd.
+
+Fixed in 5a4050c2 (`fix(engine): NamedObjectPool::Allocate must not strip last
+char`). Verified: Main.exe `-total_frames 10`, `-total_frames 30`, and
+`-total_frames 20 -reload_at_frame 10` all exit 0 on GISponza post-fix.
+
+The architectural hardening noted above (explicit lifetime tracking for mesh
+GPU-address tables) is still worth pursuing — tracked separately by task-32
+(fence-based command allocator lifetime) and the mesh VA lifetime concern
+should be a follow-up task if it recurs.
 <!-- SECTION:NOTES:END -->
