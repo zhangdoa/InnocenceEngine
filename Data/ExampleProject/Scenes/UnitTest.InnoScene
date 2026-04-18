@@ -51,7 +51,7 @@
             "Components": [
                 {"Type": 1, "Name": "UnitTest.Orb.TransformComponent"}
             ],
-            "ChildScene": "Generated/Scenes/UnitTest.ShaderBall.InnoScene"
+            "ChildScene": "ExampleProject/Scenes/UnitTest.ShaderBall.InnoScene"
         },
         {
             "Name": "Prim.Triangle",
