@@ -3,9 +3,10 @@ id: TASK-51
 title: >-
   Replace uint64_t-stored COM pointers with typed pointers in GPU resource
   components
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 19:13'
+updated_date: '2026-04-18 09:30'
 labels:
   - reliability
   - DX12
@@ -33,3 +34,19 @@ priority: medium
 
 **Scope:** `m_CommandList`, `m_PipelineStateObject`, `m_DeviceMemories[]`, `m_MappedMemories[]` in DX12FrameManagementService.cpp and DX12GPUBufferResourceService.cpp
 <!-- SECTION:DESCRIPTION:END -->
+
+## Resolution (2026-04-18)
+
+Took option 3 at the unsafe surface: `DX12Helper::AsDX12CommandList(CommandListComponent*)` now centralises the `uint64_t → ID3D12GraphicsCommandList7*` cast with a logged-error guard on null. Errors escalate to fatal in test mode via the LogService `_Exit` path (landed in 11f3af15), so null never reaches the dereference in automated tests.
+
+- 2c32f0cb — 18 sites in DX12FrameManagementService
+- 345c8fa6 — 2 sites in DX12GPUBufferResourceService  
+- c418ef98 — 5 remaining sites in DX12CommandListResourceService / DX12GraphicsHardwareService / DX12TextureResourceService, plus explicit null-return guard in `Execute` so we never submit a null list to a queue
+
+`m_PipelineStateObject` is already stored as `IPipelineStateObject*` (typed), not `uint64_t`; the casts there are backend downcasts, not type erasure — left as-is.
+
+Remaining type-erasure surfaces that weren't in scope:
+- `TextureComponent::m_GPUResources` → `ID3D12Resource*` (DX12TextureResourceService)
+- `m_DeviceMemories[]` / `m_MappedMemories[]`
+
+The larger refactor — a backend-specific `DX12CommandListComponent` with a typed ComPtr — is still the right endgame. This step narrows the unsafe surface to one place so that refactor becomes mechanical.
