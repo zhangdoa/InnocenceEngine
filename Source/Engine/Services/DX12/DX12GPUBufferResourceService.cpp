@@ -313,7 +313,7 @@ bool DX12GPUBufferResourceService::UploadToGPU(CommandListComponent* commandList
 	if (!deviceMemory->m_DefaultHeapBuffer)
 		return true;
 
-	auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_DX12CommandList = DX12Helper::AsDX12CommandList(commandList);
 
 	l_DX12CommandList->CopyResource(deviceMemory->m_DefaultHeapBuffer.Get(), mappedMemory->m_UploadHeapBuffer.Get());
 
@@ -322,7 +322,7 @@ bool DX12GPUBufferResourceService::UploadToGPU(CommandListComponent* commandList
 
 bool DX12GPUBufferResourceService::Clear(CommandListComponent* commandList, GPUBufferComponent* gpuBuffer)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 
 	ID3D12DescriptorHeap* l_heaps[] = { m_ctx->m_CSUDescHeap.Get() };
 	l_commandList->SetDescriptorHeaps(1, l_heaps);
