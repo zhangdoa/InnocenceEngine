@@ -41,6 +41,15 @@ bool SceneService::LoadSync(const char* fileName)
 	g_Engine->Get<TextureResourceService>()->OnSceneUnloading();
 	g_Engine->Get<MaterialResourceService>()->OnSceneUnloading();
 
+	// 1b. Release scene-lifespan assets from the AssetService asset tables (TASK-52).
+	// Without this, AllocateMeshAsset/Material/Texture continues to return the prior
+	// scene's asset handle on name collision (residency still reads as Resident) while
+	// its underlying GPU resources have just been freed — the new scene's MeshComponent
+	// inherits a stale GPU VA and the first ExecuteIndirect / TLAS build that touches
+	// it page-faults. Releasing here bumps the generation, clears the LUT, and forces
+	// AllocateMeshAsset to hand the new scene a fresh slot.
+	AssetService::ReleaseAssetsByLifespan(ObjectLifespan::Scene);
+
 	// 2. Destroy scene-scoped components
 	g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
 	Log(Success, "Scene entities cleaned up.");

@@ -3,10 +3,10 @@ id: TASK-52
 title: >-
   RadianceCacheReprojectionPass compute dispatch hangs GPU
   (DXGI_ERROR_DEVICE_HUNG) on GISponza auto-test
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-16 20:18'
-updated_date: '2026-04-17 01:29'
+updated_date: '2026-04-17 11:21'
 labels:
   - bug
   - gpu

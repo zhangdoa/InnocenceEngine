@@ -5,6 +5,8 @@
 #include "../Common/EntityID.h"
 #include "../Common/ComponentStorage.h"
 #include "../Common/Object.h"
+#include "../Common/LogService.h"
+#include "../Engine.h"
 #include "../Common/ClassTemplate.h"
 #include "../Interface/IService.h"
 
@@ -99,7 +101,15 @@ namespace Inno
         struct TStorageWrapper : IStorageWrapper
         {
             TComponentStorage<T> m_Storage;
-            void CleanUp(ObjectLifespan Lifespan) override { m_Storage.CleanUp(Lifespan); }
+            void CleanUp(ObjectLifespan Lifespan) override
+            {
+                // TASK-52: log per-storage before/after so a type-specific lifespan mismatch
+                // (component registered with wrong lifespan) is visible by name.
+                auto l_before = m_Storage.Size();
+                m_Storage.CleanUp(Lifespan);
+                auto l_after = m_Storage.Size();
+                Log(Verbose, "  storage<", typeid(T).name(), ">: ", l_before, " -> ", l_after);
+            }
             void Remove(EntityID Entity) override          { m_Storage.Remove(Entity); }
         };
 

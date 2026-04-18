@@ -130,10 +130,16 @@ ObjectLifespan EntityRegistry::GetLifespan(EntityID Entity) const
 void EntityRegistry::CleanUp(ObjectLifespan Lifespan)
 {
     // Step 1: Remove all components for matching entities (before freeing slots)
+    // TASK-52: log storages + their post-cleanup sizes so mismatched-lifespan leaks
+    // (components not removed because they were added with the wrong lifespan, or
+    // because a storage was never registered) become immediately visible.
+    Log(Verbose, "EntityRegistry::CleanUp(Lifespan=", static_cast<int>(Lifespan),
+        ") — iterating ", m_Storages.size(), " storages.");
     for (auto& [l_Key, l_Wrapper] : m_Storages)
         l_Wrapper->CleanUp(Lifespan);
 
     // Step 2: Free entity slots
+    uint32_t l_freed = 0;
     for (EntityID l_Id = 1; l_Id < m_NextID; ++l_Id)
     {
         if (m_Valid[l_Id] && m_Lifespans[l_Id] == Lifespan)
@@ -142,6 +148,9 @@ void EntityRegistry::CleanUp(ObjectLifespan Lifespan)
             m_Lifespans[l_Id] = ObjectLifespan::Invalid;
             m_Names[l_Id]     = {};
             m_FreeList.push_back(l_Id);
+            ++l_freed;
         }
     }
+    Log(Verbose, "EntityRegistry::CleanUp — freed ", l_freed, " entity slots with Lifespan=",
+        static_cast<int>(Lifespan));
 }

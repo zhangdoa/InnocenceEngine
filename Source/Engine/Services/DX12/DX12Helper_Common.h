@@ -114,8 +114,34 @@ namespace Inno
 				if (SUCCEEDED(l_pDred->GetPageFaultAllocationOutput(&l_pageFault)))
 				{
 					if (l_pageFault.PageFaultVA != 0)
+					{
 						g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
 							"DRED Page Fault at VA=0x", l_pageFault.PageFaultVA);
+
+						// Walk the existing-allocations list — resources still live at fault time that
+						// cover the faulting VA. Helps attribute the fault to a named D3D12 resource.
+						int l_existingIdx = 0;
+						for (const D3D12_DRED_ALLOCATION_NODE* l_n = l_pageFault.pHeadExistingAllocationNode;
+							l_n != nullptr && l_existingIdx < 32; l_n = l_n->pNext, ++l_existingIdx)
+						{
+							g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+								"DRED Existing[", l_existingIdx, "]: name='",
+								l_n->ObjectNameW ? l_n->ObjectNameW : L"(null)",
+								"' type=", static_cast<int>(l_n->AllocationType));
+						}
+
+						// Walk the recently-freed-allocations list — resources whose VA range
+						// overlaps the faulting VA. This typically identifies a use-after-free.
+						int l_freedIdx = 0;
+						for (const D3D12_DRED_ALLOCATION_NODE* l_n = l_pageFault.pHeadRecentFreedAllocationNode;
+							l_n != nullptr && l_freedIdx < 32; l_n = l_n->pNext, ++l_freedIdx)
+						{
+							g_Engine->Get<LogService>()->Print(LogLevel::Warning, __FUNCTION__,
+								"DRED RecentlyFreed[", l_freedIdx, "]: name='",
+								l_n->ObjectNameW ? l_n->ObjectNameW : L"(null)",
+								"' type=", static_cast<int>(l_n->AllocationType));
+						}
+					}
 				}
 			}
 			catch (...)
