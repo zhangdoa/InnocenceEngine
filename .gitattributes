@@ -1,0 +1,32 @@
+# Default: auto-detect text, store with LF, check out with LF (no CRLF conversion).
+* text=auto eol=lf
+
+# Windows-only scripts and solution files must keep CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+*.vcxproj.user text eol=crlf
+
+# Binary — never touch line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.tga binary
+*.dds binary
+*.hdr binary
+*.exr binary
+*.bin binary
+*.innobin binary
+*.rdc binary
+*.pdb binary
+*.dll binary
+*.exe binary
+*.lib binary
+*.zip binary
+*.7z binary
