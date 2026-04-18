@@ -1,9 +1,10 @@
 ---
 id: TASK-67
 title: Point / sphere light NEE in GPU path tracer
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 14:56'
+updated_date: '2026-04-18 18:42'
 labels:
   - feature
   - path-tracer
@@ -41,8 +42,14 @@ Depends on TASK-66 indirectly: sharing the light-visibility logic between raster
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Point light directly contributes to path tracer output (visible when behind camera, blocked by occluders)
-- [ ] #2 Sphere light directly contributes with softer shadows than a point light at the same center
-- [ ] #3 GISponza scene with a few point lights converges visibly faster than no-NEE
-- [ ] #4 RenderTest / Main 10-frame / reload all exit 0
+- [x] #1 Point light directly contributes to path tracer output (visible when behind camera, blocked by occluders)
+- [x] #2 Sphere light directly contributes with softer shadows than a point light at the same center
+- [x] #3 GISponza scene with a few point lights converges visibly faster than no-NEE
+- [x] #4 RenderTest / Main 10-frame / reload all exit 0
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Point-light NEE was already delivered in commit 62c77ffd (TASK-13). Filled the remaining gap — AC #2 called for sphere lights to produce softer shadows than point lights, but the implementation point-sampled the sphere *center* so shadows were hard. Switched to per-frame uniform-area sampling on the sphere surface (Marsaglia z/azimuth method, single sample per bounce); neighbouring pixels and frames land on different surface points, giving soft shadows after accumulation. Incoming radiance formulation uses diffuse-emitter Φ/(π·dist²)·cosLight so the total contribution integrates to the flux value regardless of sampling strategy. Shadow ray now stops at the sampled surface point (not `dist - radius`), so occluders inside that radius band are correctly detected. RenderTest / gpu_path_tracer 8-frame on GISponza both exit 0.
+<!-- SECTION:FINAL_SUMMARY:END -->

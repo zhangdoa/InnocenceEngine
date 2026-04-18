@@ -278,18 +278,33 @@ void RayGenShader()
             }
         }
 
-        // Sphere light NEE (point sample at sphere center)
+        // Sphere light NEE — sample a random point on the sphere surface so
+        // neighbouring pixels / frames land on different directions, giving
+        // soft shadows after accumulation. Previous implementation sampled
+        // the center (hard shadows — indistinguishable from a point light).
+        // Uniform-area sampling over the full sphere; a visible-hemisphere
+        // importance sampler would converge faster but the math is larger.
+        // TASK-67 AC #2.
         for (uint spIdx = 0; spIdx < g_SphereLightCount; spIdx++)
         {
-            float3 spPos        = g_SphereLights[spIdx].position.xyz;
+            float3 spCenter     = g_SphereLights[spIdx].position.xyz;
             float  spSphereRad  = g_SphereLights[spIdx].luminousFlux.w;
             float3 spFlux       = g_SphereLights[spIdx].luminousFlux.xyz;
 
-            float3 toLight = spPos - payload.hitPos;
+            // Uniform point on unit sphere (Marsaglia's z/azimuth method).
+            float2 xiSp = Rand2(rng);
+            float  zSp  = 2.0f * xiSp.x - 1.0f;
+            float  phi  = 2.0f * PI * xiSp.y;
+            float  rSp  = sqrt(max(1.0f - zSp * zSp, 0.0f));
+            float3 nLight  = float3(rSp * cos(phi), rSp * sin(phi), zSp);
+            float3 pLight  = spCenter + spSphereRad * nLight;
+
+            float3 toLight = pLight - payload.hitPos;
             float  dist    = length(toLight);
             float3 L       = toLight / dist;
             float NdotL    = max(dot(N, L), 0.0f);
-            if (NdotL <= 0.0f)
+            float cosLight = max(dot(nLight, -L), 0.0f);
+            if (NdotL <= 0.0f || cosLight <= 0.0f)
                 continue;
 
             ShadowPayload spShadow;
@@ -298,15 +313,21 @@ void RayGenShader()
             spShadowRay.Origin    = payload.hitPos + N * RAY_EPSILON;
             spShadowRay.Direction = L;
             spShadowRay.TMin      = RAY_EPSILON;
-            spShadowRay.TMax      = max(dist - spSphereRad - RAY_EPSILON, RAY_EPSILON);
+            // Stop just before the sampled surface point — no self-hit on the sphere.
+            spShadowRay.TMax      = max(dist - RAY_EPSILON, RAY_EPSILON);
             TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
                      0xFF, 0, 0, 1, spShadowRay, spShadow);
 
             if (!spShadow.isShadowed)
             {
-                float  attenuation = 1.0f / max(dist * dist, 0.0001f);
-                float3 irradiance  = spFlux * attenuation;
-                radiance += throughput * CookTorranceGGX(N, V, L, albedo, metalness, roughness) * irradiance;
+                // Treat spFlux as total radiant flux Φ of a uniform diffuse
+                // emitter. Surface radiance L_e = Φ / (π · 4π r²). Area PDF
+                // = 1 / (4π r²). Converting to solid-angle at the shading
+                // point: E = L_e · cosLight · (4π r²) / dist² · (1/sample).
+                // Simplifies to: incomingRadiance = Φ · cosLight / (π · dist²).
+                float  geomTerm = cosLight / max(dist * dist, 0.0001f);
+                float3 incoming = spFlux * geomTerm / PI;
+                radiance += throughput * CookTorranceGGX(N, V, L, albedo, metalness, roughness) * incoming;
             }
         }
 
