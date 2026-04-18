@@ -1,0 +1,54 @@
+---
+id: TASK-77
+title: >-
+  R&D: path tracer denoise + faster convergence → promote to primary rendering
+  pipeline
+status: To Do
+assignee: []
+created_date: '2026-04-18 19:34'
+labels:
+  - R&D
+  - path-tracer
+  - rendering
+  - architecture
+dependencies: []
+priority: medium
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+## Direction
+
+Path tracer quality is now correct (TASK-69 back-face normals, TASK-67 sphere NEE, TASK-74 per-frame material refresh, TASK-77 indirect-sky firefly clamp). Real-time accumulation still needs seconds to converge on Sponza interior — fine for offline / preview stills, not yet fine for interactive framerates. Investigate what it takes to make the path tracer the **primary** rendering pipeline, retiring the rasterized GBuffer-forward chain into a debug / fallback path.
+
+## Two axes, in order of typical impact
+
+### 1. Denoiser
+- **Temporal accumulation reprojection** (already have a TAA pass, reuse its motion vectors): reproject previous-frame's irradiance estimate to this frame via depth+velocity, then blend with current-frame noisy sample. Turns 1 spp/frame into something that looks like 30-60 spp after a second of camera stability.
+- **Spatial edge-aware filter** (à-trous wavelet, bilateral, SVGF): one post-pass on the noisy sample before (or alongside) temporal accumulation. Intel/NVIDIA have OSS implementations that port cleanly to HLSL.
+- **Intel Open Image Denoise / NVIDIA OptiX Denoiser** as the shipping-grade option — integrates as an external SDK.
+- Start simple: temporal + small spatial → evaluate.
+
+### 2. Faster convergence (fewer samples needed per frame)
+- **ReSTIR DI** for direct lighting: spatiotemporal resampling makes NEE trivially convergent for many-light scenes. Biggest one-shot convergence win in the last few years.
+- **Light BVH / alias table** for many-light scenes: even with the current flat light-list NEE, Sponza's small light count is fine, but becomes a bottleneck as soon as the scene gains > 100 lights.
+- **Proper multi-importance sampling (balance heuristic)** between BRDF-sampling and light-sampling lobes — we sample per lobe today with single-lobe PDF, which biases variance.
+- **Stratified sub-pixel sampling + path reuse** (Morton-jittered, or blue noise) instead of Halton-only.
+
+## Why promote path tracer to primary
+
+- Correct GI by construction (no radiance cache to debug, no probe-grid mismatch).
+- Shared shading code with the rasterized OpaquePass already (BRDF, Fresnel, Disney diffuse) so material parity isn't an extra cost.
+- Sponza already renders recognizably at 30-300 frames accumulated; with a denoiser the visible sample count per frame becomes 1 spp + temporal history, which is what the offline-lookalike renderers ship at real-time.
+- Retires two codepaths for shadows / GI / reflection that currently both need maintenance (rasterizer cascaded shadows, radiance cache for GI, reflection probes). One pipeline = less drift.
+
+## Non-goals
+
+This task is **R&D direction**, not a concrete implementation step. Each axis above becomes its own implementation task once the direction is approved. Denoiser first makes the most sense to land earliest — it's independent of the other work.
+
+## Exit criteria for the direction
+
+- GISponza at 1080p renders visually clean (subjective) at ≤ 30 ms / frame on the Laptop GPU target, with the denoiser producing temporally stable output that the user can't distinguish from offline convergence after one second of camera stability.
+- Rasterizer is marked "debug / comparison mode" in the config — only the path tracer is the default render path.
+<!-- SECTION:DESCRIPTION:END -->
