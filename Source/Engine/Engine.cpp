@@ -1000,16 +1000,31 @@ bool Engine::Run()
 {
 	// Bake mode (TASK-68): headless, one-shot import-then-exit. The normal
 	// Run loop depends on WindowSystem being Activated; in bake mode we use
-	// the HeadlessWindowService and never enter frame pacing. Split the
-	// `;`-separated bakeInputs list and call AssetService::ImportSync per
-	// path, logging per-file and total wall-clock.
+	// the HeadlessWindowService and never enter frame pacing.
+	//
+	// Per-file parallelism (TASK-70 axis 1): each path runs as its own
+	// TaskScheduler task, so a 5-model batch fans out across workers instead
+	// of serializing behind a single thread. AssimpWrapper::Import is
+	// thread-safe — each call constructs its own local Assimp::Importer,
+	// writes to unique filenames, and goes through the per-type shared_mutex
+	// -guarded AssetService registries.
 	if (m_pImpl->m_initConfig.isBakeMode)
 	{
 		const std::string l_list(m_pImpl->m_initConfig.bakeInputs);
 		auto* l_assetService = Get<AssetService>();
+		auto* l_taskScheduler = Get<TaskScheduler>();
 
-		const auto l_batchStart = std::chrono::steady_clock::now();
-		uint32_t l_ok = 0, l_fail = 0;
+		struct BakeTask
+		{
+			std::string path;
+			std::atomic<bool> ok{false};
+			std::atomic<int64_t> elapsedMs{0};
+			Handle<ITask> handle;
+		};
+		// deque: pointer stability across push_back (the lambda captures the
+		// atomic members by pointer, so reallocation would dangle).
+		std::deque<BakeTask> l_tasks;
+
 		size_t l_pos = 0;
 		while (l_pos < l_list.size())
 		{
@@ -1019,25 +1034,48 @@ bool Engine::Run()
 			l_pos = l_sep + 1;
 			if (l_path.empty()) continue;
 
-			const auto l_fileStart = std::chrono::steady_clock::now();
-			const bool l_result = l_assetService->ImportSync(l_path.c_str());
-			const auto l_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-				std::chrono::steady_clock::now() - l_fileStart).count();
-			if (l_result)
+			l_tasks.emplace_back();
+			auto& l_entry = l_tasks.back();
+			l_entry.path = l_path;
+			BakeTask* l_entryPtr = &l_entry;
+			l_entry.handle = l_taskScheduler->Submit(
+				ITask::Desc("Bake Import Task", ITask::Type::Once),
+				[l_assetService, l_entryPtr]()
+				{
+					const auto l_fileStart = std::chrono::steady_clock::now();
+					const bool l_result = l_assetService->ImportSync(l_entryPtr->path.c_str());
+					const auto l_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+						std::chrono::steady_clock::now() - l_fileStart).count();
+					l_entryPtr->ok.store(l_result, std::memory_order_release);
+					l_entryPtr->elapsedMs.store(static_cast<int64_t>(l_ms), std::memory_order_release);
+					return l_result;
+				});
+			l_entry.handle->Activate();
+		}
+
+		const auto l_batchStart = std::chrono::steady_clock::now();
+		for (auto& l_entry : l_tasks)
+			l_entry.handle->Wait();
+
+		uint32_t l_ok = 0, l_fail = 0;
+		for (auto& l_entry : l_tasks)
+		{
+			const auto l_ms = static_cast<uint64_t>(l_entry.elapsedMs.load(std::memory_order_acquire));
+			if (l_entry.ok.load(std::memory_order_acquire))
 			{
-				Log(Success, "Bake: ", l_path.c_str(), " imported in ", static_cast<uint64_t>(l_ms), " ms.");
+				Log(Success, "Bake: ", l_entry.path.c_str(), " imported in ", l_ms, " ms.");
 				++l_ok;
 			}
 			else
 			{
-				Log(Error, "Bake: ", l_path.c_str(), " FAILED after ", static_cast<uint64_t>(l_ms), " ms.");
+				Log(Error, "Bake: ", l_entry.path.c_str(), " FAILED after ", l_ms, " ms.");
 				++l_fail;
 			}
 		}
 		const auto l_totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::steady_clock::now() - l_batchStart).count();
-		Log(Success, "Bake complete: ", l_ok, " ok, ", l_fail, " failed, total ",
-			static_cast<uint64_t>(l_totalMs), " ms.");
+		Log(Success, "Bake complete: ", l_ok, " ok, ", l_fail, " failed, wall-clock ",
+			static_cast<uint64_t>(l_totalMs), " ms across ", static_cast<uint32_t>(l_tasks.size()), " files.");
 		return l_fail == 0;
 	}
 

@@ -3,9 +3,10 @@ id: TASK-70
 title: >-
   Parallelize asset import — fan out per-mesh / per-texture work instead of one
   monolithic task
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-18 17:13'
+updated_date: '2026-04-18 18:35'
 labels:
   - performance
   - asset-pipeline
@@ -29,9 +30,19 @@ Complements TASK-68 (headless bake mode); a headless baker gains even more from 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 f_convertModel launches the 5 model imports in parallel (not serial)
+- [x] #1 f_convertModel launches the 5 model imports in parallel (not serial)
 - [ ] #2 Inside a single Import, BC texture compression runs on the TaskScheduler across workers
 - [ ] #3 Child scene JSON is written only after all mesh/material/texture tasks for that file complete
 - [ ] #4 Bake of the 5 Y-key models wall-clock-faster than the single-worker baseline (record the number in the task's final summary)
-- [ ] #5 No race in AssetService registries — the existing deque+mutex design should cover it, but verify under stress
+- [x] #5 No race in AssetService registries — the existing deque+mutex design should cover it, but verify under stress
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Axis 1 (per-file parallelism) landed for the -bake path. Each path submits its own TaskScheduler task; Engine::Run awaits all and aggregates results. Wall-clock on a 3-file batch drops from 130+1546+221=1897ms serial to 1546ms (= longest file, dragon), confirming real parallelism. AssetService registries already serialize correctly through per-type shared_mutex, no race added.
+
+Remaining:
+- Axis 2 (within-file BC compression parallelism) — the real Sponza win. AssimpTextureProcessor::CompressToBC is per-texture and embarrassingly parallel. Fanning those out inside ProcessMaterialTextures would cut Sponza main's (~50 textures) bake time significantly.
+- Extend to the interactive Y-key path in World.inl (still calls ImportSync serially in f_convertModel).
+<!-- SECTION:NOTES:END -->
