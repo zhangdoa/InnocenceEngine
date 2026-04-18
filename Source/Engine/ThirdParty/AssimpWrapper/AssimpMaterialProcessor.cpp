@@ -85,23 +85,24 @@ void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* materi
 		assetData->m_ShaderModel = ShaderModel::Opaque;
 	}
 
-	if (material->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
-	{
-		assetData->m_Attributes.Metallic = l_result.r;
-	}
+	// PBR metallic/roughness: prefer the glTF-style scalar factors Assimp exposes
+	// for real PBR materials. Do NOT translate Phong specular colour or shininess
+	// exponent — they are different concepts and the reinterpretation produces
+	// spurious metallic-gold cloth, glass-smooth dirt, etc. When the factor
+	// isn't present, fall back to a non-metal dielectric default
+	// (metallic=0, roughness=0.7); the renderer will still sample texture maps
+	// if the material provides them, overriding the scalar fallback per-pixel.
+	float l_metallicFactor = 0.0f;
+	if (material->Get(AI_MATKEY_METALLIC_FACTOR, l_metallicFactor) == aiReturn::aiReturn_SUCCESS)
+		assetData->m_Attributes.Metallic = l_metallicFactor;
 	else
-	{
-		assetData->m_Attributes.Metallic = 0.5f;
-	}
+		assetData->m_Attributes.Metallic = 0.0f;
 
-	if (material->Get(AI_MATKEY_SHININESS, l_result) == aiReturn::aiReturn_SUCCESS)
-	{
-		assetData->m_Attributes.Roughness = l_result.r;
-	}
+	float l_roughnessFactor = 0.0f;
+	if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, l_roughnessFactor) == aiReturn::aiReturn_SUCCESS)
+		assetData->m_Attributes.Roughness = l_roughnessFactor;
 	else
-	{
-		assetData->m_Attributes.Roughness = 0.5f;
-	}
+		assetData->m_Attributes.Roughness = 0.7f;
 
 	if (material->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
