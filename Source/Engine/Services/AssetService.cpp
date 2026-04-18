@@ -357,7 +357,7 @@ void AssetService::ReleaseAssetsByLifespan(ObjectLifespan lifespan)
 		}
 	}
 
-	Log(Verbose, "AssetService::ReleaseAssetsByLifespan(", static_cast<int>(lifespan),
+	Log(Verbose, "AssetService::ReleaseAssetsByLifespan(", lifespan,
 		") — released meshes=", l_meshReleased, " materials=", l_matReleased, " textures=", l_texReleased);
 }
 

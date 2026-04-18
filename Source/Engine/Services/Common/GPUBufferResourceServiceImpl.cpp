@@ -78,7 +78,7 @@ bool GPUBufferResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, 
 {
 	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
 	{
-		Log(Warning, "WriteMappedMemory rejected for [", gpuBuffer->m_InstanceName, "]: ObjectStatus is ", static_cast<int>(gpuBuffer->m_ObjectStatus), ", expected Activated(4).");
+		Log(Warning, "WriteMappedMemory rejected for [", gpuBuffer->m_InstanceName, "]: ObjectStatus is ", gpuBuffer->m_ObjectStatus, ", expected Activated.");
 		return false;
 	}
 

@@ -91,6 +91,40 @@ namespace Inno { namespace Enum {                                             \
     }                                                                         \
 } }
 
+// Register an enum that's already declared elsewhere (not via INNO_ENUM) so
+// Log(..., myEnumValue, ...) prints the name instead of requiring a
+// static_cast<int>. Use for engine-wide enums in Inno:: namespace like
+// ObjectStatus / ObjectLifespan that pre-date the Enum registry machinery.
+// Place the call at file scope after the enum definition. The qualifier
+// `::Inno::EnumName` lets callers reference engine-namespace enums from
+// inside the Inno::Enum specialization block.
+#define INNO_REGISTER_EXTERNAL_ENUM(EnumName, ...)                            \
+namespace Inno { namespace Enum {                                             \
+    template <>                                                               \
+    struct InnoEnumTraits<::Inno::EnumName> {                                 \
+        static const std::vector<std::string_view>& RawNames() {              \
+            static const std::vector<std::string_view> rawNames = SplitNames(#__VA_ARGS__); \
+            return rawNames;                                                  \
+        }                                                                     \
+        static const std::vector<std::string>& FullNames() {                  \
+            static const std::vector<std::string> fullNames = [](){           \
+                std::vector<std::string> names;                               \
+                auto raw = RawNames();                                        \
+                names.reserve(raw.size());                                    \
+                for (auto name : raw)                                         \
+                    names.push_back(std::string(#EnumName) + "::" + std::string(name)); \
+                return names;                                                 \
+            }();                                                              \
+            return fullNames;                                                 \
+        }                                                                     \
+    };                                                                        \
+    template <>                                                               \
+    struct IsRegisteredEnum<::Inno::EnumName> : std::true_type {};            \
+    inline const char* ToString(::Inno::EnumName value) {                     \
+        return Inno::Enum::ToString< ::Inno::EnumName >(value);               \
+    }                                                                         \
+} }
+
 // Optional bitwise operators if needed.
 #define INNO_ENUM_OPERATORS(enumTypeName)                                   \
 inline enumTypeName operator&(enumTypeName a, enumTypeName b) {               \

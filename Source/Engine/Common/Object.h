@@ -2,6 +2,7 @@
 #include "FixedSizeString.h"
 #include "Config.h"
 #include "EntityID.h"
+#include "Enum.h"
 
 namespace Inno
 {
@@ -21,6 +22,15 @@ namespace Inno
 		Scene,
 		Frame,
 	};
+}
+
+// Make both enums loggable directly — `Log(..., lifespan, ...)` now prints
+// "ObjectLifespan::Scene" instead of requiring `static_cast<int>(lifespan)`.
+INNO_REGISTER_EXTERNAL_ENUM(ObjectStatus,   Invalid, Created, Activated, Suspended, Terminated)
+INNO_REGISTER_EXTERNAL_ENUM(ObjectLifespan, Invalid, Persistence, Scene, Frame)
+
+namespace Inno
+{
 
 	using ObjectName = FixedSizeString<128>;
 

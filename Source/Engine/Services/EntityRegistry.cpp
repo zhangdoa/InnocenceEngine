@@ -133,7 +133,7 @@ void EntityRegistry::CleanUp(ObjectLifespan Lifespan)
     // TASK-52: log storages + their post-cleanup sizes so mismatched-lifespan leaks
     // (components not removed because they were added with the wrong lifespan, or
     // because a storage was never registered) become immediately visible.
-    Log(Verbose, "EntityRegistry::CleanUp(Lifespan=", static_cast<int>(Lifespan),
+    Log(Verbose, "EntityRegistry::CleanUp(Lifespan=", Lifespan,
         ") — iterating ", m_Storages.size(), " storages.");
     for (auto& [l_Key, l_Wrapper] : m_Storages)
         l_Wrapper->CleanUp(Lifespan);
@@ -151,6 +151,5 @@ void EntityRegistry::CleanUp(ObjectLifespan Lifespan)
             ++l_freed;
         }
     }
-    Log(Verbose, "EntityRegistry::CleanUp — freed ", l_freed, " entity slots with Lifespan=",
-        static_cast<int>(Lifespan));
+    Log(Verbose, "EntityRegistry::CleanUp — freed ", l_freed, " entity slots with Lifespan=", Lifespan);
 }
