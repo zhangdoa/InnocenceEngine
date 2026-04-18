@@ -63,3 +63,41 @@ standalone converges cleanly in the same session).
 The path tracer accumulation math itself is correct — verified against
 UnitTest. This task is strictly about what in the Sponza scene setup
 makes it behave as if it's a moving scene.
+
+## Investigation progress (2026-04-18)
+
+Diagnostics landed in 3b99dafc:
+- `GPUPathTracerPass::Update` logs accumulation resets.
+- `DX12GPUBufferResourceService::UpdateRaytracingInstances` logs TLAS
+  rebuilds with dirty-transform count.
+
+Results over 40 frames with `-test gpu_path_tracer`:
+
+- **View matrix is stable.** Only two resets: frame 0 (initial) and
+  frame 7 (view re-evaluated shortly after GISponza finishes loading).
+  From frame 7 onwards the accumulator grows monotonically.
+- **TLAS is stable.** Three rebuilds: frame 0 (initial, 57 instances),
+  frame 5 (GISponza load brings count to 94), frame 6 (GISponza's
+  instances dirty once after load). Stable after frame 6 — no per-frame
+  matrix jitter from `TransformService`.
+
+So the drift is not "camera moved" and not "TLAS changed". Remaining
+suspects in order of likelihood:
+
+1. **Sub-pixel jitter sequence (expected behaviour, perceived as
+   drift).** `GenerateCameraRay` adds `Halton(g_FrameCount, 2)` /
+   `Halton(g_FrameCount, 3)` offsets. Each frame samples a different
+   sub-pixel location — this *is* how progressive anti-aliasing works,
+   and visible "pixels moving" at low sample counts is expected.
+   Convergence rate depends on scene variance.
+2. **Light / material buffer updates not yet traced.** If
+   LightDataService or materials re-upload per frame with FP jitter,
+   each sample integrates slightly different lighting.
+3. **BVH builder non-determinism across sessions** (not intra-session
+   after frame 6).
+
+Next concrete step: save output PNG at frame 30 and frame 100, diff
+pixel-wise. If differences shrink roughly with 1/N, convergence is
+fine and the user report is "jitter visible at low sample counts",
+not a bug. If differences have spatial or temporal bias, investigate
+light buffers and per-bounce RNG.
