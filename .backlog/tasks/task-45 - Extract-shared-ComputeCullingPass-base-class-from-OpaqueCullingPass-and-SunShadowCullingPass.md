@@ -3,9 +3,10 @@ id: TASK-45
 title: >-
   Extract shared ComputeCullingPass base class from OpaqueCullingPass and
   SunShadowCullingPass
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-16 18:30'
+updated_date: '2026-04-18 11:49'
 labels:
   - refactor
   - rendering
@@ -27,3 +28,13 @@ Both culling passes (OpaqueCullingPass, SunShadowCullingPass) follow an identica
 
 **Improvement:** Extract a `ComputeCullingPass` base class (or template) that owns the common Setup/Initialize/Terminate/PrepareCommandList skeleton. Subclasses only specify the shader path, resource name prefix, and optionally override the resource binding layout if needed. The DeviceMemoryBarrier + SetCurrentState pattern becomes a single implementation point.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Extracted `ComputeCullingPass` base class in d3dc6286. OpaqueCullingPass and SunShadowCullingPass each collapse to a 14-line header-only class declaring two virtual hooks (`GetPassName()`, `GetComputeShaderPath()`). The shared Setup / Initialize / Terminate / PrepareCommandList skeleton — including the resource binding layout, dispatch math, and UAV state-tracking update — now lives in one place.
+
+Net -262 / +192 lines. Any future culling sibling (transparency, decals, particles) becomes a 14-line header. TASK-44's `SetCurrentState` and any future compute-culling fix applies once, not per subclass.
+
+Regression: RenderTest, Main 10-frame integration, and scene reload all exit 0.
+<!-- SECTION:FINAL_SUMMARY:END -->
