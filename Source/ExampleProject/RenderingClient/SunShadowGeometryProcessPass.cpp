@@ -66,8 +66,12 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_RasterizerCullMode = RasterizerCullMode::Front;
+	// Shadow pass renders both faces of every triangle so thin / single-sided
+	// occluders (curtains, foliage, Sponza cloth) write depth. Front-face culling
+	// is a common Peter-Panning mitigation but relies on watertight geometry; our
+	// scenes routinely include single-sided meshes. The shader's adaptive depth
+	// bias in shadowResolver.hlsl handles Peter-Panning instead.
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
