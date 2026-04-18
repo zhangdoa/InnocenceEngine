@@ -97,6 +97,17 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
     float3 normal = n0 * baryW + n1 * barycentrics.x + n2 * barycentrics.y;
     payload.normal = normalize(mul((float3x3)ObjectToWorld3x4(), normal));
 
+    // Two-sided shading for thin / single-faced geometry (Sponza curtains,
+    // cloth, leaves). When the ray hits the back of a triangle, the
+    // interpolated vertex normal points into the incoming hemisphere — BRDF
+    // eval then sees cos(N, V) < 0 and the Fresnel term goes haywire, which
+    // made curtains look like chrome under the path tracer (TASK-69). Flip
+    // the shading normal so the BRDF always sees a ray-facing surface. The
+    // geometric side is conceptually identical for thin fabric; for truly
+    // solid objects, back-face hits should be vanishingly rare.
+    if (dot(payload.normal, WorldRayDirection()) > 0.0f)
+        payload.normal = -payload.normal;
+
     float2 uv0 = LoadVertexUV(offsets.vertexOffset, indices.x);
     float2 uv1 = LoadVertexUV(offsets.vertexOffset, indices.y);
     float2 uv2 = LoadVertexUV(offsets.vertexOffset, indices.z);

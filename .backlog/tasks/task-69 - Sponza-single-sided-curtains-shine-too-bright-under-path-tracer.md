@@ -1,9 +1,10 @@
 ---
 id: TASK-69
 title: Sponza single-sided curtains shine too bright under path tracer
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 15:08'
+updated_date: '2026-04-18 17:53'
 labels:
   - bug
   - path-tracer
@@ -23,3 +24,9 @@ Two directions, pick one or both:
 
 Related to TASK-56 convergence investigation; may also want to flag materials tagged as two-sided on the asset side.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a ray-facing-normal flip in GPUPathTracerClosestHit.hlsl: if dot(shadingNormal, rayDir) > 0, the ray hit the back of a triangle and the interpolated vertex normal points into the incoming hemisphere — Fresnel then reads a near-grazing angle on the wrong side and returns ~pure-specular, which is what made Sponza curtains look like chrome. Flipping the normal on back-face hits treats thin geometry as two-sided, which matches the physical intent for cloth/leaves. BRDF eval now sees cos(N,V) >= 0. Verified: RenderTest 0, gpu_path_tracer 8-frame on GISponza exit 0, Sponza interior renders as expected (dark, low-sample noise, but not chrome curtains).
+<!-- SECTION:FINAL_SUMMARY:END -->
