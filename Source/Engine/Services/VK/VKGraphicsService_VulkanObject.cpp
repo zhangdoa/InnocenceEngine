@@ -7,8 +7,6 @@
 #include "../../Component/VKSamplerComponent.h"
 #include "../../Component/VKGPUBufferComponent.h"
 
-#include "../CommonFunctionDefinationMacro.inl"
-
 #include "../../Engine.h"
 
 using namespace Inno;

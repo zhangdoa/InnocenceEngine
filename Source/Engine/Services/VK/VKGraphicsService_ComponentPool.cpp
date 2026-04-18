@@ -1,7 +1,5 @@
 #include "VKGraphicsService.h"
 
-#include "../CommonFunctionDefinationMacro.inl"
-
 #include "../../Common/Randomizer.h"
 #include "../../Services/RenderingConfigurationService.h"
 

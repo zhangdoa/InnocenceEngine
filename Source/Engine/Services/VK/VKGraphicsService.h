@@ -49,7 +49,6 @@ namespace Inno
 		bool DrawInstanced(RenderPassComponent* renderPass, CommandListComponent* commandList, size_t instanceCount = 1) override;
 		
 		bool CommandListEnd(RenderPassComponent* renderPass, CommandListComponent* commandList) override;
-		bool UnbindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset = 0, size_t elementCount = SIZE_MAX) override;
 		bool Execute(CommandListComponent* commandList, GPUEngineType GPUEngineType) override;
 		bool Dispatch(RenderPassComponent* renderPass, CommandListComponent* commandList, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 		

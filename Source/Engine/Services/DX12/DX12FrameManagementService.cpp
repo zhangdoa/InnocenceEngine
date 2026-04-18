@@ -248,16 +248,6 @@ bool DX12FrameManagementService::BindGPUResource(RenderPassComponent* renderPass
 		return BindGraphicsResource(commandList, resourceBindingLayoutDescIndex, renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex], resource);
 }
 
-bool DX12FrameManagementService::UnbindGPUResource(RenderPassComponent* renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
-{
-	// Explicit unbinding is a no-op in DX12: the next SetDescriptorTable /
-	// SetCompute*RootDescriptor overwrites any previous binding, and
-	// CommandList::Close flushes all state. VKGraphicsService::UnbindGPUResource
-	// is also a no-op — the interface exists for the cross-backend contract,
-	// not because any backend actually needs explicit unbinding.
-	return true;
-}
-
 bool DX12FrameManagementService::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
 	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);

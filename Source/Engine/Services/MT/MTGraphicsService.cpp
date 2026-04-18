@@ -150,11 +150,6 @@ bool MTGraphicsService::DrawInstanced(RenderPassComponent* renderPass, size_t in
 	return true;
 }
 
-bool MTGraphicsService::UnbindGPUResource(RenderPassComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
-{
-	return true;
-}
-
 bool MTGraphicsService::CommandListEnd(RenderPassComponent* renderPass)
 {
 	return true;

@@ -1,7 +1,5 @@
 #include "VKGraphicsService.h"
 
-#include "../CommonFunctionDefinationMacro.inl"
-
 #include "../../Engine.h"
 
 using namespace Inno;
@@ -293,11 +291,6 @@ bool VKGraphicsService::ExecuteIndirect(RenderPassComponent* renderPass, Command
 {
 	// Vulkan ExecuteIndirect not implemented yet
 	// TODO: Implement vkCmdDrawIndirect functionality
-	return true;
-}
-
-bool VKGraphicsService::UnbindGPUResource(RenderPassComponent *renderPass, CommandListComponent* commandList, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, size_t startOffset, size_t elementCount)
-{
 	return true;
 }
 

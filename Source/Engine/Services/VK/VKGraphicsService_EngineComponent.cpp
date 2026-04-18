@@ -1,8 +1,6 @@
 #include "VKGraphicsService.h"
 #include "../GraphicsResourceService.h"
 
-#include "../CommonFunctionDefinationMacro.inl"
-
 #include "../../Engine.h"
 
 using namespace Inno;
