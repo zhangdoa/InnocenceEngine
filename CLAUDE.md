@@ -1,12 +1,12 @@
 # InnocenceEngine — Claude Instructions
 
-## Project Setup
+## What
 
 - 8-year solo C++ game engine, active refactoring toward GPU-driven rendering and modern C++
 - Source: `C:\GitRepo\InnocenceEngine\Source\` — never touch `Source\External\`
 - Build: `C:\GitRepo\InnocenceEngine\Build\` (RelWithDebInfo only, gitignored)
 - Run: `C:\GitRepo\InnocenceEngine\Bin\` — always invoke executables from this directory
-- Conventions: `Documents\code-standards.md` (before every coding task) and `Documents\commit-message-policy.md` (before every commit)
+- Standards: `Documents\code-standards.md` (before every coding task) and `Documents\commit-message-policy.md` (before every commit)
 
 ### Workspace hygiene
 
@@ -14,7 +14,12 @@
 - Scripts belong in `Scripts/` (tracked) — never in `Build/`
 - "Go ahead" means implement — do not ask follow-up questions
 
-## Build & Test
+### Project-level forbidden (not covered by code standards)
+
+- Committing without a full test pass
+- Touching `Source\External\`
+
+## How
 
 ### Build
 
@@ -46,7 +51,7 @@ powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
    powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 10' -Wait -PassThru -NoNewWindow).ExitCode"
    ```
 
-3. **Scene reload** — reloads UnitTest scene at a chosen frame; catches device-removed crashes from in-flight resource destruction, stale descriptors, and multi-load accumulation bugs. Use for **any** change touching asset loading, scene lifecycle, GPU resource management, deferred initialization, or any state that persists across scene boundaries (shared asset handles, component pools, descriptor heaps). The 10-frame single-load tier (tier 2) can silently green-light changes that only fail on the second or later load — texture name accumulation (aef0f866), stale GPU VAs in the GPUModelData pipeline (TASK-52), etc.
+3. **Scene reload** — reloads UnitTest scene at a chosen frame; catches device-removed crashes from in-flight resource destruction, stale descriptors, and multi-load accumulation bugs. Use for **any** change touching asset loading, scene lifecycle, GPU resource management, deferred initialization, or any state that persists across scene boundaries (shared asset handles, component pools, descriptor heaps). The 10-frame single-load tier (tier 2) can silently green-light changes that only fail on the second or later load.
 
    ```
    powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -reload_at_frame 10' -Wait -PassThru -NoNewWindow).ExitCode"
@@ -104,15 +109,13 @@ ls C:/GitRepo/InnocenceEngine/Build/captures/
 - Shader changes: capture before and after, compare thumbnails
 - Never ask "does it look correct?" — run the capture and check yourself
 
-## Workflow
-
-### Standard pipeline
+### Workflow — standard pipeline
 
 **Implementation → Build → Runtime test → Shader test (if shaders changed) → Peer review → User approval.** Every step is mandatory. Any build error, test crash, D3D12 validation error, or shader failure = stop and fix before proceeding.
 
-### Task-first approach (applies to every bug and non-trivial change)
+### Workflow — task-first approach
 
-Never rogue-fix. Follow this loop, and file a backlog task *before* starting the fix so the work is tracked:
+Never rogue-fix. File a backlog task *before* starting the fix so the work is tracked, then follow the loop:
 
 1. **Discover** — reproduce; identify the failing resource/path/assumption
 2. **Test** — add or pick a test that exhibits the bug
@@ -121,7 +124,7 @@ Never rogue-fix. Follow this loop, and file a backlog task *before* starting the
 5. **Validate** — rerun the relevant test tier(s); zero validation errors required
 6. **Commit** — atomic commit per `Documents/commit-message-policy.md`
 
-### Regression debugging
+### Workflow — regression debugging
 
 When a regression is found, do NOT guess. Instead:
 
@@ -130,7 +133,7 @@ When a regression is found, do NOT guess. Instead:
 3. Build and test after each step to isolate the offending change
 4. Only then analyze and fix the root cause
 
-### Commit granularity
+### Workflow — commit granularity
 
 Commits must be atomic and logically self-contained:
 
@@ -139,13 +142,9 @@ Commits must be atomic and logically self-contained:
 - Each commit must build and pass RenderTest independently (no broken-state commits)
 - Typical splits: `feat: engine code` / `data: scene and component files` / `chore: scripts and tooling`
 
-### Sync with remote
+### Workflow — sync with remote
 
-Pull and rebase occasionally to stay current with the remote branch. Do this:
-
-- Before starting a new task or feature
-- Before committing if the session has been long
-- After completing a logical unit of work
+Pull and rebase occasionally to stay current with the remote branch. Do this before starting a new task or feature, before committing if the session has been long, or after completing a logical unit of work.
 
 ```bash
 git fetch origin
@@ -156,7 +155,7 @@ git stash pop  # restore changes
 
 If rebase fails due to file locks (common when VS or other tools hold files open), abort and retry later — do not force or discard work.
 
-### Merge policy
+### Workflow — merge policy
 
 Never blindly merge or accept incoming changes:
 
@@ -164,30 +163,48 @@ Never blindly merge or accept incoming changes:
 2. Build and run the full test suite after merging — treat a merge like any other code change
 3. If tests fail post-merge, bisect the merged commits to find the offender before fixing
 
-### Bug vigilance
+### Workflow — bug vigilance
 
 Any unexpected behavior, warning, or anomaly observed during testing — even minor or intermittent — gets backlogged immediately so it is tracked and not forgotten.
 
-### Structural improvement after every CL
+### Skills & Tools
 
-After every non-trivial changelist, do a brief retrospective and file a backlog task for each structural finding. Do not leave structural observations as conversation.
+| Situation | Skill |
+|-----------|-------|
+| Before any new feature or non-trivial change | `superpowers:brainstorming` |
+| Planning multi-step implementation | `superpowers:writing-plans` → `superpowers:executing-plans` |
+| Bug or unexpected behavior | `superpowers:systematic-debugging` |
+| Any third-party SDK or API | `context7` MCP — never assume behavior |
+| After implementation, before merge | `superpowers:requesting-code-review` |
+| Before claiming work is done | `superpowers:verification-before-completion` |
+| 2+ independent tasks that can run in parallel | `superpowers:dispatching-parallel-agents` |
 
-1. **What implicit contract was violated?** — identify the unenforced assumption
-2. **What structural weakness allowed it?**
-3. **What improvement moves the engine toward orthogonality and explicit contracts?**
+<!-- BACKLOG.MD MCP GUIDELINES START -->
 
-**Target qualities:**
+<CRITICAL_INSTRUCTION>
 
-- **Orthogonality** — each service/module has one responsibility; changes in one place don't silently affect another
-- **Explicit contracts** — preconditions, postconditions, and ownership are enforced (types, assertions, documented invariants), not assumed
-- **Fail loudly** — invalid state produces an immediate, visible error at the point of violation, not silent corruption three frames later
-- **Reload-safe by default** — any resource or asset loadable more than once must handle re-initialization without accumulating stale state
+### Backlog workflow (Backlog.md MCP)
 
-## Rules
+This project uses Backlog.md MCP for all task and project management activities.
 
-**Code standards** are in `Documents/code-standards.md` — the single source of truth for naming, formatting, engine abstractions, safety, and GPU conventions. Read it before every coding task.
+- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
+- If your client only supports tools or the above request fails, call `backlog.get_backlog_instructions()` to load the tool-oriented overview. Use the `instruction` selector when you need `task-creation`, `task-execution`, or `task-finalization`.
 
-### Working principles (how to approach changes)
+- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
+- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
+- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
+
+These guides cover: decision framework for when to create tasks, search-first workflow to avoid duplicates, links to detailed guides for task creation, execution, and finalization, and MCP tools reference.
+
+You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
+
+</CRITICAL_INSTRUCTION>
+
+<!-- BACKLOG.MD MCP GUIDELINES END -->
+
+## Principles
+
+### Working principles
 
 - **Systemic** — never patch locally; trace and fix root causes
 - **Expert quality** — think before every change; no mediocre solutions
@@ -196,9 +213,24 @@ After every non-trivial changelist, do a brief retrospective and file a backlog 
 - **No explanatory comments** — only comment when the code itself is not obvious
 - **Validate everything** — build and runtime test before any commit
 - **Services own operation domains, not component types** — a `FooComponent` does not imply a `FooSystem`; multiple services may operate on the same component type independently
-- **Fix at the right layer** — a high-level issue gets a high-level fix, not a low-level workaround. A generic container, pool, or base service must not carry knowledge of a caller's naming conventions, project paths, enum values, or scene assumptions. When the instinct is "add a warning / cast / special case in the foundation class", step up a layer: adjust the caller, formalise the invariant at its source, or add the overload on the owning type. Symptoms of this violation in past sessions: `NormalizeKey` popping caller slashes inside `NamedObjectPool`, hardcoded project paths in `DX12GraphicsHardwareService::TryLoadRenderDocAPI`, `static_cast<int>(lifespan)` at a log call-site instead of registering the enum with `LogService`. The correct fix is always at the layer that *owns* the concept.
+- **Fix at the right layer** — a high-level concern gets a high-level fix. A generic container, pool, or base service must not carry knowledge of a caller's naming conventions, project paths, enum values, scene assumptions, or named downstream consumers. Same rule applies to comments: each layer's documentation names its own concepts, not the consumers that happen to depend on it. When the instinct is "add the check / cast / special case in the foundation class", step up a layer and adjust the owner instead.
 
-### Mindset (how to think, not just what to do)
+### Target qualities (aim every CL at these)
+
+- **Orthogonality** — each service/module has one responsibility; changes in one place don't silently affect another
+- **Explicit contracts** — preconditions, postconditions, and ownership are enforced (types, assertions, documented invariants), not assumed
+- **Fail loudly** — invalid state produces an immediate, visible error at the point of violation, not silent corruption three frames later
+- **Reload-safe by default** — any resource or asset loadable more than once must handle re-initialization without accumulating stale state
+
+### Structural improvement after every CL
+
+After every non-trivial changelist, do a brief retrospective and file a backlog task for each structural finding. Do not leave structural observations as conversation.
+
+1. What implicit contract was violated? — identify the unenforced assumption
+2. What structural weakness allowed it?
+3. What improvement moves the engine toward the target qualities above?
+
+### Mindset
 
 - **Own the problem end-to-end** — don't surface a finding and stop. When you discover a bug, the next action is to diagnose and fix it, not to ask "want me to proceed?" Natural checkpoints (build green, capture obtained, root cause found) are hand-off points *within* the work, not prompts to wait for permission
 - **Push through, don't defer** — the "decent but distant assistant" pattern — summarize findings, ask next step, wait — is a failure mode. A principal engineer wouldn't stop at "the PSO is never bound" and wait for instructions; they'd find out *why*. You own the outcome the user asked for, not a series of status updates
@@ -227,50 +259,3 @@ These phrases and shapes are the "decent-but-distant" pattern — do not emit th
 - "All tests pass." / "The fix is in." followed by nothing (if there's more work, do it; if truly done, say so and commit)
 
 When tempted to emit one of these, instead: pick, act, and continue. The user can always interrupt — that's cheaper than you waiting.
-
-### Project-level forbidden (not covered by code standards)
-
-- Committing without a full test pass
-- Touching `Source\External\`
-
-## Skills & Tools
-
-| Situation | Skill |
-|-----------|-------|
-| Before any new feature or non-trivial change | `superpowers:brainstorming` |
-| Planning multi-step implementation | `superpowers:writing-plans` → `superpowers:executing-plans` |
-| Bug or unexpected behavior | `superpowers:systematic-debugging` |
-| Any third-party SDK or API | `context7` MCP — never assume behavior |
-| After implementation, before merge | `superpowers:requesting-code-review` |
-| Before claiming work is done | `superpowers:verification-before-completion` |
-| 2+ independent tasks that can run in parallel | `superpowers:dispatching-parallel-agents` |
-
-<!-- BACKLOG.MD MCP GUIDELINES START -->
-
-<CRITICAL_INSTRUCTION>
-
-## BACKLOG WORKFLOW INSTRUCTIONS
-
-This project uses Backlog.md MCP for all task and project management activities.
-
-**CRITICAL GUIDANCE**
-
-- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
-- If your client only supports tools or the above request fails, call `backlog.get_backlog_instructions()` to load the tool-oriented overview. Use the `instruction` selector when you need `task-creation`, `task-execution`, or `task-finalization`.
-
-- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
-- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
-- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
-
-These guides cover:
-
-- Decision framework for when to create tasks
-- Search-first workflow to avoid duplicates
-- Links to detailed guides for task creation, execution, and finalization
-- MCP tools reference
-
-You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
-
-</CRITICAL_INSTRUCTION>
-
-<!-- BACKLOG.MD MCP GUIDELINES END -->
