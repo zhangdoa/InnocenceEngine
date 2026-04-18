@@ -61,6 +61,12 @@ namespace Inno {
 // The macro to declare an enum and specialize its traits.
 // This macro declares the enum (in the Inno::Enum namespace) and creates a specialization
 // of InnoEnumTraits so that ToString returns "EnumName::Enumerator".
+// Declare an enum class at Inno:: scope, register it with the Inno::Enum
+// traits machinery, and make it loggable directly via `Log(..., value, ...)`.
+// The underlying `enum class` lives in `Inno::Enum::EnumName` because the
+// traits specializations must too; a `using` alias in `Inno::` gives the
+// natural `Inno::EnumName` spelling at call sites (including unqualified use
+// inside `namespace Inno`).
 #define INNO_ENUM(EnumName, ...)                                              \
 namespace Inno { namespace Enum {                                             \
     enum class EnumName { __VA_ARGS__ };                                       \
@@ -89,41 +95,8 @@ namespace Inno { namespace Enum {                                             \
     inline const char* ToString(EnumName value) {                             \
         return Inno::Enum::ToString<EnumName>(value);                         \
     }                                                                         \
-} }
-
-// Register an enum that's already declared elsewhere (not via INNO_ENUM) so
-// Log(..., myEnumValue, ...) prints the name instead of requiring a
-// static_cast<int>. Use for engine-wide enums in Inno:: namespace like
-// ObjectStatus / ObjectLifespan that pre-date the Enum registry machinery.
-// Place the call at file scope after the enum definition. The qualifier
-// `::Inno::EnumName` lets callers reference engine-namespace enums from
-// inside the Inno::Enum specialization block.
-#define INNO_REGISTER_EXTERNAL_ENUM(EnumName, ...)                            \
-namespace Inno { namespace Enum {                                             \
-    template <>                                                               \
-    struct InnoEnumTraits<::Inno::EnumName> {                                 \
-        static const std::vector<std::string_view>& RawNames() {              \
-            static const std::vector<std::string_view> rawNames = SplitNames(#__VA_ARGS__); \
-            return rawNames;                                                  \
-        }                                                                     \
-        static const std::vector<std::string>& FullNames() {                  \
-            static const std::vector<std::string> fullNames = [](){           \
-                std::vector<std::string> names;                               \
-                auto raw = RawNames();                                        \
-                names.reserve(raw.size());                                    \
-                for (auto name : raw)                                         \
-                    names.push_back(std::string(#EnumName) + "::" + std::string(name)); \
-                return names;                                                 \
-            }();                                                              \
-            return fullNames;                                                 \
-        }                                                                     \
-    };                                                                        \
-    template <>                                                               \
-    struct IsRegisteredEnum<::Inno::EnumName> : std::true_type {};            \
-    inline const char* ToString(::Inno::EnumName value) {                     \
-        return Inno::Enum::ToString< ::Inno::EnumName >(value);               \
-    }                                                                         \
-} }
+} }                                                                           \
+namespace Inno { using EnumName = Enum::EnumName; }
 
 // Optional bitwise operators if needed.
 #define INNO_ENUM_OPERATORS(enumTypeName)                                   \

@@ -4,30 +4,13 @@
 #include "EntityID.h"
 #include "Enum.h"
 
-namespace Inno
-{
-	enum class ObjectStatus
-	{
-		Invalid,
-		Created,
-		Activated,
-		Suspended,
-		Terminated,
-	};
-
-	enum class ObjectLifespan
-	{
-		Invalid,
-		Persistence,
-		Scene,
-		Frame,
-	};
-}
-
-// Make both enums loggable directly — `Log(..., lifespan, ...)` now prints
-// "ObjectLifespan::Scene" instead of requiring `static_cast<int>(lifespan)`.
-INNO_REGISTER_EXTERNAL_ENUM(ObjectStatus,   Invalid, Created, Activated, Suspended, Terminated)
-INNO_REGISTER_EXTERNAL_ENUM(ObjectLifespan, Invalid, Persistence, Scene, Frame)
+// INNO_ENUM declares the enum in Inno::Enum::, registers it with the traits
+// registry so Log() prints the name, and publishes a `using EnumName = ...`
+// alias into Inno:: so callers can write `Inno::ObjectStatus::Activated` or
+// plain `ObjectStatus::Activated` inside `namespace Inno` — same ergonomics
+// as the raw enum while being fully loggable.
+INNO_ENUM(ObjectStatus,   Invalid, Created, Activated, Suspended, Terminated)
+INNO_ENUM(ObjectLifespan, Invalid, Persistence, Scene, Frame)
 
 namespace Inno
 {
