@@ -10,7 +10,7 @@ using namespace Inno;
 
 bool DX12CommandListResourceService::Delete(CommandListComponent* ptr)
 {
-	auto l_dx12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(ptr->m_CommandList);
+	auto l_dx12CommandList = DX12Helper::AsDX12CommandList(ptr);
 	if (l_dx12CommandList)
 		l_dx12CommandList->Release();
 

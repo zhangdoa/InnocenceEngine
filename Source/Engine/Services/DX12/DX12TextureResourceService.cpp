@@ -286,7 +286,7 @@ bool DX12TextureResourceService::InitializeImpl(TextureComponent* texture, void*
 
 bool DX12TextureResourceService::Clear(CommandListComponent* commandList, TextureComponent* texture)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	uint32_t frameIndex = g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
 
 	auto* resource = static_cast<ID3D12Resource*>(texture->GetGPUResource(frameIndex));
@@ -330,7 +330,7 @@ bool DX12TextureResourceService::Clear(CommandListComponent* commandList, Textur
 
 bool DX12TextureResourceService::Copy(CommandListComponent* commandList, TextureComponent* sourceTexture, TextureComponent* destinationTexture)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	uint32_t frameIndex = g_Engine->Get<FrameManagementService>()->GetCurrentFrame();
 
 	auto* srcResource = static_cast<ID3D12Resource*>(sourceTexture->GetGPUResource(frameIndex));
@@ -412,7 +412,7 @@ bool DX12TextureResourceService::GenerateMipmap(TextureComponent* texture, Comma
         endIndex = 1;
     }
 
-    auto l_DX12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+    auto l_DX12CommandList = DX12Helper::AsDX12CommandList(commandList);
     if (!l_DX12CommandList)
     {
         Log(Error, texture->m_InstanceName, " Invalid command list");

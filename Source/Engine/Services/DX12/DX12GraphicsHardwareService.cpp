@@ -237,7 +237,9 @@ bool DX12GraphicsHardwareService::WaitOnGPU(ISemaphore* semaphore, GPUEngineType
 
 bool DX12GraphicsHardwareService::Execute(CommandListComponent* commandList, GPUEngineType queueType)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
+	if (l_commandList == nullptr)
+		return false;
 
 	ID3D12CommandList* l_commandListToExecute[] = { l_commandList };
 
