@@ -21,7 +21,7 @@ using namespace DX12Helper;
 
 bool DX12FrameManagementService::Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_pipelineStateObject = reinterpret_cast<DX12PipelineStateObject*>(pipelineStateObject);
 	auto l_PSO = l_pipelineStateObject ? l_pipelineStateObject->m_PSO.Get() : nullptr;
 	auto l_currentFrame = GetCurrentFrame();
@@ -54,7 +54,7 @@ bool DX12FrameManagementService::Open(CommandListComponent* commandList, GPUEngi
 
 bool DX12FrameManagementService::Close(CommandListComponent* commandList, GPUEngineType engineType)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_closeResult = l_commandList->Close();
 	if (FAILED(l_closeResult))
 	{
@@ -85,7 +85,7 @@ bool DX12FrameManagementService::BindRenderPassComponent(RenderPassComponent* re
 		return false;
 	}
 
-	auto l_dx12CommandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_dx12CommandList = DX12Helper::AsDX12CommandList(commandList);
 	if (!l_dx12CommandList)
 	{
 		Log(Error, "Invalid DX12 command list in BindRenderPassComponent");
@@ -122,7 +122,7 @@ bool DX12FrameManagementService::ClearRenderTargets(RenderPassComponent* renderP
 	if (renderPass->m_RenderPassDesc.m_RenderTargetCount == 0)
 		return true;
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	if (!l_commandList)
 	{
 		Log(Error, "Invalid DX12 command list in ClearRenderTargets");
@@ -250,7 +250,7 @@ bool DX12FrameManagementService::BindGPUResource(RenderPassComponent* renderPass
 
 bool DX12FrameManagementService::TryToTransitState(TextureComponent* texture, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
 	auto* resource = static_cast<ID3D12Resource*>(texture->GetGPUResource(frameIndex));
@@ -289,7 +289,7 @@ bool DX12FrameManagementService::TryToTransitState(TextureComponent* texture, Co
 
 bool DX12FrameManagementService::TryToTransitState(GPUBufferComponent* gpuBuffer, CommandListComponent* commandList, Accessibility sourceAccessibility, Accessibility targetAccessibility)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	uint32_t frameIndex = GetCurrentFrame();
 
 	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(gpuBuffer->m_DeviceMemories[frameIndex]);
@@ -331,7 +331,7 @@ bool DX12FrameManagementService::DrawIndexedInstanced(RenderPassComponent* rende
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 
 	D3D12_VERTEX_BUFFER_VIEW vbv = {};
@@ -360,7 +360,7 @@ bool DX12FrameManagementService::DrawInstanced(RenderPassComponent* renderPass, 
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 
 	l_commandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
@@ -379,7 +379,7 @@ bool DX12FrameManagementService::Dispatch(RenderPassComponent* renderPass, Comma
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	if (!l_commandList)
 	{
 		Log(Error, "CommandList is null in Dispatch for render pass ", renderPass->m_InstanceName);
@@ -405,7 +405,7 @@ bool DX12FrameManagementService::DispatchRays(RenderPassComponent* renderPass, C
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 
 	if (l_PSO->m_RaytracingMissShaderCount == 0 || l_PSO->m_RaytracingHitGroupCount == 0)
@@ -464,7 +464,7 @@ bool DX12FrameManagementService::ExecuteIndirect(RenderPassComponent* renderPass
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(renderPass->m_PipelineStateObject);
 	auto l_deviceMemory = reinterpret_cast<DX12DeviceMemory*>(indirectDrawCommand->m_DeviceMemories[GetCurrentFrame()]);
 
@@ -497,7 +497,7 @@ void DX12FrameManagementService::PushRootConstants(RenderPassComponent* renderPa
 		return;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 
 	if (renderPass->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 		l_commandList->SetGraphicsRoot32BitConstants(0, 1, &rootConstants, 0);
@@ -532,7 +532,7 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	if (!l_commandList)
 	{
 		Log(Error, "CommandList is null in BindComputeResource");
@@ -651,7 +651,7 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	if (!l_commandList)
 	{
 		Log(Error, "CommandList is null in BindGraphicsResource");
@@ -750,7 +750,7 @@ bool DX12FrameManagementService::BindGraphicsResource(CommandListComponent* comm
 
 bool DX12FrameManagementService::SetDescriptorHeaps(RenderPassComponent* renderPass, CommandListComponent* commandList)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	if (!l_commandList)
 	{
 		Log(Error, "Command list is null in SetDescriptorHeaps for render pass ", renderPass->m_InstanceName);
@@ -774,7 +774,7 @@ bool DX12FrameManagementService::SetRenderTargets(RenderPassComponent* renderPas
 		return false;
 	}
 
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 	auto l_currentFrame = GetCurrentFrame();
 	auto l_outputMergerTarget = reinterpret_cast<DX12OutputMergerTarget*>(renderPass->m_OutputMergerTarget);
 
@@ -805,7 +805,7 @@ bool DX12FrameManagementService::SetRenderTargets(RenderPassComponent* renderPas
 
 bool DX12FrameManagementService::PreparePipeline(RenderPassComponent* renderPass, CommandListComponent* commandList, DX12PipelineStateObject* PSO)
 {
-	auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+	auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 
 	if (!l_commandList)
 	{
@@ -1115,7 +1115,7 @@ bool DX12FrameManagementService::PrepareRayTracing(CommandListComponent* command
     l_mappedMemory->m_NeedUploadToGPU = false;
 
     auto l_instanceBuffer = reinterpret_cast<DX12DeviceMemory*>(l_RaytracingInstanceBufferComponent->m_DeviceMemories[l_currentFrame]);
-    auto l_commandList = reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+    auto l_commandList = DX12Helper::AsDX12CommandList(commandList);
 
     auto instanceBarrier_UploadToDefaultHeap = CD3DX12_RESOURCE_BARRIER::Transition(
         l_instanceBuffer->m_DefaultHeapBuffer.Get(),

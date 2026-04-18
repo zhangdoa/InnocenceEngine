@@ -3,6 +3,7 @@
 #include "../../Common/LogService.h"
 #include "../../Common/Object.h"
 #include "../../Component/GPUResourceComponent.h"
+#include "../../Component/CommandListComponent.h"
 
 #include "DX12Headers.h"
 
@@ -10,6 +11,21 @@ namespace Inno
 {
 	namespace DX12Helper
 	{
+		// Centralised typed access to DX12 command lists. CommandListComponent stores the COM
+		// pointer as a uint64_t for API-agnostic abstraction; callers reinterpret_cast it back.
+		// This helper does that cast in one place with a non-null guard, so every call site
+		// sees either a valid list or nullptr (and a logged error) — no silent UB on a zero
+		// handle.
+		inline ID3D12GraphicsCommandList7* AsDX12CommandList(CommandListComponent* commandList)
+		{
+			if (commandList == nullptr || commandList->m_CommandList == 0)
+			{
+				Log(Error, "DX12: AsDX12CommandList called with null or unbacked CommandListComponent.");
+				return nullptr;
+			}
+			return reinterpret_cast<ID3D12GraphicsCommandList7*>(commandList->m_CommandList);
+		}
+
 		template <typename T>
 		bool SetObjectName(const wchar_t* name, ComPtr<T> rhs, const char* objectType)
 		{
