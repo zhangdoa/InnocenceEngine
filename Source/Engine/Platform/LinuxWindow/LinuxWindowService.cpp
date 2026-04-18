@@ -7,12 +7,8 @@ using namespace Inno;
 
 #include<X11/X.h>
 #include<X11/Xlib.h>
-#include "glad/glad.h"
-#include<GL/glx.h>
 
 #undef Success
-
-typedef GLXContext(*glXCreateContextAttribsARBProc) (Display*, GLXFBConfig, GLXContext, Bool, const int32_t*);
 
 namespace LinuxWindowServiceNS
 {
@@ -29,16 +25,6 @@ namespace LinuxWindowServiceNS
 
 	Display* m_display;
 	Window m_window;
-	GLint m_attributes[] = {
-		GLX_RENDER_TYPE, GLX_RGBA_BIT,
-		GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-		GLX_DOUBLEBUFFER, true,
-		GLX_RED_SIZE, 1,
-		GLX_GREEN_SIZE, 1,
-		GLX_BLUE_SIZE, 1,
-		None
-	};
-	GLXContext m_context;
 }
 
 bool LinuxWindowServiceNS::Setup(IServiceConfig* systemConfig)
@@ -73,60 +59,6 @@ bool LinuxWindowServiceNS::Setup(IServiceConfig* systemConfig)
 	XSelectInput(m_display, m_window, ExposureMask | StructureNotifyMask);
 
 	XMapWindow(m_display, m_window);
-
-	int32_t num_fbc = 0;
-	GLXFBConfig* fbc = glXChooseFBConfig(m_display, DefaultScreen(m_display), m_attributes, &num_fbc);
-	if (!fbc)
-	{
-		Log(Error, "glXChooseFBConfig() failed!");
-		m_ObjectStatus = ObjectStatus::Suspended;
-		return false;
-	}
-
-	/* Create old OpenGL context to get correct function pointer for
-	glXCreateContextAttribsARB() */
-	XVisualInfo* vi = glXGetVisualFromFBConfig(m_display, fbc[0]);
-	GLXContext ctx_old = glXCreateContext(m_display, vi, 0, GL_TRUE);
-
-	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-	glXCreateContextAttribsARB =
-		(glXCreateContextAttribsARBProc)
-		glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
-	if (!glXCreateContextAttribsARB)
-	{
-		Log(Error, "glXCreateContextAttribsARB() not found!");
-		m_ObjectStatus = ObjectStatus::Suspended;
-		return false;
-	}
-
-	/* Destroy old context */
-	glXMakeCurrent(m_display, 0, 0);
-	glXDestroyContext(m_display, ctx_old);
-	/* Set desired minimum OpenGL version */
-	static int32_t context_attribs[] = {
-		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
-		None
-	};
-
-	/* Create modern OpenGL context */
-	m_context = glXCreateContextAttribsARB(m_display, fbc[0], NULL, true, context_attribs);
-	if (!m_context)
-	{
-		Log(Error, "Failed to create OpenGL context!");
-		m_ObjectStatus = ObjectStatus::Suspended;
-		return false;
-	}
-	glXMakeCurrent(m_display, m_window, m_context);
-
-	// glad: load all OpenGL function pointers
-	// ---------------------------------------
-	if (!gladLoadGL())
-	{
-		Log(Error, "Failed to Initialize GLAD.");
-		m_ObjectStatus = ObjectStatus::Suspended;
-		return false;
-	}
 
 	LinuxWindowServiceNS::m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "LinuxWindowService Setup finished.");
