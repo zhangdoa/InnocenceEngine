@@ -486,7 +486,9 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	hitGroupDesc.IntersectionShaderImport = nullptr;
 
 	D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
-	shaderConfig.MaxPayloadSizeInBytes = 48;  // PathTracerPayload: 44B; ShadowPayload: 4B
+	// PathTracerPayload: hitPos(12) + normal(12) + texCoord(8) + albedo(12) + metalness(4) + roughness(4) + missed(4) = 56B
+	// ShadowPayload: 4B. Round up to 64 for alignment headroom.
+	shaderConfig.MaxPayloadSizeInBytes = 64;
 	shaderConfig.MaxAttributeSizeInBytes = 8; // barycentrics
 
 	D3D12_GLOBAL_ROOT_SIGNATURE globalSig = { PSO->m_RootSignature.Get() };

@@ -500,6 +500,8 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 			l_ptVertex.normX = l_vert->m_normal.x;
 			l_ptVertex.normY = l_vert->m_normal.y;
 			l_ptVertex.normZ = l_vert->m_normal.z;
+			l_ptVertex.texU  = l_vert->m_texCoord.x;
+			l_ptVertex.texV  = l_vert->m_texCoord.y;
 			l_vertices.push_back(l_ptVertex);
 		}
 

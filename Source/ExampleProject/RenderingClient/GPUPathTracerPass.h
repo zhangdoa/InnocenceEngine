@@ -32,6 +32,7 @@ namespace Inno
 		{
 			float posX, posY, posZ;
 			float normX, normY, normZ;
+			float texU, texV;
 		};
 
 		struct MeshOffsetData
