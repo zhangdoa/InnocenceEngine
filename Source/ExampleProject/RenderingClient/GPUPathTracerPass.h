@@ -1,7 +1,9 @@
 #pragma once
+#include <unordered_set>
 #include "../../Engine/Interface/IRenderPass.h"
 #include "../../Engine/Component/TextureComponent.h"
 #include "../../Engine/Component/GPUBufferComponent.h"
+#include "../../Engine/Common/EntityID.h"
 #include "../../Engine/Common/GPUDataStructure.h"
 
 namespace Inno
@@ -82,6 +84,10 @@ namespace Inno
 		std::vector<uint32_t>               m_PendingIndices;
 		std::vector<MeshOffsetData>         m_PendingOffsets;
 		std::vector<MaterialConstantBuffer> m_PendingMaterials;
+
+		// Entities already warned about missing/unresolvable materials, so
+		// RebuildGeometryBuffers doesn't spam the log once per rebuild.
+		std::unordered_set<EntityID> m_WarnedMissingMaterial;
 
 		void RebuildGeometryBuffers();
 		bool AreMeshesGPUReady();

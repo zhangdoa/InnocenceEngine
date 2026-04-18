@@ -181,6 +181,12 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 m_defaultMaterialEntity = l_entityID;
             }
 
+            // Primitive meshes inherit the default material so every TLAS-instanceable
+            // entity carries a MaterialComponent. Downstream passes (path tracer, opaque
+            // G-buffer) no longer hit the silent white-Lambert fallback on these.
+            auto* l_defaultMaterial = l_registry->Get<MaterialComponent>(m_defaultMaterialEntity);
+            auto l_defaultMaterialHandle = l_defaultMaterial ? l_defaultMaterial->m_Asset : MaterialAssetHandle{};
+
             auto loadOrCreateMesh = [&](const char* name, MeshShape shape, EntityID& entityIDRef) {
                 if (entityIDRef != INVALID_ENTITY)
                     return;
@@ -192,6 +198,10 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                 auto& l_mesh     = l_registry->Emplace<MeshComponent>(l_entityID);
                 l_mesh.m_InstanceName = ObjectName(l_componentName.c_str());
                 auto* l_meshPtr  = &l_mesh;
+
+                auto& l_material = l_registry->Emplace<MaterialComponent>(l_entityID);
+                l_material.m_InstanceName = ObjectName((std::string(name) + ".MaterialComponent").c_str());
+                l_material.m_Asset = l_defaultMaterialHandle;
 
                 auto l_filePath = AssetService::GetAssetFilePath(l_componentName.c_str());
                 if (AssetService::Load(l_filePath.c_str(), *l_meshPtr, l_entityID))
