@@ -140,6 +140,39 @@ bool RenderPassResourceService::InitializeOutputMergerTargets(RenderPassComponen
 	else
 	{
 		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
+		const size_t l_colorOutputCount = l_outputMergerTarget->m_ColorOutputs.size();
+
+		// TASK-38: enforce pass-type ↔ usage invariant here, at the one site that
+		// actually stamps the Usage onto each output texture. A compute-only pass
+		// producing ColorAttachment textures would silently get RENDER_TARGET layout
+		// and explode at the first UAV bind (GBV-only symptom; see TASK-36). Fail
+		// loudly at declaration time instead. Only validate when output textures
+		// will inherit the pass's default RT desc — passes with custom init funcs
+		// or no color outputs bypass this copy, so the check wouldn't be meaningful.
+		if (l_colorOutputCount > 0)
+		{
+			const auto l_passEngine = renderPass->m_RenderPassDesc.m_GPUEngineType;
+			const auto l_rtUsage    = renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage;
+			if (l_passEngine == GPUEngineType::Compute && l_rtUsage == TextureUsage::ColorAttachment)
+			{
+				Log(Error, "RenderPass '", renderPass->m_InstanceName.c_str(),
+					"' declares GPUEngineType::Compute but its RenderTargetDesc.Usage is "
+					"ColorAttachment. A compute pass's UAV outputs must use "
+					"TextureUsage::ComputeOnly — ColorAttachment maps to RENDER_TARGET "
+					"layout and will crash on UAV binding.");
+				return false;
+			}
+			if (l_passEngine == GPUEngineType::Graphics && l_rtUsage == TextureUsage::ComputeOnly)
+			{
+				Log(Error, "RenderPass '", renderPass->m_InstanceName.c_str(),
+					"' declares GPUEngineType::Graphics but its RenderTargetDesc.Usage is "
+					"ComputeOnly. A graphics pass's RTV outputs must use "
+					"TextureUsage::ColorAttachment — ComputeOnly maps to UAV layout and "
+					"will reject OMSetRenderTargets.");
+				return false;
+			}
+		}
+
 		for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 		{
 			auto l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
