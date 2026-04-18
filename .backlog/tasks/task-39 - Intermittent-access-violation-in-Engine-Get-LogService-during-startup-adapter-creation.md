@@ -1,15 +1,19 @@
 ---
-id: task-39
-title: Intermittent access violation in Engine::Get<LogService> during startup adapter creation
+id: TASK-39
+title: >-
+  Intermittent access violation in Engine::Get<LogService> during startup
+  adapter creation
 status: Todo
-priority: medium
-type: bug
+assignee: []
+created_date: ''
+updated_date: '2026-04-18 11:07'
 labels:
   - bug
   - startup
   - dx12
   - race
-created: 2026-04-15
+dependencies: []
+priority: medium
 ---
 
 ## Bug
@@ -54,9 +58,22 @@ Observed 1-in-2 in the original sighting. Wider sampling (20 launches total: 10 
 3. Narrow by temporarily disabling PhysX setup, DX12 callback registration, and/or deferring worker thread task dispatch until after `Engine::Setup` returns
 4. Root-cause the ordering bug
 
-## Acceptance criteria
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 #1 Reproduction rate characterized: 0/20 post-warmup, 1/1 on initial cold call. Likely cold-start condition, not a deterministic race.
+- [ ] #2 #2 Crashing call stack captured (debugger or crash dump)
+- [ ] #3 #3 Root cause identified
+- [ ] #4 #4 Fix lands; stress loop of 100 launches produces 0 crashes
+<!-- AC:END -->
 
-- [x] #1 Reproduction rate characterized: 0/20 post-warmup, 1/1 on initial cold call. Likely cold-start condition, not a deterministic race.
-- [ ] #2 Crashing call stack captured (debugger or crash dump)
-- [ ] #3 Root cause identified
-- [ ] #4 Fix lands; stress loop of 100 launches produces 0 crashes
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Repro observation 2026-04-18
+
+Hit the AV during TASK-60 investigation on `Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 30`. Same fault address (0x10), same function signature (`std::_Hash<...>::_Find_last<std::type_index>`), same module (LogService lookup via `Engine::Get<LogService>()`). Occurs roughly 1-in-3 invocations in this session; re-running always succeeds on the second attempt within the same session.
+
+This matches the hypothesis that `Engine::singletons_` (a raw `std::unordered_map<std::type_index, void*>`) is being read concurrently with its first insertion. The crashing thread is likely a worker calling `Get<LogService>()` before the main-thread setup has finished populating the map.
+
+Still doesn't give a reliable stress-loop repro, but the symptom is fresh enough now that attaching a debugger on first launch of the day would likely catch it.
+<!-- SECTION:NOTES:END -->
