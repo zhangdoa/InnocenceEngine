@@ -20,11 +20,11 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("FinalBlendPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("FinalBlendPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("FinalBlendPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("FinalBlendPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -88,10 +88,10 @@ bool FinalBlendPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("FinalBlendPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("FinalBlendPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("FinalBlendPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("FinalBlendPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -174,8 +174,6 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_fmService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
-
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;	
@@ -203,7 +201,7 @@ bool FinalBlendPass::RenderTargetsCreationFunc()
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_Result = g_Engine->Get<TextureResourceService>()->Add("Final Blend Pass Result/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("Final Blend Pass Result");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 

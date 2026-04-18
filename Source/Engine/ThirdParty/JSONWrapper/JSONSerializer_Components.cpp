@@ -260,8 +260,7 @@ bool JSONWrapper::Load(const char* fileName, MaterialComponent& component, Entit
             if (!std::filesystem::exists(l_fullPath))
                 continue;
 
-            auto l_nameWithSlash = l_textureName + "/";
-            auto l_texturePtr = l_textureService->Add(l_nameWithSlash.c_str());
+            auto l_texturePtr = l_textureService->Add(l_textureName.c_str());
             if (!l_texturePtr)
                 continue;
 
@@ -328,7 +327,7 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
 // 	else
 // 	{
 // 		l_SkeletonComp = g_Engine->Get<AnimationService>()->AddSkeletonComponent();
-// 		l_SkeletonComp->m_InstanceName = (std::string(name) + ("//")).c_str();
+// 		l_SkeletonComp->m_InstanceName = name;
 
 // 		auto l_size = j["Bones"].size();
 // 		l_SkeletonComp->m_BoneList.reserve(l_size);
@@ -363,7 +362,7 @@ bool JSONWrapper::Load(const char* fileName, TextureComponent& component, Entity
 // 		}
 
 // 		auto l_ADC = g_Engine->Get<AnimationService>()->AddAnimationComponent();
-// 		l_ADC->m_InstanceName = (l_animationFileName + "//").c_str();
+// 		l_ADC->m_InstanceName = l_animationFileName;
 
 // 		std::streamoff l_offset = 0;
 

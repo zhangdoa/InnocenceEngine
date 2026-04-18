@@ -94,10 +94,10 @@ namespace Inno
 		}
 		else
 		{
-			m_PlayerCharacterEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Player Character/");
+			m_PlayerCharacterEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Player Character");
 		}
 
-		auto l_PlayerCameraEntity = l_Registry->FindByName("Main Camera/");
+		auto l_PlayerCameraEntity = l_Registry->FindByName("Main Camera");
 		if (l_PlayerCameraEntity != INVALID_ENTITY)
 		{
 			m_PlayerCameraEntity = l_PlayerCameraEntity;
@@ -107,7 +107,7 @@ namespace Inno
 		}
 		else
 		{
-			m_PlayerCameraEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Main Camera/");
+			m_PlayerCameraEntity = l_Registry->Spawn(ObjectLifespan::Scene, "Main Camera");
 			auto& l_Camera = l_Registry->Emplace<CameraComponent>(m_PlayerCameraEntity);
 			l_Registry->Emplace<TransformComponent>(m_PlayerCameraEntity);
 			m_PlayerCameraComponent = &l_Camera;
@@ -115,7 +115,7 @@ namespace Inno
 
 		if (m_DebugCameraEntity == INVALID_ENTITY)
 		{
-			m_DebugCameraEntity = l_Registry->Spawn(ObjectLifespan::Persistence, "Debug Camera/");
+			m_DebugCameraEntity = l_Registry->Spawn(ObjectLifespan::Persistence, "Debug Camera");
 			auto& l_DebugCamera = l_Registry->Emplace<CameraComponent>(m_DebugCameraEntity);
 			l_Registry->Emplace<TransformComponent>(m_DebugCameraEntity);
 			m_DebugCameraComponent = &l_DebugCamera;

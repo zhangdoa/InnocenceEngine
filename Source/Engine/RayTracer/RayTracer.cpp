@@ -558,7 +558,7 @@ bool RayTracer::Initialize()
 		RayTracerNS::m_outputHeight = l_res.y / RayTracerNS::m_downsampleDenominator;
 	}
 
-	m_TextureComp = g_Engine->Get<TextureResourceService>()->Add("RayTracingResult/");
+	m_TextureComp = g_Engine->Get<TextureResourceService>()->Add("RayTracingResult");
 
 	m_TextureComp->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_TextureComp->m_TextureDesc.Usage = TextureUsage::Sample;

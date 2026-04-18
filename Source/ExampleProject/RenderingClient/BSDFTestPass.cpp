@@ -22,12 +22,12 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BSDFTestPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BSDFTestPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BSDFTestPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BSDFTestPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -81,10 +81,10 @@ bool BSDFTestPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BSDFTestPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BSDFTestPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("BSDFTestPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("BSDFTestPass");
 
 	//
 	auto l_RenderingCapability = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability();

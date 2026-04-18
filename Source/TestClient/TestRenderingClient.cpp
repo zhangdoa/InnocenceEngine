@@ -116,11 +116,11 @@ bool TestRenderingClient::Setup_DrawInstanced()
     
     m_DrawInstanced = new DrawInstancedResources();
 
-    m_DrawInstanced->ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add("TestDrawInstanced/");
+    m_DrawInstanced->ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add("TestDrawInstanced");
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_VSPath = "drawInstanced.vert";
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_PSPath = "drawInstanced.frag";
 
-    m_DrawInstanced->RenderPass = g_Engine->Get<RenderPassResourceService>()->Add("TestDrawInstanced/");
+    m_DrawInstanced->RenderPass = g_Engine->Get<RenderPassResourceService>()->Add("TestDrawInstanced");
 
     auto l_desc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
     l_desc.m_RenderTargetCount = 1;
@@ -131,7 +131,7 @@ bool TestRenderingClient::Setup_DrawInstanced()
     m_DrawInstanced->RenderPass->m_RenderPassDesc = l_desc;
     m_DrawInstanced->RenderPass->m_ShaderProgram  = m_DrawInstanced->ShaderProgram;
 
-    m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestDrawInstanced/Graphics/");
+    m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestDrawInstanced/Graphics");
     m_DrawInstanced->CommandList->m_Type = GPUEngineType::Graphics;
 
 	g_Engine->Get<FrameManagementService>()->SetUserPipelineOutput([this]() -> GPUResourceComponent*
@@ -198,11 +198,11 @@ bool TestRenderingClient::Setup_PixelReadback()
     
     m_DrawInstanced = new DrawInstancedResources();
 
-    m_DrawInstanced->ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add("TestPixelReadback/");
+    m_DrawInstanced->ShaderProgram = g_Engine->Get<ShaderProgramResourceService>()->Add("TestPixelReadback");
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_VSPath = "drawInstanced.vert";
     m_DrawInstanced->ShaderProgram->m_ShaderFilePaths.m_PSPath = "drawInstanced.frag";
 
-    m_DrawInstanced->RenderPass = g_Engine->Get<RenderPassResourceService>()->Add("TestPixelReadback/");
+    m_DrawInstanced->RenderPass = g_Engine->Get<RenderPassResourceService>()->Add("TestPixelReadback");
 
     auto l_desc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
     l_desc.m_RenderTargetCount = 1;
@@ -218,7 +218,7 @@ bool TestRenderingClient::Setup_PixelReadback()
     m_DrawInstanced->RenderPass->m_RenderPassDesc = l_desc;
     m_DrawInstanced->RenderPass->m_ShaderProgram  = m_DrawInstanced->ShaderProgram;
 
-    m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestPixelReadback/Graphics/");
+    m_DrawInstanced->CommandList = g_Engine->Get<CommandListResourceService>()->Add("TestPixelReadback/Graphics");
     m_DrawInstanced->CommandList->m_Type = GPUEngineType::Graphics;
 
     return true;

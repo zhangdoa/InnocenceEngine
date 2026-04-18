@@ -69,10 +69,10 @@ bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_PointLightGPUBufferComp = l_rsService->Add("PointLightCBuffer/");
-	m_SphereLightGPUBufferComp = l_rsService->Add("SphereLightCBuffer/");
-	m_CSMGPUBufferComp = l_rsService->Add("CSMCBuffer/");
-	m_GICBufferGPUBufferComp = l_rsService->Add("GICBuffer/");
+	m_PointLightGPUBufferComp = l_rsService->Add("PointLightCBuffer");
+	m_SphereLightGPUBufferComp = l_rsService->Add("SphereLightCBuffer");
+	m_CSMGPUBufferComp = l_rsService->Add("CSMCBuffer");
+	m_GICBufferGPUBufferComp = l_rsService->Add("GICBuffer");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;

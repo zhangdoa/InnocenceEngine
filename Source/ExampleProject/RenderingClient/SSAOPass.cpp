@@ -20,11 +20,11 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SSAONoisePass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SSAONoisePass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SSAONoisePass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SSAONoisePass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -85,15 +85,15 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("SSAOPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("SSAOPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("SSAOPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("SSAOPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SSAONoisePass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SSAONoisePass");
 
-	m_SamplerComp_RandomRot = g_Engine->Get<SamplerResourceService>()->Add("SSAONoisePass_RandomRot/");
+	m_SamplerComp_RandomRot = g_Engine->Get<SamplerResourceService>()->Add("SSAONoisePass_RandomRot");
 
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_RandomRot->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
@@ -121,7 +121,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 		m_Kernel.emplace_back(l_sample);
 	}
 
-	m_KernelGPUBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("SSAO_Kernel/");
+	m_KernelGPUBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("SSAO_Kernel");
 	m_KernelGPUBuffer->m_GPUResourceType = GPUResourceType::Buffer;
 	m_KernelGPUBuffer->m_ElementSize = sizeof(Vec4);
 	m_KernelGPUBuffer->m_ElementCount = m_kernelSize;
@@ -140,7 +140,7 @@ bool SSAOPass::Setup(IServiceConfig* systemConfig)
 		m_Noise.push_back(noise);
 	}
 
-	m_NoiseTexture = g_Engine->Get<TextureResourceService>()->Add("SSAO_Noise/");
+	m_NoiseTexture = g_Engine->Get<TextureResourceService>()->Add("SSAO_Noise");
 
 	m_NoiseTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_NoiseTexture->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
@@ -264,7 +264,7 @@ bool SSAOPass::RenderTargetsCreationFunc()
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_Result = g_Engine->Get<TextureResourceService>()->Add("SSAO_Result/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("SSAO_Result");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 

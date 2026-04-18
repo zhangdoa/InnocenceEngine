@@ -62,10 +62,10 @@ bool DrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_GPUModelDataBufferComp = l_rsService->Add("GPUModelDataBuffer/");
-	m_TransformBufferComp = l_rsService->Add("TransformBuffer/");
-	m_TransformPrevBufferComp = l_rsService->Add("TransformPrevBuffer/");
-	m_MaterialGPUBufferComp = l_rsService->Add("MaterialCBuffer/");
+	m_GPUModelDataBufferComp = l_rsService->Add("GPUModelDataBuffer");
+	m_TransformBufferComp = l_rsService->Add("TransformBuffer");
+	m_TransformPrevBufferComp = l_rsService->Add("TransformPrevBuffer");
+	m_MaterialGPUBufferComp = l_rsService->Add("MaterialCBuffer");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;

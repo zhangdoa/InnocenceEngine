@@ -15,11 +15,11 @@ using namespace Inno;
 bool TAAPass::Setup(IServiceConfig* systemConfig)
 {
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TAAPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TAAPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "TAAPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TAAPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TAAPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -65,10 +65,10 @@ bool TAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("TAAPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("TAAPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("TAAPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("TAAPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -191,7 +191,7 @@ bool TAAPass::RenderTargetsCreationFunc()
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_EvenTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Even)/");
+	m_EvenTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Even)");
 	m_EvenTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_EvenTextureComp->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
@@ -200,7 +200,7 @@ bool TAAPass::RenderTargetsCreationFunc()
 	if (m_OddTextureComp)
 		g_Engine->Get<TextureResourceService>()->Delete(m_OddTextureComp);
 
-	m_OddTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Odd)/");
+	m_OddTextureComp = g_Engine->Get<TextureResourceService>()->Add("TAA Pass Result (Odd)");
 	m_OddTextureComp->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_OddTextureComp->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 

@@ -29,7 +29,7 @@ bool AnimationDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_AnimationGPUBufferComp = l_rsService->Add("AnimationCBuffer/");
+	m_AnimationGPUBufferComp = l_rsService->Add("AnimationCBuffer");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;

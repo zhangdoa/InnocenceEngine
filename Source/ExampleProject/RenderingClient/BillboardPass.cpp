@@ -17,14 +17,14 @@ using namespace Inno;
 bool BillboardPass::Setup(IServiceConfig* systemConfig)
 {
 
-	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("BillboardPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("BillboardPass");
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BillboardPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BillboardPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "billboardPass.vert";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "billboardPass.frag";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BillboardPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BillboardPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -65,7 +65,7 @@ bool BillboardPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BillboardPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BillboardPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;

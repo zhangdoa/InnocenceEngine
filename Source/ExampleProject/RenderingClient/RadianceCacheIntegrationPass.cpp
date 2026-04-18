@@ -20,11 +20,11 @@ bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheIntegrationPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheIntegrationPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheIntegration.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheIntegrationPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheIntegrationPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -57,10 +57,10 @@ bool RadianceCacheIntegrationPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheIntegrationPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheIntegrationPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheIntegrationPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheIntegrationPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -174,7 +174,7 @@ bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_Result = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Integration Result/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Integration Result");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 

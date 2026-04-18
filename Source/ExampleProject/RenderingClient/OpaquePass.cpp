@@ -18,17 +18,17 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("OpaquePass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("OpaquePass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "opaqueGeometryProcessPass.frag";
 
-	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("OpaquePass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("OpaquePass");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("OpaquePass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("OpaquePass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -102,7 +102,7 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("OpaquePass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("OpaquePass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 	
 	m_ObjectStatus = ObjectStatus::Created;

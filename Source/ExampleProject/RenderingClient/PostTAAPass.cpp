@@ -15,11 +15,11 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("PostTAAPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("PostTAAPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "postTAAPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("PostTAAPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("PostTAAPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -48,10 +48,10 @@ bool PostTAAPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("PostTAAPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("PostTAAPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("PostTAAPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("PostTAAPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -124,9 +124,6 @@ bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	l_fmService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_renderingContext->m_input, 0);
-	l_fmService->UnbindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 1);
-
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -153,7 +150,7 @@ bool PostTAAPass::RenderTargetsCreationFunc()
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
-	m_Result = g_Engine->Get<TextureResourceService>()->Add("Post-TAA Pass Result/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("Post-TAA Pass Result");
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 

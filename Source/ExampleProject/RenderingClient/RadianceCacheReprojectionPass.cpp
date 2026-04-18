@@ -20,11 +20,11 @@ using namespace Inno;
 bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 {
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheReprojectionPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheReprojectionPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheReprojection.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheReprojectionPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheReprojectionPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -104,10 +104,10 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -229,7 +229,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::ComputeOnly;
-	m_RadianceCache_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Result (Even)/");
+	m_RadianceCache_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Result (Even)");
 	m_RadianceCache_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_RadianceCache_Even);
@@ -237,7 +237,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_RadianceCache_Odd)
 		g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Odd);
 
-	m_RadianceCache_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Result (Odd)/");
+	m_RadianceCache_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Result (Odd)");
 	m_RadianceCache_Odd->m_TextureDesc = m_RadianceCache_Even->m_TextureDesc;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_RadianceCache_Odd);
@@ -247,7 +247,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 
 	auto l_probeTextureWidth = (l_RenderPassDesc.m_RenderTargetDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto l_probeTextureHeight = (l_RenderPassDesc.m_RenderTargetDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
-	m_ProbePosition_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Odd)/");
+	m_ProbePosition_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Odd)");
 	m_ProbePosition_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_ProbePosition_Odd->m_TextureDesc.Width = l_probeTextureWidth;
 	m_ProbePosition_Odd->m_TextureDesc.Height = l_probeTextureHeight;
@@ -257,7 +257,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_ProbePosition_Even)
 		g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Even);
 
-	m_ProbePosition_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Even)/");
+	m_ProbePosition_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Even)");
 	m_ProbePosition_Even->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbePosition_Even);
@@ -265,7 +265,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_ProbeNormal_Odd)
 		g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Odd);
 
-	m_ProbeNormal_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Normal (Odd)/");
+	m_ProbeNormal_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Normal (Odd)");
 	m_ProbeNormal_Odd->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeNormal_Odd);
@@ -273,7 +273,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_ProbeNormal_Even)
 		g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Even);
 
-	m_ProbeNormal_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Normal (Even)/");
+	m_ProbeNormal_Even = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Normal (Even)");
 	m_ProbeNormal_Even->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeNormal_Even);
@@ -281,7 +281,7 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_WorldProbeGrid)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
 
-	m_WorldProbeGrid = g_Engine->Get<GPUBufferResourceService>()->Add("Radiance Cache World Probe Grid/");
+	m_WorldProbeGrid = g_Engine->Get<GPUBufferResourceService>()->Add("Radiance Cache World Probe Grid");
 	m_WorldProbeGrid->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_WorldProbeGrid->m_ElementCount = 256 * 1024;
 	m_WorldProbeGrid->m_ElementSize = sizeof(float) * 3 + sizeof(float) * 3 + sizeof(float);

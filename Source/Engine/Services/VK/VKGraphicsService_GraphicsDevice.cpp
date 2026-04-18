@@ -7,8 +7,6 @@
 #include "../../Component/VKSamplerComponent.h"
 #include "../../Component/VKGPUBufferComponent.h"
 
-#include "../CommonFunctionDefinationMacro.inl"
-
 #include "../../Engine.h"
 
 using namespace Inno;
@@ -83,7 +81,7 @@ bool VKGraphicsService::AssignSwapChainImages()
 	if (l_outputMergerTarget->m_ColorOutputs.size() == 0)
 	{
 		l_outputMergerTarget->m_ColorOutputs.resize(1);
-		l_outputMergerTarget->m_ColorOutputs[0] = AddTextureComponent((m_SwapChainRenderPassComp->m_InstanceName.c_str() + std::string("_RT/")).c_str());
+		l_outputMergerTarget->m_ColorOutputs[0] = AddTextureComponent((m_SwapChainRenderPassComp->m_InstanceName.c_str() + std::string("_RT")).c_str());
 	}
 
 	auto l_VKTextureComp = reinterpret_cast<VKTextureComponent*>(l_outputMergerTarget->m_ColorOutputs[0]);

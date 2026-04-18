@@ -34,10 +34,10 @@ bool SunShadowBlurOddPass::Setup(IServiceConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[2] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[3] = 1.0f;
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowBlurOddPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowBlurOddPass");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowBlurPassOdd.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowBlurOddPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowBlurOddPass");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -115,9 +115,6 @@ bool SunShadowBlurOddPass::PrepareCommandList(IRenderingContext* renderingContex
 	// l_fmService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
 	// l_fmService->Dispatch(m_RenderPassComp, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
-
-	// l_fmService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, SunShadowGeometryProcessPass::Get().GetRenderPassComp()->m_RenderTargets[0], 1);
-	// l_fmService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, m_RenderPassComp->m_RenderTargets[0], 2);
 
 	// l_fmService->CommandListEnd(m_RenderPassComp);
 

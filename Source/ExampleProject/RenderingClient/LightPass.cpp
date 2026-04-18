@@ -28,11 +28,11 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LightPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LightPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "lightPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LightPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LightPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -184,15 +184,15 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler/");
-	m_SamplerComp_Point = g_Engine->Get<SamplerResourceService>()->Add("LightPass/PointSampler/");
+	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
+	m_SamplerComp_Point = g_Engine->Get<SamplerResourceService>()->Add("LightPass/PointSampler");
 	m_SamplerComp_Point->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_Point->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LightPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LightPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("LightPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("LightPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -354,13 +354,13 @@ bool LightPass::RenderTargetsCreationFunc()
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	m_LuminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Luminance Result/");
+	m_LuminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Luminance Result");
 	m_LuminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_LuminanceResult->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_LuminanceResult);
 
-	m_IlluminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Illuminance Result/");
+	m_IlluminanceResult = g_Engine->Get<TextureResourceService>()->Add("LightPass Illuminance Result");
 	m_IlluminanceResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_IlluminanceResult->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 

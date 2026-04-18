@@ -46,7 +46,7 @@ using namespace ImGuiRendererDX12NS;
 bool ImGuiRenderPass::Setup(IServiceConfig* systemConfig)
 {
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("ImGuiRenderPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("ImGuiRenderPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Graphics;

@@ -15,11 +15,11 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BRDFLUTPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("BRDFLUTPass");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "BRDFLUTPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BRDFLUTPass/");
-	m_Result = g_Engine->Get<TextureResourceService>()->Add("BRDF LUT/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("BRDFLUTPass");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("BRDF LUT");
 	m_Result->m_TextureDesc.Width = 512;
 	m_Result->m_TextureDesc.Height = 512;
 	m_Result->m_TextureDesc.DepthOrArraySize = 1;
@@ -48,10 +48,10 @@ bool BRDFLUTPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("BRDFLUTPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("BRDFLUTPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BRDFLUTPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("BRDFLUTPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;

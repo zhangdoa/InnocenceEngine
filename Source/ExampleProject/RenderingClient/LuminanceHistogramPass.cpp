@@ -22,11 +22,11 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LuminanceHistogramPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LuminanceHistogramPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceHistogramPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LuminanceHistogramPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LuminanceHistogramPass");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -52,13 +52,13 @@ bool LuminanceHistogramPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LuminanceHistogramPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LuminanceHistogramPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("LuminanceHistogramPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("LuminanceHistogramPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_luminanceHistogram = g_Engine->Get<GPUBufferResourceService>()->Add("LuminanceHistogramGPUBuffer/");
+	m_luminanceHistogram = g_Engine->Get<GPUBufferResourceService>()->Add("LuminanceHistogramGPUBuffer");
 	m_luminanceHistogram->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceHistogram->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceHistogram->m_ElementCount = 256;

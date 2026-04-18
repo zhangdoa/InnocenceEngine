@@ -25,11 +25,11 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 	l_RenderPassDesc.m_UseOutputMerger = false;
 	l_RenderPassDesc.m_Resizable = false;
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LuminanceAveragePass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("LuminanceAveragePass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LuminanceAveragePass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("LuminanceAveragePass");
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -56,10 +56,10 @@ bool LuminanceAveragePass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LuminanceAveragePass/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("LuminanceAveragePass");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
-	m_luminanceAverage = g_Engine->Get<GPUBufferResourceService>()->Add("LuminanceAverageGPUBuffer/");
+	m_luminanceAverage = g_Engine->Get<GPUBufferResourceService>()->Add("LuminanceAverageGPUBuffer");
 	m_luminanceAverage->m_CPUAccessibility = Accessibility::Immutable;
 	m_luminanceAverage->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_luminanceAverage->m_ElementCount = m_MaxResultToKeep;

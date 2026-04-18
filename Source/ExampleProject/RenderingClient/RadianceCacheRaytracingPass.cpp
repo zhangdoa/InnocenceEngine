@@ -22,16 +22,16 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("RadianceCacheRaytracingPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("RadianceCacheRaytracingPass");
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheRaytracingPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheRaytracingPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_RayGenPath = "RadianceCacheRayGen.hlsl";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_ClosestHitPath = "RadianceCacheClosestHit.hlsl";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_AnyHitPath = "RadianceCacheAnyHit.hlsl";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_MissPath = "RadianceCacheMiss.hlsl";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheRaytracingPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheRaytracingPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -141,10 +141,10 @@ bool RadianceCacheRaytracingPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheRaytracingPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheRaytracingPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheRaytracingPass/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheRaytracingPass");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;

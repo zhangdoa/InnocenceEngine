@@ -122,14 +122,8 @@ std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName,
 		return {};
 	}
 
-	// Use only the stem (base filename without extension and without directory) so the
-	// component name contains no path separators. FixedSizeString overwrites its last
-	// character with '\0'; all component names therefore carry a trailing '/' as the
-	// sacrificial character. The returned name (stored in MaterialComponent JSON) must
-	// NOT include the trailing '/' — only the m_InstanceName assignment uses it.
 	auto l_TextureBaseName = g_Engine->Get<IOService>()->getFileName(l_NormalizedFileName.c_str());
-	auto l_Name = std::string(BaseName) + "." + l_TextureBaseName;
-	auto l_InstanceName = l_Name + "/";
+	auto l_InstanceName = std::string(BaseName) + "." + l_TextureBaseName;
 
 	TextureComponent l_Texture = {};
 	l_Texture.m_InstanceName = l_InstanceName.c_str();
@@ -158,7 +152,7 @@ std::string AssimpTextureProcessor::CreateTextureComponent(const char* FileName,
 	if (l_Result)
 	{
 		Log(Success, "Created and saved TextureComponent: ", l_ResolvedPath.c_str());
-		return l_Name;
+		return l_InstanceName;
 	}
 
 	Log(Error, "Failed to save TextureComponent: ", l_ResolvedPath.c_str());

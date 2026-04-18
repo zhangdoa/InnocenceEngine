@@ -84,7 +84,7 @@ ObjectStatus AnimationResourceService::GetStatus()
 
 SkeletonComponent* AnimationResourceService::AddSkeletonComponent()
 {
-	auto l_Entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(m_Impl->m_SkeletonCount) + "/").c_str());
+	auto l_Entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(m_Impl->m_SkeletonCount)).c_str());
 	auto& l_SDC = g_Engine->Get<EntityRegistry>()->Emplace<SkeletonComponent>(l_Entity);
 	m_Impl->m_SkeletonCount++;
 	return &l_SDC;
@@ -92,7 +92,7 @@ SkeletonComponent* AnimationResourceService::AddSkeletonComponent()
 
 AnimationComponent* AnimationResourceService::AddAnimationComponent()
 {
-	auto l_Entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, ("Animation_" + std::to_string(m_Impl->m_AnimationCount) + "/").c_str());
+	auto l_Entity = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Persistence, ("Animation_" + std::to_string(m_Impl->m_AnimationCount)).c_str());
 	auto& l_ADC = g_Engine->Get<EntityRegistry>()->Emplace<AnimationComponent>(l_Entity);
 	m_Impl->m_AnimationCount++;
 	return &l_ADC;

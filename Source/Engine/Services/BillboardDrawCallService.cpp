@@ -43,7 +43,7 @@ bool BillboardDrawCallServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_BillboardGPUBufferComp = l_rsService->Add("BillboardCBuffer/");
+	m_BillboardGPUBufferComp = l_rsService->Add("BillboardCBuffer");
 
 	OnSceneLoaded();
 

@@ -107,7 +107,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                     return true;
 
                 auto l_componentName = std::string(name) + "." + TextureComponent::GetTypeName();
-                auto l_entityName    = l_componentName + "/";
+                auto l_entityName    = l_componentName;
 
                 auto l_entityID = l_registry->Spawn(ObjectLifespan::Persistence, l_entityName.c_str());
                 auto& l_texture = l_registry->Emplace<TextureComponent>(l_entityID);
@@ -150,7 +150,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
             if (m_defaultMaterialEntity == INVALID_ENTITY)
             {
                 auto l_materialName = std::string("DefaultMaterial.MaterialComponent");
-                auto l_entityName   = l_materialName + "/";
+                auto l_entityName   = l_materialName;
                 auto l_entityID     = l_registry->Spawn(ObjectLifespan::Persistence, l_entityName.c_str());
                 auto& l_material    = l_registry->Emplace<MaterialComponent>(l_entityID);
                 l_material.m_InstanceName = ObjectName(l_materialName.c_str());
@@ -186,7 +186,7 @@ bool TemplateAssetServiceImpl::LoadTemplateAssets()
                     return;
 
                 auto l_componentName = std::string(name) + ".MeshComponent";
-                auto l_entityName    = l_componentName + "/";
+                auto l_entityName    = l_componentName;
 
                 auto l_entityID  = l_registry->Spawn(ObjectLifespan::Persistence, l_entityName.c_str());
                 auto& l_mesh     = l_registry->Emplace<MeshComponent>(l_entityID);

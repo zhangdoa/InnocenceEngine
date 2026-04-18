@@ -89,11 +89,7 @@ bool JSONWrapper::SaveScene(const char* fileName)
 
 	for (auto l_EntityID : l_EntityIDs)
 	{
-		// Strip the trailing "/" that Spawn appends
-		std::string l_FullName = l_registry->GetName(l_EntityID);
-		std::string l_Name = (!l_FullName.empty() && l_FullName.back() == '/')
-			? l_FullName.substr(0, l_FullName.size() - 1)
-			: l_FullName;
+		std::string l_Name = l_registry->GetName(l_EntityID);
 
 		json entityJson;
 		entityJson["Name"] = l_Name;
@@ -134,14 +130,14 @@ bool JSONWrapper::SaveScene(const char* fileName)
 
 		// MeshComponent — reference only, asset file is source of truth
 		auto* l_mesh = l_registry->Get<MeshComponent>(l_EntityID);
-		if (l_mesh && l_mesh->m_InstanceName.c_str()[0] != '\0')
+		if (l_mesh)
 		{
 			entityJson["Components"].push_back({{"Type", MeshComponent::GetTypeID()}, {"Name", l_mesh->m_InstanceName.c_str()}});
 		}
 
 		// MaterialComponent — regenerate file (attributes may have changed)
 		auto* l_material = l_registry->Get<MaterialComponent>(l_EntityID);
-		if (l_material && l_material->m_InstanceName.c_str()[0] != '\0')
+		if (l_material)
 		{
 			std::string l_CompName = l_material->m_InstanceName.c_str();
 			json j;
@@ -173,7 +169,6 @@ bool JSONWrapper::LoadScene(const char* fileName)
 	for (auto& entityJson : j["Entities"])
 	{
 		std::string l_EntityName = entityJson["Name"];
-		l_EntityName += "/";
 		auto l_EntityID = l_registry->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
 		for (auto& compJson : entityJson["Components"])
@@ -256,7 +251,7 @@ bool JSONWrapper::LoadChildScene(const char* sceneFilePath, EntityID parentEntit
 
 	for (auto& entityJson : j["Entities"])
 	{
-		std::string l_EntityName = l_ParentName + entityJson["Name"].get<std::string>() + "/";
+		std::string l_EntityName = l_ParentName + entityJson["Name"].get<std::string>();
 		auto l_EntityID = l_registry->Spawn(ObjectLifespan::Scene, l_EntityName.c_str());
 
 		// Inherit parent transform

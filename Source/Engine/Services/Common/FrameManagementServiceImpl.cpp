@@ -42,9 +42,9 @@ bool FrameManagementService::Setup(IServiceConfig* systemConfig)
 
 	Log(Success, "Global Graphics CommandLists have been created.");
 
-	m_SwapChainRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SwapChain/");
-	m_SwapChainShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SwapChain/");
-	m_SwapChainSamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SwapChain/");
+	m_SwapChainRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SwapChain");
+	m_SwapChainShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SwapChain");
+	m_SwapChainSamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SwapChain");
 
 	// m_GlobalSemaphore is created by the DX12 backend during CreateHardwareResources
 	// (CreateSyncPrimitives sets up fence events on it), so we don't create a new one here.

@@ -21,18 +21,18 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_shadowMapResolution = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig().shadowMapResolution;
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowGeometryProcessPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowGeometryProcessPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_VSPath = "sunShadowGeometryProcessPass.vert";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_GSPath = "sunShadowGeometryProcessPass.geom";
 	m_ShaderProgramComp->m_ShaderFilePaths.m_PSPath = "sunShadowGeometryProcessPass.frag";
 
-	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SunShadowGeometryProcessPass/");
+	m_SamplerComp = g_Engine->Get<SamplerResourceService>()->Add("SunShadowGeometryProcessPass");
 
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SamplerComp->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowGeometryProcessPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowGeometryProcessPass");
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -122,7 +122,7 @@ bool SunShadowGeometryProcessPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("SunShadowGeometryProcessPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("SunShadowGeometryProcessPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
 	m_ObjectStatus = ObjectStatus::Created;

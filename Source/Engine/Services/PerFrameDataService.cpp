@@ -72,8 +72,8 @@ bool PerFrameDataServiceImpl::Setup(IServiceConfig* systemConfig)
 {
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
 
-	m_PerFrameCBufferGPUBufferComp = l_rsService->Add("PerFrameCBuffer/");
-	m_PerFrameCBufferPrevGPUBufferComp = l_rsService->Add("PerFrameCBufferPrev/");
+	m_PerFrameCBufferGPUBufferComp = l_rsService->Add("PerFrameCBuffer");
+	m_PerFrameCBufferPrevGPUBufferComp = l_rsService->Add("PerFrameCBufferPrev");
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;

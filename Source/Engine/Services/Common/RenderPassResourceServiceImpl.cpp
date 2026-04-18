@@ -106,7 +106,7 @@ bool RenderPassResourceService::CreateOutputMergerTargets(RenderPassComponent* r
 		for (size_t i = 0; i < l_outputMergerTarget->m_ColorOutputs.size(); i++)
 		{
 			auto& l_renderTarget = l_outputMergerTarget->m_ColorOutputs[i];
-			l_renderTarget = l_textureService->Add((std::string(renderPass->m_InstanceName.c_str()) + "_RT_" + std::to_string(i) + "/").c_str());
+			l_renderTarget = l_textureService->Add((std::string(renderPass->m_InstanceName.c_str()) + "_RT_" + std::to_string(i)).c_str());
 			Log(Verbose, "Render target: ", l_renderTarget->m_InstanceName, " has been allocated at: ", l_renderTarget);
 		}
 	}
@@ -121,7 +121,7 @@ bool RenderPassResourceService::CreateOutputMergerTargets(RenderPassComponent* r
 		auto l_textureService = g_Engine->Get<TextureResourceService>();
 		auto l_outputMergerTarget = renderPass->m_OutputMergerTarget;
 		auto& l_depthStencilRenderTarget = l_outputMergerTarget->m_DepthStencilOutput;
-		l_depthStencilRenderTarget = l_textureService->Add((std::string(renderPass->m_InstanceName.c_str()) + "_DS/").c_str());
+		l_depthStencilRenderTarget = l_textureService->Add((std::string(renderPass->m_InstanceName.c_str()) + "_DS").c_str());
 		Log(Verbose, renderPass->m_InstanceName.c_str(), " depth stencil target has been allocated.");
 	}
 

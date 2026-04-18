@@ -17,13 +17,13 @@ bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowCullingPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("SunShadowCullingPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "sunShadowCulling.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowCullingPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("SunShadowCullingPass");
 
-	m_IndirectDrawCommandBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("SunShadowCullingPass/IndirectDrawCommandBuffer/");
+	m_IndirectDrawCommandBuffer = g_Engine->Get<GPUBufferResourceService>()->Add("SunShadowCullingPass/IndirectDrawCommandBuffer");
 	m_IndirectDrawCommandBuffer->m_Usage = GPUBufferUsage::IndirectDraw;
 	m_IndirectDrawCommandBuffer->m_ElementCount = g_Engine->Get<RenderingConfigurationService>()->GetRenderingCapability().maxMeshes;
 
@@ -67,7 +67,7 @@ bool SunShadowCullingPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("SunShadowCullingPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("SunShadowCullingPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;

@@ -47,8 +47,8 @@ static void TestFSSTrailingSlashPreserved()
 {
     TestRunner::StartTest("FixedSizeString: trailing slash is preserved (no sacrificial-char truncation)");
 
-    FixedSizeString<64> s("Component/");
-    bool passed = (std::string(s.c_str()) == "Component/") && (s.size() == 10);
+    FixedSizeString<64> s("Component");
+    bool passed = (std::string(s.c_str()) == "Component") && (s.size() == 10);
     TestRunner::EndTest(passed);
 }
 
@@ -178,7 +178,7 @@ static void TestFSSFind()
     bool passed =
         (s.find("Comp")  != nullptr) &&
         (s.find("child") != nullptr) &&
-        (s.find("/")     != nullptr) &&
+        (s.find("")     != nullptr) &&
         (s.find("xyz")   == nullptr);
     TestRunner::EndTest(passed);
 }

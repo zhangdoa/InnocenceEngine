@@ -18,11 +18,11 @@ bool TransparentBlendPass::Setup(IServiceConfig *systemConfig)
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TransparentBlendPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("TransparentBlendPass");
 
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "transparentBlendPass.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TransparentBlendPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("TransparentBlendPass");
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -128,11 +128,6 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 	// l_fmService->BindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_PerFrameCBufferGPUBufferComp, 4);
 
 	// l_fmService->Dispatch(m_RenderPassComp, 160, 90, 1);
-
-	// l_fmService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetHeadPtrTexture(), 0);
-	// l_fmService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel0(), 1);
-	// l_fmService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, TransparentGeometryProcessPass::Get().GetResultChannel1(), 2);
-	// l_fmService->UnbindGPUResource(m_RenderPassComp, ShaderStage::Compute, l_canvas, 3);
 
 	// l_fmService->CommandListEnd(m_RenderPassComp);
 

@@ -430,21 +430,21 @@ bool DX12GPUBufferResourceService::CreateRaytracingResources()
 {
 	auto l_swapChainImageCount = g_Engine->Get<FrameManagementService>()->GetSwapChainImageCount();
 
-	m_TLASBufferComponent = Add("TLASBuffer/");
+	m_TLASBufferComponent = Add("TLASBuffer");
 	m_TLASBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_TLASBufferComponent->m_Usage = GPUBufferUsage::TLAS;
 	m_TLASBufferComponent->m_ElementCount = 256;
 
 	InitializeImpl(m_TLASBufferComponent);
 
-	m_ScratchBufferComponent = Add("ScratchBuffer/");
+	m_ScratchBufferComponent = Add("ScratchBuffer");
 	m_ScratchBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_ScratchBufferComponent->m_Usage = GPUBufferUsage::ScratchBuffer;
 	m_ScratchBufferComponent->m_ElementCount = 256;
 
 	InitializeImpl(m_ScratchBufferComponent);
 
-	m_RaytracingInstanceBufferComponent = Add("RaytracingInstanceBuffer/");
+	m_RaytracingInstanceBufferComponent = Add("RaytracingInstanceBuffer");
 	m_RaytracingInstanceBufferComponent->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_RaytracingInstanceBufferComponent->m_ElementCount = 256;
 	m_RaytracingInstanceBufferComponent->m_ElementSize = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);

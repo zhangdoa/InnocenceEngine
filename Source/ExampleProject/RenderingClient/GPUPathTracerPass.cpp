@@ -28,7 +28,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_ShaderStage = ShaderStage::RayGen | ShaderStage::ClosestHit | ShaderStage::AnyHit | ShaderStage::Miss;
 
 	// --- Ray Tracing SPC ---
-	m_RayTracingSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("GPUPathTracerPass/");
+	m_RayTracingSPC = g_Engine->Get<ShaderProgramResourceService>()->Add("GPUPathTracerPass");
 	m_RayTracingSPC->m_ShaderFilePaths.m_RayGenPath     = "GPUPathTracerRayGen.hlsl";
 	m_RayTracingSPC->m_ShaderFilePaths.m_ClosestHitPath = "GPUPathTracerClosestHit.hlsl";
 	m_RayTracingSPC->m_ShaderFilePaths.m_AnyHitPath     = "GPUPathTracerAnyHit.hlsl";
@@ -36,7 +36,7 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingSPC->m_ShaderFilePaths.m_ShadowMissPath = "GPUPathTracerShadowMiss.hlsl";
 
 	// --- Ray Tracing Render Pass ---
-	m_RayTracingRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("GPUPathTracerPass/");
+	m_RayTracingRenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("GPUPathTracerPass");
 
 	auto l_rtDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_rtDesc.m_GPUEngineType    = GPUEngineType::Compute;
@@ -138,10 +138,10 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	m_RayTracingRenderPassComp->m_ShaderProgram = m_RayTracingSPC;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("GPUPathTracerPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	// --- Scene callbacks ---
@@ -204,7 +204,7 @@ bool GPUPathTracerPass::Initialize()
 
 
 	// AccumulationBuffer: HDR RGBA float32, ComputeOnly UAV
-	m_AccumulationBuffer = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerAccumBuffer/");
+	m_AccumulationBuffer = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerAccumBuffer");
 	m_AccumulationBuffer->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
 	m_AccumulationBuffer->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
 	m_AccumulationBuffer->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
@@ -217,7 +217,7 @@ bool GPUPathTracerPass::Initialize()
 	g_Engine->Get<TextureResourceService>()->Initialize(m_AccumulationBuffer);
 
 	// FrameCountCB: single uint32
-	m_FrameCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerFrameCountCB/");
+	m_FrameCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerFrameCountCB");
 	m_FrameCountCB->m_ElementCount      = 1;
 	m_FrameCountCB->m_ElementSize       = sizeof(uint32_t);
 	m_FrameCountCB->m_CPUAccessibility  = Accessibility::WriteOnly;
@@ -225,7 +225,7 @@ bool GPUPathTracerPass::Initialize()
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_FrameCountCB);
 
 	// LightCountCB: two uint32 (point count, sphere count) + two padding uint32
-	m_LightCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerLightCountCB/");
+	m_LightCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerLightCountCB");
 	m_LightCountCB->m_ElementCount      = 1;
 	m_LightCountCB->m_ElementSize       = sizeof(PathTracerLightCountData);
 	m_LightCountCB->m_CPUAccessibility  = Accessibility::WriteOnly;
@@ -523,7 +523,7 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 	}
 
 	// Create and upload mega vertex buffer (ReadWrite for SRV descriptor table binding)
-	m_MegaVertexBuffer = l_bufService->Add("GPUPathTracerMegaVB/");
+	m_MegaVertexBuffer = l_bufService->Add("GPUPathTracerMegaVB");
 	m_MegaVertexBuffer->m_ElementCount     = l_vertices.size();
 	m_MegaVertexBuffer->m_ElementSize      = sizeof(GPUPathTracerVertex);
 	m_MegaVertexBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
@@ -532,7 +532,7 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 	l_bufService->Initialize(m_MegaVertexBuffer);
 
 	// Create and upload mega index buffer
-	m_MegaIndexBuffer = l_bufService->Add("GPUPathTracerMegaIB/");
+	m_MegaIndexBuffer = l_bufService->Add("GPUPathTracerMegaIB");
 	m_MegaIndexBuffer->m_ElementCount     = l_indices.size();
 	m_MegaIndexBuffer->m_ElementSize      = sizeof(uint32_t);
 	m_MegaIndexBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
@@ -541,7 +541,7 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 	l_bufService->Initialize(m_MegaIndexBuffer);
 
 	// Create and upload mesh offset buffer
-	m_MeshOffsetBuffer = l_bufService->Add("GPUPathTracerMeshOffsets/");
+	m_MeshOffsetBuffer = l_bufService->Add("GPUPathTracerMeshOffsets");
 	m_MeshOffsetBuffer->m_ElementCount     = l_offsets.size();
 	m_MeshOffsetBuffer->m_ElementSize      = sizeof(MeshOffsetData);
 	m_MeshOffsetBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
@@ -550,7 +550,7 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 	l_bufService->Initialize(m_MeshOffsetBuffer);
 
 	// Create and upload material buffer (indexed by TLAS instance)
-	m_MaterialBuffer = l_bufService->Add("GPUPathTracerMaterialBuffer/");
+	m_MaterialBuffer = l_bufService->Add("GPUPathTracerMaterialBuffer");
 	m_MaterialBuffer->m_ElementCount     = l_materials.size();
 	m_MaterialBuffer->m_ElementSize      = sizeof(MaterialConstantBuffer);
 	m_MaterialBuffer->m_CPUAccessibility = Accessibility::WriteOnly;

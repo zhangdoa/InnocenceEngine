@@ -16,7 +16,7 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 	Log(Verbose, "Creating MaterialComponent for: ", l_MaterialName);
 
 	OutMaterial = {};
-	auto l_InstanceName = std::string(BaseName) + "." + l_MaterialName + ".MaterialComponent/";
+	auto l_InstanceName = std::string(BaseName) + "." + l_MaterialName + ".MaterialComponent";
 	OutMaterial.m_InstanceName = l_InstanceName.c_str();
 
 	auto l_allocation = AssetService::AllocateMaterialAsset(l_MaterialName, ObjectLifespan::Scene);

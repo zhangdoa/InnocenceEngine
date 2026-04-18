@@ -18,10 +18,10 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 {
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
-	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheFilterHorizontalPass/");
+	m_ShaderProgramComp = g_Engine->Get<ShaderProgramResourceService>()->Add("RadianceCacheFilterHorizontalPass");
 	m_ShaderProgramComp->m_ShaderFilePaths.m_CSPath = "RadianceCacheFilterHorizontal.comp";
 
-	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheFilterHorizontalPass/");
+	m_RenderPassComp = g_Engine->Get<RenderPassResourceService>()->Add("RadianceCacheFilterHorizontalPass");
 	
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
@@ -70,10 +70,10 @@ bool RadianceCacheFilterHorizontalPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheFilterHorizontalPass/Graphics/");
+	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheFilterHorizontalPass/Graphics");
 	m_CommandListComp_Graphics->m_Type = GPUEngineType::Graphics;
 
-	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheFilterHorizontalPass/Compute/");
+	m_CommandListComp_Compute = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheFilterHorizontalPass/Compute");
 	m_CommandListComp_Compute->m_Type = GPUEngineType::Compute;
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -179,7 +179,7 @@ bool RadianceCacheFilterHorizontalPass::RenderTargetsCreationFunc()
 	if (m_Result)
 		g_Engine->Get<TextureResourceService>()->Delete(m_Result);
 
-	m_Result = g_Engine->Get<TextureResourceService>()->Add("RadianceCacheFilterHorizontalPass_Result/");
+	m_Result = g_Engine->Get<TextureResourceService>()->Add("RadianceCacheFilterHorizontalPass_Result");
 	m_Result->m_TextureDesc = l_raytracingResult->m_TextureDesc;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 
