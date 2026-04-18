@@ -126,13 +126,21 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
     if (albedoIdx != PT_INVALID_TEXTURE_INDEX)
         albedo = g_MaterialTextures[NonUniformResourceIndex(albedoIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).rgb;
 
+    // glTF packs metallic and roughness into one texture: R = unused/occlusion,
+    // G = roughness, B = metalness (glTF 2.0 spec, section 5.22). Our
+    // AssimpMaterialProcessor points slot 2 (METALLIC) at the same texture
+    // as slot 3 (ROUGHNESS) because Assimp reports aiTextureType_METALNESS
+    // and aiTextureType_DIFFUSE_ROUGHNESS as both referring to the packed
+    // texture. Sample from the right channel for each slot. Sampling .r for
+    // both (previous bug) read occlusion / zero and collapsed every glTF
+    // surface to the scalar fallback "fully metallic, fully rough."
     uint metallicIdx = mat.TextureIndices[PT_TEX_SLOT_METALLIC];
     if (metallicIdx != PT_INVALID_TEXTURE_INDEX)
-        metalness = g_MaterialTextures[NonUniformResourceIndex(metallicIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).r;
+        metalness = g_MaterialTextures[NonUniformResourceIndex(metallicIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).b;
 
     uint roughnessIdx = mat.TextureIndices[PT_TEX_SLOT_ROUGHNESS];
     if (roughnessIdx != PT_INVALID_TEXTURE_INDEX)
-        roughness = g_MaterialTextures[NonUniformResourceIndex(roughnessIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).r;
+        roughness = g_MaterialTextures[NonUniformResourceIndex(roughnessIdx)].SampleLevel(g_MaterialSampler, payload.texCoord, 0.0f).g;
 
     payload.albedo    = albedo;
     payload.metalness = metalness;
