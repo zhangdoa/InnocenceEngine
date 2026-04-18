@@ -104,7 +104,7 @@ void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene,
 			if (l_AiMesh->mMaterialIndex < Scene->mNumMaterials)
 			{
 				MaterialComponent l_Material = {};
-				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_AiMesh->mMaterialIndex], BaseName, ModelBaseDir, l_Material);
+				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_AiMesh->mMaterialIndex], l_AiMesh->mMaterialIndex, BaseName, ModelBaseDir, l_Material);
 				l_MaterialName = l_Material.m_InstanceName.c_str();
 			}
 

@@ -10,9 +10,22 @@
 
 using namespace Inno;
 
-bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial)
+bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material, uint32_t MaterialIndex, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial)
 {
-	auto l_MaterialName = Material->GetName().C_Str();
+	// Some glTF files (notably the Intel/Frostbite Sponza curtains pack) ship
+	// materials with empty `name` fields in the Assimp-exposed aiMaterial.
+	// Keying AllocateMaterialAsset on "" collapses every unnamed material in
+	// the file into one asset — the last import overwrites the previous, and
+	// the N distinct materials share one set of textures (the last one's).
+	// Fall back to a stable per-scene index so unnamed materials stay distinct.
+	const char* l_RawName = Material->GetName().C_Str();
+	std::string l_NameBuf;
+	if (!l_RawName || l_RawName[0] == '\0')
+	{
+		l_NameBuf = "material_" + std::to_string(MaterialIndex);
+		l_RawName = l_NameBuf.c_str();
+	}
+	auto l_MaterialName = l_RawName;
 	Log(Verbose, "Creating MaterialComponent for: ", l_MaterialName);
 
 	OutMaterial = {};
@@ -60,8 +73,22 @@ bool AssimpMaterialProcessor::CreateMaterialComponent(const aiMaterial* Material
 void AssimpMaterialProcessor::ProcessMaterialProperties(const aiMaterial* material, MaterialAssetData* assetData)
 {
 	aiColor3D l_result;
+	aiColor4D l_result4;
 
-	if (material->Get(AI_MATKEY_COLOR_DIFFUSE, l_result) == aiReturn::aiReturn_SUCCESS)
+	// glTF PBR workflow stores the albedo factor as `baseColorFactor` (exposed
+	// via AI_MATKEY_BASE_COLOR, aiColor4D), not AI_MATKEY_COLOR_DIFFUSE (the
+	// Phong diffuse). Try the PBR key first; fall back to the legacy Phong key
+	// for FBX / older assets. Otherwise the per-material tint is lost (e.g.
+	// Sponza curtain_01/02/03 materials all show albedo=1 despite glTF
+	// baseColorFactor distinguishing red/green/blue).
+	if (material->Get(AI_MATKEY_BASE_COLOR, l_result4) == aiReturn::aiReturn_SUCCESS)
+	{
+		assetData->m_Attributes.AlbedoR = l_result4.r;
+		assetData->m_Attributes.AlbedoG = l_result4.g;
+		assetData->m_Attributes.AlbedoB = l_result4.b;
+		assetData->m_Attributes.Alpha   = l_result4.a;
+	}
+	else if (material->Get(AI_MATKEY_COLOR_DIFFUSE, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		assetData->m_Attributes.AlbedoR = l_result.r;
 		assetData->m_Attributes.AlbedoG = l_result.g;

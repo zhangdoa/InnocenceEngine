@@ -8,7 +8,7 @@ namespace Inno
 {
 	namespace AssimpMaterialProcessor
 	{
-		bool CreateMaterialComponent(const aiMaterial* Material, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial);
+		bool CreateMaterialComponent(const aiMaterial* Material, uint32_t MaterialIndex, const char* BaseName, const char* ModelBaseDir, MaterialComponent& OutMaterial);
 
 		void ProcessMaterialProperties(const aiMaterial* Material, MaterialAssetData* AssetData);
 
