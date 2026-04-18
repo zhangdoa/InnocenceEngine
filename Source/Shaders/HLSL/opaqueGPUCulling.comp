@@ -23,66 +23,52 @@ RWStructuredBuffer<DX12IndirectDrawCommand> u_DrawCommandBuffer : register(u0);
 // Thread group size
 #define THREAD_GROUP_SIZE 64
 
-// Frustum culling function using bounding box
+// Clip-space plane frustum culling. We test in clip space, NOT after the /w to
+// NDC, because the perspective divide breaks for AABBs that straddle the near
+// plane (corners with w <= 0 produce sign-flipped or infinite NDC coordinates,
+// making the "all corners outside plane P" test silently wrong). The clip-space
+// inequality x < -w is valid for any sign of w, so it stays correct even when
+// some corners are behind the camera.
+//
+// DX12 clip-space frustum: -w <= x <= w, -w <= y <= w, 0 <= z <= w.
 bool IsInFrustum(float4 boundingBoxMin, float4 boundingBoxMax, float4x4 viewProjectionMatrix)
 {
-    // Get the 8 corners of the bounding box
-    float3 corners[8];
-    corners[0] = float3(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMin.z);
-    corners[1] = float3(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMin.z);
-    corners[2] = float3(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMin.z);
-    corners[3] = float3(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMin.z);
-    corners[4] = float3(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMax.z);
-    corners[5] = float3(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMax.z);
-    corners[6] = float3(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMax.z);
-    corners[7] = float3(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMax.z);
+    float4 corners[8] = {
+        float4(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMin.z, 1.0),
+        float4(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMin.z, 1.0),
+        float4(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMin.z, 1.0),
+        float4(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMin.z, 1.0),
+        float4(boundingBoxMin.x, boundingBoxMin.y, boundingBoxMax.z, 1.0),
+        float4(boundingBoxMax.x, boundingBoxMin.y, boundingBoxMax.z, 1.0),
+        float4(boundingBoxMin.x, boundingBoxMax.y, boundingBoxMax.z, 1.0),
+        float4(boundingBoxMax.x, boundingBoxMax.y, boundingBoxMax.z, 1.0),
+    };
 
-    // Check each frustum plane: if all corners are outside any plane, cull the object
+    for (int i = 0; i < 8; i++)
+        corners[i] = mul(corners[i], viewProjectionMatrix);
+
+    // For each plane, cull only if every corner is strictly outside that plane.
+    bool allOutsideLeft   = true;
+    bool allOutsideRight  = true;
+    bool allOutsideBottom = true;
+    bool allOutsideTop    = true;
+    bool allOutsideNear   = true;
+    bool allOutsideFar    = true;
+
     for (int i = 0; i < 8; i++)
     {
-        float4 clipPos = mul(float4(corners[i], 1.0), viewProjectionMatrix);
-        corners[i] = clipPos.xyz / clipPos.w; // Store NDC coordinates
+        float4 c = corners[i];
+        if (c.x >= -c.w) allOutsideLeft   = false;
+        if (c.x <=  c.w) allOutsideRight  = false;
+        if (c.y >= -c.w) allOutsideBottom = false;
+        if (c.y <=  c.w) allOutsideTop    = false;
+        if (c.z >=  0.0) allOutsideNear   = false;
+        if (c.z <=  c.w) allOutsideFar    = false;
     }
 
-    // Check if all corners are outside any frustum plane
-    // Left plane (x = -1)
-    bool allOutsideLeft = true;
-    for (int i = 0; i < 8; i++)
-        if (corners[i].x >= -1.0) { allOutsideLeft = false; break; }
-    if (allOutsideLeft) return false;
-
-    // Right plane (x = 1)
-    bool allOutsideRight = true;
-    for (int i = 0; i < 8; i++)
-        if (corners[i].x <= 1.0) { allOutsideRight = false; break; }
-    if (allOutsideRight) return false;
-
-    // Bottom plane (y = -1)
-    bool allOutsideBottom = true;
-    for (int i = 0; i < 8; i++)
-        if (corners[i].y >= -1.0) { allOutsideBottom = false; break; }
-    if (allOutsideBottom) return false;
-
-    // Top plane (y = 1)
-    bool allOutsideTop = true;
-    for (int i = 0; i < 8; i++)
-        if (corners[i].y <= 1.0) { allOutsideTop = false; break; }
-    if (allOutsideTop) return false;
-
-    // Near plane (z = -1)
-    bool allOutsideNear = true;
-    for (int i = 0; i < 8; i++)
-        if (corners[i].z >= -1.0) { allOutsideNear = false; break; }
-    if (allOutsideNear) return false;
-
-    // Far plane (z = 1)
-    bool allOutsideFar = true;
-    for (int i = 0; i < 8; i++)
-        if (corners[i].z <= 1.0) { allOutsideFar = false; break; }
-    if (allOutsideFar) return false;
-
-    // Object is at least partially inside frustum
-    return true;
+    return !(allOutsideLeft || allOutsideRight ||
+             allOutsideBottom || allOutsideTop ||
+             allOutsideNear || allOutsideFar);
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
