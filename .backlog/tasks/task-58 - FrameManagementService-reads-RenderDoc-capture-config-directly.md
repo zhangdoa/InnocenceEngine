@@ -1,9 +1,10 @@
 ---
 id: TASK-58
 title: FrameManagementService reads RenderDoc capture config directly
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 09:00'
+updated_date: '2026-04-18 17:34'
 labels:
   - architecture
   - rendering-client
@@ -22,3 +23,9 @@ priority: low
 
 Resolve by having the rendering client (or a dedicated `CaptureController`) register a per-frame callback that the frame manager invokes. The callback owner decides when to request a capture; the frame manager just calls the hook.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+`FrameManagementService::Update` no longer reads `getInitConfig().captureFrame`. Added `SetPreFrameCallback` / `SetPostFrameCallback` hooks; Engine.cpp wires the RenderDoc BeginCapture/EndCapture via those hooks only when `-capture_frame N` is provided. The frame manager now owns frame pacing only; capture is a client-side debug-tool concern.
+<!-- SECTION:FINAL_SUMMARY:END -->

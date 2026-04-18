@@ -39,6 +39,11 @@ namespace Inno
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
 		void SetCommandPreparationCallback(std::function<bool()>&& callback);
 		void SetCommandExecutionCallback(std::function<bool()>&& callback);
+		// Pre/post-frame hooks so clients (e.g. the rendering client's capture
+		// logic, auto-test instrumentation) can run work at frame boundaries
+		// without FrameManagementService having to know about the feature.
+		void SetPreFrameCallback(std::function<void(uint32_t)>&& callback);
+		void SetPostFrameCallback(std::function<void(uint32_t)>&& callback);
 
 		// Swap chain
 		RenderPassComponent* GetSwapChainRenderPassComponent();
@@ -131,6 +136,8 @@ namespace Inno
 		std::function<bool()> m_UploadHeapPreparationCallback;
 		std::function<bool()> m_CommandPreparationCallback;
 		std::function<bool()> m_CommandExecutionCallback;
+		std::function<void(uint32_t)> m_PreFrameCallback;
+		std::function<void(uint32_t)> m_PostFrameCallback;
 
 		std::atomic_bool m_needResize = false;
 		bool m_DeviceErrorReported = false;

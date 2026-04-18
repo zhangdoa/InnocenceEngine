@@ -663,6 +663,37 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				}
 				return true;
 			});
+
+		// RenderDoc / PIX capture trigger. Lives here rather than inside
+		// FrameManagementService::Update because the frame manager owns frame
+		// pacing, not debug-tool triggers. -capture_frame N fires a single
+		// frame capture at frame N (0-indexed, FrameCountSinceLaunch).
+		const int l_captureFrame = m_pImpl->m_initConfig.captureFrame;
+		if (l_captureFrame >= 0)
+		{
+			Get<FrameManagementService>()->SetPreFrameCallback([this, l_captureFrame](uint32_t frameCount)
+				{
+					if (frameCount == static_cast<uint32_t>(l_captureFrame))
+						Get<GraphicsHardwareService>()->BeginCapture();
+				});
+
+			Get<FrameManagementService>()->SetPostFrameCallback([this, l_captureFrame](uint32_t frameCount)
+				{
+					if (frameCount != static_cast<uint32_t>(l_captureFrame))
+						return;
+
+					// Drain all queued GPU work so the capture boundary encloses
+					// a complete frame — RenderDoc's EndFrameCapture otherwise
+					// sees a mid-flight state and records no useful frame.
+					auto* l_fm = Get<FrameManagementService>();
+					auto* l_hw = Get<GraphicsHardwareService>();
+					l_hw->WaitOnCPU(l_hw->GetSemaphoreValue(GPUEngineType::Graphics), GPUEngineType::Graphics);
+					l_hw->WaitOnCPU(l_hw->GetSemaphoreValue(GPUEngineType::Compute),  GPUEngineType::Compute);
+					l_hw->WaitOnCPU(l_hw->GetSemaphoreValue(GPUEngineType::Copy),     GPUEngineType::Copy);
+					(void)l_fm;
+					l_hw->EndCapture();
+				});
+		}
 	}
 
 	// Only setup rendering-related services if not headless

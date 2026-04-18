@@ -8,6 +8,7 @@
 #include "../FrameManagementService.h"
 #include "../../Engine.h"
 #include "../../Services/RenderingConfigurationService.h"
+#include "../../Common/IOService.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
 #include "DX12Helper_Common.h"
@@ -15,6 +16,8 @@
 #include "DX12Helper_Texture.h"
 
 #include "../../../External/GitSubmodules/renderdoc/renderdoc/api/app/renderdoc_app.h"
+
+#include <filesystem>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -331,21 +334,49 @@ bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 	if (l_initConfig.captureFrame < 0)
 		return false;
 
+	// Load order:
+	// 1. Already in-process (e.g. `renderdoccmd capture -w` wrapped the launch, or
+	//    the user pre-injected the DLL). This is the common path.
+	// 2. INNO_RENDERDOC_DLL env var override — lets users with non-default installs
+	//    point us at their renderdoc.dll without recompiling.
+	// 3. System PATH lookup ("renderdoc.dll" with no explicit path).
+	// 4. The Windows default install location as a last-resort fallback.
+	// We deliberately don't ship this as a hard-coded-only path: the engine is
+	// not supposed to assume where a third-party SDK lives on the user's box.
+	static constexpr const char* k_DefaultInstallPath = "C:/Program Files/RenderDoc/renderdoc.dll";
 	HMODULE l_RenderDocModule = GetModuleHandleA("renderdoc.dll");
-	if (l_RenderDocModule == nullptr)
+	const char* l_LoadedFrom = nullptr;
+	if (l_RenderDocModule)
 	{
-		l_RenderDocModule = LoadLibraryA("C:/Program Files/RenderDoc/renderdoc.dll");
-		if (l_RenderDocModule == nullptr)
-		{
-			Log(Warning, "RenderDoc: failed to load renderdoc.dll from 'C:/Program Files/RenderDoc/'.");
-			return false;
-		}
-		Log(Success, "RenderDoc: loaded renderdoc.dll from 'C:/Program Files/RenderDoc/'.");
+		l_LoadedFrom = "pre-injected";
 	}
 	else
 	{
-		Log(Success, "RenderDoc: detected pre-injected renderdoc.dll.");
+		char l_EnvOverride[MAX_PATH] = {};
+		DWORD l_EnvLen = GetEnvironmentVariableA("INNO_RENDERDOC_DLL", l_EnvOverride, MAX_PATH);
+		if (l_EnvLen > 0 && l_EnvLen < MAX_PATH)
+		{
+			l_RenderDocModule = LoadLibraryA(l_EnvOverride);
+			if (l_RenderDocModule) l_LoadedFrom = l_EnvOverride;
+		}
+		if (!l_RenderDocModule)
+		{
+			l_RenderDocModule = LoadLibraryA("renderdoc.dll");
+			if (l_RenderDocModule) l_LoadedFrom = "PATH";
+		}
+		if (!l_RenderDocModule)
+		{
+			l_RenderDocModule = LoadLibraryA(k_DefaultInstallPath);
+			if (l_RenderDocModule) l_LoadedFrom = k_DefaultInstallPath;
+		}
+		if (!l_RenderDocModule)
+		{
+			Log(Warning, "RenderDoc: renderdoc.dll not found (tried pre-injected, INNO_RENDERDOC_DLL env var, PATH, '",
+				k_DefaultInstallPath, "'). In-process capture disabled.");
+			return false;
+		}
 	}
+	Log(Success, "RenderDoc: loaded renderdoc.dll from ", l_LoadedFrom, ".");
 
 	auto l_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(l_RenderDocModule, "RENDERDOC_GetAPI");
 	if (l_GetAPI == nullptr)
@@ -361,8 +392,15 @@ bool DX12GraphicsHardwareService::TryLoadRenderDocAPI()
 
 	m_RenderDocAPI = l_API;
 
-	std::string l_captureDir = "C:/GitRepo/InnocenceEngine/Build/captures/frame";
-	l_API->SetCaptureFilePathTemplate(l_captureDir.c_str());
+	// Template is "<file-prefix>"; RenderDoc appends a frame index and `.rdc`.
+	// Derived from the working directory (`Bin/`) so the capture output follows
+	// the repo wherever it lives, and stays adjacent to the build outputs.
+	// Dir existence is not guaranteed — create it if missing.
+	auto l_workingDir  = g_Engine->Get<IOService>()->getWorkingDirectory();
+	auto l_captureDir  = l_workingDir + "../Build/captures";
+	std::filesystem::create_directories(l_captureDir);
+	std::string l_captureTemplate = l_captureDir + "/frame";
+	l_API->SetCaptureFilePathTemplate(l_captureTemplate.c_str());
 	l_API->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, 1);
 	l_API->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, 1);
 

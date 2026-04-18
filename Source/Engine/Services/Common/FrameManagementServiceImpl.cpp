@@ -127,11 +127,11 @@ bool FrameManagementService::Update()
 {
 	auto l_currentFrame = m_CurrentFrame;
 
-	auto l_captureFrame = g_Engine->getInitConfig().captureFrame;
-	bool l_isCapturing = (l_captureFrame >= 0 && m_FrameCountSinceLaunch == static_cast<uint32_t>(l_captureFrame));
-
-	if (l_isCapturing)
-		m_HardwareService->BeginCapture();
+	// Pre-frame hook — clients use this for debug/capture/instrumentation
+	// triggers that need to straddle the GPU frame boundary. FrameManagement
+	// owns frame pacing; it does NOT own RenderDoc or auto-test logic.
+	if (m_PreFrameCallback)
+		m_PreFrameCallback(m_FrameCountSinceLaunch);
 
 	// BeginFrame waits for the per-queue fences of this frame slot before resetting
 	// allocators, so HasGPUError below sees a GPU that has caught up to prior work.
@@ -204,14 +204,11 @@ bool FrameManagementService::Update()
 
 	Present();
 
-	if (l_isCapturing)
-	{
-		// Drain all queued GPU work so the capture boundary encloses a complete frame.
-		m_HardwareService->WaitOnCPU(m_GraphicsSemaphoreValues[l_currentFrame], GPUEngineType::Graphics);
-		m_HardwareService->WaitOnCPU(m_ComputeSemaphoreValues[l_currentFrame], GPUEngineType::Compute);
-		m_HardwareService->WaitOnCPU(m_CopySemaphoreValues[l_currentFrame], GPUEngineType::Copy);
-		m_HardwareService->EndCapture();
-	}
+	// Post-frame hook — clients use this to finalize capture / readback /
+	// any work that needs to happen AFTER Present but within the same
+	// logical frame. Callback receives the frame index just completed.
+	if (m_PostFrameCallback)
+		m_PostFrameCallback(m_FrameCountSinceLaunch);
 
 	EndFrame();
 
@@ -275,6 +272,16 @@ void FrameManagementService::SetCommandPreparationCallback(std::function<bool()>
 void FrameManagementService::SetCommandExecutionCallback(std::function<bool()>&& callback)
 {
 	m_CommandExecutionCallback = callback;
+}
+
+void FrameManagementService::SetPreFrameCallback(std::function<void(uint32_t)>&& callback)
+{
+	m_PreFrameCallback = std::move(callback);
+}
+
+void FrameManagementService::SetPostFrameCallback(std::function<void(uint32_t)>&& callback)
+{
+	m_PostFrameCallback = std::move(callback);
 }
 
 RenderPassComponent* FrameManagementService::GetSwapChainRenderPassComponent()
