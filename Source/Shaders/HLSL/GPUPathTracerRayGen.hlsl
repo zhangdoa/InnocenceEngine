@@ -68,7 +68,7 @@ float DistributionGGX(float3 N, float3 H, float roughness)
     float a2 = a * a;
     float NdotH = max(dot(N, H), 0.0f);
     float denom = NdotH * NdotH * (a2 - 1.0f) + 1.0f;
-    return a2 / (3.14159265f * denom * denom);
+    return a2 / (PI * denom * denom);
 }
 
 float GeometrySmithGGXCorrelated(float NdotL, float NdotV, float alpha)
@@ -102,7 +102,7 @@ float3 CookTorranceGGX(float3 N, float3 V, float3 L, float3 albedo, float metaln
     float NdotH = max(dot(N, H), 0.0f);
     float LdotH = max(dot(L, H), 0.0f);
 
-    float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
+    float3 F0 = lerp(float3(F0_DIELECTRIC, F0_DIELECTRIC, F0_DIELECTRIC), albedo, metalness);
     float alpha = roughness * roughness;
 
     float  D = DistributionGGX(N, H, roughness);
@@ -115,7 +115,7 @@ float3 CookTorranceGGX(float3 N, float3 V, float3 L, float3 albedo, float metaln
     // Diffuse: Disney 2015 Burley with energy conservation
     float3 kD = (1.0f - F) * (1.0f - metalness);
     float  diffuseTerm = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness);
-    float3 diffuse = kD * albedo * diffuseTerm / 3.14159265f;
+    float3 diffuse = kD * albedo * diffuseTerm / PI;
 
     return (diffuse + specular) * NdotL;
 }
@@ -123,7 +123,7 @@ float3 CookTorranceGGX(float3 N, float3 V, float3 L, float3 albedo, float metaln
 float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
 {
     float a = roughness * roughness;
-    float phi = 2.0f * 3.14159265f * xi.x;
+    float phi = TWO_PI * xi.x;
     float cosTheta = sqrt((1.0f - xi.y) / (1.0f + (a * a - 1.0f) * xi.y));
     float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
 
@@ -138,7 +138,7 @@ float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
 
 float3 CosineSampleHemisphere(float2 xi, float3 N)
 {
-    float phi = 2.0f * 3.14159265f * xi.x;
+    float phi = TWO_PI * xi.x;
     float cosTheta = sqrt(1.0f - xi.y);
     float sinTheta = sqrt(xi.y);
 
@@ -156,7 +156,7 @@ float3 SampleSunDirection(float3 sunDir, float2 xi)
     float r = sin(SUN_ANGULAR_RADIUS);
     float d = cos(SUN_ANGULAR_RADIUS);
 
-    float phi = 2.0f * 3.14159265f * xi.x;
+    float phi = TWO_PI * xi.x;
     float cosTheta = 1.0f - xi.y * (1.0f - d);
     float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
 
@@ -192,8 +192,8 @@ RayDesc GenerateCameraRay(uint2 pixel, float2 jitter, uint2 resolution)
     RayDesc ray;
     ray.Origin    = g_Frame.camera_posWS.xyz;
     ray.Direction = normalize(worldPos);
-    ray.TMin      = 0.001f;
-    ray.TMax      = 1e6f;
+    ray.TMin      = RAY_EPSILON;
+    ray.TMax      = RAY_MAX_DISTANCE;
     return ray;
 }
 
@@ -231,7 +231,9 @@ void RayGenShader()
 
         float3 albedo    = payload.albedo;
         float  metalness = payload.metalness;
-        float  roughness = max(payload.roughness, 0.04f);
+        // Floor roughness at F0_DIELECTRIC to avoid near-zero roughness numerical instability
+        // in GGX microfacet distribution (NDF blows up as alpha → 0).
+        float  roughness = max(payload.roughness, F0_DIELECTRIC);
 
         // Direct sun lighting with soft shadow (jittered sun disk)
         float3 lightDir = SampleSunDirection(normalize(g_Frame.sun_direction.xyz), Rand2(rng));
@@ -240,10 +242,10 @@ void RayGenShader()
         ShadowPayload shadow;
         shadow.isShadowed = true;
         RayDesc shadowRay;
-        shadowRay.Origin    = payload.hitPos + N * 0.001f;
+        shadowRay.Origin    = payload.hitPos + N * RAY_EPSILON;
         shadowRay.Direction = lightDir;
-        shadowRay.TMin      = 0.001f;
-        shadowRay.TMax      = 1e6f;
+        shadowRay.TMin      = RAY_EPSILON;
+        shadowRay.TMax      = RAY_MAX_DISTANCE;
         TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
                  0xFF, 0, 0, 1, shadowRay, shadow);
 
@@ -272,9 +274,9 @@ void RayGenShader()
             ShadowPayload ptShadow;
             ptShadow.isShadowed = true;
             RayDesc ptShadowRay;
-            ptShadowRay.Origin    = payload.hitPos + N * 0.001f;
+            ptShadowRay.Origin    = payload.hitPos + N * RAY_EPSILON;
             ptShadowRay.Direction = L;
-            ptShadowRay.TMin      = 0.001f;
+            ptShadowRay.TMin      = RAY_EPSILON;
             ptShadowRay.TMax      = dist - 0.002f;
             TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
                      0xFF, 0, 0, 1, ptShadowRay, ptShadow);
@@ -304,10 +306,10 @@ void RayGenShader()
             ShadowPayload spShadow;
             spShadow.isShadowed = true;
             RayDesc spShadowRay;
-            spShadowRay.Origin    = payload.hitPos + N * 0.001f;
+            spShadowRay.Origin    = payload.hitPos + N * RAY_EPSILON;
             spShadowRay.Direction = L;
-            spShadowRay.TMin      = 0.001f;
-            spShadowRay.TMax      = max(dist - spSphereRad - 0.001f, 0.001f);
+            spShadowRay.TMin      = RAY_EPSILON;
+            spShadowRay.TMax      = max(dist - spSphereRad - RAY_EPSILON, RAY_EPSILON);
             TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
                      0xFF, 0, 0, 1, spShadowRay, spShadow);
 
@@ -320,7 +322,7 @@ void RayGenShader()
         }
 
         // Multi-lobe importance sampling: choose diffuse or specular path
-        float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metalness);
+        float3 F0 = lerp(float3(F0_DIELECTRIC, F0_DIELECTRIC, F0_DIELECTRIC), albedo, metalness);
         float NdotV = max(dot(N, V), 0.0f);
         float3 F_approx = FresnelSchlick(NdotV, F0, 1.0f);
         float specWeight = saturate(max(F_approx.x, max(F_approx.y, F_approx.z)) + metalness);
@@ -338,14 +340,14 @@ void RayGenShader()
             // Diffuse path: cosine-weighted hemisphere sampling
             L = CosineSampleHemisphere(xi, N);
             float NdotL = max(dot(N, L), 0.0f);
-            float cosinePdf = NdotL / 3.14159265f;
+            float cosinePdf = NdotL / PI;
 
             // Evaluate full BRDF for this direction
             float3 H = normalize(V + L);
             float LdotH = max(dot(L, H), 0.0f);
             float3 F = FresnelSchlick(LdotH, F0, 1.0f);
             float3 kD = (1.0f - F) * (1.0f - metalness);
-            float3 brdfDiffuse = kD * albedo / 3.14159265f;
+            float3 brdfDiffuse = kD * albedo / PI;
 
             pdf = pDiffuse * cosinePdf;
             throughput *= brdfDiffuse * NdotL / max(pdf, 0.0001f);
@@ -374,7 +376,7 @@ void RayGenShader()
 
         // Russian roulette
         float maxComp = max(throughput.x, max(throughput.y, throughput.z));
-        if (maxComp < 0.01f)
+        if (maxComp < RR_THROUGHPUT_THRESHOLD)
         {
             if (bounce >= 2)
             {
@@ -388,7 +390,7 @@ void RayGenShader()
             }
         }
 
-        ray.Origin    = payload.hitPos + N * 0.001f;
+        ray.Origin    = payload.hitPos + N * RAY_EPSILON;
         ray.Direction = L;
     }
 

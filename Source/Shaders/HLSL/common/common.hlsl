@@ -2,7 +2,21 @@
 
 static const float EPSILON = 0.00001;
 static const float PI = 3.14159265359;
+static const float TWO_PI = 6.28318530718;
+static const float INV_PI = 0.31830988618;
 static const float SQRT2 = 1.41421356237;
+
+// PBR constants
+// F0 for non-metallic dielectrics in linear space. 0.04 = ~4% reflectance
+// (typical plastic / cloth / paint). Metals override with their albedo.
+static const float F0_DIELECTRIC = 0.04;
+
+// Ray-tracing constants
+static const float RAY_EPSILON      = 0.001;  // origin offset along normal to avoid self-intersection
+static const float RAY_MAX_DISTANCE = 1e6;    // treat as "infinity" for primary / shadow rays
+
+// Russian roulette in progressive path tracing
+static const float RR_THROUGHPUT_THRESHOLD = 0.01;  // start Russian roulette below this throughput magnitude
 
 // Texture indexing constants - shared between CPU and GPU
 static const uint INVALID_TEXTURE_INDEX = 0xFFFFFFFF;

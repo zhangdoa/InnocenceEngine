@@ -162,7 +162,7 @@ void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
 
 	// Compute Fresnel factor using Schlick's approximation.
 	// Here F90 is assumed to be 1.0 (typical for dielectrics).
-	float3 F0 = float3(0.04, 0.04, 0.04);
+	float3 F0 = float3(F0_DIELECTRIC, F0_DIELECTRIC, F0_DIELECTRIC);
 	F0 = lerp(F0, l_MaterialAttributes.m_Albedo, l_MaterialAttributes.m_Metallic);
 	float F90 = 1.0;
 	float3 l_FresnelTerm = Fresnel_Schlick(F0, F90, LdotHL);
