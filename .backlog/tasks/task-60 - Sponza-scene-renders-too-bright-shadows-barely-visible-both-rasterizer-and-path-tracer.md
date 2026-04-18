@@ -3,10 +3,10 @@ id: TASK-60
 title: >-
   Sponza scene renders too bright / shadows barely visible (both rasterizer and
   path tracer)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-18 09:50'
-updated_date: '2026-04-18 11:07'
+updated_date: '2026-04-18 11:29'
 labels:
   - bug
   - rendering
@@ -65,3 +65,25 @@ Candidates to investigate next:
 
 Related: the `-total_frames ... -total_frames N` launches are also hitting TASK-39 (startup AV in `Engine::Get<LogService>`) roughly 1-in-3 runs — second invocation always worked. Not blocking TASK-60 but worth noting the repro finally landed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Two-part fix landed in bc6aa204 + 1734baaa:
+
+1. **Root cause**: `SunShadowGeometryProcessPass` used `RasterizerCullMode::Front` (Peter-Panning mitigation), but Sponza has many thin single-sided meshes (curtains, cloth) whose every triangle faces one way relative to the sun. Front-face culling eliminated them from the shadow map entirely, so cascades 0-2 stored only the ground plane's depth gradient and cascade 3 was 95% empty. Every shaded pixel sampled "no occluder", shadow factor was 0, lighting was uniform.
+
+   Fix: disable back-face culling in the shadow pass. Peter-Panning is handled by the shader's adaptive `MIN_SHADOW_BIAS`/`MAX_SHADOW_BIAS` in `shadowResolver.hlsl` — the hardware cull mode was belt-and-suspenders.
+
+   Post-fix cascade coverage went from (100%/99%/76%/4.5% mostly-ground) to (~90%/94%/76%/4.5% with actual occluders).
+
+2. **Scoped**: radiance-cache GI passes temporarily disabled so the per-pixel noise doesn't mask direct-lighting debugging. Tracked as "re-enable once TASK-6 / GI quality lands".
+
+**Visible result**: Sponza now shows clear curtain self-shadowing, pillar directional lighting, ground shadows from occluders, dark ceiling where sun doesn't reach.
+
+Regression tiers pass: RenderTest, Main 10-frame integration, scene reload.
+
+Related tasks that surfaced during investigation:
+- TASK-39 got a fresh repro note (startup AV hit 1-in-3 invocations)
+- The "max Y = 0" artifact in audit dump HDRs turned out to be stb_image_write clamping negatives — dump-format limitation, not a real bug. Not filed.
+<!-- SECTION:FINAL_SUMMARY:END -->
