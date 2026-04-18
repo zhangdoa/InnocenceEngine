@@ -1,9 +1,10 @@
 ---
 id: TASK-55
 title: Path tracer entities without MaterialComponent silently get default white Lambert (no warning, no sentinel)
-status: Todo
+status: Done
 assignee: []
 created_date: '2026-04-17 16:55'
+updated_date: '2026-04-18 07:55'
 labels:
   - path-tracer
   - rendering
