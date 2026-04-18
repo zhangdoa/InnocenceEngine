@@ -5,6 +5,7 @@
 #include "Interface/IRenderingClient.h"
 #include "Interface/ILogicClient.h"
 #include <type_traits>
+#include <shared_mutex>
 
 namespace Inno
 {
@@ -58,24 +59,42 @@ namespace Inno
 		float getTickTime();
 
 		template <typename T>
-		T* Get() 
+		T* Get()
 		{
 			auto type = std::type_index(typeid(T));
-			auto it = singletons_.find(type);
-			if (it == singletons_.end()) 
 			{
-				// For IService classes, use dependency resolution
-				if constexpr (std::is_base_of_v<IService, T>) {
-					return GetSystemWithDependencies<T>();
-				}
-				else {
-					// Essential Services: Create directly
-					T* instance = new T();
-					singletons_[type] = instance;
-					return instance;
-				}
+				// Fast path: shared read lock for the common hit-in-map case.
+				std::shared_lock<std::shared_mutex> lock(singletons_mutex_);
+				auto it = singletons_.find(type);
+				if (it != singletons_.end())
+					return static_cast<T*>(it->second);
 			}
-			return static_cast<T*>(singletons_[type]);
+
+			// Miss. TASK-39 fix — previously the bare std::unordered_map was
+			// concurrently readable+writable without a mutex, so a worker thread
+			// calling Get<LogService>() during startup could race the main thread's
+			// populating Emplace and fault at 0x10 inside std::_Find_last.
+			//
+			// Constructors of many services call Log() which re-enters Get<>, and
+			// std::shared_mutex on MSVC (SRW-backed) forbids a thread holding the
+			// unique lock from also taking the shared lock. So new T() must run
+			// OUTSIDE the unique lock, with a losing-race insert handled by delete.
+			if constexpr (std::is_base_of_v<IService, T>) {
+				return GetSystemWithDependencies<T>();
+			}
+			else {
+				T* instance = new T();
+
+				std::unique_lock<std::shared_mutex> lock(singletons_mutex_);
+				auto it = singletons_.find(type);
+				if (it != singletons_.end())
+				{
+					delete instance;
+					return static_cast<T*>(it->second);
+				}
+				singletons_[type] = instance;
+				return instance;
+			}
 		}
 
 	private:
@@ -92,8 +111,10 @@ namespace Inno
 
 		EngineImpl* m_pImpl;
 
-		// Storage for singletons using raw pointers
+		// Storage for singletons using raw pointers. Guarded by singletons_mutex_ —
+		// Get<T>() is reachable from any thread, so the map must be thread-safe.
 		std::unordered_map<std::type_index, void*> singletons_;
+		mutable std::shared_mutex singletons_mutex_;
 	};
 
 	// Template implementation must be in header
@@ -108,22 +129,35 @@ namespace Inno
 			return nullptr;
 		}
 		else {
-			// Handle regular IService classes
+			// Handle regular IService classes — same locked find-or-create as Get<>.
 			auto type = std::type_index(typeid(T));
-			auto it = singletons_.find(type);
-			if (it == singletons_.end()) {
-				// Create the type directly
-				T* instance = new T();
-				if (!instance) {
-					return nullptr;
+			{
+				std::shared_lock<std::shared_mutex> lock(singletons_mutex_);
+				auto it = singletons_.find(type);
+				if (it != singletons_.end())
+					return static_cast<T*>(it->second);
+			}
+
+			T* instance = new T();
+			if (!instance)
+				return nullptr;
+
+			{
+				std::unique_lock<std::shared_mutex> lock(singletons_mutex_);
+				// Another thread may have raced us to insert the same type.
+				auto it = singletons_.find(type);
+				if (it != singletons_.end())
+				{
+					delete instance;
+					return static_cast<T*>(it->second);
 				}
 				singletons_[type] = instance;
-				// Resolve dependencies after creation
-				auto dependencies = instance->GetDependencies();
-				ResolveDependencies(dependencies);
-				return instance;
 			}
-			return static_cast<T*>(it->second);
+
+			// ResolveDependencies re-enters Get<>, so it must run outside the unique lock.
+			auto dependencies = instance->GetDependencies();
+			ResolveDependencies(dependencies);
+			return instance;
 		}
 	}
 
