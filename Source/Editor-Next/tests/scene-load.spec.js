@@ -2,14 +2,10 @@ const { _electron: electron } = require('@playwright/test');
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 
-// Regression spec for the AssetPanel scene-load path after the bug fixes:
-//  - baseDir resolved from __dirname (was process.cwd() — wrong outside the
-//    editor source dir; Playwright launches from `tests/` cwd, exactly the
-//    case that broke before).
-//  - load-scene listener properly removed on unmount (was a leaked
-//    anonymous handler).
-//  - LOAD_SCENE dispatch goes through useIpc.js, which now toasts and
-//    short-circuits when the engine is offline.
+// AssetPanel scene-load contract:
+//  - baseDir resolves from __dirname so any launcher's cwd works.
+//  - load-scene window event has a removable named listener.
+//  - useIpc.js short-circuits and toasts when the engine is offline.
 test('asset panel double-click on .InnoScene loads the scene', async () => {
   test.setTimeout(180000);
   const electronApp = await electron.launch({

@@ -2,13 +2,8 @@ import { reactive, shallowRef } from 'vue'
 
 // Single source of truth for what panels exist and which are currently
 // open. AppLayout registers descriptors here at mount; EditorHeader's
-// Window menu reads the list and dispatches toggles. dockview-vue's
-// addPanel / removePanel handles the actual layout mutation.
-//
-// Layout persistence (panel positions surviving editor reload) is a
-// follow-up — for now, closing and re-opening returns the panel to its
-// declared default position. That's better than the prior state where
-// closing a panel by accident lost it until restart.
+// Window menu reads the list and dispatches toggles. Re-opening a closed
+// panel returns it to its declared default position.
 
 const dockviewApi = shallowRef(null)
 

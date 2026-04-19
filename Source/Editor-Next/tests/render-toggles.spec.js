@@ -2,10 +2,9 @@ const { _electron: electron } = require('@playwright/test');
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 
-// Smoke spec for TASK-62 AC #5 (Render Toggles pane). Asserts the engine
-// publishes its DevToggleRegistry contents over IPC and the panel renders
-// rows for at least the GPUPathTracer toggle and the Screenshot action —
-// the two surfaces that retired the INNO_KEY_B and INNO_KEY_C bindings.
+// The engine publishes DevToggleRegistry over IPC and the panel renders
+// a row per toggle / action. GPUPathTracer + Screenshot are the two
+// entries the example rendering client always registers.
 test('render toggles pane lists engine-registered toggles + actions', async () => {
   test.setTimeout(180000);
   const electronApp = await electron.launch({

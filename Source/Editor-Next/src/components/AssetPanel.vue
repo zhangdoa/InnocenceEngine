@@ -65,10 +65,8 @@ onMounted(() => {
   if (window.require) {
     fs = window.require('fs')
     path = window.require('path')
-    // Anchor on __dirname (the editor source dir, stable regardless of where
-    // Electron was launched from) instead of process.cwd(). cwd is set by
-    // whoever invoked the app — Playwright, npm script, drag-launch — none
-    // of which have to land in Source/Editor-Next.
+    // __dirname (the editor source dir) is the only stable anchor for
+    // resolving repo-relative paths from any launcher's cwd.
     baseDir = path.resolve(__dirname, '../../../../Data')
     loadDirectory('')
   }

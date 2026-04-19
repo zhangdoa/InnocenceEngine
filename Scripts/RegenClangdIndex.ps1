@@ -1,26 +1,17 @@
 # Regenerate compile_commands.json so clangd can resolve project includes.
 #
-# Visual Studio's CMake generator (used by BuildWin.ps1 for the real engine
-# build) does not emit compile_commands.json. clangd therefore guesses at
-# include paths and floods every C++ edit with bogus diagnostics about
-# "string_view not found", "ix undeclared", etc. — alarms that have nothing
-# to do with the code, only with clangd's missing index. Ignoring those is
-# how you stop noticing real diagnostics later.
+# The Visual Studio CMake generator that drives the engine build does not
+# emit compile_commands.json. This script configures a separate Ninja
+# build dir purely to produce the database (no compilation happens),
+# then copies it to the repo root where clangd auto-discovers it.
 #
-# This script configures a *separate*, build-only Ninja directory purely to
-# emit the database, then copies it to the repo root where clangd auto-
-# discovers it. Engine builds remain on MSBuild via BuildWin.ps1 — this
-# script only runs the cmake configure step (no actual compilation).
-#
-# Run after:
+# Re-run after:
 #  - Adding a new .cpp / .h file
 #  - Changing CMakeLists.txt (include paths, definitions, c++ standard)
 #  - Pulling submodule updates that change external include layout
 #
-# Prefers Ninja (faster configure, smaller graph), falls back to NMake
-# Makefiles which ships with every Visual Studio install. Both generators
-# honour CMAKE_EXPORT_COMPILE_COMMANDS; the Visual Studio generator (used
-# by the real build) does not, which is why this side-channel exists.
+# Requires Ninja from the latest Visual Studio install (located via
+# vswhere) plus the MSVC toolchain set up by VsDevCmd.bat.
 
 $ErrorActionPreference = 'Stop'
 

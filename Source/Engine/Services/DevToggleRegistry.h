@@ -6,15 +6,12 @@
 
 namespace Inno
 {
-    // Lightweight registry of named developer toggles and one-shot actions
-    // that any subsystem can publish and the editor (or other tooling) can
-    // enumerate and control over IPC. Decouples EditorService from
-    // example-project / client-specific classes — the client registers a
-    // getter / setter pair, EditorService only knows about strings + bools.
+    // Named developer toggles and one-shot actions, addressable by string
+    // from any thread. Subsystems publish via Register*; tooling enumerates
+    // via All* and drives via Set / Trigger.
     //
-    // The setter is responsible for any frame-boundary deferral the client
-    // needs (e.g. "queue toggle, apply at the start of next frame to avoid
-    // mid-frame state churn"). The registry just plumbs the call through.
+    // Setters are responsible for any frame-boundary deferral they need —
+    // the registry calls them directly, on the caller's thread.
     namespace DevToggleRegistry
     {
         struct Toggle

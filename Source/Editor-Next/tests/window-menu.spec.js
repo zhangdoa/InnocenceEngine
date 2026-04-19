@@ -2,9 +2,8 @@ const { _electron: electron } = require('@playwright/test');
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 
-// Smoke spec for TASK-62 AC #1 (master Window panel toggler). Asserts the
-// Window submenu lists every registered panel, that toggling closes the
-// panel in dockview, and that toggling again re-opens it.
+// Window submenu lists every registered panel; toggling closes it in
+// dockview and toggling again re-opens it.
 test('window menu toggles panels', async () => {
   test.setTimeout(180000);
   const electronApp = await electron.launch({
