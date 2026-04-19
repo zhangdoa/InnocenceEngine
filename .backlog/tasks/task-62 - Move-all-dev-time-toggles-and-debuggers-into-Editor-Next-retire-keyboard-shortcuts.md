@@ -115,7 +115,7 @@ These slot into `tests/editor.spec.js` (smoke) / `tests/ux-audit.spec.js` (visua
 - [x] #4 Render Target Debugger pane lists every pass + RT and routes a chosen one to the swap chain; per-RT-as-swapchain-input keys removed (`H`, `G` deleted)
 - [x] #5 Per-Pass Toggle pane enables/disables every registered pass; `m_showTransparent`, `m_showVolumetric`, `m_GPUPathTracerActive` (and equivalents) no longer have key bindings (`B`, `C` deleted; `T`, `J`, `V` deleted as dead code)
 - [x] #6 Asset Conversion / Import pane handles model + standalone-texture imports — Import files and Import folder buttons in AssetPanel; AssetService::Import auto-routes PNG/JPG/TGA via filename-suffix → slot heuristic (NormalGL/DX, Color/Albedo/BaseColor, Metalness/Metallic, Roughness, AmbientOcclusion/AO)
-- [ ] #7 World Editing: entity create / delete / rename + transform gizmo round-trips to engine IPC and rewrites the entity's `*.json` on Save
+- [ ] #7 World Editing: entity create / delete / rename + transform gizmo round-trips to engine IPC and rewrites the entity's `*.json` on Save — CRUD + property-edit + Save round-trip done; transform-gizmo viewport overlay split out as TASK-79
 - [x] #8 Engine IPC dispatcher refactored from ad-hoc handlers to a first-class message router (one place to register a `(type → handler)` mapping)
 - [x] #9 Playwright specs cover smoke + visual-diff for every new panel; all green in CI (smoke specs for every shipped pane)
 - [x] #10 `Source/ExampleProject/LogicClient/World.inl` no longer registers any `OneShot` `INNO_KEY_*` callback for dev-time features (only permanent gameplay / camera bindings remain) (`R`, `L`, `Y` removed; the `B`/`C`/`H`/`G`/`T`/`J`/`V` keys lived in `ExampleRenderingClient.cpp` and are also gone)
