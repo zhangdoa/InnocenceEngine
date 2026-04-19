@@ -13,6 +13,7 @@
 #include "../../Common/IOService.h"
 #include "../../Common/MathHelper.h"
 #include "../../Common/Randomizer.h"
+#include "../../Common/TaskScheduler.h"
 #include "../../Services/AssetService.h"
 #include "../JSONWrapper/JSONWrapper.h"
 #include "../../Engine.h"
@@ -74,54 +75,109 @@ bool AssimpImporter::Import(const char* FileName)
 	return true;
 }
 
-void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* ExportName, const char* ModelBaseDir)
+namespace
 {
-	Log(Verbose, "Processing scene: ", ExportName);
+	std::string MakeMeshInstanceName(uint32_t meshIndex, const char* baseName)
+	{
+		return std::string(baseName) + "." + std::to_string(meshIndex) + ".MeshComponent";
+	}
 
-	// Collect mesh→material pairs during node processing
-	std::vector<std::pair<std::string, std::string>> l_DrawCalls;
-	ProcessAssimpNode(Scene->mRootNode, Scene, ExportName, ModelBaseDir, l_DrawCalls);
+	std::string MakeMaterialInstanceName(const aiMaterial* material, uint32_t materialIndex, const char* baseName)
+	{
+		// Mirror CreateMaterialComponent's naming: aiString returned by value,
+		// length check to synthesize a name for unnamed glTF materials.
+		aiString l_AiName = material->GetName();
+		std::string l_Name;
+		if (l_AiName.length == 0)
+			l_Name = "material_" + std::to_string(materialIndex);
+		else
+			l_Name.assign(l_AiName.C_Str(), l_AiName.length);
+		return std::string(baseName) + "." + l_Name + ".MaterialComponent";
+	}
 
-	// Build a child .InnoScene with one entity per draw call
-	JSONWrapper::SaveChildScene(ExportName, l_DrawCalls);
-	Log(Success, "Saved child scene: Scenes/", ExportName, ".InnoScene with ", l_DrawCalls.size(), " entities.");
+	void CollectAssimpWork(const aiNode* node, const aiScene* scene, const char* baseName,
+		std::unordered_set<uint32_t>& outMeshIndices,
+		std::unordered_set<uint32_t>& outMaterialIndices,
+		std::vector<std::pair<std::string, std::string>>& outDrawCalls)
+	{
+		for (uint32_t i = 0; i < node->mNumMeshes; i++)
+		{
+			uint32_t l_MeshIndex = node->mMeshes[i];
+			outMeshIndices.insert(l_MeshIndex);
+
+			const aiMesh* l_AiMesh = scene->mMeshes[l_MeshIndex];
+			std::string l_MeshName = MakeMeshInstanceName(l_MeshIndex, baseName);
+
+			std::string l_MaterialName;
+			if (l_AiMesh->mMaterialIndex < scene->mNumMaterials)
+			{
+				outMaterialIndices.insert(l_AiMesh->mMaterialIndex);
+				l_MaterialName = MakeMaterialInstanceName(scene->mMaterials[l_AiMesh->mMaterialIndex], l_AiMesh->mMaterialIndex, baseName);
+			}
+
+			outDrawCalls.push_back({ std::move(l_MeshName), std::move(l_MaterialName) });
+		}
+
+		for (uint32_t i = 0; i < node->mNumChildren; i++)
+			CollectAssimpWork(node->mChildren[i], scene, baseName, outMeshIndices, outMaterialIndices, outDrawCalls);
+	}
 }
 
 // AssimpWrapper is an offline asset converter (Baker tool).
 // Components are populated from Assimp data and saved to disk by the processors.
 // EntityRegistry entity creation happens at runtime load time in AssetService.
-void AssimpImporter::ProcessAssimpNode(const aiNode* Node, const aiScene* Scene, const char* BaseName, const char* ModelBaseDir,
-	std::vector<std::pair<std::string, std::string>>& drawCalls)
+//
+// Fan-out: mesh serialization, material JSON save, and BC texture compression
+// are independent per-asset — submit one TaskScheduler task per unique mesh
+// and per unique material, wait on all before writing the child scene JSON
+// (which needs the full mesh→material draw-call table). Texture dedup across
+// materials is handled inside AssetService::ImportTexture.
+void AssimpImporter::ProcessAssimpScene(const aiScene* Scene, const char* ExportName, const char* ModelBaseDir)
 {
-	if (Node->mNumMeshes)
+	Log(Verbose, "Processing scene: ", ExportName);
+
+	std::unordered_set<uint32_t> l_UniqueMeshes;
+	std::unordered_set<uint32_t> l_UniqueMaterials;
+	std::vector<std::pair<std::string, std::string>> l_DrawCalls;
+	CollectAssimpWork(Scene->mRootNode, Scene, ExportName, l_UniqueMeshes, l_UniqueMaterials, l_DrawCalls);
+
+	auto* l_Scheduler = g_Engine->Get<TaskScheduler>();
+	std::vector<Handle<ITask>> l_TaskHandles;
+	l_TaskHandles.reserve(l_UniqueMeshes.size() + l_UniqueMaterials.size());
+
+	// Copy C-strings into std::string so task lambdas own their storage; the
+	// aiScene pointer stays valid for the lifetime of the outer Assimp::Importer
+	// on the caller stack, and we wait on all handles before returning.
+	std::string l_BaseName(ExportName);
+	std::string l_ModelBaseDir(ModelBaseDir);
+
+	for (uint32_t l_MeshIndex : l_UniqueMeshes)
 	{
-		for (uint32_t i = 0; i < Node->mNumMeshes; i++)
-		{
-			auto l_MeshIndex = Node->mMeshes[i];
-			auto l_AiMesh = Scene->mMeshes[l_MeshIndex];
+		auto l_Task = l_Scheduler->Submit(ITask::Desc("AssimpImport_Mesh", ITask::Type::Once),
+			[Scene, l_BaseName, l_MeshIndex]()
+			{
+				MeshComponent l_Mesh = {};
+				AssimpMeshProcessor::CreateMeshComponent(Scene, l_BaseName.c_str(), l_MeshIndex, l_Mesh);
+			});
+		l_Task->Activate();
+		l_TaskHandles.push_back(l_Task);
+	}
 
-			Log(Verbose, "Processing mesh: ", l_AiMesh->mName.C_Str());
-
-			MeshComponent l_Mesh = {};
-			AssimpMeshProcessor::CreateMeshComponent(Scene, BaseName, l_MeshIndex, l_Mesh);
-
-			std::string l_MaterialName;
-			if (l_AiMesh->mMaterialIndex < Scene->mNumMaterials)
+	for (uint32_t l_MatIndex : l_UniqueMaterials)
+	{
+		auto l_Task = l_Scheduler->Submit(ITask::Desc("AssimpImport_Material", ITask::Type::Once),
+			[Scene, l_BaseName, l_ModelBaseDir, l_MatIndex]()
 			{
 				MaterialComponent l_Material = {};
-				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_AiMesh->mMaterialIndex], l_AiMesh->mMaterialIndex, BaseName, ModelBaseDir, l_Material);
-				l_MaterialName = l_Material.m_InstanceName.c_str();
-			}
-
-			drawCalls.push_back({l_Mesh.m_InstanceName.c_str(), l_MaterialName});
-		}
+				AssimpMaterialProcessor::CreateMaterialComponent(Scene->mMaterials[l_MatIndex], l_MatIndex, l_BaseName.c_str(), l_ModelBaseDir.c_str(), l_Material);
+			});
+		l_Task->Activate();
+		l_TaskHandles.push_back(l_Task);
 	}
 
-	if (Node->mNumChildren)
-	{
-		for (uint32_t i = 0; i < Node->mNumChildren; i++)
-		{
-			ProcessAssimpNode(Node->mChildren[i], Scene, BaseName, ModelBaseDir, drawCalls);
-		}
-	}
+	for (auto& l_Handle : l_TaskHandles)
+		l_Handle->Wait();
+
+	JSONWrapper::SaveChildScene(ExportName, l_DrawCalls);
+	Log(Success, "Saved child scene: Scenes/", ExportName, ".InnoScene with ", l_DrawCalls.size(), " entities.");
 }
