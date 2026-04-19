@@ -9,7 +9,6 @@ export const sceneStore = reactive({
   selectedEntityId: null,
 
   reset() {
-    console.log('SceneStore: Resetting scene state...');
     this.entities = [];
     this.selectedEntity = null;
     this.selectedEntityId = null;
@@ -17,7 +16,6 @@ export const sceneStore = reactive({
 
   selectEntity(id) {
     if (!connectionStore.isConnected) return;
-    console.log(`SceneStore: selectEntity called for ID: ${id}`);
     this.selectedEntityId = id;
     if (ipcRenderer) {
       ipcRenderer.send('engine-message', { type: 'GET_ENTITY_DETAILS', id: id });

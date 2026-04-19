@@ -135,7 +135,7 @@ const triggerImportFolder = () => {
 
 .toolbar {
   padding: 8px 16px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 
 .asset-content {
@@ -154,7 +154,7 @@ const triggerImportFolder = () => {
 }
 
 .asset-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ctp-surface0);
 }
 
 .icon-wrapper {

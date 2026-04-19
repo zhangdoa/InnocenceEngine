@@ -74,6 +74,6 @@ import LightEditor from './inspector/LightEditor.vue'
 .entity-info {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--ctp-surface1);
 }
 </style>

@@ -8,7 +8,6 @@ export const connectionStore = reactive({
   lastMessage: '',
 
   reset() {
-    console.log('ConnectionStore: Resetting connection state...');
     this.isConnected = false;
     this.lastMessage = '';
   },

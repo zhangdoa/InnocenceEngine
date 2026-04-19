@@ -4,7 +4,7 @@
 
     <main class="dock-container">
       <dockview-vue
-        class="dockview-theme-dark"
+        class="dockview-theme-ctp"
         style="width: 100%; height: 100%;"
         @ready="onDockviewReady"
       >

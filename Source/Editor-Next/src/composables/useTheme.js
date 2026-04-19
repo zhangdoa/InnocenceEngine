@@ -38,12 +38,6 @@ export function useTheme() {
       textColor: currentPalette.value.text,
       border: `1px solid ${currentPalette.value.surface1}`,
     },
-    Tag: {
-      textColorSuccess: '#11111b',
-      textColorError: '#11111b',
-      textColorInfo: '#11111b',
-      textColorWarning: '#11111b',
-    },
     Collapse: {
       titleTextColor: currentPalette.value.text,
     },

@@ -1,22 +1,13 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { NEmpty, NIcon, NText, NSpace } from 'naive-ui'
 import { VideocamOutline } from '@vicons/ionicons5'
 import { connectionStore } from '../store/connectionStore'
 
+// Shared texture is composited into the host window by Electron's sharedTexture
+// API from main.js — this canvas is a placeholder layer. TASK-81 tracks wiring
+// the canvas to receive VIEWPORT_READY and handle resize.
 const canvasRef = ref(null)
-const isTextureReady = ref(false)
-
-onMounted(() => {
-  console.log('ViewportPanel mounted')
-  
-  // Listen for shared texture events from main process
-  // In this Electron version, shared textures might be bound to the frame
-  // or sent via a specific IPC channel that the native layer handles.
-})
-
-onUnmounted(() => {
-})
 </script>
 
 <template>

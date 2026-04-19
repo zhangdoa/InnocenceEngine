@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import {
   NList, NListItem, NInput, NScrollbar, NText, NSpace, NIcon,
   NEmpty, NButton, NButtonGroup, useDialog,
@@ -11,10 +11,6 @@ import { sceneStore } from '../store/sceneStore'
 import { connectionStore } from '../store/connectionStore'
 
 const dialog = useDialog()
-
-onMounted(() => {
-  console.log('HierarchyPanel mounted');
-})
 
 const searchQuery = ref('')
 
