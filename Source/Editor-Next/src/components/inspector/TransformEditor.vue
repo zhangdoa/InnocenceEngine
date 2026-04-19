@@ -24,6 +24,8 @@
           <n-input-number
             :value="draft.rotEuler[i]"
             @update:value="(v) => onRotAxis(i, v)"
+            @focus="focusedRotAxis = i"
+            @blur="focusedRotAxis = null"
             :show-button="false"
             :precision="2"
             data-test-prop="rot-euler-input"
@@ -58,7 +60,7 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { NForm, NFormItem, NGrid, NGridItem, NInputNumber, NText } from 'naive-ui'
 import { sceneStore } from '../../store/sceneStore'
 import { eulerDegToQuat, quatToEulerDeg } from '../../math/quatEuler'
@@ -76,12 +78,23 @@ const draft = reactive({
   scale:    [...(props.component.scale ?? [1, 1, 1])],
 })
 
+// Null when no axis is being edited; 0/1/2 while a rotation input is focused.
+// Server replies mid-edit overwrite the input's external value with the
+// re-decomposed quat, which Naive's NInputNumber surfaces as a cursor jump
+// and a strikethrough on the digit being typed. Freezing the focused axis
+// keeps typing stable; the next blur lets the server state land.
+const focusedRotAxis = ref(null)
+
 watch(
   () => props.component,
   (next) => {
-    draft.pos      = [...(next.pos   ?? [0, 0, 0])]
-    draft.rotEuler = quatToEulerDeg(next.rot ?? [0, 0, 0, 1])
-    draft.scale    = [...(next.scale ?? [1, 1, 1])]
+    draft.pos   = [...(next.pos   ?? [0, 0, 0])]
+    draft.scale = [...(next.scale ?? [1, 1, 1])]
+    const fresh = quatToEulerDeg(next.rot ?? [0, 0, 0, 1])
+    const fi = focusedRotAxis.value
+    draft.rotEuler = fi == null
+      ? fresh
+      : draft.rotEuler.map((v, i) => (i === fi ? v : fresh[i]))
   },
   { deep: true },
 )
