@@ -1,6 +1,8 @@
 import { createApp, h } from 'vue'
 import App from './App.vue'
 
+import './math' // side-effect: expose window.__innoMath for tests
+
 import HierarchyPanel from './components/HierarchyPanel.vue'
 import PropertyPanel from './components/PropertyPanel.vue'
 import AssetPanel from './components/AssetPanel.vue'

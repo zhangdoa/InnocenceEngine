@@ -574,7 +574,11 @@ void EditorService::RegisterBuiltinHandlers()
 				l_transform->m_LocalScale = Vec3(l_val[0], l_val[1], l_val[2]);
 				committed = SerializeVec(l_transform->m_LocalScale);
 			}
-			// TODO: Rotation (Quat) — tracked as TASK-79 AC #4
+			else if (l_prop == "rot")
+			{
+				l_transform->m_LocalRot = Vec4(l_val[0], l_val[1], l_val[2], l_val[3]);
+				committed = SerializeVec(l_transform->m_LocalRot);
+			}
 			else
 			{
 				throw EditorReqError("BAD_PROPERTY", "Unknown TransformComponent property: " + l_prop);
