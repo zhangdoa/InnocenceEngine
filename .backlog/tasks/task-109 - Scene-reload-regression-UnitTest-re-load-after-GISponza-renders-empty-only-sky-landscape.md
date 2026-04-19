@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-19 19:39'
-updated_date: '2026-04-19 20:35'
+updated_date: '2026-04-19 20:55'
 labels:
   - bug
   - rendering
@@ -84,4 +84,6 @@ Remaining suspects (in rough priority):
 4. **Thread-scheduling of per-entity draw-call population** — if any RegisterDrawCall-equivalent fires from multiple threads without deterministic ordering.
 
 Next step would be RenderDoc captures of two different runs and diffing the draw-call sequence. That's a substantial investigation — probably a ~1 day task on its own.
+
+**Cross-reference 2026-04-19 22:56** (Opus): the TASK-111 scaffolding attempt surfaced that `MeshResourceService::OnSceneUnloading`'s filter (`GetLifespan(owner) == Scene`) does NOT reliably drop `ShaderBall.0.MeshComponent` from the deferred init queue — the task survives into the next scene's init pass with a dangling asset handle. This is likely the SAME race that causes the launch-to-launch shader ball non-determinism: whether ShaderBall's task gets drained on time depends on thread scheduling. OnSceneUnloading's filter needs scrutiny — either `GetLifespan` returns something other than `Scene` for child-scene entities, or there's a window where the owner EntityID is valid-but-not-yet-registered, or the task is being push()'d AFTER OnSceneUnloading ran. Each deserves a direct test.
 <!-- SECTION:NOTES:END -->
