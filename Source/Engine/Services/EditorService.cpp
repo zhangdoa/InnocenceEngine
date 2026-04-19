@@ -199,7 +199,11 @@ bool EditorService::Initialize()
 							{
 								std::string l_path = l_json["path"];
 								Log(Success, "EditorService: Requesting scene load: ", l_path.c_str());
-								g_Engine->Get<SceneService>()->Load(l_path.c_str());
+								// AsyncLoad=true: editor IPC arrives on the WebSocket thread,
+								// not the main loop. A sync Load from here races the rendering
+								// thread on DX12 resource lifecycle (same incident pattern as
+								// the HID-driven scene loads — see feedback_async_scene_load).
+								g_Engine->Get<SceneService>()->Load(l_path.c_str(), true);
 							}
 						}
 						else if (l_type == "SAVE_SCENE")
