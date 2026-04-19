@@ -3,6 +3,7 @@ import { useMessage } from 'naive-ui'
 import { connectionStore } from '../store/connectionStore'
 import { sceneStore } from '../store/sceneStore'
 import { assetStore } from '../store/assetStore'
+import { devToggleStore } from '../store/devToggleStore'
 
 export function useIpc() {
   const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
@@ -18,6 +19,7 @@ export function useIpc() {
         connectionStore.isUserInitiatedShutdown = false
         connectionStore.lastMessage = 'Engine Handshake Successful'
         ipcRenderer.send('engine-message', { type: 'GET_SCENE' })
+        ipcRenderer.send('engine-message', { type: 'LIST_DEV_TOGGLES' })
         message.success('System Online')
       } else {
         connectionStore.lastMessage = 'Engine Connection Lost'
@@ -49,8 +51,11 @@ export function useIpc() {
             message.error(`Import failed: ${msg.name}`)
           }
           break
+        case 'DEV_TOGGLES':
+          devToggleStore.applySnapshot(msg)
+          break
         case 'HELLO_REPLY':
-          // Handled by main process for handle duplication, 
+          // Handled by main process for handle duplication,
           // but we can log it here if needed
           break
       }
