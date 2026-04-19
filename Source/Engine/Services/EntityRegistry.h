@@ -26,6 +26,7 @@ namespace Inno
         // Entity lifecycle
         EntityID    Spawn(ObjectLifespan Lifespan, const char* Name = nullptr);
         void        Destroy(EntityID Entity);
+        bool        Rename(EntityID Entity, const char* Name);
         bool        IsValid(EntityID Entity) const;
         const char* GetName(EntityID Entity) const;
         EntityID    FindByName(const char* Name) const;  // linear scan; editor/load only

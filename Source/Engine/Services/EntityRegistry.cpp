@@ -85,6 +85,14 @@ void EntityRegistry::Destroy(EntityID Entity)
     m_FreeList.push_back(Entity);
 }
 
+bool EntityRegistry::Rename(EntityID Entity, const char* Name)
+{
+    if (!IsValid(Entity))
+        return false;
+    m_Names[Entity] = Name ? Name : "";
+    return true;
+}
+
 bool EntityRegistry::IsValid(EntityID Entity) const
 {
     return Entity != INVALID_ENTITY && Entity < MAX_ENTITIES && m_Valid[Entity];

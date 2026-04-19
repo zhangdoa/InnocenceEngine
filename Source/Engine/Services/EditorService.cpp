@@ -395,6 +395,47 @@ void EditorService::RegisterBuiltinHandlers()
 		g_Engine->Get<AssetService>()->Import(l_path.c_str());
 	});
 
+	reg("ENTITY_CREATE", [](const json& msg, ix::WebSocket& ws) {
+		std::string l_name = msg.value("name", std::string("Entity"));
+		auto l_id = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, l_name.c_str());
+		json l_reply;
+		l_reply["type"] = "ENTITY_CREATED";
+		l_reply["id"]   = (uint32_t)l_id;
+		l_reply["name"] = l_name;
+		ws.send(l_reply.dump());
+	});
+
+	reg("ENTITY_DELETE", [](const json& msg, ix::WebSocket& /*ws*/) {
+		if (!msg.contains("id"))
+			return;
+		auto* l_registry = g_Engine->Get<EntityRegistry>();
+		EntityID l_id = (EntityID)msg["id"].get<uint32_t>();
+		if (!l_registry->IsValid(l_id))
+		{
+			Log(Warning, "EditorService: ENTITY_DELETE for invalid id ", (uint32_t)l_id);
+			return;
+		}
+		// Refuse to delete persistent (engine-owned) entities; the editor
+		// only owns scene-bound entities. Otherwise a stray click could
+		// nuke the player camera, sun, etc.
+		if (l_registry->GetLifespan(l_id) != ObjectLifespan::Scene)
+		{
+			Log(Warning, "EditorService: refusing ENTITY_DELETE on non-scene entity ", (uint32_t)l_id);
+			return;
+		}
+		l_registry->Destroy(l_id);
+	});
+
+	reg("ENTITY_RENAME", [](const json& msg, ix::WebSocket& /*ws*/) {
+		if (!msg.contains("id") || !msg.contains("name"))
+			return;
+		auto* l_registry = g_Engine->Get<EntityRegistry>();
+		EntityID l_id = (EntityID)msg["id"].get<uint32_t>();
+		std::string l_name = msg["name"];
+		if (!l_registry->Rename(l_id, l_name.c_str()))
+			Log(Warning, "EditorService: ENTITY_RENAME failed for id ", (uint32_t)l_id);
+	});
+
 	reg("UPDATE_ENTITY_PROPERTY", [](const json& msg, ix::WebSocket& /*ws*/) {
 		if (!msg.contains("id") || !msg.contains("component") || !msg.contains("property") || !msg.contains("value"))
 			return;
