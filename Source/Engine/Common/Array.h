@@ -259,6 +259,6 @@ namespace Inno
 		size_t m_ElementCount;
 		size_t m_CurrentFreeIndex;
 		bool m_Initialized;
-		std::shared_mutex m_Mutex;
+		mutable std::shared_mutex m_Mutex;
 	};
 }
