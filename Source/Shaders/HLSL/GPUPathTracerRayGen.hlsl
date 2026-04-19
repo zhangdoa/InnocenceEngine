@@ -125,6 +125,22 @@ float3 ImportanceSampleGGX(float2 xi, float3 N, float roughness)
     return normalize(tangent * H.x + bitangent * H.y + N * H.z);
 }
 
+float3 UniformSampleHemisphere(float2 xi, float3 N)
+{
+    // Uniform over the hemisphere above N. pdf = 1 / (2π).
+    float phi = TWO_PI * xi.x;
+    float cosTheta = xi.y;
+    float sinTheta = sqrt(max(1.0f - cosTheta * cosTheta, 0.0f));
+
+    float3 H = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+    float3 up    = abs(N.z) < 0.999f ? float3(0, 0, 1) : float3(1, 0, 0);
+    float3 tangent   = normalize(cross(up, N));
+    float3 bitangent = cross(N, tangent);
+
+    return normalize(tangent * H.x + bitangent * H.y + N * H.z);
+}
+
 float3 CosineSampleHemisphere(float2 xi, float3 N)
 {
     float phi = TWO_PI * xi.x;
@@ -211,17 +227,13 @@ void RayGenShader()
 
         if (payload.missed)
         {
-            // Primary miss (camera ray straight to sky): keep the full HDR
-            // value so looking at the sky is correctly bright.
-            // Indirect miss (bounce > 0): an interior bounce that escaped to
-            // sky. These are the firefly source — throughput is tiny, sky is
-            // huge, their product occasionally explodes and (even though the
-            // accumulator averages) biases the converged mean toward white
-            // over many frames. Clamp indirect sky contributions.
-            float3 skyContribution = throughput * SkyColor(ray.Direction);
-            if (bounce > 0)
-                skyContribution = min(skyContribution, float3(50.0f, 50.0f, 50.0f));
-            radiance += skyContribution;
+            // Primary miss (camera ray straight to sky) keeps the full HDR
+            // value so looking at the sky is correctly bright. Indirect
+            // misses land through the sky NEE path below — never here —
+            // so indirect rays that escape geometry simply terminate with
+            // no additional contribution, avoiding double-counting.
+            if (bounce == 0)
+                radiance += throughput * SkyColor(ray.Direction);
             break;
         }
 
@@ -251,6 +263,41 @@ void RayGenShader()
         if (!shadow.isShadowed)
         {
             radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
+        }
+
+        // Sky NEE. Visibility-gated environment sampling: cosine-weighted
+        // hemisphere sample, shadow ray, and if the sample escapes scene
+        // geometry the sky's HDR radiance contributes. Replaces the old
+        // "sky on any indirect miss" path — occluded rays (Sponza's roof
+        // etc.) contribute zero; visible sky (open atrium, skybox scenes)
+        // still lights the surface correctly. No MIS with BSDF sampling
+        // because indirect miss no longer carries sky radiance (see miss
+        // branch above).
+        {
+            float2 xiSky = Rand2(rng);
+            float3 skyL = UniformSampleHemisphere(xiSky, N);
+            float  NdotSky = max(dot(N, skyL), 0.0f);
+            if (NdotSky > 0.0f)
+            {
+                ShadowPayload skyShadow;
+                skyShadow.isShadowed = true;
+                RayDesc skyRay;
+                skyRay.Origin    = payload.hitPos + N * RAY_EPSILON;
+                skyRay.Direction = skyL;
+                skyRay.TMin      = RAY_EPSILON;
+                skyRay.TMax      = RAY_MAX_DISTANCE;
+                TraceRay(SceneAS, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+                         0xFF, 0, 0, 1, skyRay, skyShadow);
+                if (!skyShadow.isShadowed)
+                {
+                    // Uniform-hemisphere pdf = 1/(2π). CookTorranceGGX
+                    // already returns BRDF·cos, so the estimator
+                    //   L·(BRDF·cos)/pdf = L·CookTorrance·2π
+                    // no cos-division hazard at grazing angles.
+                    float3 skyRadiance = SkyColor(skyL);
+                    radiance += throughput * CookTorranceGGX(N, V, skyL, albedo, metalness, roughness) * skyRadiance * TWO_PI;
+                }
+            }
         }
 
         // Point light NEE
