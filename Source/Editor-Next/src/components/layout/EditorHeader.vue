@@ -80,12 +80,21 @@ const menuOptions = computed(() => [
     label: 'Window',
     key: 'window',
     icon: renderIcon(AppsOutline),
-    children: panelStore.panels.map((p) => ({
-      label: p.title,
-      key: `panel-toggle-${p.id}`,
-      icon: renderIcon(p.visible ? CheckboxOutline : SquareOutline),
-      props: { 'data-test': `window-toggle-${p.id}` },
-    })),
+    children: [
+      ...panelStore.panels.map((p) => ({
+        label: p.title,
+        key: `panel-toggle-${p.id}`,
+        icon: renderIcon(p.visible ? CheckboxOutline : SquareOutline),
+        props: { 'data-test': `window-toggle-${p.id}` },
+      })),
+      { type: 'divider', key: 'window-divider' },
+      {
+        label: 'Reset layout',
+        key: 'window-reset',
+        icon: renderIcon(RefreshOutline),
+        props: { 'data-test': 'window-reset' },
+      },
+    ],
   },
 ])
 
@@ -97,6 +106,9 @@ const handleMenuClick = (key) => {
   } else if (key.startsWith('panel-toggle-')) {
     const id = key.replace('panel-toggle-', '');
     panelStore.toggle(id);
+  } else if (key === 'window-reset') {
+    panelStore.resetLayout();
+    message.info('Panel layout reset');
   }
 }
 </script>
