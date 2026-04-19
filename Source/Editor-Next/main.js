@@ -243,11 +243,20 @@ function connectToEngine() {
       return;
     }
 
-    // VIEWPORT_READY event — consume the handle AND forward for the viewport UI.
+    // Engine's VIEWPORT_READY is a handshake that carries the raw shared
+    // handle — main consumes it to bind the shared texture. The renderer
+    // doesn't see this event; instead, setupSharedTexture emits a
+    // sanitized VIEWPORT_READY (or VIEWPORT_FAILED) from here based on
+    // bind outcome.
     if (msg.envelope === 'event' && msg.type === 'VIEWPORT_READY') {
       if (msg.payload?.sharedHandle && msg.payload.sharedHandle !== 0) {
         setupSharedTexture(msg.payload);
+      } else {
+        sendViewportEvent('VIEWPORT_FAILED', {
+          reason: 'Engine reported a viewport event with a null shared handle',
+        });
       }
+      return;
     }
 
     if (win) win.webContents.send('engine-message', msg);
@@ -265,57 +274,74 @@ function connectToEngine() {
   });
 }
 
+// Publish a viewport state transition to the renderer as an engine-event
+// envelope so ViewportPanel picks it up through useIpc's normal bus. These
+// events are synthesized by main.js based on bind outcome — distinct from
+// the engine's own VIEWPORT_READY which carries a shared handle and is
+// consumed here.
+function sendViewportEvent(type, payload) {
+  if (!win) return;
+  win.webContents.send('engine-message', { envelope: 'event', type, payload });
+}
+
 function setupSharedTexture(info) {
   if (importedTexture) {
-    importedTexture.release();
+    try { importedTexture.release(); } catch {}
+    importedTexture = null;
   }
 
-  console.log('Main: sharedTexture API:', Object.keys(sharedTexture));
-  if (sharedTexture.subtle) {
-    console.log('Main: sharedTexture.subtle API:', Object.keys(sharedTexture.subtle));
-  }
   console.log(`Main: Importing Shared Texture 0x${info.sharedHandle.toString(16)} (${info.width}x${info.height})`);
 
-  try {
-    importedTexture = sharedTexture.importSharedTexture({
-      source: {
-        type: 'd3d12-shared-handle',
-        handle: BigInt(info.sharedHandle)
-      },
-      width: info.width,
-      height: info.height,
-      format: info.format === 'rgba' ? 'rgba8' : 'bgra8'
-    });
-
-    sharedTexture.sendSharedTexture({
-      frame: win.webContents.mainFrame,
-      importedSharedTexture: importedTexture
-    });
-
-    console.log('Main: Shared texture sent to renderer');
-  } catch (e) {
-    console.error('Main: Failed to import shared texture:', e);
-
+  const tryImport = (shape, config) => {
     try {
-      console.log('Main: Trying fallback structure...');
-      importedTexture = sharedTexture.importSharedTexture({
-        textureInfo: {
-          handle: BigInt(info.sharedHandle),
-          pixelFormat: info.format === 'rgba' ? 'rgba8unorm' : 'bgra8unorm',
-          codedSize: { width: info.width, height: info.height },
-          visibleRect: { x: 0, y: 0, width: info.width, height: info.height }
-        }
-      });
-
+      importedTexture = sharedTexture.importSharedTexture(config);
       sharedTexture.sendSharedTexture({
         frame: win.webContents.mainFrame,
         importedSharedTexture: importedTexture
       });
-      console.log('Main: Fallback import successful');
-    } catch (e2) {
-      console.error('Main: Fallback also failed:', e2);
+      console.log(`Main: Shared texture bound (${shape})`);
+      return { ok: true };
+    } catch (e) {
+      const reason = e?.message || String(e);
+      console.error(`Main: ${shape} bind failed:`, reason);
+      return { ok: false, reason };
     }
+  };
+
+  const primary = tryImport('primary', {
+    source: {
+      type: 'd3d12-shared-handle',
+      handle: BigInt(info.sharedHandle)
+    },
+    width: info.width,
+    height: info.height,
+    format: info.format === 'rgba' ? 'rgba8' : 'bgra8'
+  });
+
+  if (primary.ok) {
+    sendViewportEvent('VIEWPORT_READY', { width: info.width, height: info.height });
+    return;
   }
+
+  const fallback = tryImport('fallback', {
+    textureInfo: {
+      handle: BigInt(info.sharedHandle),
+      pixelFormat: info.format === 'rgba' ? 'rgba8unorm' : 'bgra8unorm',
+      codedSize: { width: info.width, height: info.height },
+      visibleRect: { x: 0, y: 0, width: info.width, height: info.height }
+    }
+  });
+
+  if (fallback.ok) {
+    sendViewportEvent('VIEWPORT_READY', { width: info.width, height: info.height });
+    return;
+  }
+
+  sendViewportEvent('VIEWPORT_FAILED', {
+    reason: `primary: ${primary.reason}; fallback: ${fallback.reason}`,
+    width:  info.width,
+    height: info.height,
+  });
 }
 
 app.whenReady().then(() => {

@@ -444,6 +444,16 @@ void EditorService::RegisterBuiltinHandlers()
 		return result;
 	});
 
+	reg("VIEWPORT_RESIZE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		// No-op until TASK-73 implements swap-chain / back-buffer resize. Echo
+		// the requested dimensions so the editor's canvas can at least show
+		// the size it asked for — we'll stop lying about the real back-buffer
+		// size once the engine grows a real resize path.
+		const uint32_t l_width  = payload.value("width",  0u);
+		const uint32_t l_height = payload.value("height", 0u);
+		return json{ {"width", l_width}, {"height", l_height}, {"applied", false} };
+	});
+
 	reg("SET_VIEWPORT_SOURCE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
 		if (payload.contains("pass") && payload.contains("rtIndex"))
 		{
