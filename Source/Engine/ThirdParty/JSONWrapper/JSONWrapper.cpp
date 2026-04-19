@@ -59,11 +59,52 @@ bool JSONWrapper::Load(const char* fileName, json& data)
 	return true;
 }
 
+namespace
+{
+	// nlohmann/json serializes doubles at max-roundtrip precision
+	// (%.17g → "0.7820000052452087"). Transforms, colours, and PBR
+	// constants authored as single-precision floats should read back
+	// as the same short decimals they were authored with. Pre-rounding
+	// each double to 6 significant digits before dump preserves all
+	// precision a float can carry (~7.2 digits) while eliminating the
+	// trailing-zero noise that makes every saved JSON diff look like
+	// a format change. Leaves integers and non-numeric values untouched.
+	void TrimFloatPrecision(json& j)
+	{
+		if (j.is_object())
+		{
+			for (auto& [_, v] : j.items())
+				TrimFloatPrecision(v);
+			return;
+		}
+		if (j.is_array())
+		{
+			for (auto& v : j)
+				TrimFloatPrecision(v);
+			return;
+		}
+		if (j.is_number_float())
+		{
+			double d = j.get<double>();
+			if (d == 0.0 || std::isnan(d) || std::isinf(d))
+				return;
+			// Round-trip through %.6g to drop non-significant trailing noise
+			// while preserving all meaningful digits of a single-precision
+			// float.
+			char buf[32];
+			std::snprintf(buf, sizeof(buf), "%.6g", d);
+			j = std::strtod(buf, nullptr);
+		}
+	}
+}
+
 bool JSONWrapper::Save(const char* fileName, const json& data)
 {
+	json trimmed = data;
+	TrimFloatPrecision(trimmed);
 	std::ofstream o;
 	o.open(g_Engine->Get<IOService>()->getDataDirectory() + fileName, std::ios::out | std::ios::trunc);
-	o << std::setw(4) << data << std::endl;
+	o << std::setw(4) << trimmed << std::endl;
 	o.close();
 
 	Log(Verbose, "JSON file: ", fileName, " has been saved.");
