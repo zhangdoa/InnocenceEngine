@@ -434,9 +434,16 @@ void EditorService::RegisterBuiltinHandlers()
 			const std::string l_pass    = payload["pass"];
 			const uint32_t    l_rtIndex = payload["rtIndex"].get<uint32_t>();
 			ViewportSourceOverride::Set(l_pass, l_rtIndex);
-			return json{ {"pass", l_pass}, {"rtIndex", l_rtIndex} };
 		}
-		ViewportSourceOverride::Reset();
+		else
+		{
+			ViewportSourceOverride::Reset();
+		}
+		// Read back the actual override state so the client commits truth,
+		// not the payload it submitted. Empty object means no override.
+		auto l_current = ViewportSourceOverride::Get();
+		if (l_current.has_value())
+			return json{ {"pass", l_current->m_PassName}, {"rtIndex", l_current->m_RTIndex} };
 		return json::object();
 	});
 
