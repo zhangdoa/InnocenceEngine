@@ -3,9 +3,10 @@ id: TASK-82
 title: >-
   Editor-Next: replace scene-mutation setTimeouts with a request/reply IPC
   convention
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 09:56'
+updated_date: '2026-04-19 10:11'
 labels:
   - editor
   - ipc
@@ -32,9 +33,17 @@ The underlying smell: every mutation site invents its own "send and hope" sequen
 A hardcoded delay tuned for the fastest machine still races on the slowest; tuning for the slowest machine makes the UI feel mushy everywhere. Request/reply is the right primitive — mutation → commit → single source of truth → UI updates.
 
 ## Acceptance Criteria
-
-- [ ] #1 No `setTimeout` calls on the mutation path in `sceneStore.js`; scene refresh happens on engine reply/push
-- [ ] #2 Rapid consecutive mutations (create three entities back-to-back) all show up in the outliner deterministically; no lost refreshes
-- [ ] #3 `panelStore.resetLayout` no longer races with dockview's internal layout updates
-- [ ] #4 Playwright regression: create-3-entities-in-200ms test asserts all three are visible in the hierarchy
+<!-- AC:BEGIN -->
+- [ ] #1 #1 No `setTimeout` calls on the mutation path in `sceneStore.js`; scene refresh happens on engine reply/push
+- [ ] #2 #2 Rapid consecutive mutations (create three entities back-to-back) all show up in the outliner deterministically; no lost refreshes
+- [ ] #3 #3 `panelStore.resetLayout` no longer races with dockview's internal layout updates
+- [ ] #4 #4 Playwright regression: create-3-entities-in-200ms test asserts all three are visible in the hierarchy
 <!-- SECTION:DESCRIPTION:END -->
+
+<!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Superseded by TASK-86 (editor rewrite phase 2: IPC contract) and TASK-87 (scene vertical). The setTimeout-based refresh pattern is designed out of the new request/reply contract rather than patched.
+<!-- SECTION:FINAL_SUMMARY:END -->

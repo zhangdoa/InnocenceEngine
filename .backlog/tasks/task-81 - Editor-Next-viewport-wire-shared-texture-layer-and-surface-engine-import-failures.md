@@ -3,9 +3,10 @@ id: TASK-81
 title: >-
   Editor-Next viewport: wire shared-texture layer and surface engine-import
   failures
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 09:56'
+updated_date: '2026-04-19 10:11'
 labels:
   - editor
   - viewport
@@ -30,9 +31,17 @@ Result today: if the shared-texture import fails in prod, `isConnected` flips tr
 4. **Update the decoration.** Replace the hardcoded "1280x720" with the real dims from step 1; or drop the decoration if it's not load-bearing.
 
 ## Acceptance Criteria
-
-- [ ] #1 On successful shared-texture bind, viewport receives `VIEWPORT_READY` and renders engine output; resolution readout matches real dims
-- [ ] #2 On shared-texture bind failure, viewport shows an explicit error state (not a blank black box)
-- [ ] #3 Resizing the dock panel propagates to the engine's back-buffer (feature-gated on TASK-73 if needed)
-- [ ] #4 Playwright smoke: viewport panel is present and reports either ready or failed within 5s of engine start
+<!-- AC:BEGIN -->
+- [ ] #1 #1 On successful shared-texture bind, viewport receives `VIEWPORT_READY` and renders engine output; resolution readout matches real dims
+- [ ] #2 #2 On shared-texture bind failure, viewport shows an explicit error state (not a blank black box)
+- [ ] #3 #3 Resizing the dock panel propagates to the engine's back-buffer (feature-gated on TASK-73 if needed)
+- [ ] #4 #4 Playwright smoke: viewport panel is present and reports either ready or failed within 5s of engine start
 <!-- SECTION:DESCRIPTION:END -->
+
+<!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Superseded by TASK-89 (editor rewrite phase 5: viewport). The symptoms described here are addressed as part of the viewport slice of the coherent rewrite rather than patched on top of the Gemini-era scaffold.
+<!-- SECTION:FINAL_SUMMARY:END -->

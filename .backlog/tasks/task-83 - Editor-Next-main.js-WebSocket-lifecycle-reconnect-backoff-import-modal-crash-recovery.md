@@ -3,9 +3,10 @@ id: TASK-83
 title: >-
   Editor-Next main.js: WebSocket lifecycle, reconnect backoff, import-modal
   crash recovery
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 09:57'
+updated_date: '2026-04-19 10:11'
 labels:
   - editor
   - electron
@@ -27,10 +28,18 @@ Several correctness holes in `main.js`'s engine-connection lifecycle, surfaced b
 5. **`AssetPanel.vue` native `fs.readdirSync` / `statSync` has no try/catch** — a broken symlink or permission-denied entry kills the whole listing with an uncaught error. Also assumes `baseDir = __dirname/../../../../Data`, which breaks when Vite bundles.
 
 ## Acceptance Criteria
-
-- [ ] #1 `socket.on('error', ...)` handler in place; logs and does not crash main
-- [ ] #2 Reconnect consults `isUserInitiatedShutdown` before scheduling, and the reconnect timer is cleared on `stopEngine`/`restartEngine`/successful connect
-- [ ] #3 Reconnect uses exponential backoff (5s → 10s → 20s → 30s cap) and emits a `connection-status` channel update after N failed attempts so the renderer can show an explicit "offline — retry?" state
-- [ ] #4 On any disconnect, `assetStore.isImporting` is reset and `ImportModal` hides or shows a failure state
-- [ ] #5 `AssetPanel` wraps `fs.readdirSync`/`statSync` in try/catch, skips failing entries, and resolves `baseDir` via an IPC call to main (or an Electron `app.getAppPath`-based resolver that survives bundling)
+<!-- AC:BEGIN -->
+- [ ] #1 #1 `socket.on('error', ...)` handler in place; logs and does not crash main
+- [ ] #2 #2 Reconnect consults `isUserInitiatedShutdown` before scheduling, and the reconnect timer is cleared on `stopEngine`/`restartEngine`/successful connect
+- [ ] #3 #3 Reconnect uses exponential backoff (5s → 10s → 20s → 30s cap) and emits a `connection-status` channel update after N failed attempts so the renderer can show an explicit "offline — retry?" state
+- [ ] #4 #4 On any disconnect, `assetStore.isImporting` is reset and `ImportModal` hides or shows a failure state
+- [ ] #5 #5 `AssetPanel` wraps `fs.readdirSync`/`statSync` in try/catch, skips failing entries, and resolves `baseDir` via an IPC call to main (or an Electron `app.getAppPath`-based resolver that survives bundling)
 <!-- SECTION:DESCRIPTION:END -->
+
+<!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Superseded by TASK-88 (editor rewrite phase 4: connection lifecycle state machine). WebSocket lifecycle, reconnect backoff, and disconnect fan-out all fall out of the new explicit state machine rather than being patched on the existing boolean-plus-5s-retry implementation.
+<!-- SECTION:FINAL_SUMMARY:END -->
