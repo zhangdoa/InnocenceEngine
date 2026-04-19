@@ -268,6 +268,11 @@ app.whenReady().then(() => {
     }
   });
 
+  // Renderer asks the main process for the Data/ directory because the
+  // renderer bundle loses __dirname (Vite flat-bundles ESM, where it is
+  // undefined). Resolved here from main.js's stable __dirname anchor.
+  ipcMain.handle('get-data-dir', () => path.resolve(__dirname, '../../Data'));
+
   ipcMain.on('select-files', async (event) => {
     const { dialog } = require('electron');
     const result = await dialog.showOpenDialog(win, {

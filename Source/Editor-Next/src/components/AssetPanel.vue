@@ -25,7 +25,11 @@
       </n-space>
     </div>
 
-    <n-scrollbar class="asset-content">
+    <n-text v-if="loadError" type="error" style="padding: 12px; display: block;" data-test="asset-panel-error">
+      {{ loadError }}
+    </n-text>
+
+    <n-scrollbar v-else class="asset-content">
       <n-grid :cols="10" :x-gap="12" :y-gap="12" item-responsive responsive="screen">
         <n-grid-item v-for="item in items" :key="item.name" span="2 m:1">
           <div 
@@ -66,19 +70,34 @@ const isRoot = computed(() => currentPath.value === '' || currentPath.value === 
 const pathParts = computed(() => currentPath.value.split(/[\\\/]/).filter(p => p))
 
 let fs, path, baseDir
+const loadError = ref(null)
 
 const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
 
 const onRefreshAssets = () => loadDirectory(currentPath.value)
 
-onMounted(() => {
-  if (window.require) {
+onMounted(async () => {
+  if (!window.require || !ipcRenderer) {
+    loadError.value = 'Node integration unavailable — cannot enumerate assets.'
+    console.error('AssetPanel:', loadError.value)
+    return
+  }
+  try {
     fs = window.require('fs')
     path = window.require('path')
-    // __dirname (the editor source dir) is the only stable anchor for
-    // resolving repo-relative paths from any launcher's cwd.
-    baseDir = path.resolve(__dirname, '../../../../Data')
+    // Ask the main process for the data dir — the renderer bundle is
+    // flat-ESM so __dirname is undefined here; main.js has the stable
+    // anchor and resolves Data/ from that.
+    baseDir = await ipcRenderer.invoke('get-data-dir')
+    if (!baseDir || !fs.existsSync(baseDir)) {
+      loadError.value = `Data directory not found: ${baseDir ?? '(no path)'}`
+      console.error('AssetPanel:', loadError.value)
+      return
+    }
     loadDirectory('')
+  } catch (e) {
+    loadError.value = `Asset enumeration failed: ${e.message}`
+    console.error('AssetPanel:', e)
   }
   window.addEventListener('refresh-assets', onRefreshAssets)
 })
