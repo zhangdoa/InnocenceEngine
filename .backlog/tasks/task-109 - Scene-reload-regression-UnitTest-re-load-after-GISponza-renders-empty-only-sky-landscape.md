@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-19 19:39'
-updated_date: '2026-04-19 20:16'
+updated_date: '2026-04-19 20:35'
 labels:
   - bug
   - rendering
@@ -74,4 +74,14 @@ tier-2 (single GISponza load, no reload) renders correctly; tier-3 (UnitTest →
 
 <!-- SECTION:NOTES:BEGIN -->
 **User update (2026-04-19 22:15)**: the shader ball renders *differently every launch* — "sometimes it's fine, sometimes a part of it is missing, and sometimes it's gone." That's non-determinism across fresh Main.exe processes, not just the reload case. Pattern strongly suggests: uninitialized memory read, unsynchronised BLAS/TLAS build vs. first draw, or a data race between deferred resource initialization and the first frame. Investigation should start by running the same scene N times and collecting gpu_output.png from each — if any two differ despite identical input, the draw path has a race. Candidate culprits: ShaderBall.0-4.MeshComponent use deferred BLAS init; if the first frame's TLAS build races the last BLAS init, that specific mesh's geometry is garbage for that frame. Check for a WaitForGPU / fence between "ProcessDeferredMeshInit" and "BuildTLAS".
+
+**Investigation 2026-04-19 22:35** (Opus): reproduced the non-determinism with a 3-launch loop against UnitTest at `-total_frames 4` — got 3 different md5 hashes on gpu_output.png. Hypothesis "mesh init races with first draw" was addressed by commit `0498fa71` (drain deferred queues + WaitForGPUIdle inside LoadSync before rendering resumes), but re-running 3 times post-fix still produced 3 different hashes. So the race is NOT in mesh/texture/material/GPU-buffer deferred init — those are now fully drained before the first post-load frame.
+
+Remaining suspects (in rough priority):
+1. **DrawCallService buffer ordering** — if parallel tasks upload GPU buffers out-of-order relative to the draw submit, per-frame constants could be stale. DrawCallService uses a mutex but tasks that feed it may not.
+2. **LuminanceHistogram / auto-exposure convergence** — first few frames not converged; if any compute dispatch orders differ, exposure varies.
+3. **TLAS build timing** — for path tracer specifically, though user reports rasterizer also varies.
+4. **Thread-scheduling of per-entity draw-call population** — if any RegisterDrawCall-equivalent fires from multiple threads without deterministic ordering.
+
+Next step would be RenderDoc captures of two different runs and diffing the draw-call sequence. That's a substantial investigation — probably a ~1 day task on its own.
 <!-- SECTION:NOTES:END -->

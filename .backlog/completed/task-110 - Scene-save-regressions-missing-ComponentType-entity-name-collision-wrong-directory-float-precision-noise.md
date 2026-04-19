@@ -3,9 +3,10 @@ id: TASK-110
 title: >-
   Scene save regressions: missing ComponentType, entity-name collision, wrong
   directory, float precision noise
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 19:47'
+updated_date: '2026-04-19 20:39'
 labels:
   - editor
   - scene-save
@@ -77,3 +78,32 @@ Save is the backbone of editor workflow. The current state silently corrupts ref
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All four issues addressed across three commits.
+
+## Fixes
+
+**#1 MaterialComponent dropped ComponentType** — commit `05158649`. Added `{"ComponentType", MaterialComponent::GetTypeID()}` to the serializer; now matches the other component types.
+
+**#2 Entity-name-based filenames orphaned original files** — commit `05158649`. Added a static per-scene map (`g_LoadedCompFilenames` keyed by `{EntityID, typeID}`) that remembers the load-time filename; `SaveScene` consults it first and only falls back to `{EntityName}.{ComponentType}` for editor-spawned entities with no authored file. Cleared on scene unload via a new `JSONWrapper::ClearLoadedCompFilenames()` called from `SceneService::LoadSync`.
+
+**#3 Wrong project directory** — fixed as a side effect of #2. `AssetService::GetAssetFilePath(compName)` searches project-first then Generated; with the original filename preserved, it resolves to the project path (e.g. `Data/ExampleProject/Components/GITestBox.Camera.TransformComponent.json`). Editor-spawned components without a tracked original still land in `Data/Generated/Components/` — that's the intentional destination for new assets.
+
+**#4 Float precision expansion** — commit `8a78b49d`. Pre-dump rounding pass in `JSONWrapper::Save` that rewrites every float node to 6 significant digits via `snprintf("%.6g")` + `strtod` round-trip. Single precision carries ~7.2 significant digits, so 6 loses nothing that could round-trip back into the original float. Integers / zero / NaN / Inf untouched.
+
+## Validation
+- Engine build green across all three commits.
+- Main.exe tier-2 offscreen (GISponza auto-load, 10 frames): exit 0.
+- User manually verified #1 and #2 by tweaking the camera in the editor, saving, and observing the diff landed in the original tracked component files (not orphaned copies with spaces in names).
+
+## What was NOT verified
+- **Byte-for-byte "zero git diff" on an unmodified-scene round-trip**. The `-setw(4)` pretty-print output does not byte-match authored JSONs that used compact `{"R": 1, "G": 0.782, ...}` single-line objects. Values are semantically equal; formatting differs. Getting fully byte-clean diffs would need either a custom dumper that preserves author formatting or a one-time reformat commit that normalizes everything to the new output style. Neither is in TASK-110's scope; TASK-111 should cover the semantic-equivalence assertion.
+- **Editor-spawned component save path** — not exercised in this session. The fallback `{EntityName}.{ComponentType}` → `Generated/Components/` path is untested; the logic is simple but deserves a regression once TASK-111's determinism tier is in place.
+
+## Follow-ups
+- TASK-111 (semantic determinism test tier) — should now have a clean baseline to regress against.
+- If the whitespace-level diff becomes a real nuisance, open a small task for a custom dumper that preserves the single-line compact layout on arrays of primitives and small objects.
+<!-- SECTION:FINAL_SUMMARY:END -->
