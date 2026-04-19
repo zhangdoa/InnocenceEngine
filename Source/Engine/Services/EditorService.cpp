@@ -9,6 +9,8 @@
 #include "DevToggleRegistry.h"
 #include "RenderPassResourceService.h"
 #include "ViewportSourceOverride.h"
+#include "../Common/TaskScheduler.h"
+#include "../Common/Thread.h"
 #include "../Component/TransformComponent.h"
 #include "../Component/LightComponent.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
@@ -225,6 +227,37 @@ bool EditorService::Initialize()
 								if (!DevToggleRegistry::Set(l_name, l_value))
 									Log(Warning, "EditorService: SET_DEV_TOGGLE for unknown toggle: ", l_name.c_str());
 							}
+						}
+						else if (l_type == "LIST_TASKS")
+						{
+							auto* l_scheduler = g_Engine->Get<TaskScheduler>();
+							json l_threads = json::array();
+							size_t l_threadCount = l_scheduler->GetThreadCounts();
+							for (uint32_t t = 0; t < l_threadCount; ++t)
+							{
+								const auto& l_buffer = l_scheduler->GetTaskReport(t);
+								json l_reports = json::array();
+								for (size_t i = 0; i < l_buffer.size(); ++i)
+								{
+									const auto& l_r = l_buffer[i];
+									if (!l_r.m_TaskName)
+										continue;
+									json l_report;
+									l_report["name"]       = l_r.m_TaskName;
+									l_report["startTime"]  = l_r.m_StartTime;
+									l_report["finishTime"] = l_r.m_FinishTime;
+									l_reports.push_back(l_report);
+								}
+								json l_thread;
+								l_thread["index"]   = t;
+								l_thread["reports"] = l_reports;
+								l_threads.push_back(l_thread);
+							}
+
+							json l_reply;
+							l_reply["type"]    = "TASK_GRAPH";
+							l_reply["threads"] = l_threads;
+							webSocket.send(l_reply.dump());
 						}
 						else if (l_type == "LIST_RENDER_TARGETS")
 						{

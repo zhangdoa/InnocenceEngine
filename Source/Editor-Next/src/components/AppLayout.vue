@@ -68,6 +68,12 @@ panelStore.register({
   title: 'RT Debugger',
   position: { direction: 'below', referencePanel: 'render_toggles_panel', height: 240 },
 })
+panelStore.register({
+  id: 'task_debugger_panel',
+  component: 'task-debugger',
+  title: 'Task Debugger',
+  position: { direction: 'below', referencePanel: 'rt_debugger_panel', height: 280 },
+})
 
 const onDockviewReady = (event) => {
   panelStore.setApi(event.api)

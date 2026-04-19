@@ -5,6 +5,7 @@ import { sceneStore } from '../store/sceneStore'
 import { assetStore } from '../store/assetStore'
 import { devToggleStore } from '../store/devToggleStore'
 import { renderTargetStore } from '../store/renderTargetStore'
+import { taskGraphStore } from '../store/taskGraphStore'
 
 export function useIpc() {
   const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
@@ -58,6 +59,9 @@ export function useIpc() {
           break
         case 'RENDER_TARGETS':
           renderTargetStore.applySnapshot(msg)
+          break
+        case 'TASK_GRAPH':
+          taskGraphStore.applySnapshot(msg)
           break
         case 'HELLO_REPLY':
           // Handled by main process for handle duplication,
