@@ -78,8 +78,11 @@ namespace Inno
 		void TryWriteAutoCapture();
 
 		bool m_drawBRDFTest = false;
-		bool m_GPUPathTracerActive = false;
-		bool m_GPUPathTracerPendingToggle = false;
+		// Desired is what the user/toggle asked for; Active is what the
+		// frame loop has actually switched into. PrepareCommands reconciles
+		// them at the next frame boundary so the toggle never lands mid-frame.
+		bool m_GPUPathTracerDesired = false;
+		bool m_GPUPathTracerActive  = false;
 		bool m_saveScreenCapture = false;
 
 
@@ -99,19 +102,22 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Setup(IServiceConfig* systemConfig)
 	{
-		// Setter defers to the next frame boundary via the pending flag so
-		// the toggle never lands mid-frame.
+		// Getter reports the desired state — i.e. what the user's last click
+		// asked for — so callers that read back immediately after Set() (the
+		// IPC setter-reply convention) see their own write, not yesterday's
+		// frame state. The frame loop reconciles Active with Desired at the
+		// next boundary so the toggle never lands mid-frame.
 		DevToggleRegistry::RegisterToggle("GPUPathTracer",
-			[this]() { return m_GPUPathTracerActive; },
-			[this](bool desired) {
-				if (desired != m_GPUPathTracerActive)
-					m_GPUPathTracerPendingToggle = true;
-			});
+			[this]() { return m_GPUPathTracerDesired; },
+			[this](bool desired) { m_GPUPathTracerDesired = desired; });
 
 		DevToggleRegistry::RegisterAction("Screenshot", [this]() { m_saveScreenCapture = true; });
 
 		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
-			m_GPUPathTracerActive = true;
+		{
+			m_GPUPathTracerDesired = true;
+			m_GPUPathTracerActive  = true;
+		}
 
 		// Idempotent bootstrap of AmbientCG PBR sets that materials in
 		// ExampleProject scenes reference. Each ImportTexture writes a
@@ -268,10 +274,9 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::PrepareCommands()
 	{
-		if (m_GPUPathTracerPendingToggle)
+		if (m_GPUPathTracerDesired != m_GPUPathTracerActive)
 		{
-			m_GPUPathTracerPendingToggle = false;
-			m_GPUPathTracerActive = !m_GPUPathTracerActive;
+			m_GPUPathTracerActive = m_GPUPathTracerDesired;
 			if (m_GPUPathTracerActive)
 				GPUPathTracerPass::Get().ResetAccumulation();
 		}
