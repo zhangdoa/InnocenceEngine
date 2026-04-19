@@ -5,6 +5,7 @@
 #include "MeshResourceService.h"
 #include "TextureResourceService.h"
 #include "MaterialResourceService.h"
+#include "GPUBufferResourceService.h"
 #include "TransformService.h"
 #include "PhysicsSimulationService.h"
 #include "BillboardDrawCallService.h"
@@ -68,6 +69,22 @@ bool SceneService::LoadSync(const char* fileName)
 
 	// Load the new scene
 	AssetService::LoadScene(fileName);
+
+	// 5b. Drain the deferred-initialization queues synchronously before
+	// rendering resumes. AssetService::LoadScene queues mesh / texture /
+	// material / GPU-buffer init tasks; FrameManagementService::Update
+	// drains them one frame at a time. Without this drain, the first
+	// post-load draw sees a mix of Activated and still-pending components
+	// — Activated meshes draw, non-Activated meshes either skip or
+	// reference garbage vertex/index buffers. The shader-ball-varies-
+	// every-launch symptom (TASK-109) traces directly to this race.
+	// GPU-idle wait afterwards to ensure upload command lists complete
+	// before the next command list references the resources.
+	g_Engine->Get<MeshResourceService>()->InitializeComponents();
+	g_Engine->Get<TextureResourceService>()->InitializeComponents();
+	g_Engine->Get<MaterialResourceService>()->InitializeComponents();
+	g_Engine->Get<GPUBufferResourceService>()->InitializeComponents();
+	g_Engine->Get<FrameManagementService>()->WaitForGPUIdle();
 
 	// Loaded phase:
 	// 6. Refresh engine service state that depends on loaded scene data
