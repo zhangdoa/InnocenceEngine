@@ -2,7 +2,7 @@ project_name: "InnocenceEngine"
 default_status: "To Do"
 statuses: ["To Do", "In Progress", "Done"]
 labels: []
-definition_of_done: []
+definition_of_done: ["Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)", "Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary", "If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path", "Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap", "User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system", "Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer"]
 date_format: yyyy-mm-dd
 max_column_width: 20
 auto_open_browser: true

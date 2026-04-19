@@ -63,7 +63,8 @@
       "Bash(powershell.exe -NoProfile -Command \"\nSet-Location 'C:\\\\GitRepo\\\\InnocenceEngine\\\\Bin'\n\\\\$p = Start-Process -FilePath '.\\\\RelWithDebInfo\\\\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test -testcase bareboot' -Wait -PassThru\n\\\\$p.WaitForExit\\(\\)\nexit \\\\$p.ExitCode\n\"\necho \"PowerShell exit: $?\")",
       "Bash(powershell.exe -NoProfile -Command \"\nSet-Location 'C:\\\\GitRepo\\\\InnocenceEngine\\\\Bin'\n\\\\$p = Start-Process -FilePath '.\\\\RelWithDebInfo\\\\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test bareboot' -Wait -PassThru\n\\\\$p.WaitForExit\\(\\)\nexit \\\\$p.ExitCode\n\"\necho \"Exit: $?\")",
       "Bash(powershell.exe -Command \"cd 'C:\\\\GitRepo\\\\InnocenceEngine\\\\Bin'; Start-Process -FilePath 'RelWithDebInfo\\\\RenderTest.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -test draw_instanced' -Wait; exit [System.Environment]::ExitCode\" 2>&1; echo \"Exit: $?\")",
-      "Bash(wc -l /c/GitRepo/InnocenceEngine/Source/Engine/Services/*.h /c/GitRepo/InnocenceEngine/Source/Engine/Services/*.cpp)"
+      "Bash(wc -l /c/GitRepo/InnocenceEngine/Source/Engine/Services/*.h /c/GitRepo/InnocenceEngine/Source/Engine/Services/*.cpp)",
+      "mcp__backlog__task_list"
     ],
     "deny": []
   }
