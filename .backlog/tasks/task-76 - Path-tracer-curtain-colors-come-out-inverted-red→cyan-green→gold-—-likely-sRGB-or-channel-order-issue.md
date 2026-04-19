@@ -3,16 +3,33 @@ id: TASK-76
 title: >-
   Path tracer curtain colors come out inverted (red→cyan, green→gold) — likely
   sRGB or channel-order issue
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 19:24'
+closed_date: '2026-04-19 01:45'
 labels:
   - bug
   - path-tracer
   - colorspace
+  - not-reproducible
 dependencies: []
 priority: low
 ---
+
+## Resolution (2026-04-19): NOT A BUG
+
+The "inverted" curtain colors were actually correct renderings of the source textures. The Intel NewSponza asset has three curtain fabrics:
+
+- `curtain_fabric_red_BaseColor.png` — deep red/crimson
+- `curtain_fabric_green_BaseColor.png` — dark forest green
+- `curtain_fabric_blue_BaseColor.png` — **TEAL / CYAN** (mis-named; it is not pure blue)
+
+The "cyan curtains" in the path-traced output are the blue.png texture being faithfully rendered — its actual RGB center pixel is (8, 90, 106) sRGB, which is teal. The "orange curtains" are the red.png texture, warmed by HDR exposure + ACES tonemap — not an inversion.
+
+Verification: raw-albedo debug write (bypass all BRDF/lighting) reproduces the same cyan+orange pattern, because the sampled texture values match what the final frame shows.
+
+### Side effect: xyY matrix orientation fix
+While investigating, found and fixed a genuine color-space bug in `common.hlsl`: `RGB_XYZ` and `XYZ_RGB` used `mul(v, M)` (HLSL row-major vector-times-matrix), which effectively applies `M^T`. The round-trip was self-consistent at unit exposure but produced hue shifts when the Y component was scaled by auto-exposure (as finalBlendPass does). Fix: changed to `mul(M, v)` so the second output component is true CIE Y luminance. Landed separately, not part of this task.
 
 ## Description
 
