@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-19 19:49'
+updated_date: '2026-04-19 20:55'
 labels:
   - test
   - scene-save
@@ -68,3 +69,18 @@ Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProje
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**Progress 2026-04-19 22:55** (Opus): flag parsing + InitConfig propagation committed in `0186ed01`. Hook (Load → Save → Exit) attempted via `SetPreFrameCallback` at frame 0 but that path tripped an existing deferred-mesh-init race: WorldSystem's default `Load(UnitTest)` runs during engine init and leaves mesh deferred-init tasks in the queue; my post-init `Load(<test scene>)` ran through `OnSceneUnloading` which has a filter to drop scene-bound tasks, but `ShaderBall.0.MeshComponent` slipped through that filter and failed in InitializeComponents with an invalid asset handle when the next drain ran. Under `totalFrames > 0` the log upgrades to FatalOnError so Main.exe exited 1.
+
+**Proper structural fix**: the engine init flow should have a way to substitute the initial scene rather than load-default-then-swap. Options:
+- Add a `InitConfig::initialScene` override that WorldSystem consults before defaulting to UnitTest.
+- Add a `SceneService::LoadFirst(path)` that skips the OnSceneUnloading/CleanUp phase for the very first load.
+- Move the test scene load inside WorldSystem under a flag, so it replaces the default.
+
+Any of these fixes are simpler than debugging why ShaderBall slips the OnSceneUnloading filter — that filter check is `GetLifespan(owner) == Scene` and should match, so something about the timing or ownership is off.
+
+**Still to do**: pick one of the three structural approaches, wire up the test body (Load → SceneService::Save → exit), document the tier in CLAUDE.md's test tier list, and extend commit-gate.js to require it when serializer code is staged.
+<!-- SECTION:NOTES:END -->
