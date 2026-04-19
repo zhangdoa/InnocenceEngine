@@ -61,13 +61,6 @@ const onDockviewReady = (event) => {
     title: 'Workspace',
     position: { direction: 'below', referencePanel: viewportPane, height: 300 }
   })
-
-  event.api.addPanel({
-    id: 'scenes_panel',
-    component: 'scenes',
-    title: 'Scenes',
-    position: { direction: 'below', referencePanel: hierarchyPane, height: 220 }
-  })
 }
 </script>
 
