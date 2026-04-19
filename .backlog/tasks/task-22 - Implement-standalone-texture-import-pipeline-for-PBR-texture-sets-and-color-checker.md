@@ -3,9 +3,10 @@ id: TASK-22
 title: >-
   Implement standalone texture import pipeline for PBR texture sets and color
   checker
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-13 09:35'
+closed_date: '2026-04-19 10:00'
 labels:
   - textures
   - asset-pipeline
@@ -13,6 +14,23 @@ labels:
 dependencies: []
 priority: medium
 ---
+
+## Resolution (2026-04-19)
+
+Engine-side pipeline done:
+- `BCCompression::CompressRGBAToBC` is the shared BC1/BC4/BC5 path,
+  no longer Assimp-internal.
+- `AssetService::ImportTexture(absolutePath, sampler, usage, isSRGB,
+  slotIndex, instanceName)` is the public entry point.
+- `ExampleRenderingClient::Setup` runs an idempotent bake step over the
+  AmbientCG sets shipped via `DownloadAssets.ps1`, producing
+  `Generated/Components/<Set>_<Slot>.TextureComponent.{json,innobin}`
+  on first launch and skipping on subsequent ones.
+
+Original-task extras (4 textured spheres + color-checker cube in
+UnitTest) skipped — TASK-78's ShaderBall on Metal032 covers the
+"prove the PBR pipeline end-to-end" intent. The remaining piece is
+the editor UI for ad-hoc imports, tracked under TASK-62 AC #6.
 
 ## Description
 

@@ -1,9 +1,10 @@
 ---
 id: TASK-78
 title: Bespoke materials for bunny (dielectric), dragon (r=0.75 gold), and ShaderBall (PBR set)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 09:30'
+closed_date: '2026-04-19 10:00'
 labels:
   - assets
   - materials
