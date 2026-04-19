@@ -209,9 +209,27 @@ bool EditorService::Initialize()
 
 	l_server->start();
 
+	// Every scene load (editor-initiated or engine-initiated) ends by running
+	// the registered callbacks; ours broadcasts SCENE_UPDATED so connected
+	// editors refresh their hierarchy without the client having to poll.
+	m_sceneLoadedCallback = [this]() { BroadcastSceneUpdated(); };
+	g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&m_sceneLoadedCallback);
+
 	m_ObjectStatus = ObjectStatus::Activated;
 	Log(Success, "EditorService: WebSocket server started on port 8081.");
 	return true;
+}
+
+void EditorService::BroadcastSceneUpdated()
+{
+	if (!m_Server) return;
+	auto l_server = GetServer(m_Server);
+	json payload;
+	payload["scene"] = g_Engine->Get<SceneService>()->GetCurrentSceneName();
+	const auto l_msg = BuildEvent("SCENE_UPDATED", std::move(payload)).dump();
+	for (auto&& client : l_server->getClients())
+		client->send(l_msg);
+	Log(Verbose, "EditorService: Broadcast SCENE_UPDATED event.");
 }
 
 static void RequireFields(const json& payload, std::initializer_list<const char*> fields)

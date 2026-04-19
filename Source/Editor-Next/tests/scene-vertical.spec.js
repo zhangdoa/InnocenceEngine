@@ -218,6 +218,63 @@ test('UPDATE_ENTITY_PROPERTY reply re-hydrates selectedEntity component', async 
   }
 });
 
+test('SCENE_UPDATED event drives sceneStore.refresh and clears isLoading', async () => {
+  const { app, window } = await launchEditor();
+  try {
+    await installEngineMock(window);
+
+    const outcome = await window.evaluate(async () => {
+      const sceneStore = window.__innoStores?.scene;
+      if (!sceneStore || !sceneStore.loadScene) return { skipped: true };
+      await new Promise(r => setTimeout(r, 20));
+
+      // Seed the mock's scene to a known state then kick off a LOAD_SCENE.
+      // The mock's LOAD_SCENE handler replies with just { path } (mirroring
+      // the real engine), so `isLoading` should stay true until a
+      // SCENE_UPDATED event arrives.
+      window.__mockEngine.setResponder('LOAD_SCENE', (payload) => ({ path: payload.path }));
+      window.__mockEngine.setScene([{ id: 77, name: 'NewSceneEntity' }]);
+
+      const loadPromise = sceneStore.loadScene('GISponza.InnoScene');
+      await new Promise(r => setTimeout(r, 10));
+      const midLoad = sceneStore.isLoading;
+
+      await loadPromise;
+      const afterReply = sceneStore.isLoading;
+
+      // Now fire SCENE_UPDATED as the engine would do when async load completes.
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.emit('engine-message', {}, {
+        envelope: 'event',
+        type: 'SCENE_UPDATED',
+        payload: { scene: 'GISponza' },
+      });
+      // Let the GET_SCENE that the handler fires round-trip through the mock.
+      await new Promise(r => setTimeout(r, 50));
+
+      return {
+        midLoad,
+        afterReply,
+        afterEvent: sceneStore.isLoading,
+        currentScene: sceneStore.currentScene,
+        entities: sceneStore.entities.map(e => e.name),
+      };
+    });
+
+    if (outcome.skipped) return;
+    expect(outcome.midLoad).toBe(true);
+    // The reply alone does not clear isLoading — only SCENE_UPDATED (or the
+    // 15s safety-net timer) does. Keeping isLoading true after reply proves
+    // the client honours the load-is-async contract.
+    expect(outcome.afterReply).toBe(true);
+    expect(outcome.afterEvent).toBe(false);
+    expect(outcome.currentScene).toBe('GISponza');
+    expect(outcome.entities).toEqual(['NewSceneEntity']);
+  } finally {
+    await app.close().catch(() => {});
+  }
+});
+
 test('engine disconnect clears scene and rejects in-flight scene requests', async () => {
   const { app, window } = await launchEditor();
   try {

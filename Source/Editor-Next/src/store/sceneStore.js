@@ -11,11 +11,15 @@ export const sceneStore = reactive({
   entities: [],
   selectedEntity: null,
   selectedEntityId: null,
+  isLoading: false,     // true between LOAD_SCENE dispatch and SCENE_UPDATED
+  currentScene: '',     // populated from the engine's SCENE_UPDATED payload
 
   reset() {
     this.entities = []
     this.selectedEntity = null
     this.selectedEntityId = null
+    this.isLoading = false
+    this.currentScene = ''
   },
 
   async refresh() {
@@ -90,6 +94,29 @@ export const sceneStore = reactive({
     this.entities = entities ?? []
   },
 
+  /**
+   * Fire a LOAD_SCENE request. The engine replies immediately with the
+   * accepted path — the actual load is async; the SCENE_UPDATED event
+   * (broadcast from SceneService's loaded-callback) is the real completion
+   * signal. This action flips `isLoading` for the duration so UI can show
+   * a pending state.
+   */
+  async loadScene(path) {
+    if (!connectionStore.isConnected) return
+    this.isLoading = true
+    try {
+      await request('LOAD_SCENE', { path })
+      // Safety net: if SCENE_UPDATED never arrives (engine load failed
+      // silently before reaching our callback), clear `isLoading` after
+      // a grace window so the UI doesn't stay pending forever. A real
+      // engine-side failure here is worth its own backlog task.
+      setTimeout(() => { this.isLoading = false }, 15000)
+    } catch (e) {
+      this.isLoading = false
+      throw e
+    }
+  },
+
   onConnect() {
     this.refresh().catch(e => console.error('sceneStore.refresh on connect:', e))
   },
@@ -101,4 +128,10 @@ export const sceneStore = reactive({
 on('engine-connected', ({ connected }) => {
   if (connected) sceneStore.onConnect()
   else sceneStore.onDisconnect()
+})
+
+on('SCENE_UPDATED', (payload) => {
+  if (payload?.scene) sceneStore.currentScene = payload.scene
+  sceneStore.isLoading = false
+  sceneStore.refresh().catch(e => console.error('sceneStore.refresh on SCENE_UPDATED:', e))
 })

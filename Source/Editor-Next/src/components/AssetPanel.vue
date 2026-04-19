@@ -55,8 +55,8 @@ import {
   NSpace, NText, NScrollbar, NIcon, useMessage
 } from 'naive-ui'
 import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline, AddOutline } from '@vicons/ionicons5'
-import { request } from '../composables/useIpc'
 import { connectionStore } from '../store/connectionStore'
+import { sceneStore } from '../store/sceneStore'
 
 const message = useMessage()
 
@@ -122,8 +122,11 @@ const onItemDblClick = async (item) => {
   }
   const relPath = path.join(currentPath.value, item.name)
   try {
-    await request('LOAD_SCENE', { path: relPath })
     message.info(`Loading ${relPath}…`)
+    await sceneStore.loadScene(relPath)
+    // The store flips isLoading off when SCENE_UPDATED arrives (success),
+    // or after a 15s grace window (safety net). Either way, the hierarchy
+    // reflects truth without a follow-up toast here.
   } catch (e) {
     message.error(`Load failed: ${e.message}`)
   }

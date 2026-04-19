@@ -95,7 +95,14 @@ async function main() {
     return process.exit(0)
   }
 
-  // Real test check — walk the transcript from the last user message.
+  // Real test check — walk the transcript from the last *real user
+  // prompt*. The transcript uses type: "user" for several distinct
+  // things: tool-result feedback (content = array of tool_result blocks),
+  // harness pseudo-prompts (<task-notification>, <system-reminder>,
+  // <command-message>, <local-command*>), and actual user prompts
+  // (string content). Only the last kind should bound the scan window,
+  // otherwise we keep stopping at tool results from seconds ago and
+  // miss the test that ran before them.
   const xp = input.transcript_path
   if (!xp || !fs.existsSync(xp)) return failOpen(new Error('transcript not accessible'))
   const lines = fs.readFileSync(xp, 'utf8').split('\n').filter(Boolean)
@@ -104,7 +111,10 @@ async function main() {
     try {
       const m = JSON.parse(lines[i])
       const t = m.type || m.role || m.message?.role
-      if (t === 'user') { lastUserIdx = i; break }
+      if (t !== 'user') continue
+      if (!isRealUserPrompt(m.message?.content ?? m.content)) continue
+      lastUserIdx = i
+      break
     } catch { /* skip */ }
   }
 
@@ -189,6 +199,26 @@ function blockMissingAttribution() {
     '',
   ].join('\n'))
   process.exit(2)
+}
+
+// Harness-generated pseudo-prompts masquerade as user messages in the
+// transcript. Filter them so the "last real user prompt" marker lands
+// where a human actually typed something.
+const PSEUDO_PROMPT_PREFIXES = [
+  '<task-notification>',
+  '<system-reminder>',
+  '<command-message>',
+  '<command-name>',
+  '<local-command',
+]
+
+function isRealUserPrompt(content) {
+  if (typeof content !== 'string') return false
+  const trimmed = content.trimStart()
+  for (const p of PSEUDO_PROMPT_PREFIXES) {
+    if (trimmed.startsWith(p)) return false
+  }
+  return true
 }
 
 function firstArray(...xs) {

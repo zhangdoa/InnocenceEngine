@@ -1,6 +1,7 @@
 #pragma once
 #include "../Interface/IService.h"
 
+#include <functional>
 #include <memory>
 
 namespace Inno
@@ -29,10 +30,15 @@ namespace Inno
 
 	private:
 		void RegisterBuiltinHandlers();
+		void BroadcastSceneUpdated();
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 		void* m_Server = nullptr; // Opaque pointer to ix::WebSocketServer
 		uint32_t m_clientPID = 0;
 		std::unique_ptr<EditorServiceImpl> m_Impl;
+
+		// SceneService::AddSceneLoadedCallback stores a raw function pointer,
+		// so the functor must out-live the service.
+		std::function<void()> m_sceneLoadedCallback;
 	};
 }
