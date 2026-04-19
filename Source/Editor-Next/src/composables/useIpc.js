@@ -62,21 +62,28 @@ export function useIpc() {
     })
   }
 
-  const cleanupIpc = () => {
+  const onLoadScene = (e) => {
     if (!ipcRenderer) return
-    ipcRenderer.removeAllListeners('engine-connected')
-    ipcRenderer.removeAllListeners('engine-message')
-    ipcRenderer.removeAllListeners('files-selected')
+    if (!connectionStore.isConnected) {
+      message.warning('Engine offline; scene load ignored')
+      return
+    }
+    ipcRenderer.send('engine-message', { type: 'LOAD_SCENE', path: e.detail })
+    message.info(`Loading ${e.detail}…`)
+  }
+
+  const cleanupIpc = () => {
+    if (ipcRenderer) {
+      ipcRenderer.removeAllListeners('engine-connected')
+      ipcRenderer.removeAllListeners('engine-message')
+      ipcRenderer.removeAllListeners('files-selected')
+    }
+    window.removeEventListener('load-scene', onLoadScene)
   }
 
   onMounted(() => {
     setupIpc()
-    // Global scene loader
-    window.addEventListener('load-scene', (e) => {
-      if (ipcRenderer) {
-        ipcRenderer.send('engine-message', { type: 'LOAD_SCENE', path: e.detail })
-      }
-    })
+    window.addEventListener('load-scene', onLoadScene)
   })
 
   onUnmounted(() => {

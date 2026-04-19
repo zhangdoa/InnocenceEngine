@@ -59,18 +59,24 @@ let fs, path, baseDir
 
 const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
 
+const onRefreshAssets = () => loadDirectory(currentPath.value)
+
 onMounted(() => {
   if (window.require) {
     fs = window.require('fs')
     path = window.require('path')
-    baseDir = path.join(window.process.cwd(), '../../Data')
+    // Anchor on __dirname (the editor source dir, stable regardless of where
+    // Electron was launched from) instead of process.cwd(). cwd is set by
+    // whoever invoked the app — Playwright, npm script, drag-launch — none
+    // of which have to land in Source/Editor-Next.
+    baseDir = path.resolve(__dirname, '../../../../Data')
     loadDirectory('')
   }
-  window.addEventListener('refresh-assets', () => loadDirectory(currentPath.value))
+  window.addEventListener('refresh-assets', onRefreshAssets)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('refresh-assets', () => loadDirectory(currentPath.value))
+  window.removeEventListener('refresh-assets', onRefreshAssets)
 })
 
 const loadDirectory = (relPath) => {
