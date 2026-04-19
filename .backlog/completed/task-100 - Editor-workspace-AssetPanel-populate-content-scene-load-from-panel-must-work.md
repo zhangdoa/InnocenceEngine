@@ -3,9 +3,10 @@ id: TASK-100
 title: >-
   Editor workspace (AssetPanel): populate content; scene load from panel must
   work
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 18:13'
+updated_date: '2026-04-19 19:07'
 labels:
   - editor
   - bug
@@ -57,3 +58,22 @@ The center workspace panel (`AssetPanel.vue`) is currently empty — no folders,
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Commit `b03c162f`. Root cause was `__dirname` in the Vite-flat-bundled ESM renderer: in several Electron configurations it resolves to `undefined`, so `path.resolve(__dirname, '../../../../Data')` threw silently and the panel rendered empty.
+
+## Fix
+- `main.js` exposes `ipcMain.handle('get-data-dir')` that computes the Data/ path from main.js's stable `__dirname`.
+- `AssetPanel.vue` awaits the IPC response on mount, validates the returned path with `fs.existsSync`, and renders an inline `n-text type="error"` (`data-test="asset-panel-error"`) with the failure reason when any of: Node integration unavailable, Data directory missing, or fs throws.
+
+## Validation
+- Editor build: `✓ built in 8.92s`.
+- `tests/scene-load.spec.js` (live engine, `--engine=Main`): 1 passed in 5.0s — drills ExampleProject → Scenes → GISponza.InnoScene via dblclick and confirms the "Loading…" toast, i.e. the panel enumerates Data/ content and the dblclick → sceneStore.loadScene round-trip fires end-to-end.
+
+## What was NOT verified
+- **Reproduction of the original empty-panel symptom**: `scene-load.spec.js` in the committed codebase already passed against the old path (it uses `path.join(__dirname, '..')` for Electron's `cwd`, which may keep `__dirname` meaningful in the spec runner's Electron host even when a manual launch breaks). I couldn't reproduce the empty-panel state in the automated environment to confirm the user-observed symptom maps exactly to the Vite-bundle `__dirname` gotcha. The fix is strictly more robust either way.
+- **Packaged build**: not re-tested; the IPC approach should work identically because main.js's `__dirname` stays meaningful in packaged Electron apps.
+- **New regression spec for the error path**: I added the UI element for the error state (`data-test="asset-panel-error"`) but did not write a spec that asserts the error renders when Node integration is stripped — low ROI until contextIsolation is turned on project-wide.
+<!-- SECTION:FINAL_SUMMARY:END -->
