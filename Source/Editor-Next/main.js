@@ -200,13 +200,37 @@ app.whenReady().then(() => {
   ipcMain.on('select-files', async (event) => {
     const { dialog } = require('electron');
     const result = await dialog.showOpenDialog(win, {
-      title: 'Select 3D Models to Import',
+      title: 'Select assets to import',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: '3D Models', extensions: ['obj', 'fbx', 'gltf', 'glb'] }]
+      filters: [
+        { name: '3D models', extensions: ['obj', 'fbx', 'gltf', 'glb', 'ply', 'md5mesh'] },
+        { name: 'Textures',  extensions: ['png', 'jpg', 'jpeg', 'tga'] },
+        { name: 'All files', extensions: ['*'] },
+      ]
     });
 
     if (!result.canceled && result.filePaths.length > 0) {
       win.webContents.send('files-selected', result.filePaths);
+    }
+  });
+
+  ipcMain.on('select-folder', async () => {
+    const { dialog } = require('electron');
+    const fs = require('fs');
+    const nodePath = require('path');
+    const result = await dialog.showOpenDialog(win, {
+      title: 'Select a folder to bulk-import (every supported file inside)',
+      properties: ['openDirectory'],
+    });
+    if (result.canceled || !result.filePaths.length) return;
+
+    const folder = result.filePaths[0];
+    const entries = fs.readdirSync(folder).filter((name) =>
+      /\.(png|jpe?g|tga|obj|fbx|gltf|glb|ply|md5mesh)$/i.test(name)
+    );
+    const filePaths = entries.map((name) => nodePath.join(folder, name));
+    if (filePaths.length > 0) {
+      win.webContents.send('files-selected', filePaths);
     }
   });
 });

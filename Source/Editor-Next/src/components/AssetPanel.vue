@@ -12,10 +12,16 @@
           </n-breadcrumb>
         </n-space>
         
-        <n-button size="small" secondary @click="triggerImport" type="primary">
-          <template #icon><n-icon><add-outline /></n-icon></template>
-          Import
-        </n-button>
+        <n-button-group size="small">
+          <n-button secondary type="primary" @click="triggerImport" data-test="import-files">
+            <template #icon><n-icon><add-outline /></n-icon></template>
+            Import files
+          </n-button>
+          <n-button secondary @click="triggerImportFolder" data-test="import-folder">
+            <template #icon><n-icon><folder-outline /></n-icon></template>
+            Import folder
+          </n-button>
+        </n-button-group>
       </n-space>
     </div>
 
@@ -44,8 +50,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { 
-  NGrid, NGridItem, NBreadcrumb, NBreadcrumbItem, NButton, 
+import {
+  NGrid, NGridItem, NBreadcrumb, NBreadcrumbItem, NButton, NButtonGroup,
   NSpace, NText, NScrollbar, NIcon
 } from 'naive-ui'
 import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline, AddOutline } from '@vicons/ionicons5'
@@ -112,9 +118,11 @@ const onItemDblClick = (item) => {
 }
 
 const triggerImport = () => {
-  if (ipcRenderer) {
-    ipcRenderer.send('select-files');
-  }
+  if (ipcRenderer) ipcRenderer.send('select-files')
+}
+
+const triggerImportFolder = () => {
+  if (ipcRenderer) ipcRenderer.send('select-folder')
 }
 </script>
 

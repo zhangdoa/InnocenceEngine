@@ -404,7 +404,8 @@ std::string AssetService::GetComponentDirectory()
 
 bool AssetService::Import(const char* fileName)
 {
-	auto l_extension = g_Engine->Get<IOService>()->getFileExtension(fileName);
+	auto* l_io = g_Engine->Get<IOService>();
+	auto l_extension = l_io->getFileExtension(fileName);
 	std::string l_fileName = fileName;
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".ply" || l_extension == ".PLY" || l_extension == ".md5mesh")
@@ -414,6 +415,42 @@ bool AssetService::Import(const char* fileName)
 		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Import Model Task", ITask::Type::Once), [=]()
 			{
 				AssimpWrapper::Import(l_fileName.c_str());
+			});
+		tempTask->Activate();
+		return true;
+	}
+	else if (l_extension == ".png" || l_extension == ".PNG" || l_extension == ".jpg" || l_extension == ".JPG" || l_extension == ".jpeg" || l_extension == ".JPEG" || l_extension == ".tga" || l_extension == ".TGA")
+	{
+		// Auto-detect material slot + sRGB from filename suffix using the
+		// AmbientCG / common-PBR convention. Unknown suffixes fall through
+		// as albedo (slot 1, sRGB) — the safest default for an unlabelled
+		// colour image.
+		std::string l_baseName = l_io->getFileName(fileName);
+		auto l_dot = l_baseName.find_last_of('.');
+		if (l_dot != std::string::npos)
+			l_baseName.erase(l_dot);
+		std::string l_lowered;
+		l_lowered.reserve(l_baseName.size());
+		for (char c : l_baseName)
+			l_lowered.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+
+		uint32_t l_slot   = 1;
+		bool     l_isSRGB = true;
+		if (l_lowered.find("normal") != std::string::npos)         { l_slot = 0; l_isSRGB = false; }
+		else if (l_lowered.find("metalness") != std::string::npos) { l_slot = 2; l_isSRGB = false; }
+		else if (l_lowered.find("metallic")  != std::string::npos) { l_slot = 2; l_isSRGB = false; }
+		else if (l_lowered.find("roughness") != std::string::npos) { l_slot = 3; l_isSRGB = false; }
+		else if (l_lowered.find("ambientocclusion") != std::string::npos
+		      || l_lowered.find("_ao") != std::string::npos)        { l_slot = 4; l_isSRGB = false; }
+		else if (l_lowered.find("color")     != std::string::npos
+		      || l_lowered.find("albedo")    != std::string::npos
+		      || l_lowered.find("basecolor") != std::string::npos)  { l_slot = 1; l_isSRGB = true;  }
+
+		std::string l_instanceName = l_baseName + ".TextureComponent";
+		auto tempTask = g_Engine->Get<TaskScheduler>()->Submit(ITask::Desc("Import Texture Task", ITask::Type::Once),
+			[fileNameCopy = l_fileName, instanceName = std::move(l_instanceName), l_slot, l_isSRGB]()
+			{
+				ImportTexture(fileNameCopy.c_str(), TextureSampler::Sampler2D, TextureUsage::Sample, l_isSRGB, l_slot, instanceName.c_str());
 			});
 		tempTask->Activate();
 		return true;
