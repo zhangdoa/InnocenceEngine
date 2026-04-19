@@ -17,57 +17,54 @@
 </template>
 
 <script setup>
-import { shallowRef } from 'vue'
 import { DockviewVue } from 'dockview-vue'
 import EditorHeader from './layout/EditorHeader.vue'
 import EditorFooter from './layout/EditorFooter.vue'
 import ImportModal from './layout/ImportModal.vue'
 import { useIpc } from '../composables/useIpc'
+import { panelStore } from '../store/panelStore'
 
 import 'dockview-vue/dist/styles/dockview.css'
 
 // Initialize IPC message routing
 useIpc()
 
-const dockviewApi = shallowRef()
+// Declarative panel descriptors. panelStore registers them up front so the
+// Window menu can list (and re-open) them even before dockview is ready;
+// the actual addPanel calls happen in onDockviewReady once the API exists.
+panelStore.register({
+  id: 'viewport_panel',
+  component: 'viewport',
+  title: 'Viewport',
+  position: { direction: 'within', referencePanel: null },
+})
+panelStore.register({
+  id: 'hierarchy_panel',
+  component: 'hierarchy',
+  title: 'Outliner',
+  position: { direction: 'left', referencePanel: 'viewport_panel', width: 300 },
+})
+panelStore.register({
+  id: 'properties_panel',
+  component: 'properties',
+  title: 'Inspector',
+  position: { direction: 'right', referencePanel: 'viewport_panel', width: 400 },
+})
+panelStore.register({
+  id: 'assets_panel',
+  component: 'assets',
+  title: 'Workspace',
+  position: { direction: 'below', referencePanel: 'viewport_panel', height: 300 },
+})
+panelStore.register({
+  id: 'render_toggles_panel',
+  component: 'render-toggles',
+  title: 'Render Toggles',
+  position: { direction: 'below', referencePanel: 'hierarchy_panel', height: 240 },
+})
 
 const onDockviewReady = (event) => {
-  dockviewApi.value = event.api
-  
-  const viewportPane = event.api.addPanel({
-    id: 'viewport_panel',
-    component: 'viewport',
-    title: 'Viewport',
-    position: { direction: 'within', referencePanel: null }
-  })
-
-  const hierarchyPane = event.api.addPanel({
-    id: 'hierarchy_panel',
-    component: 'hierarchy',
-    title: 'Outliner',
-    position: { direction: 'left', referencePanel: viewportPane, width: 300 }
-  })
-
-  event.api.addPanel({
-    id: 'properties_panel',
-    component: 'properties',
-    title: 'Inspector',
-    position: { direction: 'right', referencePanel: viewportPane, width: 400 }
-  })
-
-  event.api.addPanel({
-    id: 'assets_panel',
-    component: 'assets',
-    title: 'Workspace',
-    position: { direction: 'below', referencePanel: viewportPane, height: 300 }
-  })
-
-  event.api.addPanel({
-    id: 'render_toggles_panel',
-    component: 'render-toggles',
-    title: 'Render Toggles',
-    position: { direction: 'below', referencePanel: hierarchyPane, height: 240 }
-  })
+  panelStore.setApi(event.api)
 }
 </script>
 

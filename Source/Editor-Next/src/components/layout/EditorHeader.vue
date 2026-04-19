@@ -1,7 +1,7 @@
 <template>
   <header class="editor-header">
     <div class="header-left">
-      <n-menu mode="horizontal" :options="menuOptions" class="menu-bar" @update:value="handleMenuClick" />
+      <n-menu mode="horizontal" :options="menuOptions" :value="null" class="menu-bar" @update:value="handleMenuClick" />
     </div>
     <div class="header-right">
       <n-space align="center" :size="20">
@@ -34,18 +34,20 @@
 </template>
 
 <script setup>
-import { h } from 'vue'
-import { 
-  NMenu, NButton, NButtonGroup, NTag, NSpace, NIcon, useMessage 
+import { h, computed } from 'vue'
+import {
+  NMenu, NButton, NButtonGroup, NTag, NSpace, NIcon, useMessage
 } from 'naive-ui'
-import { 
-  PowerOutline, RefreshOutline, SaveOutline, 
+import {
+  PowerOutline, RefreshOutline, SaveOutline,
   CheckmarkCircle, CloseCircle, SettingsOutline,
-  ColorPaletteOutline, SunnyOutline, FlaskOutline, MoonOutline
+  ColorPaletteOutline, SunnyOutline, FlaskOutline, MoonOutline,
+  AppsOutline, SquareOutline, CheckboxOutline
 } from '@vicons/ionicons5'
 import { connectionStore } from '../../store/connectionStore'
 import { sceneStore } from '../../store/sceneStore'
 import { uiStore } from '../../store/uiStore'
+import { panelStore } from '../../store/panelStore'
 
 const message = useMessage()
 
@@ -53,9 +55,11 @@ const renderIcon = (icon) => {
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
-const menuOptions = [
-  { 
-    label: 'Editor', 
+// Built lazily so visibility-marker icons (filled vs outlined checkbox)
+// re-render when panelStore.panels changes.
+const menuOptions = computed(() => [
+  {
+    label: 'Editor',
     key: 'editor',
     icon: renderIcon(SettingsOutline),
     children: [
@@ -71,14 +75,28 @@ const menuOptions = [
         ]
       }
     ]
-  }
-]
+  },
+  {
+    label: 'Window',
+    key: 'window',
+    icon: renderIcon(AppsOutline),
+    children: panelStore.panels.map((p) => ({
+      label: p.title,
+      key: `panel-toggle-${p.id}`,
+      icon: renderIcon(p.visible ? CheckboxOutline : SquareOutline),
+      props: { 'data-test': `window-toggle-${p.id}` },
+    })),
+  },
+])
 
 const handleMenuClick = (key) => {
   if (key.startsWith('theme-')) {
     const flavor = key.replace('theme-', '');
     uiStore.setTheme(flavor);
     message.info(`Theme changed to ${flavor}`);
+  } else if (key.startsWith('panel-toggle-')) {
+    const id = key.replace('panel-toggle-', '');
+    panelStore.toggle(id);
   }
 }
 </script>
