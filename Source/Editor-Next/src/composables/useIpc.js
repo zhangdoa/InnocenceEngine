@@ -4,6 +4,7 @@ import { connectionStore } from '../store/connectionStore'
 import { sceneStore } from '../store/sceneStore'
 import { assetStore } from '../store/assetStore'
 import { devToggleStore } from '../store/devToggleStore'
+import { renderTargetStore } from '../store/renderTargetStore'
 
 export function useIpc() {
   const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
@@ -20,6 +21,7 @@ export function useIpc() {
         connectionStore.lastMessage = 'Engine Handshake Successful'
         ipcRenderer.send('engine-message', { type: 'GET_SCENE' })
         ipcRenderer.send('engine-message', { type: 'LIST_DEV_TOGGLES' })
+        ipcRenderer.send('engine-message', { type: 'LIST_RENDER_TARGETS' })
         message.success('System Online')
       } else {
         connectionStore.lastMessage = 'Engine Connection Lost'
@@ -53,6 +55,9 @@ export function useIpc() {
           break
         case 'DEV_TOGGLES':
           devToggleStore.applySnapshot(msg)
+          break
+        case 'RENDER_TARGETS':
+          renderTargetStore.applySnapshot(msg)
           break
         case 'HELLO_REPLY':
           // Handled by main process for handle duplication,

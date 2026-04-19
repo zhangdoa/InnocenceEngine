@@ -62,6 +62,12 @@ panelStore.register({
   title: 'Render Toggles',
   position: { direction: 'below', referencePanel: 'hierarchy_panel', height: 240 },
 })
+panelStore.register({
+  id: 'rt_debugger_panel',
+  component: 'rt-debugger',
+  title: 'RT Debugger',
+  position: { direction: 'below', referencePanel: 'render_toggles_panel', height: 240 },
+})
 
 const onDockviewReady = (event) => {
   panelStore.setApi(event.api)
