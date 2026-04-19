@@ -48,14 +48,18 @@ Message-AI-Generated-By: [AI Agent Model Name]
 Code-Human-Written: [Human Name]
 ```
 
-## AI Agent Team Process
+## AI Agent Scratch File
 
-AI agents use temp file workflow:
+AI agents draft messages in `Build/commit-message.txt` (gitignored) and commit
+with `git commit -F Build/commit-message.txt`.
 
-1. Create message in `AI Agent Team/commit-message.txt`
-2. User reviews code changes and commit message
-3. User approves and then AI agents execute commit with `git commit -c AI Agent Team/commit-message.txt`
-4. Reuse temp file for next commit
+## Harness enforcement
+
+`.claude/hooks/commit-gate.js` runs as a `PreToolUse` hook on Bash and blocks
+`git commit` unless the commit message contains `Code-AI-Generated-By:` or
+`Message-AI-Generated-By:`. It reads messages from either `-m ...` or `-F path`.
+See `CLAUDE.md` → Harness enforcement for the test-run gate that runs
+alongside.
 
 ## Example
 

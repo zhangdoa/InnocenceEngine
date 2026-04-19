@@ -1,5 +1,7 @@
 # InnocenceEngine — Claude Instructions
 
+Project-scoped only. Meta engineering/behavioral rules live in the user-scope `CLAUDE.md`.
+
 ## What
 
 - 8-year solo C++ game engine, active refactoring toward GPU-driven rendering and modern C++
@@ -16,8 +18,22 @@
 
 ### Project-level forbidden (not covered by code standards)
 
-- Committing without a full test pass
+- Committing without a real integration-test run (enforced by `.claude/hooks/commit-gate.js`; see Harness enforcement)
 - Touching `Source\External\`
+
+## Harness enforcement
+
+`.claude/settings.json` wires a PreToolUse hook (`.claude/hooks/commit-gate.js`) that blocks `git commit` unless BOTH gates pass:
+
+**Test-run gate** — one of:
+
+- A qualifying integration test ran in the current turn — `npx playwright test` (editor), `Main.exe` with frame flags (engine), `RenderTest.exe -test`, or `InteractiveTest.ps1`
+- The staged set is docs-only — `.backlog/`, `Documents/`, `*.md`, `.claude/`
+- The commit message contains `[skip-test-gate]` — use this only when the commit genuinely cannot be validated by a test (commit-message edit, hook fix, etc.)
+
+**Attribution gate** — the commit message (from `-m` or `-F`) must contain `Code-AI-Generated-By:` or `Message-AI-Generated-By:` per `Documents/commit-message-policy.md`. No escape; every Claude-issued commit is AI-authored by definition.
+
+Commit-message drafts go in `Build/commit-message.txt` (gitignored), not in a tracked scratch folder. The hook fails open on internal errors so a broken hook never bricks commits.
 
 ## How
 
@@ -121,10 +137,6 @@ ls C:/GitRepo/InnocenceEngine/Build/captures/
 - Shader changes: capture before and after, compare thumbnails
 - Never ask "does it look correct?" — run the capture and check yourself
 
-### Workflow — standard pipeline
-
-**Implementation → Build → Runtime test → Shader test (if shaders changed) → Peer review → User approval.** Every step is mandatory. Any build error, test crash, D3D12 validation error, or shader failure = stop and fix before proceeding.
-
 ### Workflow — task-first approach
 
 Never rogue-fix. File a backlog task *before* starting the fix so the work is tracked, then follow the loop:
@@ -214,21 +226,13 @@ You MUST read the overview resource to understand the complete workflow. The inf
 
 <!-- BACKLOG.MD MCP GUIDELINES END -->
 
-## Principles
+## Project-specific principles
 
-### Working principles
-
-- **Systemic** — never patch locally; trace and fix root causes
-- **Expert quality** — think before every change; no mediocre solutions
-- **No workarounds** — low-quality patches are forbidden
-- **No assumptions** — verify with tools; hallucination is a real risk
-- **No explanatory comments** — only comment when the code itself is not obvious
 - **Comments describe present state, never history** — the codebase is not a changelog. Banned: "now via X / used to be Y / replaces / subsumes / retires / migrated from / deleted alongside / first consumer lands in next commit / added in <sha> / before this fix / fixed in TASK-NN". Git log + commit messages + backlog tasks are the version control; the source file describes only what is true today. Why-comments are fine when they document a present invariant ("setter must be lock-free; AllToggles holds the mutex"); they are not fine when they explain how the code got here.
-- **Validate everything** — build and runtime test before any commit
-- **Services own operation domains, not component types** — a `FooComponent` does not imply a `FooSystem`; multiple services may operate on the same component type independently
+- **Services own operation domains, not component types** — a `FooComponent` does not imply a `FooSystem`; multiple services may operate on the same component type independently.
 - **Fix at the right layer** — a high-level concern gets a high-level fix. A generic container, pool, or base service must not carry knowledge of a caller's naming conventions, project paths, enum values, scene assumptions, or named downstream consumers. Same rule applies to comments: each layer's documentation names its own concepts, not the consumers that happen to depend on it. When the instinct is "add the check / cast / special case in the foundation class", step up a layer and adjust the owner instead.
 
-### Target qualities (aim every CL at these)
+## Target qualities (aim every CL at these)
 
 - **Orthogonality** — each service/module has one responsibility; changes in one place don't silently affect another
 - **Explicit contracts** — preconditions, postconditions, and ownership are enforced (types, assertions, documented invariants), not assumed
@@ -242,33 +246,3 @@ After every non-trivial changelist, do a brief retrospective and file a backlog 
 1. What implicit contract was violated? — identify the unenforced assumption
 2. What structural weakness allowed it?
 3. What improvement moves the engine toward the target qualities above?
-
-### Mindset
-
-- **Own the problem end-to-end** — don't surface a finding and stop. When you discover a bug, the next action is to diagnose and fix it, not to ask "want me to proceed?" Natural checkpoints (build green, capture obtained, root cause found) are hand-off points *within* the work, not prompts to wait for permission
-- **Push through, don't defer** — the "decent but distant assistant" pattern — summarize findings, ask next step, wait — is a failure mode. A principal engineer wouldn't stop at "the PSO is never bound" and wait for instructions; they'd find out *why*. You own the outcome the user asked for, not a series of status updates
-- **Be critical, not agreeable** — challenge your own conclusions before reporting them. Challenge the user's framing when the data contradicts it. Agreement-by-default wastes everyone's time and produces mediocre work. When the user says "do X," and X doesn't match the evidence, say so
-- **Distinguish reversible from decisive** — confirm before destructive/shared-state actions (force-push, drop tables, send messages). Don't confirm before reading more code, adding a log line, rerunning a test — those are free. Asking for permission at reversible checkpoints is learned helplessness, not caution
-- **Measure against the user's actual goal** — "test the path tracer" doesn't mean "obtain a capture"; it means "know whether the path tracer works and why/why not." Don't declare victory at the instrumental step. Keep going until the terminal goal is met
-- **No victory laps mid-work** — avoid long "here's what I accomplished" summaries at intermediate checkpoints; they trade momentum for performative progress. Brief status, then continue
-
-### End-of-response checklist (run before ending any turn)
-
-Prose guidance decays; behavior at turn boundaries is where drift happens. Before ending a response, verify:
-
-1. **Is the user's terminal goal met?** Not the instrumental step (build green, capture obtained, bug localized). The thing they actually asked for.
-2. **If not, am I stopping at a decision point or a phase boundary?** Only decision points (destructive action, genuinely ambiguous fork, or a question the codebase can't answer) justify stopping. Phase boundaries don't.
-3. **Did I end with a question?** If yes, can I answer it myself by reading more code or running one more test? Then do that instead.
-4. **Did I list options without picking one?** If yes, pick the highest-value one and do it. Lists-of-options are handoff disguised as helpfulness.
-
-### Banned end-of-response patterns
-
-These phrases and shapes are the "decent-but-distant" pattern — do not emit them unless a genuinely blocking decision point has been reached:
-
-- "Should I proceed?" / "Want me to continue?" / "Let me know if…"
-- "Next step: …" as a standalone trailing sentence (it's a question in disguise)
-- "We could do X or Y — which do you prefer?" at reversible forks
-- A bullet list of findings with no chosen action underneath
-- "All tests pass." / "The fix is in." followed by nothing (if there's more work, do it; if truly done, say so and commit)
-
-When tempted to emit one of these, instead: pick, act, and continue. The user can always interrupt — that's cheaper than you waiting.
