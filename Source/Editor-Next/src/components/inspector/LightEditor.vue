@@ -38,8 +38,11 @@ const updateProp = (property) => {
   })
 }
 
+// #RRGGBB is the native <input type="color"> wire format, not a theme
+// surface — leaving the literal so an unset color picker has a sensible
+// default when the engine hasn't sent a component value yet.
 const rgbToHex = (rgb) => {
-  if (!rgb) return '#FFFFFF'
+  if (!rgb) return '#ffffff'
   const r = Math.round(rgb[0] * 255).toString(16).padStart(2, '0')
   const g = Math.round(rgb[1] * 255).toString(16).padStart(2, '0')
   const b = Math.round(rgb[2] * 255).toString(16).padStart(2, '0')

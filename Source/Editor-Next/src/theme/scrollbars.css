@@ -1,0 +1,21 @@
+/* Scrollbar styling via Catppuccin tokens. WebKit-only; Firefox renders
+ * native scrollbars and picks light/dark from `color-scheme`, which the
+ * active-flavor layer already sets. */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ctp-mantle);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ctp-surface1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ctp-surface2);
+}

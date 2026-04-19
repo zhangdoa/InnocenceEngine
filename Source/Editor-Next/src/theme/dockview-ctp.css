@@ -1,0 +1,62 @@
+/* Catppuccin port for dockview-vue.
+ *
+ * Apply class "dockview-theme-ctp" on the <dockview-vue> element. Every
+ * --dv-* variable routes to a Catppuccin semantic token, so a flavor switch
+ * (toggling ctp-* class on <html>) repaints tabs, sashes, drop targets, and
+ * group backgrounds together with the rest of the app — no per-element JS
+ * repaint.
+ *
+ * Semantic mapping (dockview → Catppuccin):
+ *   group content background → base
+ *   tab bar (below group)    → mantle
+ *   active tab body          → base       (so the tab visually belongs to its group)
+ *   hidden tab body          → mantle
+ *   separators / dividers    → surface0   (faint)
+ *   pane header border       → surface1
+ *   active sash / outline    → blue       (primary accent)
+ *   drop target fill         → blue @ 35% alpha
+ *   hover icon bg            → surface1
+ *   tab divider              → surface0
+ *
+ * File is standalone (no app-level rules). Lifting it into an upstream PR
+ * for dockview-vue is a copy-paste.
+ */
+
+.dockview-theme-ctp {
+  /* ——— colors ——— */
+  --dv-paneview-active-outline-color: var(--ctp-blue);
+  --dv-drag-over-background-color: color-mix(in srgb, var(--ctp-blue) 35%, transparent);
+  --dv-drag-over-border-color: var(--ctp-blue);
+  --dv-tabs-container-scrollbar-color: var(--ctp-overlay0);
+  --dv-icon-hover-background-color: var(--ctp-surface1);
+  --dv-floating-box-shadow:
+    0 4px 12px 0 color-mix(in srgb, var(--ctp-crust) 60%, transparent);
+
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--ctp-blue);
+
+  --dv-group-view-background-color: var(--ctp-base);
+  --dv-tabs-and-actions-container-background-color: var(--ctp-mantle);
+
+  --dv-activegroup-visiblepanel-tab-background-color: var(--ctp-base);
+  --dv-activegroup-hiddenpanel-tab-background-color:  var(--ctp-mantle);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--ctp-base);
+  --dv-inactivegroup-hiddenpanel-tab-background-color:  var(--ctp-mantle);
+  --dv-tab-divider-color: var(--ctp-surface0);
+  --dv-activegroup-visiblepanel-tab-color:   var(--ctp-text);
+  --dv-activegroup-hiddenpanel-tab-color:    var(--ctp-subtext0);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--ctp-subtext1);
+  --dv-inactivegroup-hiddenpanel-tab-color:  var(--ctp-overlay0);
+  --dv-separator-border: var(--ctp-surface0);
+  --dv-paneview-header-border-color: var(--ctp-surface1);
+
+  /* ——— non-color tokens ——— */
+  --dv-overlay-z-index: 999;
+  --dv-tabs-and-actions-container-font-size: 13px;
+  --dv-tabs-and-actions-container-height: 32px;
+  --dv-tab-font-size: inherit;
+  --dv-border-radius: 0px;
+  --dv-tab-margin: 0;
+  --dv-active-sash-transition-duration: 0.1s;
+  --dv-active-sash-transition-delay: 0.5s;
+}

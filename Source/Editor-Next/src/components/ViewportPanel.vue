@@ -41,7 +41,12 @@ const canvasRef = ref(null)
   position: relative;
   width: 100%;
   height: 100%;
-  background: #000;
+  /* The engine's shared texture composites into this pane; the fallback
+   * surface shows only before VIEWPORT_READY. Use the darkest Catppuccin
+   * token so the fallback matches the palette in every flavor (dark in
+   * Frappé/Macchiato/Mocha, light-grey in Latte — conventional for light
+   * DCC tooling). */
+  background: var(--ctp-crust);
   overflow: hidden;
 }
 
@@ -78,7 +83,7 @@ const canvasRef = ref(null)
 }
 
 .stats {
-  background: rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--ctp-crust) 65%, transparent);
   padding: 4px 8px;
   border-radius: 4px;
 }

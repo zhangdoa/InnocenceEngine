@@ -1,0 +1,10 @@
+/* Theme entry point. Import in App.vue. Order matters:
+ *   1. official palette   — declares --ctp-{flavor}-{color} vars
+ *   2. active layer       — aliases --ctp-{color} to the active flavor
+ *   3. dockview port      — consumes --ctp-{color} for every --dv-* var
+ *   4. scrollbars         — consumes --ctp-{color} */
+
+@import '@catppuccin/palette/css/catppuccin.css';
+@import './catppuccin-active.css';
+@import './dockview-ctp.css';
+@import './scrollbars.css';
