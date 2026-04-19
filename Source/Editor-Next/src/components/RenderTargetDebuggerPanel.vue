@@ -70,7 +70,7 @@ const onReset = () => {
 </script>
 
 <template>
-  <div class="rt-debugger" data-test="rt-debugger-panel">
+  <div class="render-target-debugger" data-test="render-target-debugger-panel">
     <div v-if="!connectionStore.isConnected" class="empty-container">
       <n-empty description="Engine offline" size="small" />
     </div>
@@ -98,14 +98,14 @@ const onReset = () => {
           placeholder="Select pass / RT…"
           size="small"
           filterable
-          data-test="rt-picker"
+          data-test="render-target-picker"
         />
         <n-space :size="6" class="actions">
           <n-button
             size="small"
             type="primary"
             :disabled="!selectedKey"
-            data-test="rt-apply"
+            data-test="render-target-apply"
             @click="onApply"
           >
             Use as viewport
@@ -113,12 +113,12 @@ const onReset = () => {
           <n-button
             size="small"
             :disabled="!renderTargetStore.override"
-            data-test="rt-reset"
+            data-test="render-target-reset"
             @click="onReset"
           >
             Reset
           </n-button>
-          <n-button size="small" quaternary data-test="rt-refresh" @click="renderTargetStore.refresh">
+          <n-button size="small" quaternary data-test="render-target-refresh" @click="renderTargetStore.refresh">
             Refresh list
           </n-button>
         </n-space>
@@ -128,7 +128,7 @@ const onReset = () => {
 </template>
 
 <style scoped>
-.rt-debugger {
+.render-target-debugger {
   display: flex;
   flex-direction: column;
   height: 100%;

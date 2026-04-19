@@ -4,7 +4,7 @@
 
     <main class="dock-container">
       <dockview-vue
-        class="dockview-theme-ctp"
+        :theme="ctpTheme"
         style="width: 100%; height: 100%;"
         @ready="onDockviewReady"
       >
@@ -23,6 +23,13 @@ import EditorFooter from './layout/EditorFooter.vue'
 import ImportModal from './layout/ImportModal.vue'
 import { panelStore } from '../store/panelStore'
 
+// dockview-core defaults to `themeAbyss` when no `theme` prop is passed —
+// it calls `setClassNames(themeAbyss.className)` on an internal node whose
+// CSS-var definitions shadow anything we put on the outer wrapper. Pass
+// our own theme descriptor so that internal node gets `dockview-theme-ctp`
+// instead, and the port under src/theme/dockview-ctp.css actually applies.
+const ctpTheme = { name: 'ctp', className: 'dockview-theme-ctp' }
+
 // Importing the store barrel wires every store's engine-connected
 // subscription before the first paint and exposes window.__innoStores for
 // Playwright harnesses to drive.
@@ -36,41 +43,50 @@ import 'dockview-vue/dist/styles/dockview.css'
 // No viewport panel — the engine renders into its own native window (see
 // project CLAUDE.md design notes). The editor is tooling only; the game
 // view lives in Main.exe's OS window alongside this one.
-panelStore.register({
-  id: 'hierarchy_panel',
-  component: 'hierarchy',
-  title: 'Outliner',
-  position: { direction: 'within', referencePanel: null },
-})
-panelStore.register({
-  id: 'properties_panel',
-  component: 'properties',
-  title: 'Inspector',
-  position: { direction: 'right', referencePanel: 'hierarchy_panel', width: 400 },
-})
+//
+// Layout: left column = functional panels (render toggles, RT debugger,
+// task debugger), centre = workspace/assets, right column = outliner
+// over inspector. The first panel registered anchors everything else,
+// so assets (the centre) is registered first.
 panelStore.register({
   id: 'assets_panel',
   component: 'assets',
   title: 'Workspace',
-  position: { direction: 'below', referencePanel: 'hierarchy_panel', height: 300 },
+  position: { direction: 'within', referencePanel: null },
 })
+
+// Left column — stacked functional panels.
 panelStore.register({
   id: 'render_toggles_panel',
   component: 'render-toggles',
   title: 'Render Toggles',
-  position: { direction: 'below', referencePanel: 'hierarchy_panel', height: 240 },
+  position: { direction: 'left', referencePanel: 'assets_panel', width: 280 },
 })
 panelStore.register({
-  id: 'rt_debugger_panel',
-  component: 'rt-debugger',
-  title: 'RT Debugger',
-  position: { direction: 'below', referencePanel: 'render_toggles_panel', height: 240 },
+  id: 'render_target_debugger_panel',
+  component: 'render-target-debugger',
+  title: 'Render Target Debugger',
+  position: { direction: 'below', referencePanel: 'render_toggles_panel', height: 260 },
 })
 panelStore.register({
   id: 'task_debugger_panel',
   component: 'task-debugger',
   title: 'Task Debugger',
-  position: { direction: 'below', referencePanel: 'rt_debugger_panel', height: 280 },
+  position: { direction: 'below', referencePanel: 'render_target_debugger_panel', height: 260 },
+})
+
+// Right column — outliner over inspector.
+panelStore.register({
+  id: 'hierarchy_panel',
+  component: 'hierarchy',
+  title: 'Outliner',
+  position: { direction: 'right', referencePanel: 'assets_panel', width: 340 },
+})
+panelStore.register({
+  id: 'properties_panel',
+  component: 'properties',
+  title: 'Inspector',
+  position: { direction: 'below', referencePanel: 'hierarchy_panel', height: 420 },
 })
 
 const onDockviewReady = (event) => {

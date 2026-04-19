@@ -6,7 +6,10 @@ import { reactive, shallowRef } from 'vue'
 // to localStorage on every dockview-driven change and restored on next
 // editor launch.
 
-const LAYOUT_STORAGE_KEY = 'inno-editor-layout-v1'
+// Bump the suffix whenever a panel id is renamed or the default layout
+// changes shape — dockview's `fromJSON` will throw on stale ids and
+// panelStore falls back to `_addAllRegistered` for a clean start.
+const LAYOUT_STORAGE_KEY = 'inno-editor-layout-v2'
 const PERSIST_DEBOUNCE_MS = 250
 
 const dockviewApi = shallowRef(null)
