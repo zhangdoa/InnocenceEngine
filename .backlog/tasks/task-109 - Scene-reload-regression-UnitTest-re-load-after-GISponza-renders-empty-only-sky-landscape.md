@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-19 19:39'
+updated_date: '2026-04-19 20:16'
 labels:
   - bug
   - rendering
@@ -68,3 +69,9 @@ tier-2 (single GISponza load, no reload) renders correctly; tier-3 (UnitTest →
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+**User update (2026-04-19 22:15)**: the shader ball renders *differently every launch* — "sometimes it's fine, sometimes a part of it is missing, and sometimes it's gone." That's non-determinism across fresh Main.exe processes, not just the reload case. Pattern strongly suggests: uninitialized memory read, unsynchronised BLAS/TLAS build vs. first draw, or a data race between deferred resource initialization and the first frame. Investigation should start by running the same scene N times and collecting gpu_output.png from each — if any two differ despite identical input, the draw path has a race. Candidate culprits: ShaderBall.0-4.MeshComponent use deferred BLAS init; if the first frame's TLAS build races the last BLAS init, that specific mesh's geometry is garbage for that frame. Check for a WaitForGPU / fence between "ProcessDeferredMeshInit" and "BuildTLAS".
+<!-- SECTION:NOTES:END -->
