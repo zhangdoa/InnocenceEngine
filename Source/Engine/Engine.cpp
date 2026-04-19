@@ -352,6 +352,26 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "D3D12 GPU-based validation enabled.");
 	}
 
+	auto l_serializeTestPos = arg.find("-serialize_test");
+	if (l_serializeTestPos != std::string::npos)
+	{
+		std::string l_remainder = arg.substr(l_serializeTestPos + 15);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			auto l_end = l_remainder.find(' ', l_start);
+			std::string l_path = l_remainder.substr(l_start,
+				l_end == std::string::npos ? std::string::npos : l_end - l_start);
+			if (l_path.size() < sizeof(l_result.serializeTest))
+			{
+				std::memcpy(l_result.serializeTest, l_path.c_str(), l_path.size() + 1);
+				Log(Success, "Serialize-determinism test on scene: ", l_result.serializeTest);
+				l_result.isOffscreen = true; // render pipeline not required
+				l_result.totalFrames = 1;    // exit immediately after save
+			}
+		}
+	}
+
 	auto l_captureArgPos = arg.find("-capture_frame");
 	if (l_captureArgPos != std::string::npos)
 	{
@@ -695,6 +715,16 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				}
 				return true;
 			});
+
+		// Serialize-determinism test (TASK-111) — the flag is parsed and
+		// propagated into InitConfig::serializeTest, but the save-on-load
+		// hook is not yet wired. Initial pre-frame-callback implementation
+		// tripped an existing deferred-mesh-init race when swapping scenes
+		// mid-init (the WorldSystem UnitTest load leaves init tasks in the
+		// queue that the OnSceneUnloading filter doesn't always remove).
+		// Deferring the hook until the init sequence can be restructured
+		// to load the test scene in place of UnitTest rather than after it.
+		// See TASK-111 for the follow-up.
 
 		// RenderDoc / PIX capture trigger. Lives here rather than inside
 		// FrameManagementService::Update because the frame manager owns frame

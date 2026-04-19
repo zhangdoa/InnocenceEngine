@@ -33,6 +33,12 @@ namespace Inno
 		// copies the `;`-separated list into bakeInputs, and implies isHeadless.
 		bool isBakeMode = false;
 		char bakeInputs[1024] = {};
+		// Serialize-determinism test (TASK-111). When non-empty, Main.exe
+		// loads the scene, issues SceneService::Save, and exits. Callers
+		// can `git diff Data/` afterwards to see whether the save round-
+		// trip preserved the on-disk state; a clean diff means the
+		// serializer is idempotent for the tested scene.
+		char serializeTest[512] = {};
 	};
 
 	class IWindowService;
