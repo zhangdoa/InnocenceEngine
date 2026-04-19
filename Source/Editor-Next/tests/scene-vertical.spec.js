@@ -127,7 +127,12 @@ async function installEngineMock(window) {
     };
 
     // Tell the rest of the app the engine is "connected" so store refresh
-    // on-connect fires.
+    // on-connect fires. Phase 4 made connectionStore.isConnected a getter
+    // off `status === 'live'` — we fire both the state-machine event and
+    // the legacy binary signal so every consumer agrees.
+    ipcRenderer.emit('connection-status', {}, {
+      status: 'live', attempt: 0, error: null, nextRetryMs: null,
+    });
     ipcRenderer.emit('engine-connected', {}, true);
   });
 }
@@ -228,6 +233,9 @@ test('engine disconnect clears scene and rejects in-flight scene requests', asyn
       const beforeCount = sceneStore.entities.length;
 
       const { ipcRenderer } = window.require('electron');
+      ipcRenderer.emit('connection-status', {}, {
+        status: 'lost', attempt: 0, error: null, nextRetryMs: 2000,
+      });
       ipcRenderer.emit('engine-connected', {}, false);
       await new Promise(r => setTimeout(r, 20));
 

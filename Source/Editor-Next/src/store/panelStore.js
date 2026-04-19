@@ -91,12 +91,25 @@ export const panelStore = reactive({
     } catch (_) {
       // localStorage might be unavailable in some sandboxed contexts
     }
-    if (!dockviewApi.value) return
-    this.panels.forEach((p) => {
-      const handle = dockviewApi.value.getPanel(p.id)
-      if (handle) handle.api.close()
-      p.visible = false
-    })
+    const api = dockviewApi.value
+    if (!api) return
+    // Tear down the whole dockview in one atomic call instead of looping
+    // handle.close() (which was async and could race the subsequent
+    // re-add, leaving some panels registered from the old layout and
+    // skipped in _addAllRegistered). `clear()` removes every panel and
+    // group synchronously.
+    if (typeof api.clear === 'function') {
+      api.clear()
+    } else {
+      // Fallback for older dockview versions without clear(): close each
+      // panel and flip visibility; known to race on some transitions but
+      // still better than no reset.
+      this.panels.forEach((p) => {
+        const handle = api.getPanel(p.id)
+        if (handle) handle.api.close()
+      })
+    }
+    this.panels.forEach((p) => { p.visible = false })
     this._addAllRegistered()
   },
 
