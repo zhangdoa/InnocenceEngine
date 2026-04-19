@@ -8,7 +8,7 @@
  *   exit 0 = allow the tool call
  *   exit 2 = block the tool call; stderr is shown to Claude (and the user)
  *
- * Two gates, both must pass:
+ * Three gates; all must pass:
  *
  * 1. Test-run gate — allow if any of:
  *    - transcript since last user message contains a Bash call matching
@@ -17,7 +17,18 @@
  *    - all staged paths match DOCS_ONLY_PATH
  *    - commit message contains SKIP_SENTINEL
  *
- * 2. Attribution gate — commit message must contain Code-AI-Generated-By:
+ * 2. Live-engine gate — if any staged file is editor-facing code
+ *    (EDITOR_CODE_PATH), require one of:
+ *    - a Playwright run against a spec that spawns the real engine
+ *      (detected by `--engine=Main` in the spec source, or by running
+ *      the full suite with no file argument)
+ *    - a Main.exe frame-run, RenderTest, or InteractiveTest invocation
+ *    - SKIP_SENTINEL in the commit message
+ *   Mock-only Playwright specs alone don't qualify — they hide the
+ *   optimistic-vs-server-truth races that only surface against a live
+ *   engine.
+ *
+ * 3. Attribution gate — commit message must contain Code-AI-Generated-By:
  *    or Message-AI-Generated-By: per Documents/commit-message-policy.md.
  *    No escape; every Claude-issued commit is AI-authored.
  *
@@ -39,6 +50,21 @@ const QUALIFYING_TEST = new RegExp([
 ].join('|'))
 
 const DOCS_ONLY_PATH = /^\.backlog\/|^Documents\/|\.md$|^\.claude\/|\.gitignore$/
+
+// Staged-file paths that require live-engine validation: any change
+// under the editor source tree or the IPC-facing engine service.
+const EDITOR_CODE_PATH = /^Source\/(Editor-Next\/src\/|Engine\/Services\/EditorService\.)/
+
+// Engine-truth tests that don't go through Playwright: if one of these
+// ran we treat the live-engine gate as satisfied even without a
+// browser-side Playwright invocation.
+const NON_PLAYWRIGHT_LIVE = new RegExp([
+  String.raw`Main\.exe\b[^|&;]*-(total_frames|reload_at_frame|bake|capture_frame)\b`,
+  String.raw`RenderTest\.exe\b[^|&;]*-test\b`,
+  String.raw`InteractiveTest\.ps1`,
+].join('|'))
+
+const PLAYWRIGHT_RE = /npx\s+playwright\s+test(?:\b|$)([^|&;\n]*)/
 
 const SKIP_SENTINEL = '[skip-test-gate]'
 
@@ -137,12 +163,85 @@ async function main() {
     return
   }
 
+  // Live-engine gate. Only fires when editor-facing code is staged.
+  const editorCodeStaged = staged.some(f => EDITOR_CODE_PATH.test(f))
+  if (editorCodeStaged) {
+    const liveRan = didLiveEngineTestRun(lines, lastUserIdx, cwd)
+    if (!liveRan) {
+      blockNoLiveEngine(staged)
+      return
+    }
+  }
+
   // Attribution gate. If the commit message — whether inline via -m /
   // HEREDOC or via -F <file> — contains a qualifying attribution header,
   // allow. Otherwise block.
   const message = collectCommitMessageText(cmd, cwd)
   if (ATTRIBUTION_RE.test(message)) return process.exit(0)
   blockMissingAttribution()
+}
+
+function didLiveEngineTestRun(lines, lastUserIdx, cwd) {
+  const path = require('path')
+  const editorDir = path.join(cwd, 'Source', 'Editor-Next')
+
+  for (let i = lastUserIdx + 1; i < lines.length; i++) {
+    let m
+    try { m = JSON.parse(lines[i]) } catch { continue }
+    const blocks = firstArray(m.message?.content, m.content)
+    for (const b of blocks) {
+      if (b?.type !== 'tool_use' || b?.name !== 'Bash') continue
+      const c = b.input?.command || ''
+      if (NON_PLAYWRIGHT_LIVE.test(c)) return true
+
+      const pw = c.match(PLAYWRIGHT_RE)
+      if (!pw) continue
+      // Playwright invocation; classify by the file arguments (if any).
+      const args = (pw[1] || '').trim()
+      if (!args) return true // running the whole suite → includes live specs
+      const files = args.split(/\s+/).filter(s => s && !s.startsWith('-'))
+      if (files.length === 0) return true // flags only, no file filter
+      // At least one arg must be a live-engine spec for the run to
+      // qualify. Resolve relative to Source/Editor-Next (the usual
+      // playwright cwd) and grep for `--engine=Main` in the source.
+      for (const f of files) {
+        const abs = path.isAbsolute(f) ? f : path.join(editorDir, f)
+        try {
+          if (fs.readFileSync(abs, 'utf8').includes('--engine=Main')) return true
+        } catch { /* unreadable — skip */ }
+      }
+    }
+  }
+  return false
+}
+
+function blockNoLiveEngine(staged) {
+  const filesList = staged.length
+    ? staged.filter(f => EDITOR_CODE_PATH.test(f)).slice(0, 10).map(f => '  ' + f).join('\n')
+    : '  (no editor code detected — bug?)'
+  process.stderr.write([
+    '',
+    '[commit-gate] git commit blocked — editor code staged but no live-engine test ran.',
+    '',
+    'Editor-facing staged paths:',
+    filesList,
+    '',
+    'Mock-only Playwright specs (scene-vertical, inspector-rotation, theme-reactivity,',
+    'ipc-contract, ux-audit) hide optimistic-vs-server-truth races. Run at least one of:',
+    '  • npx playwright test                                   (full suite — includes live)',
+    '  • npx playwright test tests/render-toggles.spec.js      (live engine)',
+    '  • npx playwright test tests/render-target-debugger.spec.js',
+    '  • npx playwright test tests/scene-load.spec.js',
+    '  • npx playwright test tests/editor.spec.js',
+    '  • npx playwright test tests/window-menu.spec.js',
+    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N          (engine frame-run)',
+    '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
+    '',
+    `Escape hatch: include ${SKIP_SENTINEL} if this commit genuinely cannot`,
+    'be validated end-to-end (e.g. a typo fix in a comment).',
+    '',
+  ].join('\n'))
+  process.exit(2)
 }
 
 function collectCommitMessageText(cmd, cwd) {
