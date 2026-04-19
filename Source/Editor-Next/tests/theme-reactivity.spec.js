@@ -69,14 +69,28 @@ test('panels and dockview chrome repaint on theme flavor change', async () => {
       const footerBg = await readBg('.editor-footer');
       expect(footerBg, `footer bg in ${flavor}`).toBe(FLAVOR_MANTLE_RGB[flavor]);
 
-      // This is the assertion the original TASK-91 regression centres on:
-      // dockview's tab bar must resolve `--dv-tabs-and-actions-container-
-      // background-color` to the active flavor's mantle, not to the
-      // abyss-default that dockview-core injects when no theme prop is
-      // supplied. A regression here = someone dropped the :theme prop on
-      // <dockview-vue>.
+      // Guards against dropping the :theme prop on <dockview-vue>: if
+      // the prop is missing, dockview-core falls back to themeAbyss on
+      // its inner node and this bg locks to #1c1c2a across all flavors.
       const tabBg = await readBg('.dv-tabs-and-actions-container');
       expect(tabBg, `dockview tab bar bg in ${flavor}`).toBe(FLAVOR_MANTLE_RGB[flavor]);
+
+      // Guards against dropping ThemedPanelHost: dockview-vue's
+      // `mountVueComponent` only merges direct-parent provides when
+      // mounting a panel, so App.vue's outer NConfigProvider theme
+      // doesn't reach NInput inside the panel. Without the host
+      // wrapper, Naive falls back to its default theme (white bg in
+      // both mocha and latte, green focus rings). We read --n-color
+      // directly off NInput's host — that's the variable Naive
+      // generates from themeOverrides.
+      const inputColor = await window.evaluate(() => {
+        const el = document.querySelector('.hierarchy-panel .n-input');
+        return el ? getComputedStyle(el).getPropertyValue('--n-color').trim() : null;
+      });
+      const mantleHex = FLAVOR_MANTLE_RGB[flavor].replace(/rgb\((\d+), (\d+), (\d+)\)/, (_, r, g, b) =>
+        '#' + [r, g, b].map((x) => Number(x).toString(16).padStart(2, '0')).join('')
+      );
+      expect(inputColor?.toLowerCase(), `n-input --n-color in ${flavor}`).toBe(mantleHex);
     }
   } finally {
     await electronApp.close().catch(() => {});
