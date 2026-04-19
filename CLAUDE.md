@@ -31,7 +31,19 @@ grep -i "error" C:/GitRepo/InnocenceEngine/Build/msbuild_out.txt | grep -v ZERO_
 
 # Shader compilation
 powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\HLSL2DXIL.ps1"
+
+# clangd index — run when CMakeLists.txt or include layout changes, or when
+# clangd diagnostics start citing missing headers / undeclared identifiers
+# that the MSBuild build resolves fine. Emits compile_commands.json at the
+# repo root; clangd auto-discovers it on next reload.
+powershell.exe -File "C:\GitRepo\InnocenceEngine\Scripts\RegenClangdIndex.ps1"
 ```
+
+**Trust real diagnostics, fix false ones at the layer that produces them.**
+If clangd reports `<string_view> not found` or `nlohmann/json.hpp not found`
+on a file MSBuild compiles cleanly, the index is stale — rerun the regen
+script. Don't dismiss the diagnostic, don't filter it; the cost of learning
+to ignore loud signals is missing the real one later.
 
 **Always launch the build with `run_in_background: true`** — the Bash tool then auto-fires a completion notification instead of blocking with a timeout. Don't guess a timeout value, don't poll with sleep loops, don't use `TaskOutput(block=true)`. Do unrelated work while it runs (e.g. read code, draft the next edit). When the notification arrives, grep the log for errors. Same pattern applies to `HLSL2DXIL.ps1` and any long runtime test.
 

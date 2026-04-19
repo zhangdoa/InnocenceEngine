@@ -16,6 +16,14 @@ set(INNO_EXTERNAL_DIRECTORIES ${CMAKE_SOURCE_DIR}/Source/External)
 set(INNO_EXTERNAL_INCLUDE_DIRECTORIES ${INNO_EXTERNAL_DIRECTORIES}/Include)
 set(INNO_GITSUBMODULE_DIRECTORIES ${INNO_EXTERNAL_DIRECTORIES}/GitSubmodules)
 
+# clangd / IDE index. The Visual Studio generator (what BuildWin.ps1 drives)
+# silently ignores this flag, so the real engine build is unaffected. A
+# parallel Ninja configure (Scripts/RegenClangdIndex.ps1) is what actually
+# emits compile_commands.json — setting the flag here just means any
+# generator that *does* honour it produces the database without needing a
+# -D override on the command line.
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Language standard
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 17)
