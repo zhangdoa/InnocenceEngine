@@ -3,16 +3,27 @@ id: TASK-75
 title: >-
   Orphan texture stuck at ObjectStatus::Created — Sponza
   col_head_2ndfloor_02_Normal never initialized
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-18 19:24'
+closed_date: '2026-04-19 04:05'
 labels:
   - bug
   - asset
   - textures
+  - not-reproducible
 dependencies: []
 priority: low
 ---
+
+## Resolution (2026-04-19): no longer reproducible
+
+Verified with verbose logging on a fresh GISponza load (`-loglevel 0 -total_frames 20`) and on a scene-reload run (`-total_frames 30 -reload_at_frame 15`):
+
+- `col_head_2ndfloor_02_Normal` log trail: queued → InitializeComponents picks it up → CreateSRV succeeds → "is initialized."
+- 238 texture initialisations on a single load, 253 across the reload cycle, **zero failures, zero stuck**.
+
+Likely fixed as a side effect of the TASK-74 work that reorganised the deferred init queue (`EnqueueBinaryLoad` → background thread → `Initialize` → `InitializeComponents`) and added per-frame `RefreshMaterialTextureIndices` so that any future late-arriving texture is tolerated rather than gating the rebuild. Closing as not-reproducible — re-open with a fresh log if it surfaces again.
 
 ## Description
 
