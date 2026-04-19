@@ -338,7 +338,14 @@ void EditorService::RegisterBuiltinHandlers()
 		const bool        l_value = payload["value"];
 		if (!DevToggleRegistry::Set(l_name, l_value))
 			throw EditorReqError("NOT_FOUND", "Unknown dev toggle: " + l_name);
-		return json{ {"name", l_name}, {"value", l_value} };
+		// Read back the actual state — the setter may coerce, defer,
+		// or otherwise land on a value different from what was asked.
+		// Reply with truth so the client doesn't stay out of sync.
+		auto l_actual = DevToggleRegistry::Get(l_name);
+		return json{
+			{"name",  l_name},
+			{"value", l_actual.value_or(l_value)},
+		};
 	});
 
 	reg("TRIGGER_DEV_ACTION", [](const json& payload, ix::WebSocket& /*ws*/) -> json {

@@ -27,9 +27,22 @@ export const devToggleStore = reactive({
   async setToggle(name, value) {
     if (!connectionStore.isConnected) return
     const t = this.toggles.find((x) => x.name === name)
-    if (t) t.value = value // optimistic
-    const committed = await request('SET_DEV_TOGGLE', { name, value })
-    if (committed && t) t.value = committed.value
+    if (!t) return
+    // Snapshot the pre-click state so we can roll back on rejection.
+    // Engine replies with the ACTUAL state after its setter ran (read
+    // back via the toggle's getter), which may differ from what we
+    // asked for — commit that, not our optimistic guess.
+    const previous = t.value
+    t.value = value
+    try {
+      const committed = await request('SET_DEV_TOGGLE', { name, value })
+      if (committed && typeof committed.value === 'boolean') {
+        t.value = committed.value
+      }
+    } catch (e) {
+      t.value = previous
+      throw e
+    }
   },
 
   async triggerAction(name) {

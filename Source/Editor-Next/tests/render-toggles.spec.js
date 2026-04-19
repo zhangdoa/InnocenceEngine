@@ -35,14 +35,26 @@ test('render toggles pane lists engine-registered toggles + actions', async () =
     await window.waitForSelector('[data-test="toggle-row-GPUPathTracer"]', { timeout: 10000 });
     await window.waitForSelector('[data-test="action-btn-Screenshot"]', { timeout: 10000 });
 
-    // Toggle the path tracer on; the click should emit SET_DEV_TOGGLE,
-    // and the optimistic local update flips the switch immediately. The
-    // engine accepting the change will be reconciled on the next
-    // LIST_DEV_TOGGLES round-trip — for the spec, the optimistic flip is
-    // sufficient evidence that the IPC ran without error.
+    // Toggle the path tracer on, then verify the ENGINE's own getter
+    // reports it on — not just the optimistic UI flip. setToggle now
+    // commits the engine's read-back (SET_DEV_TOGGLE replies with the
+    // actual state after its setter ran), and a subsequent refresh()
+    // re-queries the engine, so an assertion against
+    // __innoStores.devToggle after that round-trip is genuinely server
+    // truth.
+    await window.waitForFunction(() => !!window.__innoStores?.devToggle, { timeout: 5000 });
     const ptSwitch = window.locator('[data-test="toggle-switch-GPUPathTracer"]');
     await ptSwitch.click();
     await expect(ptSwitch).toHaveAttribute('aria-checked', 'true');
+
+    // Force a fresh LIST_DEV_TOGGLES round-trip and assert the value
+    // the engine reports for GPUPathTracer is true.
+    const reported = await window.evaluate(async () => {
+      await window.__innoStores.devToggle.refresh();
+      const t = window.__innoStores.devToggle.toggles.find((x) => x.name === 'GPUPathTracer');
+      return t ? t.value : null;
+    });
+    expect(reported, 'engine-reported GPUPathTracer state after set').toBe(true);
 
     // Action button should produce a toast confirming dispatch.
     await window.click('[data-test="action-btn-Screenshot"]');

@@ -71,6 +71,19 @@ namespace Inno
             return true;
         }
 
+        std::optional<bool> Get(const std::string& name)
+        {
+            std::function<bool()> getter;
+            {
+                std::lock_guard<std::mutex> lock(g_mutex);
+                auto it = g_toggles.find(name);
+                if (it == g_toggles.end() || !it->second.m_Get)
+                    return std::nullopt;
+                getter = it->second.m_Get;
+            }
+            return getter();
+        }
+
         bool Trigger(const std::string& name)
         {
             std::function<void()> trigger;

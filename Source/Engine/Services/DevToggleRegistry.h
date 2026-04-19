@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -39,6 +40,12 @@ namespace Inno
         // implemented as "set an atomic / push to a queue").
         bool Set(const std::string& name, bool value);
         bool Trigger(const std::string& name);
+
+        // Read current state by name, via the toggle's registered getter.
+        // Returns nullopt when the name is not registered or the getter
+        // is missing. Useful after Set() so callers can observe whatever
+        // value the setter actually landed on (coerced, clamped, queued).
+        std::optional<bool> Get(const std::string& name);
 
         // Wipe everything. Called on engine teardown so callbacks holding
         // references to soon-to-be-destroyed state don't outlive the owner.
