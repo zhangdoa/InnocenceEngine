@@ -1,16 +1,16 @@
 {
     "ComponentType": 7,
     "ShaderModel": 1,
-    "Albedo": { "R": 1.0, "G": 0.766, "B": 0.336, "A": 1.0 },
-    "Metallic": 1.0,
-    "Roughness": 0.75,
+    "Albedo": { "R": 1.0, "G": 1.0, "B": 1.0, "A": 1.0 },
+    "Metallic": 0.0,
+    "Roughness": 1.0,
     "AO": 1.0,
     "Thickness": 1.0,
     "TextureComponents": [
-        { "Name": "" },
-        { "Name": "" },
-        { "Name": "" },
-        { "Name": "" },
-        { "Name": "" }
+        { "Name": "Ground037_NormalGL.TextureComponent" },
+        { "Name": "Ground037_Color.TextureComponent" },
+        { "Name": "BasicMetallicTexture.TextureComponent" },
+        { "Name": "Ground037_Roughness.TextureComponent" },
+        { "Name": "BasicAOTexture.TextureComponent" }
     ]
 }
