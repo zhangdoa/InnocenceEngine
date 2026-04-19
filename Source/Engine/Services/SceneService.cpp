@@ -9,6 +9,7 @@
 #include "PhysicsSimulationService.h"
 #include "BillboardDrawCallService.h"
 #include "FrameManagementService.h"
+#include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 
 #include "../Engine.h"
 using namespace Inno;
@@ -52,6 +53,7 @@ bool SceneService::LoadSync(const char* fileName)
 
 	// 2. Destroy scene-scoped components
 	g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
+	JSONWrapper::ClearLoadedCompFilenames();
 	Log(Success, "Scene entities cleaned up.");
 
 	// 3. Clear transform hierarchy (nodes index into now-empty storage, safe to reset)

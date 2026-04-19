@@ -11,6 +11,35 @@
 #include "../../Engine.h"
 using namespace Inno;
 
+namespace
+{
+	std::mutex g_LoadedCompFilenamesMutex;
+	// Key: (EntityID, component type id). Value: the filename the
+	// component was loaded from (without trailing ".json"). Preserved so
+	// Save writes back to the authored file instead of an entity-name-
+	// based replacement.
+	std::map<std::pair<EntityID, uint32_t>, std::string> g_LoadedCompFilenames;
+
+	void RememberLoadedCompFilename(EntityID entityId, uint32_t typeId, const std::string& name)
+	{
+		std::lock_guard<std::mutex> lock(g_LoadedCompFilenamesMutex);
+		g_LoadedCompFilenames[{entityId, typeId}] = name;
+	}
+
+	std::string LookupLoadedCompFilename(EntityID entityId, uint32_t typeId)
+	{
+		std::lock_guard<std::mutex> lock(g_LoadedCompFilenamesMutex);
+		auto it = g_LoadedCompFilenames.find({entityId, typeId});
+		return it == g_LoadedCompFilenames.end() ? std::string{} : it->second;
+	}
+}
+
+void JSONWrapper::ClearLoadedCompFilenames()
+{
+	std::lock_guard<std::mutex> lock(g_LoadedCompFilenamesMutex);
+	g_LoadedCompFilenames.clear();
+}
+
 
 bool JSONWrapper::Load(const char* fileName, json& data)
 {
@@ -95,33 +124,39 @@ bool JSONWrapper::SaveScene(const char* fileName)
 		entityJson["Name"] = l_Name;
 		entityJson["Components"] = json::array();
 
-		// TransformComponent
+		// TransformComponent — filename: prefer the one it was loaded from
+		// (captured by LoadScene / LoadChildScene), fall back to entity-name
+		// pattern for entities the editor spawned mid-session.
 		auto* l_xf = l_registry->Get<TransformComponent>(l_EntityID);
 		if (l_xf)
 		{
-			std::string l_CompName = l_Name + ".TransformComponent";
+			std::string l_CompName = LookupLoadedCompFilename(l_EntityID, TransformComponent::GetTypeID());
+			if (l_CompName.empty())
+				l_CompName = l_Name + ".TransformComponent";
 			json j;
 			to_json(j, *l_xf);
 			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
 			entityJson["Components"].push_back({{"Type", TransformComponent::GetTypeID()}, {"Name", l_CompName}});
 		}
 
-		// LightComponent — name derived from entity name
 		auto* l_light = l_registry->Get<LightComponent>(l_EntityID);
 		if (l_light)
 		{
-			std::string l_CompName = l_Name + ".LightComponent";
+			std::string l_CompName = LookupLoadedCompFilename(l_EntityID, LightComponent::GetTypeID());
+			if (l_CompName.empty())
+				l_CompName = l_Name + ".LightComponent";
 			json j;
 			to_json(j, *l_light);
 			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
 			entityJson["Components"].push_back({{"Type", LightComponent::GetTypeID()}, {"Name", l_CompName}});
 		}
 
-		// CameraComponent — name derived from entity name
 		auto* l_camera = l_registry->Get<CameraComponent>(l_EntityID);
 		if (l_camera)
 		{
-			std::string l_CompName = l_Name + ".CameraComponent";
+			std::string l_CompName = LookupLoadedCompFilename(l_EntityID, CameraComponent::GetTypeID());
+			if (l_CompName.empty())
+				l_CompName = l_Name + ".CameraComponent";
 			json j;
 			to_json(j, *l_camera);
 			Save(AssetService::GetAssetFilePath(l_CompName.c_str()).c_str(), j);
@@ -216,7 +251,10 @@ bool JSONWrapper::LoadScene(const char* fileName)
 			{
 				Log(Warning, "LoadScene: skipping unknown component type ", l_TypeID,
 					" (", l_CompName.c_str(), ")");
+				continue;
 			}
+
+			RememberLoadedCompFilename(l_EntityID, l_TypeID, l_CompName);
 		}
 
 		// Load child scene if referenced
@@ -303,6 +341,12 @@ bool JSONWrapper::LoadChildScene(const char* sceneFilePath, EntityID parentEntit
 				auto& l_Camera = l_registry->Emplace<CameraComponent>(l_EntityID);
 				AssetService::Load(l_FilePath.c_str(), l_Camera);
 			}
+			else
+			{
+				continue;
+			}
+
+			RememberLoadedCompFilename(l_EntityID, l_TypeID, l_CompName);
 		}
 
 		// Recursive child scene support

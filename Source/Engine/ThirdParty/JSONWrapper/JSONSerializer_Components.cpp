@@ -81,6 +81,7 @@ void JSONWrapper::to_json(json& j, const MaterialComponent& component)
 
     j = json
     {
+        {"ComponentType", MaterialComponent::GetTypeID()},
         {"ShaderModel", l_asset->m_ShaderModel},
         {"Albedo", {
             {"R", l_asset->m_Attributes.AlbedoR},

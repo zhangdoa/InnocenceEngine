@@ -36,6 +36,13 @@ namespace Inno
 		bool LoadScene(const char* fileName);
 		bool LoadChildScene(const char* sceneFilePath, EntityID parentEntity);
 
+		// Per-scene map of the filename each component was loaded from.
+		// Keyed by (EntityID, component type id). Save consults this so
+		// e.g. "Main Camera"'s transform is written back to the original
+		// "GITestBox.Camera.TransformComponent" file instead of a new
+		// entity-name-based filename. Cleared on scene unload.
+		void ClearLoadedCompFilenames();
+
 		bool Load(const char* fileName, TransformComponent& component);
 		bool Load(const char* fileName, MeshComponent& component, EntityID owner = INVALID_ENTITY);
 		bool Load(const char* fileName, MaterialComponent& component, EntityID owner = INVALID_ENTITY);
