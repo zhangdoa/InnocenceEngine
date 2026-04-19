@@ -52,9 +52,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   NGrid, NGridItem, NBreadcrumb, NBreadcrumbItem, NButton, NButtonGroup,
-  NSpace, NText, NScrollbar, NIcon
+  NSpace, NText, NScrollbar, NIcon, useMessage
 } from 'naive-ui'
 import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline, AddOutline } from '@vicons/ionicons5'
+import { request } from '../composables/useIpc'
+import { connectionStore } from '../store/connectionStore'
+
+const message = useMessage()
 
 const currentPath = ref('')
 const items = ref([])
@@ -106,14 +110,22 @@ const navigateUp = () => {
   loadDirectory(parent === '.' ? '' : parent)
 }
 
-const onItemDblClick = (item) => {
+const onItemDblClick = async (item) => {
   if (item.isDir) {
     loadDirectory(path.join(currentPath.value, item.name))
-  } else if (item.name.endsWith('.InnoScene')) {
-    if (window.require) {
-      const relPath = path.join(currentPath.value, item.name)
-      window.dispatchEvent(new CustomEvent('load-scene', { detail: relPath }))
-    }
+    return
+  }
+  if (!item.name.endsWith('.InnoScene')) return
+  if (!connectionStore.isConnected) {
+    message.warning('Engine offline; scene load ignored')
+    return
+  }
+  const relPath = path.join(currentPath.value, item.name)
+  try {
+    await request('LOAD_SCENE', { path: relPath })
+    message.info(`Loading ${relPath}…`)
+  } catch (e) {
+    message.error(`Load failed: ${e.message}`)
   }
 }
 

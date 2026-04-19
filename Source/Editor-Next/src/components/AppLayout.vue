@@ -21,13 +21,18 @@ import { DockviewVue } from 'dockview-vue'
 import EditorHeader from './layout/EditorHeader.vue'
 import EditorFooter from './layout/EditorFooter.vue'
 import ImportModal from './layout/ImportModal.vue'
-import { useIpc } from '../composables/useIpc'
 import { panelStore } from '../store/panelStore'
 
-import 'dockview-vue/dist/styles/dockview.css'
+// Importing the stores at module load wires their engine-connected
+// subscriptions before the first paint — they self-refresh on connect.
+import '../store/connectionStore'
+import '../store/sceneStore'
+import '../store/assetStore'
+import '../store/devToggleStore'
+import '../store/renderTargetStore'
+import '../store/taskGraphStore'
 
-// Initialize IPC message routing
-useIpc()
+import 'dockview-vue/dist/styles/dockview.css'
 
 // Declarative panel descriptors. panelStore registers them up front so the
 // Window menu can list (and re-open) them even before dockview is ready;

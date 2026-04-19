@@ -82,17 +82,19 @@ for (const flavor of flavors) {
       await window.click(`text=${flavorText}`, { timeout: 5000 });
       await window.waitForTimeout(1500); 
 
-      // 2. Trigger Simulation via State (Proves modal visibility)
+      // 2. Trigger the import modal by emitting a wire-shaped IMPORT_PROGRESS
+      //    event on the renderer's ipcRenderer — useIpc routes event-envelope
+      //    messages from main's 'engine-message' channel into the store bus.
       console.log(`[TEST] Triggering state simulation...`);
       await window.evaluate(() => {
         const { ipcRenderer } = require('electron');
-        ipcRenderer.emit('engine-message', {}, { 
-          type: 'IMPORT_PROGRESS', 
-          name: 'E2E_Test_Asset.obj', 
-          progress: 42 
+        ipcRenderer.emit('engine-message', {}, {
+          envelope: 'event',
+          type: 'IMPORT_PROGRESS',
+          payload: { name: 'E2E_Test_Asset.obj', progress: 42 },
         });
       });
-      
+
       // Wait for modal card to appear
       const modalSelector = '.n-card.n-modal';
       await window.waitForSelector(modalSelector, { state: 'attached', timeout: 5000 });

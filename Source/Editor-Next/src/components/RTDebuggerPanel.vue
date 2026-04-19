@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch, ref } from 'vue'
+import { computed, watch, ref } from 'vue'
 import {
   NScrollbar,
   NEmpty,
@@ -16,17 +16,8 @@ import { connectionStore } from '../store/connectionStore'
 const message = useMessage()
 const selectedKey = ref(null)
 
-watch(
-  () => connectionStore.isConnected,
-  (connected) => {
-    if (connected) renderTargetStore.refresh()
-    else renderTargetStore.clear()
-  },
-)
-
-onMounted(() => {
-  if (connectionStore.isConnected) renderTargetStore.refresh()
-})
+// Store self-refreshes on connect/disconnect via its own on('engine-connected')
+// subscription — the panel just renders the store.
 
 // Flatten the (pass, rt) hierarchy into a single Naive select with
 // composite values 'passName::rtIndex'. Each option's label shows
@@ -72,7 +63,7 @@ const onApply = () => {
 }
 
 const onReset = () => {
-  renderTargetStore.reset()
+  renderTargetStore.clearOverride()
   selectedKey.value = null
   message.info('Viewport reset to default source')
 }

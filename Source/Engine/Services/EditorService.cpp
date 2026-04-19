@@ -30,15 +30,38 @@
 
 #include <functional>
 #include <mutex>
+#include <stdexcept>
 #include <unordered_map>
 
 using namespace Inno;
 
+// Editor ↔ engine wire protocol (mirrored in Source/Editor-Next/src/composables/useIpc.js).
+//
+//   REQUEST  { envelope: "request", id: N, type: "...", payload: {...} }
+//   REPLY    { envelope: "reply",   id: N, status: "ok"|"err", result? | error? }
+//   EVENT    { envelope: "event",   type: "...", payload: {...} }
+//
+// Handlers take the payload and return a result json; the dispatcher wraps it
+// in the reply envelope with the matching id. Throwing `EditorReqError`
+// translates into a status=err reply without crashing the WS loop.
+
 namespace Inno
 {
+	class EditorReqError : public std::runtime_error
+	{
+	public:
+		EditorReqError(std::string code, std::string message)
+			: std::runtime_error(message), m_Code(std::move(code))
+		{
+		}
+		const std::string& Code() const { return m_Code; }
+	private:
+		std::string m_Code;
+	};
+
 	struct EditorServiceImpl
 	{
-		using Handler = std::function<void(const json& msg, ix::WebSocket& ws)>;
+		using Handler = std::function<json(const json& payload, ix::WebSocket& ws)>;
 		std::mutex                                  mutex;
 		std::unordered_map<std::string, Handler>    handlers;
 	};
@@ -48,6 +71,35 @@ inline ix::WebSocketServer* GetServer(void* ptr) { return static_cast<ix::WebSoc
 
 static json SerializeVec(const Vec3& v) { return { v.x, v.y, v.z }; }
 static json SerializeVec(const Vec4& v) { return { v.x, v.y, v.z, v.w }; }
+
+static json BuildErrorReply(uint64_t id, const std::string& code, const std::string& message)
+{
+	json reply;
+	reply["envelope"] = "reply";
+	reply["id"]       = id;
+	reply["status"]   = "err";
+	reply["error"]    = { {"code", code}, {"message", message} };
+	return reply;
+}
+
+static json BuildOkReply(uint64_t id, json result)
+{
+	json reply;
+	reply["envelope"] = "reply";
+	reply["id"]       = id;
+	reply["status"]   = "ok";
+	reply["result"]   = std::move(result);
+	return reply;
+}
+
+static json BuildEvent(const char* type, json payload)
+{
+	json evt;
+	evt["envelope"] = "event";
+	evt["type"]     = type;
+	evt["payload"]  = std::move(payload);
+	return evt;
+}
 
 EditorService::EditorService() = default;
 EditorService::~EditorService() = default;
@@ -87,33 +139,62 @@ bool EditorService::Initialize()
 			if (msg->type != ix::WebSocketMessageType::Message)
 				return;
 
-			Log(Success, "EditorService: Received message: ", msg->str.c_str());
-
-			try
-			{
-				auto l_json = json::parse(msg->str);
-				if (!l_json.contains("type"))
-				{
-					Log(Warning, "EditorService: message missing 'type' field; dropping.");
-					return;
-				}
-				std::string l_type = l_json["type"];
-
-				EditorServiceImpl::Handler l_handler;
-				{
-					std::lock_guard<std::mutex> lock(m_Impl->mutex);
-					auto it = m_Impl->handlers.find(l_type);
-					if (it != m_Impl->handlers.end())
-						l_handler = it->second;
-				}
-				if (l_handler)
-					l_handler(l_json, webSocket);
-				else
-					Log(Warning, "EditorService: no handler registered for message type: ", l_type.c_str());
-			}
+			json l_json;
+			try { l_json = json::parse(msg->str); }
 			catch (const std::exception& e)
 			{
 				Log(Error, "EditorService: Failed to parse JSON: ", e.what());
+				return;
+			}
+
+			// Enforce the envelope contract. Clients that send bare {type:...}
+			// messages pre-TASK-86 are silently dropped rather than routed —
+			// the editor rewrite deletes the Gemini-era compat path.
+			const std::string l_envelope = l_json.value("envelope", std::string());
+			if (l_envelope != "request")
+			{
+				Log(Warning, "EditorService: ignoring non-request envelope: \"", l_envelope.c_str(), "\"");
+				return;
+			}
+
+			if (!l_json.contains("id") || !l_json.contains("type"))
+			{
+				Log(Warning, "EditorService: request missing required id/type; dropping.");
+				return;
+			}
+
+			const uint64_t    l_id   = l_json["id"].get<uint64_t>();
+			const std::string l_type = l_json["type"].get<std::string>();
+			const json        l_payload = l_json.value("payload", json::object());
+
+			EditorServiceImpl::Handler l_handler;
+			{
+				std::lock_guard<std::mutex> lock(m_Impl->mutex);
+				auto it = m_Impl->handlers.find(l_type);
+				if (it != m_Impl->handlers.end())
+					l_handler = it->second;
+			}
+			if (!l_handler)
+			{
+				Log(Warning, "EditorService: no handler for request type \"", l_type.c_str(), "\" (id=", l_id, ")");
+				webSocket.send(BuildErrorReply(l_id, "NO_HANDLER", "No handler registered for request type: " + l_type).dump());
+				return;
+			}
+
+			try
+			{
+				json l_result = l_handler(l_payload, webSocket);
+				webSocket.send(BuildOkReply(l_id, std::move(l_result)).dump());
+			}
+			catch (const EditorReqError& e)
+			{
+				Log(Warning, "EditorService: handler \"", l_type.c_str(), "\" rejected id=", l_id, ": ", e.what());
+				webSocket.send(BuildErrorReply(l_id, e.Code(), e.what()).dump());
+			}
+			catch (const std::exception& e)
+			{
+				Log(Error, "EditorService: handler \"", l_type.c_str(), "\" threw on id=", l_id, ": ", e.what());
+				webSocket.send(BuildErrorReply(l_id, "INTERNAL", e.what()).dump());
 			}
 		});
 
@@ -133,6 +214,58 @@ bool EditorService::Initialize()
 	return true;
 }
 
+static void RequireFields(const json& payload, std::initializer_list<const char*> fields)
+{
+	for (auto* f : fields)
+	{
+		if (!payload.contains(f))
+			throw EditorReqError("BAD_PAYLOAD", std::string("missing required field: ") + f);
+	}
+}
+
+static json GetHandshakeResult(const json& payload, uint32_t& outClientPID)
+{
+	if (payload.contains("pid"))
+		outClientPID = payload["pid"].get<uint32_t>();
+
+	void* l_sharedHandle = g_Engine->Get<FrameManagementService>()->GetViewportSharedHandle();
+	auto  l_resolution   = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+
+	if (l_sharedHandle && outClientPID > 0)
+	{
+#ifdef INNO_PLATFORM_WIN
+		HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, outClientPID);
+		if (hProcess)
+		{
+			HANDLE duplicateHandle = NULL;
+			if (DuplicateHandle(GetCurrentProcess(), l_sharedHandle, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
+			{
+				l_sharedHandle = duplicateHandle;
+			}
+			else
+			{
+				Log(Error, "EditorService: HELLO DuplicateHandle failed. GetLastError=", (uint64_t)GetLastError());
+			}
+			CloseHandle(hProcess);
+		}
+		else
+		{
+			Log(Error, "EditorService: HELLO OpenProcess failed. GetLastError=", (uint64_t)GetLastError());
+		}
+#endif
+	}
+
+	const uint32_t l_width  = l_resolution.x ? l_resolution.x : 1280;
+	const uint32_t l_height = l_resolution.y ? l_resolution.y : 720;
+
+	json result;
+	result["sharedHandle"] = (uint64_t)l_sharedHandle;
+	result["width"]        = l_width;
+	result["height"]       = l_height;
+	result["format"]       = "rgba";
+	return result;
+}
+
 void EditorService::RegisterBuiltinHandlers()
 {
 	auto reg = [this](const char* type, EditorServiceImpl::Handler h) {
@@ -140,55 +273,11 @@ void EditorService::RegisterBuiltinHandlers()
 		m_Impl->handlers[type] = std::move(h);
 	};
 
-	reg("HELO", [this](const json& msg, ix::WebSocket& ws) {
-		if (msg.contains("pid"))
-		{
-			m_clientPID = msg["pid"].get<uint32_t>();
-			Log(Success, "EditorService: Client PID registered: ", m_clientPID);
-		}
-
-		void* l_sharedHandle = g_Engine->Get<FrameManagementService>()->GetViewportSharedHandle();
-		auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-
-		if (l_sharedHandle && m_clientPID > 0)
-		{
-#ifdef INNO_PLATFORM_WIN
-			HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, m_clientPID);
-			if (hProcess)
-			{
-				HANDLE duplicateHandle = NULL;
-				if (DuplicateHandle(GetCurrentProcess(), l_sharedHandle, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
-				{
-					l_sharedHandle = duplicateHandle;
-					Log(Success, "EditorService: Duplicated shared handle for UI process (PID ", m_clientPID, "): ", (uint64_t)l_sharedHandle);
-				}
-				else
-				{
-					Log(Error, "EditorService: Failed to duplicate handle. GetLastError=", (uint64_t)GetLastError());
-				}
-				CloseHandle(hProcess);
-			}
-			else
-			{
-				Log(Error, "EditorService: Failed to open UI process (PID ", m_clientPID, ") for handle duplication. GetLastError=", (uint64_t)GetLastError());
-			}
-#endif
-		}
-
-		uint32_t l_width  = l_resolution.x ? l_resolution.x : 1280;
-		uint32_t l_height = l_resolution.y ? l_resolution.y : 720;
-
-		json l_reply;
-		l_reply["type"]         = "HELLO_REPLY";
-		l_reply["sharedHandle"] = (uint64_t)l_sharedHandle;
-		l_reply["width"]        = l_width;
-		l_reply["height"]       = l_height;
-		l_reply["format"]       = "rgba";
-		ws.send(l_reply.dump());
-		Log(Success, "EditorService: Sent HELLO_REPLY with sharedHandle: ", (uint64_t)l_sharedHandle, " size: ", l_width, "x", l_height);
+	reg("HELLO", [this](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		return GetHandshakeResult(payload, m_clientPID);
 	});
 
-	reg("GET_SCENE", [](const json& /*msg*/, ix::WebSocket& ws) {
+	reg("GET_SCENE", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
 		auto l_registry = g_Engine->Get<EntityRegistry>();
 		auto l_ids = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
 		json l_entities = json::array();
@@ -199,19 +288,17 @@ void EditorService::RegisterBuiltinHandlers()
 			l_entity["name"] = l_registry->GetName(l_id);
 			l_entities.push_back(l_entity);
 		}
-		json l_reply;
-		l_reply["type"]     = "SCENE_DATA";
-		l_reply["entities"] = l_entities;
-		ws.send(l_reply.dump());
+		json result;
+		result["entities"] = l_entities;
+		return result;
 	});
 
-	reg("GET_ENTITY_DETAILS", [](const json& msg, ix::WebSocket& ws) {
-		if (!msg.contains("id"))
-			return;
-		EntityID l_id = (EntityID)msg["id"].get<uint32_t>();
+	reg("GET_ENTITY_DETAILS", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "id" });
+		EntityID l_id = (EntityID)payload["id"].get<uint32_t>();
 		auto l_registry = g_Engine->Get<EntityRegistry>();
 		if (!l_registry->IsValid(l_id))
-			return;
+			throw EditorReqError("NOT_FOUND", "Entity does not exist or has been destroyed");
 
 		json l_details;
 		l_details["id"]   = (uint32_t)l_id;
@@ -244,13 +331,12 @@ void EditorService::RegisterBuiltinHandlers()
 
 		l_details["components"] = l_components;
 
-		json l_reply;
-		l_reply["type"]    = "ENTITY_DETAILS";
-		l_reply["details"] = l_details;
-		ws.send(l_reply.dump());
+		json result;
+		result["details"] = l_details;
+		return result;
 	});
 
-	reg("LIST_DEV_TOGGLES", [](const json& /*msg*/, ix::WebSocket& ws) {
+	reg("LIST_DEV_TOGGLES", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
 		json l_toggles = json::array();
 		for (auto& t : DevToggleRegistry::AllToggles())
 		{
@@ -263,31 +349,30 @@ void EditorService::RegisterBuiltinHandlers()
 		for (auto& a : DevToggleRegistry::AllActions())
 			l_actions.push_back({{"name", a.m_Name}});
 
-		json l_reply;
-		l_reply["type"]    = "DEV_TOGGLES";
-		l_reply["toggles"] = l_toggles;
-		l_reply["actions"] = l_actions;
-		ws.send(l_reply.dump());
+		json result;
+		result["toggles"] = l_toggles;
+		result["actions"] = l_actions;
+		return result;
 	});
 
-	reg("SET_DEV_TOGGLE", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("name") || !msg.contains("value"))
-			return;
-		std::string l_name  = msg["name"];
-		bool        l_value = msg["value"];
+	reg("SET_DEV_TOGGLE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "name", "value" });
+		const std::string l_name  = payload["name"];
+		const bool        l_value = payload["value"];
 		if (!DevToggleRegistry::Set(l_name, l_value))
-			Log(Warning, "EditorService: SET_DEV_TOGGLE for unknown toggle: ", l_name.c_str());
+			throw EditorReqError("NOT_FOUND", "Unknown dev toggle: " + l_name);
+		return json{ {"name", l_name}, {"value", l_value} };
 	});
 
-	reg("TRIGGER_DEV_ACTION", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("name"))
-			return;
-		std::string l_name = msg["name"];
+	reg("TRIGGER_DEV_ACTION", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "name" });
+		const std::string l_name = payload["name"];
 		if (!DevToggleRegistry::Trigger(l_name))
-			Log(Warning, "EditorService: TRIGGER_DEV_ACTION for unknown action: ", l_name.c_str());
+			throw EditorReqError("NOT_FOUND", "Unknown dev action: " + l_name);
+		return json{ {"name", l_name} };
 	});
 
-	reg("LIST_TASKS", [](const json& /*msg*/, ix::WebSocket& ws) {
+	reg("LIST_TASKS", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
 		auto* l_scheduler = g_Engine->Get<TaskScheduler>();
 		json l_threads = json::array();
 		size_t l_threadCount = l_scheduler->GetThreadCounts();
@@ -311,13 +396,12 @@ void EditorService::RegisterBuiltinHandlers()
 			l_thread["reports"] = l_reports;
 			l_threads.push_back(l_thread);
 		}
-		json l_reply;
-		l_reply["type"]    = "TASK_GRAPH";
-		l_reply["threads"] = l_threads;
-		ws.send(l_reply.dump());
+		json result;
+		result["threads"] = l_threads;
+		return result;
 	});
 
-	reg("LIST_RENDER_TARGETS", [](const json& /*msg*/, ix::WebSocket& ws) {
+	reg("LIST_RENDER_TARGETS", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
 		json l_passes = json::array();
 		g_Engine->Get<RenderPassResourceService>()->ForEach(
 			[&l_passes](RenderPassComponent* rp)
@@ -343,128 +427,199 @@ void EditorService::RegisterBuiltinHandlers()
 				l_passes.push_back(l_pass);
 			});
 
-		json l_reply;
-		l_reply["type"]   = "RENDER_TARGETS";
-		l_reply["passes"] = l_passes;
+		json result;
+		result["passes"] = l_passes;
 		auto l_current = ViewportSourceOverride::Get();
 		if (l_current.has_value())
 		{
 			json l_sel;
-			l_sel["pass"]       = l_current->m_PassName;
-			l_sel["rtIndex"]    = l_current->m_RTIndex;
-			l_reply["override"] = l_sel;
-		}
-		ws.send(l_reply.dump());
-	});
-
-	reg("SET_VIEWPORT_SOURCE", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (msg.contains("pass") && msg.contains("rtIndex"))
-		{
-			std::string l_pass    = msg["pass"];
-			uint32_t    l_rtIndex = msg["rtIndex"].get<uint32_t>();
-			ViewportSourceOverride::Set(l_pass, l_rtIndex);
+			l_sel["pass"]    = l_current->m_PassName;
+			l_sel["rtIndex"] = l_current->m_RTIndex;
+			result["override"] = l_sel;
 		}
 		else
 		{
-			ViewportSourceOverride::Reset();
+			result["override"] = nullptr;
 		}
+		return result;
 	});
 
-	reg("LOAD_SCENE", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("path"))
-			return;
-		std::string l_path = msg["path"];
+	reg("SET_VIEWPORT_SOURCE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		if (payload.contains("pass") && payload.contains("rtIndex"))
+		{
+			const std::string l_pass    = payload["pass"];
+			const uint32_t    l_rtIndex = payload["rtIndex"].get<uint32_t>();
+			ViewportSourceOverride::Set(l_pass, l_rtIndex);
+			return json{ {"pass", l_pass}, {"rtIndex", l_rtIndex} };
+		}
+		ViewportSourceOverride::Reset();
+		return json::object();
+	});
+
+	reg("LOAD_SCENE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "path" });
+		const std::string l_path = payload["path"];
 		Log(Success, "EditorService: Requesting scene load: ", l_path.c_str());
-		// AsyncLoad=true: this callback runs on the WebSocket worker
-		// thread; SceneService::Load from a non-main thread must be
-		// async or it races DX12 resource lifecycle on the render thread.
+		// AsyncLoad=true: this callback runs on the WebSocket worker thread;
+		// SceneService::Load from a non-main thread must be async or it races
+		// DX12 resource lifecycle on the render thread.
 		g_Engine->Get<SceneService>()->Load(l_path.c_str(), true);
+		return json{ {"path", l_path} };
 	});
 
-	reg("SAVE_SCENE", [](const json& /*msg*/, ix::WebSocket& /*ws*/) {
+	reg("SAVE_SCENE", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
 		Log(Success, "EditorService: Requesting scene save.");
 		auto sceneService = g_Engine->Get<SceneService>();
-		sceneService->Save(sceneService->GetCurrentSceneName().c_str());
+		const bool ok = sceneService->Save(sceneService->GetCurrentSceneName().c_str());
+		if (!ok)
+			throw EditorReqError("SAVE_FAILED", "Scene save failed");
+		return json{ {"path", sceneService->GetCurrentSceneName().c_str()} };
 	});
 
-	reg("IMPORT_ASSET", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("path"))
-			return;
-		std::string l_path = msg["path"];
+	reg("IMPORT_ASSET", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "path" });
+		const std::string l_path = payload["path"];
 		Log(Success, "EditorService: Requesting asset import: ", l_path.c_str());
 		g_Engine->Get<AssetService>()->Import(l_path.c_str());
+		return json{ {"path", l_path} };
 	});
 
-	reg("ENTITY_CREATE", [](const json& msg, ix::WebSocket& ws) {
-		std::string l_name = msg.value("name", std::string("Entity"));
-		auto l_id = g_Engine->Get<EntityRegistry>()->Spawn(ObjectLifespan::Scene, l_name.c_str());
-		json l_reply;
-		l_reply["type"] = "ENTITY_CREATED";
-		l_reply["id"]   = (uint32_t)l_id;
-		l_reply["name"] = l_name;
-		ws.send(l_reply.dump());
-	});
-
-	reg("ENTITY_DELETE", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("id"))
-			return;
+	reg("ENTITY_CREATE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		const std::string l_name = payload.value("name", std::string("Entity"));
 		auto* l_registry = g_Engine->Get<EntityRegistry>();
-		EntityID l_id = (EntityID)msg["id"].get<uint32_t>();
-		if (!l_registry->IsValid(l_id))
+		auto  l_id = l_registry->Spawn(ObjectLifespan::Scene, l_name.c_str());
+
+		auto l_ids = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+		json l_entities = json::array();
+		for (auto id : l_ids)
 		{
-			Log(Warning, "EditorService: ENTITY_DELETE for invalid id ", (uint32_t)l_id);
-			return;
+			json e;
+			e["id"]   = (uint32_t)id;
+			e["name"] = l_registry->GetName(id);
+			l_entities.push_back(e);
 		}
-		// Refuse to delete persistent (engine-owned) entities; the editor
-		// only owns scene-bound entities. Otherwise a stray click could
-		// nuke the player camera, sun, etc.
+		json result;
+		result["entity"]   = { {"id", (uint32_t)l_id}, {"name", l_name} };
+		result["entities"] = l_entities;
+		return result;
+	});
+
+	reg("ENTITY_DELETE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "id" });
+		auto* l_registry = g_Engine->Get<EntityRegistry>();
+		const EntityID l_id = (EntityID)payload["id"].get<uint32_t>();
+		if (!l_registry->IsValid(l_id))
+			throw EditorReqError("NOT_FOUND", "Entity does not exist or has been destroyed");
+		// Refuse to delete persistent (engine-owned) entities; the editor only
+		// owns scene-bound entities. Otherwise a stray click could nuke the
+		// player camera, sun, etc.
 		if (l_registry->GetLifespan(l_id) != ObjectLifespan::Scene)
-		{
-			Log(Warning, "EditorService: refusing ENTITY_DELETE on non-scene entity ", (uint32_t)l_id);
-			return;
-		}
+			throw EditorReqError("FORBIDDEN", "Refusing to delete non-scene entity");
 		l_registry->Destroy(l_id);
+
+		auto l_ids = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+		json l_entities = json::array();
+		for (auto id : l_ids)
+		{
+			json e;
+			e["id"]   = (uint32_t)id;
+			e["name"] = l_registry->GetName(id);
+			l_entities.push_back(e);
+		}
+		json result;
+		result["removed"]  = (uint32_t)l_id;
+		result["entities"] = l_entities;
+		return result;
 	});
 
-	reg("ENTITY_RENAME", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("id") || !msg.contains("name"))
-			return;
+	reg("ENTITY_RENAME", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "id", "name" });
 		auto* l_registry = g_Engine->Get<EntityRegistry>();
-		EntityID l_id = (EntityID)msg["id"].get<uint32_t>();
-		std::string l_name = msg["name"];
+		const EntityID    l_id   = (EntityID)payload["id"].get<uint32_t>();
+		const std::string l_name = payload["name"];
 		if (!l_registry->Rename(l_id, l_name.c_str()))
-			Log(Warning, "EditorService: ENTITY_RENAME failed for id ", (uint32_t)l_id);
+			throw EditorReqError("RENAME_FAILED", "Rename failed; entity may not exist");
+
+		auto l_ids = l_registry->GetAllEntityIDs(ObjectLifespan::Scene);
+		json l_entities = json::array();
+		for (auto id : l_ids)
+		{
+			json e;
+			e["id"]   = (uint32_t)id;
+			e["name"] = l_registry->GetName(id);
+			l_entities.push_back(e);
+		}
+		json result;
+		result["renamed"]  = (uint32_t)l_id;
+		result["name"]     = l_name;
+		result["entities"] = l_entities;
+		return result;
 	});
 
-	reg("UPDATE_ENTITY_PROPERTY", [](const json& msg, ix::WebSocket& /*ws*/) {
-		if (!msg.contains("id") || !msg.contains("component") || !msg.contains("property") || !msg.contains("value"))
-			return;
-		EntityID    l_id       = (EntityID)msg["id"].get<uint32_t>();
-		std::string l_compType = msg["component"];
-		std::string l_prop     = msg["property"];
-		auto        l_val      = msg["value"];
+	reg("UPDATE_ENTITY_PROPERTY", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
+		RequireFields(payload, { "id", "component", "property", "value" });
+		const EntityID    l_id       = (EntityID)payload["id"].get<uint32_t>();
+		const std::string l_compType = payload["component"];
+		const std::string l_prop     = payload["property"];
+		auto              l_val      = payload["value"];
 
-		auto l_registry = g_Engine->Get<EntityRegistry>();
+		auto* l_registry = g_Engine->Get<EntityRegistry>();
 		if (!l_registry->IsValid(l_id))
-			return;
+			throw EditorReqError("NOT_FOUND", "Entity does not exist or has been destroyed");
 
+		json committed;
 		if (l_compType == "TransformComponent")
 		{
 			auto l_transform = l_registry->Get<TransformComponent>(l_id);
 			if (!l_transform)
-				return;
-			if (l_prop == "pos")        l_transform->m_LocalPos   = Vec3(l_val[0], l_val[1], l_val[2]);
-			else if (l_prop == "scale") l_transform->m_LocalScale = Vec3(l_val[0], l_val[1], l_val[2]);
-			// TODO: Rotation (Quat)
+				throw EditorReqError("NO_COMPONENT", "Entity has no TransformComponent");
+			if (l_prop == "pos")
+			{
+				l_transform->m_LocalPos = Vec3(l_val[0], l_val[1], l_val[2]);
+				committed = SerializeVec(l_transform->m_LocalPos);
+			}
+			else if (l_prop == "scale")
+			{
+				l_transform->m_LocalScale = Vec3(l_val[0], l_val[1], l_val[2]);
+				committed = SerializeVec(l_transform->m_LocalScale);
+			}
+			// TODO: Rotation (Quat) — tracked as TASK-79 AC #4
+			else
+			{
+				throw EditorReqError("BAD_PROPERTY", "Unknown TransformComponent property: " + l_prop);
+			}
 		}
 		else if (l_compType == "LightComponent")
 		{
 			auto l_light = l_registry->Get<LightComponent>(l_id);
 			if (!l_light)
-				return;
-			if (l_prop == "intensity")   l_light->m_LuminousFlux = l_val.get<float>();
-			else if (l_prop == "color")  l_light->m_RGBColor     = Vec4(l_val[0], l_val[1], l_val[2], 1.0f);
+				throw EditorReqError("NO_COMPONENT", "Entity has no LightComponent");
+			if (l_prop == "intensity")
+			{
+				l_light->m_LuminousFlux = l_val.get<float>();
+				committed = l_light->m_LuminousFlux;
+			}
+			else if (l_prop == "color")
+			{
+				l_light->m_RGBColor = Vec4(l_val[0], l_val[1], l_val[2], 1.0f);
+				committed = SerializeVec(l_light->m_RGBColor);
+			}
+			else
+			{
+				throw EditorReqError("BAD_PROPERTY", "Unknown LightComponent property: " + l_prop);
+			}
 		}
+		else
+		{
+			throw EditorReqError("BAD_COMPONENT", "Unknown component type: " + l_compType);
+		}
+
+		return json{
+			{"id", (uint32_t)l_id},
+			{"component", l_compType},
+			{"property", l_prop},
+			{"value", committed},
+		};
 	});
 }
 
@@ -505,8 +660,8 @@ void EditorService::NotifyViewportReady(void* sharedHandle)
 
 	auto l_server = GetServer(m_Server);
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	uint32_t l_width  = l_resolution.x ? l_resolution.x : 1280;
-	uint32_t l_height = l_resolution.y ? l_resolution.y : 720;
+	const uint32_t l_width  = l_resolution.x ? l_resolution.x : 1280;
+	const uint32_t l_height = l_resolution.y ? l_resolution.y : 720;
 
 	void* l_handleToSend = sharedHandle;
 
@@ -520,32 +675,30 @@ void EditorService::NotifyViewportReady(void* sharedHandle)
 			if (DuplicateHandle(GetCurrentProcess(), l_handleToSend, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
 			{
 				l_handleToSend = duplicateHandle;
-				Log(Success, "EditorService: Duplicated shared handle for UI process (PID ", m_clientPID, ") in NotifyViewportReady: ", (uint64_t)l_handleToSend);
 			}
 			else
 			{
-				Log(Error, "EditorService: Failed to duplicate handle in NotifyViewportReady. GetLastError=", (uint64_t)GetLastError());
+				Log(Error, "EditorService: NotifyViewportReady DuplicateHandle failed. GetLastError=", (uint64_t)GetLastError());
 			}
 			CloseHandle(hProcess);
 		}
 		else
 		{
-			Log(Error, "EditorService: Failed to open UI process (PID ", m_clientPID, ") in NotifyViewportReady for handle duplication. GetLastError=", (uint64_t)GetLastError());
+			Log(Error, "EditorService: NotifyViewportReady OpenProcess failed. GetLastError=", (uint64_t)GetLastError());
 		}
 #endif
 	}
 
-	json l_reply;
-	l_reply["type"]         = "VIEWPORT_READY";
-	l_reply["sharedHandle"] = (uint64_t)l_handleToSend;
-	l_reply["width"]        = l_width;
-	l_reply["height"]       = l_height;
-	l_reply["format"]       = "rgba";
+	json payload;
+	payload["sharedHandle"] = (uint64_t)l_handleToSend;
+	payload["width"]        = l_width;
+	payload["height"]       = l_height;
+	payload["format"]       = "rgba";
 
-	auto l_msg = l_reply.dump();
+	const auto l_msg = BuildEvent("VIEWPORT_READY", std::move(payload)).dump();
 	for (auto&& client : l_server->getClients())
 	{
 		client->send(l_msg);
 	}
-	Log(Success, "EditorService: Broadcasted VIEWPORT_READY with handle: ", (uint64_t)l_handleToSend);
+	Log(Success, "EditorService: Broadcast VIEWPORT_READY event (handle=", (uint64_t)l_handleToSend, ").");
 }

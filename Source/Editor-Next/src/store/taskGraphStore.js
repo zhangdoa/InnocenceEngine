@@ -1,21 +1,30 @@
 import { reactive } from 'vue'
+import { request, on } from '../composables/useIpc'
 import { connectionStore } from './connectionStore'
 
-const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
-
+/**
+ * Mirrors the engine's per-thread task reports. Pull-only for now (LIST_TASKS
+ * reply). A streaming TASK_GRAPH_FRAME event is a later addition (phase 6
+ * spec in TASK-62's Concurrency / Task Debugger pane).
+ */
 export const taskGraphStore = reactive({
   threads: [], // [{ index, reports: [{ name, startTime, finishTime }] }]
 
-  refresh() {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'LIST_TASKS' })
-  },
-
-  applySnapshot(payload) {
-    this.threads = payload?.threads ?? []
-  },
-
-  clear() {
+  reset() {
     this.threads = []
   },
+
+  async refresh() {
+    if (!connectionStore.isConnected) return
+    const result = await request('LIST_TASKS')
+    this.threads = result?.threads ?? []
+  },
+})
+
+on('engine-connected', ({ connected }) => {
+  if (!connected) taskGraphStore.reset()
+})
+
+on('TASK_GRAPH_FRAME', (payload) => {
+  if (payload?.threads) taskGraphStore.threads = payload.threads
 })

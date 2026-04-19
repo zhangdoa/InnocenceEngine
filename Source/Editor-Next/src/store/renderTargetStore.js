@@ -1,40 +1,44 @@
 import { reactive } from 'vue'
+import { request, on } from '../composables/useIpc'
 import { connectionStore } from './connectionStore'
 
-const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
-
-// Mirrors the engine's render-pass / RT enumeration. The engine publishes
-// the list via RENDER_TARGETS (response to LIST_RENDER_TARGETS); the
-// editor sends SET_VIEWPORT_SOURCE (or SET_VIEWPORT_SOURCE with no args
-// to reset) to drive ViewportSourceOverride.
+/**
+ * Mirrors the engine's render-pass / RT enumeration. LIST_RENDER_TARGETS
+ * fetches the full list (plus the current override if any). SET_VIEWPORT_SOURCE
+ * with {pass, rtIndex} activates an override; no payload resets it.
+ */
 export const renderTargetStore = reactive({
   passes: [],     // [{ name, targets: [{ index, name }] }]
   override: null, // { pass, rtIndex } | null
 
-  refresh() {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'LIST_RENDER_TARGETS' })
-  },
-
-  setOverride(passName, rtIndex) {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'SET_VIEWPORT_SOURCE', pass: passName, rtIndex })
-    this.override = { pass: passName, rtIndex }
-  },
-
   reset() {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'SET_VIEWPORT_SOURCE' })
-    this.override = null
-  },
-
-  applySnapshot(payload) {
-    this.passes = payload?.passes ?? []
-    this.override = payload?.override ?? null
-  },
-
-  clear() {
     this.passes = []
     this.override = null
   },
+
+  async refresh() {
+    if (!connectionStore.isConnected) return
+    const result = await request('LIST_RENDER_TARGETS')
+    this.passes = result?.passes ?? []
+    this.override = result?.override ?? null
+  },
+
+  async setOverride(passName, rtIndex) {
+    if (!connectionStore.isConnected) return
+    const result = await request('SET_VIEWPORT_SOURCE', { pass: passName, rtIndex })
+    this.override = result && result.pass !== undefined
+      ? { pass: result.pass, rtIndex: result.rtIndex }
+      : null
+  },
+
+  async clearOverride() {
+    if (!connectionStore.isConnected) return
+    await request('SET_VIEWPORT_SOURCE')
+    this.override = null
+  },
+})
+
+on('engine-connected', ({ connected }) => {
+  if (!connected) renderTargetStore.reset()
+  else renderTargetStore.refresh().catch(e => console.error('renderTargetStore.refresh on connect:', e))
 })

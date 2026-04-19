@@ -1,42 +1,44 @@
 import { reactive } from 'vue'
+import { request, on } from '../composables/useIpc'
 import { connectionStore } from './connectionStore'
 
-const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
-
-// Mirrors the engine's DevToggleRegistry contents over IPC. The engine
-// publishes the list via DEV_TOGGLES (response to LIST_DEV_TOGGLES); the
-// editor sends SET_DEV_TOGGLE / TRIGGER_DEV_ACTION to mutate / fire.
+/**
+ * Mirrors the engine's DevToggleRegistry. LIST_DEV_TOGGLES fetches the full
+ * snapshot; SET_DEV_TOGGLE / TRIGGER_DEV_ACTION mutate. Optimistic local
+ * update keeps the UI responsive; the next refresh reconciles if the engine
+ * refused or coerced the value.
+ */
 export const devToggleStore = reactive({
   toggles: [], // [{ name: string, value: boolean }]
   actions: [], // [{ name: string }]
-
-  refresh() {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'LIST_DEV_TOGGLES' })
-  },
-
-  setToggle(name, value) {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'SET_DEV_TOGGLE', name, value })
-    // Optimistic local update so the UI reflects the click immediately;
-    // the next LIST_DEV_TOGGLES response will reconcile if the engine
-    // refused or queued the change.
-    const t = this.toggles.find((x) => x.name === name)
-    if (t) t.value = value
-  },
-
-  triggerAction(name) {
-    if (!connectionStore.isConnected || !ipcRenderer) return
-    ipcRenderer.send('engine-message', { type: 'TRIGGER_DEV_ACTION', name })
-  },
-
-  applySnapshot(payload) {
-    this.toggles = payload?.toggles ?? []
-    this.actions = payload?.actions ?? []
-  },
 
   reset() {
     this.toggles = []
     this.actions = []
   },
+
+  async refresh() {
+    if (!connectionStore.isConnected) return
+    const result = await request('LIST_DEV_TOGGLES')
+    this.toggles = result?.toggles ?? []
+    this.actions = result?.actions ?? []
+  },
+
+  async setToggle(name, value) {
+    if (!connectionStore.isConnected) return
+    const t = this.toggles.find((x) => x.name === name)
+    if (t) t.value = value // optimistic
+    const committed = await request('SET_DEV_TOGGLE', { name, value })
+    if (committed && t) t.value = committed.value
+  },
+
+  async triggerAction(name) {
+    if (!connectionStore.isConnected) return
+    await request('TRIGGER_DEV_ACTION', { name })
+  },
+})
+
+on('engine-connected', ({ connected }) => {
+  if (!connected) devToggleStore.reset()
+  else devToggleStore.refresh().catch(e => console.error('devToggleStore.refresh on connect:', e))
 })

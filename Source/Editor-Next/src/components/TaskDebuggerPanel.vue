@@ -32,11 +32,12 @@ watch(
   () => connectionStore.isConnected,
   (connected) => {
     if (connected) {
-      taskGraphStore.refresh()
+      // Store already refreshes on its own connect subscription; here we
+      // manage only the polling timer that's specific to this panel.
       startTimer()
     } else {
       stopTimer()
-      taskGraphStore.clear()
+      // Store handles the reset itself on disconnect.
     }
   },
 )

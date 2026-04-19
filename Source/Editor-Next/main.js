@@ -96,27 +96,60 @@ function createWindow() {
   spawnEngine();
 }
 
+// main.js owns the HELLO request/reply handshake — it learns the engine's
+// shared-texture handle from the reply and binds it into the renderer's
+// frame. Everything else on the wire (subsequent replies, VIEWPORT_READY
+// events, scene data, etc.) is proxied transparently to the renderer,
+// which speaks the full envelope contract via src/composables/useIpc.js.
+//
+// Use id=0 for HELLO so it never collides with a renderer-generated id
+// (useIpc's `nextRequestId` starts at 1 and only counts up).
+const HELLO_REQUEST_ID = 0;
+
 function connectToEngine() {
   console.log('Main: Connecting to Engine WS...');
   socket = new WebSocket('ws://127.0.0.1:8081');
 
   socket.on('open', () => {
     console.log('Main: Connected to Engine');
-    socket.send(JSON.stringify({ type: 'HELO', pid: process.pid }));
+    socket.send(JSON.stringify({
+      envelope: 'request',
+      id: HELLO_REQUEST_ID,
+      type: 'HELLO',
+      payload: { pid: process.pid },
+    }));
     if (win) win.webContents.send('engine-connected', true);
   });
 
-  socket.on('message', (data) => {
-    const msg = JSON.parse(data);
-    console.log('Main: Message from Engine:', msg);
+  socket.on('error', (err) => {
+    console.error('Main: WebSocket error:', err?.message || err);
+  });
 
-    if (msg.type === 'HELLO_REPLY' || msg.type === 'VIEWPORT_READY') {
-      if (msg.sharedHandle && msg.sharedHandle !== 0) {
-        setupSharedTexture(msg);
+  socket.on('message', (data) => {
+    let msg;
+    try { msg = JSON.parse(data); }
+    catch (e) { console.error('Main: failed to parse engine message:', e); return; }
+
+    // HELLO reply — main.js owns it; don't forward to renderer (renderer
+    // never issued the request).
+    if (msg.envelope === 'reply' && msg.id === HELLO_REQUEST_ID) {
+      if (msg.status === 'ok' && msg.result?.sharedHandle && msg.result.sharedHandle !== 0) {
+        setupSharedTexture(msg.result);
+      } else if (msg.status === 'err') {
+        console.error('Main: HELLO rejected by engine:', msg.error);
+      }
+      return;
+    }
+
+    // VIEWPORT_READY event — main.js consumes the handle (re-binds the
+    // shared texture on scene load) but also forwards the event so the
+    // renderer's ViewportPanel can flip into live state.
+    if (msg.envelope === 'event' && msg.type === 'VIEWPORT_READY') {
+      if (msg.payload?.sharedHandle && msg.payload.sharedHandle !== 0) {
+        setupSharedTexture(msg.payload);
       }
     }
 
-    // Proxy other messages to renderer
     if (win) win.webContents.send('engine-message', msg);
   });
 

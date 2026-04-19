@@ -1,5 +1,4 @@
 <script setup>
-import { onMounted, watch } from 'vue'
 import {
   NScrollbar,
   NEmpty,
@@ -15,20 +14,8 @@ import { connectionStore } from '../store/connectionStore'
 
 const message = useMessage()
 
-// Pull the current list once we're connected. Re-pull on reconnect so a
-// new engine session populates the panel without a manual refresh.
-watch(
-  () => connectionStore.isConnected,
-  (connected) => {
-    if (connected) devToggleStore.refresh()
-    else devToggleStore.reset()
-  },
-  { immediate: false },
-)
-
-onMounted(() => {
-  if (connectionStore.isConnected) devToggleStore.refresh()
-})
+// devToggleStore self-refreshes on connect and clears on disconnect via its
+// own on('engine-connected') subscription.
 
 const onToggleChange = (toggle, value) => {
   devToggleStore.setToggle(toggle.name, value)
