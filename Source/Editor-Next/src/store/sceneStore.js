@@ -41,5 +41,28 @@ export const sceneStore = reactive({
     if (ipcRenderer) {
       ipcRenderer.send('engine-message', { type: 'SAVE_SCENE' });
     }
-  }
+  },
+
+  createEntity(name) {
+    if (!connectionStore.isConnected || !ipcRenderer) return
+    ipcRenderer.send('engine-message', { type: 'ENTITY_CREATE', name })
+    // Refresh list after the engine processes the create.
+    setTimeout(() => ipcRenderer.send('engine-message', { type: 'GET_SCENE' }), 50)
+  },
+
+  deleteEntity(id) {
+    if (!connectionStore.isConnected || !ipcRenderer) return
+    ipcRenderer.send('engine-message', { type: 'ENTITY_DELETE', id })
+    if (this.selectedEntityId === id) {
+      this.selectedEntity = null
+      this.selectedEntityId = null
+    }
+    setTimeout(() => ipcRenderer.send('engine-message', { type: 'GET_SCENE' }), 50)
+  },
+
+  renameEntity(id, name) {
+    if (!connectionStore.isConnected || !ipcRenderer) return
+    ipcRenderer.send('engine-message', { type: 'ENTITY_RENAME', id, name })
+    setTimeout(() => ipcRenderer.send('engine-message', { type: 'GET_SCENE' }), 50)
+  },
 })

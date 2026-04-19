@@ -1,13 +1,15 @@
 <template>
   <n-config-provider :theme="activeTheme" :theme-overrides="themeOverrides" style="height: 100%">
     <n-message-provider>
-      <app-layout />
+      <n-dialog-provider>
+        <app-layout />
+      </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
 </template>
 
 <script setup>
-import { NConfigProvider, NMessageProvider } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui'
 import AppLayout from './components/AppLayout.vue'
 import { useTheme } from './composables/useTheme'
 
