@@ -42,14 +42,14 @@
             "Components": [
                 {"Type": 1, "Name": "GISponza.Bunny.TransformComponent"}
             ],
-            "ChildScene": "Generated/Scenes/bunny.InnoScene"
+            "ChildScene": "ExampleProject/Scenes/GISponza.Bunny.InnoScene"
         },
         {
             "Name": "Dragon",
             "Components": [
                 {"Type": 1, "Name": "GISponza.Dragon.TransformComponent"}
             ],
-            "ChildScene": "Generated/Scenes/dragon.InnoScene"
+            "ChildScene": "ExampleProject/Scenes/GISponza.Dragon.InnoScene"
         },
         {
             "Name": "PointLight",

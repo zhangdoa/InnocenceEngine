@@ -1,0 +1,12 @@
+{
+    "Name": "GISponza.Dragon",
+    "Entities": [
+        {
+            "Name": "GISponza.Dragon.0",
+            "Components": [
+                {"Type": 6, "Name": "dragon.0.MeshComponent",                      "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.Dragon.MaterialComponent",           "Path": "ExampleProject/Components/"}
+            ]
+        }
+    ]
+}

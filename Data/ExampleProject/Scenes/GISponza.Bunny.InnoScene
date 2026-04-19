@@ -1,0 +1,12 @@
+{
+    "Name": "GISponza.Bunny",
+    "Entities": [
+        {
+            "Name": "GISponza.Bunny.0",
+            "Components": [
+                {"Type": 6, "Name": "bunny.0.MeshComponent",                       "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.Bunny.MaterialComponent",            "Path": "ExampleProject/Components/"}
+            ]
+        }
+    ]
+}
