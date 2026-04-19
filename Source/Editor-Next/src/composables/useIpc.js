@@ -97,6 +97,9 @@ function installRouter() {
     }
     emit('engine-connected', { connected })
   })
+  ipcRenderer.on('connection-status', (_event, payload) => {
+    emit('connection-status', payload)
+  })
   ipcRenderer.on('files-selected', (_event, paths) => {
     emit('files-selected', { paths })
   })

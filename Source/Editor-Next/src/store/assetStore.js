@@ -33,10 +33,14 @@ export const assetStore = reactive({
       this.isImporting = false
     }
   },
+
+  onConnect() { /* nothing to fetch on connect */ },
+  onDisconnect() { this.reset() },
 })
 
 on('engine-connected', ({ connected }) => {
-  if (!connected) assetStore.reset()
+  if (connected) assetStore.onConnect()
+  else assetStore.onDisconnect()
 })
 
 on('files-selected', ({ paths }) => {

@@ -36,9 +36,16 @@ export const devToggleStore = reactive({
     if (!connectionStore.isConnected) return
     await request('TRIGGER_DEV_ACTION', { name })
   },
+
+  onConnect() {
+    this.refresh().catch(e => console.error('devToggleStore.refresh on connect:', e))
+  },
+  onDisconnect() {
+    this.reset()
+  },
 })
 
 on('engine-connected', ({ connected }) => {
-  if (!connected) devToggleStore.reset()
-  else devToggleStore.refresh().catch(e => console.error('devToggleStore.refresh on connect:', e))
+  if (connected) devToggleStore.onConnect()
+  else devToggleStore.onDisconnect()
 })

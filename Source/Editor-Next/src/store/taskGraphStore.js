@@ -19,10 +19,14 @@ export const taskGraphStore = reactive({
     const result = await request('LIST_TASKS')
     this.threads = result?.threads ?? []
   },
+
+  onConnect() { /* panel drives its own refresh timer */ },
+  onDisconnect() { this.reset() },
 })
 
 on('engine-connected', ({ connected }) => {
-  if (!connected) taskGraphStore.reset()
+  if (connected) taskGraphStore.onConnect()
+  else taskGraphStore.onDisconnect()
 })
 
 on('TASK_GRAPH_FRAME', (payload) => {

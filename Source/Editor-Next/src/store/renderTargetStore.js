@@ -36,9 +36,16 @@ export const renderTargetStore = reactive({
     await request('SET_VIEWPORT_SOURCE')
     this.override = null
   },
+
+  onConnect() {
+    this.refresh().catch(e => console.error('renderTargetStore.refresh on connect:', e))
+  },
+  onDisconnect() {
+    this.reset()
+  },
 })
 
 on('engine-connected', ({ connected }) => {
-  if (!connected) renderTargetStore.reset()
-  else renderTargetStore.refresh().catch(e => console.error('renderTargetStore.refresh on connect:', e))
+  if (connected) renderTargetStore.onConnect()
+  else renderTargetStore.onDisconnect()
 })

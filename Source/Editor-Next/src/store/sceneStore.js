@@ -89,9 +89,16 @@ export const sceneStore = reactive({
     const { entities } = await request('ENTITY_RENAME', { id, name })
     this.entities = entities ?? []
   },
+
+  onConnect() {
+    this.refresh().catch(e => console.error('sceneStore.refresh on connect:', e))
+  },
+  onDisconnect() {
+    this.reset()
+  },
 })
 
 on('engine-connected', ({ connected }) => {
-  if (!connected) sceneStore.reset()
-  else sceneStore.refresh().catch(e => console.error('sceneStore.refresh on connect:', e))
+  if (connected) sceneStore.onConnect()
+  else sceneStore.onDisconnect()
 })
