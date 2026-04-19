@@ -1,0 +1,40 @@
+{
+    "Name": "GISponza.ShaderBall",
+    "Entities": [
+        {
+            "Name": "GISponza.ShaderBall.0",
+            "Components": [
+                {"Type": 6, "Name": "ShaderBall.0.MeshComponent",                  "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.ShaderBall.Metal032.MaterialComponent","Path": "ExampleProject/Components/"}
+            ]
+        },
+        {
+            "Name": "GISponza.ShaderBall.1",
+            "Components": [
+                {"Type": 6, "Name": "ShaderBall.1.MeshComponent",                  "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.ShaderBall.Metal032.MaterialComponent","Path": "ExampleProject/Components/"}
+            ]
+        },
+        {
+            "Name": "GISponza.ShaderBall.2",
+            "Components": [
+                {"Type": 6, "Name": "ShaderBall.2.MeshComponent",                  "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.ShaderBall.Metal032.MaterialComponent","Path": "ExampleProject/Components/"}
+            ]
+        },
+        {
+            "Name": "GISponza.ShaderBall.3",
+            "Components": [
+                {"Type": 6, "Name": "ShaderBall.3.MeshComponent",                  "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.ShaderBall.Metal032.MaterialComponent","Path": "ExampleProject/Components/"}
+            ]
+        },
+        {
+            "Name": "GISponza.ShaderBall.4",
+            "Components": [
+                {"Type": 6, "Name": "ShaderBall.4.MeshComponent",                  "Path": "Generated/Components/"},
+                {"Type": 7, "Name": "GISponza.ShaderBall.Metal032.MaterialComponent","Path": "ExampleProject/Components/"}
+            ]
+        }
+    ]
+}

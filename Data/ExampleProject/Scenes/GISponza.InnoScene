@@ -35,7 +35,7 @@
             "Components": [
                 {"Type": 1, "Name": "GISponza.Orb.TransformComponent"}
             ],
-            "ChildScene": "Generated/Scenes/ShaderBall.InnoScene"
+            "ChildScene": "ExampleProject/Scenes/GISponza.ShaderBall.InnoScene"
         },
         {
             "Name": "Bunny",
