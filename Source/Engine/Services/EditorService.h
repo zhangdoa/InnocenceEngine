@@ -26,15 +26,12 @@ namespace Inno
 
 		ObjectStatus GetStatus() override;
 
-		void NotifyViewportReady(void* sharedHandle);
-
 	private:
 		void RegisterBuiltinHandlers();
 		void BroadcastSceneUpdated();
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 		void* m_Server = nullptr; // Opaque pointer to ix::WebSocketServer
-		uint32_t m_clientPID = 0;
 		std::unique_ptr<EditorServiceImpl> m_Impl;
 
 		// SceneService::AddSceneLoadedCallback stores a raw function pointer,

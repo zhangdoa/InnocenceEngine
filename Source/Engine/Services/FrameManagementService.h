@@ -58,7 +58,6 @@ namespace Inno
 		ISemaphore* GetGlobalSemaphore();
 		void SetGlobalSemaphore(ISemaphore* semaphore) { m_GlobalSemaphore = semaphore; }
 		std::vector<CommandListComponent*>& GetGlobalGraphicsCommandLists() { return m_GlobalGraphicsCommandLists; }
-		virtual void* GetViewportSharedHandle() { return nullptr; }
 
 		// Command list lifecycle
 		virtual bool Open(CommandListComponent* commandList, GPUEngineType engineType, IPipelineStateObject* pipelineStateObject = nullptr) { return false; }

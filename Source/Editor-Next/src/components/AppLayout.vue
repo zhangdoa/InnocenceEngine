@@ -33,29 +33,26 @@ import 'dockview-vue/dist/styles/dockview.css'
 // Declarative panel descriptors. panelStore registers them up front so the
 // Window menu can list (and re-open) them even before dockview is ready;
 // the actual addPanel calls happen in onDockviewReady once the API exists.
-panelStore.register({
-  id: 'viewport_panel',
-  component: 'viewport',
-  title: 'Viewport',
-  position: { direction: 'within', referencePanel: null },
-})
+// No viewport panel — the engine renders into its own native window (see
+// project CLAUDE.md design notes). The editor is tooling only; the game
+// view lives in Main.exe's OS window alongside this one.
 panelStore.register({
   id: 'hierarchy_panel',
   component: 'hierarchy',
   title: 'Outliner',
-  position: { direction: 'left', referencePanel: 'viewport_panel', width: 300 },
+  position: { direction: 'within', referencePanel: null },
 })
 panelStore.register({
   id: 'properties_panel',
   component: 'properties',
   title: 'Inspector',
-  position: { direction: 'right', referencePanel: 'viewport_panel', width: 400 },
+  position: { direction: 'right', referencePanel: 'hierarchy_panel', width: 400 },
 })
 panelStore.register({
   id: 'assets_panel',
   component: 'assets',
   title: 'Workspace',
-  position: { direction: 'below', referencePanel: 'viewport_panel', height: 300 },
+  position: { direction: 'below', referencePanel: 'hierarchy_panel', height: 300 },
 })
 panelStore.register({
   id: 'render_toggles_panel',

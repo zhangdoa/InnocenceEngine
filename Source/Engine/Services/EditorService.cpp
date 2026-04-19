@@ -4,8 +4,6 @@
 #include "EntityRegistry.h"
 #include "SceneService.h"
 #include "AssetService.h"
-#include "RenderingConfigurationService.h"
-#include "FrameManagementService.h"
 #include "DevToggleRegistry.h"
 #include "RenderPassResourceService.h"
 #include "ViewportSourceOverride.h"
@@ -241,49 +239,6 @@ static void RequireFields(const json& payload, std::initializer_list<const char*
 	}
 }
 
-static json GetHandshakeResult(const json& payload, uint32_t& outClientPID)
-{
-	if (payload.contains("pid"))
-		outClientPID = payload["pid"].get<uint32_t>();
-
-	void* l_sharedHandle = g_Engine->Get<FrameManagementService>()->GetViewportSharedHandle();
-	auto  l_resolution   = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-
-	if (l_sharedHandle && outClientPID > 0)
-	{
-#ifdef INNO_PLATFORM_WIN
-		HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, outClientPID);
-		if (hProcess)
-		{
-			HANDLE duplicateHandle = NULL;
-			if (DuplicateHandle(GetCurrentProcess(), l_sharedHandle, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
-			{
-				l_sharedHandle = duplicateHandle;
-			}
-			else
-			{
-				Log(Error, "EditorService: HELLO DuplicateHandle failed. GetLastError=", (uint64_t)GetLastError());
-			}
-			CloseHandle(hProcess);
-		}
-		else
-		{
-			Log(Error, "EditorService: HELLO OpenProcess failed. GetLastError=", (uint64_t)GetLastError());
-		}
-#endif
-	}
-
-	const uint32_t l_width  = l_resolution.x ? l_resolution.x : 1280;
-	const uint32_t l_height = l_resolution.y ? l_resolution.y : 720;
-
-	json result;
-	result["sharedHandle"] = (uint64_t)l_sharedHandle;
-	result["width"]        = l_width;
-	result["height"]       = l_height;
-	result["format"]       = "rgba";
-	return result;
-}
-
 void EditorService::RegisterBuiltinHandlers()
 {
 	auto reg = [this](const char* type, EditorServiceImpl::Handler h) {
@@ -291,8 +246,12 @@ void EditorService::RegisterBuiltinHandlers()
 		m_Impl->handlers[type] = std::move(h);
 	};
 
-	reg("HELLO", [this](const json& payload, ix::WebSocket& /*ws*/) -> json {
-		return GetHandshakeResult(payload, m_clientPID);
+	reg("HELLO", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
+		// Aliveness handshake. The editor (Electron main.js) sends this
+		// after the WS opens; the reply just confirms the dispatcher is
+		// running. No payload to share — the editor does not embed the
+		// engine's frames, so no shared-texture handle is exchanged.
+		return json{ {"ok", true} };
 	});
 
 	reg("GET_SCENE", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
@@ -460,16 +419,6 @@ void EditorService::RegisterBuiltinHandlers()
 			result["override"] = nullptr;
 		}
 		return result;
-	});
-
-	reg("VIEWPORT_RESIZE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
-		// No-op until TASK-73 implements swap-chain / back-buffer resize. Echo
-		// the requested dimensions so the editor's canvas can at least show
-		// the size it asked for — we'll stop lying about the real back-buffer
-		// size once the engine grows a real resize path.
-		const uint32_t l_width  = payload.value("width",  0u);
-		const uint32_t l_height = payload.value("height", 0u);
-		return json{ {"width", l_width}, {"height", l_height}, {"applied", false} };
 	});
 
 	reg("SET_VIEWPORT_SOURCE", [](const json& payload, ix::WebSocket& /*ws*/) -> json {
@@ -681,52 +630,3 @@ ObjectStatus EditorService::GetStatus()
 	return m_ObjectStatus;
 }
 
-void EditorService::NotifyViewportReady(void* sharedHandle)
-{
-	if (!m_Server)
-		return;
-
-	auto l_server = GetServer(m_Server);
-	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-	const uint32_t l_width  = l_resolution.x ? l_resolution.x : 1280;
-	const uint32_t l_height = l_resolution.y ? l_resolution.y : 720;
-
-	void* l_handleToSend = sharedHandle;
-
-	if (l_handleToSend && m_clientPID > 0)
-	{
-#ifdef INNO_PLATFORM_WIN
-		HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, m_clientPID);
-		if (hProcess)
-		{
-			HANDLE duplicateHandle = NULL;
-			if (DuplicateHandle(GetCurrentProcess(), l_handleToSend, hProcess, &duplicateHandle, 0, FALSE, DUPLICATE_SAME_ACCESS))
-			{
-				l_handleToSend = duplicateHandle;
-			}
-			else
-			{
-				Log(Error, "EditorService: NotifyViewportReady DuplicateHandle failed. GetLastError=", (uint64_t)GetLastError());
-			}
-			CloseHandle(hProcess);
-		}
-		else
-		{
-			Log(Error, "EditorService: NotifyViewportReady OpenProcess failed. GetLastError=", (uint64_t)GetLastError());
-		}
-#endif
-	}
-
-	json payload;
-	payload["sharedHandle"] = (uint64_t)l_handleToSend;
-	payload["width"]        = l_width;
-	payload["height"]       = l_height;
-	payload["format"]       = "rgba";
-
-	const auto l_msg = BuildEvent("VIEWPORT_READY", std::move(payload)).dump();
-	for (auto&& client : l_server->getClients())
-	{
-		client->send(l_msg);
-	}
-	Log(Success, "EditorService: Broadcast VIEWPORT_READY event (handle=", (uint64_t)l_handleToSend, ").");
-}

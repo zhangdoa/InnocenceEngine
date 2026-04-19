@@ -1,4 +1,4 @@
-const { app, BrowserWindow, sharedTexture, ipcMain, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const WebSocket = require('ws');
@@ -6,7 +6,6 @@ const WebSocket = require('ws');
 let engineProcess;
 let win;
 let socket;
-let importedTexture;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Connection state machine
@@ -182,13 +181,12 @@ function createWindow() {
   spawnEngine();
 }
 
-// main.js owns the HELLO request/reply handshake — it learns the engine's
-// shared-texture handle from the reply and binds it into the renderer's
-// frame. Everything else on the wire is proxied transparently to the
-// renderer, which speaks the full envelope contract via useIpc.
-//
-// Use id=0 for HELLO so it never collides with a renderer-generated id
-// (useIpc's `nextRequestId` starts at 1 and only counts up).
+// HELLO is a liveness handshake: main sends it on socket open; the engine
+// replies, confirming it's ready to accept requests. The reply carries no
+// client-consumable payload — the editor does not embed the engine's
+// viewport (see project CLAUDE.md: the game view lives in Main.exe's own
+// OS window, not inside the Electron frame). Use id=0 so renderer-
+// generated ids (useIpc's nextRequestId starts at 1) never collide.
 const HELLO_REQUEST_ID = 0;
 
 function connectToEngine() {
@@ -214,7 +212,7 @@ function connectToEngine() {
         envelope: 'request',
         id: HELLO_REQUEST_ID,
         type: 'HELLO',
-        payload: { pid: process.pid },
+        payload: {},
       }));
     } catch (e) {
       console.error('Main: HELLO send failed:', e?.message || e);
@@ -233,28 +231,12 @@ function connectToEngine() {
     try { msg = JSON.parse(data); }
     catch (e) { console.error('Main: failed to parse engine message:', e); return; }
 
-    // HELLO reply — main.js owns it; don't forward to renderer.
+    // HELLO reply — main owns it (renderer never issues HELLO). Log outcome
+    // and drop; the reply is only used as an aliveness signal, the setConnStatus
+    // 'live' transition already happened on socket 'open'.
     if (msg.envelope === 'reply' && msg.id === HELLO_REQUEST_ID) {
-      if (msg.status === 'ok' && msg.result?.sharedHandle && msg.result.sharedHandle !== 0) {
-        setupSharedTexture(msg.result);
-      } else if (msg.status === 'err') {
+      if (msg.status === 'err') {
         console.error('Main: HELLO rejected by engine:', msg.error);
-      }
-      return;
-    }
-
-    // Engine's VIEWPORT_READY is a handshake that carries the raw shared
-    // handle — main consumes it to bind the shared texture. The renderer
-    // doesn't see this event; instead, setupSharedTexture emits a
-    // sanitized VIEWPORT_READY (or VIEWPORT_FAILED) from here based on
-    // bind outcome.
-    if (msg.envelope === 'event' && msg.type === 'VIEWPORT_READY') {
-      if (msg.payload?.sharedHandle && msg.payload.sharedHandle !== 0) {
-        setupSharedTexture(msg.payload);
-      } else {
-        sendViewportEvent('VIEWPORT_FAILED', {
-          reason: 'Engine reported a viewport event with a null shared handle',
-        });
       }
       return;
     }
@@ -271,76 +253,6 @@ function connectToEngine() {
     }
     setConnStatus('lost');
     scheduleReconnect();
-  });
-}
-
-// Publish a viewport state transition to the renderer as an engine-event
-// envelope so ViewportPanel picks it up through useIpc's normal bus. These
-// events are synthesized by main.js based on bind outcome — distinct from
-// the engine's own VIEWPORT_READY which carries a shared handle and is
-// consumed here.
-function sendViewportEvent(type, payload) {
-  if (!win) return;
-  win.webContents.send('engine-message', { envelope: 'event', type, payload });
-}
-
-function setupSharedTexture(info) {
-  if (importedTexture) {
-    try { importedTexture.release(); } catch {}
-    importedTexture = null;
-  }
-
-  console.log(`Main: Importing Shared Texture 0x${info.sharedHandle.toString(16)} (${info.width}x${info.height})`);
-
-  const tryImport = (shape, config) => {
-    try {
-      importedTexture = sharedTexture.importSharedTexture(config);
-      sharedTexture.sendSharedTexture({
-        frame: win.webContents.mainFrame,
-        importedSharedTexture: importedTexture
-      });
-      console.log(`Main: Shared texture bound (${shape})`);
-      return { ok: true };
-    } catch (e) {
-      const reason = e?.message || String(e);
-      console.error(`Main: ${shape} bind failed:`, reason);
-      return { ok: false, reason };
-    }
-  };
-
-  const primary = tryImport('primary', {
-    source: {
-      type: 'd3d12-shared-handle',
-      handle: BigInt(info.sharedHandle)
-    },
-    width: info.width,
-    height: info.height,
-    format: info.format === 'rgba' ? 'rgba8' : 'bgra8'
-  });
-
-  if (primary.ok) {
-    sendViewportEvent('VIEWPORT_READY', { width: info.width, height: info.height });
-    return;
-  }
-
-  const fallback = tryImport('fallback', {
-    textureInfo: {
-      handle: BigInt(info.sharedHandle),
-      pixelFormat: info.format === 'rgba' ? 'rgba8unorm' : 'bgra8unorm',
-      codedSize: { width: info.width, height: info.height },
-      visibleRect: { x: 0, y: 0, width: info.width, height: info.height }
-    }
-  });
-
-  if (fallback.ok) {
-    sendViewportEvent('VIEWPORT_READY', { width: info.width, height: info.height });
-    return;
-  }
-
-  sendViewportEvent('VIEWPORT_FAILED', {
-    reason: `primary: ${primary.reason}; fallback: ${fallback.reason}`,
-    width:  info.width,
-    height: info.height,
   });
 }
 
