@@ -125,6 +125,6 @@
                 {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
                 {"Type": 7, "Name": "GITestBox.CeilingMiddle.MaterialComponent"}
             ]
-        },
+        }
     ]
 }
