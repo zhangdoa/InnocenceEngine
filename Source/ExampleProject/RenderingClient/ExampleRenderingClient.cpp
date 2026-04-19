@@ -35,6 +35,7 @@
 #include "BSDFTestPass.h"
 
 #include "../../Engine/Services/HIDService.h"
+#include "../../Engine/Services/DevToggleRegistry.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
@@ -73,23 +74,19 @@ namespace Inno
 		// m_autoCaptureWritten so later calls no-op.
 		void TryWriteAutoCapture();
 
+		// RT-routing toggles (LightCulling heatmap / radiance-cache probe view).
+		// Stay on the keymap until the editor's RT Debugger pane (TASK-62 AC #4)
+		// can route an arbitrary RT to the swap chain — these aren't pass on/off
+		// flips, they re-route which texture feeds the TAA input.
 		std::function<void()> f_showLightHeatmap;
 		std::function<void()> f_showProbe;
-		std::function<void()> f_showVoxel;
-		std::function<void()> f_showTransparent;
-		std::function<void()> f_showVolumetric;
-		std::function<void()> f_saveScreenCapture;
-		std::function<void()> f_toggleGPUPathTracer;
 
 		bool m_showLightHeatmap = false;
 		bool m_showProbe = false;
-		bool m_showVoxel = false;
-		bool m_showTransparent = false;
-		bool m_showVolumetric = false;
-		bool m_saveScreenCapture = false;
 		bool m_drawBRDFTest = false;
 		bool m_GPUPathTracerActive = false;
 		bool m_GPUPathTracerPendingToggle = false;
+		bool m_saveScreenCapture = false;
 
 
 		uint32_t m_autoCaptureFrameCount = 0;
@@ -108,28 +105,30 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Setup(IServiceConfig* systemConfig)
 	{
+		// RT-routing keymap entries — kept until TASK-62 AC #4 lands an RT
+		// debugger pane that can route any RT through to the swap chain.
 		f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 		f_showProbe = [&]() { m_showProbe = !m_showProbe; };
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
 
-		f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
+		// GPU path tracer on/off + screenshot action are now published via
+		// DevToggleRegistry. The editor's render-toggles pane drives them
+		// over IPC; the old INNO_KEY_B / INNO_KEY_C bindings are retired.
+		// V/T/J had key bindings that mutated booleans nothing read — pure
+		// dead code, deleted alongside the keys.
+		DevToggleRegistry::RegisterToggle("GPUPathTracer",
+			[this]() { return m_GPUPathTracerActive; },
+			[this](bool desired) {
+				// Defer to the next frame boundary; PrepareCommands consumes
+				// the pending flag so the toggle takes effect at a safe point
+				// in the frame, not mid-render.
+				if (desired != m_GPUPathTracerActive)
+					m_GPUPathTracerPendingToggle = true;
+			});
 
-		f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
-
-		f_showVolumetric = [&]() { m_showVolumetric = !m_showVolumetric; };
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
-
-		f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
-
-		f_toggleGPUPathTracer = [&]() {
-			m_GPUPathTracerPendingToggle = true;
-		};
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleGPUPathTracer });
+		DevToggleRegistry::RegisterAction("Screenshot", [this]() { m_saveScreenCapture = true; });
 
 		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
 			m_GPUPathTracerActive = true;
@@ -872,6 +871,11 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Terminate()
 	{
+		// Drop our DevToggleRegistry callbacks first — they capture `this`,
+		// and any in-flight EditorService WS message that races shutdown
+		// would otherwise dereference a soon-to-be-destroyed client.
+		DevToggleRegistry::Clear();
+
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 		auto l_graphicsSemaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Graphics);
 		auto l_computeSemaphoreValue = l_hwService->GetSemaphoreValue(GPUEngineType::Compute);

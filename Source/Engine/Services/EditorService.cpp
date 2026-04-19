@@ -6,6 +6,7 @@
 #include "AssetService.h"
 #include "RenderingConfigurationService.h"
 #include "FrameManagementService.h"
+#include "DevToggleRegistry.h"
 #include "../Component/TransformComponent.h"
 #include "../Component/LightComponent.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
@@ -191,6 +192,45 @@ bool EditorService::Initialize()
 									l_reply["details"] = l_details;
 									webSocket.send(l_reply.dump());
 								}
+							}
+						}
+						else if (l_type == "LIST_DEV_TOGGLES")
+						{
+							json l_toggles = json::array();
+							for (auto& t : DevToggleRegistry::AllToggles())
+							{
+								json e;
+								e["name"]  = t.m_Name;
+								e["value"] = t.m_Get ? t.m_Get() : false;
+								l_toggles.push_back(e);
+							}
+							json l_actions = json::array();
+							for (auto& a : DevToggleRegistry::AllActions())
+								l_actions.push_back({{"name", a.m_Name}});
+
+							json l_reply;
+							l_reply["type"]    = "DEV_TOGGLES";
+							l_reply["toggles"] = l_toggles;
+							l_reply["actions"] = l_actions;
+							webSocket.send(l_reply.dump());
+						}
+						else if (l_type == "SET_DEV_TOGGLE")
+						{
+							if (l_json.contains("name") && l_json.contains("value"))
+							{
+								std::string l_name  = l_json["name"];
+								bool        l_value = l_json["value"];
+								if (!DevToggleRegistry::Set(l_name, l_value))
+									Log(Warning, "EditorService: SET_DEV_TOGGLE for unknown toggle: ", l_name.c_str());
+							}
+						}
+						else if (l_type == "TRIGGER_DEV_ACTION")
+						{
+							if (l_json.contains("name"))
+							{
+								std::string l_name = l_json["name"];
+								if (!DevToggleRegistry::Trigger(l_name))
+									Log(Warning, "EditorService: TRIGGER_DEV_ACTION for unknown action: ", l_name.c_str());
 							}
 						}
 						else if (l_type == "LOAD_SCENE")
