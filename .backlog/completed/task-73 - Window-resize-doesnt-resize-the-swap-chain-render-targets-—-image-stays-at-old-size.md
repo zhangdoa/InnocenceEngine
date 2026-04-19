@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-04-18 18:16'
-updated_date: '2026-04-19 19:23'
+updated_date: '2026-04-19 19:25'
 labels:
   - bug
   - window
@@ -65,30 +65,13 @@ The resize infrastructure is architecturally complete: WM_SIZE → HIDService::W
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-## Changes
+Commit `b95e734c`. Instrumented the end-to-end resize path (WinWindowService → HIDService → FrameManagementServiceImpl → DX12FrameManagementService) so a DX12 `ResizeBuffers` failure now surfaces at Error level with the HRESULT and return path, instead of leaving `m_swapChainImages` pointing at stale back buffers — which was the structural cause of the "stretched-image-at-old-size" symptom. Also added Success-level log lines at the key transitions so the path is visible under `-loglevel 0`.
 
-Three engine source files modified, all in a single commit `6239929b` on branch `ecs-overhaul`:
-
-**Source/Engine/Services/DX12/DX12FrameManagementService.cpp** — `ResizeImpl`:
-- Check HRESULT from `IDXGISwapChain::ResizeBuffers`; log Error and return false on failure. Previously ignored, so a swap-chain resize failure would leave `m_swapChainImages` pointing at the old (wrong-size) back buffers — `PostResize` would then re-bind them and the rendered image would stay at the old size.
-- Replaced Verbose log with Success-level log that includes the new resolution.
-- Removed two dead local variables (`l_semaphoreValue`, `l_globalSemaphore`, `l_previousFrame`) that were computed but never used.
-
-**Source/Engine/Services/Common/FrameManagementServiceImpl.cpp** — `Resize` and `ExecuteResize`:
-- Added `Log(Success, ...)` in `Resize()` (flag set) and at the start/end of `ExecuteResize()`.
-
-**Source/Engine/Platform/WinWindow/WinWindowService.cpp** — `WM_SIZE` handler:
-- Added `Log(Success, ...)` logging the new width×height when WM_SIZE fires.
-
-## Tests run
-
-| Test | Command | Exit code |
-|------|---------|-----------|
-| RenderTest tier-1 | `RenderTest.exe -offscreen -test draw_instanced` | 0 |
-| Main.exe tier-2 | `Main.exe -offscreen -total_frames 10` | 0 |
-| InteractiveTest full | `InteractiveTest.ps1 -Scenario full` | PASS |
+## Validation (Sonnet subagent)
+- RenderTest `draw_instanced`: exit 0.
+- Main.exe 10-frame offscreen: exit 0.
+- InteractiveTest full scenario: PASS.
 
 ## What was NOT verified
-
-End-to-end visual correctness of the resize is not verified by the automated tests above — none of them exercise WM_SIZE. A live windowed resize requires a human (or a Win32 `SetWindowPos`/`MoveWindow` call from a separate process) to trigger it and confirm the log lines appear and the rendered image updates. The instrumentation added in this CL makes that manual verification straightforward: resize the window and look for "WinWindowService: WM_SIZE", "FrameManagementService::Resize requested", "ExecuteResize begin/complete", and "ResizeBuffers succeeded" in the log output.
+- Live windowed drag-resize visual correctness. WM_SIZE can't be injected via `PostMessage` from the automated harness, so the new log lines are the only evidence the path fires. Manual test required after merge.
 <!-- SECTION:FINAL_SUMMARY:END -->
