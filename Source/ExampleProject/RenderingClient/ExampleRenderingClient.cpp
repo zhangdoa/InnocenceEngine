@@ -36,6 +36,8 @@
 
 #include "../../Engine/Services/HIDService.h"
 #include "../../Engine/Services/DevToggleRegistry.h"
+#include "../../Engine/Services/RenderPassResourceService.h"
+#include "../../Engine/Services/ViewportSourceOverride.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/AssetService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
@@ -74,15 +76,6 @@ namespace Inno
 		// m_autoCaptureWritten so later calls no-op.
 		void TryWriteAutoCapture();
 
-		// RT-routing toggles (LightCulling heatmap / radiance-cache probe view).
-		// Stay on the keymap until the editor's RT Debugger pane (TASK-62 AC #4)
-		// can route an arbitrary RT to the swap chain — these aren't pass on/off
-		// flips, they re-route which texture feeds the TAA input.
-		std::function<void()> f_showLightHeatmap;
-		std::function<void()> f_showProbe;
-
-		bool m_showLightHeatmap = false;
-		bool m_showProbe = false;
 		bool m_drawBRDFTest = false;
 		bool m_GPUPathTracerActive = false;
 		bool m_GPUPathTracerPendingToggle = false;
@@ -105,25 +98,11 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Setup(IServiceConfig* systemConfig)
 	{
-		// RT-routing keymap entries — kept until TASK-62 AC #4 lands an RT
-		// debugger pane that can route any RT through to the swap chain.
-		f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
-
-		f_showProbe = [&]() { m_showProbe = !m_showProbe; };
-		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
-
-		// GPU path tracer on/off + screenshot action are now published via
-		// DevToggleRegistry. The editor's render-toggles pane drives them
-		// over IPC; the old INNO_KEY_B / INNO_KEY_C bindings are retired.
-		// V/T/J had key bindings that mutated booleans nothing read — pure
-		// dead code, deleted alongside the keys.
+		// Setter defers to the next frame boundary via the pending flag so
+		// the toggle never lands mid-frame.
 		DevToggleRegistry::RegisterToggle("GPUPathTracer",
 			[this]() { return m_GPUPathTracerActive; },
 			[this](bool desired) {
-				// Defer to the next frame boundary; PrepareCommands consumes
-				// the pending flag so the toggle takes effect at a safe point
-				// in the frame, not mid-render.
 				if (desired != m_GPUPathTracerActive)
 					m_GPUPathTracerPendingToggle = true;
 			});
@@ -303,25 +282,15 @@ namespace Inno
 			PreTAAPass::Get().PrepareCommandList();
 
 			TAAPassRenderingContext l_TAAPassRenderingContext;
-
-			if (m_showLightHeatmap)
-			{
-				l_TAAPassRenderingContext.m_input = LightCullingPass::Get().GetHeatMap();
-			}
-			else if (m_showProbe)
-			{
-				l_TAAPassRenderingContext.m_input = RadianceCacheReprojectionPass::Get().GetCurrentFrameResult();
-			}
-			else
-			{
-				l_TAAPassRenderingContext.m_input = PreTAAPass::Get().GetResult();
-			}
-
+			l_TAAPassRenderingContext.m_input = PreTAAPass::Get().GetResult();
 			l_TAAPassRenderingContext.m_motionVector = OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[3];
 
 			TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
 		}
 
+		// Default viewport source: PT result if active, else TAA result.
+		// ViewportSourceOverride lets a tooling client substitute any
+		// pass's color RT for the default.
 		GPUResourceComponent* l_hdrSource = nullptr;
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
@@ -330,6 +299,18 @@ namespace Inno
 		else
 		{
 			l_hdrSource = TAAPass::Get().GetResult();
+		}
+
+		if (auto l_override = ViewportSourceOverride::Get())
+		{
+			auto* l_pass = g_Engine->Get<RenderPassResourceService>()->Find(l_override->m_PassName.c_str());
+			if (l_pass && l_pass->m_OutputMergerTarget &&
+				l_override->m_RTIndex < l_pass->m_OutputMergerTarget->m_ColorOutputs.size())
+			{
+				auto* l_chosen = l_pass->m_OutputMergerTarget->m_ColorOutputs[l_override->m_RTIndex];
+				if (l_chosen)
+					l_hdrSource = l_chosen;
+			}
 		}
 
 		LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
@@ -871,9 +852,8 @@ namespace Inno
 
 	bool ExampleRenderingClientImpl::Terminate()
 	{
-		// Drop our DevToggleRegistry callbacks first — they capture `this`,
-		// and any in-flight EditorService WS message that races shutdown
-		// would otherwise dereference a soon-to-be-destroyed client.
+		// Registered callbacks capture `this`; clear the registry before this
+		// instance starts to die so an in-flight WS message can't deref it.
 		DevToggleRegistry::Clear();
 
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();

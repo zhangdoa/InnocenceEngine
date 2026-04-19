@@ -26,6 +26,11 @@ RenderPassComponent* RenderPassResourceService::Add(const char* name)
 	return m_Pool.Allocate(name);
 }
 
+RenderPassComponent* RenderPassResourceService::Find(const char* name)
+{
+	return m_Pool.Find(name);
+}
+
 bool RenderPassResourceService::Delete(RenderPassComponent* ptr)
 {
 	m_Pool.Release(ptr);

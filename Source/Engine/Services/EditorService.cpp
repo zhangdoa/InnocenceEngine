@@ -7,6 +7,8 @@
 #include "RenderingConfigurationService.h"
 #include "FrameManagementService.h"
 #include "DevToggleRegistry.h"
+#include "RenderPassResourceService.h"
+#include "ViewportSourceOverride.h"
 #include "../Component/TransformComponent.h"
 #include "../Component/LightComponent.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
@@ -224,6 +226,59 @@ bool EditorService::Initialize()
 									Log(Warning, "EditorService: SET_DEV_TOGGLE for unknown toggle: ", l_name.c_str());
 							}
 						}
+						else if (l_type == "LIST_RENDER_TARGETS")
+						{
+							json l_passes = json::array();
+							g_Engine->Get<RenderPassResourceService>()->ForEach(
+								[&l_passes](RenderPassComponent* rp)
+								{
+									if (!rp || !rp->m_OutputMergerTarget)
+										return;
+									json l_rts = json::array();
+									for (size_t i = 0; i < rp->m_OutputMergerTarget->m_ColorOutputs.size(); ++i)
+									{
+										auto* tex = rp->m_OutputMergerTarget->m_ColorOutputs[i];
+										if (!tex)
+											continue;
+										json l_rt;
+										l_rt["index"] = static_cast<uint32_t>(i);
+										l_rt["name"]  = tex->m_InstanceName.c_str();
+										l_rts.push_back(l_rt);
+									}
+									if (l_rts.empty())
+										return;
+									json l_pass;
+									l_pass["name"]    = rp->m_InstanceName.c_str();
+									l_pass["targets"] = l_rts;
+									l_passes.push_back(l_pass);
+								});
+
+							json l_reply;
+							l_reply["type"]   = "RENDER_TARGETS";
+							l_reply["passes"] = l_passes;
+							auto l_current = ViewportSourceOverride::Get();
+							if (l_current.has_value())
+							{
+								json l_sel;
+								l_sel["pass"]    = l_current->m_PassName;
+								l_sel["rtIndex"] = l_current->m_RTIndex;
+								l_reply["override"] = l_sel;
+							}
+							webSocket.send(l_reply.dump());
+						}
+						else if (l_type == "SET_VIEWPORT_SOURCE")
+						{
+							if (l_json.contains("pass") && l_json.contains("rtIndex"))
+							{
+								std::string l_pass    = l_json["pass"];
+								uint32_t    l_rtIndex = l_json["rtIndex"].get<uint32_t>();
+								ViewportSourceOverride::Set(l_pass, l_rtIndex);
+							}
+							else
+							{
+								ViewportSourceOverride::Reset();
+							}
+						}
 						else if (l_type == "TRIGGER_DEV_ACTION")
 						{
 							if (l_json.contains("name"))
@@ -239,10 +294,9 @@ bool EditorService::Initialize()
 							{
 								std::string l_path = l_json["path"];
 								Log(Success, "EditorService: Requesting scene load: ", l_path.c_str());
-								// AsyncLoad=true: editor IPC arrives on the WebSocket thread,
-								// not the main loop. A sync Load from here races the rendering
-								// thread on DX12 resource lifecycle (same incident pattern as
-								// the HID-driven scene loads — see feedback_async_scene_load).
+								// AsyncLoad=true: this callback runs on the WebSocket worker
+								// thread; SceneService::Load from a non-main thread must be
+								// async or it races DX12 resource lifecycle on the render thread.
 								g_Engine->Get<SceneService>()->Load(l_path.c_str(), true);
 							}
 						}

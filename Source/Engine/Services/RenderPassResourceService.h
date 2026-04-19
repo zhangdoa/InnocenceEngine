@@ -21,6 +21,7 @@ namespace Inno
 		ObjectStatus GetStatus() override { return m_ObjectStatus; }
 
 		RenderPassComponent* Add(const char* name);
+		RenderPassComponent* Find(const char* name);
 		virtual bool Delete(RenderPassComponent* ptr);
 
 		void ForEach(std::function<void(RenderPassComponent*)> func);
