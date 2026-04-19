@@ -93,13 +93,19 @@
         },
         {
             "name": "(Windows) Launch Editor",
-            "type": "cppvsdbg",
+            "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/Bin/RelWithDebInfo/Editor.exe",
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Bin",
-            "environment": [],
-            "externalConsole": false
+            "runtimeExecutable": "${workspaceFolder}/Source/Editor-Next/node_modules/.bin/electron.cmd",
+            "args": ["."],
+            "cwd": "${workspaceFolder}/Source/Editor-Next",
+            "console": "integratedTerminal",
+            "outputCapture": "std"
+        },
+        {
+            "name": "(Windows) Attach to Editor-Spawned Engine",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
         }
     ]
 }
