@@ -126,13 +126,5 @@
                 {"Type": 7, "Name": "GITestBox.CeilingMiddle.MaterialComponent"}
             ]
         },
-        {
-            "Name": "Player Character",
-            "Components": [
-                {"Type": 1, "Name": "GITestBox.Player.TransformComponent"},
-                {"Type": 6, "Name": "UnitSquareMesh.MeshComponent"},
-                {"Type": 7, "Name": "DefaultMaterial.MaterialComponent"}
-            ]
-        }
     ]
 }
