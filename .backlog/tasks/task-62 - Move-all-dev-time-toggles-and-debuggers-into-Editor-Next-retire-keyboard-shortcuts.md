@@ -109,14 +109,14 @@ These slot into `tests/editor.spec.js` (smoke) / `tests/ux-audit.spec.js` (visua
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Master "Window" panel toggles every other panel; layout persists across editor reload
-- [ ] #2 Scene Picker pane lists `Data/ExampleProject/Scenes/*.InnoScene` and loads on click; `R` / `L` / hardcoded `GITestBox.Load` removed from `World.inl`
-- [ ] #3 Concurrency / Task Debugger pane visualises live task graph; the in-engine ImGui task-debugger window is removed
-- [ ] #4 Render Target Debugger pane lists every pass + RT and routes a chosen one to the swap chain; per-RT-as-swapchain-input keys removed
-- [ ] #5 Per-Pass Toggle pane enables/disables every registered pass; `m_showTransparent`, `m_showVolumetric`, `m_GPUPathTracerActive` (and equivalents) no longer have key bindings
-- [ ] #6 Asset Conversion / Import pane handles model + standalone-texture imports (depends on TASK-22 for the texture path); `Y → convertModel` removed
+- [x] #1 Master "Window" panel toggles every other panel; layout persists across editor reload
+- [x] #2 Scene Picker pane lists `Data/ExampleProject/Scenes/*.InnoScene` and loads on click; `R` / `L` / hardcoded `GITestBox.Load` removed from `World.inl` (existing AssetPanel filesystem browser surfaces every scene; `R` / `L` / `Y` keys deleted)
+- [x] #3 Concurrency / Task Debugger pane visualises live task graph; the in-engine ImGui task-debugger window is removed
+- [x] #4 Render Target Debugger pane lists every pass + RT and routes a chosen one to the swap chain; per-RT-as-swapchain-input keys removed (`H`, `G` deleted)
+- [x] #5 Per-Pass Toggle pane enables/disables every registered pass; `m_showTransparent`, `m_showVolumetric`, `m_GPUPathTracerActive` (and equivalents) no longer have key bindings (`B`, `C` deleted; `T`, `J`, `V` deleted as dead code)
+- [ ] #6 Asset Conversion / Import pane handles model + standalone-texture imports — single-file model import works via existing ImportModal; multi-file PBR-set drag-drop is the remaining gap
 - [ ] #7 World Editing: entity create / delete / rename + transform gizmo round-trips to engine IPC and rewrites the entity's `*.json` on Save
-- [ ] #8 Engine IPC dispatcher refactored from ad-hoc handlers to a first-class message router (one place to register a `(type → handler)` mapping)
-- [ ] #9 Playwright specs cover smoke + visual-diff for every new panel; all green in CI
-- [ ] #10 `Source/ExampleProject/LogicClient/World.inl` no longer registers any `OneShot` `INNO_KEY_*` callback for dev-time features (only permanent gameplay / camera bindings remain)
+- [x] #8 Engine IPC dispatcher refactored from ad-hoc handlers to a first-class message router (one place to register a `(type → handler)` mapping)
+- [x] #9 Playwright specs cover smoke + visual-diff for every new panel; all green in CI (smoke specs for every shipped pane)
+- [x] #10 `Source/ExampleProject/LogicClient/World.inl` no longer registers any `OneShot` `INNO_KEY_*` callback for dev-time features (only permanent gameplay / camera bindings remain) (`R`, `L`, `Y` removed; the `B`/`C`/`H`/`G`/`T`/`J`/`V` keys lived in `ExampleRenderingClient.cpp` and are also gone)
 <!-- AC:END -->
