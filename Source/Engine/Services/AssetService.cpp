@@ -5,6 +5,7 @@
 #include "../Common/IOService.h"
 #include "../Common/TaskScheduler.h"
 #include "../Common/ObjectPool.h"
+#include "../Common/BCCompression.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
@@ -490,6 +491,57 @@ bool AssetService::Load(const char* fileName, CameraComponent& component)
 bool AssetService::Load(const char* fileName, LightComponent& component)
 {
 	return JSONWrapper::Load(fileName, component);
+}
+
+std::string AssetService::ImportTexture(const char*    absolutePath,
+                                        TextureSampler sampler,
+                                        TextureUsage   usage,
+                                        bool           isSRGB,
+                                        uint32_t       slotIndex,
+                                        const char*    instanceName)
+{
+	if (!absolutePath || !instanceName || !*instanceName)
+	{
+		Log(Error, "AssetService::ImportTexture: absolutePath and instanceName are required.");
+		return {};
+	}
+
+	if (!g_Engine->Get<IOService>()->isFileExist(absolutePath))
+	{
+		Log(Warning, "AssetService::ImportTexture: file not found: ", absolutePath);
+		return {};
+	}
+
+	TextureComponent l_Texture = {};
+	l_Texture.m_InstanceName        = instanceName;
+	l_Texture.m_TextureDesc.Sampler = sampler;
+	l_Texture.m_TextureDesc.Usage   = usage;
+	l_Texture.m_TextureDesc.IsSRGB  = isSRGB;
+
+	void* l_RawData = STBWrapper::Load(absolutePath, l_Texture);
+	if (!l_RawData)
+	{
+		Log(Error, "AssetService::ImportTexture: STB decode failed: ", absolutePath);
+		return {};
+	}
+
+	TextureDesc l_CompressedDesc = {};
+	void* l_TextureData = BCCompression::CompressRGBAToBC(l_Texture.m_TextureDesc, l_RawData, slotIndex, l_CompressedDesc);
+	if (!l_TextureData)
+	{
+		Log(Error, "AssetService::ImportTexture: BC compress failed: ", absolutePath);
+		return {};
+	}
+	l_Texture.m_TextureDesc = l_CompressedDesc;
+
+	if (!Save(l_Texture, l_TextureData))
+	{
+		Log(Error, "AssetService::ImportTexture: Save failed: ", absolutePath);
+		return {};
+	}
+
+	Log(Success, "AssetService::ImportTexture: saved ", instanceName, " from ", absolutePath);
+	return std::string(instanceName);
 }
 
 bool AssetService::Save(const char* fileName, const TextureDesc& textureDesc, void* textureData)

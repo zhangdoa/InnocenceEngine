@@ -71,5 +71,15 @@ namespace Inno
 		static bool Save(const LightComponent& component);
 
 		static bool Save(const char* fileName, const TextureDesc& textureDesc, void* textureData);
+
+		// Load a standalone PNG/etc, BC-compress it for the given material
+		// slot, write {Generated/Components/<instanceName>.json + .innobin}.
+		// Returns the saved instance name on success, empty on failure.
+		static std::string ImportTexture(const char*    absolutePath,
+		                                 TextureSampler sampler,
+		                                 TextureUsage   usage,
+		                                 bool           isSRGB,
+		                                 uint32_t       slotIndex,
+		                                 const char*    instanceName);
 	};
 }
