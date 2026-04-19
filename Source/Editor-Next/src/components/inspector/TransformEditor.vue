@@ -78,23 +78,43 @@ const draft = reactive({
   scale:    [...(props.component.scale ?? [1, 1, 1])],
 })
 
-// Null when no axis is being edited; 0/1/2 while a rotation input is focused.
-// Server replies mid-edit overwrite the input's external value with the
-// re-decomposed quat, which Naive's NInputNumber surfaces as a cursor jump
-// and a strikethrough on the digit being typed. Freezing the focused axis
-// keeps typing stable; the next blur lets the server state land.
+// While a rotation input is focused we hold the draft's authoritative Euler
+// untouched; the null-case handler lets server echoes land normally.
 const focusedRotAxis = ref(null)
+
+// Queue of quats we committed locally but haven't yet seen echoed back. Each
+// reply for our own write should match the head of this queue — we drop it
+// and skip the Euler re-derivation, so repeated edits can't accumulate
+// quat↔Euler round-trip drift (gimbal branches flipping axes on us) as the
+// user types. A quat that doesn't match any pending entry is treated as an
+// external mutation and re-syncs the draft.
+const pendingQuatEchoes = []
+const QUAT_ECHO_TOL = 1e-5
+const sameQuat = (a, b) =>
+  !!a && !!b &&
+  Math.abs(a[0] - b[0]) < QUAT_ECHO_TOL &&
+  Math.abs(a[1] - b[1]) < QUAT_ECHO_TOL &&
+  Math.abs(a[2] - b[2]) < QUAT_ECHO_TOL &&
+  Math.abs(a[3] - b[3]) < QUAT_ECHO_TOL
 
 watch(
   () => props.component,
   (next) => {
     draft.pos   = [...(next.pos   ?? [0, 0, 0])]
     draft.scale = [...(next.scale ?? [1, 1, 1])]
-    const fresh = quatToEulerDeg(next.rot ?? [0, 0, 0, 1])
+
+    const fresh = next.rot ?? [0, 0, 0, 1]
+    const echoIdx = pendingQuatEchoes.findIndex((q) => sameQuat(q, fresh))
+    if (echoIdx >= 0) {
+      pendingQuatEchoes.splice(0, echoIdx + 1)
+      return
+    }
+
+    const freshEuler = quatToEulerDeg(fresh)
     const fi = focusedRotAxis.value
     draft.rotEuler = fi == null
-      ? fresh
-      : draft.rotEuler.map((v, i) => (i === fi ? v : fresh[i]))
+      ? freshEuler
+      : draft.rotEuler.map((v, i) => (i === fi ? v : freshEuler[i]))
   },
   { deep: true },
 )
@@ -125,6 +145,8 @@ const onRotAxis = (index, value) => {
   const nextEuler = [...draft.rotEuler]
   nextEuler[index] = value
   draft.rotEuler = nextEuler
-  commit('rot', eulerDegToQuat(nextEuler))
+  const quat = eulerDegToQuat(nextEuler)
+  pendingQuatEchoes.push(quat)
+  commit('rot', quat)
 }
 </script>
