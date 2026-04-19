@@ -351,6 +351,7 @@ bool FrameManagementService::WaitForGPUIdle()
 
 bool FrameManagementService::Resize()
 {
+	Log(Success, "FrameManagementService::Resize requested.");
 	m_needResize = true;
 	return true;
 }
@@ -458,9 +459,11 @@ bool FrameManagementService::ExecuteSwapChainCommands()
 
 bool FrameManagementService::ExecuteResize()
 {
+	Log(Success, "FrameManagementService::ExecuteResize begin.");
 	PreResize();
 	ResizeImpl();
 	PostResize();
+	Log(Success, "FrameManagementService::ExecuteResize complete.");
 
 	return true;
 }

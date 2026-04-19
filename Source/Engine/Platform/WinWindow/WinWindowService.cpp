@@ -230,8 +230,9 @@ bool WinWindowService::SendEvent(void* windowHook, uint32_t uMsg, uint32_t wPara
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
+			Log(Success, "WinWindowService: WM_SIZE ", l_newResolution.x, "x", l_newResolution.y);
 			g_Engine->Get<HIDService>()->WindowResizeCallback(l_newResolution.x, l_newResolution.y);
-			
+
 			return true;
 		}
 

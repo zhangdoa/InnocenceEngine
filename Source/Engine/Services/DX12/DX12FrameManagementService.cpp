@@ -1157,21 +1157,29 @@ bool DX12FrameManagementService::ResizeImpl()
         return true;
     }
 
-    Log(Verbose, "Resizing the swap chain...");
-
     auto l_screenResolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+    Log(Success, "DX12FrameManagementService::ResizeImpl: ",
+        l_screenResolution.x, "x", l_screenResolution.y);
 
     m_swapChainDesc.Width = (UINT)l_screenResolution.x;
     m_swapChainDesc.Height = (UINT)l_screenResolution.y;
 
-    auto l_semaphoreValue = m_ctx->m_directCommandQueueFence->GetCompletedValue();
-    auto l_globalSemaphore = reinterpret_cast<DX12Semaphore*>(m_GlobalSemaphore);
-
     m_swapChainImages.clear();
 
-    auto l_previousFrame = (m_CurrentFrame == 0 ? m_swapChainImageCount - 1 : m_CurrentFrame - 1);
-    Log(Verbose, "The current frame is ", m_CurrentFrame, " and the previous frame is ", l_previousFrame);
-    m_swapChain->ResizeBuffers(m_swapChainImageCount, m_swapChainDesc.Width, m_swapChainDesc.Height, m_swapChainDesc.Format, 0);
+    auto l_hResult = m_swapChain->ResizeBuffers(
+        m_swapChainImageCount,
+        m_swapChainDesc.Width,
+        m_swapChainDesc.Height,
+        m_swapChainDesc.Format,
+        0);
+
+    if (FAILED(l_hResult))
+    {
+        Log(Error, "DX12FrameManagementService::ResizeImpl: ResizeBuffers failed, HRESULT=", static_cast<int32_t>(l_hResult));
+        return false;
+    }
+
+    Log(Success, "DX12FrameManagementService::ResizeImpl: ResizeBuffers succeeded.");
 
     GetSwapChainImages();
 
