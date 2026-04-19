@@ -352,6 +352,10 @@ float GetLuma(float3 color)
 	return dot(color, float3(0.2126, 0.7152, 0.0722));
 }
 
+// sRGB D65 ↔ CIE XYZ. Rows are X, Y, Z linear combinations of R, G, B.
+// mul(M, v) treats v as a column vector and uses rows of M, so the
+// second output component is true CIE Y (relative luminance). This matters
+// for any code that then scales by luminance (exposure, tone mapping).
 static const float3x3 RGB_XYZ_Factor = float3x3(
 	0.4124564, 0.3575761, 0.1804375,
 	0.2126729, 0.7151522, 0.0721750,
@@ -366,12 +370,12 @@ static const float3x3 XYZ_RGB_Factor = float3x3(
 
 float3 RGB_XYZ(float3 rgb)
 {
-	return mul(rgb, RGB_XYZ_Factor);
+	return mul(RGB_XYZ_Factor, rgb);
 }
 
 float3 XYZ_RGB(float3 xyz)
 {
-	return mul(xyz, XYZ_RGB_Factor);
+	return mul(XYZ_RGB_Factor, xyz);
 }
 
 float3 XYZ_XYY(float3 xyz)
