@@ -23,14 +23,10 @@ import EditorFooter from './layout/EditorFooter.vue'
 import ImportModal from './layout/ImportModal.vue'
 import { panelStore } from '../store/panelStore'
 
-// Importing the stores at module load wires their engine-connected
-// subscriptions before the first paint — they self-refresh on connect.
-import '../store/connectionStore'
-import '../store/sceneStore'
-import '../store/assetStore'
-import '../store/devToggleStore'
-import '../store/renderTargetStore'
-import '../store/taskGraphStore'
+// Importing the store barrel wires every store's engine-connected
+// subscription before the first paint and exposes window.__innoStores for
+// Playwright harnesses to drive.
+import '../store'
 
 import 'dockview-vue/dist/styles/dockview.css'
 
