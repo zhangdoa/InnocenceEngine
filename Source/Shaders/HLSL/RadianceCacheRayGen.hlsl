@@ -34,87 +34,133 @@ float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
     return R2Sequence(baseIndex * 4u + sampleIndex);
 }
 
-// Sample from cumulative distribution function of reprojected radiance
-float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex)
+// GI-1.0 §2.1.3 ray guiding — hemisphere reconstruction across a 3x3 probe
+// neighbourhood with parallax correction (Figure 6).
+//
+// For each neighbour probe in the 3x3 tile window:
+//   1. Locate the neighbour's shading position (sampled from the opaque
+//      G-buffer at the neighbour tile's anchor pixel — inline, avoiding
+//      cross-thread races on in_ProbePosition which is being written by
+//      the same RayGen dispatch).
+//   2. Iterate the neighbour's 8x8 octahedral cells. For each cell:
+//        hit_ws  = neighbourPos + distance * cellDir    (distance stored
+//                  in alpha by [S1.2])
+//        dir_new = normalize(hit_ws - positionWS)       (re-aim from
+//                  current probe's frame)
+//   3. Scatter the radiance into the corresponding cell of the CURRENT
+//      probe's CDF, in the current probe's tangent frame.
+//
+// Rejection: neighbour positions beyond adaptive_cell_size * 3 are
+// dropped; sky pixels (rt0.w == 0) have no meaningful radiance.
+float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, float3 positionWS)
 {
-    float totalLuminance = 0.0;
     const int OCTAHEDRAL_SIZE = 8;
     float cellLuminance[64];
+    [unroll]
+    for (int init = 0; init < 64; init++)
+        cellLuminance[init] = 0.0;
+    float totalLuminance = 0.0;
 
-    for (int y = 0; y < OCTAHEDRAL_SIZE; y++)
+    int2 gridSize = int2(uint2(g_Frame.viewportSize.xy) / RADIANCE_CACHE_TILE_SIZE);
+    float currentDepth = length(positionWS - g_Frame.camera_posWS.xyz);
+    float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+    float maxNeighbourDist = cellSize * 3.0;
+
+    float2 jitter = float2(g_Frame.radianceCacheJitter_x, g_Frame.radianceCacheJitter_y);
+    uint2 jitterOffset = uint2(jitter);
+
+    for (int dy = -1; dy <= 1; dy++)
     {
-        for (int x = 0; x < OCTAHEDRAL_SIZE; x++)
+        for (int dx = -1; dx <= 1; dx++)
         {
-            int cellIndex = y * OCTAHEDRAL_SIZE + x;
-            float2 octUV = (float2(x, y) + 0.5) / OCTAHEDRAL_SIZE;
-            float3 cellDirection = DecodeOctahedral(octUV);
+            int2 neighbourIdx = int2(probeIndex) + int2(dx, dy);
+            if (any(neighbourIdx < int2(0, 0)) || any(neighbourIdx >= gridSize))
+                continue;
 
-            if (dot(cellDirection, normalWS) > 0.0)
+            int2 neighbourAnchor = neighbourIdx * int(RADIANCE_CACHE_TILE_SIZE) + int2(jitterOffset);
+            float4 neighbourRT0 = in_opaquePassRT0.Load(int3(neighbourAnchor, 0));
+            if (neighbourRT0.w == 0.0)
+                continue;                      // sky tile — nothing to reconstruct from
+            float3 neighbourPos = neighbourRT0.xyz;
+            if (distance(neighbourPos, positionWS) > maxNeighbourDist)
+                continue;                      // same heuristic as filter/reprojection
+
+            int2 neighbourScreenPos = neighbourIdx * int(RADIANCE_CACHE_TILE_SIZE);
+
+            for (int cy = 0; cy < OCTAHEDRAL_SIZE; cy++)
             {
-                uint2 atlasCoord = GetAtlasTextureCoordinates(float2(probeIndex * TILE_SIZE), cellDirection);
-                float luminance = GetLuma(in_RadianceCacheResults_Prev[atlasCoord].rgb);
-                cellLuminance[cellIndex] = luminance;
-                totalLuminance += luminance;
-            }
-            else
-            {
-                cellLuminance[cellIndex] = 0.0;
+                for (int cx = 0; cx < OCTAHEDRAL_SIZE; cx++)
+                {
+                    float2 octUV_n = (float2(cx, cy) + 0.5) / float(OCTAHEDRAL_SIZE);
+                    float3 dir_n = DecodeOctahedral(octUV_n);
+
+                    int2 atlasCoord = neighbourScreenPos + int2(cx, cy);
+                    float4 neighbourSample = in_RadianceCacheResults_Prev.Load(int3(atlasCoord, 0));
+                    float L = GetLuma(neighbourSample.rgb);
+                    if (L < 0.001)
+                        continue;              // empty cell — skip
+                    float d = neighbourSample.a;
+
+                    float3 hitWS = neighbourPos + d * dir_n;
+                    float3 dir_new = hitWS - positionWS;
+                    float len = length(dir_new);
+                    if (len < EPSILON)
+                        continue;
+                    dir_new /= len;
+
+                    if (dot(dir_new, normalWS) <= 0.0)
+                        continue;              // hemisphere reject in current probe's frame
+
+                    float2 octUV_new = EncodeOctahedral(dir_new);
+                    int2 newCellXY = clamp(int2(octUV_new * float(OCTAHEDRAL_SIZE)), int2(0, 0), int2(OCTAHEDRAL_SIZE - 1, OCTAHEDRAL_SIZE - 1));
+                    int newCellIndex = newCellXY.y * OCTAHEDRAL_SIZE + newCellXY.x;
+
+                    cellLuminance[newCellIndex] += L;
+                    totalLuminance += L;
+                }
             }
         }
     }
-    
-    // If no valid reprojected data, fall back to cosine-weighted sampling
+
+    // No usable reconstructed hemisphere → cosine-weighted fallback.
     if (totalLuminance < 0.001)
-    {
         return CosineWeightedHemisphereSample(Xi, normalWS);
-    }
-    
-    // Build cumulative distribution function
+
+    // Build CDF over current probe's cells, sample via Xi.x.
     float cdf[64];
     cdf[0] = cellLuminance[0];
     for (int i = 1; i < 64; i++)
-    {
-        cdf[i] = cdf[i-1] + cellLuminance[i];
-    }
-    
-    // Normalize CDF
+        cdf[i] = cdf[i - 1] + cellLuminance[i];
+
     float totalWeight = cdf[63];
     if (totalWeight > 0.0)
     {
-        for (int i = 0; i < 64; i++)
-        {
-            cdf[i] /= totalWeight;
-        }
+        [unroll]
+        for (int j = 0; j < 64; j++)
+            cdf[j] /= totalWeight;
     }
-    
+
     float randomValue = Xi.x;
     int selectedCell = 0;
-
-    for (int i = 0; i < 64; i++)
+    for (int k = 0; k < 64; k++)
     {
-        if (randomValue <= cdf[i])
+        if (randomValue <= cdf[k])
         {
-            selectedCell = i;
+            selectedCell = k;
             break;
         }
     }
-    
-    // Convert cell back to direction with jittering within cell
+
     int cellX = selectedCell % OCTAHEDRAL_SIZE;
     int cellY = selectedCell / OCTAHEDRAL_SIZE;
-    
-    float2 cellCenter = (float2(cellX, cellY) + 0.5) / OCTAHEDRAL_SIZE;
-    float2 jitteredUV = cellCenter + (Xi - 0.5) / OCTAHEDRAL_SIZE; // Jitter within cell
+    float2 cellCenter = (float2(cellX, cellY) + 0.5) / float(OCTAHEDRAL_SIZE);
+    float2 jitteredUV = cellCenter + (Xi - 0.5) / float(OCTAHEDRAL_SIZE);
     jitteredUV = clamp(jitteredUV, 0.0, 1.0);
-    
+
     float3 sampledDirection = DecodeOctahedral(jitteredUV);
-    
-    // Ensure we're in the correct hemisphere
     if (dot(sampledDirection, normalWS) <= 0.0)
-    {
         return CosineWeightedHemisphereSample(Xi, normalWS);
-    }
-    
+
     return normalize(sampledDirection);
 }
 
@@ -161,7 +207,7 @@ void RayGenShader()
     for (int i = 0; i < NUM_SAMPLES; i++)
     {
         float2 randVal = Hash2D(samplingScreenPos, i, g_Frame.frameIndex);
-        float3 sampleDir = ImportanceSampleFromCDF(randVal, normalWS, probeIndex);
+        float3 sampleDir = ImportanceSampleFromCDF(randVal, normalWS, probeIndex, positionWS);
 
         RayDesc ray;
         ray.Origin = positionWS + normalWS * 0.001;
