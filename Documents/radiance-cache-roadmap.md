@@ -100,9 +100,13 @@ HBIL-style horizon-based bent cone + AO mask; multiply bent cone by clamped cosi
 
 | ID | Slice | Status | Commit(s) |
 |---|---|---|---|
-| F | Foundation — cell size + mask (MIP chain deferred to [S1]) | ☑ (partial — single-level mask only) | |
-| S1 | Screen-cache convergence | ☐ | |
-| S2 | Screen-cache robustness | ☐ | |
+| F | Foundation — cell size + mask (MIP chain deferred to [S1.5]) | ☑ (partial — single-level mask only) | |
+| S1.1 | Algorithm 3 biased shadow-preserving temporal hysteresis | ☑ | |
+| S1.2 | Ray travel distance in atlas alpha (parallax prep) | ☑ | |
+| S1.3 | 3×3 neighbourhood CDF reconstruction with parallax correction | ☑ | |
+| S1.4 | Radiance-average backup for untraced cells | ☐ (deferred) | — |
+| S1.5 | Sparse spawning + Algorithm 2 adaptive hole-filling + mask MIP chain | ☐ | |
+| S2 | Screen-cache robustness (LRU side cache + mask-MIP filter) | ☐ | |
 | I | Irradiance evaluation | ☐ | |
 | W | World-cache overhaul | ☐ | |
 | L | Light sampling (opt) | ☐ | |
@@ -118,12 +122,57 @@ Shipped: shared header `common/RadianceCacheCommon.hlsl` with `AdaptiveCellSize`
 separable filter switched to the unified cell size. Re-enabled the GI
 passes (TASK-60 disablement lifted).
 
-Deferred: the mask MIP chain itself. With the current dense spawning, every
-tile is valid so the MIP walk is a no-op; [S1] will introduce sparse
-spawning and the MIP chain together, because the chain only does useful
-work in the presence of holes. The `FindClosestProbe` API is already
-MIP-shaped so callers won't change when the levels are populated.
+Deferred to [S1.5]: the mask MIP chain itself. With the current dense
+spawning, every tile is valid so the MIP walk is a no-op; sparse spawning
+and the MIP chain land together in [S1.5], because the chain only does
+useful work in the presence of holes. The `FindClosestProbe` API is
+already MIP-shaped so callers won't change when the levels are populated.
 
 Also in this slice: `common/common.hlsl` picked up include guards — needed
 because `RadianceCacheCommon.hlsl` transitively pulled `common.hlsl` into
 translation units that already included it via `RayTracingBindings.hlsl`.
+
+### [S1] landed pieces
+
+**[S1.1] Algorithm 3 temporal hysteresis** — replaces the ad-hoc EMA +
+relative-variance firefly clamp in RayGen with the paper's single formula
+(copied from the Capsaicin reference impl): t squared-normalised so the
+history dominates only when the new sample is more than 2× brighter than
+history (firefly rejection), with immediate adoption of darker samples
+for shadow preservation. The world-probe grid line got a hardcoded 0.1
+Karis EMA — its full treatment lives in [W].
+
+**[S1.2] Ray travel distance in atlas alpha** — `RayPayload` extended with
+a `distance` field; `ClosestHit` writes `RayTCurrent()`, `Miss` writes
+`ray.TMax`. RayGen stores the result in the atlas alpha channel so [S1.3]
+can parallax-correct reused cells.
+
+**[S1.3] 3×3 CDF reconstruction with parallax** — `ImportanceSampleFromCDF`
+iterates a 3×3 tile neighbourhood of reprojected probes, re-aims each
+neighbour cell's direction through its stored hit distance, and scatters
+the radiance into the current probe's octahedral CDF in the current
+probe's tangent frame. Neighbour positions come from the opaque G-buffer
+at each tile's anchor (avoids the cross-thread race on
+`in_ProbePosition` that would happen if we read it inside the same RayGen
+dispatch that writes it). Cell rejection uses the unified
+`AdaptiveCellSize * 3` threshold.
+
+### [S1] deferred pieces
+
+**[S1.4] Radiance-average backup** — paper §2.1.4 last paragraph. Only
+meaningful once per-cell sample counts are tracked (or ray budgets are
+high enough that "some cells populated, others not" is a frequent case).
+With the current 1-spp-per-probe configuration and a 64-cell octahedral
+map, distinguishing "no ray this frame" from "legitimately dark cell"
+requires tracking state we don't have. Deferred until [S1.5] lands the
+ray-redistribution queues, at which point the "untraced cell" set is
+explicitly known.
+
+**[S1.5] Sparse spawning + Algorithm 2 hole-filling + mask MIP chain** —
+the biggest sub-piece. Drives spawn via `upscaleFactor > 1` so one
+probe per `8·U_x × 8·U_y` tile spawns per frame; Halton(2,3) picks the
+sub-pixel each frame; adds `empty_tile` / `override_tile` queues and the
+`patch_screen_probes` kernel that steals rays from tiles that succeeded
+reprojection to fill disoccluded ones. Populates the probe-mask MIP chain
+that [F] scaffolded. Its own CL / session because it touches resource
+allocation, pass scheduling, and all four radiance-cache shaders.

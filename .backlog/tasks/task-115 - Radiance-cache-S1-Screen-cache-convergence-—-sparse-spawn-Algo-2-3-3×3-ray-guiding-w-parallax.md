@@ -3,9 +3,10 @@ id: TASK-115
 title: >-
   Radiance cache [S1] Screen-cache convergence — sparse spawn + Algo 2/3, 3×3
   ray guiding w/ parallax
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-20 17:36'
+updated_date: '2026-04-20 19:01'
 labels: []
 dependencies: []
 priority: medium
@@ -37,3 +38,9 @@ Doc: Documents/radiance-cache-roadmap.md §[S1]</description>
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-04-20: Landed [S1.1] Algorithm 3 hysteresis (73225d28), [S1.2] distance-in-alpha (a5271822), [S1.3] 3x3 neighbourhood CDF with parallax correction (30a3ff99). Remaining: [S1.4] radiance-average backup — deferred until ray redistribution in [S1.5] surfaces ‘untraced cell’ set explicitly; [S1.5] sparse spawning + Algorithm 2 hole-filling + mask MIP chain — big piece, deserves own session (touches resource allocation, pass scheduling, and all four radiance-cache shaders).
+<!-- SECTION:NOTES:END -->
