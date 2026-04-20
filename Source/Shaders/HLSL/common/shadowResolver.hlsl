@@ -19,10 +19,30 @@ static const float2 PoissonDisk[16] =
 	float2(0.14383161, -0.14100790)
 };
 
-// Soft Shadow Tuning Parameters
-#define LIGHT_SIZE 0.005 // Adjusted for a more visible soft shadow effect
+// Soft Shadow Tuning Parameters.
+// LIGHT_SIZE scales (receiverDepth - blockerDepth) → penumbra-size in texels.
+// PENUMBRA_MAX_TEXELS bounds the PCF kernel radius so near-camera blockers
+// don't explode the sample area.
+#define LIGHT_SIZE 2.0
+#define PENUMBRA_MAX_TEXELS 20.0
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.0003
+
+// Interleaved Gradient Noise — Jorge Jimenez, Next Generation Post Processing
+// in Call of Duty: Advanced Warfare (SIGGRAPH 2014). Returns angle in radians.
+// Per-pixel rotation of the Poisson kernel hides the fixed dot pattern that
+// makes a naive PCF look aliased.
+float ShadowKernelRotationAngle(float2 pixelCoord)
+{
+	float n = frac(52.9829189 * frac(dot(pixelCoord, float2(0.06711056, 0.00583715))));
+	return n * 6.28318530718; // 2*pi
+}
+
+float2 RotateOffset(float2 offset, float sinA, float cosA)
+{
+	return float2(offset.x * cosA - offset.y * sinA,
+				  offset.x * sinA + offset.y * cosA);
+}
 
 // Compute Adaptive Shadow Bias (Prevents Light Leaks)
 float ComputeShadowBias(float3 normalWS, float3 lightDir)
@@ -31,50 +51,65 @@ float ComputeShadowBias(float3 normalWS, float3 lightDir)
 	return lerp(MAX_SHADOW_BIAS, MIN_SHADOW_BIAS, cosTheta);
 }
 
-// Compute Depth-Based Blocker Search Size
+// Blocker-search radius, in texels. Larger radius finds more occluders
+// and produces larger penumbras; smaller radius is cheaper and keeps
+// shadow contacts crisp. Ramps mildly with depth so near-camera contact
+// shadows stay tight and far shadows get broader sampling.
 float GetBlockerSearchSize(float receiverDepth)
 {
-	return lerp(0.02, 0.08, saturate(receiverDepth * 0.01));
+	return lerp(4.0, 12.0, saturate(receiverDepth));
 }
 
-// Find Average Blocker Depth in Shadow Map
-float FindBlockerDepth(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize)
+// Find Average Blocker Depth in Shadow Map. Returns 1.0 when no occluders
+// were found so the caller can early-out and skip the PCF loop entirely.
+// The rotation (sinA, cosA) is a per-pixel twist of the Poisson kernel
+// shared with the PCF pass.
+float FindBlockerDepth(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize, float sinA, float cosA, out int outBlockerCount)
 {
 	int blockerCount = 0;
 	float totalBlockerDepth = 0.0;
 
 	float searchSize = GetBlockerSearchSize(currentDepth);
 
-	const int searchSamples = 16; // Blocker search sample count
+	const int searchSamples = 16;
 	for (int i = 0; i < searchSamples; ++i)
 	{
-		float2 offset = PoissonDisk[i] * texelSize * searchSize;
+		float2 offset = RotateOffset(PoissonDisk[i], sinA, cosA) * texelSize * searchSize;
 		float3 coord = float3(projCoords.xy + offset, shadowMapIndex);
 		float depthSample = shadowMap.SampleLevel(in_sampler, coord, 0).r;
 
-		if (depthSample < currentDepth)  // Detect blockers
+		if (depthSample < currentDepth)
 		{
 			totalBlockerDepth += depthSample;
 			blockerCount++;
 		}
 	}
 
+	outBlockerCount = blockerCount;
 	if (blockerCount == 0)
-		return 1.0; // No blockers found
+		return 1.0;
 
 	return totalBlockerDepth / blockerCount;
 }
 
-// Compute Penumbra Size (Soft Shadow Spread)
+// Compute Penumbra Size (Soft Shadow Spread), in texels.
 float ComputePenumbraSize(float receiverDepth, float blockerDepth)
 {
-	return clamp((receiverDepth - blockerDepth) * LIGHT_SIZE, 0.0f, 1.0f);
+	return clamp((receiverDepth - blockerDepth) * LIGHT_SIZE, 0.0f, PENUMBRA_MAX_TEXELS);
 }
 
-// PCSS Soft Shadows Implementation
-float PCSS(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize, float shadowBias)
+// PCSS Soft Shadows. Early-outs when no blockers were seen in the search
+// (fragment is lit — skip the 16-tap PCF). The (sinA, cosA) rotation is
+// applied to the same Poisson disk used for blocker search, so the two
+// passes share a coherent per-pixel pattern.
+float PCSS(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize, float shadowBias, float sinA, float cosA)
 {
-	float blockerDepth = FindBlockerDepth(projCoords, shadowMap, in_sampler, shadowMapIndex, currentDepth, texelSize);
+	int blockerCount = 0;
+	float blockerDepth = FindBlockerDepth(projCoords, shadowMap, in_sampler, shadowMapIndex, currentDepth, texelSize, sinA, cosA, blockerCount);
+
+	if (blockerCount == 0)
+		return 0.0;
+
 	float penumbraSize = ComputePenumbraSize(currentDepth, blockerDepth);
 
 	float shadow = 0.0;
@@ -82,7 +117,7 @@ float PCSS(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler,
 
 	for (int i = 0; i < filterSamples; ++i)
 	{
-		float2 offset = PoissonDisk[i] * texelSize * penumbraSize;
+		float2 offset = RotateOffset(PoissonDisk[i], sinA, cosA) * texelSize * penumbraSize;
 		float3 coord = float3(projCoords.xy + offset, shadowMapIndex);
 		float depthSample = shadowMap.SampleLevel(in_sampler, coord, 0).r;
 
@@ -92,8 +127,9 @@ float PCSS(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler,
 	return shadow / filterSamples;
 }
 
-// Sun Shadow Resolver (CSM Support + PCSS)
-float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shadowMap, SamplerState in_sampler, float3 lightDir)
+// Sun Shadow Resolver (CSM Support + PCSS). screenCoord is the compute-shader
+// thread index; used only as a stable seed for the per-pixel Poisson rotation.
+float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shadowMap, SamplerState in_sampler, float3 lightDir, uint2 screenCoord)
 {
 	int splitIndex = NR_CSM_SPLITS;
 	[unroll]
@@ -138,6 +174,13 @@ float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shado
 	// Compute adaptive shadow bias to prevent light leaks
 	float shadowBias = ComputeShadowBias(normalWS, lightDir);
 
-	// Use PCSS for Soft Shadows
-	return PCSS(projCoords, shadowMap, in_sampler, splitIndex, currentDepth, texelSize, shadowBias);
+	// Per-pixel rotation of the Poisson kernel. Both blocker-search and PCF
+	// loops share the same (sinA, cosA) so a given pixel samples a coherent
+	// rotated pattern; across pixels the pattern varies and hides the
+	// 16-tap dot signature.
+	float angle = ShadowKernelRotationAngle(float2(screenCoord));
+	float sinA, cosA;
+	sincos(angle, sinA, cosA);
+
+	return PCSS(projCoords, shadowMap, in_sampler, splitIndex, currentDepth, texelSize, shadowBias, sinA, cosA);
 }
