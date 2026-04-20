@@ -5,36 +5,71 @@
         {
             "Name": "ShaderBall.0",
             "Components": [
-                {"Type": 6, "Name": "ShaderBall.0.MeshComponent"},
-                {"Type": 7, "Name": "UnitTest.ShaderBall.DiffuseWhite.MaterialComponent", "Path": "ExampleProject/Components/"}
+                {
+                    "Type": 6,
+                    "Name": "ShaderBall.0.MeshComponent"
+                },
+                {
+                    "Type": 7,
+                    "Name": "UnitTest.ShaderBall.DiffuseWhite.MaterialComponent",
+                    "Path": "ExampleProject/Components/"
+                }
             ]
         },
         {
             "Name": "ShaderBall.1",
             "Components": [
-                {"Type": 6, "Name": "ShaderBall.1.MeshComponent"},
-                {"Type": 7, "Name": "UnitTest.ShaderBall.DielectricHalfRough.MaterialComponent", "Path": "ExampleProject/Components/"}
+                {
+                    "Type": 6,
+                    "Name": "ShaderBall.1.MeshComponent"
+                },
+                {
+                    "Type": 7,
+                    "Name": "UnitTest.ShaderBall.DielectricHalfRough.MaterialComponent",
+                    "Path": "ExampleProject/Components/"
+                }
             ]
         },
         {
             "Name": "ShaderBall.2",
             "Components": [
-                {"Type": 6, "Name": "ShaderBall.2.MeshComponent"},
-                {"Type": 7, "Name": "UnitTest.ShaderBall.DielectricSmooth.MaterialComponent", "Path": "ExampleProject/Components/"}
+                {
+                    "Type": 6,
+                    "Name": "ShaderBall.2.MeshComponent"
+                },
+                {
+                    "Type": 7,
+                    "Name": "UnitTest.ShaderBall.DielectricSmooth.MaterialComponent",
+                    "Path": "ExampleProject/Components/"
+                }
             ]
         },
         {
             "Name": "ShaderBall.3",
             "Components": [
-                {"Type": 6, "Name": "ShaderBall.3.MeshComponent"},
-                {"Type": 7, "Name": "UnitTest.ShaderBall.MetalHalfRough.MaterialComponent", "Path": "ExampleProject/Components/"}
+                {
+                    "Type": 6,
+                    "Name": "ShaderBall.3.MeshComponent"
+                },
+                {
+                    "Type": 7,
+                    "Name": "UnitTest.ShaderBall.MetalHalfRough.MaterialComponent",
+                    "Path": "ExampleProject/Components/"
+                }
             ]
         },
         {
             "Name": "ShaderBall.4",
             "Components": [
-                {"Type": 6, "Name": "ShaderBall.4.MeshComponent"},
-                {"Type": 7, "Name": "UnitTest.ShaderBall.MetalMirror.MaterialComponent", "Path": "ExampleProject/Components/"}
+                {
+                    "Type": 6,
+                    "Name": "ShaderBall.4.MeshComponent"
+                },
+                {
+                    "Type": 7,
+                    "Name": "UnitTest.ShaderBall.MetalMirror.MaterialComponent",
+                    "Path": "ExampleProject/Components/"
+                }
             ]
         }
     ]

@@ -1,8 +1,13 @@
-﻿{
+{
     "ComponentType": 7,
     "ShaderModel": 1,
-    "Albedo": {"R": 0.955, "G": 0.638, "B": 0.538, "A": 1.0},
-    "Metallic": 1,
+    "Albedo": {
+        "R": 0.955,
+        "G": 0.638,
+        "B": 0.538,
+        "A": 1.0
+    },
+    "Metallic": 1.0,
     "Roughness": 0.5,
     "AO": 1.0,
     "Thickness": 1.0,

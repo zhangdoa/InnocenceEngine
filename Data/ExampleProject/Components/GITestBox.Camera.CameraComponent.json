@@ -3,9 +3,9 @@
     "FOVX": 90.0,
     "WidthScale": 16.0,
     "HeightScale": 9.0,
-    "zNear": 0.0010000000474974513,
+    "zNear": 0.001,
     "zFar": 1000.0,
-    "Aperture": 2.200000047683716,
-    "ShutterTime": 0.0005000000237487257,
+    "Aperture": 2.2,
+    "ShutterTime": 0.0005,
     "ISO": 100.0
 }
