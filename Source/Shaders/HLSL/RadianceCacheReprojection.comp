@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common/common.hlsl"
+#include "common/RadianceCacheCommon.hlsl"
 #include "RayTracingTypes.hlsl"
 
 struct ComputeInputType
@@ -35,35 +35,33 @@ Texture2D<float4> in_ProbeNormal : register(t5);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 
-// Enhanced Heuristics for temporal stability
-static const float CELL_SIZE = 0.5;
-static const float NORMAL_THRESHOLD = 0.9; // Tighter normal matching
-static const float MAX_PLANE_DISTANCE = 0.5; // Closer distance matching
-static const float DEPTH_THRESHOLD = 0.1; // New: depth discontinuity detection
-static const float MIN_CONFIDENCE = 0.1; // Minimum confidence for reprojection
-static const float MAX_CONFIDENCE = 0.95; // Maximum confidence cap
+// Heuristics for temporal stability. NORMAL_THRESHOLD, DEPTH_THRESHOLD and
+// the confidence bounds are local to the reprojection's validity decision;
+// the spatial scale (plane / distance) comes from the unified Algorithm 6
+// AdaptiveCellSize so reprojection, sampling, and filter agree on what
+// counts as "same surface".
+static const float NORMAL_THRESHOLD = 0.9;
+static const float DEPTH_THRESHOLD = 0.1;
+static const float MIN_CONFIDENCE = 0.1;
+static const float MAX_CONFIDENCE = 0.95;
 
-// Confidence calculation for reprojection quality
 float CalculateReprojectionConfidence(
     float3 currentPos, float3 currentNormal,
     float3 prevPos, float3 prevNormal,
-    float2 motionVector, float depthDiff)
+    float2 motionVector, float depthDiff,
+    float cellSize)
 {
     float confidence = 1.0;
 
-    // Distance penalty
-    float distancePenalty = distance(currentPos, prevPos) / CELL_SIZE;
+    float distancePenalty = distance(currentPos, prevPos) / max(cellSize, EPSILON);
     confidence *= exp(-distancePenalty * distancePenalty);
 
-    // Normal similarity reward
     float normalSimilarity = max(0.0, dot(currentNormal, prevNormal));
     confidence *= normalSimilarity;
 
-    // Motion vector magnitude penalty (large motion = less confidence)
     float motionMagnitude = length(motionVector) / g_Frame.viewportSize.x;
     confidence *= exp(-motionMagnitude * 10.0);
 
-    // Depth discontinuity penalty
     confidence *= exp(-depthDiff * depthDiff / (DEPTH_THRESHOLD * DEPTH_THRESHOLD));
 
     return clamp(confidence, MIN_CONFIDENCE, MAX_CONFIDENCE);
@@ -143,7 +141,13 @@ void main(ComputeInputType input)
         float prevDepth = length(prevPositionWS_Probe - g_Frame.camera_posWS.xyz);
         float depthDiff = abs(currentDepth - prevDepth);
 
-        if (plane_dist < MAX_PLANE_DISTANCE &&
+        // Unified adaptive cell size (Algorithm 6). Threshold both the
+        // plane-distance acceptance and the confidence scoring by the same
+        // scale so the "can I reuse this probe?" decision here and the
+        // filter's "is this neighbor usable?" decision later are aligned.
+        float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+
+        if (plane_dist < cellSize &&
             normal_check > NORMAL_THRESHOLD &&
             depthDiff < DEPTH_THRESHOLD)
         {
@@ -152,10 +156,10 @@ void main(ComputeInputType input)
             threadConfidence = CalculateReprojectionConfidence(
                 positionWS, normalWS,
                 prevPositionWS_Probe, prevNormal_Probe,
-                motionVector, depthDiff);
+                motionVector, depthDiff, cellSize);
 
             // Score by distance; lower 16 bits carry groupIndex for winner identification
-            uint distScore = (uint)(saturate(dist / MAX_PLANE_DISTANCE) * 65535.0);
+            uint distScore = (uint)(saturate(dist / cellSize) * 65535.0);
             uint candidateScore = (distScore << 16) | input.groupIndex;
 
             InterlockedMin(sharedReprojectionScore, candidateScore);

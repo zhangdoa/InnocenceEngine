@@ -132,6 +132,7 @@ bool RadianceCacheReprojectionPass::Terminate()
 {
 
 	g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
+	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeMask);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Odd);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Even);
@@ -287,6 +288,18 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	m_WorldProbeGrid->m_ElementSize = sizeof(float) * 3 + sizeof(float) * 3 + sizeof(float);
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_WorldProbeGrid);
 
+	// GI-1.0 §2.1.5 probe_mask — one uint per tile. Source of truth for
+	// probe validity; single-buffered because writer (ray gen) and readers
+	// (filter) live in the same frame.
+	if (m_ProbeMask)
+		g_Engine->Get<TextureResourceService>()->Delete(m_ProbeMask);
+
+	m_ProbeMask = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Mask");
+	m_ProbeMask->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
+	m_ProbeMask->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::R;
+	m_ProbeMask->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeMask);
+
 	return true;
 }
 
@@ -347,4 +360,9 @@ TextureComponent* Inno::RadianceCacheReprojectionPass::GetPreviousProbeNormal()
 GPUBufferComponent* RadianceCacheReprojectionPass::GetWorldProbeGrid()
 {
 	return m_WorldProbeGrid;
+}
+
+TextureComponent* RadianceCacheReprojectionPass::GetProbeMask()
+{
+	return m_ProbeMask;
 }

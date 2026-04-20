@@ -1,4 +1,6 @@
 // shadertype=hlsl
+#ifndef COMMON_HLSL
+#define COMMON_HLSL
 
 static const float EPSILON = 0.00001;
 static const float PI = 3.14159265359;
@@ -584,3 +586,5 @@ DX12IndirectDrawCommand BuildIndirectDrawCommand(uint objectIndex, GPUModelData 
     cmd.m_Padding2 = 0;
     return cmd;
 }
+
+#endif // COMMON_HLSL

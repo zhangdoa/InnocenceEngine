@@ -1,0 +1,74 @@
+// shadertype=hlsl
+#ifndef RADIANCE_CACHE_COMMON_HLSL
+#define RADIANCE_CACHE_COMMON_HLSL
+
+#include "common.hlsl"
+
+// GI-1.0 (Boissé et al., AMD, 2022) primitives shared across the radiance
+// cache passes. See Documents/radiance-cache-roadmap.md for the sub-project
+// ordering; this header covers the [F] Foundation slice.
+
+// Paper §2.1: screen probes tile the framebuffer in 8x8 pixel blocks, one
+// probe per tile. The same constant is the pixel spacing between probe
+// anchors that feeds Algorithm 6 (adaptive cell size).
+static const uint RADIANCE_CACHE_TILE_SIZE = 8;
+
+// Probe-mask encoding. Per paper §2.1.5 each tile stores the 32-bit encoded
+// sub-tile pixel coordinate of its spawned probe, or a sentinel when the
+// tile holds no usable probe (sky, off-surface, or disoccluded). The mask
+// is the source of truth for "is there a probe here?" — consumers must not
+// infer validity from the probe position texture alone (that texture can
+// carry stale data from the previous frame inside a currently-invalid tile).
+static const uint PROBE_MASK_INVALID = 0xFFFFFFFFu;
+
+uint PackProbeMask(uint2 subTilePixel)
+{
+    return (subTilePixel.y << 16) | (subTilePixel.x & 0xFFFFu);
+}
+
+uint2 UnpackProbeMask(uint packed)
+{
+    return uint2(packed & 0xFFFFu, packed >> 16);
+}
+
+bool IsValidProbe(uint packed)
+{
+    return packed != PROBE_MASK_INVALID;
+}
+
+// GI-1.0 Algorithm 6 — adaptive cell size in world units, a single
+// heuristic threading reprojection, sampling, and filter. The paper's form:
+//   cell_size = depth * tan(fovY * cell_size_px / max(W, H)) / sqrt(2) * delta
+// with cell_size_px = 8 (target neighbor-probe pixel spacing) and delta = 1.
+// fovY is recovered from the projection matrix at runtime — p[1][1] equals
+// 1 / tan(fovY / 2) under the engine's row-vector convention.
+float AdaptiveCellSize(float depth, float2 viewportSize, float4x4 proj)
+{
+    float tanHalfFovY = 1.0 / max(proj[1][1], EPSILON);
+    float fovY = 2.0 * atan(tanHalfFovY);
+    float cellSizePx = float(RADIANCE_CACHE_TILE_SIZE);
+    float maxDim = max(viewportSize.x, viewportSize.y);
+    return depth * tan(fovY * cellSizePx / maxDim) / SQRT2;
+}
+
+// GI-1.0 Algorithm 4 — sparse directional probe search. [F] lands a
+// single-level mask sufficient for dense spawning; [S1] will extend this
+// to a full MIP-chain walk once sparse spawning introduces real holes.
+struct ProbeLookup
+{
+    int2 tileCoord;
+    uint packed;
+};
+
+ProbeLookup FindClosestProbe(Texture2D<uint> probeMask, int2 pixel, int2 offsetInProbes, int2 gridSize)
+{
+    ProbeLookup r;
+    r.tileCoord = (pixel / int(RADIANCE_CACHE_TILE_SIZE)) + offsetInProbes;
+    r.packed = PROBE_MASK_INVALID;
+    if (any(r.tileCoord < int2(0, 0)) || any(r.tileCoord >= gridSize))
+        return r;
+    r.packed = probeMask.Load(int3(r.tileCoord, 0));
+    return r;
+}
+
+#endif // RADIANCE_CACHE_COMMON_HLSL

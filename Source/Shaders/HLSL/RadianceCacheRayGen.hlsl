@@ -1,5 +1,6 @@
 // shadertype=hlsl
 #include "RayTracingBindings.hlsl"
+#include "common/RadianceCacheCommon.hlsl"
 
 float3 CosineWeightedHemisphereSample(float2 Xi, float3 N)
 {
@@ -129,16 +130,21 @@ void RayGenShader()
     uint2 jitterOffset = uint2(jitter);
     uint2 samplingScreenPos = probeScreenPos + jitterOffset;
 
-    // Fetch world space position
+    // Fetch world space position. Paper §2.1.5: tiles without a usable
+    // probe (sky, NaN position) are flagged with PROBE_MASK_INVALID so the
+    // filter and downstream interpolation can skip them instead of
+    // inheriting stale data from the previous frame.
     bool valid = in_opaquePassRT0.Load(int3(samplingScreenPos, 0)).w == 1.0;
     if (!valid)
     {
+        in_ProbeMask[probeIndex] = PROBE_MASK_INVALID;
         return;
     }
 
     float3 positionWS = in_opaquePassRT0.Load(int3(samplingScreenPos, 0)).xyz;
     if (isnan(positionWS.x) || isnan(positionWS.y) || isnan(positionWS.z))
     {
+        in_ProbeMask[probeIndex] = PROBE_MASK_INVALID;
         return;
     }
 
@@ -148,6 +154,7 @@ void RayGenShader()
     // Store probe position and normal for the next frame's reprojection pass
     in_ProbePosition[probeIndex] = float4(positionWS, 1);
     in_ProbeNormal[probeIndex] = float4(normalWS, 1);
+    in_ProbeMask[probeIndex] = PackProbeMask(jitterOffset);
 
     const int NUM_SAMPLES = 1;
 

@@ -303,14 +303,11 @@ namespace Inno
 			OpaqueCullingPass::Get().PrepareCommandList();
 			OpaquePass::Get().PrepareCommandList();
 
-			// TASK-60 DEBUG: the radiance-cache GI pipeline dominates per-pixel
-			// noise and masks direct-lighting issues. Disabled while chasing the
-			// missing sun shadows. Re-enable once TASK-60 closes.
-			// RadianceCacheReprojectionPass::Get().PrepareCommandList();
-			// RadianceCacheRaytracingPass::Get().PrepareCommandList();
-			// RadianceCacheFilterHorizontalPass::Get().PrepareCommandList();
-			// RadianceCacheFilterVerticalPass::Get().PrepareCommandList();
-			// RadianceCacheIntegrationPass::Get().PrepareCommandList();
+			RadianceCacheReprojectionPass::Get().PrepareCommandList();
+			RadianceCacheRaytracingPass::Get().PrepareCommandList();
+			RadianceCacheFilterHorizontalPass::Get().PrepareCommandList();
+			RadianceCacheFilterVerticalPass::Get().PrepareCommandList();
+			RadianceCacheIntegrationPass::Get().PrepareCommandList();
 
 			SSAOPass::Get().PrepareCommandList();
 

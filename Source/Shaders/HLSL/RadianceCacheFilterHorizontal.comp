@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common/common.hlsl"
+#include "common/RadianceCacheCommon.hlsl"
 #include "RayTracingTypes.hlsl"
 
 struct ComputeInputType
@@ -25,142 +25,106 @@ Texture2D<float4> in_ProbePosition : register(t1);
 [[vk::binding(2, 1)]]
 Texture2D<float4> in_ProbeNormal : register(t2);
 
+[[vk::binding(3, 1)]]
+Texture2D<uint> in_ProbeMask : register(t3);
+
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> out_FilteredRadianceCache : register(u0);
 
-// AMD GI 1.0 Algorithm 4: Sparse directional search in probe space
-uint FindClosestProbe(int2 pixel, int2 offset, uint mipLevel)
-{
-    int2 probeSpace = pixel / 8; // Transform to probe space
-    
-    for (uint mip = mipLevel; mip < 4; mip++) // Max 4 mip levels
-    {
-        int2 pos = probeSpace + offset;
-        pos = pos >> mip; // Scale by mip level
-        
-        // Check bounds
-        uint2 probeGridSize = uint2(g_Frame.viewportSize.xy) / 8;
-        if (any(pos < int2(0, 0)) || any(pos >= int2(probeGridSize)))
-            continue;
-            
-        // Check if probe exists (not sentinel)
-        float4 probePos = in_ProbePosition.Load(int3(pos, 0));
-        if (probePos.w > 0.0) // Valid probe
-        {
-            return (pos.y << 16) | pos.x; // Pack coordinates
-        }
-    }
-    
-    return 0xFFFFFFFF; // Sentinel value
-}
-
-// AMD GI 1.0 Algorithm 5: Horizontal pass of separable bilateral filter
+// GI-1.0 Algorithm 5: horizontal pass of the separable bilateral filter.
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
     uint2 screenCoord = input.dispatchThreadID.xy;
-    uint2 probeCoord = screenCoord / 8;
-    
-    // Get current probe information
-    float4 currentProbePos = in_ProbePosition.Load(int3(probeCoord, 0));
-    if (currentProbePos.w <= 0.0) // Invalid probe
+    int2 probeCoord = int2(screenCoord / RADIANCE_CACHE_TILE_SIZE);
+    int2 gridSize = int2(uint2(g_Frame.viewportSize.xy) / RADIANCE_CACHE_TILE_SIZE);
+
+    // Validity is driven by the probe mask per paper §2.1.5, not by the
+    // position texture's alpha (which can hold stale data from a frame
+    // where the tile was valid but this frame is sky / disoccluded).
+    uint currentMask = in_ProbeMask.Load(int3(probeCoord, 0));
+    if (!IsValidProbe(currentMask))
     {
         out_FilteredRadianceCache[screenCoord] = float4(0, 0, 0, 0);
         return;
     }
-    
-    float3 currentPosWS = currentProbePos.xyz;
+
+    float3 currentPosWS = in_ProbePosition.Load(int3(probeCoord, 0)).xyz;
     float3 currentNormal = normalize(in_ProbeNormal.Load(int3(probeCoord, 0)).xyz);
-    
-    // Calculate direction for this texel within the probe
-    uint2 localCoord = screenCoord % 8;
-    float2 octUV = (float2(localCoord) + 0.5) / 8.0;
+
+    uint2 localCoord = screenCoord % RADIANCE_CACHE_TILE_SIZE;
+    float2 octUV = (float2(localCoord) + 0.5) / float(RADIANCE_CACHE_TILE_SIZE);
     float3 sampleDir = DecodeOctahedral(octUV);
-    
-    // Only process hemisphere above surface
+
     if (dot(sampleDir, currentNormal) <= 0.0)
     {
         out_FilteredRadianceCache[screenCoord] = float4(0, 0, 0, 0);
         return;
     }
-    
+
     float4 currentRadiance = in_RadianceCacheResults.Load(int3(screenCoord, 0));
     float currentDepth = length(currentPosWS - g_Frame.camera_posWS.xyz);
-    
-    // AMD GI 1.0 adaptive cell size heuristic
-    float cellSize = currentDepth * tan(g_Frame.aperture * 8.0 / max(g_Frame.viewportSize.x, g_Frame.viewportSize.y));
-    cellSize = max(cellSize, 0.1); // Minimum cell size
-    
-    // HORIZONTAL PASS ONLY - 7 taps along X axis
-    float4 filteredRadiance = currentRadiance;
-    float totalWeight = 1.0;
-    
-    // Gaussian kernel weights for 7-tap filter
+
+    // Unified adaptive cell size (Algorithm 6) — same heuristic across
+    // reprojection, sampling, and filter. Floored at 0.1 world units so
+    // the filter still does work at depths where the per-probe footprint
+    // shrinks below sub-millimetre and the plane / depth tests become
+    // noise-sensitive.
+    float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+
+    // 7-tap Gaussian weights for the horizontal pass.
     static const float weights[7] = { 0.006, 0.061, 0.242, 0.383, 0.242, 0.061, 0.006 };
     static const int offsets[7] = { -3, -2, -1, 0, 1, 2, 3 };
-    
-    filteredRadiance = float4(0, 0, 0, 0);
-    totalWeight = 0.0;
-    
+
+    float4 filteredRadiance = float4(0, 0, 0, 0);
+    float totalWeight = 0.0;
+
     for (int i = 0; i < 7; i++)
     {
-        int2 offset = int2(offsets[i], 0); // Horizontal only
-        uint2 sampleCoord = screenCoord + offset;
-        
-        // Bounds check
-        if (any(sampleCoord >= uint2(g_Frame.viewportSize.xy)))
+        int2 offset = int2(offsets[i], 0);
+        int2 sampleCoord = int2(screenCoord) + offset;
+
+        if (any(sampleCoord < int2(0, 0)) || any(sampleCoord >= int2(g_Frame.viewportSize.xy)))
             continue;
-            
-        uint2 sampleProbeCoord = sampleCoord / 8;
-        
-        // Check if sample is within same probe
+
+        int2 sampleProbeCoord = sampleCoord / int(RADIANCE_CACHE_TILE_SIZE);
+
         if (any(sampleProbeCoord != probeCoord))
         {
-            // Find closest probe using sparse search
-            uint packedProbe = FindClosestProbe(int2(screenCoord), offset / 8, 0);
-            if (packedProbe == 0xFFFFFFFF) continue;
-            
-            // Unpack and validate probe
-            int2 neighborProbeCoord = int2(packedProbe & 0xFFFF, packedProbe >> 16);
-            float4 neighborProbePos = in_ProbePosition.Load(int3(neighborProbeCoord, 0));
-            float3 neighborNormal = normalize(in_ProbeNormal.Load(int3(neighborProbeCoord, 0)).xyz);
-            
-            // AMD GI 1.0 validation tests
-            float plane_dist = abs(dot(neighborProbePos.xyz - currentPosWS, currentNormal));
+            // Neighbor tile — consult the mask; invalid → skip this tap.
+            ProbeLookup neighbor = FindClosestProbe(in_ProbeMask, sampleCoord, int2(0, 0), gridSize);
+            if (!IsValidProbe(neighbor.packed))
+                continue;
+
+            float3 neighborPosWS = in_ProbePosition.Load(int3(neighbor.tileCoord, 0)).xyz;
+            float3 neighborNormal = normalize(in_ProbeNormal.Load(int3(neighbor.tileCoord, 0)).xyz);
+
+            float plane_dist = abs(dot(neighborPosWS - currentPosWS, currentNormal));
             float normal_check = dot(neighborNormal, currentNormal);
-            
+
             if (plane_dist > cellSize || normal_check < 0.9)
                 continue;
         }
-        
+
         float4 sampleRadiance = in_RadianceCacheResults.Load(int3(sampleCoord, 0));
 
-        // Depth-based bilateral weight (geometry-aware, not circular)
-        uint2 sampleProbeForDepth = sampleCoord / 8;
-        float4 sampleProbePos = in_ProbePosition.Load(int3(sampleProbeForDepth, 0));
-        float sampleDepth = length(sampleProbePos.xyz - g_Frame.camera_posWS.xyz);
+        float3 sampleProbePos = in_ProbePosition.Load(int3(sampleProbeCoord, 0)).xyz;
+        float sampleDepth = length(sampleProbePos - g_Frame.camera_posWS.xyz);
         float depthWeight = 1.0 / (1.0 + abs(currentDepth - sampleDepth) / cellSize);
 
-        // Final weight combines Gaussian and depth-based bilateral
         float weight = weights[i] * depthWeight;
-        
+
         filteredRadiance += sampleRadiance * weight;
         totalWeight += weight;
     }
-    
-    // Normalize and clamp
+
     if (totalWeight > 0.0)
-    {
         filteredRadiance /= totalWeight;
-    }
     else
-    {
         filteredRadiance = currentRadiance;
-    }
-    
-    // Prevent negative values
+
     filteredRadiance.rgb = max(filteredRadiance.rgb, float3(0.0, 0.0, 0.0));
-    
+
     out_FilteredRadianceCache[screenCoord] = filteredRadiance;
     DeviceMemoryBarrier();
 }

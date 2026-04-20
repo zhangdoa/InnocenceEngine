@@ -100,7 +100,7 @@ HBIL-style horizon-based bent cone + AO mask; multiply bent cone by clamped cosi
 
 | ID | Slice | Status | Commit(s) |
 |---|---|---|---|
-| F | Foundation — cell size + mask MIP | ☐ | |
+| F | Foundation — cell size + mask (MIP chain deferred to [S1]) | ☑ (partial — single-level mask only) | |
 | S1 | Screen-cache convergence | ☐ | |
 | S2 | Screen-cache robustness | ☐ | |
 | I | Irradiance evaluation | ☐ | |
@@ -109,3 +109,21 @@ HBIL-style horizon-based bent cone + AO mask; multiply bent cone by clamped cosi
 | X | Short-range SS GI (opt) | ☐ | |
 
 Backlog subtasks filed per slice; each updates this table on landing.
+
+### [F] landed scope vs. planned
+
+Shipped: shared header `common/RadianceCacheCommon.hlsl` with `AdaptiveCellSize`
+(Algorithm 6), probe-mask pack/unpack, and `FindClosestProbe`. New
+`ProbeMask` UAV/SRV wired through RayGen → Filter. Reprojection and the
+separable filter switched to the unified cell size. Re-enabled the GI
+passes (TASK-60 disablement lifted).
+
+Deferred: the mask MIP chain itself. With the current dense spawning, every
+tile is valid so the MIP walk is a no-op; [S1] will introduce sparse
+spawning and the MIP chain together, because the chain only does useful
+work in the presence of holes. The `FindClosestProbe` API is already
+MIP-shaped so callers won't change when the levels are populated.
+
+Also in this slice: `common/common.hlsl` picked up include guards — needed
+because `RadianceCacheCommon.hlsl` transitively pulled `common.hlsl` into
+translation units that already included it via `RayTracingBindings.hlsl`.

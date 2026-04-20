@@ -23,6 +23,7 @@ namespace Inno
 		TextureComponent* GetPreviousProbePosition();
 		TextureComponent* GetCurrentProbeNormal();
 		TextureComponent* GetPreviousProbeNormal();
+		TextureComponent* GetProbeMask();
 
 	private:
 		const uint32_t TILE_SIZE = 8;
@@ -36,6 +37,7 @@ namespace Inno
 		TextureComponent* m_ProbePosition_Even;
 		TextureComponent* m_ProbeNormal_Odd;
 		TextureComponent* m_ProbeNormal_Even;
+		TextureComponent* m_ProbeMask;
 
 		GPUBufferComponent* m_WorldProbeGrid;
 

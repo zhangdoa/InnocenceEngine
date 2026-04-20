@@ -38,3 +38,9 @@ RWTexture2D<float4> in_ProbePosition : register(u2);
 
 [[vk::binding(3, 2)]]
 RWTexture2D<float4> in_ProbeNormal : register(u3);
+
+// GI-1.0 §2.1.5 probe_mask — one texel per 8x8 tile. Encodes the sub-tile
+// pixel coords of the spawned probe (PackProbeMask) or PROBE_MASK_INVALID
+// when the tile has no usable probe. Source of truth for probe validity.
+[[vk::binding(4, 2)]]
+RWTexture2D<uint> in_ProbeMask : register(u4);

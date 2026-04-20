@@ -1,9 +1,10 @@
 ---
 id: TASK-114
 title: 'Radiance cache [F] Foundation — unified adaptive cell size + probe mask MIP'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-20 17:35'
+updated_date: '2026-04-20 18:14'
 labels: []
 dependencies: []
 priority: medium
@@ -43,3 +44,9 @@ Doc: Documents/radiance-cache-roadmap.md §[F]</description>
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-04-20: Shipped shared HLSL header (AdaptiveCellSize, probe-mask pack/unpack, FindClosestProbe), ProbeMask UAV written by RayGen, Filter H/V read it as SRV; Reprojection + Filter use unified cell size; TASK-60 disablement lifted. Deferred the mask MIP chain to [S1] — with dense spawning every tile is valid so MIP walk is a no-op until sparse spawning lands. Main.exe 10-frame exit 0; scene-reload (20 frames, reload at 10) exit 0.
+<!-- SECTION:NOTES:END -->
