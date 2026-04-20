@@ -35,6 +35,17 @@ Texture2D<float4> in_ProbeNormal : register(t5);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 
+// Under sparse spawning, Reprojection owns the "this tile has no usable
+// data" signal — it flags sky tiles and tiles where no previous probe
+// could be reused as PROBE_MASK_INVALID so downstream passes (filter,
+// interpolation, RayGen's 3x3 neighbourhood scatter) can skip them.
+// Successful-reprojection tiles leave the mask untouched; the mask then
+// reflects "the last time any RayGen spawn wrote here" — stale position
+// data up to ξ_x·ξ_y frames old, but radiance has been reprojected each
+// frame so this is paper-compliant hysteresis.
+[[vk::binding(1, 2)]]
+RWTexture2D<uint> in_ProbeMask : register(u1);
+
 // Heuristics for temporal stability. NORMAL_THRESHOLD, DEPTH_THRESHOLD and
 // the confidence bounds are local to the reprojection's validity decision;
 // the spatial scale (plane / distance) comes from the unified Algorithm 6
@@ -190,6 +201,10 @@ void main(ComputeInputType input)
                     in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
                 }
             }
+            // Invalidate the mask so filter/interpolation skip this tile.
+            // RayGen may later write a fresh mask if this tile is its
+            // Halton-selected spawn tile for the current frame.
+            in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
         }
         DeviceMemoryBarrier();
         return;
@@ -218,20 +233,20 @@ void main(ComputeInputType input)
     }
     else if (input.groupIndex == 0)
     {
-        // No valid reprojection found - use current sample with reduced confidence
+        // No valid reprojection found: tile's history is unreliable this
+        // frame. Clear to zero and invalidate the mask so downstream passes
+        // skip the stale data. If this is the Halton-selected spawn tile
+        // for the current frame, RayGen will write a fresh valid mask and
+        // radiance below; otherwise the tile remains empty until its next
+        // spawn turn (at most ξ_x * ξ_y frames).
         for (uint i = 0; i < 8; i++)
         {
             for (uint j = 0; j < 8; j++)
             {
-                uint2 currentPixel = screenCoord_Probe + uint2(i, j);
-                float4 currentSample = in_RadianceCacheResults[currentPixel];
-
-                // Apply stability clamping
-                currentSample.rgb = max(currentSample.rgb, float3(0.0, 0.0, 0.0));
-
-                in_RadianceCacheResults[currentPixel] = currentSample;
+                in_RadianceCacheResults[screenCoord_Probe + uint2(i, j)] = float4(0, 0, 0, 0);
             }
         }
+        in_ProbeMask[screenCoord_Probe / 8] = PROBE_MASK_INVALID;
     }
 
     DeviceMemoryBarrier();

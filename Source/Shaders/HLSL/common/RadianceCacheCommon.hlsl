@@ -14,26 +14,45 @@
 static const uint RADIANCE_CACHE_TILE_SIZE = 8;
 
 // Probe-mask encoding. Per paper §2.1.5 each tile stores the 32-bit encoded
-// sub-tile pixel coordinate of its spawned probe, or a sentinel when the
-// tile holds no usable probe (sky, off-surface, or disoccluded). The mask
-// is the source of truth for "is there a probe here?" — consumers must not
-// infer validity from the probe position texture alone (that texture can
-// carry stale data from the previous frame inside a currently-invalid tile).
-static const uint PROBE_MASK_INVALID = 0xFFFFFFFFu;
+// sub-tile pixel coordinate of its spawned probe. Bit 31 is the VALID flag
+// so all-zero (uninitialised / cleared) memory correctly reads as INVALID,
+// removing the need for a per-frame mask clear under sparse spawning where
+// most tiles inherit their mask from a previous frame's spawn. Consumers
+// must not infer validity from the probe position texture alone — that
+// texture can carry stale data from a frame where the tile was valid but
+// is now sky or disoccluded.
+static const uint PROBE_MASK_INVALID = 0u;
+static const uint PROBE_MASK_VALID_BIT = 0x80000000u;
 
 uint PackProbeMask(uint2 subTilePixel)
 {
-    return (subTilePixel.y << 16) | (subTilePixel.x & 0xFFFFu);
+    return PROBE_MASK_VALID_BIT | (subTilePixel.y << 16) | (subTilePixel.x & 0xFFFFu);
 }
 
 uint2 UnpackProbeMask(uint packed)
 {
-    return uint2(packed & 0xFFFFu, packed >> 16);
+    return uint2(packed & 0xFFFFu, (packed >> 16) & 0x7FFFu);
 }
 
 bool IsValidProbe(uint packed)
 {
-    return packed != PROBE_MASK_INVALID;
+    return (packed & PROBE_MASK_VALID_BIT) != 0u;
+}
+
+// Halton low-discrepancy sequence. GI-1.0 §2.1.1 uses Halton(2) / Halton(3)
+// to pick the anchor pixel inside each spawn tile; over ξ_x * ξ_y frames the
+// sequence visits every (8-pixel-aligned) sub-region of the spawn tile once.
+float Halton(uint i, uint base)
+{
+    float result = 0.0;
+    float f = 1.0;
+    while (i > 0u)
+    {
+        f /= float(base);
+        result += f * float(i % base);
+        i /= base;
+    }
+    return result;
 }
 
 // GI-1.0 Algorithm 6 — adaptive cell size in world units, a single

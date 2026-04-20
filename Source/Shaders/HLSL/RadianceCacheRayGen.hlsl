@@ -66,9 +66,6 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, flo
     float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
     float maxNeighbourDist = cellSize * 3.0;
 
-    float2 jitter = float2(g_Frame.radianceCacheJitter_x, g_Frame.radianceCacheJitter_y);
-    uint2 jitterOffset = uint2(jitter);
-
     for (int dy = -1; dy <= 1; dy++)
     {
         for (int dx = -1; dx <= 1; dx++)
@@ -77,10 +74,20 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, flo
             if (any(neighbourIdx < int2(0, 0)) || any(neighbourIdx >= gridSize))
                 continue;
 
-            int2 neighbourAnchor = neighbourIdx * int(RADIANCE_CACHE_TILE_SIZE) + int2(jitterOffset);
+            // Under sparse spawning each neighbour was anchored at its own
+            // Halton-picked sub-tile pixel in whichever frame last spawned
+            // it; use the mask's stored sub-pixel to locate its G-buffer
+            // position this frame rather than assuming all tiles share the
+            // current frame's Halton offset.
+            uint neighbourMask = in_ProbeMask[uint2(neighbourIdx)];
+            if (!IsValidProbe(neighbourMask))
+                continue;
+            uint2 neighbourSubPixel = UnpackProbeMask(neighbourMask);
+
+            int2 neighbourAnchor = neighbourIdx * int(RADIANCE_CACHE_TILE_SIZE) + int2(neighbourSubPixel);
             float4 neighbourRT0 = in_opaquePassRT0.Load(int3(neighbourAnchor, 0));
             if (neighbourRT0.w == 0.0)
-                continue;                      // sky tile — nothing to reconstruct from
+                continue;                      // tile is sky this frame — skip
             float3 neighbourPos = neighbourRT0.xyz;
             if (distance(neighbourPos, positionWS) > maxNeighbourDist)
                 continue;                      // same heuristic as filter/reprojection
@@ -167,19 +174,30 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, flo
 [shader("raygeneration")]
 void RayGenShader()
 {
-    uint2 probeIndex = DispatchRaysIndex().xy;
-    uint2 upscaledProbeSize = probeAtlasSize * upscaleFactor;
-    uint2 probeScreenPos = probeIndex * upscaledProbeSize;
+    // GI-1.0 §2.1.1 sparse spawn: dispatch is sized at spawn-tile granularity
+    // (viewport / (8·ξ_x, 8·ξ_y)). Each thread owns one spawn tile and spawns
+    // exactly one probe inside it per frame, at a Halton-picked pixel. The
+    // remaining (ξ_x·ξ_y - 1) probe slots inside the spawn tile inherit
+    // whatever Reprojection has for them — reprojected radiance if the
+    // temporal reuse succeeded, PROBE_MASK_INVALID if it didn't.
+    uint2 spawnIndex = DispatchRaysIndex().xy;
+    uint2 spawnTileOrigin = spawnIndex * spawnTileSize;
 
-    // Apply jittering to select a random pixel within the probe tile
-    float2 jitter = float2(g_Frame.radianceCacheJitter_x, g_Frame.radianceCacheJitter_y);
-    uint2 jitterOffset = uint2(jitter);
-    uint2 samplingScreenPos = probeScreenPos + jitterOffset;
+    // Halton(2) / Halton(3) — pick pixel inside the (8·ξ_x × 8·ξ_y) spawn
+    // tile for this frame. The ξ_x · ξ_y permutation cycles through all
+    // probe-tile slots within the spawn tile over that many frames.
+    float2 haltonUV = float2(Halton(g_Frame.frameIndex, 2u), Halton(g_Frame.frameIndex, 3u));
+    uint2 pixelInSpawn = uint2(haltonUV * float2(spawnTileSize));
+    uint2 samplingScreenPos = spawnTileOrigin + pixelInSpawn;
+
+    // Derive probe tile and sub-tile pixel from the Halton-chosen pixel.
+    uint2 probeIndex = samplingScreenPos / RADIANCE_CACHE_TILE_SIZE;
+    uint2 subTilePixel = samplingScreenPos % RADIANCE_CACHE_TILE_SIZE;
+    uint2 probeScreenPos = probeIndex * RADIANCE_CACHE_TILE_SIZE;
 
     // Fetch world space position. Paper §2.1.5: tiles without a usable
-    // probe (sky, NaN position) are flagged with PROBE_MASK_INVALID so the
-    // filter and downstream interpolation can skip them instead of
-    // inheriting stale data from the previous frame.
+    // probe (sky, NaN position) are flagged PROBE_MASK_INVALID so filter
+    // and interpolation skip them.
     bool valid = in_opaquePassRT0.Load(int3(samplingScreenPos, 0)).w == 1.0;
     if (!valid)
     {
@@ -200,7 +218,7 @@ void RayGenShader()
     // Store probe position and normal for the next frame's reprojection pass
     in_ProbePosition[probeIndex] = float4(positionWS, 1);
     in_ProbeNormal[probeIndex] = float4(normalWS, 1);
-    in_ProbeMask[probeIndex] = PackProbeMask(jitterOffset);
+    in_ProbeMask[probeIndex] = PackProbeMask(subTilePixel);
 
     const int NUM_SAMPLES = 1;
 

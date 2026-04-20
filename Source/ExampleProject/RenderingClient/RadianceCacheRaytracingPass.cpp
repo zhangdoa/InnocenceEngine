@@ -244,8 +244,13 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 11);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, RadianceCacheReprojectionPass::Get().GetProbeMask(), 12);
 
-	auto dispatch_x = (l_result->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;  // Round up
-	auto dispatch_y = (l_result->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;  // Round up
+	// Dispatch at spawn-tile granularity: viewport / (8·UPSCALE_X, 8·UPSCALE_Y).
+	// One thread per spawn tile spawns exactly one probe per frame at a
+	// Halton-picked sub-pixel; the rest of the probes inside the spawn
+	// tile inherit their data from Reprojection (or stay PROBE_MASK_INVALID
+	// if reprojection also failed for that tile).
+	auto dispatch_x = (l_result->m_TextureDesc.Width + SPAWN_TILE_SIZE_X - 1) / SPAWN_TILE_SIZE_X;
+	auto dispatch_y = (l_result->m_TextureDesc.Height + SPAWN_TILE_SIZE_Y - 1) / SPAWN_TILE_SIZE_Y;
 
 	l_fmService->DispatchRays(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);

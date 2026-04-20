@@ -7,7 +7,12 @@ static const uint SH_TILE_SIZE = 2;  // 2×2 SH storage per probe
 static const uint HASH_TABLE_SIZE = 256 * 1024;
 static const float3 probeSpacing = float3(0.125, 0.125, 0.125); // Adjust probe spacing as needed
 static const uint2 probeAtlasSize = uint2(8, 8);
-static const uint2 upscaleFactor = uint2(1, 1); // No upscaling for now
+// GI-1.0 §2.1.1 temporal upscaling: one probe per (8*ξ_x, 8*ξ_y) spawn tile
+// per frame, Halton-picked sub-pixel cycles through all probe-tile slots
+// over ξ_x * ξ_y frames. (2,2) = quarter the ray budget per frame, full
+// probe grid converges in 4 frames.
+static const uint2 upscaleFactor = uint2(2, 2);
+static const uint2 spawnTileSize = probeAtlasSize * upscaleFactor;
 
 struct WorldProbe
 {
