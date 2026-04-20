@@ -5,8 +5,14 @@
 #include "../../Engine/RayTracer/RayTracer.h"
 #include "../../Engine/Component/TransformComponent.h"
 #include "../../Engine/Component/CameraComponent.h"
+#include "../../Engine/Common/IOService.h"
 
 #include "../../Engine/Engine.h"
+
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <string>
 
 using namespace Inno;
 
@@ -14,6 +20,125 @@ using namespace Inno;
 
 namespace Inno
 {
+// ---------------------------------------------------------------------------
+// Serialize-determinism test (TASK-111)
+// Load a scene, save it in-place, compare saved state against the snapshot
+// taken just before the save, restore originals, then exit 0 (pass) or 1
+// (diff found).  Only called when -serialize_test <path> is supplied.
+// ---------------------------------------------------------------------------
+namespace
+{
+	// Read all regular files under dirPath into a map path→content.
+	std::map<std::string, std::string> SnapshotDirectory(const std::string& dirPath)
+	{
+		std::map<std::string, std::string> result;
+		namespace fs = std::filesystem;
+		if (!fs::exists(dirPath))
+			return result;
+		for (auto& entry : fs::directory_iterator(dirPath))
+		{
+			if (!entry.is_regular_file())
+				continue;
+			std::string path = entry.path().generic_string();
+			std::ifstream f(path, std::ios::binary);
+			if (f)
+				result[path] = std::string(std::istreambuf_iterator<char>(f), {});
+		}
+		return result;
+	}
+
+	std::string ReadFileContent(const std::string& path)
+	{
+		std::ifstream f(path, std::ios::binary);
+		if (!f)
+			return {};
+		return std::string(std::istreambuf_iterator<char>(f), {});
+	}
+
+	void RestoreFile(const std::string& path, const std::string& content)
+	{
+		std::ofstream f(path, std::ios::out | std::ios::trunc | std::ios::binary);
+		f << content;
+	}
+
+	// Returns true if all saved files match the pre-save snapshot; logs
+	// every diffing file.  Restores originals from the snapshot on failure.
+	bool CompareAndRestore(
+		const std::string&                           l_sceneFilePath,
+		const std::string&                           l_origScene,
+		const std::string&                           l_compDirPath,
+		const std::map<std::string, std::string>&    l_origComps)
+	{
+		bool l_passed = true;
+
+		// Check scene file
+		std::string l_savedScene = ReadFileContent(l_sceneFilePath);
+		if (l_savedScene != l_origScene)
+		{
+			Log(Error, "[serialize-test] DIFF: ", l_sceneFilePath.c_str());
+			l_passed = false;
+		}
+
+		// Check component directory
+		auto l_savedComps = SnapshotDirectory(l_compDirPath);
+		for (auto& [path, saved] : l_savedComps)
+		{
+			auto it = l_origComps.find(path);
+			if (it == l_origComps.end())
+			{
+				Log(Error, "[serialize-test] NEW file created by save: ", path.c_str());
+				l_passed = false;
+			}
+			else if (it->second != saved)
+			{
+				Log(Error, "[serialize-test] DIFF: ", path.c_str());
+				l_passed = false;
+			}
+		}
+		for (auto& [path, _] : l_origComps)
+		{
+			if (!l_savedComps.count(path))
+			{
+				Log(Error, "[serialize-test] DELETED by save: ", path.c_str());
+				l_passed = false;
+			}
+		}
+
+		// Restore originals so the working tree stays clean.
+		if (!l_passed)
+		{
+			RestoreFile(l_sceneFilePath, l_origScene);
+			for (auto& [path, content] : l_origComps)
+				RestoreFile(path, content);
+			Log(Error, "[serialize-test] FAILED — source files restored.");
+		}
+		return l_passed;
+	}
+
+	void RunSerializeTest(const char* l_sceneRelPath)
+	{
+		auto* io = g_Engine->Get<IOService>();
+		std::string l_dataDir    = io->getDataDirectory();
+		std::string l_sceneFile  = l_dataDir + l_sceneRelPath;
+		std::string l_compDir    = l_dataDir + io->getProjectName() + "/Components/";
+
+		// Snapshot before save
+		std::string l_origScene = ReadFileContent(l_sceneFile);
+		auto        l_origComps = SnapshotDirectory(l_compDir);
+
+		g_Engine->Get<SceneService>()->Save("");
+
+		bool l_passed = CompareAndRestore(l_sceneFile, l_origScene, l_compDir, l_origComps);
+		if (l_passed)
+		{
+			Log(Success, "[serialize-test] PASSED — round-trip is idempotent for: ", l_sceneRelPath);
+		}
+		// _Exit bypasses CRT teardown and C++ destructors (which crash with GPU
+		// threads still alive). The OS reclaims all handles and memory cleanly.
+		_Exit(l_passed ? 0 : 1);
+	}
+} // anonymous namespace
+
 	class WorldSystem : public IService
 	{
 	public:
@@ -80,12 +205,25 @@ namespace Inno
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
 		g_Engine->Get<HIDService>()->AddButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
-		f_sceneLoadingFinishedCallback = [&]() {
-			if (!m_player)
-				m_player = new Player();
-			m_player->Setup();
-			m_ObjectStatus = ObjectStatus::Activated;
+		const auto& l_config = g_Engine->getInitConfig();
+		if (l_config.serializeTest[0] != '\0')
+		{
+			// Serialize-determinism mode: run the save+compare test after the
+			// scene has finished loading, then exit.  No player, no game loop.
+			const char* l_testScene = l_config.serializeTest;
+			f_sceneLoadingFinishedCallback = [l_testScene]() {
+				RunSerializeTest(l_testScene);
 			};
+		}
+		else
+		{
+			f_sceneLoadingFinishedCallback = [&]() {
+				if (!m_player)
+					m_player = new Player();
+				m_player->Setup();
+				m_ObjectStatus = ObjectStatus::Activated;
+			};
+		}
 
 		g_Engine->Get<SceneService>()->AddSceneLoadedCallback(&f_sceneLoadingFinishedCallback);
 
@@ -96,7 +234,14 @@ namespace Inno
 	{
 		bool l_result = true;
 
-		g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/UnitTest.InnoScene");
+		// In serialize-test mode, load the target scene directly so the
+		// scene-loaded callback fires once on the right scene.  Otherwise
+		// default to UnitTest for normal engine operation.
+		const auto& l_config = g_Engine->getInitConfig();
+		const char* l_initialScene = (l_config.serializeTest[0] != '\0')
+		                           ? l_config.serializeTest
+		                           : "ExampleProject/Scenes/UnitTest.InnoScene";
+		g_Engine->Get<SceneService>()->Load(l_initialScene);
 
 		  RayTracerConfig l_cfg;
 		l_cfg.downsampleDenominator = 2;

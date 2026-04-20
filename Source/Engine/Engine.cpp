@@ -716,16 +716,6 @@ bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline,
 				return true;
 			});
 
-		// Serialize-determinism test (TASK-111) — the flag is parsed and
-		// propagated into InitConfig::serializeTest, but the save-on-load
-		// hook is not yet wired. Initial pre-frame-callback implementation
-		// tripped an existing deferred-mesh-init race when swapping scenes
-		// mid-init (the WorldSystem UnitTest load leaves init tasks in the
-		// queue that the OnSceneUnloading filter doesn't always remove).
-		// Deferring the hook until the init sequence can be restructured
-		// to load the test scene in place of UnitTest rather than after it.
-		// See TASK-111 for the follow-up.
-
 		// RenderDoc / PIX capture trigger. Lives here rather than inside
 		// FrameManagementService::Update because the frame manager owns frame
 		// pacing, not debug-tool triggers. -capture_frame N fires a single
