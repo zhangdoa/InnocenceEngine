@@ -23,10 +23,14 @@ public class Win32 {
     public static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")]
     public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")]
+    public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     public const uint WM_KEYDOWN     = 0x0100;
     public const uint WM_KEYUP       = 0x0101;
     public const uint WM_RBUTTONDOWN = 0x0204;
     public const uint WM_RBUTTONUP   = 0x0205;
+    public const uint SWP_NOZORDER   = 0x0004;
+    public const uint SWP_NOMOVE     = 0x0002;
 }
 "@
 
@@ -215,6 +219,26 @@ function Run-GISponza {
     Wait-AndCheck 3 "GISponza stable"
 }
 
+# --- Scenario: Path tracer + window resize (TASK-113) ---
+# Exercises GPUPathTracerPass::OnResize — the accumulation buffer must be
+# recreated at the new resolution and accumulation history scrapped.
+function Run-PathTracerResize {
+    Write-Host "`n--- Path Tracer + Window Resize ---"
+
+    Write-Host "  Pressing B (path tracer ON)"
+    Send-Key $hwnd $VK_B
+    Wait-AndCheck 5 "PathTracer ON"
+
+    $flags = [Win32]::SWP_NOZORDER -bor [Win32]::SWP_NOMOVE
+
+    foreach ($dims in @(@(1024, 768), @(1600, 900), @(800, 600))) {
+        $w = $dims[0]; $h = $dims[1]
+        Write-Host "  Resize to ${w}x${h}"
+        [Win32]::SetWindowPos($hwnd, [IntPtr]::Zero, 0, 0, $w, $h, $flags) | Out-Null
+        Wait-AndCheck 3 "Resize ${w}x${h} stable"
+    }
+}
+
 # --- Scenario: Path tracer + scene reload (the dangerous combo) ---
 function Run-PathTracerWithReload {
     Write-Host "`n--- Path Tracer + Scene Reload ---"
@@ -238,6 +262,7 @@ switch ($Scenario) {
     "scene_reload"       { Run-SceneReload }
     "camera_movement"    { Run-CameraMovement }
     "pathtracer_reload"  { Run-PathTracerWithReload }
+    "pathtracer_resize"  { Run-PathTracerResize }
     "gi_sponza"          { Run-GISponza }
     "reimport"           { Run-ReImport }
     "full" {
@@ -245,10 +270,11 @@ switch ($Scenario) {
         Run-TogglePathTracer
         Run-SceneReload
         Run-PathTracerWithReload
+        Run-PathTracerResize
     }
     default {
         Write-Host "Unknown scenario: $Scenario"
-        Write-Host "Valid: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, gi_sponza, reimport, full"
+        Write-Host "Valid: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, pathtracer_resize, gi_sponza, reimport, full"
         Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
         exit 2
     }
