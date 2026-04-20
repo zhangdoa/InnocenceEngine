@@ -176,46 +176,32 @@ void RayGenShader()
         float NdotL = saturate(dot(normalWS, sampleDir));
         float3 radiance = tempPayload.radiance * NdotL;
 
-        // Store in radiance cache with improved temporal accumulation
+        // Algorithm 3 hysteresis: firefly-reject + shadow-preserving blend.
+        // The history bias (high t) only kicks in when L_new > 2*L_old,
+        // otherwise the new sample is adopted fully; the paper's asymmetry
+        // is intentional — favours dark (shadow) transitions while filtering
+        // bright outliers from rarely-hit emissives or BRDF tails.
         uint2 texIndex = GetAtlasTextureCoordinates(float2(probeScreenPos), sampleDir);
         float3 oldScreenSpaceRadiance = in_RadianceCacheResults[texIndex].xyz;
 
-        // Temporal blending
-        float currentLuminance = GetLuma(radiance);
-        float oldLuminance = GetLuma(oldScreenSpaceRadiance);
-        float maxLuminance = max(currentLuminance, oldLuminance);
-
-        float temporalWeight = 0.15;
-
-        // Relative variance firefly suppression (scale-invariant for HDR)
-        float relativeChange = (maxLuminance > 0.001)
-            ? abs(currentLuminance - oldLuminance) / maxLuminance
-            : 0.0;
-
-        if (relativeChange > 3.0)
-        {
-            temporalWeight *= 0.1;
-            float maxAllowedRadiance = max(oldLuminance * 4.0, 1.0);
-            radiance = min(radiance, float3(maxAllowedRadiance, maxAllowedRadiance, maxAllowedRadiance));
-        }
-
-        // NaN protection
         if (any(isnan(radiance)) || any(isinf(radiance)))
-        {
             radiance = oldScreenSpaceRadiance;
-            temporalWeight = 0.0;
-        }
-        
-        in_RadianceCacheResults[texIndex] = float4(lerp(oldScreenSpaceRadiance, radiance, temporalWeight), 1);
+
+        float t = TemporalBlendAlgo3(GetLuma(radiance), GetLuma(oldScreenSpaceRadiance));
+        in_RadianceCacheResults[texIndex] = float4(lerp(radiance, oldScreenSpaceRadiance, t), 1);
 
         // Only write to world probe grid on the first sample to avoid intra-probe write races.
         // Cross-probe hash collisions on the same cell remain a known limitation of the hash-grid approach.
+        // Simple EMA here — paper §2.2.3 prescribes Karis-style exponential
+        // moving average for the world cache; full two-level tiled layout
+        // with proper decay is deferred to [W].
         if (i == 0)
         {
+            const float WORLD_PROBE_EMA = 0.1;
             uint worldProbeIndex = ComputeProbeHash(positionWS);
             float3 oldWorldProbeRadiance = in_WorldProbeGrid[worldProbeIndex].radiance;
             in_WorldProbeGrid[worldProbeIndex].positionWS = positionWS;
-            in_WorldProbeGrid[worldProbeIndex].radiance = lerp(oldWorldProbeRadiance, radiance, temporalWeight);
+            in_WorldProbeGrid[worldProbeIndex].radiance = lerp(oldWorldProbeRadiance, radiance, WORLD_PROBE_EMA);
             in_WorldProbeGrid[worldProbeIndex].weight = 1.0;
         }
     }
