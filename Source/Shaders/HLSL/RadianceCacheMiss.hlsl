@@ -27,4 +27,7 @@ void MissShader(inout RayPayload payload)
     );
 
     payload.radiance = skyRadiance;
+    // Miss = sky — report the ray's TMax so the consumer recognises
+    // "no physical hit point" without branching on a separate flag.
+    payload.distance = RayTCurrent();
 }

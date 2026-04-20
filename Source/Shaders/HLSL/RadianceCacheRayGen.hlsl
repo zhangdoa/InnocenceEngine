@@ -171,6 +171,7 @@ void RayGenShader()
 
         RayPayload tempPayload;
         tempPayload.radiance = float3(0, 0, 0);
+        tempPayload.distance = ray.TMax;
 
         TraceRay(SceneAS, RAY_FLAG_NONE, 0xFF, 0, 1, 0, ray, tempPayload);
         float NdotL = saturate(dot(normalWS, sampleDir));
@@ -188,7 +189,10 @@ void RayGenShader()
             radiance = oldScreenSpaceRadiance;
 
         float t = TemporalBlendAlgo3(GetLuma(radiance), GetLuma(oldScreenSpaceRadiance));
-        in_RadianceCacheResults[texIndex] = float4(lerp(radiance, oldScreenSpaceRadiance, t), 1);
+        // Alpha = ray travel distance along sampleDir. Consumed next frame
+        // during ray-guiding reconstruction to parallax-correct the
+        // reused cell direction (paper §2.1.3).
+        in_RadianceCacheResults[texIndex] = float4(lerp(radiance, oldScreenSpaceRadiance, t), tempPayload.distance);
 
         // Only write to world probe grid on the first sample to avoid intra-probe write races.
         // Cross-probe hash collisions on the same cell remain a known limitation of the hash-grid approach.

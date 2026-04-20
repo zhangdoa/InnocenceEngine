@@ -64,4 +64,5 @@ void ClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAt
     }
 
     payload.radiance = hitRadiance;
+    payload.distance = RayTCurrent();
 }

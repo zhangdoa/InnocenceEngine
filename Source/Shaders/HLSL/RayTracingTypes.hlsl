@@ -17,9 +17,14 @@ struct WorldProbe
 };
 
 // Payload structure passed between TraceRay calls.
+// distance = ray-parameter t at the hit (or ray.TMax for a sky miss),
+// used by screen-probe ray guiding to apply parallax correction when
+// the reprojected sample originated from a spatially offset probe
+// (paper §2.1.3, Figure 6).
 struct RayPayload
 {
     float3 radiance;
+    float distance;
 };
 
 // Create tangent space for importance sampling
