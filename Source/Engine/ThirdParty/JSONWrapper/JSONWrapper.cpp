@@ -471,7 +471,16 @@ bool JSONWrapper::LoadChildScene(const char* sceneFilePath, EntityID parentEntit
 	}
 
 	auto l_registry = g_Engine->Get<EntityRegistry>();
-	auto* l_ParentTransform = l_registry->Get<TransformComponent>(parentEntity);
+	// Snapshot parent transform by value. Emplace<TransformComponent> inside the
+	// loop may reallocate the underlying component-storage vector, which would
+	// dangle any pointer held across the call.
+	bool l_hasParentXf = false;
+	TransformComponent l_ParentXfCopy{};
+	if (auto* p = l_registry->Get<TransformComponent>(parentEntity))
+	{
+		l_ParentXfCopy = *p;
+		l_hasParentXf = true;
+	}
 	std::string l_ParentName = l_registry->GetName(parentEntity);
 
 	std::string l_DefaultPath;
@@ -493,11 +502,11 @@ bool JSONWrapper::LoadChildScene(const char* sceneFilePath, EntityID parentEntit
 
 		// Inherit parent transform
 		auto& l_Transform = l_registry->Emplace<TransformComponent>(l_EntityID);
-		if (l_ParentTransform)
+		if (l_hasParentXf)
 		{
-			l_Transform.m_LocalPos = l_ParentTransform->m_LocalPos;
-			l_Transform.m_LocalRot = l_ParentTransform->m_LocalRot;
-			l_Transform.m_LocalScale = l_ParentTransform->m_LocalScale;
+			l_Transform.m_LocalPos = l_ParentXfCopy.m_LocalPos;
+			l_Transform.m_LocalRot = l_ParentXfCopy.m_LocalRot;
+			l_Transform.m_LocalScale = l_ParentXfCopy.m_LocalScale;
 		}
 
 		for (auto& compJson : entityJson["Components"])
