@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-04-20 17:36'
-updated_date: '2026-04-20 19:01'
+updated_date: '2026-04-20 19:30'
 labels: []
 dependencies: []
 priority: medium
@@ -43,4 +43,6 @@ Doc: Documents/radiance-cache-roadmap.md §[S1]</description>
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-04-20: Landed [S1.1] Algorithm 3 hysteresis (73225d28), [S1.2] distance-in-alpha (a5271822), [S1.3] 3x3 neighbourhood CDF with parallax correction (30a3ff99). Remaining: [S1.4] radiance-average backup — deferred until ray redistribution in [S1.5] surfaces ‘untraced cell’ set explicitly; [S1.5] sparse spawning + Algorithm 2 hole-filling + mask MIP chain — big piece, deserves own session (touches resource allocation, pass scheduling, and all four radiance-cache shaders).
+
+2026-04-20 (later): [S1.5] sparse spawning + Halton + Reprojection mask invalidation landed (39de2a1b). Main.exe 20 frames + reload at 10: exit 0, no new warnings. Visual verification attempted via windowed Main.exe + -capture_frame + renderdoccmd thumb, but thumbnail comes out solid black on both HEAD and HEAD~1 — not a regression, but the A/B-capture workflow is broken. Filed TASK-119. Remaining [S1] sub-pieces deferred: [S1.4] radiance-average backup (blocked on ray-redistribution tracking), [S1.5b] mask MIP chain (bundled), [S1.5c] Algorithm 2 ray redistribution.
 <!-- SECTION:NOTES:END -->

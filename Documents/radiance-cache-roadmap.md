@@ -105,7 +105,9 @@ HBIL-style horizon-based bent cone + AO mask; multiply bent cone by clamped cosi
 | S1.2 | Ray travel distance in atlas alpha (parallax prep) | ☑ | |
 | S1.3 | 3×3 neighbourhood CDF reconstruction with parallax correction | ☑ | |
 | S1.4 | Radiance-average backup for untraced cells | ☐ (deferred) | — |
-| S1.5 | Sparse spawning + Algorithm 2 adaptive hole-filling + mask MIP chain | ☐ | |
+| S1.5 | Sparse spawning (upscale 2×2) + Halton pixel + Reprojection mask invalidation | ☑ | |
+| S1.5b | Mask MIP chain + FindClosestProbe MIP walk | ☐ (deferred) | |
+| S1.5c | Algorithm 2 ray redistribution (empty/override queues + patch kernel) | ☐ (deferred) | |
 | S2 | Screen-cache robustness (LRU side cache + mask-MIP filter) | ☐ | |
 | I | Irradiance evaluation | ☐ | |
 | W | World-cache overhaul | ☐ | |
@@ -168,11 +170,31 @@ requires tracking state we don't have. Deferred until [S1.5] lands the
 ray-redistribution queues, at which point the "untraced cell" set is
 explicitly known.
 
-**[S1.5] Sparse spawning + Algorithm 2 hole-filling + mask MIP chain** —
-the biggest sub-piece. Drives spawn via `upscaleFactor > 1` so one
-probe per `8·U_x × 8·U_y` tile spawns per frame; Halton(2,3) picks the
-sub-pixel each frame; adds `empty_tile` / `override_tile` queues and the
-`patch_screen_probes` kernel that steals rays from tiles that succeeded
-reprojection to fill disoccluded ones. Populates the probe-mask MIP chain
-that [F] scaffolded. Its own CL / session because it touches resource
-allocation, pass scheduling, and all four radiance-cache shaders.
+**[S1.5] Sparse spawning + Halton pixel + Reprojection mask invalidation** —
+drives spawn via `upscaleFactor = (2, 2)`, cutting ray budget to 1/4;
+Halton(2)/Halton(3) picks one pixel per 16×16 spawn tile per frame;
+Reprojection now owns the "this tile is useless" signal, invalidating
+PROBE_MASK on sky and no-reprojection-possible paths. Successful
+reprojection leaves the mask alone so the last spawn's mask persists
+through the rest of the upscale cycle. Mask encoding updated: validity
+is a bit-31 flag, INVALID = 0, so uninitialised memory reads as invalid
+without a per-frame clear. RayGen's 3×3 CDF reconstruction now reads
+each neighbour's sub-pixel from its own mask instead of the CB jitter
+(each neighbour was spawned at its own Halton offset on its own frame).
+
+**[S1.5b] Mask MIP chain + FindClosestProbe MIP walk** — deferred. With
+1/4 spawning, up to 3/4 of tiles per frame fall back to reprojected
+history or PROBE_MASK_INVALID. Filter's immediate-neighbour tap already
+handles most of these (the single-level walk the `FindClosestProbe`
+helper does today); the MIP chain only starts paying off once holes
+reliably span >1 probe-tile — which is mainly disocclusion scenarios
+that [S1.5c] also targets. Bundling these two into a single future CL.
+
+**[S1.5c] Algorithm 2 ray redistribution** — deferred. Without it, fully
+disoccluded tiles stay dark for up to `ξ_x · ξ_y` = 4 frames. Visible as
+brief dark patches under fast motion. Paper §2.1.2 fixes this via an
+`empty_tile` / `override_tile` queue pair plus a `patch_screen_probes`
+kernel that steals ray slots from well-reprojected tiles to fill
+disoccluded ones; keeps the per-frame ray budget constant. Non-trivial
+infrastructure (2 new buffers, a classify-and-populate compute pass, a
+dispatch-indirect RayGen invocation).
