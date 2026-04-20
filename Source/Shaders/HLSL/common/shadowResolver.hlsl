@@ -127,11 +127,52 @@ float PCSS(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler,
 	return shadow / filterSamples;
 }
 
-// Sun Shadow Resolver (CSM Support + PCSS). screenCoord is the compute-shader
-// thread index; used only as a stable seed for the per-pixel Poisson rotation.
+// Width (as a fraction of the half-extent) of the blend band at the edge
+// of each cascade. 0.15 → outer 15% of the cascade fades out into the
+// next cascade. Too small and the seam stays visible; too large and we
+// pay for two PCSS evaluations on a lot of pixels.
+#define CASCADE_BLEND_BAND 0.15
+
+// Evaluates PCSS for a single cascade. Returns 0 if the fragment is not
+// inside this cascade's projected depth/UV range (caller should treat
+// that as "unshadowed by this cascade").
+float EvaluateCascadeShadow(float3 positionWS, int splitIndex, Texture2DArray shadowMap, SamplerState in_sampler, float2 texelSize, float shadowBias, float sinA, float cosA)
+{
+	float4 lightSpacePos = mul(float4(positionWS, 1.0f), CSMs[splitIndex].v);
+	lightSpacePos = mul(lightSpacePos, CSMs[splitIndex].p);
+	// Orthographic projection — no perspective divide needed.
+
+	float3 projCoords = lightSpacePos.xyz;
+	if (projCoords.x > 1.0 || projCoords.x < -1.0 ||
+	    projCoords.y > 1.0 || projCoords.y < -1.0 ||
+	    projCoords.z > 1.0 || projCoords.z < 0.0)
+		return 0.0;
+
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+	projCoords.y  = 1.0 - projCoords.y;
+
+	return PCSS(projCoords, shadowMap, in_sampler, splitIndex, projCoords.z, texelSize, shadowBias, sinA, cosA);
+}
+
+// Returns 1.0 in the interior of the cascade, fading to 0.0 over
+// CASCADE_BLEND_BAND near the AABB edge. Used as the primary cascade's
+// weight when blending into the next cascade.
+float ComputeCascadeEdgeWeight(float3 positionWS, int splitIndex)
+{
+	float3 center     = 0.5 * (CSMs[splitIndex].AABBMin.xyz + CSMs[splitIndex].AABBMax.xyz);
+	float3 halfExtent = 0.5 * (CSMs[splitIndex].AABBMax.xyz - CSMs[splitIndex].AABBMin.xyz);
+	// Normalized distance from the edge, per axis: 0 at the edge, 1 at the center.
+	float3 distToEdge = 1.0 - abs(positionWS - center) / max(halfExtent, 1e-5);
+	float  edgeFactor = min(distToEdge.x, min(distToEdge.y, distToEdge.z));
+	return saturate(edgeFactor / CASCADE_BLEND_BAND);
+}
+
+// Sun Shadow Resolver (CSM Support + PCSS + cross-cascade blending).
+// screenCoord is the compute-shader thread index; used only as a stable
+// seed for the per-pixel Poisson rotation.
 float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shadowMap, SamplerState in_sampler, float3 lightDir, uint2 screenCoord)
 {
-	int splitIndex = NR_CSM_SPLITS;
+	int primaryIdx = NR_CSM_SPLITS;
 	[unroll]
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
@@ -142,36 +183,19 @@ float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shado
 			positionWS.y <= CSMs[i].AABBMax.y &&
 			positionWS.z <= CSMs[i].AABBMax.z)
 		{
-			splitIndex = i;
+			primaryIdx = i;
 			break;
 		}
 	}
 
-	if (splitIndex == NR_CSM_SPLITS)
+	if (primaryIdx == NR_CSM_SPLITS)
 		return 0.0;
 
 	float2 shadowMapSize;
-	float level;
-	float elements;
+	float level, elements;
 	shadowMap.GetDimensions(0, shadowMapSize.x, shadowMapSize.y, elements, level);
 	float2 texelSize = 1.0 / shadowMapSize;
 
-	float4 lightSpacePos = mul(float4(positionWS, 1.0f), CSMs[splitIndex].v);
-	lightSpacePos = mul(lightSpacePos, CSMs[splitIndex].p);
-	// Don't need perspective divide for othrographic projection
-	
-	float3 projCoords = lightSpacePos.xyz;
-	if (projCoords.x > 1.0 || projCoords.x < -1.0 || projCoords.y > 1.0 || projCoords.y < -1.0 || projCoords.z > 1.0 || projCoords.z < 0.0)
-	{
-		return 0.0;
-	}
-
-	projCoords.xy = projCoords.xy * 0.5 + 0.5;
-	projCoords.y = 1.0 - projCoords.y;
-
-	float currentDepth = projCoords.z;
-
-	// Compute adaptive shadow bias to prevent light leaks
 	float shadowBias = ComputeShadowBias(normalWS, lightDir);
 
 	// Per-pixel rotation of the Poisson kernel. Both blocker-search and PCF
@@ -182,5 +206,17 @@ float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shado
 	float sinA, cosA;
 	sincos(angle, sinA, cosA);
 
-	return PCSS(projCoords, shadowMap, in_sampler, splitIndex, currentDepth, texelSize, shadowBias, sinA, cosA);
+	float primaryShadow = EvaluateCascadeShadow(positionWS, primaryIdx, shadowMap, in_sampler, texelSize, shadowBias, sinA, cosA);
+	float primaryWeight = ComputeCascadeEdgeWeight(positionWS, primaryIdx);
+
+	// Only blend when we're in the fade band and a further cascade exists.
+	// The outermost cascade fades out to "unshadowed" at its edge, which
+	// is already the correct behavior (beyond-cascade = no shadow data).
+	if (primaryWeight < 1.0 && primaryIdx + 1 < NR_CSM_SPLITS)
+	{
+		float secondaryShadow = EvaluateCascadeShadow(positionWS, primaryIdx + 1, shadowMap, in_sampler, texelSize, shadowBias, sinA, cosA);
+		return lerp(secondaryShadow, primaryShadow, primaryWeight);
+	}
+
+	return primaryShadow * primaryWeight;
 }
