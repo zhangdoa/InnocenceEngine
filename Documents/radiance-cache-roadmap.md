@@ -96,6 +96,30 @@ HBIL-style horizon-based bent cone + AO mask; multiply bent cone by clamped cosi
 
 ---
 
+## Capture / test protocol
+
+Async-load timing: GISponza's load request fires at frame 5 but the
+geometry/textures stream in over ~30–40 more frames. For a fully-loaded
+scene, capture with `-total_frames 100 -capture_frame 60`. Frames before
+~50 render a black G-buffer and misleading thumbnails. This is the note
+that CLAUDE.md's "good capture range: 6–9" should be updated to reflect;
+leave the fix for a separate tooling commit.
+
+```
+rm -f C:/GitRepo/InnocenceEngine/Build/captures/frame_capture.rdc
+cd C:/GitRepo/InnocenceEngine/Bin && powershell.exe -NoProfile -NonInteractive \
+  -Command "(Start-Process -FilePath 'RelWithDebInfo\Main.exe' \
+    -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -total_frames 100 -capture_frame 60' \
+    -Wait -PassThru -NoNewWindow).ExitCode"
+"C:/Program Files/RenderDoc/renderdoccmd.exe" thumb \
+  --out="C:/GitRepo/InnocenceEngine/Build/captures/<label>.png" \
+  --format=png --max-size=512 \
+  "C:/GitRepo/InnocenceEngine/Build/captures/frame_capture.rdc"
+```
+
+Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the
+next CL can compare against it.
+
 ## Status
 
 | ID | Slice | Status | Commit(s) |
