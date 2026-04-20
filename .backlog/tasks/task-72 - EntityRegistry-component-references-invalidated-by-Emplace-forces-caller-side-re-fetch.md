@@ -6,11 +6,15 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-18 17:37'
+updated_date: '2026-04-20 15:37'
 labels:
   - architecture
   - ecs
   - api-design
 dependencies: []
+references:
+  - docs/superpowers/specs/2026-04-20-component-access-model-design.md
+  - cfc1c8d1
 priority: medium
 ---
 
@@ -43,3 +47,11 @@ Three reasonable resolutions:
 - [ ] #3 All existing `// Re-fetch: Emplace above …` comments can be deleted
 - [ ] #4 RenderTest / Main 10-frame / reload regression green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Design approved 2026-04-20 (brainstorming dialogue). Shape: Read/Write/Modify API replaces Get<T>→T* on EntityRegistry; RawIterate<T>() retained as the single named escape hatch for hot-path services; TComponentStorage gains Reserve() and preflight-based scene load avoids reallocation; Remove becomes tombstone + bulk CleanUp. Full spec in docs/superpowers/specs/2026-04-20-component-access-model-design.md. Migration split into 6 reviewable commits; see spec Migration section.
+
+Implementation deferred. Non-determinism root cause that triggered this investigation is patched (commit cfc1c8d1, JSONWrapper::LoadChildScene snapshot-by-value). Revisit after current rendering-improvements work lands.
+<!-- SECTION:NOTES:END -->
