@@ -1,10 +1,10 @@
 ---
 id: TASK-6
 title: 'Radiance cache quality: align with AMD GI 1.0 reference'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-07 13:24'
+updated_date: '2026-04-20 17:35'
 labels:
   - rendering
   - GI
@@ -16,6 +16,8 @@ references:
   - Source/Shaders/HLSL/RadianceCacheFilterHorizontal.comp
   - Source/Shaders/HLSL/RadianceCacheIntegration.comp
   - Source/Shaders/HLSL/lightPass.comp
+  - Documents/radiance-cache-roadmap.md
+  - Build/GI1_0.pdf
 priority: medium
 ---
 
@@ -41,3 +43,9 @@ The radiance cache implementation has quality gaps compared to AMD's GI 1.0 refe
 - L2 SH (9 coefficients) for better directional resolution (currently L1 with 4 coefficients)
 - World-space probe grid improvements for off-screen GI
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-04-20: Paper re-read; gap matrix + sub-project decomposition written to Documents/radiance-cache-roadmap.md. Current impl is a simplified SSRC skeleton; ~12 major paper algorithms absent (mask MIP, Algo 2/3/4/5/6, LRU side cache, 3x3+parallax reconstruction, 4-probe interpolation, fingerprint-hashed world cache, denoiser). Slicing into sub-projects [F]/[S1]/[S2]/[I]/[W]/[L]/[X]; each gets its own CL and references the roadmap.
+<!-- SECTION:NOTES:END -->
