@@ -47,6 +47,12 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 	m_RayTracingRenderPassComp->m_RenderPassDesc = l_rtDesc;
 
+	// Owned accumulation UAV isn't an output-merger target so the frame-
+	// management resize path would otherwise skip it. Hook OnResize so the
+	// buffer is recreated at the new resolution and accumulation history
+	// is scrapped.
+	m_RayTracingRenderPassComp->m_OnResize = [this]() { OnResize(); };
+
 	// Binding layout: b0=PerFrameCB, b1=FrameCountCB, b2=LightCountCB,
 	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
 	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
@@ -215,9 +221,6 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 
 bool GPUPathTracerPass::Initialize()
 {
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
-
 	g_Engine->Get<ShaderProgramResourceService>()->Initialize(m_RayTracingSPC);
 	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RayTracingRenderPassComp);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
@@ -226,18 +229,7 @@ bool GPUPathTracerPass::Initialize()
 
 
 
-	// AccumulationBuffer: HDR RGBA float32, ComputeOnly UAV
-	m_AccumulationBuffer = g_Engine->Get<TextureResourceService>()->Add("GPUPathTracerAccumBuffer");
-	m_AccumulationBuffer->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
-	m_AccumulationBuffer->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
-	m_AccumulationBuffer->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
-	m_AccumulationBuffer->m_TextureDesc.PixelDataType    = TexturePixelDataType::Float32;
-	m_AccumulationBuffer->m_TextureDesc.Width            = l_resolution.x;
-	m_AccumulationBuffer->m_TextureDesc.Height           = l_resolution.y;
-	m_AccumulationBuffer->m_TextureDesc.DepthOrArraySize = 1;
-	m_AccumulationBuffer->m_CPUAccessibility             = Accessibility::Immutable;
-	m_AccumulationBuffer->m_GPUAccessibility             = Accessibility::ReadWrite;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_AccumulationBuffer);
+	CreateAccumulationBuffer();
 
 	// FrameCountCB: single uint32
 	m_FrameCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerFrameCountCB");
@@ -438,6 +430,42 @@ GPUResourceComponent* GPUPathTracerPass::GetResult()
 void GPUPathTracerPass::ResetAccumulation()
 {
 	m_FrameCount = 1;
+}
+
+void GPUPathTracerPass::CreateAccumulationBuffer()
+{
+	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	auto l_texService = g_Engine->Get<TextureResourceService>();
+
+	m_AccumulationBuffer = l_texService->Add("GPUPathTracerAccumBuffer");
+	m_AccumulationBuffer->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
+	m_AccumulationBuffer->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
+	m_AccumulationBuffer->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
+	m_AccumulationBuffer->m_TextureDesc.PixelDataType    = TexturePixelDataType::Float32;
+	m_AccumulationBuffer->m_TextureDesc.Width            = l_resolution.x;
+	m_AccumulationBuffer->m_TextureDesc.Height           = l_resolution.y;
+	m_AccumulationBuffer->m_TextureDesc.DepthOrArraySize = 1;
+	m_AccumulationBuffer->m_CPUAccessibility             = Accessibility::Immutable;
+	m_AccumulationBuffer->m_GPUAccessibility             = Accessibility::ReadWrite;
+	l_texService->Initialize(m_AccumulationBuffer);
+}
+
+// Called by FrameManagementService::PostResize after the GPU has been fully
+// drained and RenderingConfigurationService holds the new resolution. The
+// accumulation buffer must be re-sized (its dimensions drive DispatchRays,
+// which already reads the current resolution each frame — a stale buffer
+// there causes out-of-bounds UAV writes). Accumulation history is scrapped
+// because sample counts across two resolutions can't be combined.
+void GPUPathTracerPass::OnResize()
+{
+	auto l_texService = g_Engine->Get<TextureResourceService>();
+	if (m_AccumulationBuffer)
+	{
+		l_texService->Delete(m_AccumulationBuffer);
+		m_AccumulationBuffer = nullptr;
+	}
+	CreateAccumulationBuffer();
+	ResetAccumulation();
 }
 
 void GPUPathTracerPass::RebuildGeometryBuffers()

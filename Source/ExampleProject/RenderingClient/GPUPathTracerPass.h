@@ -95,5 +95,7 @@ namespace Inno
 		void RebuildGeometryBuffers();
 		void RefreshMaterialTextureIndices();
 		bool AreMeshesGPUReady();
+		void CreateAccumulationBuffer();
+		void OnResize();
 	};
 }
