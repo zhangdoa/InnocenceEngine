@@ -47,6 +47,8 @@ const QUALIFYING_TEST = new RegExp([
   String.raw`RenderTest\.exe\b[^|&;]*-test\b`,
   // Interactive scripted test
   String.raw`InteractiveTest\.ps1`,
+  // Serialization determinism test
+  String.raw`Main\.exe\b[^|&;]*-serialize_test\b`,
 ].join('|'))
 
 const DOCS_ONLY_PATH = /^\.backlog\/|^Documents\/|\.md$|^\.claude\/|\.gitignore$/
@@ -54,6 +56,10 @@ const DOCS_ONLY_PATH = /^\.backlog\/|^Documents\/|\.md$|^\.claude\/|\.gitignore$
 // Staged-file paths that require live-engine validation: any change
 // under the editor source tree or the IPC-facing engine service.
 const EDITOR_CODE_PATH = /^Source\/(Editor-Next\/src\/|Engine\/Services\/EditorService\.)/
+
+// Staged-file paths that require the serialize-determinism test.
+// Any change to the JSON serializer or scene-service surfaces a round-trip risk.
+const SERIALIZER_CODE_PATH = /^Source\/Engine\/(ThirdParty\/JSONWrapper\/|Services\/(AssetService|SceneService)\.)/
 
 // Engine-truth tests that don't go through Playwright: if one of these
 // ran we treat the live-engine gate as satisfied even without a
@@ -169,6 +175,17 @@ async function main() {
     const liveRan = didLiveEngineTestRun(lines, lastUserIdx, cwd)
     if (!liveRan) {
       blockNoLiveEngine(staged)
+      return
+    }
+  }
+
+  // Serialize-test gate. Fires when JSONWrapper / AssetService / SceneService
+  // is staged; requires a serialize-test run in the current turn.
+  const serializerStaged = staged.some(f => SERIALIZER_CODE_PATH.test(f))
+  if (serializerStaged) {
+    const serializeRan = didSerializeTestRun(lines, lastUserIdx)
+    if (!serializeRan) {
+      blockNoSerializeTest(staged)
       return
     }
   }
@@ -323,6 +340,43 @@ function isRealUserPrompt(content) {
 function firstArray(...xs) {
   for (const x of xs) if (Array.isArray(x)) return x
   return []
+}
+
+const SERIALIZE_TEST_RE = /Main\.exe\b[^|&;]*-serialize_test\b/
+
+function didSerializeTestRun(lines, lastUserIdx) {
+  for (let i = lastUserIdx + 1; i < lines.length; i++) {
+    let m
+    try { m = JSON.parse(lines[i]) } catch { continue }
+    const blocks = firstArray(m.message?.content, m.content)
+    for (const b of blocks) {
+      if (b?.type === 'tool_use' && b?.name === 'Bash') {
+        if (SERIALIZE_TEST_RE.test(b.input?.command || '')) return true
+      }
+    }
+  }
+  return false
+}
+
+function blockNoSerializeTest(staged) {
+  const filesList = staged.length
+    ? staged.filter(f => SERIALIZER_CODE_PATH.test(f)).slice(0, 10).map(f => '  ' + f).join('\n')
+    : '  (no serializer code detected — bug?)'
+  process.stderr.write([
+    '',
+    '[commit-gate] git commit blocked — serializer code staged but no serialize-test ran.',
+    '',
+    'Serializer-facing staged paths:',
+    filesList,
+    '',
+    'Run the serialize-determinism test in this turn before committing:',
+    '  Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProject/Scenes/UnitTest.InnoScene',
+    '',
+    `Escape hatch: include ${SKIP_SENTINEL} if this change genuinely cannot`,
+    'be validated by a serialize-test (e.g. a rename with no logic change).',
+    '',
+  ].join('\n'))
+  process.exit(2)
 }
 
 function failOpen(err) {

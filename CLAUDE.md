@@ -27,9 +27,11 @@ Project-scoped only. Meta engineering/behavioral rules live in the user-scope `C
 
 **Test-run gate** — one of:
 
-- A qualifying integration test ran in the current turn — `npx playwright test` (editor), `Main.exe` with frame flags (engine), `RenderTest.exe -test`, or `InteractiveTest.ps1`
+- A qualifying integration test ran in the current turn — `npx playwright test` (editor), `Main.exe` with frame flags (engine), `RenderTest.exe -test`, `InteractiveTest.ps1`, or `Main.exe -serialize_test`
 - The staged set is docs-only — `.backlog/`, `Documents/`, `*.md`, `.claude/`
 - The commit message contains `[skip-test-gate]` — use this only when the commit genuinely cannot be validated by a test (commit-message edit, hook fix, etc.)
+
+**Serialize-determinism gate** — additionally required when `JSONWrapper/`, `AssetService.*`, or `SceneService.*` are staged: `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` must have run in the current turn.
 
 **Attribution gate** — the commit message (from `-m` or `-F`) must contain `Code-AI-Generated-By:` or `Message-AI-Generated-By:` per `Documents/commit-message-policy.md`. No escape; every Claude-issued commit is AI-authored by definition.
 
@@ -90,6 +92,12 @@ to ignore loud signals is missing the real one later.
    ```
    powershell.exe -NoProfile -NonInteractive -File "C:/GitRepo/InnocenceEngine/Scripts/InteractiveTest.ps1" -Scenario full
    # Scenarios: toggle_pathtracer, scene_reload, camera_movement, pathtracer_reload, full
+   ```
+
+5. **Serialize-determinism** — loads a scene, saves it in-place, compares saved state against the pre-save snapshot, restores originals, exits 0 if idempotent or 1 if any file changed. **Required** whenever `JSONWrapper/`, `AssetService.*`, or `SceneService.*` are staged (enforced by `.claude/hooks/commit-gate.js`). Also run manually after any scene-structure or component-serializer change.
+
+   ```
+   powershell.exe -NoProfile -NonInteractive -Command "Set-Location 'C:\GitRepo\InnocenceEngine\Bin'; (Start-Process -FilePath 'RelWithDebInfo\Main.exe' -ArgumentList '-mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProject/Scenes/UnitTest.InnoScene' -Wait -PassThru -NoNewWindow).ExitCode"
    ```
 
 ### GPU validation
