@@ -118,9 +118,13 @@ async function main() {
   }
 
   // Docs-only escape.
+  // `-c core.quotePath=false` keeps non-ASCII paths unquoted so the
+  // DOCS_ONLY_PATH regex actually matches them (git would otherwise wrap
+  // paths containing e.g. em-dash or × in double quotes + octal escapes,
+  // and every `^\.backlog\/` / `^Documents\/` test would fail).
   let stagedRaw = ''
   try {
-    stagedRaw = execSync('git diff --cached --name-only', { cwd, encoding: 'utf8' })
+    stagedRaw = execSync('git -c core.quotePath=false diff --cached --name-only', { cwd, encoding: 'utf8' })
   } catch { /* no git; nothing we can do */ }
   const staged = stagedRaw.split('\n').map(s => s.trim()).filter(Boolean)
   if (staged.length > 0 && staged.every(f => DOCS_ONLY_PATH.test(f))) {
