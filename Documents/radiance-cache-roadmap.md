@@ -138,7 +138,8 @@ next CL can compare against it.
 | I.2 | SH L2 upgrade (9 coefficients, 3×3 per-probe storage) | ☑ | |
 | I.2b | Ramamoorthi-Hanrahan cosine-lobe convolution | ☑ | |
 | I.3 | Temporal GI denoiser (inline, motion-reprojected blend) | ☑ | |
-| I.3b | Adaptive spatial filter (disocclusion-mask-aware) | ☐ | |
+| I.3b | Inline 3x3 depth-bilateral on history read | ☑ | |
+| I.3c | Variance-aware spatial filter + disocclusion-mask dilation | ☐ | |
 | W | World-cache overhaul | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
@@ -275,12 +276,21 @@ Motion-vector reprojection + 5% depth-ratio validity gate + 10% new /
 90% history blend. Disocclusion / first-frame / out-of-bounds pixels
 use 100% raw irradiance (no over-blur on newly-visible surfaces).
 
-**[I.3b] Adaptive spatial filter** — deferred. Paper §2.4.3 sizes the
-spatial-filter radius inversely with accumulated sample count (small
-radius for converged pixels, large for disoccluded). Also uses a
-dilated disocclusion mask so the filter's kernel doesn't shrink too
-aggressively on edges. Non-trivial: another full-screen pass, a
-per-pixel sample-count counter (accumulate in history's unused
-channel?), bilateral-weighted A-trous or similar kernel. Best tackled
-once the temporal variant has been observed against an interactive
-scene to identify where residual variance actually sits.
+**[I.3b] Inline 3x3 depth-bilateral on history read** — landed. In the
+same block that performs motion-vector reprojection, each tap in a 3x3
+neighbourhood of the previous history is depth-bilateral-weighted
+(tent kernel × `exp(-20 · |Δdepth| / depth)`). Taps with uninitialised
+depth or > 5% relative depth mismatch are dropped; if all fail we
+stay on raw irradiance. Inline read means no UAV race; the blended
+write-back compounds smoothing across frames without tracking an
+explicit sample count.
+
+**[I.3c] Variance-aware spatial filter** — deferred. The inline
+`3x3` kernel is a tent-weighted bilateral and doesn't scale its
+radius with history age. Paper §2.4.3 enlarges the kernel where the
+accumulated sample count is low (disocclusion regions) and shrinks
+it where the signal is already converged. Proper implementation is
+its own pass: an A-trous-style multi-level filter, with per-pixel
+variance (from storing `second moment` in an unused history
+channel) driving the early-out radius. Best layered on top of
+the inline form once real per-pixel variance data exists.
