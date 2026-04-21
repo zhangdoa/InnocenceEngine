@@ -140,7 +140,8 @@ next CL can compare against it.
 | I.3 | Temporal GI denoiser (inline, motion-reprojected blend) | ☑ | |
 | I.3b | Inline 3x3 depth-bilateral on history read | ☑ | |
 | I.3c | Inline 5x5 Gaussian bilateral + tighter temporal blend | ☑ | |
-| I.3d | Variance-aware adaptive kernel radius + disocclusion-mask dilation | ☐ | |
+| I.3d | Inline spatial-variance-adaptive blend rate | ☑ | |
+| I.3e | Temporal-variance (SVGF moments) + A-trous multi-stride + disocclusion dilation | ☐ | |
 | W | World-cache overhaul | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
@@ -292,11 +293,20 @@ bilateral depth weight preserved. Temporal blend rate drops from 0.10
 to 0.05 so the denoised output leans harder on the now-wider-smoothed
 history. Disoccluded / first-frame pixels still short-circuit to raw.
 
-**[I.3d] Variance-aware adaptive kernel** — deferred. The 5x5 kernel
-is fixed-radius and not scaled by per-pixel history age. Paper §2.4.3
-enlarges the kernel where sample count is low (disocclusion regions)
-and shrinks it where the signal is already converged. Proper
-implementation stores a second-moment (luma²) ping-pong texture,
-computes per-pixel variance from (moment2 - moment1²), and drives
-both kernel radius and blend rate from that variance. Worth a
-dedicated pass for A-trous-style multi-stride filtering.
+**[I.3d] Spatial-variance-adaptive blend rate** — landed. Track
+1st/2nd moments across the existing 5x5 filter support (0 extra
+texture fetches); derive `rel_var = luma(variance) / luma(mean)^2`;
+`blend_rate = lerp(0.03, 0.20, saturate(rel_var))`. Low-variance
+interiors lean into history aggressively (3%/97%), high-variance
+edges/discontinuities respond quickly (20%/80%). Disoccluded pixels
+still short-circuit to 100% raw.
+
+**[I.3e] Temporal-variance (SVGF) + A-trous** — deferred. The
+stricter paper form tracks a second-moment HISTORY texture and
+computes TEMPORAL variance, which captures the probe's actual
+sample convergence rate. Driving blend rate AND kernel radius off
+that temporal variance is the SVGF recipe. Also deferred: A-trous
+multi-stride filtering (3 passes at strides 1, 2, 4 approximates a
+large Gaussian with 5-tap-per-pass). Requires moving the denoiser
+out of the LightPass compute into its own pass(es) and a
+second-moment ping-pong texture.
