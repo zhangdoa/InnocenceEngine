@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common/common.hlsl"
+#include "common/RadianceCacheCommon.hlsl"
 
 struct ComputeInputType
 {
@@ -69,6 +69,14 @@ StructuredBuffer<uint> in_LightIndexList : register(t9);
 Texture2D<float4> in_RadianceCache : register(t10);
 [[vk::binding(11, 1)]]
 Texture3D<float4> in_VolumetricFog : register(t11);
+// GI-1.0 §2.4 edge-aware probe interpolation needs per-probe world
+// position, normal, and mask alongside the SH irradiance atlas.
+[[vk::binding(12, 1)]]
+Texture2D<float4> in_ProbePosition : register(t12);
+[[vk::binding(13, 1)]]
+Texture2D<float4> in_ProbeNormal : register(t13);
+[[vk::binding(14, 1)]]
+Texture2D<uint> in_ProbeMask : register(t14);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerTypeLinear : register(s0);
 [[vk::binding(1, 2)]]
@@ -127,27 +135,91 @@ float3 LoadIrradiance(uint2 shReadCoord, float3 normal)
         0.0);
 }
 
-float3 SampleRadianceCache(float2 screenCoord, float3 normal)
+// GI-1.0 §2.4 edge-aware probe weight. Returns 0 when the probe is sky /
+// off-surface or crosses a plane / normal discontinuity — prevents a
+// nearby probe on a different surface from leaking light across edges.
+float ComputeProbeWeight(uint2 probeCoord, uint2 maxProbeIdx,
+                         float3 pixelPos, float3 pixelNormal, float cellSize)
+{
+    probeCoord = min(probeCoord, maxProbeIdx);
+    uint mask = in_ProbeMask[probeCoord];
+    if (!IsValidProbe(mask))
+        return 0.0;
+
+    float3 probePos = in_ProbePosition[probeCoord].xyz;
+    float3 probeNormal = normalize(in_ProbeNormal[probeCoord].xyz);
+
+    float planeDist = abs(dot(probePos - pixelPos, pixelNormal));
+    if (planeDist > cellSize)
+        return 0.0;
+
+    float normalDot = dot(pixelNormal, probeNormal);
+    if (normalDot <= 0.0)
+        return 0.0;
+
+    return normalDot * saturate(1.0 - planeDist / cellSize);
+}
+
+// GI-1.0 §2.4.1 per-pixel interpolation: weighted average of the 4 probes
+// surrounding the pixel. Each corner combines the bilinear weight from
+// screen-space position with an edge-aware weight (probe validity + plane
+// + normal). If every corner is rejected we fall back to an equal-weight
+// average of SH — the paper's "relaxed interpolation" — so that edge
+// pixels don't go black when their local neighbourhood has no good
+// probe.
+float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNormal)
 {
     uint2 probeIndex = uint2(screenCoord) / TILE_SIZE;
-    // Clamp neighbor probes to the last valid probe so bilinear reads never go OOB
     uint2 maxProbeIndex = uint2(g_Frame.viewportSize.xy) / TILE_SIZE - 1;
 
-    float3 Irradiance_TL = LoadIrradiance(probeIndex * SH_TILE_SIZE, normal);
-    float3 Irradiance_TR = LoadIrradiance(min(probeIndex + uint2(1, 0), maxProbeIndex) * SH_TILE_SIZE, normal);
-    float3 Irradiance_BL = LoadIrradiance(min(probeIndex + uint2(0, 1), maxProbeIndex) * SH_TILE_SIZE, normal);
-    float3 Irradiance_BR = LoadIrradiance(min(probeIndex + uint2(1, 1), maxProbeIndex) * SH_TILE_SIZE, normal);
+    float depth = length(pixelPos - g_Frame.camera_posWS.xyz);
+    float cellSize = max(AdaptiveCellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
 
-    float2 uv = frac(float2(screenCoord) / TILE_SIZE);
-    uv = smoothstep(0.0, 1.0, uv);
+    uint2 tl = probeIndex;
+    uint2 tr = probeIndex + uint2(1, 0);
+    uint2 bl = probeIndex + uint2(0, 1);
+    uint2 br = probeIndex + uint2(1, 1);
 
-    float3 top    = lerp(Irradiance_TL, Irradiance_TR, uv.x);
-    float3 bottom = lerp(Irradiance_BL, Irradiance_BR, uv.x);
-    float3 result = lerp(top, bottom, uv.y);
+    float2 bilinear = frac(float2(screenCoord) / TILE_SIZE);
+    float wTL = (1.0 - bilinear.x) * (1.0 - bilinear.y);
+    float wTR = bilinear.x * (1.0 - bilinear.y);
+    float wBL = (1.0 - bilinear.x) * bilinear.y;
+    float wBR = bilinear.x * bilinear.y;
 
-    result = max(result, float3(0.0, 0.0, 0.0));
+    float eTL = ComputeProbeWeight(tl, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+    float eTR = ComputeProbeWeight(tr, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+    float eBL = ComputeProbeWeight(bl, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+    float eBR = ComputeProbeWeight(br, maxProbeIndex, pixelPos, pixelNormal, cellSize);
 
-    return result;
+    float fTL = wTL * eTL;
+    float fTR = wTR * eTR;
+    float fBL = wBL * eBL;
+    float fBR = wBR * eBR;
+
+    float totalWeight = fTL + fTR + fBL + fBR;
+
+    float3 result;
+    if (totalWeight > 0.0)
+    {
+        float3 ITL = LoadIrradiance(min(tl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        float3 ITR = LoadIrradiance(min(tr, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        float3 IBL = LoadIrradiance(min(bl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        float3 IBR = LoadIrradiance(min(br, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        result = (fTL * ITL + fTR * ITR + fBL * IBL + fBR * IBR) / totalWeight;
+    }
+    else
+    {
+        // Relaxed interpolation fallback (paper §2.4.1): all edge weights
+        // rejected — use equal-weight screen-bilinear blend so the pixel
+        // still receives something rather than going black.
+        float3 ITL = LoadIrradiance(min(tl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        float3 ITR = LoadIrradiance(min(tr, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        float3 IBL = LoadIrradiance(min(bl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        float3 IBR = LoadIrradiance(min(br, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+        result = wTL * ITL + wTR * ITR + wBL * IBL + wBR * IBR;
+    }
+
+    return max(result, float3(0.0, 0.0, 0.0));
 }
 
 void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
@@ -265,7 +337,7 @@ void main(ComputeInputType input)
 	l_MaterialAttributes.m_Albedo = GPassRT2.xyz;
 
 	/// Indirect light from radiance cache
-	float3 l_IrradianceFromCache = SampleRadianceCache(l_ScreenCoord, N);
+	float3 l_IrradianceFromCache = SampleRadianceCache(l_ScreenCoord, l_Position_WorldSpace, N);
 
 	if (any(isnan(l_IrradianceFromCache)))
 		l_IrradianceFromCache = float3(0.0, 0.0, 0.0);

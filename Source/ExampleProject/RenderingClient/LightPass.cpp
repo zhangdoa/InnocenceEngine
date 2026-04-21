@@ -12,6 +12,7 @@
 #include "SunShadowBlurEvenPass.h"
 #include "LightCullingPass.h"
 #include "RadianceCacheIntegrationPass.h"
+#include "RadianceCacheReprojectionPass.h"
 #include "VolumetricPass.h"
 
 #include "../../Engine/Engine.h"
@@ -43,7 +44,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(22);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(25);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -182,6 +183,30 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorIndex = 1;
 
+	// t12 - Probe Position (GI-1.0 §2.4 edge-aware probe interpolation)
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorIndex = 12;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_TextureUsage = TextureUsage::ComputeOnly;
+
+	// t13 - Probe Normal
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorIndex = 13;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_TextureUsage = TextureUsage::ComputeOnly;
+
+	// t14 - Probe Mask
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_DescriptorIndex = 14;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_TextureUsage = TextureUsage::ComputeOnly;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
@@ -288,6 +313,9 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(SunShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheIntegrationPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbePosition()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetProbeMask()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -316,6 +344,9 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IlluminanceResult, 19);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Linear, 20);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Point, 21);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 22);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 23);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetProbeMask(), 24);
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
