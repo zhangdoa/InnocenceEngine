@@ -31,7 +31,10 @@ Texture2D<uint> in_ProbeMask : register(t3);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> out_FinalFiltered : register(u0);
 
-// GI-1.0 Algorithm 5: vertical pass of the separable bilateral filter.
+// GI-1.0 Algorithm 5: vertical pass of the separable probe-space bilateral
+// filter. See the horizontal pass for the full documentation — this pass
+// swaps the blur direction to Y and sources from the horizontal-filtered
+// atlas.
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
@@ -49,69 +52,62 @@ void main(ComputeInputType input)
     float3 currentPosWS = in_ProbePosition.Load(int3(probeCoord, 0)).xyz;
     float3 currentNormal = normalize(in_ProbeNormal.Load(int3(probeCoord, 0)).xyz);
 
-    uint2 localCoord = screenCoord % RADIANCE_CACHE_TILE_SIZE;
+    int2 localCoord = int2(screenCoord) % int(RADIANCE_CACHE_TILE_SIZE);
     float2 octUV = (float2(localCoord) + 0.5) / float(RADIANCE_CACHE_TILE_SIZE);
-    float3 sampleDir = DecodeOctahedral(octUV);
+    float3 direction = DecodeOctahedral(octUV);
 
-    if (dot(sampleDir, currentNormal) <= 0.0)
+    if (dot(direction, currentNormal) <= 0.0)
     {
         out_FinalFiltered[screenCoord] = float4(0, 0, 0, 0);
         return;
     }
 
-    float4 currentRadiance = in_HorizontalFiltered.Load(int3(screenCoord, 0));
+    float4 centerSample = in_HorizontalFiltered.Load(int3(screenCoord, 0));
     float currentDepth = length(currentPosWS - g_Frame.camera_posWS.xyz);
     float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
 
-    static const float weights[7] = { 0.006, 0.061, 0.242, 0.383, 0.242, 0.061, 0.006 };
-    static const int offsets[7] = { -3, -2, -1, 0, 1, 2, 3 };
+    float4 filteredRadiance = centerSample;
+    float totalWeight = 1.0;
 
-    float4 filteredRadiance = float4(0, 0, 0, 0);
-    float totalWeight = 0.0;
-
-    for (int i = 0; i < 7; i++)
+    const int kRadius = 3;
+    const int kSize = kRadius * 2;
+    for (int i = 0; i < kSize; i++)
     {
-        int2 offset = int2(0, offsets[i]);
-        int2 sampleCoord = int2(screenCoord) + offset;
-
-        if (any(sampleCoord < int2(0, 0)) || any(sampleCoord >= int2(g_Frame.viewportSize.xy)))
+        int step = (((i & 1) << 1) - 1) * ((i >> 1) + 1);
+        int2 neighbourProbe = probeCoord + int2(0, step);
+        if (any(neighbourProbe < int2(0, 0)) || any(neighbourProbe >= gridSize))
             continue;
 
-        int2 sampleProbeCoord = sampleCoord / int(RADIANCE_CACHE_TILE_SIZE);
+        uint neighbourMask = in_ProbeMask.Load(int3(neighbourProbe, 0));
+        if (!IsValidProbe(neighbourMask))
+            continue;
 
-        if (any(sampleProbeCoord != probeCoord))
-        {
-            ProbeLookup neighbor = FindClosestProbe(in_ProbeMask, sampleCoord, int2(0, 0), gridSize);
-            if (!IsValidProbe(neighbor.packed))
-                continue;
+        float3 neighbourPosWS = in_ProbePosition.Load(int3(neighbourProbe, 0)).xyz;
+        float3 neighbourNormal = normalize(in_ProbeNormal.Load(int3(neighbourProbe, 0)).xyz);
 
-            float3 neighborPosWS = in_ProbePosition.Load(int3(neighbor.tileCoord, 0)).xyz;
-            float3 neighborNormal = normalize(in_ProbeNormal.Load(int3(neighbor.tileCoord, 0)).xyz);
+        if (abs(dot(neighbourPosWS - currentPosWS, currentNormal)) > cellSize)
+            continue;
+        if (dot(direction, neighbourNormal) <= 0.0)
+            continue;
 
-            float plane_dist = abs(dot(neighborPosWS - currentPosWS, currentNormal));
-            float normal_check = dot(neighborNormal, currentNormal);
+        int2 neighbourAtlasCoord = neighbourProbe * int(RADIANCE_CACHE_TILE_SIZE) + localCoord;
+        float4 neighbourSample = in_HorizontalFiltered.Load(int3(neighbourAtlasCoord, 0));
+        float neighbourHitDistance = min(neighbourSample.a, centerSample.a);
 
-            if (plane_dist > cellSize || normal_check < 0.9)
-                continue;
-        }
+        float3 hitWS = neighbourPosWS + direction * neighbourHitDistance;
+        float3 reprojectedDir = normalize(hitWS - currentPosWS);
+        if (dot(direction, reprojectedDir) < PROBE_FILTER_ANGLE_THRESHOLD)
+            continue;
 
-        float4 sampleRadiance = in_HorizontalFiltered.Load(int3(sampleCoord, 0));
+        float neighbourDepth = length(neighbourPosWS - g_Frame.camera_posWS.xyz);
+        float depthRatio = saturate(1.0 - abs(neighbourDepth - currentDepth) / max(currentDepth, EPSILON));
+        float weight = pow(depthRatio, 8.0);
 
-        float3 sampleProbePos = in_ProbePosition.Load(int3(sampleProbeCoord, 0)).xyz;
-        float sampleDepth = length(sampleProbePos - g_Frame.camera_posWS.xyz);
-        float depthWeight = 1.0 / (1.0 + abs(currentDepth - sampleDepth) / cellSize);
-
-        float weight = weights[i] * depthWeight;
-
-        filteredRadiance += sampleRadiance * weight;
+        filteredRadiance += weight * float4(neighbourSample.rgb, neighbourHitDistance);
         totalWeight += weight;
     }
 
-    if (totalWeight > 0.0)
-        filteredRadiance /= totalWeight;
-    else
-        filteredRadiance = currentRadiance;
-
+    filteredRadiance /= totalWeight;
     filteredRadiance.rgb = max(filteredRadiance.rgb, float3(0.0, 0.0, 0.0));
 
     out_FinalFiltered[screenCoord] = filteredRadiance;

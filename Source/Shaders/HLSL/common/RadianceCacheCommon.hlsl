@@ -90,6 +90,15 @@ ProbeLookup FindClosestProbe(Texture2D<uint> probeMask, int2 pixel, int2 offsetI
     return r;
 }
 
+// GI-1.0 Algorithm 5 angular-error threshold for parallax-corrected filter
+// taps. Capsaicin uses cos(2e-2 * PI) ≈ 0.998 — reject a tap if the
+// parallax-reprojected direction diverges by > ~3.6° from the original
+// cell direction. Preserves small-scale occlusion (paper Figure 9): a
+// neighbour whose stored hit distance, re-aimed from the current probe,
+// points at a noticeably different world direction is likely seeing
+// different geometry and would contaminate shadow edges if blended in.
+static const float PROBE_FILTER_ANGLE_THRESHOLD = 0.998;
+
 // GI-1.0 Algorithm 3 — biased shadow-preserving temporal hysteresis.
 // Returns the blend factor t for `lerp(radiance_new, radiance_old, t)`.
 // Matching the Capsaicin reference impl (GPUOpen-LibrariesAndSDKs/Capsaicin):
