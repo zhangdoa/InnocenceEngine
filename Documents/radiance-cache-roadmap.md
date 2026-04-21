@@ -136,7 +136,9 @@ next CL can compare against it.
 | S2.2 | LRU persistent side cache for evicted probes | ☐ (deferred) | |
 | I.1 | Edge-aware 4-probe interpolation + relaxed fallback | ☑ | |
 | I.2 | SH L2 upgrade (9 coefficients, 3×3 per-probe storage) | ☑ | |
-| I.3 | Spatiotemporal GI denoiser | ☐ | |
+| I.2b | Ramamoorthi-Hanrahan cosine-lobe convolution | ☑ | |
+| I.3 | Temporal GI denoiser (inline, motion-reprojected blend) | ☑ | |
+| I.3b | Adaptive spatial filter (disocclusion-mask-aware) | ☐ | |
 | W | World-cache overhaul | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
@@ -267,11 +269,18 @@ irradiance convolution (with per-band cosine-lobe weights π, 2π/3,
 the current form gives a sharper-than-irradiance reconstruction but
 matches the behaviour the pipeline was tuned against.
 
-**[I.3] Spatiotemporal GI denoiser** — remaining. Biggest visible-quality
-lever still pending; probably the single biggest improvement to the
-"per-pixel noise inherited from the pipeline". Paper §2.4.3 prescribes
-temporal accumulation with adaptive spatial-filter radius sized by the
-per-pixel history sample count, plus a disocclusion mask (dilated into
-a blur mask) to switch between stable accumulation and aggressive
-spatial blur on newly-appeared pixels. Net new pass + new history
-resources.
+**[I.3] Temporal GI denoiser (minimal variant)** — inline in LightPass,
+ping-pong GI-irradiance history (rgb = irradiance, a = linear depth).
+Motion-vector reprojection + 5% depth-ratio validity gate + 10% new /
+90% history blend. Disocclusion / first-frame / out-of-bounds pixels
+use 100% raw irradiance (no over-blur on newly-visible surfaces).
+
+**[I.3b] Adaptive spatial filter** — deferred. Paper §2.4.3 sizes the
+spatial-filter radius inversely with accumulated sample count (small
+radius for converged pixels, large for disoccluded). Also uses a
+dilated disocclusion mask so the filter's kernel doesn't shrink too
+aggressively on edges. Non-trivial: another full-screen pass, a
+per-pixel sample-count counter (accumulate in history's unused
+channel?), bilateral-weighted A-trous or similar kernel. Best tackled
+once the temporal variant has been observed against an interactive
+scene to identify where residual variance actually sits.
