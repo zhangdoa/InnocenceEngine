@@ -132,8 +132,11 @@ next CL can compare against it.
 | S1.5 | Sparse spawning (upscale 2×2) + Halton pixel + Reprojection mask invalidation | ☑ | |
 | S1.5b | Mask MIP chain + FindClosestProbe MIP walk | ☐ (deferred) | |
 | S1.5c | Algorithm 2 ray redistribution (empty/override queues + patch kernel) | ☐ (deferred) | |
-| S2 | Screen-cache robustness (LRU side cache + mask-MIP filter) | ☐ | |
-| I | Irradiance evaluation | ☐ | |
+| S2.1 | Probe-space filter with parallax-correction angular rejection | ☑ | |
+| S2.2 | LRU persistent side cache for evicted probes | ☐ (deferred) | |
+| I.1 | Edge-aware 4-probe interpolation + relaxed fallback | ☑ | |
+| I.2 | SH L2 upgrade (9 coefficients, 3×3 per-probe storage) | ☑ | |
+| I.3 | Spatiotemporal GI denoiser | ☐ | |
 | W | World-cache overhaul | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
@@ -222,3 +225,53 @@ kernel that steals ray slots from well-reprojected tiles to fill
 disoccluded ones; keeps the per-frame ray budget constant. Non-trivial
 infrastructure (2 new buffers, a classify-and-populate compute pass, a
 dispatch-indirect RayGen invocation).
+
+### [S2.1] shipped, [S2.2] deferred
+
+**[S2.1] Probe-space filter with parallax-correction angular rejection** —
+the old filter iterated in screen space, so its stride-1 taps across a
+tile boundary sampled cells of a *different* probe representing
+*different* world directions; the filter was mathematically wrong for
+the atlas layout even though it compiled and ran. New filter iterates
+in probe space (6 taps at ±{1,2,3} probe-tiles along the blur axis),
+reads the same cell in each neighbour probe, and uses Capsaicin's
+parallax rejection: re-aim the stored hit distance through the current
+probe's position and reject the tap if the reprojected direction
+differs from the original cell direction by more than ~3.6°.
+
+**[S2.2] LRU persistent side cache** — deferred. Paper §2.1.8
+describes a side texture + MRU-reorder scheme to keep probes that
+reprojection would otherwise evict (mostly useful for thin-geometry
+wobble). Substantial infrastructure (eviction signal from reprojection,
+a scatter-by-screen-coord pass, MRU reorder, decay-based cleanup).
+Not on the critical path for the noise we see on large surfaces.
+
+### [I.1] and [I.2] shipped, [I.3] remains
+
+**[I.1] Edge-aware 4-probe interpolation** — LightPass now queries each
+of the 4 surrounding probes for validity (mask bit 31), plane distance
+(edge-aware depth against AdaptiveCellSize), and normal dot-product;
+each corner's final weight is `screen_bilinear * edge_weight`. If every
+corner is rejected, falls back to an unweighted screen-bilinear blend
+("relaxed interpolation") so edge pixels don't go black. The paper also
+writes this fallback flag into the output alpha as a denoiser hint —
+wired in alongside [I.3].
+
+**[I.2] SH L2 upgrade** — 4 → 9 coefficients. Adds the 5 band-2 basis
+functions (Y_2_2, Y_2_1, Y_20, Y_21, Y_22) that capture quadrant /
+axis-pair directional variation L1 can't express. Atlas layout 2×2 →
+3×3 per probe. One follow-up worth noting: `LoadIrradiance` still
+evaluates `Σ SH[l,m] · Y_lm(n)` rather than the Ramamoorthi-Hanrahan
+irradiance convolution (with per-band cosine-lobe weights π, 2π/3,
+π/4). That's a ~1-day fix if we want physically-correct irradiance;
+the current form gives a sharper-than-irradiance reconstruction but
+matches the behaviour the pipeline was tuned against.
+
+**[I.3] Spatiotemporal GI denoiser** — remaining. Biggest visible-quality
+lever still pending; probably the single biggest improvement to the
+"per-pixel noise inherited from the pipeline". Paper §2.4.3 prescribes
+temporal accumulation with adaptive spatial-filter radius sized by the
+per-pixel history sample count, plus a disocclusion mask (dilated into
+a blur mask) to switch between stable accumulation and aggressive
+spatial blur on newly-appeared pixels. Net new pass + new history
+resources.
