@@ -376,35 +376,62 @@ void main(ComputeInputType input)
 	if (any(isnan(l_IrradianceFromCache)))
 		l_IrradianceFromCache = float3(0.0, 0.0, 0.0);
 
-	// GI-1.0 §2.4.3 temporal denoiser (minimal variant — temporal
-	// accumulation only; spatial filter deferred to [I.3b]). Sample the
-	// previous frame's GI-irradiance history at the motion-vector-
-	// reprojected coord and blend 10% new / 90% history when the
-	// reprojection's stored depth matches this pixel's depth within 5%.
-	// Disocclusions and depth discontinuities fall back to 100% raw —
-	// no over-blurring of newly-visible surfaces.
+	// GI-1.0 §2.4.3 spatiotemporal denoiser, inline variant:
+	// temporal accumulation + a depth-bilateral 3x3 smoothing on the
+	// prev-history read. Reading (rather than writing) means no UAV race;
+	// the bilateral smoothing compounds frame-to-frame because the
+	// blended result we write back IS a smoothed version of prev, so
+	// subsequent frames read a progressively more denoised history.
 	{
 		float l_CurrentDepth = length(l_Position_WorldSpace - g_Frame.camera_posWS.xyz);
 
 		float2 l_Motion = in_opaquePassRT3.Load(int3(l_ScreenCoord, 0)).xy;
 		int2 l_PrevCoord = int2(l_ScreenCoord) + int2(l_Motion);
 
-		bool l_InBounds = all(l_PrevCoord >= int2(0, 0)) &&
-		                  all(l_PrevCoord < int2(g_Frame.viewportSize.xy));
-
+		int2 l_Viewport = int2(g_Frame.viewportSize.xy);
 		float3 l_DenoisedIrradiance = l_IrradianceFromCache;
-		if (l_InBounds)
+
+		// Bilateral 3x3 on the reprojected neighbourhood. Weight each tap
+		// by `exp(-k * |Δdepth| / depth)`; skip uninitialised (depth == 0)
+		// and out-of-bounds taps.
+		float3 l_HistoryAcc = float3(0, 0, 0);
+		float l_HistoryWeight = 0.0;
+		[unroll]
+		for (int dy = -1; dy <= 1; dy++)
 		{
-			float4 l_HistorySample = in_GIHistoryPrev.Load(int3(l_PrevCoord, 0));
-			float l_HistoryDepth = l_HistorySample.a;
-			// Reject if prior pixel sat on a different surface or no
-			// history exists (depth 0 on the first frame / uninitialised
-			// texture).
-			bool l_DepthValid = l_HistoryDepth > 0.0 &&
-				abs(l_CurrentDepth - l_HistoryDepth) / max(l_CurrentDepth, EPSILON) < 0.05;
-			if (l_DepthValid)
-				l_DenoisedIrradiance = lerp(l_HistorySample.rgb, l_IrradianceFromCache, 0.1);
+			[unroll]
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				int2 l_TapCoord = l_PrevCoord + int2(dx, dy);
+				if (any(l_TapCoord < int2(0, 0)) || any(l_TapCoord >= l_Viewport))
+					continue;
+
+				float4 l_Tap = in_GIHistoryPrev.Load(int3(l_TapCoord, 0));
+				float l_TapDepth = l_Tap.a;
+				if (l_TapDepth <= 0.0)
+					continue;
+
+				float l_DepthError = abs(l_TapDepth - l_CurrentDepth) / max(l_CurrentDepth, EPSILON);
+				if (l_DepthError > 0.05)
+					continue;
+
+				// Centre tap counts 4×, direct neighbours 2×, diagonals 1×
+				// (tent kernel) combined with the depth bilateral.
+				float l_Spatial = (dx == 0 ? 2.0 : 1.0) * (dy == 0 ? 2.0 : 1.0);
+				float l_DepthW = exp(-l_DepthError * 20.0);
+				float l_W = l_Spatial * l_DepthW;
+
+				l_HistoryAcc += l_W * l_Tap.rgb;
+				l_HistoryWeight += l_W;
+			}
 		}
+
+		if (l_HistoryWeight > 1e-4)
+		{
+			float3 l_HistoryFiltered = l_HistoryAcc / l_HistoryWeight;
+			l_DenoisedIrradiance = lerp(l_HistoryFiltered, l_IrradianceFromCache, 0.1);
+		}
+		// else: no valid taps (disocclusion / first frame) — stay on raw.
 
 		out_GIHistory[l_ScreenCoord] = float4(l_DenoisedIrradiance, l_CurrentDepth);
 		l_IrradianceFromCache = l_DenoisedIrradiance;
