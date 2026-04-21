@@ -44,7 +44,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(25);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(27);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -207,6 +207,22 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_DescriptorIndex = 14;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_TextureUsage = TextureUsage::ComputeOnly;
 
+	// t15 - Previous-frame GI history (rgb = irradiance, a = linear depth)
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[25].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[25].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[25].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[25].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[25].m_DescriptorIndex = 15;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[25].m_TextureUsage = TextureUsage::ComputeOnly;
+
+	// u2 - Current-frame GI history (writes the temporally-blended irradiance)
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[26].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[26].m_DescriptorSetIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[26].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[26].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[26].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[26].m_TextureUsage = TextureUsage::ComputeOnly;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
@@ -247,7 +263,9 @@ bool LightPass::Terminate()
 
 	g_Engine->Get<TextureResourceService>()->Delete(m_LuminanceResult);
 	g_Engine->Get<TextureResourceService>()->Delete(m_IlluminanceResult);
-	
+	g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Even);
+	g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Odd);
+
 	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_Point);
 	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_Linear);
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
@@ -316,6 +334,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbePosition()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheReprojectionPass::Get().GetProbeMask()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(GetPreviousGIHistory(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(GetCurrentGIHistory(), m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -347,6 +367,8 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetCurrentProbePosition(), 22);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 23);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetProbeMask(), 24);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, GetPreviousGIHistory(), 25);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, GetCurrentGIHistory(), 26);
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
@@ -382,6 +404,12 @@ bool LightPass::RenderTargetsCreationFunc()
 	if (m_IlluminanceResult)
 		g_Engine->Get<TextureResourceService>()->Delete(m_IlluminanceResult);
 
+	if (m_GIHistory_Even)
+		g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Even);
+
+	if (m_GIHistory_Odd)
+		g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Odd);
+
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
@@ -397,5 +425,29 @@ bool LightPass::RenderTargetsCreationFunc()
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_IlluminanceResult);
 
+	m_GIHistory_Even = g_Engine->Get<TextureResourceService>()->Add("LightPass GI History (Even)");
+	m_GIHistory_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_GIHistory_Even->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_GIHistory_Even);
+
+	m_GIHistory_Odd = g_Engine->Get<TextureResourceService>()->Add("LightPass GI History (Odd)");
+	m_GIHistory_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_GIHistory_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_GIHistory_Odd);
+
 	return true;
+}
+
+TextureComponent* LightPass::GetCurrentGIHistory()
+{
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
+	return (l_frameCount % 2 == 1) ? m_GIHistory_Odd : m_GIHistory_Even;
+}
+
+TextureComponent* LightPass::GetPreviousGIHistory()
+{
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
+	return (l_frameCount % 2 == 1) ? m_GIHistory_Even : m_GIHistory_Odd;
 }

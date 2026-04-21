@@ -77,6 +77,11 @@ Texture2D<float4> in_ProbePosition : register(t12);
 Texture2D<float4> in_ProbeNormal : register(t13);
 [[vk::binding(14, 1)]]
 Texture2D<uint> in_ProbeMask : register(t14);
+// GI-1.0 §2.4.3 temporal denoiser history: rgb = accumulated irradiance,
+// a = linear depth at the pixel that produced the sample. Alpha is used
+// to reject reprojections that land on a different surface.
+[[vk::binding(15, 1)]]
+Texture2D<float4> in_GIHistoryPrev : register(t15);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerTypeLinear : register(s0);
 [[vk::binding(1, 2)]]
@@ -85,6 +90,8 @@ SamplerState in_samplerTypePoint : register(s1);
 RWTexture2D<float4> out_lightPassRT0 : register(u0);
 [[vk::binding(1, 3)]]
 RWTexture2D<float4> out_lightPassRT1 : register(u1);
+[[vk::binding(2, 3)]]
+RWTexture2D<float4> out_GIHistory : register(u2);
 
 #include "common/coneTrace.hlsl"
 #include "common/BSDF.hlsl"
@@ -368,6 +375,40 @@ void main(ComputeInputType input)
 
 	if (any(isnan(l_IrradianceFromCache)))
 		l_IrradianceFromCache = float3(0.0, 0.0, 0.0);
+
+	// GI-1.0 §2.4.3 temporal denoiser (minimal variant — temporal
+	// accumulation only; spatial filter deferred to [I.3b]). Sample the
+	// previous frame's GI-irradiance history at the motion-vector-
+	// reprojected coord and blend 10% new / 90% history when the
+	// reprojection's stored depth matches this pixel's depth within 5%.
+	// Disocclusions and depth discontinuities fall back to 100% raw —
+	// no over-blurring of newly-visible surfaces.
+	{
+		float l_CurrentDepth = length(l_Position_WorldSpace - g_Frame.camera_posWS.xyz);
+
+		float2 l_Motion = in_opaquePassRT3.Load(int3(l_ScreenCoord, 0)).xy;
+		int2 l_PrevCoord = int2(l_ScreenCoord) + int2(l_Motion);
+
+		bool l_InBounds = all(l_PrevCoord >= int2(0, 0)) &&
+		                  all(l_PrevCoord < int2(g_Frame.viewportSize.xy));
+
+		float3 l_DenoisedIrradiance = l_IrradianceFromCache;
+		if (l_InBounds)
+		{
+			float4 l_HistorySample = in_GIHistoryPrev.Load(int3(l_PrevCoord, 0));
+			float l_HistoryDepth = l_HistorySample.a;
+			// Reject if prior pixel sat on a different surface or no
+			// history exists (depth 0 on the first frame / uninitialised
+			// texture).
+			bool l_DepthValid = l_HistoryDepth > 0.0 &&
+				abs(l_CurrentDepth - l_HistoryDepth) / max(l_CurrentDepth, EPSILON) < 0.05;
+			if (l_DepthValid)
+				l_DenoisedIrradiance = lerp(l_HistorySample.rgb, l_IrradianceFromCache, 0.1);
+		}
+
+		out_GIHistory[l_ScreenCoord] = float4(l_DenoisedIrradiance, l_CurrentDepth);
+		l_IrradianceFromCache = l_DenoisedIrradiance;
+	}
 
 	// Convert SH irradiance to Lambertian outgoing radiance: albedo * (1 - metallic) * E / PI
 	float3 l_LuminanceIndirectLight_FromCache = l_MaterialAttributes.m_Albedo * (1.0 - l_MaterialAttributes.m_Metallic) * l_IrradianceFromCache / PI;

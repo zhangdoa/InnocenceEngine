@@ -18,6 +18,8 @@ namespace Inno
 
 		TextureComponent* GetLuminanceResult();
 		TextureComponent* GetIlluminanceResult();
+		TextureComponent* GetCurrentGIHistory();
+		TextureComponent* GetPreviousGIHistory();
 
 	private:
 		ObjectStatus m_ObjectStatus;
@@ -28,6 +30,12 @@ namespace Inno
 
 		TextureComponent* m_LuminanceResult;
 		TextureComponent* m_IlluminanceResult;
+		// Ping-pong full-screen GI irradiance history for the [I.3] temporal
+		// denoiser. rgb = accumulated irradiance, a = linear depth at the
+		// sampled pixel so the next frame can reject reprojections that
+		// land on a surface at a different depth.
+		TextureComponent* m_GIHistory_Even;
+		TextureComponent* m_GIHistory_Odd;
 
 		bool RenderTargetsCreationFunc();
 	};
