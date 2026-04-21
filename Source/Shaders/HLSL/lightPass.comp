@@ -120,8 +120,21 @@ float4 GetFog(in Texture3D<float4> voxelTexture,
 	return result;
 }
 
-// GI-1.0 §2.4.2 SH irradiance evaluation. 9 coefficients (bands 0–2)
-// packed row-major in a 3x3 SH tile per probe:
+// GI-1.0 §2.4.2 SH irradiance evaluation via Ramamoorthi–Hanrahan 2001
+// cosine-lobe convolution. For a radiance-SH, the irradiance at normal n
+// equals the dot product of the radiance SH with the rotated cosine
+// lobe's SH; the cosine lobe is zonal so only its (l, 0) coefficients
+// are non-zero, and after rotation each band picks up a band-wide
+// weight:
+//   irradiance(n) / π = 1 · SH[0] · Y00
+//                     + (2/3) · Σ_m SH[1,m] · Y_1m(n)
+//                     + (1/4) · Σ_m SH[2,m] · Y_2m(n)
+// The π factor cancels downstream (LightPass divides the albedo term by
+// π), so we return `E(n) / π` directly. Without the band weights the
+// result was a sharpened radiance-at-normal rather than true irradiance,
+// which overbrightened directional hotspots.
+//
+// 9 coefficients (bands 0–2) packed row-major in a 3×3 SH tile per probe:
 //   (0,0)=Y00   (1,0)=Y11   (2,0)=Y1_1
 //   (0,1)=Y10   (1,1)=Y2_2  (2,1)=Y2_1
 //   (0,2)=Y20   (1,2)=Y21   (2,2)=Y22
@@ -137,18 +150,16 @@ float3 LoadIrradiance(uint2 shReadCoord, float3 n)
     float3 c21 = in_RadianceCache[shReadCoord + uint2(1, 2)].rgb;
     float3 c22 = in_RadianceCache[shReadCoord + uint2(2, 2)].rgb;
 
-    float3 result =
-        c00  * Y_00() +
-        c11  * Y_11 (n) +
-        c1_1 * Y_1_1(n) +
-        c10  * Y_10 (n) +
-        c2_2 * Y_2_2(n) +
-        c2_1 * Y_2_1(n) +
-        c20  * Y_20 (n) +
-        c21  * Y_21 (n) +
-        c22  * Y_22 (n);
+    const float A0 = 1.0;
+    const float A1 = 2.0 / 3.0;
+    const float A2 = 1.0 / 4.0;
 
-    return max(result, 0.0);
+    float3 band0 = A0 * c00  * Y_00();
+    float3 band1 = A1 * (c11  * Y_11 (n) + c1_1 * Y_1_1(n) + c10  * Y_10 (n));
+    float3 band2 = A2 * (c2_2 * Y_2_2(n) + c2_1 * Y_2_1(n) + c20  * Y_20 (n) +
+                         c21  * Y_21 (n) + c22  * Y_22 (n));
+
+    return max(band0 + band1 + band2, 0.0);
 }
 
 // GI-1.0 §2.4 edge-aware probe weight. Returns 0 when the probe is sky /
