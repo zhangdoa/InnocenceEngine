@@ -139,7 +139,8 @@ next CL can compare against it.
 | I.2b | Ramamoorthi-Hanrahan cosine-lobe convolution | ☑ | |
 | I.3 | Temporal GI denoiser (inline, motion-reprojected blend) | ☑ | |
 | I.3b | Inline 3x3 depth-bilateral on history read | ☑ | |
-| I.3c | Variance-aware spatial filter + disocclusion-mask dilation | ☐ | |
+| I.3c | Inline 5x5 Gaussian bilateral + tighter temporal blend | ☑ | |
+| I.3d | Variance-aware adaptive kernel radius + disocclusion-mask dilation | ☐ | |
 | W | World-cache overhaul | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
@@ -285,12 +286,17 @@ stay on raw irradiance. Inline read means no UAV race; the blended
 write-back compounds smoothing across frames without tracking an
 explicit sample count.
 
-**[I.3c] Variance-aware spatial filter** — deferred. The inline
-`3x3` kernel is a tent-weighted bilateral and doesn't scale its
-radius with history age. Paper §2.4.3 enlarges the kernel where the
-accumulated sample count is low (disocclusion regions) and shrinks
-it where the signal is already converged. Proper implementation is
-its own pass: an A-trous-style multi-level filter, with per-pixel
-variance (from storing `second moment` in an unused history
-channel) driving the early-out radius. Best layered on top of
-the inline form once real per-pixel variance data exists.
+**[I.3c] Inline 5x5 Gaussian bilateral + 0.05 blend rate** — landed.
+Swap 3x3 tent (9 taps) for 5x5 Gaussian (25 taps), with the per-tap
+bilateral depth weight preserved. Temporal blend rate drops from 0.10
+to 0.05 so the denoised output leans harder on the now-wider-smoothed
+history. Disoccluded / first-frame pixels still short-circuit to raw.
+
+**[I.3d] Variance-aware adaptive kernel** — deferred. The 5x5 kernel
+is fixed-radius and not scaled by per-pixel history age. Paper §2.4.3
+enlarges the kernel where sample count is low (disocclusion regions)
+and shrinks it where the signal is already converged. Proper
+implementation stores a second-moment (luma²) ping-pong texture,
+computes per-pixel variance from (moment2 - moment1²), and drives
+both kernel radius and blend rate from that variance. Worth a
+dedicated pass for A-trous-style multi-stride filtering.
