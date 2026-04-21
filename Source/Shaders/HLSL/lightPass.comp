@@ -394,7 +394,11 @@ void main(ComputeInputType input)
 		// 5x5 Gaussian weights (separable (1,4,6,4,1) outer product, σ≈1).
 		static const float l_Kernel[5] = { 1.0, 4.0, 6.0, 4.0, 1.0 };
 
-		float3 l_HistoryAcc = float3(0, 0, 0);
+		// Track 1st and 2nd moments over the filter support so we can
+		// derive a cheap spatial-variance estimate without a 2nd-moment
+		// history texture. Pure shader-local — no new bindings.
+		float3 l_M1 = float3(0, 0, 0);
+		float3 l_M2 = float3(0, 0, 0);
 		float l_HistoryWeight = 0.0;
 		[unroll]
 		for (int dy = -2; dy <= 2; dy++)
@@ -419,20 +423,30 @@ void main(ComputeInputType input)
 				float l_DepthW = exp(-l_DepthError * 20.0);
 				float l_W = l_Spatial * l_DepthW;
 
-				l_HistoryAcc += l_W * l_Tap.rgb;
+				l_M1 += l_W * l_Tap.rgb;
+				l_M2 += l_W * l_Tap.rgb * l_Tap.rgb;
 				l_HistoryWeight += l_W;
 			}
 		}
 
 		if (l_HistoryWeight > 1e-4)
 		{
-			float3 l_HistoryFiltered = l_HistoryAcc / l_HistoryWeight;
-			// 5% new / 95% history — the wider kernel gives us enough
-			// per-frame smoothing that we can afford a slower temporal
-			// response in exchange for a cleaner steady-state image.
-			// Disoccluded pixels still short-circuit above, so the slow
-			// response doesn't leak stale radiance onto new surfaces.
-			l_DenoisedIrradiance = lerp(l_HistoryFiltered, l_IrradianceFromCache, 0.05);
+			float3 l_HistoryMean = l_M1 / l_HistoryWeight;
+			float3 l_HistoryMeanSq = l_M2 / l_HistoryWeight;
+			// Spatial variance of the bilateral-filtered neighbourhood.
+			// Large values mean we're sitting on a shadow edge / disocclusion
+			// / near a probe-interpolation seam — places where a heavy
+			// history lean would smear detail across a discontinuity.
+			float3 l_Variance = max(l_HistoryMeanSq - l_HistoryMean * l_HistoryMean, 0.0);
+			float l_VarLuma = GetLuma(l_Variance);
+			float l_MeanLumaSq = GetLuma(l_HistoryMean) * GetLuma(l_HistoryMean);
+			float l_RelVariance = saturate(l_VarLuma / (l_MeanLumaSq + 1e-4));
+			// Low relative variance → 3% new, 97% history (clean regions
+			// get maximum accumulation). High → 20% new, 80% history
+			// (edges respond to change quickly). Same short-circuit for
+			// no-valid-taps below keeps disocclusions on 100% raw.
+			float l_Blend = lerp(0.03, 0.2, l_RelVariance);
+			l_DenoisedIrradiance = lerp(l_HistoryMean, l_IrradianceFromCache, l_Blend);
 		}
 		// else: no valid taps (disocclusion / first frame) — stay on raw.
 
