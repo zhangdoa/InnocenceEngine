@@ -1,7 +1,7 @@
 // shadertype=hlsl
 
 static const uint TILE_SIZE = 8;  // 8×8 probe tile size
-static const uint SH_TILE_SIZE = 2;  // 2×2 SH storage per probe
+static const uint SH_TILE_SIZE = 3;  // 3×3 SH storage per probe — 9 coefficients for bands 0–2 (GI-1.0 §2.4.2)
 
 // Should be the same as the element count of the WorldProbeGrid buffer
 static const uint HASH_TABLE_SIZE = 256 * 1024;
@@ -124,8 +124,17 @@ float2 GetAtlasTextureCoordinates(float2 screenCoordXY, float3 normalWS)
     return screenCoordXY + octUV * probeAtlasSize;
 }
 
-// SH Basis Functions (first 3 bands)
-float Y_00() { return 0.282095f; }  // L0 (DC)
-float Y_1_1(float3 w) { return 0.488603f * w.y; }  // L1, -1 (Y)
-float Y_10(float3 w) { return 0.488603f * w.z; }  // L1, 0 (Z)
-float Y_11(float3 w) { return 0.488603f * w.x; }  // L1, 1 (X)
+// SH Basis Functions, real form, bands 0–2 (9 coefficients).
+// Paper §2.4.2 caps SH projection at 3 bands — irradiance integration
+// against a cosine lobe has an analytic closed form per band, and higher
+// bands are dominated by ray-tracing noise so their inclusion costs more
+// variance than it gains detail.
+float Y_00()          { return 0.282094791773878f; }
+float Y_1_1(float3 w) { return 0.488602511902919f * w.y; }
+float Y_10 (float3 w) { return 0.488602511902919f * w.z; }
+float Y_11 (float3 w) { return 0.488602511902919f * w.x; }
+float Y_2_2(float3 w) { return 1.092548430592079f * w.x * w.y; }
+float Y_2_1(float3 w) { return 1.092548430592079f * w.y * w.z; }
+float Y_20 (float3 w) { return 0.315391565252520f * (3.0f * w.z * w.z - 1.0f); }
+float Y_21 (float3 w) { return 1.092548430592079f * w.x * w.z; }
+float Y_22 (float3 w) { return 0.546274215296039f * (w.x * w.x - w.y * w.y); }

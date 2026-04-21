@@ -19,10 +19,16 @@ RWTexture2D<float4> in_RadianceCacheResults_Output : register(u0);
 static const float SH_NORMALIZE_FACTOR = 4.0 * PI / float(TILE_SIZE * TILE_SIZE);
 static const uint THREAD_COUNT = TILE_SIZE * TILE_SIZE; // 64
 
-groupshared float3 gs_SH_L0[THREAD_COUNT];
-groupshared float3 gs_SH_L1_x[THREAD_COUNT];
-groupshared float3 gs_SH_L1_y[THREAD_COUNT];
-groupshared float3 gs_SH_L1_z[THREAD_COUNT];
+// SH L=0 (1) + L=1 (3) + L=2 (5) = 9 coefficients, each float3 for RGB.
+groupshared float3 gs_SH0[THREAD_COUNT];
+groupshared float3 gs_SH1[THREAD_COUNT];
+groupshared float3 gs_SH2[THREAD_COUNT];
+groupshared float3 gs_SH3[THREAD_COUNT];
+groupshared float3 gs_SH4[THREAD_COUNT];
+groupshared float3 gs_SH5[THREAD_COUNT];
+groupshared float3 gs_SH6[THREAD_COUNT];
+groupshared float3 gs_SH7[THREAD_COUNT];
+groupshared float3 gs_SH8[THREAD_COUNT];
 
 [numthreads(TILE_SIZE, TILE_SIZE, 1)]
 void main(ComputeInputType input)
@@ -40,46 +46,72 @@ void main(ComputeInputType input)
         radiance = normalize(radiance) * 1000.0;
 
     float2 uv = float2(x, y) / TILE_SIZE;
-    float3 sampleDir = DecodeOctahedral(uv);
+    float3 w = DecodeOctahedral(uv);
 
-    float shWeight = SH_NORMALIZE_FACTOR;
-    gs_SH_L0[threadIndex] = radiance * Y_00() * shWeight;
-    gs_SH_L1_x[threadIndex] = radiance * Y_11(sampleDir) * shWeight;
-    gs_SH_L1_y[threadIndex] = radiance * Y_1_1(sampleDir) * shWeight;
-    gs_SH_L1_z[threadIndex] = radiance * Y_10(sampleDir) * shWeight;
+    float W = SH_NORMALIZE_FACTOR;
+    gs_SH0[threadIndex] = radiance * Y_00()   * W;
+    gs_SH1[threadIndex] = radiance * Y_11 (w) * W;
+    gs_SH2[threadIndex] = radiance * Y_1_1(w) * W;
+    gs_SH3[threadIndex] = radiance * Y_10 (w) * W;
+    gs_SH4[threadIndex] = radiance * Y_2_2(w) * W;
+    gs_SH5[threadIndex] = radiance * Y_2_1(w) * W;
+    gs_SH6[threadIndex] = radiance * Y_20 (w) * W;
+    gs_SH7[threadIndex] = radiance * Y_21 (w) * W;
+    gs_SH8[threadIndex] = radiance * Y_22 (w) * W;
 
     GroupMemoryBarrierWithGroupSync();
 
-    // Parallel reduction
+    // Parallel reduction across the 64 threads.
     for (uint stride = THREAD_COUNT / 2; stride > 0; stride >>= 1)
     {
         if (threadIndex < stride)
         {
-            gs_SH_L0[threadIndex] += gs_SH_L0[threadIndex + stride];
-            gs_SH_L1_x[threadIndex] += gs_SH_L1_x[threadIndex + stride];
-            gs_SH_L1_y[threadIndex] += gs_SH_L1_y[threadIndex + stride];
-            gs_SH_L1_z[threadIndex] += gs_SH_L1_z[threadIndex + stride];
+            gs_SH0[threadIndex] += gs_SH0[threadIndex + stride];
+            gs_SH1[threadIndex] += gs_SH1[threadIndex + stride];
+            gs_SH2[threadIndex] += gs_SH2[threadIndex + stride];
+            gs_SH3[threadIndex] += gs_SH3[threadIndex + stride];
+            gs_SH4[threadIndex] += gs_SH4[threadIndex + stride];
+            gs_SH5[threadIndex] += gs_SH5[threadIndex + stride];
+            gs_SH6[threadIndex] += gs_SH6[threadIndex + stride];
+            gs_SH7[threadIndex] += gs_SH7[threadIndex + stride];
+            gs_SH8[threadIndex] += gs_SH8[threadIndex + stride];
         }
         GroupMemoryBarrierWithGroupSync();
     }
 
     if (threadIndex == 0)
     {
-        uint2 writeCoord = probeIndex * SH_TILE_SIZE;
+        // 3×3 storage layout (row-major within each probe):
+        //   (0,0)=Y00     (1,0)=Y11   (2,0)=Y1_1
+        //   (0,1)=Y10     (1,1)=Y2_2  (2,1)=Y2_1
+        //   (0,2)=Y20     (1,2)=Y21   (2,2)=Y22
+        // LoadIrradiance in lightPass.comp uses the same ordering to pair
+        // coefficients with basis functions.
+        uint2 base = probeIndex * SH_TILE_SIZE;
 
-        // Read previous frame's SH (persists in the output UAV)
-        float3 prevSH_L0   = in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)].rgb;
-        float3 prevSH_L1_x = in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)].rgb;
-        float3 prevSH_L1_y = in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)].rgb;
-        float3 prevSH_L1_z = in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)].rgb;
+        float3 p0 = in_RadianceCacheResults_Output[base + uint2(0, 0)].rgb;
+        float3 p1 = in_RadianceCacheResults_Output[base + uint2(1, 0)].rgb;
+        float3 p2 = in_RadianceCacheResults_Output[base + uint2(2, 0)].rgb;
+        float3 p3 = in_RadianceCacheResults_Output[base + uint2(0, 1)].rgb;
+        float3 p4 = in_RadianceCacheResults_Output[base + uint2(1, 1)].rgb;
+        float3 p5 = in_RadianceCacheResults_Output[base + uint2(2, 1)].rgb;
+        float3 p6 = in_RadianceCacheResults_Output[base + uint2(0, 2)].rgb;
+        float3 p7 = in_RadianceCacheResults_Output[base + uint2(1, 2)].rgb;
+        float3 p8 = in_RadianceCacheResults_Output[base + uint2(2, 2)].rgb;
 
-        // Temporal blend: 90% history, 10% current. Use 100% current when no history.
-        float blend = (dot(prevSH_L0, prevSH_L0) < 0.001) ? 1.0 : 0.1;
+        // Temporal blend: 90% history, 10% current; use 100% current when
+        // no prior L0 is detectable (first frame / tile-level disocclusion).
+        float blend = (dot(p0, p0) < 0.001) ? 1.0 : 0.1;
 
-        in_RadianceCacheResults_Output[writeCoord + uint2(0, 0)] = float4(lerp(prevSH_L0,   gs_SH_L0[0],   blend), 1.0);
-        in_RadianceCacheResults_Output[writeCoord + uint2(1, 0)] = float4(lerp(prevSH_L1_x, gs_SH_L1_x[0], blend), 1.0);
-        in_RadianceCacheResults_Output[writeCoord + uint2(0, 1)] = float4(lerp(prevSH_L1_y, gs_SH_L1_y[0], blend), 1.0);
-        in_RadianceCacheResults_Output[writeCoord + uint2(1, 1)] = float4(lerp(prevSH_L1_z, gs_SH_L1_z[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(0, 0)] = float4(lerp(p0, gs_SH0[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(1, 0)] = float4(lerp(p1, gs_SH1[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(2, 0)] = float4(lerp(p2, gs_SH2[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(0, 1)] = float4(lerp(p3, gs_SH3[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(1, 1)] = float4(lerp(p4, gs_SH4[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(2, 1)] = float4(lerp(p5, gs_SH5[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(0, 2)] = float4(lerp(p6, gs_SH6[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(1, 2)] = float4(lerp(p7, gs_SH7[0], blend), 1.0);
+        in_RadianceCacheResults_Output[base + uint2(2, 2)] = float4(lerp(p8, gs_SH8[0], blend), 1.0);
     }
     DeviceMemoryBarrier();
 }

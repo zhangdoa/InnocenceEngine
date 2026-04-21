@@ -120,19 +120,35 @@ float4 GetFog(in Texture3D<float4> voxelTexture,
 	return result;
 }
 
-float3 LoadIrradiance(uint2 shReadCoord, float3 normal)
+// GI-1.0 §2.4.2 SH irradiance evaluation. 9 coefficients (bands 0–2)
+// packed row-major in a 3x3 SH tile per probe:
+//   (0,0)=Y00   (1,0)=Y11   (2,0)=Y1_1
+//   (0,1)=Y10   (1,1)=Y2_2  (2,1)=Y2_1
+//   (0,2)=Y20   (1,2)=Y21   (2,2)=Y22
+float3 LoadIrradiance(uint2 shReadCoord, float3 n)
 {
-    float3 SH_L0   = in_RadianceCache[shReadCoord + uint2(0, 0)].rgb;
-    float3 SH_L1_x = in_RadianceCache[shReadCoord + uint2(1, 0)].rgb;
-    float3 SH_L1_y = in_RadianceCache[shReadCoord + uint2(0, 1)].rgb;
-    float3 SH_L1_z = in_RadianceCache[shReadCoord + uint2(1, 1)].rgb;
+    float3 c00 = in_RadianceCache[shReadCoord + uint2(0, 0)].rgb;
+    float3 c11 = in_RadianceCache[shReadCoord + uint2(1, 0)].rgb;
+    float3 c1_1 = in_RadianceCache[shReadCoord + uint2(2, 0)].rgb;
+    float3 c10 = in_RadianceCache[shReadCoord + uint2(0, 1)].rgb;
+    float3 c2_2 = in_RadianceCache[shReadCoord + uint2(1, 1)].rgb;
+    float3 c2_1 = in_RadianceCache[shReadCoord + uint2(2, 1)].rgb;
+    float3 c20 = in_RadianceCache[shReadCoord + uint2(0, 2)].rgb;
+    float3 c21 = in_RadianceCache[shReadCoord + uint2(1, 2)].rgb;
+    float3 c22 = in_RadianceCache[shReadCoord + uint2(2, 2)].rgb;
 
-    return max( // Clamp to avoid negative irradiance
-        SH_L0 * Y_00() +
-        SH_L1_x * Y_11(normal) +
-        SH_L1_y * Y_1_1(normal) +
-        SH_L1_z * Y_10(normal), 
-        0.0);
+    float3 result =
+        c00  * Y_00() +
+        c11  * Y_11 (n) +
+        c1_1 * Y_1_1(n) +
+        c10  * Y_10 (n) +
+        c2_2 * Y_2_2(n) +
+        c2_1 * Y_2_1(n) +
+        c20  * Y_20 (n) +
+        c21  * Y_21 (n) +
+        c22  * Y_22 (n);
+
+    return max(result, 0.0);
 }
 
 // GI-1.0 §2.4 edge-aware probe weight. Returns 0 when the probe is sky /
