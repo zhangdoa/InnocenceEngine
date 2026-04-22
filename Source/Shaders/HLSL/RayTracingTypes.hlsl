@@ -17,8 +17,9 @@ static const uint2 spawnTileSize = probeAtlasSize * upscaleFactor;
 struct WorldProbe
 {
     float3 positionWS;
-    float3 radiance; // Could later be SH coefficients
-    float weight; // Used for temporal accumulation
+    float3 radiance;        // Could later be SH coefficients
+    float weight;           // Used for temporal accumulation
+    uint fingerprint;       // Secondary hash of positionWS — used by [W.1] linear-probing collision check; 0 = empty slot
 };
 
 // Payload structure passed between TraceRay calls.
@@ -69,17 +70,59 @@ float2 Hash2D(uint2 pixelID, uint seed)
     ) / float(0x7fffffff);
 }
 
+// GI-1.0 §2.2 world-cache addressing — paper's "two distinct hashes that
+// produce little to no collision between one another" (Jarzynski–Olano
+// 2020). We use a PCG3D mix on the quantised grid index for the bucket
+// and a different PCG3D constant set for the fingerprint, then linear-
+// probe by fingerprint match in the consumers (RayGen / ClosestHit).
+//
+// Quantisation step is the same `probeSpacing` constant — different
+// world positions inside the same cell intentionally collide so they
+// share the cached outgoing radiance for that voxel.
+uint3 _PCG3D(uint3 v)
+{
+    v = v * 1664525u + 1013904223u;
+    v.x += v.y * v.z;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+    v ^= v >> 16u;
+    v.x += v.y * v.z;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+    return v;
+}
+
+uint3 _ProbeGridIndex(float3 positionWS)
+{
+    // Bias by 2^20 so negative world coordinates produce well-defined uints
+    // before the PCG3D mix (avoids two's-complement aliasing in the bucket).
+    int3 g = int3(floor(positionWS / probeSpacing));
+    return uint3(g.x + (1 << 20), g.y + (1 << 20), g.z + (1 << 20));
+}
+
 uint ComputeProbeHash(float3 positionWS)
 {
-
-    int3 gridIndex = int3(floor(positionWS / probeSpacing));
-
-    uint hashKey = 1664525 * gridIndex.x + 1013904223;
-    hashKey ^= 1664525 * gridIndex.y + 1013904223;
-    hashKey ^= 1664525 * gridIndex.z + 1013904223;
-
-    return hashKey % HASH_TABLE_SIZE;
+    uint3 v = _PCG3D(_ProbeGridIndex(positionWS));
+    return (v.x ^ v.y ^ v.z) % HASH_TABLE_SIZE;
 }
+
+// Fingerprint reserves 0 as the "empty slot" sentinel so the linear-probe
+// loop can distinguish "this slot was never written" from "wrong cell".
+uint ComputeProbeFingerprint(float3 positionWS)
+{
+    uint3 g = _ProbeGridIndex(positionWS);
+    // Different mix sequence — perturb the input then run PCG3D so the
+    // bucket and fingerprint hashes are decorrelated.
+    uint3 v = _PCG3D(g.zyx ^ uint3(0xA341316Cu, 0xC8013EA4u, 0xAD90777Du));
+    uint fp = v.x ^ v.y ^ v.z;
+    return fp == 0u ? 1u : fp;
+}
+
+// Linear probing — paper §2.2 ("linear probing inside the bucket"). Walk
+// up to MAX_LINEAR_PROBE slots looking for a fingerprint match (lookup)
+// or an empty / matching slot (insert). Returns HASH_TABLE_SIZE when no
+// suitable slot is found; consumers must handle the miss.
+static const uint MAX_LINEAR_PROBE = 8u;
 
 float2 EncodeOctahedral(float3 N)
 {

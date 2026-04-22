@@ -59,8 +59,23 @@ void ClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAt
     }
     else
     {
-        uint worldProbeIndex = ComputeProbeHash(hitPositionWS);
-        hitRadiance = in_WorldProbeGrid[worldProbeIndex].radiance;
+        // Off-screen hit: walk the world cache by fingerprint per [W.1].
+        // A matching fingerprint within MAX_LINEAR_PROBE slots returns
+        // the cached outgoing radiance; a miss leaves the contribution
+        // at zero (better than reading another cell's accumulated colour).
+        uint bucket = ComputeProbeHash(hitPositionWS);
+        uint fingerprint = ComputeProbeFingerprint(hitPositionWS);
+        for (uint probe = 0u; probe < MAX_LINEAR_PROBE; probe++)
+        {
+            uint slot = (bucket + probe) % HASH_TABLE_SIZE;
+            if (in_WorldProbeGrid[slot].fingerprint == fingerprint)
+            {
+                hitRadiance = in_WorldProbeGrid[slot].radiance;
+                break;
+            }
+            if (in_WorldProbeGrid[slot].fingerprint == 0u)
+                break; // empty slot — no entry exists for this cell
+        }
     }
 
     payload.radiance = hitRadiance;

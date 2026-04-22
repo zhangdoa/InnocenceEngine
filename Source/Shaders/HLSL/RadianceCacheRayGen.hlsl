@@ -259,18 +259,32 @@ void RayGenShader()
         in_RadianceCacheResults[texIndex] = float4(lerp(radiance, oldScreenSpaceRadiance, t), tempPayload.distance);
 
         // Only write to world probe grid on the first sample to avoid intra-probe write races.
-        // Cross-probe hash collisions on the same cell remain a known limitation of the hash-grid approach.
-        // Simple EMA here — paper §2.2.3 prescribes Karis-style exponential
-        // moving average for the world cache; full two-level tiled layout
-        // with proper decay is deferred to [W].
+        // Linear-probe by fingerprint per [W.1] (paper §2.2): walk up to
+        // MAX_LINEAR_PROBE slots from the bucket, accept the first slot
+        // whose fingerprint matches (update existing) or is empty (insert).
+        // If all slots are taken by other cells we silently drop the write
+        // — preferable to overwriting another cell's accumulation under a
+        // hash collision. Karis-style EMA temporal blend matches paper §2.2.3.
         if (i == 0)
         {
             const float WORLD_PROBE_EMA = 0.1;
-            uint worldProbeIndex = ComputeProbeHash(positionWS);
-            float3 oldWorldProbeRadiance = in_WorldProbeGrid[worldProbeIndex].radiance;
-            in_WorldProbeGrid[worldProbeIndex].positionWS = positionWS;
-            in_WorldProbeGrid[worldProbeIndex].radiance = lerp(oldWorldProbeRadiance, radiance, WORLD_PROBE_EMA);
-            in_WorldProbeGrid[worldProbeIndex].weight = 1.0;
+            uint bucket = ComputeProbeHash(positionWS);
+            uint fingerprint = ComputeProbeFingerprint(positionWS);
+
+            for (uint probe = 0u; probe < MAX_LINEAR_PROBE; probe++)
+            {
+                uint slot = (bucket + probe) % HASH_TABLE_SIZE;
+                uint slotFp = in_WorldProbeGrid[slot].fingerprint;
+                if (slotFp == 0u || slotFp == fingerprint)
+                {
+                    float3 oldRadiance = (slotFp == fingerprint) ? in_WorldProbeGrid[slot].radiance : float3(0, 0, 0);
+                    in_WorldProbeGrid[slot].positionWS = positionWS;
+                    in_WorldProbeGrid[slot].radiance = lerp(oldRadiance, radiance, WORLD_PROBE_EMA);
+                    in_WorldProbeGrid[slot].weight = 1.0;
+                    in_WorldProbeGrid[slot].fingerprint = fingerprint;
+                    break;
+                }
+            }
         }
     }
 }
