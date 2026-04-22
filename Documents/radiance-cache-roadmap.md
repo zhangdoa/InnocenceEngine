@@ -142,7 +142,9 @@ next CL can compare against it.
 | I.3c | Inline 5x5 Gaussian bilateral + tighter temporal blend | ☑ | |
 | I.3d | Inline spatial-variance-adaptive blend rate | ☑ | |
 | I.3e | Temporal-variance (SVGF moments) + A-trous multi-stride + disocclusion dilation | ☐ | |
-| W | World-cache overhaul | ☐ | |
+| W.1 | World cache: fingerprint hash + linear probing | ☑ | |
+| W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☐ | |
+| W.3 | World cache: two-level tiled MIP + decay eviction | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
 
