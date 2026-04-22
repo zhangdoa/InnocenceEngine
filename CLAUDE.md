@@ -200,6 +200,26 @@ Never blindly merge or accept incoming changes:
 
 Any unexpected behavior, warning, or anomaly observed during testing — even minor or intermittent — gets backlogged immediately so it is tracked and not forgotten.
 
+### Workflow — cross-session continuity
+
+Conversation context does not survive session boundaries. Anything a future session needs to pick up work must live in a tracked file — **not** in commit messages, not in recent-memory narrative, not in conversation scrollback.
+
+**End of every landing CL (on a multi-session task):**
+
+1. Update the owning task's `## Implementation Notes` with: what landed, what's deferred, what's next. Leave `status: In Progress` if more of the umbrella remains.
+2. If a roadmap/design doc is referenced by the task (e.g. `Documents/*-roadmap.md`), update its status table *and* its "Remaining work — priority order" section in the same CL. Every landing CL re-orders or shortens that list; priority never lives only in chat.
+3. Commit the task/doc changes (see commit-granularity rule).
+
+**Start of every session:**
+
+1. Before "continuing", list `.backlog/tasks/` entries with `status: In Progress` (Backlog MCP or `rg '^status: In Progress' .backlog/tasks/*.md`). Read each.
+2. For each in-progress task, read every `Documents/*.md` it references.
+3. Those two together are the session hand-off. Never rely on prior-conversation memory; never infer "what's next" from the last commit subject.
+
+**Forbidden:** recording "next step", "deferred to next CL", or priority order only in commit messages or conversation text. Commit messages describe what landed; the task file and roadmap doc describe what's next. A new session will not grep the git log for direction.
+
+**Rule of thumb — systemic vs. local:** when a cross-cutting concern surfaces (cross-session state, silent failures, forbidden patterns, etc.), the fix belongs in a document that governs *every* future occurrence (this file, a shared policy doc, or a code-level invariant). Fixing only the instance the user just pointed at is the local-not-systemic antipattern.
+
 ### Skills & Tools
 
 | Situation | Skill |
