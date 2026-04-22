@@ -18,8 +18,7 @@ Rewrite the separable 7×7 bilateral filter (paper Algo 5) to: walk the mask MIP
 
 Depends on [F] (mask MIP) and [S1] (eviction signal).
 
-Doc: Documents/radiance-cache-roadmap.md §[S2]</description>
-<parameter name="labels">["rendering", "GI", "TASK-6"]
+Parent: TASK-6 (see Implementation Notes §[S2]).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done

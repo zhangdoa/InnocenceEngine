@@ -25,8 +25,7 @@ Replaces the current "spawn every tile every frame + simple EMA" with paper-accu
 
 Depends on [F] — mask MIP + unified cell size are used by all four queues/searches here.
 
-Doc: Documents/radiance-cache-roadmap.md §[S1]</description>
-<parameter name="labels">["rendering", "GI", "TASK-6"]
+Parent: TASK-6 (see Implementation Notes §[S1]).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done

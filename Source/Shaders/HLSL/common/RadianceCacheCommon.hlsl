@@ -5,8 +5,7 @@
 #include "common.hlsl"
 
 // GI-1.0 (Boissé et al., AMD, 2022) primitives shared across the radiance
-// cache passes. See Documents/radiance-cache-roadmap.md for the sub-project
-// ordering; this header covers the [F] Foundation slice.
+// cache passes.
 
 // Paper §2.1: screen probes tile the framebuffer in 8x8 pixel blocks, one
 // probe per tile. The same constant is the pixel spacing between probe

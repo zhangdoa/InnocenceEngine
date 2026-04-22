@@ -24,8 +24,7 @@ Rewrite the flat `WorldProbeGrid` into the paper's two-level spatial hash (§2.2
 
 Independent of [F]/[S1]/[S2]/[I] — can be done in parallel once [F] lands (closest-hit shader is the only overlap point).
 
-Doc: Documents/radiance-cache-roadmap.md §[W]</description>
-<parameter name="labels">["rendering", "GI", "TASK-6"]
+Parent: TASK-6 (see Implementation Notes §[W]).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done

@@ -31,8 +31,7 @@ Deliverables:
 - Re-enabled passes (lift the TASK-60 disablement)
 - RenderDoc baseline + post-[F] capture at frame 8 GISponza
 
-Doc: Documents/radiance-cache-roadmap.md §[F]</description>
-<parameter name="labels">["rendering", "GI", "TASK-6"]
+Parent: TASK-6 (see Implementation Notes §[F]).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done

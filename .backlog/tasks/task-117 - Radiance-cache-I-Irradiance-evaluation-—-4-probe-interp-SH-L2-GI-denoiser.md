@@ -23,8 +23,7 @@ LightPass GI consumption rewrite (paper §2.4):
 
 Depends on [S1]+[S2] — probes need to be converging and filtered before consumption changes.
 
-Doc: Documents/radiance-cache-roadmap.md §[I]</description>
-<parameter name="labels">["rendering", "GI", "TASK-6"]
+Parent: TASK-6 (see Implementation Notes §[I]).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done
