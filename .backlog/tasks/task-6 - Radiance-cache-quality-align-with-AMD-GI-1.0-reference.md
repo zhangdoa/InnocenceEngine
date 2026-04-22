@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-22 20:10'
+updated_date: '2026-04-22 20:30'
 labels:
   - rendering
   - GI
@@ -106,13 +106,12 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] was split into four sub-slices on extraction day — see Status table for [I.3e.1–4] detail.
 
-1. **[I.3e.2] SVGF temporal-variance-driven blend rate** — adds 2nd-moment history, drives blend+radius from sqrt(temporal variance)
-2. **[I.3e.3] A-trous multi-stride spatial filter** — 3 dispatches at stride 1/2/4, variance-weighted joint bilateral
-3. **[I.3e.4] Disocclusion mask dilation** — kills halos at motion-disoccluded edges
-4. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
-5. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
-6. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
-7. **[S2.2] LRU side cache** — thin-geometry stability
+1. **[I.3e.3] A-trous multi-stride spatial filter** — 3 dispatches at stride 1/2/4, variance-weighted joint bilateral (consumes the per-pixel moments history [I.3e.2] landed)
+2. **[I.3e.4] Disocclusion mask dilation** — kills halos at motion-disoccluded edges
+3. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
+4. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
+5. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+6. **[S2.2] LRU side cache** — thin-geometry stability
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -156,7 +155,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3c | Inline 5x5 Gaussian bilateral + tighter temporal blend | ☑ | |
 | I.3d | Inline spatial-variance-adaptive blend rate | ☑ | |
 | I.3e.1 | Extract denoiser into standalone GIDenoisePass (zero-behavior-change prerequisite) | ☑ | |
-| I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | ☐ | |
+| I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | ☑ | |
 | I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☐ | |
 | I.3e.4 | Disocclusion mask dilation | ☐ | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
@@ -248,6 +247,14 @@ Split into four sub-slices because "move the denoiser + add 2nd-moment history +
 New `GIDenoisePass` (compute) runs between RadianceCacheIntegrationPass and LightPass. Owns the ping-pong GI history (moved from LightPass); samples the radiance cache SH atlas + applies the inline temporal + 5×5 Gaussian-bilateral denoise + spatial-variance-adaptive blend. LightPass drops the SH-sample + denoise block and reads the denoiser's RGBA output directly. Zero behavior change target: same blend formula, same kernel, same history encoding.
 
 Bindings rebalanced: LightPass loses 5 (RadianceCache SH atlas, ProbePosition/Normal/Mask, GIHistoryPrev, GIHistoryCurrent UAV), regains 1 (GIIrradiance). GIDenoisePass takes 10 (PerFrame CB, G-buffer RT0/RT1/RT3, SH atlas, probe pos/normal/mask, history prev/current).
+
+#### [I.3e.2] — SVGF temporal-variance-driven blend rate
+
+Adds a per-pixel moments ping-pong texture (`r = E[luma], g = E[luma²], b = history-count N, a = unused`) to GIDenoisePass. On each frame the center reprojected tap drives validity (depth ≤ 5% error + non-zero prev-N); on valid reprojection `N = min(prev_N + 1, 32)` and `α = max(1/N, 0.05)` mix prev moments with the current frame's (luma, luma²). Disocclusion resets to `N=1, α=1` (raw sample). The 5×5 Gaussian-bilateral spatial tap is retained for history-color smoothing (will be removed in [I.3e.3] when A-trous replaces it).
+
+Temporal variance `σ² = E[L²] − E[L]²` is exposed in the moments UAV for the [I.3e.3] A-trous pass to use as its luminance edge-stopping weight; this slice does not yet drive a spatial filter radius from it.
+
+Bindings: +2 on GIDenoisePass (in_MomentsPrev at t8, out_MomentsCurrent at u1; layout grows from 10 to 12 entries). LightPass unchanged.
 
 #### [W.1] — World cache: fingerprint hash + linear probing
 

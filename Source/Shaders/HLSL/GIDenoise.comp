@@ -32,9 +32,26 @@ Texture2D<float4> in_ProbeNormal : register(t5);
 Texture2D<uint> in_ProbeMask : register(t6);
 [[vk::binding(7, 1)]]
 Texture2D<float4> in_GIHistoryPrev : register(t7);
+// Previous-frame SVGF moments: r = E[luma], g = E[luma²],
+// b = history-count N, a = unused. N = 0 = invalid / uninitialised, so
+// fresh memory reads as "disocclusion" without a per-frame clear.
+[[vk::binding(8, 1)]]
+Texture2D<float4> in_MomentsPrev : register(t8);
 
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> out_GIHistory : register(u0);
+[[vk::binding(1, 2)]]
+RWTexture2D<float4> out_MomentsCurrent : register(u1);
+
+// SVGF temporal accumulation caps (Schied et al. 2017). N grows by 1 per
+// successful reprojection until MAX_HISTORY_N — used here to pace the
+// per-pixel exponential average, and will drive the A-trous spatial
+// filter radius in [I.3e.3].
+static const float MAX_HISTORY_N = 32.0;
+// Floor on temporal blend rate — without it the accumulation weights the
+// first sample infinitely (N → ∞ ⇒ α → 0), so a single bad probe
+// propagates forever. 1/20 matches SVGF's usual choice.
+static const float MIN_TEMPORAL_ALPHA = 0.05;
 
 // GI-1.0 §2.4.2 irradiance evaluation via Ramamoorthi–Hanrahan 2001
 // cosine-lobe convolution. 9 coefficients (bands 0–2) packed row-major
@@ -156,10 +173,12 @@ void main(ComputeInputType input)
 	float4 GPassRT0 = in_opaquePassRT0[l_ScreenCoord];
 
 	// Sky / no geometry: leave a sentinel (0 irradiance, 0 depth) so next
-	// frame's reprojection rejects this tap.
+	// frame's reprojection rejects this tap. Also reset moments so a tile
+	// that becomes sky then re-occupied doesn't carry stale N.
 	if (GPassRT0.a == 0.0)
 	{
 		out_GIHistory[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		out_MomentsCurrent[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		return;
 	}
 
@@ -171,28 +190,74 @@ void main(ComputeInputType input)
 	if (any(isnan(l_IrradianceFromCache)))
 		l_IrradianceFromCache = float3(0.0, 0.0, 0.0);
 
-	// GI-1.0 §2.4.3 spatiotemporal denoiser, inline variant:
-	// temporal accumulation + 5x5 depth-bilateral Gaussian on the
-	// prev-history read. Reading (rather than writing) means no UAV race;
-	// the bilateral smoothing compounds frame-to-frame because the
-	// blended result we write back IS a smoothed version of prev, so
-	// subsequent frames read a progressively more denoised history.
+	// GI-1.0 §2.4.3 / SVGF (Schied et al. 2017) temporal accumulation.
+	// Per-pixel moments history (E[L], E[L²], N) lets us compute TEMPORAL
+	// variance — the probe's actual convergence rate — instead of the
+	// shader-local SPATIAL variance [I.3d] used. Blend rate α = max(1/N,
+	// α_min); N resets on disocclusion so newly-visible surfaces start at
+	// α=1 (raw sample) and relax over subsequent frames.
 	float l_CurrentDepth = length(l_Position_WorldSpace - g_Frame.camera_posWS.xyz);
 
 	float2 l_Motion = in_opaquePassRT3.Load(int3(l_ScreenCoord, 0)).xy;
 	int2 l_PrevCoord = int2(l_ScreenCoord) + int2(l_Motion);
-
 	int2 l_Viewport = int2(g_Frame.viewportSize.xy);
-	float3 l_DenoisedIrradiance = l_IrradianceFromCache;
 
-	// 5x5 Gaussian weights (separable (1,4,6,4,1) outer product, σ≈1).
+	// Single-pixel reprojection for moments/history-count validity: only
+	// the center tap drives "is my history usable at all." The 5x5
+	// bilateral below is still used to denoise the color read; it's
+	// retained here for parity with [I.3d] and will be dropped when
+	// [I.3e.3] lands A-trous multi-stride filtering.
+	bool l_ReprojectionValid = false;
+	float l_PrevM1 = 0.0;
+	float l_PrevM2 = 0.0;
+	float l_PrevN = 0.0;
+	if (all(l_PrevCoord >= int2(0, 0)) && all(l_PrevCoord < l_Viewport))
+	{
+		float4 l_CenterHistory = in_GIHistoryPrev.Load(int3(l_PrevCoord, 0));
+		float l_CenterDepth = l_CenterHistory.a;
+		if (l_CenterDepth > 0.0)
+		{
+			float l_DepthError = abs(l_CenterDepth - l_CurrentDepth) / max(l_CurrentDepth, EPSILON);
+			if (l_DepthError <= 0.05)
+			{
+				float4 l_CenterMoments = in_MomentsPrev.Load(int3(l_PrevCoord, 0));
+				if (l_CenterMoments.b > 0.0)
+				{
+					l_ReprojectionValid = true;
+					l_PrevM1 = l_CenterMoments.r;
+					l_PrevM2 = l_CenterMoments.g;
+					l_PrevN = l_CenterMoments.b;
+				}
+			}
+		}
+	}
+
+	float l_CurrentLuma = GetLuma(l_IrradianceFromCache);
+	float l_CurrentLumaSq = l_CurrentLuma * l_CurrentLuma;
+
+	float l_HistoryCount;
+	float l_Alpha;
+	float l_M1;
+	float l_M2;
+	if (l_ReprojectionValid)
+	{
+		l_HistoryCount = min(l_PrevN + 1.0, MAX_HISTORY_N);
+		l_Alpha = max(1.0 / l_HistoryCount, MIN_TEMPORAL_ALPHA);
+		l_M1 = lerp(l_PrevM1, l_CurrentLuma, l_Alpha);
+		l_M2 = lerp(l_PrevM2, l_CurrentLumaSq, l_Alpha);
+	}
+	else
+	{
+		l_HistoryCount = 1.0;
+		l_Alpha = 1.0;
+		l_M1 = l_CurrentLuma;
+		l_M2 = l_CurrentLumaSq;
+	}
+
+	// 5x5 Gaussian + depth-bilateral weighting over the prev-history
+	// neighbourhood gives us the smoothed history color to blend against.
 	static const float l_Kernel[5] = { 1.0, 4.0, 6.0, 4.0, 1.0 };
-
-	// Track 1st and 2nd moments over the filter support so we can derive
-	// a cheap spatial-variance estimate without a 2nd-moment history
-	// texture. Pure shader-local — no new bindings.
-	float3 l_M1 = float3(0, 0, 0);
-	float3 l_M2 = float3(0, 0, 0);
+	float3 l_HistoryColorSum = float3(0, 0, 0);
 	float l_HistoryWeight = 0.0;
 	[unroll]
 	for (int dy = -2; dy <= 2; dy++)
@@ -217,31 +282,22 @@ void main(ComputeInputType input)
 			float l_DepthW = exp(-l_DepthError * 20.0);
 			float l_W = l_Spatial * l_DepthW;
 
-			l_M1 += l_W * l_Tap.rgb;
-			l_M2 += l_W * l_Tap.rgb * l_Tap.rgb;
+			l_HistoryColorSum += l_W * l_Tap.rgb;
 			l_HistoryWeight += l_W;
 		}
 	}
 
-	if (l_HistoryWeight > 1e-4)
+	float3 l_DenoisedIrradiance;
+	if (l_ReprojectionValid && l_HistoryWeight > 1e-4)
 	{
-		float3 l_HistoryMean = l_M1 / l_HistoryWeight;
-		float3 l_HistoryMeanSq = l_M2 / l_HistoryWeight;
-		// Spatial variance of the bilateral-filtered neighbourhood. Large
-		// values mean we're sitting on a shadow edge / disocclusion / near
-		// a probe-interpolation seam — places where a heavy history lean
-		// would smear detail across a discontinuity.
-		float3 l_Variance = max(l_HistoryMeanSq - l_HistoryMean * l_HistoryMean, 0.0);
-		float l_VarLuma = GetLuma(l_Variance);
-		float l_MeanLumaSq = GetLuma(l_HistoryMean) * GetLuma(l_HistoryMean);
-		float l_RelVariance = saturate(l_VarLuma / (l_MeanLumaSq + 1e-4));
-		// Low relative variance → 3% new, 97% history (clean regions get
-		// maximum accumulation). High → 20% new, 80% history (edges
-		// respond to change quickly). No-valid-taps (disocclusion / first
-		// frame) falls through to the raw irradiance written above.
-		float l_Blend = lerp(0.03, 0.2, l_RelVariance);
-		l_DenoisedIrradiance = lerp(l_HistoryMean, l_IrradianceFromCache, l_Blend);
+		float3 l_HistoryMean = l_HistoryColorSum / l_HistoryWeight;
+		l_DenoisedIrradiance = lerp(l_HistoryMean, l_IrradianceFromCache, l_Alpha);
+	}
+	else
+	{
+		l_DenoisedIrradiance = l_IrradianceFromCache;
 	}
 
 	out_GIHistory[l_ScreenCoord] = float4(l_DenoisedIrradiance, l_CurrentDepth);
+	out_MomentsCurrent[l_ScreenCoord] = float4(l_M1, l_M2, l_HistoryCount, 0.0);
 }

@@ -31,7 +31,7 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(10);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(12);
 
 	// b0 - PerFrame CBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -96,13 +96,29 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 7;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// u0 - Current-frame GI history (write target)
+	// t8 - Previous-frame SVGF moments (r=E[L], g=E[L²], b=history count, a=spare)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 8;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_TextureUsage = TextureUsage::ComputeOnly;
+
+	// u0 - Current-frame GI history (write target)
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;
+
+	// u1 - Current-frame SVGF moments (write target)
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -133,6 +149,8 @@ bool GIDenoisePass::Terminate()
 {
 	g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Odd);
+	g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Even);
+	g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Odd);
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
@@ -157,6 +175,12 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (!m_GIHistory_Odd || m_GIHistory_Odd->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
+	if (!m_Moments_Even || m_Moments_Even->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	if (!m_Moments_Odd || m_Moments_Odd->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -164,6 +188,8 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_previousHistory = GetPreviousResult();
 	auto l_currentHistory = GetCurrentResult();
+	auto l_previousMoments = GetPreviousMoments();
+	auto l_currentMoments = GetCurrentMoments();
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(RadianceCacheIntegrationPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
@@ -172,6 +198,8 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(RadianceCacheReprojectionPass::Get().GetProbeMask(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_previousHistory, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_currentHistory, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_fmService->TryToTransitState(l_previousMoments, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(l_currentMoments, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -186,7 +214,9 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 6);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetProbeMask(), 7);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousHistory, 8);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentHistory, 9);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousMoments, 9);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentHistory, 10);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentMoments, 11);
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
@@ -216,12 +246,30 @@ TextureComponent* GIDenoisePass::GetPreviousResult()
 	return (l_frameCount % 2 == 1) ? m_GIHistory_Even : m_GIHistory_Odd;
 }
 
+TextureComponent* GIDenoisePass::GetCurrentMoments()
+{
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
+	return (l_frameCount % 2 == 1) ? m_Moments_Odd : m_Moments_Even;
+}
+
+TextureComponent* GIDenoisePass::GetPreviousMoments()
+{
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
+	return (l_frameCount % 2 == 1) ? m_Moments_Even : m_Moments_Odd;
+}
+
 bool GIDenoisePass::RenderTargetsCreationFunc()
 {
 	if (m_GIHistory_Even)
 		g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Even);
 	if (m_GIHistory_Odd)
 		g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Odd);
+	if (m_Moments_Even)
+		g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Even);
+	if (m_Moments_Odd)
+		g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Odd);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -234,6 +282,16 @@ bool GIDenoisePass::RenderTargetsCreationFunc()
 	m_GIHistory_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_GIHistory_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_GIHistory_Odd);
+
+	m_Moments_Even = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass Moments (Even)");
+	m_Moments_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_Moments_Even->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_Moments_Even);
+
+	m_Moments_Odd = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass Moments (Odd)");
+	m_Moments_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_Moments_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_Moments_Odd);
 
 	return true;
 }
