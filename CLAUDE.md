@@ -173,6 +173,7 @@ Commits must be atomic and logically self-contained:
 - No unrelated fixes bundled together
 - Each commit must build and pass RenderTest independently (no broken-state commits)
 - Typical splits: `feat: engine code` / `data: scene and component files` / `chore: scripts and tooling`
+- Backlog task changes (creation, edit, move to `completed/`) must be committed — never leave task-file edits uncommitted across sessions. Commit them as their own `docs(backlog)` commit (docs-only, skips the test-run gate) or bundle with the code CL that triggered the status change.
 
 ### Workflow — sync with remote
 
