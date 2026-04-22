@@ -3,10 +3,10 @@ id: TASK-111
 title: >-
   Add serialization determinism test tier — scene load → save must be byte-equal
   (idempotent round-trip)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 19:49'
-updated_date: '2026-04-19 20:55'
+updated_date: '2026-04-20 10:20'
 labels:
   - test
   - scene-save
@@ -84,3 +84,18 @@ Any of these fixes are simpler than debugging why ShaderBall slips the OnSceneUn
 
 **Still to do**: pick one of the three structural approaches, wire up the test body (Load → SceneService::Save → exit), document the tier in CLAUDE.md's test tier list, and extend commit-gate.js to require it when serializer code is staged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the serialize-determinism test tier for TASK-111.
+
+**Changes:**
+- `JSONWrapper.cpp`: Added 3 child-scene tracking maps (parent→child path, child entity→parent, path→DefaultComponentPath) populated during LoadScene/LoadChildScene, cleared on ClearLoadedCompFilenames. Rewrote SaveScene to use a two-phase approach: Phase 1 saves the main scene file preserving ChildScene keys (skipping inlined child entities), Phase 2 saves each child scene file separately. Fixed Save() to open files with std::ios::binary to prevent Windows CRLF injection.
+- `World.inl`: Added RunSerializeTest() and helpers (SnapshotDirectory, ReadFileContent, RestoreFile, CompareAndRestore) in an anonymous namespace. WorldSystem::Setup() and Initialize() branch on serializeTest config field. Uses _Exit() instead of std::exit() to avoid CRT teardown crash with GPU threads still live.
+- `commit-gate.js`: Added SERIALIZER_CODE_PATH gate requiring -serialize_test run when JSONWrapper/AssetService/SceneService is staged.
+- `CLAUDE.md`: Documented tier 5 serialize-determinism test.
+- Data files: Normalized 565 JSON/.InnoScene files from Windows CRLF to LF; float precision cleanup via round-trip save.
+
+**Fixes encountered:** (1) JSONWrapper::Save used text-mode ofstream on Windows → CRLF output vs LF snapshot; fixed with binary mode. (2) std::exit() crashed with STATUS_STACK_BUFFER_OVERRUN during CRT teardown with GPU threads live; replaced with _Exit(). (3) Data files had Windows CRLF; normalized with WriteAllBytes.
+<!-- SECTION:FINAL_SUMMARY:END -->
