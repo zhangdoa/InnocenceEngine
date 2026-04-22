@@ -3,10 +3,10 @@
 
 namespace Inno
 {
-	class LightPass : public IRenderPass
+	class GIDenoisePass : public IRenderPass
 	{
 	public:
-		INNO_CLASS_SINGLETON(LightPass)
+		INNO_CLASS_SINGLETON(GIDenoisePass)
 
 		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
@@ -16,18 +16,22 @@ namespace Inno
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
 
-		TextureComponent* GetLuminanceResult();
-		TextureComponent* GetIlluminanceResult();
+		// Denoised per-pixel indirect irradiance for the current frame.
+		// rgb = irradiance, a = linear depth of the pixel that produced the
+		// sample (next-frame reprojection validity).
+		TextureComponent* GetCurrentResult();
 
 	private:
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;
-		SamplerComponent* m_SamplerComp_Linear;
-		SamplerComponent* m_SamplerComp_Point;
 
-		TextureComponent* m_LuminanceResult;
-		TextureComponent* m_IlluminanceResult;
+		// Ping-pong full-screen GI irradiance history. Role (current /
+		// previous) swaps every frame based on frame count parity.
+		TextureComponent* m_GIHistory_Even;
+		TextureComponent* m_GIHistory_Odd;
+
+		TextureComponent* GetPreviousResult();
 
 		bool RenderTargetsCreationFunc();
 	};

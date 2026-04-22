@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-22 00:00'
+updated_date: '2026-04-22 20:10'
 labels:
   - rendering
   - GI
@@ -104,11 +104,15 @@ Sized as a CL each.
 
 Each piece is session-sized — take the top item, design, implement, capture, commit; then pick the new top. Every landing CL updates the Status table below AND removes/re-orders the entry here.
 
-1. **[I.3e] SVGF temporal moments + A-trous** — biggest lever for residual GI noise
-2. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
-3. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
-4. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
-5. **[S2.2] LRU side cache** — thin-geometry stability
+[I.3e] was split into four sub-slices on extraction day — see Status table for [I.3e.1–4] detail.
+
+1. **[I.3e.2] SVGF temporal-variance-driven blend rate** — adds 2nd-moment history, drives blend+radius from sqrt(temporal variance)
+2. **[I.3e.3] A-trous multi-stride spatial filter** — 3 dispatches at stride 1/2/4, variance-weighted joint bilateral
+3. **[I.3e.4] Disocclusion mask dilation** — kills halos at motion-disoccluded edges
+4. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
+5. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
+6. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+7. **[S2.2] LRU side cache** — thin-geometry stability
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -151,7 +155,10 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3b | Inline 3x3 depth-bilateral on history read | ☑ | |
 | I.3c | Inline 5x5 Gaussian bilateral + tighter temporal blend | ☑ | |
 | I.3d | Inline spatial-variance-adaptive blend rate | ☑ | |
-| I.3e | Temporal-variance (SVGF moments) + A-trous multi-stride + disocclusion dilation | ☐ | |
+| I.3e.1 | Extract denoiser into standalone GIDenoisePass (zero-behavior-change prerequisite) | ☑ | |
+| I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | ☐ | |
+| I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☐ | |
+| I.3e.4 | Disocclusion mask dilation | ☐ | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
 | W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☐ | |
 | W.3 | World cache: two-level tiled MIP + decay eviction | ☐ | |
@@ -232,9 +239,15 @@ Swap 3×3 tent (9 taps) for 5×5 Gaussian (25 taps), with the per-tap bilateral 
 
 Track 1st/2nd moments across the existing 5×5 filter support (0 extra texture fetches); derive `rel_var = luma(variance) / luma(mean)^2`; `blend_rate = lerp(0.03, 0.20, saturate(rel_var))`. Low-variance interiors lean into history aggressively (3%/97%), high-variance edges/discontinuities respond quickly (20%/80%). Disoccluded pixels still short-circuit to 100% raw.
 
-#### [I.3e] — Temporal-variance (SVGF) + A-trous (next up)
+#### [I.3e] — Temporal-variance (SVGF) + A-trous
 
-The stricter paper form tracks a second-moment HISTORY texture and computes TEMPORAL variance, which captures the probe's actual sample convergence rate. Driving blend rate AND kernel radius off that temporal variance is the SVGF recipe. Also required: A-trous multi-stride filtering (3 passes at strides 1, 2, 4 approximates a large Gaussian with 5-tap-per-pass). Requires moving the denoiser out of the LightPass compute into its own pass(es) and a second-moment ping-pong texture.
+Split into four sub-slices because "move the denoiser + add 2nd-moment history + A-trous multi-stride + disocclusion dilation" in one CL is too big to regress-debug cleanly. [I.3e.1] ships the structural prerequisite (standalone pass, zero behavior change target); subsequent slices evolve the new pass's shader only.
+
+#### [I.3e.1] — Extract denoiser into standalone GIDenoisePass
+
+New `GIDenoisePass` (compute) runs between RadianceCacheIntegrationPass and LightPass. Owns the ping-pong GI history (moved from LightPass); samples the radiance cache SH atlas + applies the inline temporal + 5×5 Gaussian-bilateral denoise + spatial-variance-adaptive blend. LightPass drops the SH-sample + denoise block and reads the denoiser's RGBA output directly. Zero behavior change target: same blend formula, same kernel, same history encoding.
+
+Bindings rebalanced: LightPass loses 5 (RadianceCache SH atlas, ProbePosition/Normal/Mask, GIHistoryPrev, GIHistoryCurrent UAV), regains 1 (GIIrradiance). GIDenoisePass takes 10 (PerFrame CB, G-buffer RT0/RT1/RT3, SH atlas, probe pos/normal/mask, history prev/current).
 
 #### [W.1] — World cache: fingerprint hash + linear probing
 

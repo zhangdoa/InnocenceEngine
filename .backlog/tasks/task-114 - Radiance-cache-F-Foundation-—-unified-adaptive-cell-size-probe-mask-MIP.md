@@ -1,10 +1,10 @@
 ---
 id: TASK-114
 title: 'Radiance cache [F] Foundation — unified adaptive cell size + probe mask MIP'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-20 17:35'
-updated_date: '2026-04-20 18:14'
+updated_date: '2026-04-22 00:00'
 labels: []
 dependencies: []
 priority: medium
