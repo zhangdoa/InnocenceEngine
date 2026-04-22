@@ -20,6 +20,28 @@ Project-scoped only. Meta engineering/behavioral rules live in the user-scope `C
 
 - Committing without a real integration-test run (enforced by `.claude/hooks/commit-gate.js`; see Harness enforcement)
 - Touching `Source\External\`
+- Creating any new documentation file (`*.md`, `README`, design doc, roadmap, spec, architecture note, etc.) under `Documents/`, the repo root, or any tracked directory without explicit user request. "Explicit request" = the user typed something like "create a doc at …" or "write a spec for …"; inferring that a doc *would be useful* is not authorization. The system-prompt default ("NEVER create documentation files unless explicitly requested") is not overridden by this project — reinforced here.
+
+### AI authorship scope — what the AI may and may not author
+
+The backlog is the only AI-authored project-state medium. Anything longer-lived than conversation context goes into backlog task files. The AI does not invent new tracked docs.
+
+**AI may author:**
+
+- Source files under `Source/` (except `Source/External/`) as part of implementing a task
+- Backlog task files under `.backlog/tasks/**` (creation, edit, move to `completed/`) per the backlog workflow
+- Edits to `CLAUDE.md`, `.claude/**`, and `.backlog/**` when the user explicitly asks to codify a rule or update workflow
+- Transient scratch files under `Build/**` (gitignored) — commit messages, logs, captures
+
+**AI may NOT author, without explicit user request:**
+
+- Any new `*.md` under `Documents/`, the repo root, or any tracked directory
+- `README.md`, design specs, roadmaps, architecture notes, runbooks, migration guides, release notes
+- Edits to *existing* `Documents/*.md` files not owned by the AI. The two AI-editable docs in `Documents/` are `code-standards.md` and `commit-message-policy.md`, and only when the user asks to update them.
+
+If long-lived cross-session context is needed (priority order, next-up slice, design rationale, partial progress), it goes in the owning backlog task's `## Implementation Notes` section — the backlog already survives sessions and is the supported hand-off mechanism. Standalone roadmap/plan docs are not.
+
+Existing `Documents/*.md` files that were AI-created without explicit authorization (e.g. `Documents/radiance-cache-roadmap.md`) are flagged for user decision: keep as user-owned, migrate content into the owning backlog task and delete, or split. The AI does not unilaterally delete or migrate them.
 
 ## Harness enforcement
 
@@ -204,19 +226,21 @@ Any unexpected behavior, warning, or anomaly observed during testing — even mi
 
 Conversation context does not survive session boundaries. Anything a future session needs to pick up work must live in a tracked file — **not** in commit messages, not in recent-memory narrative, not in conversation scrollback.
 
+**The only AI-owned cross-session medium is the backlog task file.** The AI does not create roadmap docs, design docs, or any other `Documents/*.md` to carry state (see "AI authorship scope" above).
+
 **End of every landing CL (on a multi-session task):**
 
-1. Update the owning task's `## Implementation Notes` with: what landed, what's deferred, what's next. Leave `status: In Progress` if more of the umbrella remains.
-2. If a roadmap/design doc is referenced by the task (e.g. `Documents/*-roadmap.md`), update its status table *and* its "Remaining work — priority order" section in the same CL. Every landing CL re-orders or shortens that list; priority never lives only in chat.
-3. Commit the task/doc changes (see commit-granularity rule).
+1. Update the owning task's `## Implementation Notes` with: what landed, what's deferred, what's next, and the ordered list of remaining slices. Leave `status: In Progress` if more of the umbrella remains.
+2. If sub-slices exist as their own tasks, also update their status (to `Done`, or to `In Progress` if you're taking the next one now).
+3. Commit the task changes (see commit-granularity rule).
 
 **Start of every session:**
 
-1. Before "continuing", list `.backlog/tasks/` entries with `status: In Progress` (Backlog MCP or `rg '^status: In Progress' .backlog/tasks/*.md`). Read each.
-2. For each in-progress task, read every `Documents/*.md` it references.
-3. Those two together are the session hand-off. Never rely on prior-conversation memory; never infer "what's next" from the last commit subject.
+1. Before "continuing", list `.backlog/tasks/` entries with `status: In Progress` (Backlog MCP `task_list`, or `rg '^status: In Progress' .backlog/tasks/*.md`). Read each.
+2. Read referenced sub-task files and the parent task's Implementation Notes. That is the session hand-off.
+3. Never rely on prior-conversation memory; never infer "what's next" from the last commit subject. If a user-owned doc under `Documents/` is referenced, it is background, not the hand-off.
 
-**Forbidden:** recording "next step", "deferred to next CL", or priority order only in commit messages or conversation text. Commit messages describe what landed; the task file and roadmap doc describe what's next. A new session will not grep the git log for direction.
+**Forbidden:** recording "next step", "deferred to next CL", or priority order only in commit messages, chat, or an AI-authored `Documents/*.md`. Commit messages describe what landed; the backlog task file describes what's next.
 
 **Rule of thumb — systemic vs. local:** when a cross-cutting concern surfaces (cross-session state, silent failures, forbidden patterns, etc.), the fix belongs in a document that governs *every* future occurrence (this file, a shared policy doc, or a code-level invariant). Fixing only the instance the user just pointed at is the local-not-systemic antipattern.
 
