@@ -96,6 +96,22 @@ HBIL-style horizon-based bent cone + AO mask; multiply bent cone by clamped cosi
 
 ---
 
+## Remaining work — priority order
+
+Durable cross-session source-of-truth for what to pick up next. Conversation context does not survive; this file does. Every landing CL updates the Status table below AND removes/re-orders the entry here.
+
+Each piece is session-sized — take the top item, design, implement, capture, commit; then pick the new top.
+
+1. **[I.3e] SVGF temporal moments + A-trous** — biggest lever for residual GI noise
+2. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
+3. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
+4. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+5. **[S2.2] LRU side cache** — thin-geometry stability
+
+Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
+
+---
+
 ## Capture / test protocol
 
 Async-load timing: GISponza's load request fires at frame 5 but the
