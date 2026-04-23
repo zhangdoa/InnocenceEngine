@@ -108,8 +108,8 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
 
-1. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
-2. **[S2.2-multi-slot] LRU multi-slot side cache** — follow-up to [S2.2]: current implementation stores 1 slot per tile (overwrites on every successful reprojection). Paper's 4-slot MRU variant preserves distinct poses a camera-panning probe oscillates between. File if single-slot leaves a visible gap.
+1. **[S2.2-multi-slot] LRU multi-slot side cache** — follow-up to [S2.2]: current implementation stores 1 slot per tile (overwrites on every successful reprojection). Paper's 4-slot MRU variant preserves distinct poses a camera-panning probe oscillates between. File if single-slot leaves a visible gap.
+2. **[S1.5c-override-full] Paper dispatch-indirect override queue** — current implementation is a shader-local priority-shift: within each 2×2 spawn-tile, an empty or high-variance probe tile preempts the Halton pick. The paper's Algorithm 2 adds EXTRA rays (2 per high-variance tile, 0 per well-converged) via a classify-and-populate compute pass + UAV counter + dispatch-indirect RayGen. Only land this if the shader-local version leaves a visible noise floor on high-variance regions.
 3. **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current implementation is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if PROBE_SEARCH_MAX_RING grows much larger; defer until that's the case.
 4. **[W.3b-cache-the-index]** Paper §2.2.4 cache-the-index optimization — amortise per-vertex hash computation. Currently no-op because the RayGen → single ClosestHit path doesn't re-trace from the closest hit, so the tile hash is already computed once per vertex. Becomes meaningful when (if) we add multi-bounce ray tracing from ClosestHit.
 
@@ -144,7 +144,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | S1.4 | Radiance-average backup for untraced cells | ☐ (deferred) | — |
 | S1.5 | Sparse spawning (upscale 2×2) + Halton pixel + Reprojection mask invalidation | ☑ | |
 | S1.5b | FindClosestProbe widening ring search + filter migration + dead-code cleanup | ☑ | |
-| S1.5c | Algorithm 2 ray redistribution (empty-tile redirect; override queue deferred) | ☑ (partial) | |
+| S1.5c | Algorithm 2 ray redistribution (empty-tile redirect + high-variance priority) | ☑ | |
 | S2.1 | Probe-space filter with parallax-correction angular rejection | ☑ | |
 | S2.2 | Side cache for evicted probes — single-slot-per-tile snapshot | ☑ | |
 | I.1 | Edge-aware 4-probe interpolation + relaxed fallback | ☑ | |
@@ -205,13 +205,15 @@ Landed as a focused refactor rather than a full MIP chain:
 
 Why ring-walk instead of MIP chain: paper's Algorithm 4 uses a MIP-chain walk for O(log r) scaling. With PROBE_SEARCH_MAX_RING=2 the direct ring scan loads at most 25 tile-mask texels per call — well within budget and avoids the MIP-chain generation pass. If the search radius needs to grow (e.g. world-space light-leak scenarios), a real MIP chain becomes worthwhile — filed as `[S1.5b-mip-chain]` in the Remaining Work list.
 
-#### [S1.5c] — Algorithm 2 ray redistribution (partial — empty-tile redirect only)
+#### [S1.5c] — Algorithm 2 ray redistribution (empty-tile redirect + high-variance priority)
 
-Landed the empty-tile half of paper Algorithm 2 as a shader-only redirect inside RayGen. Each dispatched spawn tile scans the ξ_x·ξ_y probe tiles it owns; if any is `PROBE_MASK_INVALID` (Reprojection flagged it this frame), the Halton-picked sampling pixel gets redirected to that disoccluded tile instead of wherever Halton was rolling. Keeps the ray budget constant (one spawn per spawn tile, same as before) and kills the "disoccluded tile waits up to ξ_x·ξ_y frames for Halton to come around" regression.
+Paper Algorithm 2 priorities, implemented as a shader-only priority-shift inside each 2×2 spawn tile in RayGen:
 
-Intentionally deferred: the paper's `override_tile` queue — routing EXTRA rays to well-reprojected-but-high-variance tiles by stealing from neighbours. Would need the full infrastructure TASK-6 originally listed (two UAV counters, classify-and-populate compute pass, dispatch-indirect RayGen). Filed as `[S1.5c-override]` in the Remaining Work list above. The empty-tile redirect is the high-value half; override is a refinement.
+1. **Empty-tile redirect** — any probe tile flagged `PROBE_MASK_INVALID` by Reprojection (disoccluded this frame) preempts the Halton pick, so the disoccluded tile gets a ray immediately instead of waiting up to ξ_x·ξ_y frames for Halton to cycle through.
+2. **High-variance redirect** — if no tile is empty, the tile with the highest current-atlas luma coefficient-of-variation (σ/μ, sampled from 4 diagonal cells of the 8×8 octahedral atlas) preempts Halton if its σ/μ exceeds `OVERRIDE_CV_THRESHOLD = 1.0` (stddev ≈ mean — firefly-class variance). So high-variance tiles get spawned every frame while quiet tiles wait for Halton. Sub-pixel jitter inside the redirected tile preserved.
+3. **Halton default** — no empty, no high-variance → let the Halton pick land wherever it rolled.
 
-Implementation keeps the Halton sub-pixel offset inside the redirected probe tile so repeated disocclusions of the same tile still sample varied pixels, not the same pixel every frame.
+Paper's full override queue adds EXTRA rays (2 per high-variance tile, 0 per well-converged) via a classify-and-populate compute pass + UAV counter + dispatch-indirect RayGen. Out of scope here — our priority-shift approximates the intent within the fixed per-spawn-tile ray budget. Filed as `[S1.5c-override-full]` in the Remaining Work list if the shader-local version proves insufficient.
 
 #### [S2.1] — Probe-space filter with parallax-correction angular rejection
 

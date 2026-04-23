@@ -189,19 +189,30 @@ void RayGenShader()
     float2 haltonUV = float2(Halton(g_Frame.frameIndex, 2u), Halton(g_Frame.frameIndex, 3u));
     uint2 pixelInSpawn = uint2(haltonUV * float2(spawnTileSize));
 
-    // [S1.5c] Paper Algorithm 2 — empty-tile priority. Scan the ξ_x·ξ_y
-    // probe tiles inside our spawn tile; if any is flagged INVALID by
-    // Reprojection (disoccluded this frame), redirect the spawn there
-    // instead of letting the Halton pick land on an already-valid tile.
-    // Without this, disoccluded tiles have to wait for the Halton cycle
-    // to come around — up to ξ_x·ξ_y frames of visible dark patches
-    // under fast motion. Sub-pixel inside the redirected tile uses the
-    // Halton offset so repeated disocclusions still get varied jitter.
+    // Paper Algorithm 2 priorities inside each 2×2 spawn tile:
+    //   1. [S1.5c] Empty-tile redirect — any probe tile flagged INVALID
+    //      by Reprojection (disoccluded this frame) preempts Halton so
+    //      the disoccluded tile gets a ray immediately instead of waiting
+    //      up to ξ_x·ξ_y frames for the Halton cycle to land there.
+    //   2. [S1.5c-override] High-variance tile redirect — if no tile is
+    //      empty, redirect to the tile with the highest current-atlas
+    //      luma coefficient-of-variation (σ/μ > OVERRIDE_CV_THRESHOLD).
+    //      Paper's override queue spends EXTRA rays on high-variance
+    //      tiles at the cost of well-converged ones; we approximate with
+    //      a priority-shift inside the fixed per-spawn-tile ray budget,
+    //      so high-variance tiles get spawned every frame (instead of 1
+    //      in ξ_x·ξ_y) while quiet tiles wait for Halton. Sub-pixel
+    //      inside the redirected tile uses the Halton offset so repeated
+    //      redirects still get varied jitter.
+    //   3. Halton default — no empty, no high-variance → let the Halton
+    //      pick land wherever it rolled.
     //
-    // Paper's full Algorithm 2 also routes EXTRA rays to high-variance
-    // tiles via an override-queue (ray stealing from well-reprojected
-    // neighbours). Out of scope here; ray budget stays constant at one
-    // spawn per spawn tile.
+    // Variance probe: four diagonal cells of the probe's 8×8 octahedral
+    // atlas give a cheap σ/μ estimate. Cheaper than reading all 64 cells;
+    // enough to distinguish fireflies (one outlier cell) from smooth
+    // probes.
+    const float OVERRIDE_CV_THRESHOLD = 1.0; // stddev ≈ mean → firefly-class variance
+
     bool redirected = false;
     for (uint py = 0; py < upscaleFactor.y; py++)
     {
@@ -217,6 +228,47 @@ void RayGenShader()
             }
         }
         if (redirected) break;
+    }
+
+    if (!redirected)
+    {
+        float bestCV = OVERRIDE_CV_THRESHOLD;
+        uint2 bestOffset = uint2(0, 0);
+        bool foundVariance = false;
+        for (uint py = 0; py < upscaleFactor.y; py++)
+        {
+            for (uint px = 0; px < upscaleFactor.x; px++)
+            {
+                uint2 probeTile = spawnIndex * upscaleFactor + uint2(px, py);
+                if (!IsValidProbe(in_ProbeMask[probeTile]))
+                    continue; // empty tiles handled above; shouldn't reach here but guards re-entry
+
+                uint2 probeScreen = probeTile * RADIANCE_CACHE_TILE_SIZE;
+                float L0 = GetLuma(in_RadianceCacheResults[probeScreen + uint2(0, 0)].rgb);
+                float L1 = GetLuma(in_RadianceCacheResults[probeScreen + uint2(7, 0)].rgb);
+                float L2 = GetLuma(in_RadianceCacheResults[probeScreen + uint2(0, 7)].rgb);
+                float L3 = GetLuma(in_RadianceCacheResults[probeScreen + uint2(7, 7)].rgb);
+                float mean = (L0 + L1 + L2 + L3) * 0.25;
+                float d0 = L0 - mean;
+                float d1 = L1 - mean;
+                float d2 = L2 - mean;
+                float d3 = L3 - mean;
+                float var = (d0 * d0 + d1 * d1 + d2 * d2 + d3 * d3) * 0.25;
+                float cv = sqrt(var) / max(mean, 0.01);
+                if (cv > bestCV)
+                {
+                    bestCV = cv;
+                    bestOffset = uint2(px, py);
+                    foundVariance = true;
+                }
+            }
+        }
+        if (foundVariance)
+        {
+            uint2 subJitter = uint2(haltonUV * float(RADIANCE_CACHE_TILE_SIZE));
+            pixelInSpawn = bestOffset * RADIANCE_CACHE_TILE_SIZE + subJitter;
+            redirected = true;
+        }
     }
 
     uint2 samplingScreenPos = spawnTileOrigin + pixelInSpawn;
