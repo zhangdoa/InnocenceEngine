@@ -141,7 +141,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | S1.1 | Algorithm 3 biased shadow-preserving temporal hysteresis | ☑ | |
 | S1.2 | Ray travel distance in atlas alpha (parallax prep) | ☑ | |
 | S1.3 | 3×3 neighbourhood CDF reconstruction with parallax correction | ☑ | |
-| S1.4 | Radiance-average backup for untraced cells | ☐ (deferred) | — |
+| S1.4 | Radiance-average backup for untraced cells (coverage-gated) | ☑ | |
 | S1.5 | Sparse spawning (upscale 2×2) + Halton pixel + Reprojection mask invalidation | ☑ | |
 | S1.5b | FindClosestProbe widening ring search + filter migration + dead-code cleanup | ☑ | |
 | S1.5c | Algorithm 2 ray redistribution (empty-tile redirect + high-variance priority) | ☑ | |
@@ -187,9 +187,13 @@ Replaces the ad-hoc EMA + relative-variance firefly clamp in RayGen with the pap
 
 `ImportanceSampleFromCDF` iterates a 3×3 tile neighbourhood of reprojected probes, re-aims each neighbour cell's direction through its stored hit distance, and scatters the radiance into the current probe's octahedral CDF in the current probe's tangent frame. Neighbour positions come from the opaque G-buffer at each tile's anchor (avoids the cross-thread race on `in_ProbePosition` that would happen if we read it inside the same RayGen dispatch that writes it). Cell rejection uses the unified `AdaptiveCellSize * 3` threshold.
 
-#### [S1.4] — Radiance-average backup (deferred)
+#### [S1.4] — Radiance-average backup (coverage-gated)
 
-Paper §2.1.4 last paragraph. Only meaningful once per-cell sample counts are tracked (or ray budgets are high enough that "some cells populated, others not" is a frequent case). With the current 1-spp-per-probe configuration and a 64-cell octahedral map, distinguishing "no ray this frame" from "legitimately dark cell" requires tracking state we don't have. Deferred until [S1.5c] lands the ray-redistribution queues, at which point the "untraced cell" set is explicitly known.
+Paper §2.1.4: untraced cells in a probe's octahedral atlas inherit the average radiance of the traced cells so SH projection isn't biased toward zero in directions never sampled.
+
+Implementation lives inside `RadianceCacheIntegration.comp`. Atlas alpha (ray travel distance, written by RayGen in [S1.2]) is the "traced/untraced" signal — cells with α > 0 have been traced at some point in history, α == 0 flags an untraced cell. A pre-reduction over the 64 threads computes the traced-cell sum + count; after the reduction every thread reads the probe average, and untraced cells replace their (zero) radiance with that average before the existing SH integration runs.
+
+**Coverage-gated activation**: paper's unconditional fill-in assumes the ray budget is dense enough that a probe is near-saturated (most of 64 cells traced). Our sparse-spawning configuration (1 ray per 2×2 spawn tile per frame, Halton cycle over 4 frames, 1 cell per spawn) only saturates to ~15–20% coverage in most of the scene even at frame 60. A first-pass implementation without a coverage gate doubled SH DC for partial-coverage probes (visible per-probe brightness banding across the whole view) because the avg-of-a-dozen-traced-cells was extrapolated across 50+ untraced directions. The gate activates the fill-in only when coverage > 0.9 — below that the probe is deemed too sparse for the average to be a reliable extrapolation, and untraced cells stay at zero (same behaviour as pre-[S1.4]). If ray budget grows (e.g. [S1.5c-override-full] adds extra rays or the engine bumps per-frame spawn count) the gate auto-activates for probes that become dense enough. Infrastructure is in place, dormant until warranted.
 
 #### [S1.5] — Sparse spawning + Halton pixel + Reprojection mask invalidation
 

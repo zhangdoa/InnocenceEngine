@@ -30,6 +30,15 @@ groupshared float3 gs_SH6[THREAD_COUNT];
 groupshared float3 gs_SH7[THREAD_COUNT];
 groupshared float3 gs_SH8[THREAD_COUNT];
 
+// [S1.4] radiance-average backup pre-reduction: sum of traced radiance +
+// count of traced cells, reduced across the 64 probe cells. Atlas alpha
+// stores ray travel distance ([S1.2]), so alpha == 0 flags a cell that
+// has never been traced. Untraced cells are replaced with the traced-
+// cell average before SH projection so partial-coverage probes don't
+// bias SH toward zero in the directions we haven't sampled yet.
+groupshared float3 gs_avgSum[THREAD_COUNT];
+groupshared float gs_avgCount[THREAD_COUNT];
+
 [numthreads(TILE_SIZE, TILE_SIZE, 1)]
 void main(ComputeInputType input)
 {
@@ -39,11 +48,50 @@ void main(ComputeInputType input)
     uint y = input.groupThreadID.y;
 
     uint2 readCoord = probeIndex * TILE_SIZE + uint2(x, y);
-    float3 radiance = max(in_RadianceCacheResults_Input.Load(int3(readCoord, 0)).xyz, float3(0, 0, 0));
+    float4 atlasSample = in_RadianceCacheResults_Input.Load(int3(readCoord, 0));
+    float3 radiance = max(atlasSample.xyz, float3(0, 0, 0));
+    float rayDistance = atlasSample.w;
 
     float radianceMagnitude = length(radiance);
     if (radianceMagnitude > 1000.0)
         radiance = normalize(radiance) * 1000.0;
+
+    // [S1.4] radiance-average backup: seed the per-probe average reduction
+    // from cells with a non-zero ray-travel-distance record. rayDistance
+    // is written by RayGen ([S1.2]); a cell with rayDistance > 0 has been
+    // traced at some point in the temporal history, alpha == 0 flags a
+    // cell that's never been sampled.
+    bool tracedCell = rayDistance > 0.0;
+    gs_avgSum[threadIndex] = tracedCell ? radiance : float3(0, 0, 0);
+    gs_avgCount[threadIndex] = tracedCell ? 1.0 : 0.0;
+
+    GroupMemoryBarrierWithGroupSync();
+
+    for (uint avgStride = THREAD_COUNT / 2; avgStride > 0; avgStride >>= 1)
+    {
+        if (threadIndex < avgStride)
+        {
+            gs_avgSum[threadIndex] += gs_avgSum[threadIndex + avgStride];
+            gs_avgCount[threadIndex] += gs_avgCount[threadIndex + avgStride];
+        }
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    // Coverage gate: paper's backup assumes enough ray budget that a probe
+    // is near-saturated (most of 64 cells traced), and fills the few
+    // remaining untraced cells with the average so SH DC isn't biased by
+    // zero-radiance directions. Below the threshold we leave untraced
+    // cells at zero — our sparse-spawning configuration (1 ray per spawn
+    // tile per frame) hits only ~20% coverage for most of the scene, and
+    // filling 80% of a probe with an avg-of-a-dozen-cells doubles SH DC
+    // and produces strong per-probe brightness banding. If ray budget
+    // grows (e.g. [S1.5c-override-full] adds extra rays) this gate
+    // activates automatically for the probes that become dense enough.
+    const float COVERAGE_ACTIVATION_THRESHOLD = 0.9;
+    float coverage = gs_avgCount[0] / float(THREAD_COUNT);
+    float3 tracedAvg = gs_avgCount[0] > 0.5 ? (gs_avgSum[0] / gs_avgCount[0]) : float3(0, 0, 0);
+    if (!tracedCell && coverage > COVERAGE_ACTIVATION_THRESHOLD)
+        radiance = tracedAvg;
 
     float2 uv = float2(x, y) / TILE_SIZE;
     float3 w = DecodeOctahedral(uv);
