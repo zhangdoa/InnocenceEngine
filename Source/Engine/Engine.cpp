@@ -1116,6 +1116,11 @@ InitConfig Engine::getInitConfig()
 	return m_pImpl->m_initConfig;
 }
 
+void Engine::setSerializeTestResult(int result)
+{
+	m_pImpl->m_initConfig.serializeTestResult = result;
+}
+
 IWindowService* Engine::getWindowService()
 {
 	return m_pImpl->m_WindowSystem.get();

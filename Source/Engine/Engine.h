@@ -39,6 +39,10 @@ namespace Inno
 		// trip preserved the on-disk state; a clean diff means the
 		// serializer is idempotent for the tested scene.
 		char serializeTest[512] = {};
+		// Serialize-test exit code, populated by RunSerializeTest at the
+		// end of the save-compare round-trip (0 = pass, 1 = diff detected).
+		// Read from WinMain after Engine::Terminate() returns.
+		int serializeTestResult = 0;
 	};
 
 	class IWindowService;
@@ -65,6 +69,7 @@ namespace Inno
 		ObjectStatus GetStatus();
 
 		InitConfig getInitConfig();
+		void setSerializeTestResult(int result);
 		const FixedSizeString<128>& GetApplicationName();
 		IWindowService* getWindowService();
 		float getTickTime();

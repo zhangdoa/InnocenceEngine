@@ -3,7 +3,7 @@ id: TASK-112
 title: >-
   Replace _Exit() in serialize-test with clean engine shutdown + exit-code
   propagation
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-20 10:21'
 labels: []

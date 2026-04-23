@@ -133,9 +133,12 @@ namespace
 		{
 			Log(Success, "[serialize-test] PASSED — round-trip is idempotent for: ", l_sceneRelPath);
 		}
-		// _Exit bypasses CRT teardown and C++ destructors (which crash with GPU
-		// threads still alive). The OS reclaims all handles and memory cleanly.
-		_Exit(l_passed ? 0 : 1);
+		// Stash the result in InitConfig; WinMain reads it after Engine::Terminate()
+		// returns and uses it as the process exit code. IWindowService::Terminate()
+		// ends the main loop cleanly, driving the normal Terminate path which
+		// releases D3D12 resources and drains the debug layer.
+		g_Engine->setSerializeTestResult(l_passed ? 0 : 1);
+		g_Engine->Get<IWindowService>()->Terminate();
 	}
 } // anonymous namespace
 

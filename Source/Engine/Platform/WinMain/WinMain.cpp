@@ -145,6 +145,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
         m_pEngine->Terminate();
 
+        // Serialize-determinism test (TASK-112): if -serialize_test was
+        // passed, propagate the result WorldSystem stashed via
+        // setSerializeTestResult as the process exit code. Takes precedence
+        // over GPU-error / validation checks below because the test runs
+        // without rendering services and its pass/fail is the whole point
+        // of the invocation.
+        const InitConfig l_initConfig = m_pEngine->getInitConfig();
+        if (l_initConfig.serializeTest[0] != '\0')
+            return l_initConfig.serializeTestResult;
+
         // GraphicsHardwareService only exists in non-headless mode.
         if (!l_isHeadless && m_pEngine->Get<GraphicsHardwareService>()->HasGPUError())
             return 1;

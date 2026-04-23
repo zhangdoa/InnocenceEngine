@@ -785,9 +785,17 @@ namespace Inno
 		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
 		const bool l_isPathTracerTestMode =
 			strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0 && m_GPUPathTracerActive;
-		const uint32_t l_triggerAtFrame = l_totalFrames > 0
-			? static_cast<uint32_t>(l_totalFrames)
-			: (l_isPathTracerTestMode ? 30u : 0u);
+		// Serialize-test mode sets totalFrames=1 for the parse's auto-terminate
+		// path, but the render pipeline (FinalBlendPass, et al.) is intentionally
+		// not activated in that mode — the test's whole work is scene load +
+		// save + compare, no rendering. Skip the auto-capture trigger so
+		// ReadTextureBackToCPU doesn't run against a texture with empty GPU
+		// resources and hit the fatal-on-error log path.
+		const bool l_isSerializeTest = g_Engine->getInitConfig().serializeTest[0] != '\0';
+		const uint32_t l_triggerAtFrame = l_isSerializeTest ? 0u
+			: (l_totalFrames > 0
+				? static_cast<uint32_t>(l_totalFrames)
+				: (l_isPathTracerTestMode ? 30u : 0u));
 
 		// Per-frame trigger: mid-session snapshot (e.g. path tracer frame 30).
 		// The structural fallback is FinalizeGPUResults, which runs at shutdown
@@ -884,7 +892,11 @@ namespace Inno
 		// alive and a readback/PNG write here is safe. Per-frame trigger
 		// usually wins (m_autoCaptureWritten is already set); this catches
 		// the "user exited before the trigger frame fired" case.
-		if (g_Engine->getInitConfig().totalFrames > 0 && !m_autoCaptureWritten)
+		// Serialize-test mode sets totalFrames=1 as an auto-terminate signal
+		// but doesn't render; skip the capture path so it doesn't try to
+		// read back an unactivated texture at shutdown.
+		const bool l_isSerializeTest = g_Engine->getInitConfig().serializeTest[0] != '\0';
+		if (g_Engine->getInitConfig().totalFrames > 0 && !m_autoCaptureWritten && !l_isSerializeTest)
 			TryWriteAutoCapture();
 		return true;
 	}
