@@ -188,6 +188,37 @@ void RayGenShader()
     // probe-tile slots within the spawn tile over that many frames.
     float2 haltonUV = float2(Halton(g_Frame.frameIndex, 2u), Halton(g_Frame.frameIndex, 3u));
     uint2 pixelInSpawn = uint2(haltonUV * float2(spawnTileSize));
+
+    // [S1.5c] Paper Algorithm 2 — empty-tile priority. Scan the ξ_x·ξ_y
+    // probe tiles inside our spawn tile; if any is flagged INVALID by
+    // Reprojection (disoccluded this frame), redirect the spawn there
+    // instead of letting the Halton pick land on an already-valid tile.
+    // Without this, disoccluded tiles have to wait for the Halton cycle
+    // to come around — up to ξ_x·ξ_y frames of visible dark patches
+    // under fast motion. Sub-pixel inside the redirected tile uses the
+    // Halton offset so repeated disocclusions still get varied jitter.
+    //
+    // Paper's full Algorithm 2 also routes EXTRA rays to high-variance
+    // tiles via an override-queue (ray stealing from well-reprojected
+    // neighbours). Out of scope here; ray budget stays constant at one
+    // spawn per spawn tile.
+    bool redirected = false;
+    for (uint py = 0; py < upscaleFactor.y; py++)
+    {
+        for (uint px = 0; px < upscaleFactor.x; px++)
+        {
+            uint2 probeTile = spawnIndex * upscaleFactor + uint2(px, py);
+            if (!IsValidProbe(in_ProbeMask[probeTile]))
+            {
+                uint2 subJitter = uint2(haltonUV * float(RADIANCE_CACHE_TILE_SIZE));
+                pixelInSpawn = uint2(px, py) * RADIANCE_CACHE_TILE_SIZE + subJitter;
+                redirected = true;
+                break;
+            }
+        }
+        if (redirected) break;
+    }
+
     uint2 samplingScreenPos = spawnTileOrigin + pixelInSpawn;
 
     // Derive probe tile and sub-tile pixel from the Halton-chosen pixel.

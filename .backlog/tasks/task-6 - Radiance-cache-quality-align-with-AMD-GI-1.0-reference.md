@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-23 08:40'
+updated_date: '2026-04-23 08:50'
 labels:
   - rendering
   - GI
@@ -108,9 +108,10 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
 
-1. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
-2. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
-3. **[S2.2] LRU side cache** — thin-geometry stability
+1. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+2. **[S2.2] LRU side cache** — thin-geometry stability
+3. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
+4. **[S1.5b] Mask MIP chain + FindClosestProbe MIP walk** — [S1.5c] didn't need this; worthwhile once hole patterns get more complex
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -143,7 +144,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | S1.4 | Radiance-average backup for untraced cells | ☐ (deferred) | — |
 | S1.5 | Sparse spawning (upscale 2×2) + Halton pixel + Reprojection mask invalidation | ☑ | |
 | S1.5b | Mask MIP chain + FindClosestProbe MIP walk | ☐ (deferred) | |
-| S1.5c | Algorithm 2 ray redistribution (empty/override queues + patch kernel) | ☐ (deferred) | |
+| S1.5c | Algorithm 2 ray redistribution (empty-tile redirect; override queue deferred) | ☑ (partial) | |
 | S2.1 | Probe-space filter with parallax-correction angular rejection | ☑ | |
 | S2.2 | LRU persistent side cache for evicted probes | ☐ (deferred) | |
 | I.1 | Edge-aware 4-probe interpolation + relaxed fallback | ☑ | |
@@ -197,9 +198,13 @@ Drives spawn via `upscaleFactor = (2, 2)`, cutting ray budget to 1/4; Halton(2)/
 
 With 1/4 spawning, up to 3/4 of tiles per frame fall back to reprojected history or PROBE_MASK_INVALID. Filter's immediate-neighbour tap already handles most of these (the single-level walk the `FindClosestProbe` helper does today); the MIP chain only starts paying off once holes reliably span >1 probe-tile — which is mainly disocclusion scenarios that [S1.5c] also targets. Bundled into a future CL with [S1.5c].
 
-#### [S1.5c] — Algorithm 2 ray redistribution (deferred)
+#### [S1.5c] — Algorithm 2 ray redistribution (partial — empty-tile redirect only)
 
-Without it, fully disoccluded tiles stay dark for up to `ξ_x · ξ_y` = 4 frames. Visible as brief dark patches under fast motion. Paper §2.1.2 fixes this via an `empty_tile` / `override_tile` queue pair plus a `patch_screen_probes` kernel that steals ray slots from well-reprojected tiles to fill disoccluded ones; keeps the per-frame ray budget constant. Non-trivial infrastructure (2 new buffers, a classify-and-populate compute pass, a dispatch-indirect RayGen invocation).
+Landed the empty-tile half of paper Algorithm 2 as a shader-only redirect inside RayGen. Each dispatched spawn tile scans the ξ_x·ξ_y probe tiles it owns; if any is `PROBE_MASK_INVALID` (Reprojection flagged it this frame), the Halton-picked sampling pixel gets redirected to that disoccluded tile instead of wherever Halton was rolling. Keeps the ray budget constant (one spawn per spawn tile, same as before) and kills the "disoccluded tile waits up to ξ_x·ξ_y frames for Halton to come around" regression.
+
+Intentionally deferred: the paper's `override_tile` queue — routing EXTRA rays to well-reprojected-but-high-variance tiles by stealing from neighbours. Would need the full infrastructure TASK-6 originally listed (two UAV counters, classify-and-populate compute pass, dispatch-indirect RayGen). Filed as `[S1.5c-override]` in the Remaining Work list above. The empty-tile redirect is the high-value half; override is a refinement.
+
+Implementation keeps the Halton sub-pixel offset inside the redirected probe tile so repeated disocclusions of the same tile still sample varied pixels, not the same pixel every frame.
 
 #### [S2.1] — Probe-space filter with parallax-correction angular rejection
 
