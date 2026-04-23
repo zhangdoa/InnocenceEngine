@@ -37,8 +37,10 @@ Existing AI-created tracked docs are flagged for user decision, not unilaterally
 
 **Test-run gate** — one of:
 - A qualifying integration test ran this turn — `Main.exe` with frame flags, `RenderTest.exe -test`, `InteractiveTest.ps1`, or `Main.exe -serialize_test`.
-- Staged set is docs-only (`.backlog/`, `Documents/`, `*.md`, `.claude/`).
+- Staged set is docs-only (`.backlog/`, `Documents/`, `*.md`, `.claude/`) **and** no staged backlog task is flipping `status:` to `Done` (see closure-evidence gate).
 - Message contains `[skip-test-gate]` — use only when the commit genuinely cannot be validated by a test (commit-message edit, hook fix, docs migration, etc.).
+
+**Closure-evidence gate** — if any staged `.backlog/tasks/*.md` has a `+status: Done` line in its diff (new task-as-Done, or existing task flipping `In Progress` / `To Do` → `Done`), the docs-only bypass does **not** apply. A closing CL asserts the work is validated; the claim must be backed by a real test run in the current turn, same as a code CL. `[skip-test-gate]` still escapes for legitimate cases (abandoned / superseded tasks, retro housekeeping of long-done work).
 
 **Serialize-determinism gate** — when `JSONWrapper/`, `AssetService.*`, or `SceneService.*` are staged, `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` must have run this turn.
 

@@ -8,16 +8,25 @@
  *   exit 0 = allow the tool call
  *   exit 2 = block the tool call; stderr is shown to Claude (and the user)
  *
- * Three gates; all must pass:
+ * Four gates; all must pass:
  *
  * 1. Test-run gate — allow if any of:
  *    - transcript since last user message contains a Bash call matching
  *      QUALIFYING_TEST (playwright, Main.exe with frame flags, RenderTest,
  *      InteractiveTest.ps1)
- *    - all staged paths match DOCS_ONLY_PATH
+ *    - all staged paths match DOCS_ONLY_PATH *and* no staged backlog task
+ *      is flipping to `status: Done` (see gate 2)
  *    - commit message contains SKIP_SENTINEL
  *
- * 2. Live-engine gate — if any staged file is editor-facing code
+ * 2. Closure-evidence gate — if any staged .backlog/tasks/*.md file has a
+ *    `+status: Done` line in its staged diff (new file with Done, or
+ *    existing task flipping In Progress / To Do → Done), the docs-only
+ *    bypass from gate 1 does NOT apply. Closing a task asserts the work
+ *    is validated; the claim must be backed by an integration-test run
+ *    in the current turn. SKIP_SENTINEL still escapes for legitimate
+ *    cases (abandoned work, retro housekeeping, superseded tasks).
+ *
+ * 3. Live-engine gate — if any staged file is editor-facing code
  *    (EDITOR_CODE_PATH), require one of:
  *    - a Playwright run against a spec that spawns the real engine
  *      (detected by `--engine=Main` in the spec source, or by running
@@ -28,7 +37,7 @@
  *   optimistic-vs-server-truth races that only surface against a live
  *   engine.
  *
- * 3. Attribution gate — commit message must contain Code-AI-Generated-By:
+ * 4. Attribution gate — commit message must contain Code-AI-Generated-By:
  *    or Message-AI-Generated-By: per Documents/commit-message-policy.md.
  *    No escape; every Claude-issued commit is AI-authored.
  *
@@ -127,7 +136,16 @@ async function main() {
     stagedRaw = execSync('git -c core.quotePath=false diff --cached --name-only', { cwd, encoding: 'utf8' })
   } catch { /* no git; nothing we can do */ }
   const staged = stagedRaw.split('\n').map(s => s.trim()).filter(Boolean)
-  if (staged.length > 0 && staged.every(f => DOCS_ONLY_PATH.test(f))) {
+
+  // Closure-evidence gate. Detect backlog task files whose staged diff
+  // flips `status:` to Done — i.e., the commit is *claiming completion*.
+  // These do not get the docs-only bypass below: a completion claim must
+  // be backed by a test run in the current turn.
+  const closingTasks = detectClosingTasks(cwd, staged)
+
+  if (closingTasks.length === 0
+      && staged.length > 0
+      && staged.every(f => DOCS_ONLY_PATH.test(f))) {
     return process.exit(0)
   }
 
@@ -169,7 +187,11 @@ async function main() {
     } catch { /* skip */ }
   }
   if (!ran) {
-    blockNoTest(staged)
+    if (closingTasks.length > 0) {
+      blockNoCloseTest(closingTasks)
+    } else {
+      blockNoTest(staged)
+    }
     return
   }
 
@@ -344,6 +366,58 @@ function isRealUserPrompt(content) {
 function firstArray(...xs) {
   for (const x of xs) if (Array.isArray(x)) return x
   return []
+}
+
+// Matches an added line (single leading '+', never the '+++' file header)
+// in a staged diff that writes `status: Done`. Case-insensitive on the key
+// so `Status: Done` is caught too; value match is strict `Done` with a word
+// boundary so `Done-ish` or `Doner` don't qualify.
+const STATUS_DONE_ADDED_RE = /^\+status:\s*Done\b/mi
+
+function detectClosingTasks(cwd, staged) {
+  const backlogFiles = staged.filter(f => f.startsWith('.backlog/tasks/'))
+  const closing = []
+  for (const f of backlogFiles) {
+    try {
+      const escaped = f.replace(/"/g, '\\"')
+      // -U0: drop context lines so a neighbouring unchanged `status:` line
+      // in a task that isn't flipping status can't match our regex.
+      const diff = execSync(
+        `git -c core.quotePath=false diff --cached -U0 -- "${escaped}"`,
+        { cwd, encoding: 'utf8' }
+      )
+      if (STATUS_DONE_ADDED_RE.test(diff)) closing.push(f)
+    } catch { /* per-file diff unavailable — skip */ }
+  }
+  return closing
+}
+
+function blockNoCloseTest(closingTasks) {
+  const filesList = closingTasks.slice(0, 10).map(f => '  ' + f).join('\n')
+    + (closingTasks.length > 10 ? `\n  …and ${closingTasks.length - 10} more` : '')
+  process.stderr.write([
+    '',
+    '[commit-gate] git commit blocked — task closure without integration test.',
+    '',
+    'Task(s) flipping to status: Done this commit:',
+    filesList,
+    '',
+    'Closing a task asserts the work is validated. The docs-only bypass does',
+    'NOT apply to a completion claim — a closing CL must be backed by a test',
+    'run in the current turn, same as a code CL.',
+    '',
+    'Run one of the following in this turn before committing:',
+    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N',
+    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N -reload_at_frame M',
+    '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
+    '  • Bin\\RelWithDebInfo\\Main.exe -capture_frame N',
+    '  • InteractiveTest.ps1',
+    '',
+    `Escape hatch: include ${SKIP_SENTINEL} if this closure genuinely cannot`,
+    'be validated by a test (abandoned/superseded task, retro housekeeping).',
+    '',
+  ].join('\n'))
+  process.exit(2)
 }
 
 const SERIALIZE_TEST_RE = /Main\.exe\b[^|&;]*-serialize_test\b/
