@@ -69,23 +69,68 @@ float AdaptiveCellSize(float depth, float2 viewportSize, float4x4 proj)
     return depth * tan(fovY * cellSizePx / maxDim) / SQRT2;
 }
 
-// GI-1.0 Algorithm 4 — sparse directional probe search. [F] lands a
-// single-level mask sufficient for dense spawning; [S1] will extend this
-// to a full MIP-chain walk once sparse spawning introduces real holes.
+// GI-1.0 Algorithm 4 — sparse directional probe search. Returns the target
+// tile if it has a valid probe, otherwise expands outward in Chebyshev
+// rings looking for the closest valid substitute. The paper's form uses a
+// probe-mask MIP chain to cover the same search pattern in O(log r); with
+// 2×2 sparse spawning the worst-case hole is ≤ 2 probe-tiles, so a direct
+// ring walk to radius PROBE_SEARCH_MAX_RING (2) covers the same cases
+// without the MIP chain overhead.
+//
+// On success, r.tileCoord is the SUBSTITUTE tile's coordinate (which may
+// differ from the requested offset) — callers must use r.tileCoord for
+// all subsequent world-space reads so the substitute's own position and
+// normal drive the caller's rejection tests, not the target's.
 struct ProbeLookup
 {
     int2 tileCoord;
     uint packed;
 };
 
+static const int PROBE_SEARCH_MAX_RING = 2;
+
 ProbeLookup FindClosestProbe(Texture2D<uint> probeMask, int2 pixel, int2 offsetInProbes, int2 gridSize)
 {
     ProbeLookup r;
-    r.tileCoord = (pixel / int(RADIANCE_CACHE_TILE_SIZE)) + offsetInProbes;
+    int2 baseTile = (pixel / int(RADIANCE_CACHE_TILE_SIZE)) + offsetInProbes;
+    r.tileCoord = baseTile;
     r.packed = PROBE_MASK_INVALID;
-    if (any(r.tileCoord < int2(0, 0)) || any(r.tileCoord >= gridSize))
-        return r;
-    r.packed = probeMask.Load(int3(r.tileCoord, 0));
+
+    // Ring 0 — the requested target.
+    if (all(baseTile >= int2(0, 0)) && all(baseTile < gridSize))
+    {
+        uint packed = probeMask.Load(int3(baseTile, 0));
+        if (IsValidProbe(packed))
+        {
+            r.packed = packed;
+            return r;
+        }
+    }
+
+    // Rings 1..PROBE_SEARCH_MAX_RING — Chebyshev ring (outline only, not
+    // filled) gives even coverage without duplicating interior tiles we
+    // already visited. First-hit wins; the loop order (ring, then dy,
+    // then dx) makes "closest substitute" deterministic across invocations.
+    for (int ring = 1; ring <= PROBE_SEARCH_MAX_RING; ring++)
+    {
+        for (int dy = -ring; dy <= ring; dy++)
+        {
+            for (int dx = -ring; dx <= ring; dx++)
+            {
+                if (abs(dx) != ring && abs(dy) != ring) continue;
+                int2 q = baseTile + int2(dx, dy);
+                if (any(q < int2(0, 0)) || any(q >= gridSize)) continue;
+                uint packed = probeMask.Load(int3(q, 0));
+                if (IsValidProbe(packed))
+                {
+                    r.tileCoord = q;
+                    r.packed = packed;
+                    return r;
+                }
+            }
+        }
+    }
+
     return r;
 }
 

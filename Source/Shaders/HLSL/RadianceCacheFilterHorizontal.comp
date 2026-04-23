@@ -78,19 +78,20 @@ void main(ComputeInputType input)
     float totalWeight = 1.0;
 
     // 6 taps at step ∈ { -3, -2, -1, 1, 2, 3 } probe-tiles along X.
+    // [S1.5b] FindClosestProbe substitutes a ring-neighbour probe when the
+    // requested step lands on an invalid tile — fills multi-tile
+    // disocclusion holes the spawn-redirect ([S1.5c]) can't cover in the
+    // current frame.
     const int kRadius = 3;
     const int kSize = kRadius * 2;
     for (int i = 0; i < kSize; i++)
     {
         int step = (((i & 1) << 1) - 1) * ((i >> 1) + 1);
-        int2 neighbourProbe = probeCoord + int2(step, 0);
-        if (any(neighbourProbe < int2(0, 0)) || any(neighbourProbe >= gridSize))
+        ProbeLookup neighbour = FindClosestProbe(in_ProbeMask, int2(screenCoord), int2(step, 0), gridSize);
+        if (!IsValidProbe(neighbour.packed))
             continue;
 
-        uint neighbourMask = in_ProbeMask.Load(int3(neighbourProbe, 0));
-        if (!IsValidProbe(neighbourMask))
-            continue;
-
+        int2 neighbourProbe = neighbour.tileCoord;
         float3 neighbourPosWS = in_ProbePosition.Load(int3(neighbourProbe, 0)).xyz;
         float3 neighbourNormal = normalize(in_ProbeNormal.Load(int3(neighbourProbe, 0)).xyz);
 

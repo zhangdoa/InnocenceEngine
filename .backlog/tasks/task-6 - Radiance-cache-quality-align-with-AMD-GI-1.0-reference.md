@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-23 09:00'
+updated_date: '2026-04-23 13:10'
 labels:
   - rendering
   - GI
@@ -111,7 +111,7 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 1. **[W.3b] Two-level tiled world-hash + MIP prefilter + cache-the-index** — the structural half of the original [W.3]; eviction-of-stale-slots already shipped in [W.3a]
 2. **[S2.2] LRU side cache** — thin-geometry stability
 3. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
-4. **[S1.5b] Mask MIP chain + FindClosestProbe MIP walk** — [S1.5c] didn't need this; worthwhile once hole patterns get more complex
+4. **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current implementation is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if PROBE_SEARCH_MAX_RING grows much larger; defer until that's the case.
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -143,7 +143,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | S1.3 | 3×3 neighbourhood CDF reconstruction with parallax correction | ☑ | |
 | S1.4 | Radiance-average backup for untraced cells | ☐ (deferred) | — |
 | S1.5 | Sparse spawning (upscale 2×2) + Halton pixel + Reprojection mask invalidation | ☑ | |
-| S1.5b | Mask MIP chain + FindClosestProbe MIP walk | ☐ (deferred) | |
+| S1.5b | FindClosestProbe widening ring search + filter migration + dead-code cleanup | ☑ | |
 | S1.5c | Algorithm 2 ray redistribution (empty-tile redirect; override queue deferred) | ☑ (partial) | |
 | S2.1 | Probe-space filter with parallax-correction angular rejection | ☑ | |
 | S2.2 | LRU persistent side cache for evicted probes | ☐ (deferred) | |
@@ -195,9 +195,15 @@ Paper §2.1.4 last paragraph. Only meaningful once per-cell sample counts are tr
 
 Drives spawn via `upscaleFactor = (2, 2)`, cutting ray budget to 1/4; Halton(2)/Halton(3) picks one pixel per 16×16 spawn tile per frame; Reprojection now owns the "this tile is useless" signal, invalidating PROBE_MASK on sky and no-reprojection-possible paths. Successful reprojection leaves the mask alone so the last spawn's mask persists through the rest of the upscale cycle. Mask encoding updated: validity is a bit-31 flag, INVALID = 0, so uninitialised memory reads as invalid without a per-frame clear. RayGen's 3×3 CDF reconstruction now reads each neighbour's sub-pixel from its own mask instead of the CB jitter (each neighbour was spawned at its own Halton offset on its own frame).
 
-#### [S1.5b] — Mask MIP chain + FindClosestProbe MIP walk (deferred)
+#### [S1.5b] — FindClosestProbe widening ring search + filter migration
 
-With 1/4 spawning, up to 3/4 of tiles per frame fall back to reprojected history or PROBE_MASK_INVALID. Filter's immediate-neighbour tap already handles most of these (the single-level walk the `FindClosestProbe` helper does today); the MIP chain only starts paying off once holes reliably span >1 probe-tile — which is mainly disocclusion scenarios that [S1.5c] also targets. Bundled into a future CL with [S1.5c].
+Landed as a focused refactor rather than a full MIP chain:
+
+- `FindClosestProbe` in `common/RadianceCacheCommon.hlsl` now does an expanding Chebyshev-ring search (rings 1..PROBE_SEARCH_MAX_RING=2) when the requested target tile is invalid. First-hit wins; `r.tileCoord` returns the substitute's position so callers drive geometry-rejection tests from the actual probe used.
+- RadianceCacheFilterHorizontal.comp / RadianceCacheFilterVertical.comp migrated: replaced the hardcoded `in_ProbeMask.Load + IsValidProbe` immediate-neighbour check with `FindClosestProbe`. When the requested stride-N neighbour is invalid, the filter now finds a ring-substitute and runs the existing plane/normal/parallax rejection against the substitute's geometry — fills multi-tile disocclusion holes that the spawn-redirect in [S1.5c] can't cover within one frame.
+- Deleted the legacy stand-alone `RadianceCacheFilter.comp` — it was superseded by the H/V separable pair at [F]-landing time and had been dead code since. Its local `FindClosestProbe` with a broken "MIP walk" (shifting coordinates on a non-MIP texture) was the original motivation for calling out [S1.5b] in the roadmap.
+
+Why ring-walk instead of MIP chain: paper's Algorithm 4 uses a MIP-chain walk for O(log r) scaling. With PROBE_SEARCH_MAX_RING=2 the direct ring scan loads at most 25 tile-mask texels per call — well within budget and avoids the MIP-chain generation pass. If the search radius needs to grow (e.g. world-space light-leak scenarios), a real MIP chain becomes worthwhile — filed as `[S1.5b-mip-chain]` in the Remaining Work list.
 
 #### [S1.5c] — Algorithm 2 ray redistribution (partial — empty-tile redirect only)
 
