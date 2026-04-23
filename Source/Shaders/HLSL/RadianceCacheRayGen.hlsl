@@ -259,17 +259,21 @@ void RayGenShader()
         in_RadianceCacheResults[texIndex] = float4(lerp(radiance, oldScreenSpaceRadiance, t), tempPayload.distance);
 
         // Only write to world probe grid on the first sample to avoid intra-probe write races.
-        // Linear-probe by fingerprint per [W.1] (paper §2.2): walk up to
-        // MAX_LINEAR_PROBE slots from the bucket, accept the first slot
-        // whose fingerprint matches (update existing) or is empty (insert).
-        // If all slots are taken by other cells we silently drop the write
-        // — preferable to overwriting another cell's accumulation under a
-        // hash collision. Karis-style EMA temporal blend matches paper §2.2.3.
+        // Linear-probe by fingerprint per [W.1] + [W.2] (paper §2.2): the
+        // descriptor encodes (cell, normal-octant, short-ray-bit) so the
+        // floor and ceiling at the same voxel land in different slots and
+        // don't leak into each other. Walk up to MAX_LINEAR_PROBE slots
+        // from the bucket, accept the first slot whose fingerprint
+        // matches (update existing) or is empty (insert). If all slots
+        // are taken by other cells we silently drop the write — preferable
+        // to overwriting another cell's accumulation under a collision.
+        // Karis-style EMA temporal blend matches paper §2.2.3.
         if (i == 0)
         {
             const float WORLD_PROBE_EMA = 0.1;
-            uint bucket = ComputeProbeHash(positionWS);
-            uint fingerprint = ComputeProbeFingerprint(positionWS);
+            uint shortRayBit = IsShortRay(tempPayload.distance) ? 1u : 0u;
+            uint bucket = ComputeProbeHash(positionWS, normalWS, shortRayBit);
+            uint fingerprint = ComputeProbeFingerprint(positionWS, normalWS, shortRayBit);
 
             for (uint probe = 0u; probe < MAX_LINEAR_PROBE; probe++)
             {

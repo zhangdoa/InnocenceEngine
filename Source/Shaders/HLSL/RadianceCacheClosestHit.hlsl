@@ -59,12 +59,18 @@ void ClosestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAt
     }
     else
     {
-        // Off-screen hit: walk the world cache by fingerprint per [W.1].
-        // A matching fingerprint within MAX_LINEAR_PROBE slots returns
-        // the cached outgoing radiance; a miss leaves the contribution
-        // at zero (better than reading another cell's accumulated colour).
-        uint bucket = ComputeProbeHash(hitPositionWS);
-        uint fingerprint = ComputeProbeFingerprint(hitPositionWS);
+        // Off-screen hit: walk the world cache by fingerprint per [W.1] +
+        // [W.2]. The fingerprint encodes (cell, normal-octant, short-ray)
+        // — `-WorldRayDirection()` is a coarse hit-normal proxy that
+        // matches the WRITE side's screen-probe normal closely enough for
+        // diffuse bounces, and `RayTCurrent()` classifies short vs long
+        // rays so near-surface AO and distant radiance don't alias.
+        // A miss leaves the contribution at zero (better than reading
+        // another cell's accumulated colour through a hash collision).
+        float3 hitNormalProxy = -WorldRayDirection();
+        uint shortRayBit = IsShortRay(RayTCurrent()) ? 1u : 0u;
+        uint bucket = ComputeProbeHash(hitPositionWS, hitNormalProxy, shortRayBit);
+        uint fingerprint = ComputeProbeFingerprint(hitPositionWS, hitNormalProxy, shortRayBit);
         for (uint probe = 0u; probe < MAX_LINEAR_PROBE; probe++)
         {
             uint slot = (bucket + probe) % HASH_TABLE_SIZE;

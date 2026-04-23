@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-23 08:30'
+updated_date: '2026-04-23 08:40'
 labels:
   - rendering
   - GI
@@ -108,10 +108,9 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
 
-1. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
-2. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
-3. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
-4. **[S2.2] LRU side cache** — thin-geometry stability
+1. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
+2. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+3. **[S2.2] LRU side cache** — thin-geometry stability
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -159,7 +158,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☑ | |
 | I.3e.4 | Disocclusion mask dilation | ☑ | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
-| W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☐ | |
+| W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☑ | |
 | W.3 | World cache: two-level tiled MIP + decay eviction | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
@@ -277,5 +276,19 @@ Bundled into `SampleVariance` so every à-trous stride iteration sees the dilate
 #### [W.1] — World cache: fingerprint hash + linear probing
 
 First half of the world-cache rewrite. Fingerprint-addressed entries with open-addressing linear probing; two independent hash functions from Jarzynski–Olano 2020.
+
+#### [W.2] — World cache: directional descriptor + short-ray bit
+
+Extends the [W.1] descriptor from `(quant pos)` to `(quant pos, octant(normal), short-ray bit)` — paper §2.2 Fig. 14 light-leak fix. A floor (+Y normal) and ceiling (−Y normal) at the same voxel now land in different cache slots and don't alias. Short rays (< 1 world unit = near-surface AO/detail bounces) split from long rays (distant skybox / bounced radiance) so neither contaminates the other.
+
+Descriptor lives entirely in the fingerprint: `ComputeProbeHash` and `ComputeProbeFingerprint` both take `(pos, normal, shortRayBit)` and fold them into the PCG3D inputs. No WorldProbe struct change, no CPU-side change. Octant quantisation uses sign-per-axis (8 bins) — coarse enough to collide across smooth surface variation inside the same cell, fine enough to split axis crossings where the leak lives.
+
+Write/read asymmetry (and why this still works):
+- WRITE (RayGen): caches at the screen probe's world position with the probe's surface normal and the traced ray's travel distance.
+- READ (ClosestHit, off-screen fallback): looks up at the hit position using `-WorldRayDirection()` as a normal proxy and `RayTCurrent()` for the short-ray bit.
+
+For diffuse bounces the proxy matches the actual hit normal closely; for high-angle rays it over-rejects, which is the safer failure mode (no contribution vs leaked contribution).
+
+Stale entries: pre-[W.2] fingerprints left in the hash table from earlier runs persist until their bucket is fully probed over — they occupy slots but can never match a new-scheme fingerprint. Convergence is natural as new data streams in; a scene-reload path would clear the buffer if needed (not implemented here; deferred until measurably needed).
 
 <!-- SECTION:NOTES:END -->

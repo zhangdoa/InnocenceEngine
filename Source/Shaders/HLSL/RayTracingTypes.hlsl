@@ -19,7 +19,7 @@ struct WorldProbe
     float3 positionWS;
     float3 radiance;        // Could later be SH coefficients
     float weight;           // Used for temporal accumulation
-    uint fingerprint;       // Secondary hash of positionWS — used by [W.1] linear-probing collision check; 0 = empty slot
+    uint fingerprint;       // [W.2] secondary hash of (pos, normal-octant, short-ray-bit); 0 = empty slot
 };
 
 // Payload structure passed between TraceRay calls.
@@ -79,6 +79,22 @@ float2 Hash2D(uint2 pixelID, uint seed)
 // Quantisation step is the same `probeSpacing` constant — different
 // world positions inside the same cell intentionally collide so they
 // share the cached outgoing radiance for that voxel.
+//
+// [W.2] descriptor is (quantised pos, octant(normal), short-ray bit) per
+// paper §2.2 Fig. 14 — splits cache entries by outgoing direction so a
+// floor (+Y normal) and ceiling (−Y normal) at the same voxel don't
+// alias, and by ray length so near-surface AO (short bounces) is kept
+// separate from distant-radiance (long bounces) contributions.
+//
+// READ / WRITE asymmetry: the WRITE side caches at the screen probe's
+// world position using the probe's surface normal and the traced ray's
+// travel distance. The READ side (ClosestHit, off-screen fallback) uses
+// the hit position, `-WorldRayDirection()` as a normal proxy, and
+// `RayTCurrent()` for the short-ray bit. Hits accept the cached value
+// only when the hit-point's octant + short-ray classification matches
+// what was written — exactly the leak-fix the paper targets.
+static const float WORLD_PROBE_SHORT_RAY_THRESHOLD = 1.0;
+
 uint3 _PCG3D(uint3 v)
 {
     v = v * 1664525u + 1013904223u;
@@ -100,20 +116,47 @@ uint3 _ProbeGridIndex(float3 positionWS)
     return uint3(g.x + (1 << 20), g.y + (1 << 20), g.z + (1 << 20));
 }
 
-uint ComputeProbeHash(float3 positionWS)
+// Octant-quantise a direction: sign bit per axis gives 8 bins. Coarse on
+// purpose — the cache descriptor should collide across small normal
+// variation within the same cell (smooth surfaces) and only split at
+// axis crossings where the leak case actually lives.
+uint3 _QuantizeNormalOctant(float3 n)
 {
-    uint3 v = _PCG3D(_ProbeGridIndex(positionWS));
+    return uint3(n.x >= 0.0 ? 1u : 0u,
+                 n.y >= 0.0 ? 1u : 0u,
+                 n.z >= 0.0 ? 1u : 0u);
+}
+
+bool IsShortRay(float distance)
+{
+    return distance < WORLD_PROBE_SHORT_RAY_THRESHOLD;
+}
+
+uint ComputeProbeHash(float3 positionWS, float3 normalWS, uint shortRayBit)
+{
+    uint3 posG = _ProbeGridIndex(positionWS);
+    uint3 nG = _QuantizeNormalOctant(normalWS);
+    // Sprinkle the direction/short-ray descriptor bits into high bits so
+    // they perturb all three PCG3D output lanes without stomping the
+    // low-bit grid-index entropy.
+    uint3 mixed = posG ^ (nG << uint3(24u, 25u, 26u)) ^ uint3(shortRayBit * 0x5BD1E995u, 0, 0);
+    uint3 v = _PCG3D(mixed);
     return (v.x ^ v.y ^ v.z) % HASH_TABLE_SIZE;
 }
 
 // Fingerprint reserves 0 as the "empty slot" sentinel so the linear-probe
 // loop can distinguish "this slot was never written" from "wrong cell".
-uint ComputeProbeFingerprint(float3 positionWS)
+// Independent PCG3D constants from the bucket hash — two slots with the
+// same bucket but different descriptors (position, normal octant,
+// short-ray) are highly unlikely to share a fingerprint.
+uint ComputeProbeFingerprint(float3 positionWS, float3 normalWS, uint shortRayBit)
 {
     uint3 g = _ProbeGridIndex(positionWS);
-    // Different mix sequence — perturb the input then run PCG3D so the
-    // bucket and fingerprint hashes are decorrelated.
-    uint3 v = _PCG3D(g.zyx ^ uint3(0xA341316Cu, 0xC8013EA4u, 0xAD90777Du));
+    uint3 nG = _QuantizeNormalOctant(normalWS);
+    uint3 shortMix = uint3(shortRayBit * 0x2E099Du, shortRayBit * 0x7F4A7C15u, shortRayBit * 0x9E3779B9u);
+    uint3 seeded = g.zyx ^ (nG.zxy << uint3(27u, 28u, 29u)) ^ shortMix
+                         ^ uint3(0xA341316Cu, 0xC8013EA4u, 0xAD90777Du);
+    uint3 v = _PCG3D(seeded);
     uint fp = v.x ^ v.y ^ v.z;
     return fp == 0u ? 1u : fp;
 }
