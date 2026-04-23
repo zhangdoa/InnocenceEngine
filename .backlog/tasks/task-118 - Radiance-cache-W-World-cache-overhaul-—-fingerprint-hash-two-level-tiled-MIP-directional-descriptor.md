@@ -3,7 +3,7 @@ id: TASK-118
 title: >-
   Radiance cache [W] World-cache overhaul — fingerprint hash + two-level tiled
   MIP + directional descriptor
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-20 17:36'
 labels: []

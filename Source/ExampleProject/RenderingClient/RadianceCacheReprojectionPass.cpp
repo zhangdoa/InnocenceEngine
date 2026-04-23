@@ -293,17 +293,16 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_WorldProbeGrid)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_WorldProbeGrid);
 
-	m_WorldProbeGrid = g_Engine->Get<GPUBufferResourceService>()->Add("Radiance Cache World Probe Grid");
+	m_WorldProbeGrid = g_Engine->Get<GPUBufferResourceService>()->Add("Radiance Cache World Tile Grid");
 	m_WorldProbeGrid->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_WorldProbeGrid->m_ElementCount = 256 * 1024;
-	// WorldProbe layout (RayTracingTypes.hlsl): float3 pos + float3 radiance
-	// + float weight + uint fingerprint + uint lastTouchedFrame = 36 bytes.
-	// Fingerprint is the [W.1] linear-probing collision check (must be
-	// zero-initialised so new slots read as "empty"); lastTouchedFrame
-	// drives the [W.3] decay-based eviction (zero-init reads as "very
-	// stale" on frame 0, so stale-reclaim kicks in naturally once the
-	// frame counter exceeds the eviction age).
-	m_WorldProbeGrid->m_ElementSize = sizeof(float) * 3 + sizeof(float) * 3 + sizeof(float) + sizeof(uint32_t) * 2;
+	// WORLD_TILE_HASH_SIZE (RayTracingTypes.hlsl) — tile-addressed hash.
+	m_WorldProbeGrid->m_ElementCount = 32 * 1024;
+	// WorldTile layout (RayTracingTypes.hlsl): fingerprint (uint) +
+	// lastTouchedFrame (uint) + 2× uint pad (float4 align for cells) +
+	// 85 × WorldCell (float3 radiance + float weight = 16 B). Total = 16 + 85·16 = 1376 B.
+	// Zero-init so fingerprint reads as "empty" and weight as "unwritten"
+	// until the first ray populates a cell.
+	m_WorldProbeGrid->m_ElementSize = sizeof(uint32_t) * 4 + (sizeof(float) * 3 + sizeof(float)) * 85;
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_WorldProbeGrid);
 
 	// GI-1.0 §2.1.5 probe_mask — one uint per tile. Source of truth for

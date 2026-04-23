@@ -31,7 +31,7 @@ Texture2D<float4> in_RadianceCacheResults_Prev : register(t6); // Previous frame
 RWTexture2D<float4> in_RadianceCacheResults : register(u0);
 
 [[vk::binding(1, 2)]]
-RWStructuredBuffer<WorldProbe> in_WorldProbeGrid : register(u1);
+RWStructuredBuffer<WorldTile> in_WorldTileGrid : register(u1);
 
 [[vk::binding(2, 2)]]
 RWTexture2D<float4> in_ProbePosition : register(u2);

@@ -3,9 +3,15 @@
 static const uint TILE_SIZE = 8;  // 8×8 probe tile size
 static const uint SH_TILE_SIZE = 3;  // 3×3 SH storage per probe — 9 coefficients for bands 0–2 (GI-1.0 §2.4.2)
 
-// Should be the same as the element count of the WorldProbeGrid buffer
-static const uint HASH_TABLE_SIZE = 256 * 1024;
-static const float3 probeSpacing = float3(0.125, 0.125, 0.125); // Adjust probe spacing as needed
+// GI-1.0 §2.2.3 two-level tiled world cache. Top-level hash table stores
+// WorldTile slots; each tile holds 64 MIP0 cells (8×8) + 16 MIP1 + 4 MIP2
+// + 1 MIP3 = 85 cells total. Element count of the WorldTileGrid buffer
+// must match WORLD_TILE_HASH_SIZE.
+static const uint WORLD_TILE_HASH_SIZE = 32 * 1024;
+static const float3 probeSpacing = float3(0.125, 0.125, 0.125); // World-cache cell size; tile extent is 8× this on each axis.
+static const uint WORLD_TILE_CELLS_PER_AXIS = 8u;
+// MIP chain offsets inside WorldTile.cells[]: MIP0 @0..63 (8×8), MIP1 @64..79 (4×4), MIP2 @80..83 (2×2), MIP3 @84 (1×1).
+static const uint WORLD_TILE_CELLS_TOTAL = 85u;
 static const uint2 probeAtlasSize = uint2(8, 8);
 // GI-1.0 §2.1.1 temporal upscaling: one probe per (8*ξ_x, 8*ξ_y) spawn tile
 // per frame, Halton-picked sub-pixel cycles through all probe-tile slots
@@ -14,33 +20,39 @@ static const uint2 probeAtlasSize = uint2(8, 8);
 static const uint2 upscaleFactor = uint2(2, 2);
 static const uint2 spawnTileSize = probeAtlasSize * upscaleFactor;
 
-struct WorldProbe
+// One cell inside a WorldTile. weight == 0 flags "cell has never been written"
+// so lookups can distinguish "cell valid" from "tile recently reclaimed and
+// not yet repopulated at this coordinate".
+struct WorldCell
 {
-    float3 positionWS;
-    float3 radiance;        // Could later be SH coefficients
-    float weight;           // Used for temporal accumulation
-    uint fingerprint;       // [W.2] secondary hash of (pos, normal-octant, short-ray-bit); 0 = empty slot
-    uint lastTouchedFrame;  // [W.3] g_Frame.frameIndex at last insert/update; drives decay-based eviction
+    float3 radiance;
+    float weight;
 };
 
-// [W.3] Decay-based eviction: a slot whose lastTouchedFrame is older than
-// the current frame by more than this threshold is treated as empty for
-// INSERT purposes (lookups still reject on fingerprint mismatch as before,
-// so we don't serve stale radiance). Frees slots held by scene-reload
-// leftovers, dead geometry, or hash-scheme changes. ~1 second at 60fps
-// / ~2 seconds at 30fps — long enough that actively-refreshed cells
-// survive a brief ray-budget gap, short enough that a scene edit flushes
-// within a few seconds.
-static const uint WORLD_PROBE_EVICTION_AGE = 64u;
-
-bool IsProbeSlotStale(uint slotLastTouchedFrame, uint currentFrame)
+struct WorldTile
 {
-    // Unsigned subtraction wraps cleanly: a freshly-written slot has
-    // (current - lastTouched) small; an uninitialised slot reads 0 so
-    // the first-ever frame returns `currentFrame - 0 = currentFrame`
-    // which is ≥ threshold after 64 frames — exactly when we want to
-    // treat uninitialised-but-non-empty slots as reclaimable.
-    return (currentFrame - slotLastTouchedFrame) > WORLD_PROBE_EVICTION_AGE;
+    uint fingerprint;       // secondary hash; 0 = empty slot
+    uint lastTouchedFrame;  // g_Frame.frameIndex at last insert/update; drives decay-based eviction
+    uint _pad0;
+    uint _pad1;
+    WorldCell cells[WORLD_TILE_CELLS_TOTAL];  // 85 × 16 B = 1360 B. Tile total = 1376 B.
+};
+
+// Decay-based eviction: a tile slot whose lastTouchedFrame is older than
+// the current frame by more than this threshold is treated as empty for
+// INSERT purposes (lookups still reject on fingerprint mismatch, so stale
+// radiance isn't served). ~1 second at 60 fps — long enough that actively-
+// refreshed tiles survive a brief ray-budget gap, short enough that a
+// scene edit flushes within seconds.
+static const uint WORLD_TILE_EVICTION_AGE = 64u;
+
+bool IsTileSlotStale(uint slotLastTouchedFrame, uint currentFrame)
+{
+    // Unsigned subtraction wraps cleanly: a freshly-written tile reads
+    // small, an uninitialised slot reads 0 so the first-ever frame
+    // returns currentFrame which crosses the threshold naturally once
+    // the frame counter exceeds it.
+    return (currentFrame - slotLastTouchedFrame) > WORLD_TILE_EVICTION_AGE;
 }
 
 // Payload structure passed between TraceRay calls.
@@ -91,29 +103,25 @@ float2 Hash2D(uint2 pixelID, uint seed)
     ) / float(0x7fffffff);
 }
 
-// GI-1.0 §2.2 world-cache addressing — paper's "two distinct hashes that
-// produce little to no collision between one another" (Jarzynski–Olano
-// 2020). We use a PCG3D mix on the quantised grid index for the bucket
-// and a different PCG3D constant set for the fingerprint, then linear-
-// probe by fingerprint match in the consumers (RayGen / ClosestHit).
+// GI-1.0 §2.2 world-cache addressing — two independent PCG3D hashes
+// (Jarzynski–Olano 2020) for bucket + fingerprint, with open-addressing
+// linear probing by fingerprint match in the consumers (RayGen / ClosestHit).
 //
-// Quantisation step is the same `probeSpacing` constant — different
-// world positions inside the same cell intentionally collide so they
-// share the cached outgoing radiance for that voxel.
-//
-// [W.2] descriptor is (quantised pos, octant(normal), short-ray bit) per
-// paper §2.2 Fig. 14 — splits cache entries by outgoing direction so a
-// floor (+Y normal) and ceiling (−Y normal) at the same voxel don't
-// alias, and by ray length so near-surface AO (short bounces) is kept
-// separate from distant-radiance (long bounces) contributions.
+// §2.2.3 two-level tiled descriptor: hash is keyed by tile position, a
+// 6-bin dominant-axis direction bin, and a short-ray bit. Cell position
+// inside the tile is derived separately (CellInTile) and indexes into
+// WorldTile.cells[]. The tile's 2D cell plane is orthogonal to the
+// dominant axis of the outgoing direction — cells at different offsets
+// along the dominant axis collapse into the same 2D cell and are
+// averaged inside the MIP chain.
 //
 // READ / WRITE asymmetry: the WRITE side caches at the screen probe's
-// world position using the probe's surface normal and the traced ray's
-// travel distance. The READ side (ClosestHit, off-screen fallback) uses
-// the hit position, `-WorldRayDirection()` as a normal proxy, and
-// `RayTCurrent()` for the short-ray bit. Hits accept the cached value
-// only when the hit-point's octant + short-ray classification matches
-// what was written — exactly the leak-fix the paper targets.
+// world position using the probe's surface normal (dominant axis of
+// the outgoing diffuse hemisphere) and the traced ray's travel distance.
+// The READ side (ClosestHit, off-screen fallback) uses the hit position,
+// `-WorldRayDirection()` as a dominant-direction proxy, and RayTCurrent()
+// for the short-ray bit. Hits accept the cached value only when the
+// hit-point's axis + short-ray classification matches what was written.
 static const float WORLD_PROBE_SHORT_RAY_THRESHOLD = 1.0;
 
 uint3 _PCG3D(uint3 v)
@@ -129,23 +137,77 @@ uint3 _PCG3D(uint3 v)
     return v;
 }
 
-uint3 _ProbeGridIndex(float3 positionWS)
+// Tile grid index — one step per (probeSpacing * cells-per-axis). Bias
+// by 2^17 so negative world coordinates produce well-defined uints
+// before the PCG3D mix.
+uint3 _TileGridIndex(float3 positionWS)
 {
-    // Bias by 2^20 so negative world coordinates produce well-defined uints
-    // before the PCG3D mix (avoids two's-complement aliasing in the bucket).
+    float3 tileExtent = probeSpacing * float(WORLD_TILE_CELLS_PER_AXIS);
+    int3 g = int3(floor(positionWS / tileExtent));
+    return uint3(g.x + (1 << 17), g.y + (1 << 17), g.z + (1 << 17));
+}
+
+// Cell grid index — one step per probeSpacing, for in-tile coord lookup.
+// 2^20 bias matches what the legacy hash used.
+uint3 _CellGridIndex(float3 positionWS)
+{
     int3 g = int3(floor(positionWS / probeSpacing));
     return uint3(g.x + (1 << 20), g.y + (1 << 20), g.z + (1 << 20));
 }
 
-// Octant-quantise a direction: sign bit per axis gives 8 bins. Coarse on
-// purpose — the cache descriptor should collide across small normal
-// variation within the same cell (smooth surfaces) and only split at
-// axis crossings where the leak case actually lives.
-uint3 _QuantizeNormalOctant(float3 n)
+// 6-bin dominant-axis direction: 0=+X, 1=-X, 2=+Y, 3=-Y, 4=+Z, 5=-Z.
+// Paper §2.2.3: the tile's 2D cell plane is perpendicular to this axis,
+// cells along the axis collapse into one 2D slot and average in MIP.
+uint DominantAxis(float3 dir)
 {
-    return uint3(n.x >= 0.0 ? 1u : 0u,
-                 n.y >= 0.0 ? 1u : 0u,
-                 n.z >= 0.0 ? 1u : 0u);
+    float3 a = abs(dir);
+    uint axis;
+    if (a.x >= a.y && a.x >= a.z)
+        axis = 0u;
+    else if (a.y >= a.z)
+        axis = 1u;
+    else
+        axis = 2u;
+    uint signBit;
+    if (axis == 0u)       signBit = dir.x >= 0.0 ? 0u : 1u;
+    else if (axis == 1u)  signBit = dir.y >= 0.0 ? 0u : 1u;
+    else                  signBit = dir.z >= 0.0 ? 0u : 1u;
+    return axis * 2u + signBit;
+}
+
+// 2D cell coordinate inside a tile, given dominant axis. Picks the two
+// axes orthogonal to the dominant axis; cells along the dominant axis
+// all map to the same 2D slot.
+uint2 CellInTile(float3 positionWS, uint dominantAxisBin)
+{
+    uint3 g = _CellGridIndex(positionWS);
+    uint axis = dominantAxisBin >> 1u;
+    if (axis == 0u) return uint2(g.y & 7u, g.z & 7u); // X-dominant → YZ cells
+    if (axis == 1u) return uint2(g.x & 7u, g.z & 7u); // Y-dominant → XZ cells
+    return uint2(g.x & 7u, g.y & 7u);                 // Z-dominant → XY cells
+}
+
+// MIP cell index inside WorldTile.cells[]. mipLevel 0 = 8×8, 1 = 4×4, 2 = 2×2, 3 = 1×1.
+uint CellIndexInTile(uint2 cellXY, uint mipLevel)
+{
+    // MIP offsets: 0, 64, 80, 84.
+    uint offset;
+    if      (mipLevel == 0u) offset = 0u;
+    else if (mipLevel == 1u) offset = 64u;
+    else if (mipLevel == 2u) offset = 80u;
+    else                     offset = 84u;
+    uint axisLen = WORLD_TILE_CELLS_PER_AXIS >> mipLevel; // 8, 4, 2, 1
+    return offset + cellXY.y * axisLen + cellXY.x;
+}
+
+// Distance-to-MIP selection for reads. Short rays — MIP0 (sharpest). As
+// the traced distance grows the cone footprint widens; reading from a
+// higher MIP prefilters many cells' contributions and reduces variance.
+// Heuristic: 1 m → MIP0, 4 m → MIP1, 16 m → MIP2, 64 m+ → MIP3.
+uint SelectTileMipLevel(float distance)
+{
+    float m = log2(max(distance, 1.0)) * 0.5 - 0.5;
+    return uint(clamp(m, 0.0, 3.0));
 }
 
 bool IsShortRay(float distance)
@@ -153,30 +215,34 @@ bool IsShortRay(float distance)
     return distance < WORLD_PROBE_SHORT_RAY_THRESHOLD;
 }
 
-uint ComputeProbeHash(float3 positionWS, float3 normalWS, uint shortRayBit)
+uint ComputeTileHash(float3 positionWS, float3 directionWS, uint shortRayBit)
 {
-    uint3 posG = _ProbeGridIndex(positionWS);
-    uint3 nG = _QuantizeNormalOctant(normalWS);
-    // Sprinkle the direction/short-ray descriptor bits into high bits so
-    // they perturb all three PCG3D output lanes without stomping the
-    // low-bit grid-index entropy.
-    uint3 mixed = posG ^ (nG << uint3(24u, 25u, 26u)) ^ uint3(shortRayBit * 0x5BD1E995u, 0, 0);
+    uint3 tposG = _TileGridIndex(positionWS);
+    uint axisBin = DominantAxis(directionWS);
+    // Sprinkle the axis/short-ray descriptor bits into high bits so they
+    // perturb all three PCG3D output lanes without stomping the low-bit
+    // tile-index entropy.
+    uint3 mixed = tposG ^ uint3(axisBin * 0x5BD1E995u,
+                                shortRayBit * 0x7F4A7C15u,
+                                (axisBin ^ shortRayBit) * 0x165667B1u);
     uint3 v = _PCG3D(mixed);
-    return (v.x ^ v.y ^ v.z) % HASH_TABLE_SIZE;
+    return (v.x ^ v.y ^ v.z) % WORLD_TILE_HASH_SIZE;
 }
 
 // Fingerprint reserves 0 as the "empty slot" sentinel so the linear-probe
-// loop can distinguish "this slot was never written" from "wrong cell".
-// Independent PCG3D constants from the bucket hash — two slots with the
-// same bucket but different descriptors (position, normal octant,
-// short-ray) are highly unlikely to share a fingerprint.
-uint ComputeProbeFingerprint(float3 positionWS, float3 normalWS, uint shortRayBit)
+// loop can distinguish "never written" from "different tile". Independent
+// PCG3D constants from the bucket hash — two slots with the same bucket
+// but different descriptors are highly unlikely to share a fingerprint.
+uint ComputeTileFingerprint(float3 positionWS, float3 directionWS, uint shortRayBit)
 {
-    uint3 g = _ProbeGridIndex(positionWS);
-    uint3 nG = _QuantizeNormalOctant(normalWS);
+    uint3 tposG = _TileGridIndex(positionWS);
+    uint axisBin = DominantAxis(directionWS);
     uint3 shortMix = uint3(shortRayBit * 0x2E099Du, shortRayBit * 0x7F4A7C15u, shortRayBit * 0x9E3779B9u);
-    uint3 seeded = g.zyx ^ (nG.zxy << uint3(27u, 28u, 29u)) ^ shortMix
-                         ^ uint3(0xA341316Cu, 0xC8013EA4u, 0xAD90777Du);
+    uint3 seeded = tposG.zyx ^ uint3(axisBin * 0x27D4EB2Du,
+                                     axisBin * 0x9E3779B1u,
+                                     axisBin * 0x85EBCA77u)
+                             ^ shortMix
+                             ^ uint3(0xA341316Cu, 0xC8013EA4u, 0xAD90777Du);
     uint3 v = _PCG3D(seeded);
     uint fp = v.x ^ v.y ^ v.z;
     return fp == 0u ? 1u : fp;
@@ -184,8 +250,7 @@ uint ComputeProbeFingerprint(float3 positionWS, float3 normalWS, uint shortRayBi
 
 // Linear probing — paper §2.2 ("linear probing inside the bucket"). Walk
 // up to MAX_LINEAR_PROBE slots looking for a fingerprint match (lookup)
-// or an empty / matching slot (insert). Returns HASH_TABLE_SIZE when no
-// suitable slot is found; consumers must handle the miss.
+// or an empty / matching / stale slot (insert). Consumers handle the miss.
 static const uint MAX_LINEAR_PROBE = 8u;
 
 float2 EncodeOctahedral(float3 N)

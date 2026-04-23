@@ -108,10 +108,10 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
 
-1. **[W.3b] Two-level tiled world-hash + MIP prefilter + cache-the-index** — the structural half of the original [W.3]; eviction-of-stale-slots already shipped in [W.3a]
-2. **[S2.2] LRU side cache** — thin-geometry stability
-3. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
-4. **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current implementation is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if PROBE_SEARCH_MAX_RING grows much larger; defer until that's the case.
+1. **[S2.2] LRU side cache** — thin-geometry stability
+2. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
+3. **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current implementation is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if PROBE_SEARCH_MAX_RING grows much larger; defer until that's the case.
+4. **[W.3b-cache-the-index]** Paper §2.2.4 cache-the-index optimization — amortise per-vertex hash computation. Currently no-op because the RayGen → single ClosestHit path doesn't re-trace from the closest hit, so the tile hash is already computed once per vertex. Becomes meaningful when (if) we add multi-bounce ray tracing from ClosestHit.
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -161,7 +161,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
 | W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☑ | |
 | W.3a | World cache: decay-based eviction (stale-slot reuse) | ☑ | |
-| W.3b | World cache: two-level tiled layout + MIP prefilter + cache-the-index | ☐ | |
+| W.3b | World cache: two-level tiled layout + in-tile MIP prefilter | ☑ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
 
@@ -302,6 +302,26 @@ Write/read asymmetry (and why this still works):
 For diffuse bounces the proxy matches the actual hit normal closely; for high-angle rays it over-rejects, which is the safer failure mode (no contribution vs leaked contribution).
 
 Stale entries: pre-[W.2] fingerprints left in the hash table from earlier runs persist until their bucket is fully probed over — they occupy slots but can never match a new-scheme fingerprint. Convergence is natural as new data streams in; a scene-reload path would clear the buffer if needed (not implemented here; deferred until measurably needed). *Follow-up:* [W.3a] landed decay-based eviction which turns this from a permanent-ish leak into a bounded one (any stale slot is reclaimed within `WORLD_PROBE_EVICTION_AGE` = 64 frames).
+
+#### [W.3b] — World cache: two-level tiled layout + in-tile MIP prefilter
+
+Second half of the original [W.3] plan (paper §2.2.3). Replaces the flat cell-addressed hash with tile-addressed storage: each hash slot is a `WorldTile` containing an 85-cell MIP pyramid (8×8 MIP0 + 4×4 MIP1 + 2×2 MIP2 + 1×1 MIP3 = 85 cells × 16 B).
+
+Descriptor shift: (quant(pos, cellSize), octant(normal), shortRay) → (quant(pos, 8·cellSize), dominantAxis(dir), shortRay). Tile position now quantises at 8× the spatial extent; a 6-bin dominant-axis direction bin replaces the 8-bin normal octant. Cell-within-tile is the 2D grid index in the two axes orthogonal to the dominant axis — cells along the dominant axis collapse into the same 2D slot and are prefiltered through the MIP chain.
+
+Hash-table size trade: 256K × 36 B flat slots (~9 MB) → 32K × 1376 B tile slots (~44 MB). 8× fewer slots but each covers 512× more cell-volume in the paper's tile geometry.
+
+MIP update: eager fan-out on every write. After writing MIP0(x,y), recompute MIP1(x/2,y/2) by averaging its four MIP0 children (skipping unwritten children so a single-sample hit doesn't dilute with zeros), then MIP2 from MIP1, MIP3 from MIP2. 15 cell loads + 3 cell stores per spawn.
+
+MIP selection on read: `SelectTileMipLevel(distance)` picks MIP0 for short hits (< ~2 m), higher MIPs as cone footprint widens (log₂(d)/2 – 0.5, clamped). Matches the paper's "prefilter distant queries" intent.
+
+Slot reclaim zeros all 85 cells when ownership changes (empty → ours, or stale reclaim) so the new owner never reads the previous occupant's radiance; same-fingerprint updates skip the clear.
+
+Cache-the-index (paper §2.2.4) deferred — in our single-bounce RayGen → one-ClosestHit path the tile hash is already computed once per vertex, so the optimisation is a no-op. Would become meaningful with multi-bounce ray tracing; filed as [W.3b-cache-the-index] in Remaining Work.
+
+Buffer debug name updated: "Radiance Cache World Probe Grid" → "Radiance Cache World Tile Grid". Struct and binding renamed WorldProbe → WorldTile, in_WorldProbeGrid → in_WorldTileGrid across RayTracingTypes / RayTracingBindings / RadianceCacheRayGen / RadianceCacheClosestHit / RadianceCacheReprojectionPass.cpp.
+
+Integration test: `Main.exe -total_frames 100 -reload_at_frame 70` exits 0 with no new warnings; crosses WORLD_TILE_EVICTION_AGE = 64 so stale-reclaim and scene-reload reclaim both exercise the 85-cell clear path.
 
 #### [W.3a] — World cache: decay-based eviction (stale-slot reuse)
 

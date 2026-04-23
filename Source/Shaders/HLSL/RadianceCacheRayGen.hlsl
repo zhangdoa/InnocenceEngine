@@ -289,41 +289,86 @@ void RayGenShader()
         // reused cell direction (paper §2.1.3).
         in_RadianceCacheResults[texIndex] = float4(lerp(radiance, oldScreenSpaceRadiance, t), tempPayload.distance);
 
-        // Only write to world probe grid on the first sample to avoid intra-probe write races.
-        // Linear-probe by fingerprint per [W.1] + [W.2] (paper §2.2): the
-        // descriptor encodes (cell, normal-octant, short-ray-bit) so the
-        // floor and ceiling at the same voxel land in different slots and
-        // don't leak into each other. Walk up to MAX_LINEAR_PROBE slots
-        // from the bucket, accept the first slot whose fingerprint
-        // matches (update existing) or is empty (insert). If all slots
-        // are taken by other cells we silently drop the write — preferable
-        // to overwriting another cell's accumulation under a collision.
-        // Karis-style EMA temporal blend matches paper §2.2.3.
+        // Write to world tile grid on the first sample (avoids intra-probe
+        // write races). Paper §2.2.3 two-level hash: tile key is
+        // (quant(pos, 8·cellSize), dominantAxis(normal), shortRay); cell
+        // coord inside the tile collapses along the dominant axis. Linear-
+        // probe by fingerprint, reclaim on match / empty / stale. After
+        // writing MIP0 we fan out to MIP1..3 by averaging each parent's 4
+        // child cells — gives distant (cone) queries a prefiltered answer.
         if (i == 0)
         {
-            const float WORLD_PROBE_EMA = 0.1;
+            const float WORLD_TILE_EMA = 0.1;
             uint shortRayBit = IsShortRay(tempPayload.distance) ? 1u : 0u;
-            uint bucket = ComputeProbeHash(positionWS, normalWS, shortRayBit);
-            uint fingerprint = ComputeProbeFingerprint(positionWS, normalWS, shortRayBit);
+            uint bucket = ComputeTileHash(positionWS, normalWS, shortRayBit);
+            uint fingerprint = ComputeTileFingerprint(positionWS, normalWS, shortRayBit);
+            uint axisBin = DominantAxis(normalWS);
+            uint2 cellXY0 = CellInTile(positionWS, axisBin);
 
             for (uint probe = 0u; probe < MAX_LINEAR_PROBE; probe++)
             {
-                uint slot = (bucket + probe) % HASH_TABLE_SIZE;
-                uint slotFp = in_WorldProbeGrid[slot].fingerprint;
-                uint slotStamp = in_WorldProbeGrid[slot].lastTouchedFrame;
-                // [W.3] Slot eligible for reuse if empty, our fingerprint,
-                // or stale (owner hasn't written in ≥ WORLD_PROBE_EVICTION_AGE
-                // frames). Stale reuse is the path that unblocks slots held
-                // by scene-reload leftovers or pre-[W.2] fingerprints.
-                bool stale = IsProbeSlotStale(slotStamp, g_Frame.frameIndex);
+                uint slot = (bucket + probe) % WORLD_TILE_HASH_SIZE;
+                uint slotFp = in_WorldTileGrid[slot].fingerprint;
+                uint slotStamp = in_WorldTileGrid[slot].lastTouchedFrame;
+                bool stale = IsTileSlotStale(slotStamp, g_Frame.frameIndex);
                 if (slotFp == 0u || slotFp == fingerprint || stale)
                 {
-                    float3 oldRadiance = (slotFp == fingerprint) ? in_WorldProbeGrid[slot].radiance : float3(0, 0, 0);
-                    in_WorldProbeGrid[slot].positionWS = positionWS;
-                    in_WorldProbeGrid[slot].radiance = lerp(oldRadiance, radiance, WORLD_PROBE_EMA);
-                    in_WorldProbeGrid[slot].weight = 1.0;
-                    in_WorldProbeGrid[slot].fingerprint = fingerprint;
-                    in_WorldProbeGrid[slot].lastTouchedFrame = g_Frame.frameIndex;
+                    // Slot ownership change (empty → ours, or stale reclaim).
+                    // Clear all 85 cells so the new owner doesn't read the
+                    // previous occupant's radiance before its own rays
+                    // repopulate. Same-fingerprint updates skip the clear.
+                    if (slotFp != fingerprint)
+                    {
+                        for (uint c = 0u; c < WORLD_TILE_CELLS_TOTAL; c++)
+                        {
+                            in_WorldTileGrid[slot].cells[c].radiance = float3(0, 0, 0);
+                            in_WorldTileGrid[slot].cells[c].weight = 0.0;
+                        }
+                    }
+
+                    // Update MIP0 cell with temporal EMA.
+                    uint cIdx0 = CellIndexInTile(cellXY0, 0u);
+                    float wOld = in_WorldTileGrid[slot].cells[cIdx0].weight;
+                    float3 rOld = in_WorldTileGrid[slot].cells[cIdx0].radiance;
+                    float3 rNew = (wOld > 0.0) ? lerp(rOld, radiance, WORLD_TILE_EMA) : radiance;
+                    in_WorldTileGrid[slot].cells[cIdx0].radiance = rNew;
+                    in_WorldTileGrid[slot].cells[cIdx0].weight = 1.0;
+
+                    // MIP fan-out: for each level m ∈ {1,2,3}, recompute the
+                    // parent cell at (cellXY0 >> m) as the average of its 4
+                    // children at MIP (m-1). Skips unwritten children
+                    // (weight == 0) so one-sample hits don't dilute the
+                    // average with zero radiance from un-traced cells.
+                    for (uint m = 1u; m <= 3u; m++)
+                    {
+                        uint2 parentXY = cellXY0 >> m;
+                        uint2 childOrigin = parentXY << 1u; // in MIP(m-1) coords
+                        float3 sumR = float3(0, 0, 0);
+                        float sumW = 0.0;
+                        for (uint cy = 0u; cy < 2u; cy++)
+                        {
+                            for (uint cx = 0u; cx < 2u; cx++)
+                            {
+                                uint2 childXY = childOrigin + uint2(cx, cy);
+                                uint cIdx = CellIndexInTile(childXY, m - 1u);
+                                float cW = in_WorldTileGrid[slot].cells[cIdx].weight;
+                                if (cW > 0.0)
+                                {
+                                    sumR += in_WorldTileGrid[slot].cells[cIdx].radiance;
+                                    sumW += 1.0;
+                                }
+                            }
+                        }
+                        if (sumW > 0.0)
+                        {
+                            uint pIdx = CellIndexInTile(parentXY, m);
+                            in_WorldTileGrid[slot].cells[pIdx].radiance = sumR / sumW;
+                            in_WorldTileGrid[slot].cells[pIdx].weight = 1.0;
+                        }
+                    }
+
+                    in_WorldTileGrid[slot].fingerprint = fingerprint;
+                    in_WorldTileGrid[slot].lastTouchedFrame = g_Frame.frameIndex;
                     break;
                 }
             }
