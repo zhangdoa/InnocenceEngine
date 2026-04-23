@@ -32,6 +32,27 @@ Candidate causes (not yet investigated):
 Out of scope: radiance-cache banding (fixed in TASK-121), black fallback regions (filed as TASK-123).
 <!-- SECTION:DESCRIPTION:END -->
 
+## Investigation 2026-04-23
+
+Diagnosed via a scratch debug shader (`finalBlendPass.comp` replaced with a colour-bucket pre-tonemap visualiser, capture saved as `Build/captures/DEBUG_basepass_buckets.png`). Buckets: black = 0, blue (0, 0.01], green (0.01, 0.1], yellow (0.1, 1], orange (1, 10], red (10, 100], white >=100.
+
+Observations on GITestBox, frame 100:
+
+- Most wall pixels sit in GREEN/YELLOW (0.01–1) — normal LDR range.
+- The "blown out" central diagonal building and the bottom-right triangle register **WHITE (>=100)** in basePass — extreme HDR.
+- There are almost no RED (10–100) pixels — the distribution jumps directly from ORANGE (1–10) to WHITE, meaning the values on bright surfaces are much higher than 10, more like 100–1000.
+
+Source of the extreme values: `Data/ExampleProject/Components/GITestBox.Sun.LightComponent.json` has `LuminousFlux: 100000.0`. The engine flows this into `g_Frame.sun_illuminance` (name-vs-unit mismatch aside) and `CalculateLuminance` in `lightPass.comp` uses it as the sun's incoming illuminance. On a bright-albedo diffuse surface facing the sun, the resulting outgoing radiance saturates the 8-bit output after exposure + ACES.
+
+`luminanceAveragePass.comp` correctly excludes zero-luminance pixels from the histogram average (line 51: normalises by `viewport - countForThisBin` where `countForThisBin` is bin-0 count). So auto-exposure isn't polluted by sky pixels. The issue is just the dynamic range: average is pulled by the many dim GREEN/YELLOW wall pixels, while the sun-lit surfaces sit 3+ decades above the average.
+
+Candidate fixes (not yet chosen):
+- **Normalise sun_illuminance units** at the light-data-loading layer — `LuminousFlux` is stored as a sun value that may be appropriate for radiometric inputs but too large for the engine's BRDF units. This is a data-pipeline fix, not a shader fix.
+- **Clamp basePass before ACES** at some per-frame maximum (e.g. 99th-percentile from the histogram) so the tonemap has a narrower range to compress.
+- **Different tonemap** — AGX or Uchimura handle wide HDR ranges much better than ACES in the bright region.
+
+The correct fix depends on whether other scenes (GISponza, UnitTest) have the same "sun too hot" data convention. Check the sun components in GISponza first — if they're also 100000 and GISponza renders fine, the issue is scene-specific (GITestBox wall albedo / scale); if they're smaller, GITestBox's data is the bug.
+
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
