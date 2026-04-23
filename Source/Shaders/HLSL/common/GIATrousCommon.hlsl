@@ -27,6 +27,12 @@ static const float g_SigmaLuma = 4.0;
 // Depth error budget — matches the temporal pass's reprojection gate so
 // the temporal + spatial filters reject the same discontinuities.
 static const float g_DepthErrorBudget = 0.1;
+// SVGF §2.4.3 disocclusion dilation. Pixels with N ≥ N_LOW have converged
+// temporal variance and use σ_L directly. N below that = fresh / halo;
+// their σ_L gets boosted so the A-trous filter can cross the halo
+// instead of luma-rejecting against noisy neighbours.
+static const float g_NLowThreshold = 4.0;
+static const float g_LowNLumaBoost = 4.0;
 
 struct ComputeInputType { uint3 dispatchThreadID : SV_DispatchThreadID; };
 
@@ -42,17 +48,45 @@ struct ComputeInputType { uint3 dispatchThreadID : SV_DispatchThreadID; };
 
 [[vk::binding(0, 2)]] RWTexture2D<float4> out_Color : register(u0);
 
-// 3x3-Gaussian-smoothed temporal variance. The raw σ² = E[L²] − E[L]²
-// underestimates on low history counts (< 4 frames), so we pull in the
-// neighbourhood average when N is small. Saves [I.3e.3] from driving the
-// luma stopping function from a noisy single-pixel estimate during
-// disocclusion recovery.
-float SampleVariance(int2 p, int2 viewport)
+struct VarianceSample
+{
+	float variance; // 3×3-Gaussian-smoothed σ² when minN is low, else raw.
+	float minN;     // dilated history count (min over 3×3 neighbourhood).
+};
+
+// Raw σ² = E[L²] − E[L]² underestimates at low history counts (< 4
+// frames), so we pull in the 3×3 neighbourhood average when the
+// dilated N is small. The same neighbourhood scan does the SVGF §2.4.3
+// disocclusion dilation: a pixel adjacent to a newly-disoccluded
+// neighbour has its effective N clamped down so the caller widens σ_L
+// and the à-trous filter crosses the halo instead of luma-rejecting
+// against the disoccluded neighbour's noisy single sample.
+VarianceSample SampleVariance(int2 p, int2 viewport)
 {
 	float4 m = in_Moments.Load(int3(p, 0));
 	float centerVar = max(m.y - m.x * m.x, 0.0);
-	if (m.z >= 4.0)
-		return centerVar;
+	float minN = m.z;
+
+	// First pass: find dilated minN across the 3×3 neighbourhood.
+	[unroll] for (int dyN = -1; dyN <= 1; dyN++)
+	{
+		[unroll] for (int dxN = -1; dxN <= 1; dxN++)
+		{
+			if (dxN == 0 && dyN == 0) continue;
+			int2 qN = p + int2(dxN, dyN);
+			if (any(qN < int2(0, 0)) || any(qN >= viewport)) continue;
+			minN = min(minN, in_Moments.Load(int3(qN, 0)).z);
+		}
+	}
+
+	VarianceSample r;
+	r.minN = minN;
+
+	if (minN >= g_NLowThreshold)
+	{
+		r.variance = centerVar;
+		return r;
+	}
 
 	static const float k[3] = { 1.0/4.0, 1.0/2.0, 1.0/4.0 };
 	float sum = 0.0;
@@ -70,7 +104,8 @@ float SampleVariance(int2 p, int2 viewport)
 			wsum += w;
 		}
 	}
-	return (wsum > 0.0) ? sum / wsum : centerVar;
+	r.variance = (wsum > 0.0) ? sum / wsum : centerVar;
+	return r;
 }
 
 [numthreads(8, 8, 1)]
@@ -97,11 +132,16 @@ void main(ComputeInputType input)
 	float3 colP = centerColor.rgb;
 	float lumaP = GetLuma(colP);
 
-	float stdP = sqrt(SampleVariance(p, viewport));
+	VarianceSample varSample = SampleVariance(p, viewport);
+	float stdP = sqrt(varSample.variance);
 	// Luminance weight normaliser. EPSILON keeps weights bounded when
 	// stdP is 0 (fully-converged region); without it an unchanged pixel
-	// would reject all taps with any luma delta.
-	float lumaSigma = g_SigmaLuma * stdP + EPSILON;
+	// would reject all taps with any luma delta. Low dilated-N (halo
+	// around a disocclusion) widens σ_L so the filter can blend across
+	// the halo — at those pixels the temporal variance is unreliable
+	// anyway, so the spatial filter is the only thing reducing noise.
+	float lowNBoost = (varSample.minN < g_NLowThreshold) ? g_LowNLumaBoost : 1.0;
+	float lumaSigma = g_SigmaLuma * stdP * lowNBoost + EPSILON;
 
 	float centerW = g_AtrousKernel[2] * g_AtrousKernel[2];
 	float3 sumCol = colP * centerW;

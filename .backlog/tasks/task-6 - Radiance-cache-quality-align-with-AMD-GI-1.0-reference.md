@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-23 08:20'
+updated_date: '2026-04-23 08:30'
 labels:
   - rendering
   - GI
@@ -106,11 +106,12 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] was split into four sub-slices on extraction day — see Status table for [I.3e.1–4] detail.
 
-1. **[I.3e.4] Disocclusion mask dilation** — kills halos at motion-disoccluded edges (dilate the "reprojection invalid" mask by a few texels before it drives moment reset + A-trous luma sigma)
-2. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
-3. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
-4. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
-5. **[S2.2] LRU side cache** — thin-geometry stability
+[I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
+
+1. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
+2. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
+3. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+4. **[S2.2] LRU side cache** — thin-geometry stability
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -156,7 +157,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3e.1 | Extract denoiser into standalone GIDenoisePass (zero-behavior-change prerequisite) | ☑ | |
 | I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | ☑ | |
 | I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☑ | |
-| I.3e.4 | Disocclusion mask dilation | ☐ | |
+| I.3e.4 | Disocclusion mask dilation | ☑ | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
 | W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☐ | |
 | W.3 | World cache: two-level tiled MIP + decay eviction | ☐ | |
@@ -266,6 +267,12 @@ Pipeline ordering: RadianceCacheIntegrationPass → GIDenoisePass → GIATrous1 
 Also removed the 5×5 Gaussian-bilateral spatial tap from GIDenoisePass — A-trous now owns all spatial filtering, so the temporal pass is a pure single-tap reprojected EMA on the center pixel. This matches the original SVGF separation of temporal vs. spatial.
 
 Limitations for follow-up: variance is not filtered between A-trous iterations (paper's "σ' = σ/16" recipe), we just re-read the moments each iteration. Doing proper variance cascading would need a per-iteration variance output; deferred until it measurably matters.
+
+#### [I.3e.4] — Disocclusion mask dilation
+
+Shader-only refinement to the à-trous edge-stopping. Dilates the SVGF moments' history-count field (min-N over a 3×3 neighbourhood) inside `SampleVariance`, and uses the dilated N to scale σ_L. When a pixel is adjacent to a newly-disoccluded neighbour (N=1), its dilated minN drops below the N_LOW threshold (4) and σ_L gets boosted 4× — the à-trous filter can then blend across the halo instead of luma-rejecting against the noisy single-sample neighbour.
+
+Bundled into `SampleVariance` so every à-trous stride iteration sees the dilated estimate without a separate preprocessing pass. Zero binding changes; all three strides (1, 2, 4) inherit the fix through `common/GIATrousCommon.hlsl`.
 
 #### [W.1] — World cache: fingerprint hash + linear probing
 
