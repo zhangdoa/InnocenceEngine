@@ -254,44 +254,15 @@ void main(ComputeInputType input)
 		l_M2 = l_CurrentLumaSq;
 	}
 
-	// 5x5 Gaussian + depth-bilateral weighting over the prev-history
-	// neighbourhood gives us the smoothed history color to blend against.
-	static const float l_Kernel[5] = { 1.0, 4.0, 6.0, 4.0, 1.0 };
-	float3 l_HistoryColorSum = float3(0, 0, 0);
-	float l_HistoryWeight = 0.0;
-	[unroll]
-	for (int dy = -2; dy <= 2; dy++)
-	{
-		[unroll]
-		for (int dx = -2; dx <= 2; dx++)
-		{
-			int2 l_TapCoord = l_PrevCoord + int2(dx, dy);
-			if (any(l_TapCoord < int2(0, 0)) || any(l_TapCoord >= l_Viewport))
-				continue;
-
-			float4 l_Tap = in_GIHistoryPrev.Load(int3(l_TapCoord, 0));
-			float l_TapDepth = l_Tap.a;
-			if (l_TapDepth <= 0.0)
-				continue;
-
-			float l_DepthError = abs(l_TapDepth - l_CurrentDepth) / max(l_CurrentDepth, EPSILON);
-			if (l_DepthError > 0.05)
-				continue;
-
-			float l_Spatial = l_Kernel[dx + 2] * l_Kernel[dy + 2];
-			float l_DepthW = exp(-l_DepthError * 20.0);
-			float l_W = l_Spatial * l_DepthW;
-
-			l_HistoryColorSum += l_W * l_Tap.rgb;
-			l_HistoryWeight += l_W;
-		}
-	}
-
+	// Pure per-pixel temporal EMA — the spatial filtering is now owned by
+	// the GIATrous1/2/4 cascade downstream. Re-reading the center history
+	// tap here is cheap; we already paid the latency for it during the
+	// reprojection-validity check above.
 	float3 l_DenoisedIrradiance;
-	if (l_ReprojectionValid && l_HistoryWeight > 1e-4)
+	if (l_ReprojectionValid)
 	{
-		float3 l_HistoryMean = l_HistoryColorSum / l_HistoryWeight;
-		l_DenoisedIrradiance = lerp(l_HistoryMean, l_IrradianceFromCache, l_Alpha);
+		float3 l_HistoryColor = in_GIHistoryPrev.Load(int3(l_PrevCoord, 0)).rgb;
+		l_DenoisedIrradiance = lerp(l_HistoryColor, l_IrradianceFromCache, l_Alpha);
 	}
 	else
 	{

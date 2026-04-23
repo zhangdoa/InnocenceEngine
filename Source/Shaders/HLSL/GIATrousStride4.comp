@@ -1,0 +1,3 @@
+// shadertype=hlsl
+#define ATROUS_STRIDE 4
+#include "common/GIATrousCommon.hlsl"

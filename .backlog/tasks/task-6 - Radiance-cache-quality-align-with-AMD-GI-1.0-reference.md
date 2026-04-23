@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-22 20:30'
+updated_date: '2026-04-23 08:20'
 labels:
   - rendering
   - GI
@@ -106,12 +106,11 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] was split into four sub-slices on extraction day — see Status table for [I.3e.1–4] detail.
 
-1. **[I.3e.3] A-trous multi-stride spatial filter** — 3 dispatches at stride 1/2/4, variance-weighted joint bilateral (consumes the per-pixel moments history [I.3e.2] landed)
-2. **[I.3e.4] Disocclusion mask dilation** — kills halos at motion-disoccluded edges
-3. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
-4. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
-5. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
-6. **[S2.2] LRU side cache** — thin-geometry stability
+1. **[I.3e.4] Disocclusion mask dilation** — kills halos at motion-disoccluded edges (dilate the "reprojection invalid" mask by a few texels before it drives moment reset + A-trous luma sigma)
+2. **[W.2] World-cache descriptor extension with direction + short-ray bit** — fixes the paper's Figure 14 light-leak case
+3. **[S1.5c] Algorithm 2 ray redistribution** — kills disocclusion dark patches
+4. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+5. **[S2.2] LRU side cache** — thin-geometry stability
 
 Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
 
@@ -156,7 +155,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3d | Inline spatial-variance-adaptive blend rate | ☑ | |
 | I.3e.1 | Extract denoiser into standalone GIDenoisePass (zero-behavior-change prerequisite) | ☑ | |
 | I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | ☑ | |
-| I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☐ | |
+| I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☑ | |
 | I.3e.4 | Disocclusion mask dilation | ☐ | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
 | W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☐ | |
@@ -255,6 +254,18 @@ Adds a per-pixel moments ping-pong texture (`r = E[luma], g = E[luma²], b = his
 Temporal variance `σ² = E[L²] − E[L]²` is exposed in the moments UAV for the [I.3e.3] A-trous pass to use as its luminance edge-stopping weight; this slice does not yet drive a spatial filter radius from it.
 
 Bindings: +2 on GIDenoisePass (in_MomentsPrev at t8, out_MomentsCurrent at u1; layout grows from 10 to 12 entries). LightPass unchanged.
+
+#### [I.3e.3] — SVGF A-trous multi-stride filter
+
+Spatial counterpart to the temporal pass. Three new compute passes (`GIATrous1Pass` / `GIATrous2Pass` / `GIATrous4Pass`) dispatched in cascade with tap offsets scaled by stride 1, 2, 4. Each runs a 5×5 SVGF à-trous stencil (binomial kernel) with joint bilateral edge-stops: depth (≤ 10% error budget + exp fall-off), normal (`max(0, dot)^128`), and luminance (`exp(-|Δluma| / (σ_L · √σ_p + eps))` where σ_p is the 3×3-smoothed temporal variance from the moments texture [I.3e.2] lands).
+
+Three sibling shaders — `GIATrousStride1/2/4.comp` — each defines `ATROUS_STRIDE` and `#include "common/GIATrousCommon.hlsl"` so the tap offsets bake at compile time (avoids a runtime-stride CB and lets the compiler unroll the 5×5 loop). Intermediate textures cascade: temporal → stride-1 → stride-2 → stride-4 → LightPass consumes the stride-4 output.
+
+Pipeline ordering: RadianceCacheIntegrationPass → GIDenoisePass → GIATrous1 → GIATrous2 → GIATrous4 → LightPass. Each A-trous pass waits on the previous one's compute signal before issuing its own graphics→compute barrier.
+
+Also removed the 5×5 Gaussian-bilateral spatial tap from GIDenoisePass — A-trous now owns all spatial filtering, so the temporal pass is a pure single-tap reprojected EMA on the center pixel. This matches the original SVGF separation of temporal vs. spatial.
+
+Limitations for follow-up: variance is not filtered between A-trous iterations (paper's "σ' = σ/16" recipe), we just re-read the moments each iteration. Doing proper variance cascading would need a per-iteration variance output; deferred until it measurably matters.
 
 #### [W.1] — World cache: fingerprint hash + linear probing
 
