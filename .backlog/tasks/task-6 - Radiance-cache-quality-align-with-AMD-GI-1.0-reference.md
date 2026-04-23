@@ -1,10 +1,10 @@
 ---
 id: TASK-6
 title: 'Radiance cache quality: align with AMD GI 1.0 reference'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-23 13:10'
+updated_date: '2026-04-23 18:15'
 labels:
   - rendering
   - GI
@@ -100,20 +100,20 @@ Sized as a CL each.
 
 **Ground rule:** no sub-project merges until the CL re-enables (or keeps enabled) the GI passes and produces a RenderDoc frame-8 GISponza capture that visually validates the slice. Baseline capture before [F] went into the [F] commit for comparison.
 
-### Remaining work — priority order
+### Chapter closed 2026-04-23
 
-Each piece is session-sized — take the top item, design, implement, capture, commit; then pick the new top. Every landing CL updates the Status table below AND removes/re-orders the entry here.
+All non-optional sub-umbrellas ([F], [S1], [S2], [I], [W]) landed and marked Done in their own tasks (TASK-114/115/116/117/118). Frame-60 GISponza capture shows healthy GI (indirect bleed on curtains, filled shadows, no firefly/banding) — no visible gap that would justify promoting a deferred item now.
 
-[I.3e] was split into four sub-slices on extraction day — see Status table for [I.3e.1–4] detail.
+Future radiance-cache work files as standalone tasks when evidence or product priority warrants. Deferred candidates captured for future revival:
 
-[I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
+- **[S2.2-multi-slot] LRU multi-slot side cache** — [S2.2] landed single-slot. Paper's 4-slot MRU variant preserves distinct poses a camera-panning probe oscillates between. File if single-slot leaves a visible gap.
+- **[S1.5c-override-full] Paper dispatch-indirect override queue** — [S1.5c] landed as a shader-local priority-shift within each 2×2 spawn-tile. Paper's Algorithm 2 adds EXTRA rays (2 per high-variance tile, 0 per well-converged) via a classify-and-populate compute pass + UAV counter + dispatch-indirect RayGen. Land if the shader-local version leaves a visible noise floor on high-variance regions.
+- **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if `PROBE_SEARCH_MAX_RING` grows much larger.
+- **[W.3b-cache-the-index]** Paper §2.2.4 cache-the-index optimisation — no-op on the current single-bounce RayGen → one-ClosestHit path. Becomes meaningful with multi-bounce ray tracing from ClosestHit.
 
-1. **[S2.2-multi-slot] LRU multi-slot side cache** — follow-up to [S2.2]: current implementation stores 1 slot per tile (overwrites on every successful reprojection). Paper's 4-slot MRU variant preserves distinct poses a camera-panning probe oscillates between. File if single-slot leaves a visible gap.
-2. **[S1.5c-override-full] Paper dispatch-indirect override queue** — current implementation is a shader-local priority-shift: within each 2×2 spawn-tile, an empty or high-variance probe tile preempts the Halton pick. The paper's Algorithm 2 adds EXTRA rays (2 per high-variance tile, 0 per well-converged) via a classify-and-populate compute pass + UAV counter + dispatch-indirect RayGen. Only land this if the shader-local version leaves a visible noise floor on high-variance regions.
-3. **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current implementation is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if PROBE_SEARCH_MAX_RING grows much larger; defer until that's the case.
-4. **[W.3b-cache-the-index]** Paper §2.2.4 cache-the-index optimization — amortise per-vertex hash computation. Currently no-op because the RayGen → single ClosestHit path doesn't re-trace from the closest hit, so the tile hash is already computed once per vertex. Becomes meaningful when (if) we add multi-bounce ray tracing from ClosestHit.
+Optional slices not pursued in this chapter: **[L]** world-space ReSTIR light sampling, **[X]** HBIL short-range SS GI.
 
-Optional (not in priority order, scheduled separately): [S1.4], [S1.5b], [L], [X].
+Structural debt filed: TASK-6.1 (W.3b world-tile write/read API encapsulation, priority: low).
 
 ### Capture / test protocol
 
