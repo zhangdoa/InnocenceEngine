@@ -20,7 +20,28 @@ struct WorldProbe
     float3 radiance;        // Could later be SH coefficients
     float weight;           // Used for temporal accumulation
     uint fingerprint;       // [W.2] secondary hash of (pos, normal-octant, short-ray-bit); 0 = empty slot
+    uint lastTouchedFrame;  // [W.3] g_Frame.frameIndex at last insert/update; drives decay-based eviction
 };
+
+// [W.3] Decay-based eviction: a slot whose lastTouchedFrame is older than
+// the current frame by more than this threshold is treated as empty for
+// INSERT purposes (lookups still reject on fingerprint mismatch as before,
+// so we don't serve stale radiance). Frees slots held by scene-reload
+// leftovers, dead geometry, or hash-scheme changes. ~1 second at 60fps
+// / ~2 seconds at 30fps — long enough that actively-refreshed cells
+// survive a brief ray-budget gap, short enough that a scene edit flushes
+// within a few seconds.
+static const uint WORLD_PROBE_EVICTION_AGE = 64u;
+
+bool IsProbeSlotStale(uint slotLastTouchedFrame, uint currentFrame)
+{
+    // Unsigned subtraction wraps cleanly: a freshly-written slot has
+    // (current - lastTouched) small; an uninitialised slot reads 0 so
+    // the first-ever frame returns `currentFrame - 0 = currentFrame`
+    // which is ≥ threshold after 64 frames — exactly when we want to
+    // treat uninitialised-but-non-empty slots as reclaimable.
+    return (currentFrame - slotLastTouchedFrame) > WORLD_PROBE_EVICTION_AGE;
+}
 
 // Payload structure passed between TraceRay calls.
 // distance = ray-parameter t at the hit (or ray.TMax for a sky miss),

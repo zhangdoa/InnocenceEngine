@@ -310,13 +310,20 @@ void RayGenShader()
             {
                 uint slot = (bucket + probe) % HASH_TABLE_SIZE;
                 uint slotFp = in_WorldProbeGrid[slot].fingerprint;
-                if (slotFp == 0u || slotFp == fingerprint)
+                uint slotStamp = in_WorldProbeGrid[slot].lastTouchedFrame;
+                // [W.3] Slot eligible for reuse if empty, our fingerprint,
+                // or stale (owner hasn't written in ≥ WORLD_PROBE_EVICTION_AGE
+                // frames). Stale reuse is the path that unblocks slots held
+                // by scene-reload leftovers or pre-[W.2] fingerprints.
+                bool stale = IsProbeSlotStale(slotStamp, g_Frame.frameIndex);
+                if (slotFp == 0u || slotFp == fingerprint || stale)
                 {
                     float3 oldRadiance = (slotFp == fingerprint) ? in_WorldProbeGrid[slot].radiance : float3(0, 0, 0);
                     in_WorldProbeGrid[slot].positionWS = positionWS;
                     in_WorldProbeGrid[slot].radiance = lerp(oldRadiance, radiance, WORLD_PROBE_EMA);
                     in_WorldProbeGrid[slot].weight = 1.0;
                     in_WorldProbeGrid[slot].fingerprint = fingerprint;
+                    in_WorldProbeGrid[slot].lastTouchedFrame = g_Frame.frameIndex;
                     break;
                 }
             }

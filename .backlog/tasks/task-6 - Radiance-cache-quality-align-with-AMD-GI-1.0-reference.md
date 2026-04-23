@@ -4,7 +4,7 @@ title: 'Radiance cache quality: align with AMD GI 1.0 reference'
 status: In Progress
 assignee: []
 created_date: '2026-04-07 09:26'
-updated_date: '2026-04-23 08:50'
+updated_date: '2026-04-23 09:00'
 labels:
   - rendering
   - GI
@@ -108,7 +108,7 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
 
-1. **[W.3] Two-level tiled world-hash + MIP prefilter + decay eviction** — full world-cache redesign
+1. **[W.3b] Two-level tiled world-hash + MIP prefilter + cache-the-index** — the structural half of the original [W.3]; eviction-of-stale-slots already shipped in [W.3a]
 2. **[S2.2] LRU side cache** — thin-geometry stability
 3. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
 4. **[S1.5b] Mask MIP chain + FindClosestProbe MIP walk** — [S1.5c] didn't need this; worthwhile once hole patterns get more complex
@@ -160,7 +160,8 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3e.4 | Disocclusion mask dilation | ☑ | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
 | W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☑ | |
-| W.3 | World cache: two-level tiled MIP + decay eviction | ☐ | |
+| W.3a | World cache: decay-based eviction (stale-slot reuse) | ☑ | |
+| W.3b | World cache: two-level tiled layout + MIP prefilter + cache-the-index | ☐ | |
 | L | Light sampling (opt) | ☐ | |
 | X | Short-range SS GI (opt) | ☐ | |
 
@@ -294,6 +295,21 @@ Write/read asymmetry (and why this still works):
 
 For diffuse bounces the proxy matches the actual hit normal closely; for high-angle rays it over-rejects, which is the safer failure mode (no contribution vs leaked contribution).
 
-Stale entries: pre-[W.2] fingerprints left in the hash table from earlier runs persist until their bucket is fully probed over — they occupy slots but can never match a new-scheme fingerprint. Convergence is natural as new data streams in; a scene-reload path would clear the buffer if needed (not implemented here; deferred until measurably needed).
+Stale entries: pre-[W.2] fingerprints left in the hash table from earlier runs persist until their bucket is fully probed over — they occupy slots but can never match a new-scheme fingerprint. Convergence is natural as new data streams in; a scene-reload path would clear the buffer if needed (not implemented here; deferred until measurably needed). *Follow-up:* [W.3a] landed decay-based eviction which turns this from a permanent-ish leak into a bounded one (any stale slot is reclaimed within `WORLD_PROBE_EVICTION_AGE` = 64 frames).
+
+#### [W.3a] — World cache: decay-based eviction (stale-slot reuse)
+
+First half of the original [W.3] plan. The structural two-level tiled rewrite is substantial enough to deserve its own slice (filed as [W.3b]); decay-based eviction works independently of that rewrite and directly addresses the [W.2] leftover-fingerprint problem the previous slice flagged.
+
+Adds `uint lastTouchedFrame` to the `WorldProbe` struct (size 32 → 36 bytes; `m_ElementSize` updated on the C++ side). The RayGen write path:
+
+1. Stamps `lastTouchedFrame = g_Frame.frameIndex` on every insert/update.
+2. Treats a slot as eligible for reuse if it's empty (`fingerprint == 0`) OR matches our fingerprint OR is stale (`frameIndex - slot.lastTouchedFrame > WORLD_PROBE_EVICTION_AGE`).
+
+`WORLD_PROBE_EVICTION_AGE = 64` frames (≈1 second at 60 fps). Zero-initialised slots read as "very stale" on frame 0; stale-reclaim kicks in naturally once the frame counter exceeds the threshold.
+
+READ side (ClosestHit) unchanged: a stale slot with a matching fingerprint still serves its cached radiance — better to return dead-reckoned old data that the temporal denoiser will filter away than a hard zero that leaves a dark hole.
+
+The integration test was bumped to 100 frames with reload at frame 70 specifically to cross the eviction threshold: after frame 64 every write should be evaluating the stale path, and after the frame-70 reload any world-cache state from the old scene is reclaimable within one more eviction cycle.
 
 <!-- SECTION:NOTES:END -->
