@@ -3,7 +3,7 @@ id: TASK-117
 title: >-
   Radiance cache [I] Irradiance evaluation — 4-probe interp + SH L2 + GI
   denoiser
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-20 17:36'
 labels: []
