@@ -372,6 +372,50 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	auto l_dumpFramesArgPos = arg.find("-dump_frames");
+	if (l_dumpFramesArgPos != std::string::npos)
+	{
+		// Expect `-dump_frames START-END` (inclusive). Single token, no spaces
+		// inside the range — matches the other flag-arg conventions in this
+		// parser.
+		std::string l_remainder = arg.substr(l_dumpFramesArgPos + 12);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			std::string l_range = l_remainder.substr(l_start);
+			auto l_space = l_range.find(' ');
+			if (l_space != std::string::npos) l_range = l_range.substr(0, l_space);
+			auto l_dash = l_range.find('-');
+			if (l_dash != std::string::npos && l_dash > 0 && l_dash + 1 < l_range.size())
+			{
+				try
+				{
+					l_result.dumpFramesStart = std::stoi(l_range.substr(0, l_dash));
+					l_result.dumpFramesEnd   = std::stoi(l_range.substr(l_dash + 1));
+					if (l_result.dumpFramesEnd < l_result.dumpFramesStart)
+					{
+						Log(Warning, "'-dump_frames' end < start; ignoring.");
+						l_result.dumpFramesStart = -1;
+						l_result.dumpFramesEnd   = -1;
+					}
+					else
+					{
+						Log(Success, "Dumping gpu_output_NNNN.png for frames [",
+							l_result.dumpFramesStart, ", ", l_result.dumpFramesEnd, "].");
+					}
+				}
+				catch (...)
+				{
+					Log(Warning, "'-dump_frames' range parse failed; expected START-END.");
+				}
+			}
+			else
+			{
+				Log(Warning, "'-dump_frames' expects START-END with a dash.");
+			}
+		}
+	}
+
 	auto l_captureArgPos = arg.find("-capture_frame");
 	if (l_captureArgPos != std::string::npos)
 	{

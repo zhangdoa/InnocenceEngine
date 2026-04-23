@@ -81,6 +81,14 @@ namespace Inno
 		// m_autoCaptureWritten so later calls no-op.
 		void TryWriteAutoCapture();
 
+		// GPU-to-PNG writer used by both the one-shot auto-capture and the
+		// per-frame `-dump_frames START-END` path. Synchronises on the
+		// graphics queue, reads FinalBlendPass output back to CPU, converts
+		// to sRGB 8-bit, and writes the file. Returns false on empty
+		// readback or save failure; not idempotent — caller owns any
+		// "already wrote" latching.
+		bool WriteCaptureToFile(const char* filename);
+
 		bool m_drawBRDFTest = false;
 		// Desired is what the user/toggle asked for; Active is what the
 		// frame loop has actually switched into. PrepareCommands reconciles
@@ -797,13 +805,38 @@ namespace Inno
 				? static_cast<uint32_t>(l_totalFrames)
 				: (l_isPathTracerTestMode ? 30u : 0u));
 
+		// Unified per-frame counter. Previously lived inside the one-shot
+		// trigger's conditional; moved out so the `-dump_frames` path can
+		// share it. Runs that don't use either feature increment the
+		// counter harmlessly — nothing else reads it.
+		m_autoCaptureFrameCount++;
+
+		// Frame-sequence dump for temporal validation. When
+		// `-dump_frames START-END` is set, write `gpu_output_NNNN.png` for
+		// every frame N in [START, END] inclusive. Lets a reviewer scrub /
+		// diff consecutive frames to catch flickering, probe-spawn
+		// oscillation, or denoiser instability that a single-frame capture
+		// can't expose. Skipped when the serialize-test or an un-activated
+		// FinalBlendPass would make the readback meaningless (same guard
+		// shape as the one-shot trigger).
+		const auto& l_initCfg = g_Engine->getInitConfig();
+		if (!l_isSerializeTest
+			&& l_initCfg.dumpFramesStart >= 0
+			&& l_initCfg.dumpFramesEnd >= l_initCfg.dumpFramesStart
+			&& m_autoCaptureFrameCount >= static_cast<uint32_t>(l_initCfg.dumpFramesStart)
+			&& m_autoCaptureFrameCount <= static_cast<uint32_t>(l_initCfg.dumpFramesEnd))
+		{
+			char l_buf[64];
+			snprintf(l_buf, sizeof(l_buf), "gpu_output_%04u.png", m_autoCaptureFrameCount);
+			WriteCaptureToFile(l_buf);
+		}
+
 		// Per-frame trigger: mid-session snapshot (e.g. path tracer frame 30).
 		// The structural fallback is FinalizeGPUResults, which runs at shutdown
 		// after WaitForGPUIdle and catches any case the per-frame trigger missed
 		// (e.g. the user exited before the trigger frame). TASK-42.
 		if (l_triggerAtFrame > 0 && !m_autoCaptureWritten)
 		{
-			m_autoCaptureFrameCount++;
 			if (m_autoCaptureFrameCount >= l_triggerAtFrame)
 				TryWriteAutoCapture();
 		}
@@ -818,12 +851,8 @@ namespace Inno
 		return true;
 	}
 
-	void ExampleRenderingClientImpl::TryWriteAutoCapture()
+	bool ExampleRenderingClientImpl::WriteCaptureToFile(const char* filename)
 	{
-		if (m_autoCaptureWritten)
-			return;
-		m_autoCaptureWritten = true;
-
 		auto l_fmService = g_Engine->Get<FrameManagementService>();
 		auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 		l_hwService->SignalOnGPU(l_fmService->GetGlobalSemaphore(), GPUEngineType::Graphics);
@@ -838,30 +867,9 @@ namespace Inno
 
 		if (l_floatPixels.empty())
 		{
-			Log(Warning, "Auto-capture: ReadTextureBackToCPU returned empty.");
-			return;
+			Log(Warning, "Capture: ReadTextureBackToCPU returned empty for ", filename);
+			return false;
 		}
-
-		size_t l_zeroCount = 0, l_nonZeroCount = 0;
-		float l_sumR = 0, l_sumG = 0, l_sumB = 0, l_maxR = 0, l_maxG = 0, l_maxB = 0;
-		for (const auto& px : l_floatPixels)
-		{
-			const bool l_isZero = (px.x == 0.0f && px.y == 0.0f && px.z == 0.0f);
-			if (l_isZero) { l_zeroCount++; }
-			else
-			{
-				l_nonZeroCount++;
-				l_sumR += px.x; l_sumG += px.y; l_sumB += px.z;
-				if (px.x > l_maxR) l_maxR = px.x;
-				if (px.y > l_maxG) l_maxG = px.y;
-				if (px.z > l_maxB) l_maxB = px.z;
-			}
-		}
-		const float l_total = static_cast<float>(l_floatPixels.size());
-		Log(Success, "PathTracerReadback: total=", l_floatPixels.size(),
-			" zero=", l_zeroCount, " nonZero=", l_nonZeroCount,
-			" mean=(", l_sumR / l_total, ",", l_sumG / l_total, ",", l_sumB / l_total, ")",
-			" max=(", l_maxR, ",", l_maxG, ",", l_maxB, ")");
 
 		std::vector<uint8_t> l_uint8Pixels;
 		l_uint8Pixels.reserve(l_floatPixels.size() * 4);
@@ -878,10 +886,53 @@ namespace Inno
 		l_desc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 		l_desc.Sampler = TextureSampler::Sampler2D;
 
-		if (g_Engine->Get<AssetService>()->Save("gpu_output.png", l_desc, l_uint8Pixels.data()))
-			Log(Success, "Auto-capture: gpu_output.png written.");
-		else
-			Log(Warning, "Auto-capture: failed to write gpu_output.png.");
+		if (g_Engine->Get<AssetService>()->Save(filename, l_desc, l_uint8Pixels.data()))
+		{
+			Log(Success, "Capture: ", filename, " written.");
+			return true;
+		}
+		Log(Warning, "Capture: failed to write ", filename);
+		return false;
+	}
+
+	void ExampleRenderingClientImpl::TryWriteAutoCapture()
+	{
+		if (m_autoCaptureWritten)
+			return;
+		m_autoCaptureWritten = true;
+
+		// PathTracerReadback stats: zero/non-zero pixel split, mean, max.
+		// Originally added for path-tracer convergence diagnosis; kept here
+		// (one-shot path) rather than in the per-frame dump path so a
+		// 100-frame `-dump_frames` run doesn't spam the log.
+		auto l_srcTex = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
+		auto l_floatPixels = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
+			FinalBlendPass::Get().GetRenderPassComp(), l_srcTex);
+		if (!l_floatPixels.empty())
+		{
+			size_t l_zeroCount = 0, l_nonZeroCount = 0;
+			float l_sumR = 0, l_sumG = 0, l_sumB = 0, l_maxR = 0, l_maxG = 0, l_maxB = 0;
+			for (const auto& px : l_floatPixels)
+			{
+				const bool l_isZero = (px.x == 0.0f && px.y == 0.0f && px.z == 0.0f);
+				if (l_isZero) { l_zeroCount++; }
+				else
+				{
+					l_nonZeroCount++;
+					l_sumR += px.x; l_sumG += px.y; l_sumB += px.z;
+					if (px.x > l_maxR) l_maxR = px.x;
+					if (px.y > l_maxG) l_maxG = px.y;
+					if (px.z > l_maxB) l_maxB = px.z;
+				}
+			}
+			const float l_total = static_cast<float>(l_floatPixels.size());
+			Log(Success, "PathTracerReadback: total=", l_floatPixels.size(),
+				" zero=", l_zeroCount, " nonZero=", l_nonZeroCount,
+				" mean=(", l_sumR / l_total, ",", l_sumG / l_total, ",", l_sumB / l_total, ")",
+				" max=(", l_maxR, ",", l_maxG, ",", l_maxB, ")");
+		}
+
+		WriteCaptureToFile("gpu_output.png");
 	}
 
 	bool ExampleRenderingClientImpl::FinalizeGPUResults()
