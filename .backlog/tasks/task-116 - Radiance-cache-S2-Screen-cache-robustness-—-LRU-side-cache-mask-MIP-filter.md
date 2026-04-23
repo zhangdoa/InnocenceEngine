@@ -1,7 +1,7 @@
 ---
 id: TASK-116
 title: 'Radiance cache [S2] Screen-cache robustness — LRU side cache + mask-MIP filter'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-20 17:36'
 labels: []

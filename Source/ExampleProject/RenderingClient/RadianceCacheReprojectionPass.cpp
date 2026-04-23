@@ -35,7 +35,7 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(9);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(12);
 
 	m_ShaderStage = ShaderStage::Compute;
 
@@ -111,6 +111,33 @@ bool RadianceCacheReprojectionPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage = m_ShaderStage;
 
+	// u2 - side cache atlas (GI-1.0 §2.1.8); mirrors atlas layout, preserved on failed reprojection
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_TextureUsage = TextureUsage::ComputeOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ShaderStage = m_ShaderStage;
+
+	// u3 - side cache pos+frame
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 3;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage = m_ShaderStage;
+
+	// u4 - side cache normal
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 4;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage = m_ShaderStage;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_CommandListComp_Graphics = g_Engine->Get<CommandListResourceService>()->Add("RadianceCacheReprojectionPass/Graphics");
@@ -148,6 +175,9 @@ bool RadianceCacheReprojectionPass::Terminate()
 	g_Engine->Get<TextureResourceService>()->Delete(m_ProbeNormal_Odd);
 	g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_RadianceCache_Odd);
+	g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Atlas);
+	g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_PosFrame);
+	g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Normal);
 	
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
@@ -200,6 +230,10 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 	l_fmService->TryToTransitState(l_probeNormal, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_writeTexture, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->TryToTransitState(m_ProbeMask, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	// Side cache is single-buffered read/write from the Reprojection shader.
+	l_fmService->TryToTransitState(m_SideCache_Atlas, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_fmService->TryToTransitState(m_SideCache_PosFrame, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_fmService->TryToTransitState(m_SideCache_Normal, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	g_Engine->Get<TextureResourceService>()->Clear(m_CommandListComp_Graphics, l_writeTexture);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
@@ -215,6 +249,9 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_probeNormal, 6);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_writeTexture, 7);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_ProbeMask, 8);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_Atlas, 9);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_PosFrame, 10);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_Normal, 11);
 
 	auto dispatch_x = (l_writeTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
 	auto dispatch_y = (l_writeTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
@@ -316,6 +353,33 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	m_ProbeMask->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::R;
 	m_ProbeMask->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ProbeMask);
+
+	// GI-1.0 §2.1.8 side cache. Single-slot-per-tile "last-good" snapshot
+	// of the radiance atlas + (pos, normal, frameIndex). Written on
+	// successful reprojection, read when the current frame's reprojection
+	// fails but the cached snapshot is still geometrically close and
+	// within WORLD_TILE_EVICTION_AGE frames fresh. Single-buffered — the
+	// Reprojection shader owns both reads and writes.
+	if (m_SideCache_Atlas)
+		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Atlas);
+
+	m_SideCache_Atlas = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Side Cache Atlas");
+	m_SideCache_Atlas->m_TextureDesc = m_RadianceCache_Even->m_TextureDesc;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_SideCache_Atlas);
+
+	if (m_SideCache_PosFrame)
+		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_PosFrame);
+
+	m_SideCache_PosFrame = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Side Cache PosFrame");
+	m_SideCache_PosFrame->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_SideCache_PosFrame);
+
+	if (m_SideCache_Normal)
+		g_Engine->Get<TextureResourceService>()->Delete(m_SideCache_Normal);
+
+	m_SideCache_Normal = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Side Cache Normal");
+	m_SideCache_Normal->m_TextureDesc = m_ProbePosition_Odd->m_TextureDesc;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_SideCache_Normal);
 
 	return true;
 }

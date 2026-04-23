@@ -108,8 +108,8 @@ Each piece is session-sized — take the top item, design, implement, capture, c
 
 [I.3e] closed — SVGF pipeline (temporal + 3× à-trous + disocclusion dilation) is feature-complete. Remaining items are independent radiance-cache improvements.
 
-1. **[S2.2] LRU side cache** — thin-geometry stability
-2. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
+1. **[S1.5c-override] Override-tile ray stealing** — follow-up to [S1.5c]: route extra rays from well-reprojected tiles to high-variance ones (currently ray budget is constant at 1 spawn / spawn tile)
+2. **[S2.2-multi-slot] LRU multi-slot side cache** — follow-up to [S2.2]: current implementation stores 1 slot per tile (overwrites on every successful reprojection). Paper's 4-slot MRU variant preserves distinct poses a camera-panning probe oscillates between. File if single-slot leaves a visible gap.
 3. **[S1.5b-mip-chain]** Real mask-MIP-chain walk in `FindClosestProbe` — current implementation is a direct Chebyshev ring scan. Paper's O(log r) MIP-chain walk only pays off if PROBE_SEARCH_MAX_RING grows much larger; defer until that's the case.
 4. **[W.3b-cache-the-index]** Paper §2.2.4 cache-the-index optimization — amortise per-vertex hash computation. Currently no-op because the RayGen → single ClosestHit path doesn't re-trace from the closest hit, so the tile hash is already computed once per vertex. Becomes meaningful when (if) we add multi-bounce ray tracing from ClosestHit.
 
@@ -146,7 +146,7 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | S1.5b | FindClosestProbe widening ring search + filter migration + dead-code cleanup | ☑ | |
 | S1.5c | Algorithm 2 ray redistribution (empty-tile redirect; override queue deferred) | ☑ (partial) | |
 | S2.1 | Probe-space filter with parallax-correction angular rejection | ☑ | |
-| S2.2 | LRU persistent side cache for evicted probes | ☐ (deferred) | |
+| S2.2 | Side cache for evicted probes — single-slot-per-tile snapshot | ☑ | |
 | I.1 | Edge-aware 4-probe interpolation + relaxed fallback | ☑ | |
 | I.2 | SH L2 upgrade (9 coefficients, 3×3 per-probe storage) | ☑ | |
 | I.2b | Ramamoorthi-Hanrahan cosine-lobe convolution | ☑ | |
@@ -217,9 +217,17 @@ Implementation keeps the Halton sub-pixel offset inside the redirected probe til
 
 The old filter iterated in screen space, so its stride-1 taps across a tile boundary sampled cells of a *different* probe representing *different* world directions; the filter was mathematically wrong for the atlas layout even though it compiled and ran. New filter iterates in probe space (6 taps at ±{1,2,3} probe-tiles along the blur axis), reads the same cell in each neighbour probe, and uses Capsaicin's parallax rejection: re-aim the stored hit distance through the current probe's position and reject the tap if the reprojected direction differs from the original cell direction by more than ~3.6°.
 
-#### [S2.2] — LRU persistent side cache (deferred)
+#### [S2.2] — Side cache for evicted probes (single-slot-per-tile)
 
-Paper §2.1.8 describes a side texture + MRU-reorder scheme to keep probes that reprojection would otherwise evict (mostly useful for thin-geometry wobble). Substantial infrastructure (eviction signal from reprojection, a scatter-by-screen-coord pass, MRU reorder, decay-based cleanup). Not on the critical path for the noise we see on large surfaces.
+Paper §2.1.8 describes a side texture keyed by tile that preserves the last-good radiance snapshot across reprojection invalidations, so a tile briefly lost to occlusion or fast motion can restore its radiance instead of snapping to zero for up to ξ_x·ξ_y frames (the full Halton cycle under sparse spawning).
+
+Landed as a single-slot-per-tile variant — the simplest shape that delivers the paper's intent: three new single-buffered textures (`SideCache_Atlas` mirrors the radiance atlas layout, `SideCache_PosFrame` stores pos.xyz + asfloat(frameIndex), `SideCache_Normal` stores the winner thread's normal) owned by the Reprojection pass.
+
+Write path: on successful reprojection, the winner thread inside the 8×8 per-probe loop copies the filtered atlas block into `SideCache_Atlas` and writes (positionWS, normalWS, frameIndex) into the meta textures at the probe-tile index. No additional pass, no scatter — reuses the existing per-group winner thread.
+
+Read path: in the failed-reprojection branch (before the hard clear + invalidate), thread 0 reads the tile-anchor pixel's G-buffer (pos, normal) and the side-cache meta at the tile index. If the stored entry is (a) within `WORLD_TILE_EVICTION_AGE = 64` frames fresh, (b) within `AdaptiveCellSize × 3` of the anchor position, and (c) the stored normal matches the anchor normal above `NORMAL_THRESHOLD = 0.9`, the atlas is restored from `SideCache_Atlas` and the mask is left untouched (the tile stays valid). Otherwise fall through to the original zero + invalidate.
+
+Deferred: paper's 4-slot MRU variant (filed as [S2.2-multi-slot]) — preserves distinct poses a camera-panning probe oscillates between. Single-slot handles the common cases; multi-slot can land if single-slot leaves a visible gap.
 
 #### [I.1] — Edge-aware 4-probe interpolation
 
