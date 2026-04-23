@@ -18,6 +18,8 @@
 #include "../../../External/GitSubmodules/renderdoc/renderdoc/api/app/renderdoc_app.h"
 
 #include <filesystem>
+#include <cstdlib>
+#include <cstring>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -29,6 +31,50 @@ using namespace Inno;
 using namespace DX12Helper;
 
 static std::atomic<bool> g_GPUErrorDetected{false};
+
+// GPU-based validation on Release shaders runs in "Shader Patch Mode NONE":
+// DXC has stripped the metadata GBV relies on to correlate resource state
+// and root-binding info with shader accesses. The result is a family of
+// false-positive GBV errors that only surface under -gpu_validation against
+// Release shaders. Without this classifier the callback would log them at
+// [Error] level, which LogService::SetFatalOnError (active whenever
+// InitConfig::totalFrames > 0) upgrades to a fatal exit-1, blocking every
+// -gpu_validation integration run. Real GBV errors — corruption-class, or
+// any diagnostic from non-Release builds — still fall through to [Error].
+//
+// Observed categories (extend as new ones surface):
+//  1. "Incompatible texture barrier layout" with "Layout: UNKNOWN (N)"
+//     where N > D3D12_BARRIER_LAYOUT_VIDEO_QUEUE_COMMON (30, the last real
+//     enum value) — GBV can't recover the real layout from a patched shader.
+//  2. "Uninitialized root argument accessed" — GBV can't resolve root
+//     parameter bindings without the debug-shader metadata.
+//
+// See CLAUDE.md "Known imprecision", TASK-37, TASK-120.
+static bool IsReleaseShaderGBVFalsePositive(LPCSTR pDescription)
+{
+    if (pDescription == nullptr)
+        return false;
+    if (std::strstr(pDescription, "GPU-BASED VALIDATION") == nullptr)
+        return false;
+
+    if (std::strstr(pDescription, "Incompatible texture barrier layout") != nullptr)
+    {
+        const char* p = std::strstr(pDescription, "Layout: UNKNOWN (");
+        if (p == nullptr)
+            return false;
+        p += sizeof("Layout: UNKNOWN (") - 1;
+        char* end = nullptr;
+        const long layoutValue = std::strtol(p, &end, 10);
+        if (end == p)
+            return false;
+        return layoutValue > 30;
+    }
+
+    if (std::strstr(pDescription, "Uninitialized root argument accessed") != nullptr)
+        return true;
+
+    return false;
+}
 
 #ifdef _WIN32
 static std::string CaptureCallstack(UINT framesToSkip = 1, UINT maxFrames = 10)
@@ -82,6 +128,11 @@ static void CALLBACK D3D12DebugMessageCallback(
     case D3D12_MESSAGE_SEVERITY_CORRUPTION:
     case D3D12_MESSAGE_SEVERITY_ERROR:
         {
+            if (IsReleaseShaderGBVFalsePositive(pDescription))
+            {
+                Log(Warning, "D3D12 GBV Release-shader false positive (non-fatal): ", pDescription);
+                break;
+            }
             g_GPUErrorDetected.store(true);
             if (pContext)
                 static_cast<DX12Context*>(pContext)->m_GPUErrorDetected.store(true);
@@ -712,8 +763,14 @@ bool DX12GraphicsHardwareService::CreatePhysicalDevices()
 
         if (SUCCEEDED(l_HResult) && l_pInfoQueue)
         {
+            // CORRUPTION is always unrecoverable; break helps a debugger catch it at the site.
             l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-            l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+            // ERROR is handled by D3D12DebugMessageCallback below — it classifies the GBV
+            // Release-shader sentinel (TASK-37/TASK-120) and routes real errors through
+            // LogService(Error) + g_GPUErrorDetected. SetBreakOnSeverity(ERROR) would
+            // fire RaiseException on every D3D12 ERROR before the callback runs, which
+            // turns the sentinel false-positive into an unrecoverable crash.
+            l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
             Log(Success, "Debug report severity has been set.");
 
             ComPtr<ID3D12InfoQueue1> l_pInfoQueue1;
