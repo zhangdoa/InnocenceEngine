@@ -47,9 +47,24 @@ Umbrella for tooling improvements that close these gaps. Sized into three sub-pi
 
 Smoke-tested: `Main.exe -offscreen -total_frames 60 -dump_frames 50-59` on GITestBox wrote 10 PNGs in `Bin/gpu_output_00{50..59}.png`, each 440–462 KB, with a slight monotonic size decrease (461→440) consistent with the SVGF denoiser continuing to converge over the 10-frame window. Captures archived under `Build/captures/TASK124_seq/`.
 
-### [B] multi-camera coverage — NOT in this CL
+### [B] multi-camera coverage — landed (`-camera_orbit PITCH,RADIUS,DURATION`)
 
-Needs a design round: orbit vs explicit pose vs scene switch. The cheapest orbit option writes a `PerFrame_CB` override that ignores the scene camera's transform for N frames. Touching the per-frame camera pipeline is bigger scope than `-dump_frames` and likely deserves a separate CL.
+- `InitConfig::cameraOrbitActive / cameraOrbitPitchDeg / cameraOrbitRadius / cameraOrbitDuration`.
+- `Engine::parseInitConfig` parses the comma-triple. Validates `RADIUS > 0` and `DURATION > 0`.
+- `WorldSystem::Update` in `World.inl` owns the per-frame override. When orbit is active, looks up "Main Camera" via `EntityRegistry::FindByName`, writes position on a circle of `RADIUS` at elevation `PITCH` degrees around world origin, and writes a quaternion composed from yaw (around world Y) and pitch (around local X) so the camera looks back at origin. Yaw sweeps 0→360° linearly over `DURATION` frames. Player's `Update` still runs below; for windowed interactive sessions the Player will stomp the orbit each frame — orbit is intended for `-offscreen` capture runs.
+
+Smoke-test (GISponza via the default auto-test schedule): `-total_frames 120 -dump_frames 60-119 -camera_orbit 20,8,120` produced 60 captures across a full 180° sweep. Walls / geometry progress smoothly through the yaw rotation confirming the math; the orbit also immediately surfaced two issues that single-frame validation couldn't have caught:
+
+- A strong spiral/swirl artefact in the floor throughout all orbit frames — SVGF temporal reprojection fails under sustained rotation because motion vectors can't fully invalidate the previous-frame history tap; the denoiser smears its history along the camera's rotation path.
+- The banding we thought TASK-121 eliminated re-appears more prominently in motion than in the static capture — likely because the probe-mask ring-search doesn't have time to converge as valid probes churn in/out under yaw.
+
+Neither is a bug in `-camera_orbit` — the tool is doing its job of exposing motion-dependent defects. Filed notes on the two findings belong with TASK-121 (ring-search + motion stability) and/or a new SVGF-motion task.
+
+Captures archived under `Build/captures/TASK124_orbit/`.
+
+Limitations accepted for v1, filable as follow-ups if they bite:
+- Orbit centre is world origin (0,0,0). Scenes whose interesting geometry isn't near origin will orbit around empty space. Extension: `-camera_orbit_center X,Y,Z` or capture the initial camera position as orbit centre on the first tick.
+- Orbit is pure yaw sweep; no linear translation, no second-axis wobble, no variable speed. If testing rotation-independent flicker becomes important, a `-camera_waypoints` or scripted-path approach would replace this.
 
 ### [C] frame-diff tool — NOT in this CL
 

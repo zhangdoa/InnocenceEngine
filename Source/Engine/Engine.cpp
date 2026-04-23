@@ -416,6 +416,51 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	auto l_orbitArgPos = arg.find("-camera_orbit");
+	if (l_orbitArgPos != std::string::npos)
+	{
+		// Expect `-camera_orbit PITCH_DEG,RADIUS,DURATION_FRAMES`.
+		// Comma-separated triple, one whitespace-terminated token.
+		std::string l_remainder = arg.substr(l_orbitArgPos + 13);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			std::string l_triple = l_remainder.substr(l_start);
+			auto l_space = l_triple.find(' ');
+			if (l_space != std::string::npos) l_triple = l_triple.substr(0, l_space);
+			auto l_c1 = l_triple.find(',');
+			auto l_c2 = (l_c1 != std::string::npos) ? l_triple.find(',', l_c1 + 1) : std::string::npos;
+			if (l_c1 != std::string::npos && l_c2 != std::string::npos)
+			{
+				try
+				{
+					l_result.cameraOrbitPitchDeg = std::stof(l_triple.substr(0, l_c1));
+					l_result.cameraOrbitRadius   = std::stof(l_triple.substr(l_c1 + 1, l_c2 - l_c1 - 1));
+					l_result.cameraOrbitDuration = std::stoi(l_triple.substr(l_c2 + 1));
+					if (l_result.cameraOrbitDuration > 0 && l_result.cameraOrbitRadius > 0.0f)
+					{
+						l_result.cameraOrbitActive = true;
+						Log(Success, "Camera orbit: pitch=", l_result.cameraOrbitPitchDeg,
+							"deg radius=", l_result.cameraOrbitRadius,
+							" duration=", l_result.cameraOrbitDuration, " frames.");
+					}
+					else
+					{
+						Log(Warning, "'-camera_orbit' requires DURATION > 0 and RADIUS > 0; ignoring.");
+					}
+				}
+				catch (...)
+				{
+					Log(Warning, "'-camera_orbit' parse failed; expected PITCH_DEG,RADIUS,DURATION.");
+				}
+			}
+			else
+			{
+				Log(Warning, "'-camera_orbit' expects PITCH_DEG,RADIUS,DURATION (three comma-separated values).");
+			}
+		}
+	}
+
 	auto l_captureArgPos = arg.find("-capture_frame");
 	if (l_captureArgPos != std::string::npos)
 	{

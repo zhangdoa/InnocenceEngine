@@ -286,6 +286,49 @@ namespace
 				Log(Success, "Auto-test: ", l_totalFrames, " frames rendered, terminating.");
 				g_Engine->Get<IWindowService>()->Terminate();
 			}
+
+			// Camera orbit override — TASK-124 [B]. Each frame in
+			// [0, cameraOrbitDuration] stomps the Main Camera transform with
+			// a yaw that sweeps 0→360° over the duration, at the configured
+			// pitch and radius around the world origin. Runs after the
+			// scene-load trigger so the Main Camera is guaranteed to exist
+			// by the time we try to find it. Player's Update() further
+			// below will stomp this on windowed runs where the player is
+			// driving — accepted for v1 (orbit is intended for -offscreen
+			// capture sessions).
+			const auto& l_initCfg = g_Engine->getInitConfig();
+			if (l_initCfg.cameraOrbitActive
+				&& m_AutoFrameCount <= static_cast<uint32_t>(l_initCfg.cameraOrbitDuration))
+			{
+				auto l_Registry = g_Engine->Get<EntityRegistry>();
+				auto l_CameraEntity = l_Registry->FindByName("Main Camera");
+				if (l_CameraEntity != INVALID_ENTITY)
+				{
+					auto* l_CameraTransform = l_Registry->Get<TransformComponent>(l_CameraEntity);
+					if (l_CameraTransform)
+					{
+						const float l_yawDeg = 360.0f
+							* static_cast<float>(m_AutoFrameCount)
+							/ static_cast<float>(l_initCfg.cameraOrbitDuration);
+						const float l_pitchRad = l_initCfg.cameraOrbitPitchDeg * PI<float> / 180.0f;
+						const float l_yawRad   = l_yawDeg                       * PI<float> / 180.0f;
+						const float l_r        = l_initCfg.cameraOrbitRadius;
+						const float l_cosP     = std::cos(l_pitchRad);
+
+						l_CameraTransform->m_LocalPos = Vec3(
+							l_r * l_cosP * std::sin(l_yawRad),
+							l_r * std::sin(l_pitchRad),
+							l_r * l_cosP * std::cos(l_yawRad));
+
+						// Default camera forward is -Z, up is +Y. Yaw around
+						// world Y brings -Z to face origin; pitch around local
+						// X tilts the camera to look at origin when elevated.
+						Vec4 l_yawQuat   = Math::getQuatRotator(Vec4(0.0f, 1.0f, 0.0f, 0.0f),  l_yawDeg);
+						Vec4 l_pitchQuat = Math::getQuatRotator(Vec4(1.0f, 0.0f, 0.0f, 0.0f), -l_initCfg.cameraOrbitPitchDeg);
+						l_CameraTransform->m_LocalRot = l_yawQuat.quatMul(l_pitchQuat);
+					}
+				}
+			}
 		}
 
 		if (!allowUpdate)

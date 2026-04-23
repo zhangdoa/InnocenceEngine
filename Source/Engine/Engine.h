@@ -34,6 +34,18 @@ namespace Inno
 		// denoiser stability issues — things a single-frame capture misses.
 		int dumpFramesStart = -1;
 		int dumpFramesEnd = -1;
+		// Camera-orbit override for cross-angle visual validation.
+		// `-camera_orbit PITCH,RADIUS,DURATION` animates the Main Camera in
+		// a horizontal orbit around the world origin: yaw sweeps 0→2π over
+		// DURATION frames, pitch is elevation in degrees (0 = horizon,
+		// +up / -down), RADIUS is orbit distance from origin in world
+		// units, DURATION is the number of frames the orbit runs.
+		// DURATION <= 0 disables the override. Pairs with -dump_frames
+		// to produce a multi-angle × multi-frame evidence matrix.
+		bool cameraOrbitActive = false;
+		float cameraOrbitPitchDeg = 0.0f;
+		float cameraOrbitRadius = 0.0f;
+		int   cameraOrbitDuration = 0;
 		bool enableGPUValidation = false;  // enable D3D12 GPU-based validation + sync queue validation
 		// Bake mode: run a one-shot asset-import-then-exit pass with no rendering
 		// services or window. `-bake "path1;path2;..."` sets isBakeMode=true,
