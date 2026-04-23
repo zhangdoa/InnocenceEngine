@@ -115,18 +115,45 @@ float ComputeProbeWeight(uint2 probeCoord, uint2 maxProbeIdx,
 // neighbourhood has no good probe.
 float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNormal)
 {
-	uint2 probeIndex = uint2(screenCoord) / TILE_SIZE;
+	// Probe (i, j) is anchored at tile centre TILE_SIZE * (i + 0.5). Shift the
+	// screen coord into probe-grid space (subtract half a tile) so `probeFloor`
+	// is the top-left probe of the 4-probe quad that surrounds the pixel, not
+	// the tile the pixel happens to land in. Without the shift, crossing a tile
+	// boundary discontinuously swaps the set of probes used for interpolation,
+	// producing hard tile-grid banding on flat surfaces.
+	float2 probeUV = float2(screenCoord) / float2(TILE_SIZE, TILE_SIZE) - 0.5;
+	int2 probeFloor = int2(floor(probeUV));
 	uint2 maxProbeIndex = uint2(g_Frame.viewportSize.xy) / TILE_SIZE - 1;
+	int2 maxProbeIndexI = int2(maxProbeIndex);
 
 	float depth = length(pixelPos - g_Frame.camera_posWS.xyz);
 	float cellSize = max(AdaptiveCellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
 
-	uint2 tl = probeIndex;
-	uint2 tr = probeIndex + uint2(1, 0);
-	uint2 bl = probeIndex + uint2(0, 1);
-	uint2 br = probeIndex + uint2(1, 1);
+	int2 targetTL = clamp(probeFloor,              int2(0, 0), maxProbeIndexI);
+	int2 targetTR = clamp(probeFloor + int2(1, 0), int2(0, 0), maxProbeIndexI);
+	int2 targetBL = clamp(probeFloor + int2(0, 1), int2(0, 0), maxProbeIndexI);
+	int2 targetBR = clamp(probeFloor + int2(1, 1), int2(0, 0), maxProbeIndexI);
 
-	float2 bilinear = frac(float2(screenCoord) / TILE_SIZE);
+	// Under sparse spawning (upscaleFactor > 1) most 8×8 tiles are
+	// PROBE_MASK_INVALID in any given frame. Without ring-search the
+	// blend collapses to whichever single corner happens to be valid,
+	// producing visible per-tile banding on flat surfaces. Use the same
+	// FindClosestProbe ring walk the H/V filter passes use ([S1.5b]) so
+	// each corner contributes the closest valid substitute; the edge-
+	// aware weight test runs against the SUBSTITUTE's own position /
+	// normal (r.tileCoord), preserving plane / hemisphere rejection.
+	int2 gridSize = int2(g_Frame.viewportSize.xy) / int(RADIANCE_CACHE_TILE_SIZE);
+	ProbeLookup lookupTL = FindClosestProbe(in_ProbeMask, int2(0, 0), targetTL, gridSize);
+	ProbeLookup lookupTR = FindClosestProbe(in_ProbeMask, int2(0, 0), targetTR, gridSize);
+	ProbeLookup lookupBL = FindClosestProbe(in_ProbeMask, int2(0, 0), targetBL, gridSize);
+	ProbeLookup lookupBR = FindClosestProbe(in_ProbeMask, int2(0, 0), targetBR, gridSize);
+
+	uint2 tl = uint2(lookupTL.tileCoord);
+	uint2 tr = uint2(lookupTR.tileCoord);
+	uint2 bl = uint2(lookupBL.tileCoord);
+	uint2 br = uint2(lookupBR.tileCoord);
+
+	float2 bilinear = probeUV - float2(probeFloor);
 	float wTL = (1.0 - bilinear.x) * (1.0 - bilinear.y);
 	float wTR = bilinear.x * (1.0 - bilinear.y);
 	float wBL = (1.0 - bilinear.x) * bilinear.y;
@@ -147,18 +174,18 @@ float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNorm
 	float3 result;
 	if (totalWeight > 0.0)
 	{
-		float3 ITL = LoadIrradiance(min(tl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
-		float3 ITR = LoadIrradiance(min(tr, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
-		float3 IBL = LoadIrradiance(min(bl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
-		float3 IBR = LoadIrradiance(min(br, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+		float3 ITL = LoadIrradiance(tl * SH_TILE_SIZE, pixelNormal);
+		float3 ITR = LoadIrradiance(tr * SH_TILE_SIZE, pixelNormal);
+		float3 IBL = LoadIrradiance(bl * SH_TILE_SIZE, pixelNormal);
+		float3 IBR = LoadIrradiance(br * SH_TILE_SIZE, pixelNormal);
 		result = (fTL * ITL + fTR * ITR + fBL * IBL + fBR * IBR) / totalWeight;
 	}
 	else
 	{
-		float3 ITL = LoadIrradiance(min(tl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
-		float3 ITR = LoadIrradiance(min(tr, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
-		float3 IBL = LoadIrradiance(min(bl, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
-		float3 IBR = LoadIrradiance(min(br, maxProbeIndex) * SH_TILE_SIZE, pixelNormal);
+		float3 ITL = LoadIrradiance(tl * SH_TILE_SIZE, pixelNormal);
+		float3 ITR = LoadIrradiance(tr * SH_TILE_SIZE, pixelNormal);
+		float3 IBL = LoadIrradiance(bl * SH_TILE_SIZE, pixelNormal);
+		float3 IBR = LoadIrradiance(br * SH_TILE_SIZE, pixelNormal);
 		result = wTL * ITL + wTR * ITR + wBL * IBL + wBR * IBR;
 	}
 
