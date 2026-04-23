@@ -102,7 +102,16 @@ Sized as a CL each.
 
 ### Chapter closed 2026-04-23
 
-All non-optional sub-umbrellas ([F], [S1], [S2], [I], [W]) landed and marked Done in their own tasks (TASK-114/115/116/117/118). Frame-60 GISponza capture shows healthy GI (indirect bleed on curtains, filled shadows, no firefly/banding) — no visible gap that would justify promoting a deferred item now.
+All non-optional sub-umbrellas ([F], [S1], [S2], [I], [W]) landed and marked Done in their own tasks (TASK-114/115/116/117/118).
+
+Close-time validation against HEAD `2664c245`:
+
+- **Tier 3 reload integration** — `Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -total_frames 20 -reload_at_frame 10` → exit 0, zero `[Error]` / D3D12 ERROR / FATAL lines, scene reload at frame 10 succeeds. Covers the full radiance-cache pipeline across a scene boundary (GI history ping-pong, side-cache persistence, world-cache eviction, probe mask re-seed).
+- **Rasterizer-GI visual check** — same scene, `-total_frames 100`. `gpu_output.png` archived as `Build/captures/TASK6_rasterizer_100f.png`. GISponza reads correctly: curtains with their indirect colour bleed, central column, shadow regions filled with ambient, no firefly / banding / missing texture artefacts.
+- **Path-tracer A/B reference** — same scene, `-total_frames 200 -test gpu_path_tracer`. `gpu_output.png` archived as `Build/captures/TASK6_pathtracer_200f.png`. Converges to the same lighting distribution as the rasterizer (noisy — 200 spp without denoising — but matching colours, matching shadow fill, matching curtain contrast). Rasterizer is the denoised version of what the path tracer integrates; the two agreeing confirms the radiance cache is feeding LightPass plausible indirect light.
+- **`-gpu_validation`** — run exits 1 due to the D3D12 Release-shader GBV sentinel (`Layout: UNKNOWN (31)` on `LightPass Illuminance Result`) interacting with `SetFatalOnError` in `totalFrames > 0` mode. Not a TASK-6 regression — the sentinel is a pre-existing Release-build artefact documented in CLAUDE.md's "Known imprecision" / TASK-37, and the fatal-upgrade is TASK-112's intentional failure behaviour. Filed as TASK-120 for a proper fix (classify the sentinel at the D3D12 debug callback before the LogService sees it).
+
+No visible gap that would justify promoting a deferred item now.
 
 Future radiance-cache work files as standalone tasks when evidence or product priority warrants. Deferred candidates captured for future revival:
 
