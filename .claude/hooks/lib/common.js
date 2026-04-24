@@ -9,8 +9,8 @@ const { execSync } = require('child_process')
 const SKIP_SENTINEL = '[skip-test-gate]'       // test-run / live-engine / serialize-test / paper-port
 const SKIP_SIZE_SENTINEL = '[skip-size-gate]'  // file-size gate only
 
-// Documents/commit-message-policy.md requires one of these headers on
-// every AI-authored commit.
+// .claude/disciplines/commit-message-policy.md requires one of these
+// headers on every AI-authored commit.
 const ATTRIBUTION_RE = /^(Code-AI-Generated-By|Message-AI-Generated-By):\s*\S/m
 
 // Which tests count as "integration test ran this turn".
