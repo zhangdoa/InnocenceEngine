@@ -232,6 +232,21 @@ void main(ComputeInputType input)
 	/// from GIDenoisePass).
 	float3 l_IrradianceFromCache = in_GIIrradiance[l_ScreenCoord].rgb;
 
+	// TASK-123 ambient floor. Radiance-cache GI is single-bounce: a probe
+	// in a deep-shadow region mostly traces rays that hit other shadowed
+	// surfaces and returns near-zero irradiance. Combined with direct sun
+	// zeroed by sun-shadow, those pixels render as pure black — which is
+	// never what the environment actually looks like. A small ambient floor
+	// ensures shadows never fully collapse to zero; crude but matches
+	// what a sky-dome / world-cache fallback would produce to first order,
+	// without needing to plumb another resource binding through LightPass.
+	// Preserves bright regions exactly (max, not additive), so the sun-lit
+	// areas and the probe-populated GI remain untouched. Follow-ups listed
+	// in TASK-123 (world-cache fallback, multi-bounce RayGen) would replace
+	// this constant with a position/normal-dependent estimate.
+	const float3 AMBIENT_FLOOR = float3(0.02, 0.025, 0.03);
+	l_IrradianceFromCache = max(l_IrradianceFromCache, AMBIENT_FLOOR);
+
 	// Convert SH irradiance to Lambertian outgoing radiance: albedo * (1 - metallic) * E / PI
 	float3 l_LuminanceIndirectLight_FromCache = l_MaterialAttributes.m_Albedo * (1.0 - l_MaterialAttributes.m_Metallic) * l_IrradianceFromCache / PI;
 
