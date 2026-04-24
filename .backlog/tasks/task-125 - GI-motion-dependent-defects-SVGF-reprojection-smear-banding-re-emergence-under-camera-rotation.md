@@ -67,6 +67,21 @@ Then compare consecutive `Bin/gpu_output_0060.png` through `gpu_output_0119.png`
 ### Why this was not caught by TASK-121's validation
 
 TASK-121's close-time evidence was a single static frame on a scene where flat-wall coverage happened to have all 4 bilinear corners valid. Under rotation, the probe-mask state churns per frame, and the motion-dependent failure modes above take over. Direct consequence of the validation-methodology gap TASK-124 addresses — filed as a concrete follow-up artefact of using the new tooling.
+
+### Reference implementation to consult before fixing: Capsaicin (AMD GPUOpen)
+
+`https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/` — AMD's reference for the GI-1.0 paper we ported in TASK-6. Clone to `Build/reference/Capsaicin/` (gitignored) for study before touching the denoiser.
+
+The denoiser architecture is fundamentally different from our SVGF A-trous and directly addresses this task's defects:
+
+- **ReprojectGI** (`src/core/src/render_techniques/gi1/gi1.comp`, ~line 3997) computes a *color delta* (current vs reprojected history luma, 1/8-EMA smoothed, `gi1.comp:4077`) and derives an adaptive blend rate `alpha_blend = saturate(1 - |color_delta| / lumaB)`. Under motion `color_delta` rises, `alpha_blend` drops, and —
+- **Dynamic history cap** (`gi1.comp:4092–4097`): `max_sample_count = lerp(4, 8·N_max, alpha_blend)`. When a pixel goes unstable, the cap drops to 4 samples — old history gets scaled down to that cap (`lighting *= max_sample_count / lighting.w`), which is *exactly* the "evict stale history during motion" behaviour that our fixed `MAX_HISTORY_N = 32` + `MIN_TEMPORAL_ALPHA = 0.05` lacks. This is likely the single biggest fix for the spiral smear on the floor.
+- **Spatial filter** (`gi1.comp:4104–` `FilterGI`) is a variable-radius blur (0–8 pixels) driven by a per-pixel *blur mask* = `max(kGIDenoiser_MaxBlurMask - lighting.w, 0)`. High-sample-count pixels get zero blur; low-sample-count pixels get wide blur to mask undersampling. Distinct from our A-trous 1/2/4 stride cascade.
+- **Validity gates on reprojection** are stricter: `distance(world, previous_world) < cell_size` and `dot(normal, previous_normal) > 0.95` (we use 0.9 on normal and 5% depth ratio). `cell_size` is depth-scaled AND grazing-angle-boosted (`gi1.comp:4026`).
+
+The banding-under-motion defect (defect 2 above) is less directly addressed by Capsaicin's denoiser — their `screen_probes.hlsl` uses a different spatial-interpolation scheme that's worth studying on its own. TODO on probe interpolation needs a separate reading pass; this notes section covers only the denoiser half.
+
+Guidance for whoever picks this up: match Capsaicin's shapes before attempting tuning. The SVGF tweaks I (Claude) tried speculatively (`MIN_TEMPORAL_ALPHA = 0.02` + `MAX_HISTORY_N = 128`) gave ~10% p95 flicker reduction and were reverted once the user pointed out "read the reference, don't tune the paper". Mark this as the pattern to avoid — Capsaicin first, then diverge intentionally.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done
