@@ -8,7 +8,7 @@
  *   exit 0 = allow the tool call
  *   exit 2 = block the tool call; stderr is shown to Claude (and the user)
  *
- * Four gates; all must pass:
+ * Five gates; all must pass:
  *
  * 1. Test-run gate — allow if any of:
  *    - transcript since last user message contains a Bash call matching
@@ -26,7 +26,18 @@
  *    in the current turn. SKIP_SENTINEL still escapes for legitimate
  *    cases (abandoned work, retro housekeeping, superseded tasks).
  *
- * 3. Live-engine gate — if any staged file is editor-facing code
+ * 3. File-size gate — soft ratchet against code/script files growing
+ *    unchecked. For each staged code/script file (cpp/hpp/h/c/cc/cxx/
+ *    inl/hlsl/hlsli/comp/py/js/mjs/ts/ps1/sh), compare staged-blob line
+ *    count against HEAD blob line count; block if `new > FILE_SIZE_LIMIT`
+ *    AND `new > old`. Files already over the limit can still be edited —
+ *    just not grown further — so the threshold actively pressures size
+ *    down over time without retroactively invalidating existing work.
+ *    Vendored / generated trees (ThirdParty, External, dist, node_modules,
+ *    Generated) are excluded. SKIP_SIZE_SENTINEL escapes for legitimate
+ *    one-off additions where splitting is inappropriate.
+ *
+ * 4. Live-engine gate — if any staged file is editor-facing code
  *    (EDITOR_CODE_PATH), require one of:
  *    - a Playwright run against a spec that spawns the real engine
  *      (detected by `--engine=Main` in the spec source, or by running
@@ -37,7 +48,7 @@
  *   optimistic-vs-server-truth races that only surface against a live
  *   engine.
  *
- * 4. Attribution gate — commit message must contain Code-AI-Generated-By:
+ * 5. Attribution gate — commit message must contain Code-AI-Generated-By:
  *    or Message-AI-Generated-By: per Documents/commit-message-policy.md.
  *    No escape; every Claude-issued commit is AI-authored.
  *
@@ -82,6 +93,16 @@ const NON_PLAYWRIGHT_LIVE = new RegExp([
 const PLAYWRIGHT_RE = /npx\s+playwright\s+test(?:\b|$)([^|&;\n]*)/
 
 const SKIP_SENTINEL = '[skip-test-gate]'
+
+// File-size gate configuration.
+// Limit: 400 lines. Chosen so the current worst shader offenders
+// (RadianceCacheRayGen.hlsl @ 429, GPUPathTracerRayGen.hlsl @ 468) are
+// flagged, while typical C++ service files (100–300 lines) have headroom
+// before the gate kicks in.
+const FILE_SIZE_LIMIT = 400
+const FILE_SIZE_EXT_RE = /\.(cpp|hpp|h|c|cc|cxx|inl|hlsl|hlsli|comp|py|js|mjs|ts|ps1|sh|bash|zsh)$/i
+const FILE_SIZE_EXCLUDE_RE = /(^|\/)(ThirdParty|External|node_modules|Generated|dist)\//
+const SKIP_SIZE_SENTINEL = '[skip-size-gate]'
 
 // Documents/commit-message-policy.md requires one of these headers on
 // every AI-authored commit. Matched on a commit-message line.
@@ -142,6 +163,20 @@ async function main() {
   // These do not get the docs-only bypass below: a completion claim must
   // be backed by a test run in the current turn.
   const closingTasks = detectClosingTasks(cwd, staged)
+
+  // File-size gate. Runs before the docs-only bypass so it applies to
+  // every CL that touches code/script files, independent of the test
+  // story. The commit-message-level sentinel escapes it explicitly.
+  if (!cmd.includes(SKIP_SIZE_SENTINEL)) {
+    const msgText = collectCommitMessageText(cmd, cwd)
+    if (!msgText.includes(SKIP_SIZE_SENTINEL)) {
+      const sizeViolations = detectFileSizeViolations(cwd, staged)
+      if (sizeViolations.length > 0) {
+        blockFileSize(sizeViolations)
+        return
+      }
+    }
+  }
 
   if (closingTasks.length === 0
       && staged.length > 0
@@ -415,6 +450,70 @@ function blockNoCloseTest(closingTasks) {
     '',
     `Escape hatch: include ${SKIP_SENTINEL} if this closure genuinely cannot`,
     'be validated by a test (abandoned/superseded task, retro housekeeping).',
+    '',
+  ].join('\n'))
+  process.exit(2)
+}
+
+// Line count of a git blob spec (e.g. `:path` for staged, `HEAD:path` for
+// HEAD's version). Returns 0 if the blob doesn't exist (new file / deleted).
+// Path is wrapped in quotes and internal quotes escaped to tolerate names
+// with spaces. stdio pipe captures both stdout and stderr; stderr is
+// swallowed on missing-blob errors so we don't spam the user.
+function blobLineCount(cwd, spec) {
+  const escaped = spec.replace(/"/g, '\\"')
+  try {
+    const content = execSync(`git -c core.quotePath=false show "${escaped}"`,
+      { cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
+    // split by \n — the trailing newline adds one empty element we drop.
+    const parts = content.split('\n')
+    if (parts.length > 0 && parts[parts.length - 1] === '') parts.pop()
+    return parts.length
+  } catch {
+    return 0
+  }
+}
+
+function detectFileSizeViolations(cwd, staged) {
+  const violations = []
+  for (const f of staged) {
+    if (!FILE_SIZE_EXT_RE.test(f)) continue
+    if (FILE_SIZE_EXCLUDE_RE.test(f)) continue
+    const newLines = blobLineCount(cwd, `:${f}`)
+    if (newLines <= FILE_SIZE_LIMIT) continue
+    const oldLines = blobLineCount(cwd, `HEAD:${f}`)
+    if (newLines > oldLines) {
+      violations.push({ file: f, oldLines, newLines })
+    }
+  }
+  return violations
+}
+
+function blockFileSize(violations) {
+  const list = violations.slice(0, 10).map(v =>
+    `  ${v.file}: ${v.oldLines} → ${v.newLines} (+${v.newLines - v.oldLines})`
+  ).join('\n')
+  const more = violations.length > 10 ? `\n  …and ${violations.length - 10} more` : ''
+  process.stderr.write([
+    '',
+    `[commit-gate] git commit blocked — code/script file(s) grew past the ${FILE_SIZE_LIMIT}-line soft ratchet.`,
+    '',
+    'Files over limit that grew in this CL:',
+    list + more,
+    '',
+    'A growing oversized file usually means the responsibility belongs in a',
+    'separate translation unit. Common responses:',
+    '  • Split into multiple files (#include-based for shaders; new .cpp/.h for C++).',
+    '  • Extract helper functions or pass objects into a common header.',
+    '  • If the addition itself is small but the file is already way over,',
+    '    shrink the file first (delete dead code, inline one-shot utilities, etc).',
+    '',
+    `Already-oversized files are grandfathered — as long as they don't GROW`,
+    'the commit passes. The threshold only pressures files that are both',
+    'over and getting larger.',
+    '',
+    `Escape hatch: include ${SKIP_SIZE_SENTINEL} in the commit message if`,
+    'this is a legitimate one-off (e.g. auto-generated file, necessary migration).',
     '',
   ].join('\n'))
   process.exit(2)
