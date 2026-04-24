@@ -68,6 +68,37 @@ Then compare consecutive `Bin/gpu_output_0060.png` through `gpu_output_0119.png`
 
 TASK-121's close-time evidence was a single static frame on a scene where flat-wall coverage happened to have all 4 bilinear corners valid. Under rotation, the probe-mask state churns per frame, and the motion-dependent failure modes above take over. Direct consequence of the validation-methodology gap TASK-124 addresses — filed as a concrete follow-up artefact of using the new tooling.
 
+### Root cause: the denoiser diverged from paper §2.4.3 at the [I.3e] landing
+
+Re-reading the paper text (`Build/GI1_0.pdf`, §2.4.3 "Denoising"):
+
+> "These issues can be solved using a simple denoiser based on temporal accumulation and an adaptive spatial filter, where we compute the spatial filter radius depending on the number of samples accumulated in history. As not all pixels have a history, such as disoccluded pixels, we adapt the filtering radius to the number of accumulated samples to reduce the noise"
+
+Figure 19 is captioned "Spatial filtering guided by dilated blur mask" and shows (a) disocclusion mask → (b) dilated blur mask → (c) filtered irradiance.
+
+The paper specifies:
+- **One spatial filter pass**, not a cascade.
+- **Radius computed as a function of history count**: low N → large radius (hide undersampling), high N → small radius (preserve converged detail).
+- **Edge-aware weights** on depth + normal (not luminance).
+- **Dilated blur mask** as the radius driver.
+
+Our [I.3e] implementation is a 3-pass SVGF à-trous with fixed strides 1/2/4, SVGF-moments-derived per-pixel temporal variance, and an SVGF-style luminance edge-stop (`σ_L`). None of that is in the paper. It's imported wholesale from Schied et al. 2017's spatiotemporal variance-guided filter — a denoiser for path tracers, not the radiance cache's specific output.
+
+Why this happened: I (Claude) read §2.4.3's "adaptive spatial filter" phrase and pattern-matched it to SVGF from prior knowledge, instead of following the paper's explicit single-pass-radius-by-history design. Each [I.3e.1–4] subslice was internally consistent ("build toward SVGF") but the whole ladder was climbing the wrong wall. Capsaicin follows the paper's shape — variable-radius blur, `blur_mask = max(kGIDenoiser_MaxBlurMask - lighting.w, 0)`, radius = blur_mask's integer value. No à-trous, no SVGF moments.
+
+The motion defects this task was filed for (spiral smear + banding re-emergence) are direct consequences of this divergence. SVGF was not designed to absorb the radiance cache's specific noise characteristics (probe churn under motion, sparse-spawn update cycle); fixed à-trous strides can't react to per-pixel history count the way the paper's radius-by-history scheme does.
+
+### Scope correction: this is a re-alignment with the paper, not a "tune the denoiser"
+
+The fix is not parameter tuning inside GIDenoise.comp / GIATrous*.comp. It's replacing that whole pipeline with the paper's spec:
+
+1. Remove the three `GIATrousStride{1,2,4}.comp` passes entirely.
+2. Rewrite `GIDenoise.comp` as a single spatial filter whose radius comes from a dilated blur mask of the history count (SVGF moments texture becomes unused — can be kept for diagnostic value or removed).
+3. Build the dilated blur mask like Capsaicin: compute raw sample count per pixel in the temporal accumulation, dilate across a 3×3 neighbourhood (paper's Figure 19(b)), then drive filter radius = `max(BLUR_MASK_MAX - sample_count, 0)` or equivalent.
+4. Keep the temporal accumulation pass's blend-rate adaptive on color_delta (Capsaicin's mechanism) — that's the part that actually addresses the spiral-smear-under-motion failure mode.
+
+This is a substantial CL. It should be scheduled after reading the Capsaicin implementation of the full pipeline (not just the denoiser) and updating TASK-6's [I.3e] notes to record the divergence.
+
 ### Reference implementation to consult before fixing: Capsaicin (AMD GPUOpen)
 
 `https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/` — AMD's reference for the GI-1.0 paper we ported in TASK-6. Clone to `Build/reference/Capsaicin/` (gitignored) for study before touching the denoiser.

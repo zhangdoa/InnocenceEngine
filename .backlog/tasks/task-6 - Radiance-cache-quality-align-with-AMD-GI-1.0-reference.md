@@ -100,9 +100,11 @@ Sized as a CL each.
 
 **Ground rule:** no sub-project merges until the CL re-enables (or keeps enabled) the GI passes and produces a RenderDoc frame-8 GISponza capture that visually validates the slice. Baseline capture before [F] went into the [F] commit for comparison.
 
-### Chapter closed 2026-04-23
+### Chapter closed 2026-04-23 — with known divergence at [I.3e]
 
 All non-optional sub-umbrellas ([F], [S1], [S2], [I], [W]) landed and marked Done in their own tasks (TASK-114/115/116/117/118).
+
+**[CORRECTION 2026-04-24] The [I.3e] denoiser subslice diverged from paper §2.4.3.** The paper specifies an adaptive-radius single-pass blur driven by per-pixel history count (Figure 19 "Dilated blur mask"); we implemented a 3-pass SVGF à-trous cascade from an unrelated denoising paper (Schied 2017). See the [I.3e] commentary below and TASK-125 for the re-alignment plan. Code renders GI output today (the denoiser does *something*), but the shape does not match the paper, and the motion defects filed in TASK-125 are direct consequences. The port is not truly faithful until [I.3e] is re-implemented.
 
 Close-time validation against HEAD `2664c245`:
 
@@ -273,6 +275,14 @@ Swap 3×3 tent (9 taps) for 5×5 Gaussian (25 taps), with the per-tap bilateral 
 Track 1st/2nd moments across the existing 5×5 filter support (0 extra texture fetches); derive `rel_var = luma(variance) / luma(mean)^2`; `blend_rate = lerp(0.03, 0.20, saturate(rel_var))`. Low-variance interiors lean into history aggressively (3%/97%), high-variance edges/discontinuities respond quickly (20%/80%). Disoccluded pixels still short-circuit to 100% raw.
 
 #### [I.3e] — Temporal-variance (SVGF) + A-trous
+
+**[CORRECTION 2026-04-24]** Diverged from paper §2.4.3. Filed as TASK-125 "Root cause" section.
+
+Paper §2.4.3 specifies a single-pass blur whose radius is a function of per-pixel history count (Figure 19: "Spatial filtering guided by dilated blur mask"). Capsaicin implements exactly that shape — `blur_mask = max(kGIDenoiser_MaxBlurMask - lighting.w, 0)`, radius = blur_mask, one pass.
+
+The [I.3e] subslices below instead build the Schied et al. 2017 SVGF stack (3-pass à-trous strides 1/2/4 + moments variance + SVGF σ_L luminance edge-stop). That's an unrelated filter from a different paper, pattern-matched onto §2.4.3's "adaptive spatial filter" phrase. The TASK-125 motion defects (spiral smear under rotation, banding re-emergence) are direct consequences: SVGF wasn't designed for the radiance cache's Halton-cycle noise shape, and fixed strides don't take advantage of the paper's sample-count-driven radius scheme.
+
+The below entries are preserved for the historical record; the re-alignment with the paper is filed as TASK-125 scope.
 
 Split into four sub-slices because "move the denoiser + add 2nd-moment history + A-trous multi-stride + disocclusion dilation" in one CL is too big to regress-debug cleanly. [I.3e.1] ships the structural prerequisite (standalone pass, zero behavior change target); subsequent slices evolve the new pass's shader only.
 
