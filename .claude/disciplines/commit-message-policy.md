@@ -1,6 +1,4 @@
-# COMMIT MESSAGE POLICY
-
-**Version:** 2.1 - Streamlined Format
+# Discipline: commit-message-policy
 
 ## Standard Format
 

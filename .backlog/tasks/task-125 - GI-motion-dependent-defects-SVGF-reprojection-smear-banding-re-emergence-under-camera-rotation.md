@@ -9,6 +9,7 @@ labels:
   - GI
   - radiance-cache
   - motion
+  - paper-port
 dependencies: []
 references:
   - Source/Shaders/HLSL/GIDenoise.comp

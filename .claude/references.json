@@ -1,0 +1,76 @@
+{
+  "description": "Map of implementation files to the papers + reference implementations they port. The commit-gate hook uses this to require a `Reference: <URL>` line in the commit message for any CL touching a listed file, and `[divergence-acknowledged]` when the entry records a known divergence. See .claude/hooks/commit-gate.js citation-evidence gate.",
+  "entries": [
+    {
+      "glob": "Source/Shaders/HLSL/RadianceCacheRayGen.hlsl",
+      "paper": "GI-1.0 §2.1 (Screen Probes) — Algorithms 1, 2, 3",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp",
+      "notes": "Screen probe ray spawn + radiance blending. Compare to Capsaicin's TraceScreenProbes / PopulateCellsBuffer entry points."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/RadianceCacheReprojection.comp",
+      "paper": "GI-1.0 §2.1.1 / Algorithm 1 (Screen probes reprojection)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
+    },
+    {
+      "glob": "Source/Shaders/HLSL/RadianceCacheIntegration.comp",
+      "paper": "GI-1.0 §2.4.2 (SH projection) + §2.1.4 (radiance blending)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
+    },
+    {
+      "glob": "Source/Shaders/HLSL/RadianceCacheFilterHorizontal.comp",
+      "paper": "GI-1.0 §2.1.6 / Algorithm 5 (Radiance filtering in probe space)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
+    },
+    {
+      "glob": "Source/Shaders/HLSL/RadianceCacheFilterVertical.comp",
+      "paper": "GI-1.0 §2.1.6 / Algorithm 5 (Radiance filtering in probe space)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp"
+    },
+    {
+      "glob": "Source/Shaders/HLSL/RadianceCacheClosestHit.hlsl",
+      "paper": "GI-1.0 §2.2 (World Cache) — hash lookup on secondary hits",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl"
+    },
+    {
+      "glob": "Source/Shaders/HLSL/common/RadianceCacheCommon.hlsl",
+      "paper": "GI-1.0 §2.1.5 (FindClosestProbe / sparse directional search, Algorithm 4) + §2.1.7 (adaptive cell size, Algorithm 6)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/screen_probes.hlsl"
+    },
+    {
+      "glob": "Source/Shaders/HLSL/GIDenoise.comp",
+      "paper": "GI-1.0 §2.4.3 (Denoising)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L3997",
+      "divergence": "Paper specifies a single-pass blur with radius = f(history count) (Figure 19 'Dilated blur mask'). Capsaicin implements exactly that. Ours is a 3-pass SVGF à-trous cascade with moments-based variance (from Schied 2017's unrelated SVGF paper). See TASK-125 for re-alignment plan."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/GIATrousStride1.comp",
+      "paper": "GI-1.0 §2.4.3 (Denoising)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
+      "divergence": "Entire file should not exist under the paper's design — paper calls for single-pass variable-radius blur, not à-trous strides. See TASK-125."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/GIATrousStride2.comp",
+      "paper": "GI-1.0 §2.4.3 (Denoising)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
+      "divergence": "Entire file should not exist under the paper's design. See TASK-125."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/GIATrousStride4.comp",
+      "paper": "GI-1.0 §2.4.3 (Denoising)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
+      "divergence": "Entire file should not exist under the paper's design. See TASK-125."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/common/GIATrousCommon.hlsl",
+      "paper": "GI-1.0 §2.4.3 (Denoising)",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
+      "divergence": "SVGF edge-stops (σ_L luminance weight, moments variance) imported from Schied 2017; not part of the GI-1.0 paper. See TASK-125."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl",
+      "paper": "Reference path tracer — ground-truth comparator; no specific paper cited, but serves as the A/B target for radiance-cache quality assessments.",
+      "reference": "Any path-tracer reference; this file is our own implementation."
+    }
+  ]
+}

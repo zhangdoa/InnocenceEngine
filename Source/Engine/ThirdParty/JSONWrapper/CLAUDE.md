@@ -1,0 +1,1 @@
+Owned by the `software-architect` agent (code-data coupling: JSON round-trip, scene serialization, schema evolution). `AssetService.*` and `SceneService.*` in `Source/Engine/Services/` are part of the same ownership cluster. See `.claude/agents/software-architect.md`.
