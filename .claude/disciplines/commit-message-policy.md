@@ -59,6 +59,34 @@ with `git commit -F Build/commit-message.txt`.
 See `CLAUDE.md` → Harness enforcement for the test-run gate that runs
 alongside.
 
+### Ordering invariants
+
+These are load-bearing — do not change without re-validating against the
+synthetic-commit reproduction in `commit-gate.js` + the historical
+`55cf6a72` artefact:
+
+- The attribution gate has **no** escape sentinel. `[skip-test-gate]` and
+  `[skip-size-gate]` are scoped to their respective gates only; neither
+  bypasses attribution.
+- The attribution gate runs in the **transcript-independent phase** of
+  the dispatcher. A missing or unreadable transcript fails the dispatcher
+  open for transcript-dependent gates only — attribution still runs. Any
+  refactor that re-couples attribution to the transcript-fetch envelope
+  reintroduces the `55cf6a72` bypass.
+- Attribution is the **last** gate in the transcript-independent phase
+  (after `file-size` and `paper-port`). Other failures in that phase
+  surface first because they require more work to fix than appending an
+  attribution line.
+
+### Retroactive amend prohibition
+
+Historical commits that landed without attribution are **not** to be
+fixed by `git commit --amend` or by rewriting history. The standing rule
+is: rewrites of public history are off-limits unless the user explicitly
+requests them. A discovered missing-attribution artefact is logged in
+the backlog as a known historical gap and left in place; the gate fix
+prevents recurrence.
+
 ## Example
 
 ```
