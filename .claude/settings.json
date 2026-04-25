@@ -2,6 +2,14 @@
   "hooks": {
     "PreToolUse": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/session-gate.js"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
