@@ -22,6 +22,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/split-before-grow.md`
 - `.claude/disciplines/commit-message-policy.md`
 - `.claude/disciplines/backlog-workflow.md`
+- `.claude/disciplines/agent-dispatch.md`
 - `.claude/collaboration.md`
 
 Each agent manifest (`.claude/agents/*.md`) lists additional role-specific disciplines. Ownership paths are declared in each owned subtree's `CLAUDE.md`, not in the agent file. Full roster: `.claude/team.md`.
