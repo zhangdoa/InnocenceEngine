@@ -43,8 +43,10 @@ test('editor launches and connects to engine', async () => {
     await window.waitForSelector(entitySelector, { timeout: 30000 });
     log('Entities found in hierarchy');
     
-    const mockEntityText = 'Main Camera/';
-    const entityLocator = window.locator(`text=${mockEntityText}`);
+    // Structural locator: match the entity row by class, filter by displayed name.
+    // Decoupled from naming conventions (e.g. trailing-slash strip in c22b3b64).
+    const mockEntityText = 'Main Camera';
+    const entityLocator = window.locator('.entity-item', { hasText: mockEntityText });
     expect(await entityLocator.count()).toBeGreaterThan(0);
     log(`Entity '${mockEntityText}' found`);
 
