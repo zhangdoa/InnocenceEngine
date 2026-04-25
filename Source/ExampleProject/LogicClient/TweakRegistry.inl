@@ -280,7 +280,19 @@ namespace Inno
 			}
 			l_Out << SerializeToJSON();
 			l_Out.close();
-			Log(Success, "TweakRegistry: saved to ", l_FullPath.c_str(), ".");
+			// DrawWindowAutoSaving calls SaveToFile on every slider tick; logging
+			// every successful write floods the console during a single drag.
+			// Emit Success only when the destination path changes (first-ever
+			// save, or a switch to a different config slot) so the newsworthy
+			// "we just wrote the defaults out" event still surfaces in normal
+			// logs while steady-state autosaves stay quiet. Failures still log
+			// unconditionally above.
+			std::string& l_LastPath = GetLastSavedPath();
+			if (l_LastPath != l_FullPath)
+			{
+				Log(Success, "TweakRegistry: saved to ", l_FullPath.c_str(), ".");
+				l_LastPath = l_FullPath;
+			}
 			return true;
 		}
 
@@ -299,6 +311,12 @@ namespace Inno
 		{
 			static std::vector<TweakVar> s_Vars;
 			return s_Vars;
+		}
+
+		static std::string& GetLastSavedPath()
+		{
+			static std::string s_LastSavedPath;
+			return s_LastSavedPath;
 		}
 	};
 }
