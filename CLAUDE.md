@@ -2,6 +2,12 @@
 
 Project-scoped orchestration. Meta / cross-project rules live in the user-scope `CLAUDE.md`.
 
+## Project framing
+
+InnocenceEngine has exactly one user (zhangdoa). No team, no other contributors, no downstream consumers, no CI fleet, no fresh-checkout onboarding for anyone else. "Team-wide discipline" in this repo refers to *the agent roster* — consistency across roles — not to a human team.
+
+Apply this when writing closure notes, backlog rationales, and commit messages: do not frame issues as "blocks repro for someone else" or "misleads other developers." If a fresh-checkout build fails, the cost is to zhangdoa alone — frame it that way. Onboarding-friction work is still real (zhangdoa hits it on his own machines and after context wipes), but the audience is zhangdoa, not "anyone else."
+
 ## Session start
 
 **First action of every new session: invoke the `producer` agent.** The producer reads in-progress tasks, recent commits, and continuity notes, then briefs the user on state and likely priorities. No substantive work (code, closure, captures) before the briefing and user direction.
@@ -23,6 +29,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/commit-message-policy.md`
 - `.claude/disciplines/backlog-workflow.md`
 - `.claude/disciplines/agent-dispatch.md`
+- `.claude/disciplines/persistence-venue.md`
 - `.claude/collaboration.md`
 
 Each agent manifest (`.claude/agents/*.md`) lists additional role-specific disciplines. Ownership paths are declared in each owned subtree's `CLAUDE.md`, not in the agent file. Full roster: `.claude/team.md`.
