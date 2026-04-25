@@ -610,6 +610,16 @@ void EditorService::RegisterBuiltinHandlers()
 				l_light->m_RGBColor = Vec4(l_val[0], l_val[1], l_val[2], 1.0f);
 				committed = SerializeVec(l_light->m_RGBColor);
 			}
+			else if (l_prop == "shape" || l_prop == "lightType")
+			{
+				// GET_ENTITY_DETAILS exposes these for inspector display, but
+				// the inspector has no editor for them — so the write path is
+				// intentionally absent rather than missing. READ_ONLY is the
+				// discriminated reply that lets clients (and the symmetry
+				// regression spec) distinguish "not yet wired" from "by design
+				// not editable". Adding a writer means deleting this branch.
+				throw EditorReqError("READ_ONLY", "LightComponent." + l_prop + " is read-only");
+			}
 			else
 			{
 				throw EditorReqError("BAD_PROPERTY", "Unknown LightComponent property: " + l_prop);
