@@ -16,18 +16,22 @@ namespace Inno
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
 
-		// Denoised per-pixel indirect irradiance for the current frame.
-		// rgb = irradiance, a = linear depth of the pixel that produced the
-		// sample (next-frame reprojection validity).
+		// GI history (CL1 storage convention: rgb = sample-count-weighted
+		// radiance Σ Lᵢ, a = sample count N). The final divide rgb/N is
+		// owned by the spatial filter pass — for the GIATrous{1,2,4}
+		// cascade in CL1 use GetIrradianceForFilter() instead.
 		TextureComponent* GetCurrentResult();
 
-		// Per-pixel temporal-variance moments for the current frame.
-		// r = E[luma], g = E[luma²], b = history-count N (frames this pixel
-		// has reprojected without disocclusion), a = unused. Temporal
-		// variance = g − r² — used here to drive blend rate and exposed for
-		// the [I.3e.3] A-trous pass to use as the edge-stopping luminance
-		// weight.
+		// Per-pixel temporal-variance moments (r=E[L], g=E[L²], b=N).
+		// CL2 deletes both this and the cascade that consumes it; kept
+		// in CL1 for compatibility with GIATrous{1,2,4}.
 		TextureComponent* GetCurrentMoments();
+
+		// Normalised irradiance (rgb = lighting/N, a = N) for the
+		// GIATrous{1,2,4} cascade to consume in CL1. Transitional surface
+		// — CL2 deletes it once the variable-radius blur reads
+		// sample-count-weighted history directly.
+		TextureComponent* GetIrradianceForFilter();
 
 	private:
 		ObjectStatus m_ObjectStatus;
@@ -39,12 +43,32 @@ namespace Inno
 		TextureComponent* m_GIHistory_Even;
 		TextureComponent* m_GIHistory_Odd;
 
-		// Ping-pong full-screen SVGF moments history (see GetCurrentMoments).
+		// Ping-pong full-screen SVGF moments history.
 		TextureComponent* m_Moments_Even;
 		TextureComponent* m_Moments_Odd;
 
+		// Ping-pong previous-frame world-space position. Replaces the
+		// linear-depth-in-history-alpha source we lose when GIHistory.a
+		// becomes the sample count.
+		TextureComponent* m_PrevWorldPos_Even;
+		TextureComponent* m_PrevWorldPos_Odd;
+
+		// Ping-pong smoothed colour-delta (r = lumaA − lumaB EMA at 1/8).
+		// Drives the dynamic history cap.
+		TextureComponent* m_ColorDelta_Even;
+		TextureComponent* m_ColorDelta_Odd;
+
+		// Single-buffer scratch surface for the cascade input. Not
+		// ping-ponged — written every frame, read by GIATrous1Pass within
+		// the same frame.
+		TextureComponent* m_IrradianceForFilter;
+
 		TextureComponent* GetPreviousResult();
 		TextureComponent* GetPreviousMoments();
+		TextureComponent* GetCurrentPrevWorldPos();
+		TextureComponent* GetPreviousPrevWorldPos();
+		TextureComponent* GetCurrentColorDelta();
+		TextureComponent* GetPreviousColorDelta();
 
 		bool RenderTargetsCreationFunc();
 	};

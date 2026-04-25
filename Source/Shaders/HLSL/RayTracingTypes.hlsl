@@ -1,4 +1,6 @@
 // shadertype=hlsl
+#ifndef RAY_TRACING_TYPES_HLSL
+#define RAY_TRACING_TYPES_HLSL
 
 static const uint TILE_SIZE = 8;  // 8×8 probe tile size
 static const uint SH_TILE_SIZE = 3;  // 3×3 SH storage per probe — 9 coefficients for bands 0–2 (GI-1.0 §2.4.2)
@@ -310,3 +312,5 @@ float Y_2_1(float3 w) { return 1.092548430592079f * w.y * w.z; }
 float Y_20 (float3 w) { return 0.315391565252520f * (3.0f * w.z * w.z - 1.0f); }
 float Y_21 (float3 w) { return 1.092548430592079f * w.x * w.z; }
 float Y_22 (float3 w) { return 0.546274215296039f * (w.x * w.x - w.y * w.y); }
+
+#endif // RAY_TRACING_TYPES_HLSL

@@ -3,6 +3,7 @@
 #define RADIANCE_CACHE_COMMON_HLSL
 
 #include "common.hlsl"
+#include "../RayTracingTypes.hlsl"
 
 // GI-1.0 (Boissé et al., AMD, 2022) primitives shared across the radiance
 // cache passes.
@@ -163,5 +164,145 @@ float TemporalBlendAlgo3(float lumaNew, float lumaOld)
     t = clamp(t, 0.0, 0.95);
     return t * t;
 }
+
+// Per-pixel cache evaluation helpers. Compiled only when the consumer has
+// declared the four cache textures (in_RadianceCache, in_ProbePosition,
+// in_ProbeNormal, in_ProbeMask) and the PerFrame_CB instance `g_Frame`
+// before the #include. Two callers exist today: GIDenoise.comp consumes the
+// full bilinear blend; RadianceCacheFilter{Horizontal,Vertical}.comp use
+// only FindClosestProbe (above) and don't need these, so they leave the
+// flag undefined and skip the bodies.
+#ifdef RADIANCE_CACHE_HAS_BINDINGS
+
+// GI-1.0 §2.4.2 irradiance evaluation via Ramamoorthi–Hanrahan 2001
+// cosine-lobe convolution. 9 coefficients (bands 0–2) packed row-major
+// in a 3×3 SH tile per probe:
+//   (0,0)=Y00   (1,0)=Y11   (2,0)=Y1_1
+//   (0,1)=Y10   (1,1)=Y2_2  (2,1)=Y2_1
+//   (0,2)=Y20   (1,2)=Y21   (2,2)=Y22
+float3 LoadIrradiance(uint2 shReadCoord, float3 n)
+{
+	float3 c00 = in_RadianceCache[shReadCoord + uint2(0, 0)].rgb;
+	float3 c11 = in_RadianceCache[shReadCoord + uint2(1, 0)].rgb;
+	float3 c1_1 = in_RadianceCache[shReadCoord + uint2(2, 0)].rgb;
+	float3 c10 = in_RadianceCache[shReadCoord + uint2(0, 1)].rgb;
+	float3 c2_2 = in_RadianceCache[shReadCoord + uint2(1, 1)].rgb;
+	float3 c2_1 = in_RadianceCache[shReadCoord + uint2(2, 1)].rgb;
+	float3 c20 = in_RadianceCache[shReadCoord + uint2(0, 2)].rgb;
+	float3 c21 = in_RadianceCache[shReadCoord + uint2(1, 2)].rgb;
+	float3 c22 = in_RadianceCache[shReadCoord + uint2(2, 2)].rgb;
+
+	const float A0 = 1.0;
+	const float A1 = 2.0 / 3.0;
+	const float A2 = 1.0 / 4.0;
+
+	float3 band0 = A0 * c00  * Y_00();
+	float3 band1 = A1 * (c11  * Y_11 (n) + c1_1 * Y_1_1(n) + c10  * Y_10 (n));
+	float3 band2 = A2 * (c2_2 * Y_2_2(n) + c2_1 * Y_2_1(n) + c20  * Y_20 (n) +
+	                     c21  * Y_21 (n) + c22  * Y_22 (n));
+
+	return max(band0 + band1 + band2, 0.0);
+}
+
+// GI-1.0 §2.4 edge-aware probe weight. Returns 0 when the probe is sky /
+// off-surface or crosses a plane / normal discontinuity.
+float ComputeProbeWeight(uint2 probeCoord, uint2 maxProbeIdx,
+                         float3 pixelPos, float3 pixelNormal, float cellSize)
+{
+	probeCoord = min(probeCoord, maxProbeIdx);
+	uint mask = in_ProbeMask[probeCoord];
+	if (!IsValidProbe(mask))
+		return 0.0;
+
+	float3 probePos = in_ProbePosition[probeCoord].xyz;
+	float3 probeNormal = normalize(in_ProbeNormal[probeCoord].xyz);
+
+	float planeDist = abs(dot(probePos - pixelPos, pixelNormal));
+	if (planeDist > cellSize)
+		return 0.0;
+
+	float normalDot = dot(pixelNormal, probeNormal);
+	if (normalDot <= 0.0)
+		return 0.0;
+
+	return normalDot * saturate(1.0 - planeDist / cellSize);
+}
+
+// GI-1.0 §2.4.1 per-pixel interpolation: weighted average of the 4 probes
+// surrounding the pixel. Each corner combines the bilinear weight from
+// screen-space position with an edge-aware weight (probe validity + plane
+// + normal). Relaxed-interpolation fallback (paper §2.4.1): equal-weight
+// screen-bilinear blend so edge pixels don't go black when the local
+// neighbourhood has no good probe.
+float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNormal)
+{
+	// Probe (i, j) is anchored at tile centre TILE_SIZE * (i + 0.5). Shift the
+	// screen coord into probe-grid space (subtract half a tile) so `probeFloor`
+	// is the top-left probe of the 4-probe quad that surrounds the pixel, not
+	// the tile the pixel happens to land in.
+	float2 probeUV = float2(screenCoord) / float2(RADIANCE_CACHE_TILE_SIZE, RADIANCE_CACHE_TILE_SIZE) - 0.5;
+	int2 probeFloor = int2(floor(probeUV));
+	uint2 maxProbeIndex = uint2(g_Frame.viewportSize.xy) / RADIANCE_CACHE_TILE_SIZE - 1;
+	int2 maxProbeIndexI = int2(maxProbeIndex);
+
+	float depth = length(pixelPos - g_Frame.camera_posWS.xyz);
+	float cellSize = max(AdaptiveCellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+
+	int2 targetTL = clamp(probeFloor,              int2(0, 0), maxProbeIndexI);
+	int2 targetTR = clamp(probeFloor + int2(1, 0), int2(0, 0), maxProbeIndexI);
+	int2 targetBL = clamp(probeFloor + int2(0, 1), int2(0, 0), maxProbeIndexI);
+	int2 targetBR = clamp(probeFloor + int2(1, 1), int2(0, 0), maxProbeIndexI);
+
+	int2 gridSize = int2(g_Frame.viewportSize.xy) / int(RADIANCE_CACHE_TILE_SIZE);
+	ProbeLookup lookupTL = FindClosestProbe(in_ProbeMask, int2(0, 0), targetTL, gridSize);
+	ProbeLookup lookupTR = FindClosestProbe(in_ProbeMask, int2(0, 0), targetTR, gridSize);
+	ProbeLookup lookupBL = FindClosestProbe(in_ProbeMask, int2(0, 0), targetBL, gridSize);
+	ProbeLookup lookupBR = FindClosestProbe(in_ProbeMask, int2(0, 0), targetBR, gridSize);
+
+	uint2 tl = uint2(lookupTL.tileCoord);
+	uint2 tr = uint2(lookupTR.tileCoord);
+	uint2 bl = uint2(lookupBL.tileCoord);
+	uint2 br = uint2(lookupBR.tileCoord);
+
+	float2 bilinear = probeUV - float2(probeFloor);
+	float wTL = (1.0 - bilinear.x) * (1.0 - bilinear.y);
+	float wTR = bilinear.x * (1.0 - bilinear.y);
+	float wBL = (1.0 - bilinear.x) * bilinear.y;
+	float wBR = bilinear.x * bilinear.y;
+
+	float eTL = ComputeProbeWeight(tl, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+	float eTR = ComputeProbeWeight(tr, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+	float eBL = ComputeProbeWeight(bl, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+	float eBR = ComputeProbeWeight(br, maxProbeIndex, pixelPos, pixelNormal, cellSize);
+
+	float fTL = wTL * eTL;
+	float fTR = wTR * eTR;
+	float fBL = wBL * eBL;
+	float fBR = wBR * eBR;
+
+	float totalWeight = fTL + fTR + fBL + fBR;
+
+	float3 result;
+	if (totalWeight > 0.0)
+	{
+		float3 ITL = LoadIrradiance(tl * SH_TILE_SIZE, pixelNormal);
+		float3 ITR = LoadIrradiance(tr * SH_TILE_SIZE, pixelNormal);
+		float3 IBL = LoadIrradiance(bl * SH_TILE_SIZE, pixelNormal);
+		float3 IBR = LoadIrradiance(br * SH_TILE_SIZE, pixelNormal);
+		result = (fTL * ITL + fTR * ITR + fBL * IBL + fBR * IBR) / totalWeight;
+	}
+	else
+	{
+		float3 ITL = LoadIrradiance(tl * SH_TILE_SIZE, pixelNormal);
+		float3 ITR = LoadIrradiance(tr * SH_TILE_SIZE, pixelNormal);
+		float3 IBL = LoadIrradiance(bl * SH_TILE_SIZE, pixelNormal);
+		float3 IBR = LoadIrradiance(br * SH_TILE_SIZE, pixelNormal);
+		result = wTL * ITL + wTR * ITR + wBL * IBL + wBR * IBR;
+	}
+
+	return max(result, float3(0.0, 0.0, 0.0));
+}
+
+#endif // RADIANCE_CACHE_HAS_BINDINGS
 
 #endif // RADIANCE_CACHE_COMMON_HLSL

@@ -116,7 +116,11 @@ bool GIATrous1Pass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_viewportSize = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 	auto l_PerFrameCB = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
-	auto l_input = GIDenoisePass::Get().GetCurrentResult();
+	// CL1 transitional input: GIDenoise writes a normalised irradiance
+	// scratch (rgb = lighting/N, a = N) for the cascade because the new
+	// GIHistory storage carries sample-count-weighted radiance (rgb·N).
+	// CL2 deletes this scratch and reads GIHistory directly.
+	auto l_input = GIDenoisePass::Get().GetIrradianceForFilter();
 	auto l_moments = GIDenoisePass::Get().GetCurrentMoments();
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
