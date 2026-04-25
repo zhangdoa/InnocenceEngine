@@ -176,6 +176,70 @@ function detectClosingTasks(cwd, staged) {
   return closing
 }
 
+// When a `git commit` Bash call originates from a sub-agent (sidechain),
+// Claude Code passes the PARENT session's transcript path as
+// `transcript_path` — not the sidechain's own JSONL. The transcript-
+// dependent gates then scan the wrong file: the sub-agent's test runs,
+// task-closing intent, and qualifying tool_use blocks all live in
+// `<parent-dir>/<sessionId>/subagents/agent-<agentId>.jsonl`, invisible
+// to a parent-only scan. Result: every test-validated sub-agent commit
+// gets blocked despite legitimate evidence, training the agent toward
+// `[skip-test-gate]` (defeats the gate's purpose).
+//
+// Resolution: detect the active sidechain by matching the in-flight
+// command. Sub-agent JSONLs sit in a predictable location; the in-flight
+// commit appears as the LAST assistant Bash `tool_use` in exactly one of
+// them (no following tool_result yet — we are in PreToolUse). If a
+// unique match exists, swap that path in for the gate's transcript scan;
+// the gate's own semantics are preserved (each sub-agent must show its
+// own evidence in its own transcript), and chained dispatches work
+// transparently because the sub-agents/ directory is flat.
+//
+// Fails open: returns the original `xpFromHook` if the sub-agents
+// directory is absent, no candidate matches, or multiple match
+// (ambiguous). The transcript-dependent gates then run against the
+// parent transcript as before.
+function resolveActiveTranscriptPath(xpFromHook, currentCmd) {
+  if (!xpFromHook || !currentCmd) return xpFromHook
+  const path = require('path')
+  const base = path.basename(xpFromHook)
+  if (!base.endsWith('.jsonl')) return xpFromHook
+  const stem = base.slice(0, -'.jsonl'.length)
+  const subDir = path.join(path.dirname(xpFromHook), stem, 'subagents')
+  let entries
+  try { entries = fs.readdirSync(subDir) } catch { return xpFromHook }
+  const candidates = entries.filter(f => f.endsWith('.jsonl'))
+  const matches = []
+  for (const name of candidates) {
+    const full = path.join(subDir, name)
+    let raw
+    try { raw = fs.readFileSync(full, 'utf8') } catch { continue }
+    const lines = raw.split('\n').filter(Boolean)
+    if (lines.length === 0) continue
+    // Inspect from the tail backward for the last assistant Bash tool_use.
+    let lastBashCmd = null
+    for (let i = lines.length - 1; i >= 0; i--) {
+      let row
+      try { row = JSON.parse(lines[i]) } catch { continue }
+      const role = row.type || row.role || row.message?.role
+      if (role !== 'assistant') continue
+      const content = row.message?.content
+      if (!Array.isArray(content)) continue
+      let found = null
+      for (const b of content) {
+        if (b?.type === 'tool_use' && b?.name === 'Bash') {
+          found = b.input?.command || ''
+        }
+      }
+      if (found !== null) { lastBashCmd = found; break }
+    }
+    if (lastBashCmd === currentCmd) matches.push(full)
+  }
+  // Unique match wins; ambiguous (0 or 2+) falls back to parent.
+  if (matches.length === 1) return matches[0]
+  return xpFromHook
+}
+
 // Collect the effective commit message text from both inline flags and
 // any -F / --file argument that points at a message file.
 function collectCommitMessageText(cmd, cwd) {
@@ -200,5 +264,5 @@ module.exports = {
   isRealUserPrompt, firstArray,
   isProducerAgentCall, scanTranscriptForProducerBrief,
   blobLineCount, readStagedTaskFrontmatter, detectClosingTasks,
-  collectCommitMessageText,
+  collectCommitMessageText, resolveActiveTranscriptPath,
 }

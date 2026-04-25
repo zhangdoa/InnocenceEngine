@@ -37,7 +37,7 @@ const fs = require('fs')
 const { execSync } = require('child_process')
 const {
   collectCommitMessageText, detectClosingTasks,
-  isRealUserPrompt,
+  isRealUserPrompt, resolveActiveTranscriptPath,
 } = require('./lib/common')
 
 // Order matters: gates run top-to-bottom, first failure wins. The
@@ -96,7 +96,15 @@ async function main() {
 
   // Phase 2: transcript-dependent gates. If the transcript is missing or
   // unreadable, fail open ONLY for this phase — phase 1 already ran.
-  const xp = input.transcript_path
+  //
+  // Sidechain swap: when the in-flight `git commit` originates from a
+  // sub-agent, Claude Code passes the parent session's transcript path
+  // here. Scanning the parent finds none of the sub-agent's evidence.
+  // `resolveActiveTranscriptPath` matches the in-flight command against
+  // every sub-agent JSONL's last assistant Bash tool_use; on a unique
+  // match it returns that JSONL, so the gate scans the transcript that
+  // actually contains the work. Falls back to the parent on any miss.
+  const xp = resolveActiveTranscriptPath(input.transcript_path, cmd)
   if (!xp || !fs.existsSync(xp)) return failOpen(new Error('transcript not accessible (phase 2 skipped; phase 1 already passed)'))
   let transcript
   try {
