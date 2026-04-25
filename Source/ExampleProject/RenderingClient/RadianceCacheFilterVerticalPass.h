@@ -19,8 +19,6 @@ namespace Inno
 		TextureComponent* GetResult();
 
 	private:
-		const uint32_t TILE_SIZE = 8;
-
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;

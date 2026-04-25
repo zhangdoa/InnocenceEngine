@@ -1,4 +1,5 @@
 ﻿#include "RadianceCacheIntegrationPass.h"
+#include "RadianceCacheConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -144,8 +145,8 @@ bool RadianceCacheIntegrationPass::PrepareCommandList(IRenderingContext* renderi
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, l_readTexture, 0);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_Result, 1);
 
-	auto dispatch_x = (l_readTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
-	auto dispatch_y = (l_readTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
+	auto dispatch_x = RadianceCache::TileCount(l_readTexture->m_TextureDesc.Width);
+	auto dispatch_y = RadianceCache::TileCount(l_readTexture->m_TextureDesc.Height);
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
@@ -178,12 +179,18 @@ bool RadianceCacheIntegrationPass::RenderTargetsCreationFunc()
 	m_Result->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_Result->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 
-	m_Result->m_TextureDesc.Width = (m_Result->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
-	m_Result->m_TextureDesc.Height = (m_Result->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
-
-	// The SH coefficient count is stored per tile of SH_TILE_SIZE * SH_TILE_SIZE, and the coefficient order is (0, 0), (1, 0), (0, 1), (1, 1)
-	m_Result->m_TextureDesc.Width *= SH_TILE_SIZE;
-	m_Result->m_TextureDesc.Height *= SH_TILE_SIZE;
+	// Probe-grid extent: one screen probe per RadianceCache::TILE_SIZE pixels.
+	// Per-probe SH atlas tile is RadianceCache::SH_TILE_SIZE × SH_TILE_SIZE
+	// cells (3×3 for 9 SH coefficients, paper §2.4.2). Allocate the atlas at
+	// (probeGridW * SH_TILE_SIZE, probeGridH * SH_TILE_SIZE) so every probe
+	// in the grid has a writable / readable footprint — see TASK-127: an
+	// earlier `SH_TILE_SIZE = 2` constant here cropped GI to ~2/3 × 2/3 of
+	// the framebuffer because RadianceCacheIntegration.comp writes (and
+	// SampleRadianceCache reads) at probeIndex * 3.
+	const auto l_probeGridWidth = RadianceCache::TileCount(m_Result->m_TextureDesc.Width);
+	const auto l_probeGridHeight = RadianceCache::TileCount(m_Result->m_TextureDesc.Height);
+	m_Result->m_TextureDesc.Width = l_probeGridWidth * RadianceCache::SH_TILE_SIZE;
+	m_Result->m_TextureDesc.Height = l_probeGridHeight * RadianceCache::SH_TILE_SIZE;
 
 	g_Engine->Get<TextureResourceService>()->Initialize(m_Result);
 

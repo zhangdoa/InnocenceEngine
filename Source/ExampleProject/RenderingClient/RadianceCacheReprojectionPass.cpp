@@ -1,4 +1,5 @@
 ﻿#include "RadianceCacheReprojectionPass.h"
+#include "RadianceCacheConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -253,8 +254,8 @@ bool RadianceCacheReprojectionPass::PrepareCommandList(IRenderingContext* render
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_PosFrame, 10);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_SideCache_Normal, 11);
 
-	auto dispatch_x = (l_writeTexture->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
-	auto dispatch_y = (l_writeTexture->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
+	auto dispatch_x = RadianceCache::TileCount(l_writeTexture->m_TextureDesc.Width);
+	auto dispatch_y = RadianceCache::TileCount(l_writeTexture->m_TextureDesc.Height);
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
@@ -294,8 +295,8 @@ bool RadianceCacheReprojectionPass::RenderTargetsCreationFunc()
 	if (m_ProbePosition_Odd)
 		g_Engine->Get<TextureResourceService>()->Delete(m_ProbePosition_Odd);
 
-	auto l_probeTextureWidth = (l_RenderPassDesc.m_RenderTargetDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
-	auto l_probeTextureHeight = (l_RenderPassDesc.m_RenderTargetDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
+	auto l_probeTextureWidth = RadianceCache::TileCount(l_RenderPassDesc.m_RenderTargetDesc.Width);
+	auto l_probeTextureHeight = RadianceCache::TileCount(l_RenderPassDesc.m_RenderTargetDesc.Height);
 	m_ProbePosition_Odd = g_Engine->Get<TextureResourceService>()->Add("Radiance Cache Probe Position (Odd)");
 	m_ProbePosition_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_ProbePosition_Odd->m_TextureDesc.Width = l_probeTextureWidth;

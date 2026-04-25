@@ -20,9 +20,6 @@ namespace Inno
 		GPUResourceComponent* GetResult();
 
 	private:
-		const uint32_t TILE_SIZE = 8;
-		const uint32_t SH_TILE_SIZE = 2;
-
 		ObjectStatus m_ObjectStatus;
 		RenderPassComponent* m_RenderPassComp;
 		ShaderProgramComponent* m_ShaderProgramComp;

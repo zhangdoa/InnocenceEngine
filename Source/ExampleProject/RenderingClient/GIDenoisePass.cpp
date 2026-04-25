@@ -1,4 +1,5 @@
 #include "GIDenoisePass.h"
+#include "RadianceCacheConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -293,7 +294,15 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentWorldPos, 15);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentColorDelta, 16);
 
-	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	// Match the [numthreads(8,8,1)] in GIDenoise.comp: one group per
+	// RadianceCache::TILE_SIZE × TILE_SIZE pixel tile, ceiling-divided so a
+	// viewport that is not a multiple of the tile size still covers the
+	// right and bottom strip. Dropping the ceiling here would mirror the
+	// TASK-127 cropping bug from the SH-atlas allocation side.
+	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute,
+		RadianceCache::TileCount(uint32_t(l_viewportSize.x)),
+		RadianceCache::TileCount(uint32_t(l_viewportSize.y)),
+		1);
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 

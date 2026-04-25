@@ -1,9 +1,12 @@
 ---
 id: TASK-127
-title: 'GI applied to only ~2/3 of frame in width AND height — coordinate bug somewhere along the GI pipeline'
-status: To Do
+title: >-
+  GI applied to only ~2/3 of frame in width AND height — coordinate bug
+  somewhere along the GI pipeline
+status: Done
 assignee: []
 created_date: '2026-04-25 00:00'
+updated_date: '2026-04-25 22:30'
 labels:
   - rendering
   - GI
@@ -77,3 +80,42 @@ Cosmetic-but-visible, not a crash or data-loss bug. Does block declaring TASK-12
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Root cause was C++/HLSL constant drift, not a coordinate-pipeline bug as initially hypothesized. `RadianceCacheIntegrationPass.h` declared `SH_TILE_SIZE = 2` (stale, from when SH had 4 coefficients in 2×2). HLSL canonical `RayTracingTypes.hlsl:6` declares `SH_TILE_SIZE = 3` (correct per AMD GI-1.0 paper §2.4.2 — 9 SH coefficients in 3×3 layout). C++ side allocated the SH atlas at `probeGridW × 2`; HLSL side wrote/read at `probeIndex × 3`. At any resolution, probes past `floor(atlas_width / 3) = 2/3 × probeGridW` wrote/read out-of-bounds (UAV OOB returns zero), producing the upper-left ~2/3 × ~2/3 GI coverage symptom.
+
+### Investigation shape
+
+Investigated in parallel by paper-auditor (Capsaicin / GI-1.0 invariant audit) + rendering-researcher (engine-side trace). The auditor's invariants (probe-grid round-up, dispatch ceiling division, integer-coord addressing) ruled OUT the obvious paper-side suspects — those would cause ≤7px edge loss, not 1/3-frame loss. The actual culprit was an implementation-detail constant the auditor's invariants didn't cover (atlas layout isn't paper-prescribed). Researcher's engine-side trace through allocation vs read/write extents found the `2 vs 3` mismatch.
+
+### Fix
+
+- New `Source/ExampleProject/RenderingClient/RadianceCacheConstants.h` — single C++ namespace `Inno::RadianceCache` with `TILE_SIZE`, `SH_TILE_SIZE`, `UPSCALE_X/Y`, `SPAWN_TILE_SIZE_X/Y`, plus `TileCount(extent)` helper. Comments anchor each constant to its HLSL canonical file.
+- `RadianceCacheIntegrationPass.cpp` — atlas allocation now uses `RadianceCache::SH_TILE_SIZE` (= 3). Local helper variables `l_probeGridWidth/Height` make the multiplication intent obvious.
+- All five GI/RadianceCache pass `*.cpp` files now include `RadianceCacheConstants.h` and use `RadianceCache::TileCount(...)` for ceiling-divided dispatch extents.
+- All six pass headers (four RadianceCache passes + `GIDenoisePass` + `RadianceCacheIntegrationPass`) had per-class duplicated `TILE_SIZE = 8` / `SH_TILE_SIZE = 2` / `SPAWN_TILE_SIZE_*` constants removed.
+- `GIDenoisePass.cpp:296` dispatch line — was `uint32_t(viewportSize.x / 8.0f)` (magic literal + floor division). Now `RadianceCache::TileCount(...)` (named constant + ceiling). Comment explicitly calls out the cropping hazard.
+
+### Validation
+
+- Build: `cmake --build Build --config RelWithDebInfo --target Main` and `--target ExampleRenderingClient` — both green, Main.exe relinked, no new warnings.
+- Behavior: orbit-mode offscreen capture, 60 frames at `-camera_orbit 20,8,120` (identical CLI to baseline TASK125_CL1), exit code 0.
+- Captures (in `Build/captures/TASK127_fix/`):
+  - `gpu_output_0119.png` vs `Build/captures/TASK125_CL1/gpu_output_0119.png` — bottom-right structural geometry now lit; baseline had a black strip there.
+  - `gpu_output_0075.png` vs baseline — right ~1/3 strip drapes now visibly lit (turquoise/orange) instead of dimmed.
+  - `gpu_output_0089_final_binary.png` — fresh capture against fully-rebuilt binary, full-frame GI coverage with no rectangular cutoff.
+  - `windowed_59.png` — windowed Main.exe capture; full-frame illumination, no visible cropping.
+
+### Follow-ups filed
+
+- **TASK-6.4** (low) — paper-fidelity floor→ceil migration for `RadianceCacheCommon.hlsl` clamp + dispatch math engine-wide. Auditor identified these as real divergences from Capsaicin but invisible at 1920×1080 (axes are exact multiples of 8); manifests as ≤7px edge-strip loss at arbitrary windowed resolutions.
+- **TASK-136** (medium) — systemic audit for the C++/HLSL constant-drift class across other graphics subsystems (shadow CSM, light culling, BRDF LUT, TAA history, etc.). The TASK-127 drift class is almost certainly not unique to GI.
+
+### What was NOT verified
+
+- No unit tests run (none exist that exercise the GI pipeline at this layer; engine-level tests are integration-only and the visual capture is the integration test).
+- No RenderDoc capture (visual diff between baseline and fix in `Build/captures/` PNG pairs is the evidence).
+- No runtime mismatch shape assertion. The single-source-of-truth header eliminates the per-pass drift class entirely; further runtime guard would require shader-side reflection (not available in this engine). If TASK-136 wants stronger runtime guards, the natural place is `RadianceCacheIntegrationPass::PrepareCommandList` checking that bound atlas dimensions equal `TileCount(viewport) × SH_TILE_SIZE` per axis.
+<!-- SECTION:FINAL_SUMMARY:END -->

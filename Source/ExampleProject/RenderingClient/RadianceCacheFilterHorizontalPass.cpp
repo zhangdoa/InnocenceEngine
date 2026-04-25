@@ -1,4 +1,5 @@
 ﻿#include "RadianceCacheFilterHorizontalPass.h"
+#include "RadianceCacheConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -159,8 +160,8 @@ bool RadianceCacheFilterHorizontalPass::PrepareCommandList(IRenderingContext* re
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetProbeMask(), 4);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result, 5);
 
-	auto dispatch_x = (l_raytracingResult->m_TextureDesc.Width + TILE_SIZE - 1) / TILE_SIZE;
-	auto dispatch_y = (l_raytracingResult->m_TextureDesc.Height + TILE_SIZE - 1) / TILE_SIZE;
+	auto dispatch_x = RadianceCache::TileCount(l_raytracingResult->m_TextureDesc.Width);
+	auto dispatch_y = RadianceCache::TileCount(l_raytracingResult->m_TextureDesc.Height);
 
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);

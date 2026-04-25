@@ -1,4 +1,5 @@
 ﻿#include "RadianceCacheRaytracingPass.h"
+#include "RadianceCacheConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -249,8 +250,8 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	// Halton-picked sub-pixel; the rest of the probes inside the spawn
 	// tile inherit their data from Reprojection (or stay PROBE_MASK_INVALID
 	// if reprojection also failed for that tile).
-	auto dispatch_x = (l_result->m_TextureDesc.Width + SPAWN_TILE_SIZE_X - 1) / SPAWN_TILE_SIZE_X;
-	auto dispatch_y = (l_result->m_TextureDesc.Height + SPAWN_TILE_SIZE_Y - 1) / SPAWN_TILE_SIZE_Y;
+	auto dispatch_x = (l_result->m_TextureDesc.Width + RadianceCache::SPAWN_TILE_SIZE_X - 1u) / RadianceCache::SPAWN_TILE_SIZE_X;
+	auto dispatch_y = (l_result->m_TextureDesc.Height + RadianceCache::SPAWN_TILE_SIZE_Y - 1u) / RadianceCache::SPAWN_TILE_SIZE_Y;
 
 	l_fmService->DispatchRays(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
