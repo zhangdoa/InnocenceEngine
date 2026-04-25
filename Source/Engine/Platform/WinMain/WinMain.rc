@@ -1,0 +1,10 @@
+// Win32 executable resources for InnocenceEngine.
+// Embeds the engine logo as the application icon (taskbar / Alt-Tab /
+// file-explorer thumbnail). Shared by Main.exe and RenderTest.exe via
+// target_sources() in this directory's CMakeLists.txt.
+//
+// Path is relative to this .rc file at preprocess time. The icon source
+// is the multi-resolution .ico generated from Data/Engine/Icons/icon.png
+// (16/32/48/64/96/128/256).
+
+IDI_ICON1 ICON "../../../../Data/Engine/Icons/icon.ico"
