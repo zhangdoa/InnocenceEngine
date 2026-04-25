@@ -1,16 +1,28 @@
 #!/usr/bin/env node
 /**
- * PreToolUse hook: gate substantive tool use until the producer subagent
- * has been invoked at least once in the current session.
+ * PreToolUse hook: session-scope gates that fire on every tool call.
  *
- * Dispatcher only — gate logic lives in `.claude/hooks/gates/producer-brief.js`.
- * That gate reads `input.transcript_path` directly (mirroring the precedent
- * at `commit-gate.js:62-78`) — there is no per-session state file.
+ * Dispatcher only — each gate lives in `.claude/hooks/gates/<name>.js`.
+ *
+ * Gate order (first failure wins):
+ *   1. producer-brief   — blocks substantive tool use until the producer
+ *                         subagent has been invoked at least once this
+ *                         session. CLAUDE.md "Session start" rule.
+ *   2. agent-dispatch   — blocks `Agent` calls dispatched foreground
+ *                         without `[foreground-required]` in the prompt.
+ *                         Enforces .claude/disciplines/agent-dispatch.md.
+ *
+ * Each gate exports `run(input)` returning `{ ok: true }` or
+ * `{ ok: false, block: () => never-returns }`. The `block` callback
+ * writes its own message to stderr and `process.exit(2)`s.
  *
  * Fails OPEN on any internal error so a hook bug never bricks a session.
  */
 
-const producerBriefGate = require('./gates/producer-brief')
+const GATES = [
+  require('./gates/producer-brief'),
+  require('./gates/agent-dispatch'),
+]
 
 let raw = ''
 process.stdin.setEncoding('utf8')
@@ -22,8 +34,10 @@ async function main() {
   try { input = JSON.parse(raw) } catch { return process.exit(0) }
   if (input.hook_event_name !== 'PreToolUse') return process.exit(0)
 
-  const result = producerBriefGate.run(input)
-  if (!result.ok) { result.block(); return }
+  for (const gate of GATES) {
+    const result = gate.run(input)
+    if (!result.ok) { result.block(); return }
+  }
   process.exit(0)
 }
 

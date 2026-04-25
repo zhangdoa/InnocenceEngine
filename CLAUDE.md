@@ -38,6 +38,7 @@ Operational recipes (build commands, test-tier invocations, GPU-validation senti
 
 ## Harness enforcement
 
-`.claude/settings.json` wires a PreToolUse hook (`.claude/hooks/commit-gate.js`) that blocks `git commit` unless all gates pass. The hook is a dispatcher; per-gate rules live in `.claude/hooks/gates/<name>.js`, shared helpers in `.claude/hooks/lib/common.js`.
+`.claude/settings.json` wires two PreToolUse hooks; both are dispatchers, with per-gate rules under `.claude/hooks/gates/<name>.js` and shared helpers in `.claude/hooks/lib/common.js`. Both fail open on internal errors so a hook bug never bricks the session.
 
-Gates (first failure wins): **file-size**, **paper-port**, **test-run**, **live-engine**, **serialize-test**, **attribution**. Each gate's block message lists its escape sentinel. Drafts go in `Build/commit-message.txt` (gitignored). The hook fails open on internal errors.
+- `.claude/hooks/session-gate.js` — fires on every tool call. Gates (first failure wins): **producer-brief** (CLAUDE.md "Session start"), **agent-dispatch** (background-by-default; `[foreground-required]` in the prompt opts in per call).
+- `.claude/hooks/commit-gate.js` — fires on `Bash` and gates `git commit`. Gates (first failure wins): **data-generated**, **file-size**, **paper-port**, **test-run**, **live-engine**, **serialize-test**, **attribution**. Each block message lists its escape sentinel. Drafts go in `Build/commit-message.txt` (gitignored).

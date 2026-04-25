@@ -33,6 +33,14 @@ A bounded, short research dispatch ("report back in under 200 words, citing file
 
 Multiple `Agent` calls issued in a single tool-use block (parallel dispatch) are not affected by this rule — the dispatcher already chose concurrency.
 
+## Harness enforcement
+
+Prose drifted in practice — the rule is now enforced structurally by `.claude/hooks/gates/agent-dispatch.js` (wired through `.claude/hooks/session-gate.js`).
+
+The gate fires on every `Agent` (and legacy `Task`) tool call. It blocks any call whose `tool_input.run_in_background` is anything other than `true` *unless* the `prompt` field contains the literal sentinel `[foreground-required]`. The sentinel is the per-call justification, surfaced where the user can see it — there is no env-var bypass and no commit-message sentinel; foreground is opted into, in writing, at the dispatch site.
+
+Use the sentinel only when the two-condition test above is genuinely met. Typing it for convenience defeats the gate; if you find yourself reaching for it on every dispatch, the planning gap (cited as a pitfall below) is the thing to fix.
+
 ## Common pitfalls
 
 - *"It's just a short dispatch, I'll wait."* Short turns into long without warning — a sub-agent that hits an unfamiliar path, a long build, or a flaky test stretches a 30-second plan into 10 minutes of occupied dispatcher. Default background; promote to foreground only with the two-condition test above.
