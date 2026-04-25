@@ -56,6 +56,11 @@ xcuserdata/
 !/Data/Engine/
 !/Data/ExampleProject/
 
+# Per-user runtime config emitted by the engine (TASK-21 tweaks panel).
+# The schema is defined in Source/ExampleProject/LogicClient/Player.inl;
+# the file is regenerated with engine defaults whenever it's missing.
+/Data/ExampleProject/Configs/
+
 # Large binary assets
 /OriginalAssets/*
 

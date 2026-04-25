@@ -4,12 +4,15 @@
 #include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Component/TransformComponent.h"
 #include "../../Engine/Component/CameraComponent.h"
+#include "../../Engine/ThirdParty/ImGuiWrapper/ImGuiWrapper.h"
+#include "../../Engine/ThirdParty/ImGui/imgui.h"
 
 #include "../../Engine/Engine.h"
 using namespace Inno;
 ;
 
 #include "AnimationController.inl"
+#include "TweakRegistry.inl"
 
 #define EDITOR_MODE
 
@@ -61,8 +64,14 @@ namespace Inno
 		float m_InitialMoveSpeed = 0;
 		float m_MoveSpeed = 0;
 		float m_RotateSpeed = 0;
+		float m_SprintMultiplier = 10.0f;
+		float m_MouseSensitivity = 1.0f;
 		bool m_CanMove = false;
 		bool m_CanSlerp = false;
+
+		std::function<void()> f_drawTweakPanel;
+		bool m_TweakPanelRegistered = false;
+		static constexpr const char* k_PlayerSettingsJsonPath = "ExampleProject/Configs/PlayerSettings.json";
 
 #ifdef EDITOR_MODE
 		bool m_SmoothInterp = false;
@@ -138,8 +147,31 @@ namespace Inno
 		m_TargetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		// TODO Phase2-migrate: compute camera-player distance from TransformComponents
 		m_InitialMoveSpeed = 0.005f;
-		m_MoveSpeed = m_InitialMoveSpeed;
 		m_RotateSpeed = 10.0f;
+		m_SprintMultiplier = 10.0f;
+		m_MouseSensitivity = 1.0f;
+
+		// Re-registration on subsequent Setup calls (scene reload) is
+		// suppressed via m_TweakPanelRegistered so the static registry
+		// doesn't accumulate stale pointers from prior Player instances.
+		if (!m_TweakPanelRegistered)
+		{
+			TweakRegistry::RegisterFloat("InitialMoveSpeed", &m_InitialMoveSpeed, 0.0001f, 0.5f);
+			TweakRegistry::RegisterFloat("SprintMultiplier", &m_SprintMultiplier, 1.0f, 50.0f);
+			TweakRegistry::RegisterFloat("RotateSpeed",      &m_RotateSpeed,      0.1f,  90.0f);
+			TweakRegistry::RegisterFloat("MouseSensitivity", &m_MouseSensitivity, 0.05f, 5.0f);
+
+			// First run: emit JSON with engine defaults so the file is
+			// discoverable at the documented path. Subsequent runs load it.
+			if (!TweakRegistry::LoadFromFile(k_PlayerSettingsJsonPath))
+				TweakRegistry::SaveToFile(k_PlayerSettingsJsonPath);
+
+			f_drawTweakPanel = []() { TweakRegistry::DrawWindowAutoSaving("Player Settings", k_PlayerSettingsJsonPath); };
+			ImGuiWrapper::Get().AddUserDrawCallback(&f_drawTweakPanel);
+			m_TweakPanelRegistered = true;
+		}
+
+		m_MoveSpeed = m_InitialMoveSpeed;
 
 		if (!m_AnimationController)
 			m_AnimationController = new AnimationController();
@@ -202,7 +234,7 @@ namespace Inno
 		f_move = [&]() { m_AnimationController->ChangeState("Run"); };
 		f_stop = [&]() { m_AnimationController->ChangeState("Idle"); };
 
-		f_speedUp = [&]() { m_MoveSpeed = m_InitialMoveSpeed * 10.0f; };
+		f_speedUp = [&]() { m_MoveSpeed = m_InitialMoveSpeed * m_SprintMultiplier; };
 		f_speedDown = [&]() { m_MoveSpeed = m_InitialMoveSpeed; };
 
 		f_allowMove = [&]() { m_CanMove = true; };
@@ -301,7 +333,7 @@ namespace Inno
 		{
 			m_TargetCameraRotY = Math::getQuatRotator(
 				Vec4(0.0f, 1.0f, 0.0f, 0.0f),
-				((-offset * m_RotateSpeed) / 180.0f) * PI<float>);
+				((-offset * m_MouseSensitivity * m_RotateSpeed) / 180.0f) * PI<float>);
 
 			m_CanSlerp = false;
 
@@ -336,7 +368,7 @@ namespace Inno
 				: Vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			m_TargetCameraRotX = Math::getQuatRotator(
 				l_Right,
-				((offset * m_RotateSpeed) / 180.0f) * PI<float>);
+				((offset * m_MouseSensitivity * m_RotateSpeed) / 180.0f) * PI<float>);
 			if (l_cameraTransform)
 				l_cameraTransform->m_LocalRot = m_TargetCameraRotX.quatMul(l_cameraTransform->m_LocalRot);
 
@@ -381,4 +413,5 @@ namespace Inno
 
 		return false;
 	}
+
 }

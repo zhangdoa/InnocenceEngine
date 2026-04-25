@@ -57,6 +57,8 @@ namespace ImGuiWrapperNS
 
 	IImGuiWindow* m_windowImpl;
 	IImGuiRenderer* m_rendererImpl;
+
+	std::vector<std::function<void()>*> m_userDrawCallbacks;
 }
 
 using namespace ImGuiWrapperNS;
@@ -196,6 +198,12 @@ bool ImGuiWrapper::Prepare()
 		{
 			ImGuiWrapperNS::showApplicationProfiler();
 			ImGuiWrapperNS::showConcurrencyProfiler();
+
+			for (auto* l_Callback : ImGuiWrapperNS::m_userDrawCallbacks)
+			{
+				if (l_Callback && *l_Callback)
+					(*l_Callback)();
+			}
 		}
 		ImGui::Render();
 
@@ -223,7 +231,18 @@ bool ImGuiWrapper::Terminate()
 		ImGuiWrapperNS::m_rendererImpl->Terminate();
 		ImGui::DestroyContext();
 	}
+	ImGuiWrapperNS::m_userDrawCallbacks.clear();
 	return true;
+}
+
+void ImGuiWrapper::AddUserDrawCallback(std::function<void()>* in_Callback)
+{
+	if (!in_Callback)
+	{
+		Log(Warning, "ImGuiWrapper::AddUserDrawCallback rejected: null callback pointer.");
+		return;
+	}
+	ImGuiWrapperNS::m_userDrawCallbacks.push_back(in_Callback);
 }
 
 void ImGuiWrapperNS::showApplicationProfiler()
