@@ -70,6 +70,47 @@ function isRealUserPrompt(content) {
   return true
 }
 
+// `Agent` is the current Claude Code serialization for the subagent dispatch
+// tool; older / future variants may use `Task`. Accept either.
+function isProducerAgentCall(toolName, toolInput) {
+  if (toolName !== 'Agent' && toolName !== 'Task') return false
+  return (toolInput?.subagent_type || '') === 'producer'
+}
+
+// Scan a transcript JSONL for (1) any prior Agent(subagent_type=producer)
+// tool_use, and (2) at least one real (non-pseudo) user prompt. Used by the
+// producer-briefing gates on PreToolUse and SessionStart.
+//
+// Returns { producerSeen, hasRealUserPrompt } or null on I/O error.
+//
+// The `hasRealUserPrompt` distinction matters because subagent transcripts
+// only contain the synthetic prompt the parent passed; gates that govern
+// "the main session" must fail open on subagent transcripts.
+function scanTranscriptForProducerBrief(xpPath) {
+  const out = { producerSeen: false, hasRealUserPrompt: false }
+  let raw
+  try { raw = fs.readFileSync(xpPath, 'utf8') } catch { return null }
+  for (const line of raw.split('\n')) {
+    if (!line) continue
+    let m
+    try { m = JSON.parse(line) } catch { continue }
+    const role = m.type || m.role || m.message?.role
+    if (role === 'user' && isRealUserPrompt(m.message?.content ?? m.content)) {
+      out.hasRealUserPrompt = true
+    }
+    const content = m.message?.content
+    if (!Array.isArray(content)) continue
+    for (const block of content) {
+      if (block?.type !== 'tool_use') continue
+      if (isProducerAgentCall(block.name, block.input)) {
+        out.producerSeen = true
+      }
+    }
+    if (out.producerSeen && out.hasRealUserPrompt) break
+  }
+  return out
+}
+
 function firstArray(...xs) {
   for (const x of xs) if (Array.isArray(x)) return x
   return []
@@ -153,6 +194,7 @@ module.exports = {
   EDITOR_CODE_PATH, SERIALIZER_CODE_PATH,
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
   isRealUserPrompt, firstArray,
+  isProducerAgentCall, scanTranscriptForProducerBrief,
   blobLineCount, readStagedTaskFrontmatter, detectClosingTasks,
   collectCommitMessageText,
 }

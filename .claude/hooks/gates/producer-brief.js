@@ -40,7 +40,7 @@
 // Fails OPEN on any internal error so a hook bug never bricks the session.
 
 const fs = require('fs')
-const { isRealUserPrompt } = require('../lib/common')
+const { isProducerAgentCall, scanTranscriptForProducerBrief } = require('../lib/common')
 
 const ALLOWED_TOOLS = new Set([
   'Read', 'Glob', 'Grep', 'ToolSearch',
@@ -48,43 +48,6 @@ const ALLOWED_TOOLS = new Set([
   // status-line to function; blocking them has no user-visible benefit.
   'Skill', 'ScheduleWakeup',
 ])
-
-function isProducerAgentCall(toolName, toolInput) {
-  // Current Claude Code serializes the Agent tool as `name: "Agent"`.
-  // Older / future variants may use `"Task"`; accept either defensively.
-  if (toolName !== 'Agent' && toolName !== 'Task') return false
-  const sub = toolInput?.subagent_type || ''
-  return sub === 'producer'
-}
-
-// Scan the transcript for any prior Agent(subagent_type=producer) tool_use.
-// Returns { producerSeen: bool, hasRealUserPrompt: bool }.
-function scanTranscript(xpPath) {
-  const out = { producerSeen: false, hasRealUserPrompt: false }
-  let raw
-  try { raw = fs.readFileSync(xpPath, 'utf8') } catch { return null }
-  for (const line of raw.split('\n')) {
-    if (!line) continue
-    let m
-    try { m = JSON.parse(line) } catch { continue }
-    const role = m.type || m.role || m.message?.role
-    if (role === 'user' && isRealUserPrompt(m.message?.content ?? m.content)) {
-      out.hasRealUserPrompt = true
-    }
-    // Tool-use entries live as content blocks on assistant messages.
-    // Path: m.message.content[i] = { type: 'tool_use', name, input, ... }
-    const content = m.message?.content
-    if (!Array.isArray(content)) continue
-    for (const block of content) {
-      if (block?.type !== 'tool_use') continue
-      if (isProducerAgentCall(block.name, block.input)) {
-        out.producerSeen = true
-      }
-    }
-    if (out.producerSeen && out.hasRealUserPrompt) break
-  }
-  return out
-}
 
 function run(input) {
   if (process.env.CLAUDE_SKIP_PRODUCER === '1') return { ok: true }
@@ -96,7 +59,7 @@ function run(input) {
   const xp = input.transcript_path
   if (!xp || !fs.existsSync(xp)) return { ok: true }  // fail open
 
-  const scan = scanTranscript(xp)
+  const scan = scanTranscriptForProducerBrief(xp)
   if (!scan) return { ok: true }  // I/O error — fail open
 
   // Subagent transcripts have no real user prompts (only the synthetic
