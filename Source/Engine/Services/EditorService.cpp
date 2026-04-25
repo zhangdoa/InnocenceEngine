@@ -246,6 +246,17 @@ void EditorService::RegisterBuiltinHandlers()
 		m_Impl->handlers[type] = std::move(h);
 	};
 
+	// Setter-reply contract (SET_* and any other mutating handler whose reply
+	// the client commits as authoritative state): the reply MUST carry the
+	// post-mutation state read back from the authoritative source — never the
+	// payload the client submitted. Read-back is the only way to confirm the
+	// engine actually applied the mutation; echoing the payload masks
+	// rejection, clamping, and async-deferral bugs (the client commits its
+	// own guess as truth, then drifts from the engine on every silent
+	// divergence). Prior-art fixes: SET_DEV_TOGGLE (commit 2586477b) and
+	// SET_VIEWPORT_SOURCE (commit d4fe5462) both regressed under the
+	// payload-echo pattern before being switched to read-back.
+
 	reg("HELLO", [](const json& /*payload*/, ix::WebSocket& /*ws*/) -> json {
 		// Aliveness handshake. The editor (Electron main.js) sends this
 		// after the WS opens; the reply just confirms the dispatcher is

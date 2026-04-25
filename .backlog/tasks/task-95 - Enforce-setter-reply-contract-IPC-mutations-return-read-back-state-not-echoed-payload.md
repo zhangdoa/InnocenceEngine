@@ -3,7 +3,7 @@ id: TASK-95
 title: >-
   Enforce setter-reply contract: IPC mutations return read-back state, not
   echoed payload
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 17:34'
 labels:
@@ -40,10 +40,47 @@ The two known violations are already fixed. This task exists so the next setter-
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
+- [x] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
+- [x] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
+- [x] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
+- [x] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
+- [x] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+Convention comment landed in `Source/Engine/Services/EditorService.cpp` at the top of `RegisterBuiltinHandlers`, next to the `reg` lambda. Cites prior-art commits 2586477b and d4fe5462. Audit confirmed all SET_*-style handlers comply.
+
+`regSetter` template helper not built — the gating condition (three or more violations) was not met (zero violations among true SET_* handlers).
+
+## Final Summary
+
+**Audit (SET_* handlers + UPDATE_ENTITY_PROPERTY):**
+
+| Handler | Authoritative read-back source | Status |
+|---|---|---|
+| `SET_DEV_TOGGLE` | `DevToggleRegistry::Get(name)` | compliant |
+| `SET_VIEWPORT_SOURCE` | `ViewportSourceOverride::Get()` | compliant |
+| `UPDATE_ENTITY_PROPERTY` | re-reads component field after write (`m_LocalPos`, `m_LuminousFlux`, etc.) | compliant |
+
+**Other mutating handlers (out of strict SET_* scope, observed for completeness):**
+
+| Handler | Reply shape | Note |
+|---|---|---|
+| `LOAD_SCENE` | echoes `{path}` | scene load is async; the spec test (`SCENE_UPDATED event drives sceneStore.refresh and clears isLoading`) explicitly relies on the reply NOT clearing `isLoading` and waits for the engine-fired `SCENE_UPDATED` event to deliver authoritative scene state. Treating it as a setter would be wrong. |
+| `IMPORT_ASSET` | echoes `{path}` | fire-and-forget enqueue; no engine-side authoritative state to read back from this handler. |
+| `SAVE_SCENE` | reads `sceneService->GetCurrentSceneName()` | already authoritative. |
+| `ENTITY_CREATE` / `ENTITY_DELETE` / `ENTITY_RENAME` | re-list scene from `EntityRegistry` | already authoritative. |
+| `TRIGGER_DEV_ACTION` | echoes `{name}` | fire-and-forget action — out of scope per the original task description. |
+
+No latent SET_*-pattern violations to fix in this CL. The two non-compliant payload-echoes (`LOAD_SCENE`, `IMPORT_ASSET`) are deliberate: their authoritative state lands via separate event/poll channels, not the reply.
+
+**Build:** `MSBuild Source/Engine/Engine.vcxproj -p:Configuration=Debug -p:Platform=x64` succeeded; only pre-existing C4003 (`max` macro) warnings, unrelated to this change.
+
+**Tests:** `npx playwright test tests/ipc-contract.spec.js tests/scene-vertical.spec.js --workers=1` → 8/8 passed in 17.6s. (Parallel workers timed out due to port-8081 contention from the editor spawning the engine binary in each worker — unrelated to this change; existing infra issue.)
+
+**Not verified:**
+- Did not run the full Playwright suite — only the two specs the producer brief named.
+- Did not exercise a real engine roundtrip for the convention-only comment change; the change is comment-only and cannot affect runtime behaviour, so the suite confirms only that no regression slipped in.
+- Did not validate the `LOAD_SCENE` / `IMPORT_ASSET` async-state-arrives-via-event paths beyond what the existing scene-vertical spec already exercises; these were observed during the audit but flagged for the producer to triage if the contract should be tightened to cover async-deferred mutators.
