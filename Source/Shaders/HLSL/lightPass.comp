@@ -1,12 +1,25 @@
 // shadertype=hlsl
+//
+// LightPass kernel. One thread per screen pixel: decode the GBuffer,
+// evaluate sun + tiled point lights into a (direct, indirect-seed)
+// pair, compose the radiance-cache indirect into the direct
+// accumulator for output, write the indirect-seed to RT1 for next-
+// frame ray accumulation.
+//
+// Stages live in headers so this file stays focused on bindings + the
+// thread-group entry. See:
+//   common/lightPassCommon.hlsl          — GBuffer decode + per-light BSDF accumulator
+//   common/lightPassDirectLighting.hlsl  — sun + tiled point-light evaluators
+//   common/lightPassIndirectCompose.hlsl — radiance-cache irradiance compose
+
 #include "common/common.hlsl"
 
 struct ComputeInputType
 {
-	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
-	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
-	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
-	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+	uint3 groupID : SV_GroupID;
+	uint3 groupThreadID : SV_GroupThreadID;
+	uint3 dispatchThreadID : SV_DispatchThreadID;
+	uint  groupIndex : SV_GroupIndex;
 };
 
 [[vk::binding(0, 0)]]
@@ -80,112 +93,15 @@ RWTexture2D<float4> out_lightPassRT0 : register(u0);
 [[vk::binding(1, 3)]]
 RWTexture2D<float4> out_lightPassRT1 : register(u1);
 
-#include "common/coneTrace.hlsl"
 #include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
-#include "RayTracingTypes.hlsl"
+#include "common/lightPassCommon.hlsl"
+#include "common/lightPassDirectLighting.hlsl"
+#include "common/lightPassIndirectCompose.hlsl"
 
-#define DRAW_CSM_AREA false
-#define INDIRECT_LIGHT_FROM_CACHE_ONLY false
-
-struct MaterialAttributes
-{
-	float3 m_Albedo;
-	float m_Metallic;
-	float m_Roughness;
-};
-
-float4 GetFog(in Texture3D<float4> voxelTexture,
-	in SamplerState in_samplerTypeLinear,
-	in float3 P,
-	in float3 N,
-	in VoxelizationPass_CB g_VoxelizationPassCBuffer)
-{
-	float4 posVS = mul(float4(P, 1.0), g_Frame.v);
-	float4 posCS = mul(posVS, g_Frame.p_original);
-	posCS /= posCS.w;
-	posCS.z = -posVS.z / (g_Frame.zFar - g_Frame.zNear);
-	posCS.z = 1.0 - exp(-posCS.z * 8);
-
-	float3 tc = posCS.xyz;
-	tc.xy = tc.xy * 0.5f + 0.5f;
-	float4 result = voxelTexture.Sample(in_samplerTypeLinear, tc);
-
-	return result;
-}
-
-void CalculateLuminance(MaterialAttributes l_MaterialAttributes,
-	float3 V, float3 N, float3 L,
-	float3 luminousFlux, float attenuationFactor, out float3 luminance_ForDirectLight, out float3 luminance_ForIndirectLight)
-{
-	float NdotV = max(dot(N, V), 0.0);
-	float NdotL = max(dot(N, L), 0.0);
-	float3 HL = normalize(V + L);
-	float LdotHL = max(dot(L, HL), 0.0);
-	float NdotHL = max(dot(N, HL), 0.0);
-
-	// Compute Fresnel factor using Schlick's approximation.
-	// Here F90 is assumed to be 1.0 (typical for dielectrics).
-	float3 F0 = float3(F0_DIELECTRIC, F0_DIELECTRIC, F0_DIELECTRIC);
-	F0 = lerp(F0, l_MaterialAttributes.m_Albedo, l_MaterialAttributes.m_Metallic);
-	float F90 = 1.0;
-	float3 l_FresnelTerm = Fresnel_Schlick(F0, F90, LdotHL);
-
-	float3 l_DiffuseBSDF = ComputeDiffuseBRDF(NdotV, NdotL, LdotHL, l_MaterialAttributes.m_Roughness, l_MaterialAttributes.m_Metallic, l_FresnelTerm, l_MaterialAttributes.m_Albedo);
-	float3 l_SpecularBSDF = ComputeSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, l_MaterialAttributes.m_Roughness, F0, l_FresnelTerm);
-
-	float3 l_Illuminance = luminousFlux * attenuationFactor * NdotL;
-
-	luminance_ForDirectLight = (l_DiffuseBSDF + l_SpecularBSDF) * l_Illuminance;
-	luminance_ForIndirectLight = l_MaterialAttributes.m_Albedo * l_Illuminance / PI; // Simple Lambertian diffuse
-}
-
-float4 ApplyCSMArea(in float3 positionWS, in float3 normal, in uint2 screenCoord)
-{
-	float3 directLight = float3(0.0, 0.0, 0.0);
-	float3 L = normalize(g_Frame.sun_direction.xyz);
-	float NdotL = max(dot(normal, L), 0.0);
-	directLight = float3(NdotL, NdotL, NdotL);
-
-	int splitIndex = NR_CSM_SPLITS;
-	for (int i = 0; i < NR_CSM_SPLITS; i++)
-	{
-		if (positionWS.x >= CSMs[i].AABBMin.x &&
-			positionWS.y >= CSMs[i].AABBMin.y &&
-			positionWS.z >= CSMs[i].AABBMin.z &&
-			positionWS.x <= CSMs[i].AABBMax.x &&
-			positionWS.y <= CSMs[i].AABBMax.y &&
-			positionWS.z <= CSMs[i].AABBMax.z)
-		{
-			splitIndex = i;
-			break;
-		}
-	}
-
-	if (splitIndex == 0)
-	{
-		directLight.g = 0;
-		directLight.b = 0;
-	}
-	else if (splitIndex == 1)
-	{
-		directLight.b = 0;
-	}
-	else if (splitIndex == 2)
-	{
-		directLight.r = 0;
-		directLight.b = 0;
-	}
-	else if (splitIndex == 3)
-	{
-		directLight.r = 0;
-		directLight.g = 0;
-	}
-
-	float sunShadowFactor = SunShadowResolver(positionWS, normal, in_SunShadow, in_samplerTypeLinear, L, screenCoord);
-	directLight *= (1.0 - sunShadowFactor);
-	return float4(directLight, 1.0);
-}
+// Debug toggles. Both compile-time false in shipping; flip locally to
+// inspect cascade coverage / isolated GI compose without redispatching.
+#define DEBUG_INDIRECT_FROM_CACHE_ONLY 0
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
@@ -194,178 +110,43 @@ void main(ComputeInputType input)
 	out_lightPassRT0[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 	out_lightPassRT1[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 
-	float4 GPassRT0 = in_opaquePassRT0[l_ScreenCoord];
-
-	// No object is rendered in this pixel.
-	if (GPassRT0.a == 0.0)
+	float3 l_PositionWS;
+	float3 l_NormalWS;
+	MaterialAttributes l_Material;
+	if (!DecodeGBuffer(in_opaquePassRT0, in_opaquePassRT1, in_opaquePassRT2, l_ScreenCoord, l_PositionWS, l_NormalWS, l_Material))
 	{
 		DeviceMemoryBarrier();
 		return;
 	}
 
-	float4 GPassRT1 = in_opaquePassRT1[l_ScreenCoord];
+	float3 l_V = normalize(g_Frame.camera_posWS.xyz - l_PositionWS);
 
-	float3 l_Position_WorldSpace = GPassRT0.xyz;
-	float3 l_Normal_WorldSpace = GPassRT1.xyz;
+	float3 l_DirectLuminance = float3(0.0, 0.0, 0.0);
+	float3 l_IndirectSeedLuminance = float3(0.0, 0.0, 0.0);
 
-	float3 N = normalize(l_Normal_WorldSpace);
+	EvaluateSunLighting(
+		in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint,
+		in_SunShadow, in_samplerTypeLinear,
+		l_Material, l_PositionWS, l_NormalWS, l_V, l_ScreenCoord,
+		l_DirectLuminance, l_IndirectSeedLuminance);
 
-#if DRAW_CSM_AREA
-	float4 l_CSMDebugResult = ApplyCSMArea(l_Position_WorldSpace, N, l_ScreenCoord);
-	out_lightPassRT0[l_ScreenCoord] = l_CSMDebugResult;
-	DeviceMemoryBarrier();
-	return;
-#endif
+	EvaluateTiledPointLighting(
+		in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint,
+		in_LightGrid, in_LightIndexList,
+		l_Material, l_PositionWS, l_NormalWS, l_V, l_ScreenCoord,
+		l_DirectLuminance, l_IndirectSeedLuminance);
 
-	float3 V = normalize(g_Frame.camera_posWS.xyz - l_Position_WorldSpace);
-	float3 l_Luminance_ForDirectLight = float3(0.0, 0.0, 0.0);
-	float3 l_Luminance_ForIndirectLight = float3(0.0, 0.0, 0.0);
+	float3 l_IndirectLuminance = ComposeIndirectLighting(in_GIIrradiance, l_ScreenCoord, l_Material);
+	// GI composes into the visual RT only; the illuminance RT carries
+	// direct lighting only so next-frame ray hits do not re-accumulate
+	// already-accumulated indirect energy.
+	l_DirectLuminance += l_IndirectLuminance;
 
-	float4 GPassRT2 = in_opaquePassRT2[l_ScreenCoord];
-
-	MaterialAttributes l_MaterialAttributes;
-	l_MaterialAttributes.m_Metallic = GPassRT1.w;
-	l_MaterialAttributes.m_Roughness = GPassRT2.w;
-	l_MaterialAttributes.m_Albedo = GPassRT2.xyz;
-
-	/// Indirect light from radiance cache (denoised per-pixel irradiance
-	/// from GIDenoisePass).
-	float3 l_IrradianceFromCache = in_GIIrradiance[l_ScreenCoord].rgb;
-
-	// TASK-123 ambient floor. Radiance-cache GI is single-bounce: a probe
-	// in a deep-shadow region mostly traces rays that hit other shadowed
-	// surfaces and returns near-zero irradiance. Combined with direct sun
-	// zeroed by sun-shadow, those pixels render as pure black — which is
-	// never what the environment actually looks like. A small ambient floor
-	// ensures shadows never fully collapse to zero; crude but matches
-	// what a sky-dome / world-cache fallback would produce to first order,
-	// without needing to plumb another resource binding through LightPass.
-	// Preserves bright regions exactly (max, not additive), so the sun-lit
-	// areas and the probe-populated GI remain untouched. Follow-ups listed
-	// in TASK-123 (world-cache fallback, multi-bounce RayGen) would replace
-	// this constant with a position/normal-dependent estimate.
-	const float3 AMBIENT_FLOOR = float3(0.02, 0.025, 0.03);
-	l_IrradianceFromCache = max(l_IrradianceFromCache, AMBIENT_FLOOR);
-
-	// Convert SH irradiance to Lambertian outgoing radiance: albedo * (1 - metallic) * E / PI
-	float3 l_LuminanceIndirectLight_FromCache = l_MaterialAttributes.m_Albedo * (1.0 - l_MaterialAttributes.m_Metallic) * l_IrradianceFromCache / PI;
-
-	// GI feeds RT0 (visual output) only. RT1 (illuminance) carries direct lighting only
-	// so that next-frame ray hits do not re-accumulate already-accumulated indirect energy.
-	l_Luminance_ForDirectLight += l_LuminanceIndirectLight_FromCache;
-
-	/// Sun light
-	float3 D = normalize(g_Frame.sun_direction.xyz);
-	float r = sin(SUN_ANGULAR_RADIUS);
-	float d = cos(SUN_ANGULAR_RADIUS);
-	float DdotV = dot(D, V);
-	float3 S = V - DdotV * D;
-	float3 L = DdotV < d ? normalize(d * D + normalize(S) * r) : V;
-
-	float3 l_LuminousFlux_Sun = g_Frame.sun_illuminance.xyz;
-	float l_AttenuationFactor_Sun = 1.0;
-	float3 l_Luminance_DirectLight_Sun = float3(0.0, 0.0, 0.0);
-	float3 l_Luminance_IndirectLight_Sun = float3(0.0, 0.0, 0.0);
-	CalculateLuminance(l_MaterialAttributes, V, N, L, l_LuminousFlux_Sun, l_AttenuationFactor_Sun, l_Luminance_DirectLight_Sun, l_Luminance_IndirectLight_Sun);
-
-	float l_SunShadowFactor = SunShadowResolver(l_Position_WorldSpace, l_Normal_WorldSpace, in_SunShadow, in_samplerTypeLinear, L, l_ScreenCoord);
-	l_Luminance_ForDirectLight += l_Luminance_DirectLight_Sun * (1.0 - l_SunShadowFactor);
-	l_Luminance_ForIndirectLight += l_Luminance_IndirectLight_Sun * (1.0 - l_SunShadowFactor);
-
-	/// Point light
-	// Get the index of the current pixel in the l_PointLight grid.
-	uint2 l_TileIndex = uint2(floor((float2)l_ScreenCoord / LIGHT_CULLING_BLOCK_SIZE));
-
-	// Get the start position and offset of the l_PointLight in the l_PointLight index list.
-	uint l_StartOffset = in_LightGrid[l_TileIndex].x;
-	uint l_LightCount = in_LightGrid[l_TileIndex].y;
-
-	[loop]
-	for (uint i = 0; i < l_LightCount; ++i)
-	{
-		uint l_LightIndex = in_LightIndexList[l_StartOffset + i];
-		PointLight_CB l_PointLight = g_PointLights[l_LightIndex];
-
-		float3 L_unnormalized = l_PointLight.position.xyz - l_Position_WorldSpace;
-		float l_LightAttenuationRadius = l_PointLight.luminousFlux.w;
-
-		float3 L = normalize(L_unnormalized);
-
-		float3 l_LuminousFlux_PointLight = l_PointLight.luminousFlux.xyz;
-
-		float l_AttenuationFactor_PointLight = 1.0;
-		float l_InvertedSquareAttenuationRadius = 1.0 / max(l_LightAttenuationRadius * l_LightAttenuationRadius, EPSILON);
-		l_AttenuationFactor_PointLight *= CalculateDistanceAttenuation(L_unnormalized, l_InvertedSquareAttenuationRadius);
-
-		float3 l_Luminance_DirectLight_PointLight = float3(0.0, 0.0, 0.0);
-		float3 l_Luminance_IndirectLight_PointLight = float3(0.0, 0.0, 0.0);
-		CalculateLuminance(l_MaterialAttributes, V, N, L, l_LuminousFlux_PointLight, l_AttenuationFactor_PointLight, l_Luminance_DirectLight_PointLight, l_Luminance_IndirectLight_PointLight);
-
-		float l_PointLightShadowFactor = 0.0; // @TODO: implement shadow mapping for point light
-		l_Luminance_ForDirectLight += l_Luminance_DirectLight_PointLight * (1.0 - l_PointLightShadowFactor);
-		l_Luminance_ForIndirectLight += l_Luminance_IndirectLight_PointLight * (1.0 - l_PointLightShadowFactor);
-	}
-
-	/// Sphere area light
-	// [loop]
-	// for (uint i = 0; i < NR_SPHERE_LIGHTS; ++i)
-	// {
-	// 	float3 L_unnormalized = g_SphereLights[i].position.xyz - l_Position_WorldSpace;
-	// 	float l_LightSphereRadius = g_SphereLights[i].l_LuminousFlux.w;
-
-	// 	float3 L = normalize(L_unnormalized);
-	// 	float3 H = normalize(V + L);
-
-	// 	float LdotH = max(dot(L, H), 0.0);
-	// 	float NdotH = max(dot(N, H), 0.0);
-	// 	float NdotL = max(dot(N, L), 0.0);
-
-	// 	float sqrDist = dot(L_unnormalized, L_unnormalized);
-
-	// 	float Beta = acos(NdotL);
-	// 	float H2 = sqrt(sqrDist);
-	// 	float h = H2 / l_LightSphereRadius;
-	// 	float x = sqrt(max(h * h - 1, EPSILON));
-	// 	float y = -x * (1 / tan(Beta));
-	// 	//y = clamp(y, -1.0, 1.0);
-	// 	float l_OutgoingLuminance = 0;
-
-	// 	if (h * cos(Beta) > 1)
-	// 	{
-	// 		l_OutgoingLuminance = cos(Beta) / (h * h);
-	// 	}
-	// 	else
-	// 	{
-	// 		l_OutgoingLuminance = (1 / max(PI * h * h, EPSILON))
-	// 			* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, EPSILON)))
-	// 			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, EPSILON)) / x));
-	// 	}
-	// 	l_OutgoingLuminance *= PI;
-
-	// 	l_Luminance_ForDirectLight += CalculateLuminance(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypeLinear, NdotV, NdotL, NdotH, LdotH, l_Roughness, l_Metallic, F0, l_Albedo, l_OutgoingLuminance * g_SphereLights[i].l_LuminousFlux.xyz);
-	// }
-
-	// // Volumetric Fog
-	// float4 l_Fog = GetFog(in_VolumetricFog, in_samplerTypeLinear, l_Position_WorldSpace, l_Normal_WorldSpace, g_VoxelizationPassCBuffer);
-
-	// if (l_Fog.a)
-	// {
-	// 	l_Luminance_ForDirectLight = l_Fog.a * l_Luminance_ForDirectLight + l_Fog.xyz;
-	// }
-
-	// float l_SSAO = in_SSAO[l_ScreenCoord].x;
-	// float4 GPassRT3 = in_opaquePassRT3[l_ScreenCoord];
-	// float l_AmbienceOcclusion = 1.0 - GPassRT3.z;
-	// l_AmbienceOcclusion *= l_SSAO;
-	//l_Luminance_ForDirectLight *= l_AmbienceOcclusion;
-
-
-#if INDIRECT_LIGHT_FROM_CACHE_ONLY
-	out_lightPassRT0[l_ScreenCoord] = float4(l_LuminanceIndirectLight_FromCache, 1.0);
+#if DEBUG_INDIRECT_FROM_CACHE_ONLY
+	out_lightPassRT0[l_ScreenCoord] = float4(l_IndirectLuminance, 1.0);
 #else
-	out_lightPassRT0[l_ScreenCoord] = float4(l_Luminance_ForDirectLight, 1.0);
+	out_lightPassRT0[l_ScreenCoord] = float4(l_DirectLuminance, 1.0);
 #endif
-
-	out_lightPassRT1[l_ScreenCoord] = float4(l_Luminance_ForIndirectLight, 1.0);
+	out_lightPassRT1[l_ScreenCoord] = float4(l_IndirectSeedLuminance, 1.0);
 	DeviceMemoryBarrier();
 }
