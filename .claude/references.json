@@ -39,33 +39,23 @@
     },
     {
       "glob": "Source/Shaders/HLSL/GIDenoise.comp",
-      "paper": "GI-1.0 §2.4.3 (Denoising)",
-      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L3997",
-      "divergence": "Paper specifies a single-pass blur with radius = f(history count) (Figure 19 'Dilated blur mask'). Capsaicin implements exactly that. Ours is a 3-pass SVGF à-trous cascade with moments-based variance (from Schied 2017's unrelated SVGF paper). See TASK-125 for re-alignment plan."
+      "paper": "GI-1.0 §2.4.3 (Denoising) — temporal accumulation half (color delta, dynamic history cap, blur-mask emission).",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L3997"
     },
     {
-      "glob": "Source/Shaders/HLSL/GIATrousStride1.comp",
-      "paper": "GI-1.0 §2.4.3 (Denoising)",
-      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
-      "divergence": "Entire file should not exist under the paper's design — paper calls for single-pass variable-radius blur, not à-trous strides. See TASK-125."
+      "glob": "Source/Shaders/HLSL/GIFilterHorizontal.comp",
+      "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter, horizontal axis of the separable variable-radius bilateral blur.",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104"
     },
     {
-      "glob": "Source/Shaders/HLSL/GIATrousStride2.comp",
-      "paper": "GI-1.0 §2.4.3 (Denoising)",
-      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
-      "divergence": "Entire file should not exist under the paper's design. See TASK-125."
+      "glob": "Source/Shaders/HLSL/GIFilterVertical.comp",
+      "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter, vertical axis of the separable variable-radius bilateral blur.",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104"
     },
     {
-      "glob": "Source/Shaders/HLSL/GIATrousStride4.comp",
-      "paper": "GI-1.0 §2.4.3 (Denoising)",
-      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
-      "divergence": "Entire file should not exist under the paper's design. See TASK-125."
-    },
-    {
-      "glob": "Source/Shaders/HLSL/common/GIATrousCommon.hlsl",
-      "paper": "GI-1.0 §2.4.3 (Denoising)",
-      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104",
-      "divergence": "SVGF edge-stops (σ_L luminance weight, moments variance) imported from Schied 2017; not part of the GI-1.0 paper. See TASK-125."
+      "glob": "Source/Shaders/HLSL/common/GIFilterCommon.hlsl",
+      "paper": "GI-1.0 §2.4.3 (Denoising) — Figure 19 spatial filter body, shared by GIFilterHorizontal/Vertical.",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L4104"
     },
     {
       "glob": "Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl",

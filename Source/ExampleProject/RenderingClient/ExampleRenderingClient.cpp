@@ -16,9 +16,8 @@
 #include "RadianceCacheFilterVerticalPass.h"
 #include "RadianceCacheIntegrationPass.h"
 #include "GIDenoisePass.h"
-#include "GIATrous1Pass.h"
-#include "GIATrous2Pass.h"
-#include "GIATrous4Pass.h"
+#include "GIFilterHorizontalPass.h"
+#include "GIFilterVerticalPass.h"
 #include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
 #include "LightPass.h"
@@ -183,9 +182,8 @@ namespace Inno
 		RadianceCacheFilterVerticalPass::Get().Setup();
 		RadianceCacheIntegrationPass::Get().Setup();
 		GIDenoisePass::Get().Setup();
-		GIATrous1Pass::Get().Setup();
-		GIATrous2Pass::Get().Setup();
-		GIATrous4Pass::Get().Setup();
+		GIFilterHorizontalPass::Get().Setup();
+		GIFilterVerticalPass::Get().Setup();
 
 		SSAOPass::Get().Setup();
 
@@ -252,9 +250,8 @@ namespace Inno
 		RadianceCacheFilterVerticalPass::Get().Initialize();
 		RadianceCacheIntegrationPass::Get().Initialize();
 		GIDenoisePass::Get().Initialize();
-		GIATrous1Pass::Get().Initialize();
-		GIATrous2Pass::Get().Initialize();
-		GIATrous4Pass::Get().Initialize();
+		GIFilterHorizontalPass::Get().Initialize();
+		GIFilterVerticalPass::Get().Initialize();
 
 		SSAOPass::Get().Initialize();
 
@@ -329,9 +326,8 @@ namespace Inno
 			RadianceCacheFilterVerticalPass::Get().PrepareCommandList();
 			RadianceCacheIntegrationPass::Get().PrepareCommandList();
 			GIDenoisePass::Get().PrepareCommandList();
-			GIATrous1Pass::Get().PrepareCommandList();
-			GIATrous2Pass::Get().PrepareCommandList();
-			GIATrous4Pass::Get().PrepareCommandList();
+			GIFilterHorizontalPass::Get().PrepareCommandList();
+			GIFilterVerticalPass::Get().PrepareCommandList();
 
 			SSAOPass::Get().PrepareCommandList();
 
@@ -585,42 +581,29 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (GIATrous1Pass::Get().GetStatus() == ObjectStatus::Activated)
+		if (GIFilterHorizontalPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			if (GIDenoisePass::Get().GetStatus() == ObjectStatus::Activated)
 				l_hwService->WaitOnGPU(GIDenoisePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = GIATrous1Pass::Get().GetRenderPassComp();
-			l_hwService->Execute(GIATrous1Pass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
+			auto l_renderPass = GIFilterHorizontalPass::Get().GetRenderPassComp();
+			l_hwService->Execute(GIFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			l_hwService->Execute(GIATrous1Pass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
+			l_hwService->Execute(GIFilterHorizontalPass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (GIATrous2Pass::Get().GetStatus() == ObjectStatus::Activated)
+		if (GIFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			if (GIATrous1Pass::Get().GetStatus() == ObjectStatus::Activated)
-				l_hwService->WaitOnGPU(GIATrous1Pass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			if (GIFilterHorizontalPass::Get().GetStatus() == ObjectStatus::Activated)
+				l_hwService->WaitOnGPU(GIFilterHorizontalPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
-			auto l_renderPass = GIATrous2Pass::Get().GetRenderPassComp();
-			l_hwService->Execute(GIATrous2Pass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
+			auto l_renderPass = GIFilterVerticalPass::Get().GetRenderPassComp();
+			l_hwService->Execute(GIFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			l_hwService->Execute(GIATrous2Pass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
-		}
-
-		if (GIATrous4Pass::Get().GetStatus() == ObjectStatus::Activated)
-		{
-			if (GIATrous2Pass::Get().GetStatus() == ObjectStatus::Activated)
-				l_hwService->WaitOnGPU(GIATrous2Pass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-
-			auto l_renderPass = GIATrous4Pass::Get().GetRenderPassComp();
-			l_hwService->Execute(GIATrous4Pass::Get().GetCommandListComp(GPUEngineType::Graphics), GPUEngineType::Graphics);
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
-			l_hwService->Execute(GIATrous4Pass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
+			l_hwService->Execute(GIFilterVerticalPass::Get().GetCommandListComp(GPUEngineType::Compute), GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
@@ -673,8 +656,8 @@ namespace Inno
 			l_hwService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_hwService->WaitOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			if (GIATrous4Pass::Get().GetStatus() == ObjectStatus::Activated)
-				l_hwService->WaitOnGPU(GIATrous4Pass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			if (GIFilterVerticalPass::Get().GetStatus() == ObjectStatus::Activated)
+				l_hwService->WaitOnGPU(GIFilterVerticalPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			else if (GIDenoisePass::Get().GetStatus() == ObjectStatus::Activated)
 				l_hwService->WaitOnGPU(GIDenoisePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			
@@ -1054,9 +1037,8 @@ namespace Inno
 		SkyPass::Get().Terminate();
 
 		LightPass::Get().Terminate();
-		GIATrous4Pass::Get().Terminate();
-		GIATrous2Pass::Get().Terminate();
-		GIATrous1Pass::Get().Terminate();
+		GIFilterVerticalPass::Get().Terminate();
+		GIFilterHorizontalPass::Get().Terminate();
 		GIDenoisePass::Get().Terminate();
 
 		LightCullingPass::Get().Terminate();

@@ -3,12 +3,16 @@
 
 namespace Inno
 {
-	// SVGF à-trous iteration 3 (stride 4). Final spatial filter stage —
-	// LightPass reads this pass's output as the denoised GI irradiance.
-	class GIATrous4Pass : public IRenderPass
+	// GI-1.0 §2.4.3 paper-faithful spatial filter — horizontal axis of
+	// the separable variable-radius bilateral blur (Capsaicin gi1.comp:
+	// 4104–4154 FilterGI, gi1.cpp:2882–2927 dispatch wiring). Reads the
+	// sample-count-weighted GI history from GIDenoisePass + the per-pixel
+	// blur mask, writes a transient (rgb·N, N) scratch consumed by
+	// GIFilterVerticalPass within the same frame.
+	class GIFilterHorizontalPass : public IRenderPass
 	{
 	public:
-		INNO_CLASS_SINGLETON(GIATrous4Pass)
+		INNO_CLASS_SINGLETON(GIFilterHorizontalPass)
 
 		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;

@@ -16,22 +16,22 @@ namespace Inno
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
 
-		// GI history (CL1 storage convention: rgb = sample-count-weighted
-		// radiance Σ Lᵢ, a = sample count N). The final divide rgb/N is
-		// owned by the spatial filter pass — for the GIATrous{1,2,4}
-		// cascade in CL1 use GetIrradianceForFilter() instead.
+		// GI history (sample-count-weighted: rgb = Σ Lᵢ, a = sample
+		// count N). The horizontal filter pass consumes this directly
+		// and re-emits it after one separable blur axis; the vertical
+		// pass divides out N to produce the final irradiance.
 		TextureComponent* GetCurrentResult();
 
 		// Per-pixel temporal-variance moments (r=E[L], g=E[L²], b=N).
-		// CL2 deletes both this and the cascade that consumes it; kept
-		// in CL1 for compatibility with GIATrous{1,2,4}.
+		// Dead under the §2.4.3 paper-faithful filter — kept on this CL
+		// to keep the shader binding-set diff small; the moments
+		// ping-pong becomes a tracked follow-up (TASK-129).
 		TextureComponent* GetCurrentMoments();
 
-		// Normalised irradiance (rgb = lighting/N, a = N) for the
-		// GIATrous{1,2,4} cascade to consume in CL1. Transitional surface
-		// — CL2 deletes it once the variable-radius blur reads
-		// sample-count-weighted history directly.
-		TextureComponent* GetIrradianceForFilter();
+		// Per-pixel blur mask consumed by GIFilterHorizontal/Vertical.
+		// Stored normalised in [0, 1] (sky encoded as -1/MaxBlurMask),
+		// scalar R Float16. Capsaicin gi_denoiser.hlsl:32.
+		TextureComponent* GetBlurMask();
 
 	private:
 		ObjectStatus m_ObjectStatus;
@@ -58,10 +58,10 @@ namespace Inno
 		TextureComponent* m_ColorDelta_Even;
 		TextureComponent* m_ColorDelta_Odd;
 
-		// Single-buffer scratch surface for the cascade input. Not
-		// ping-ponged — written every frame, read by GIATrous1Pass within
-		// the same frame.
-		TextureComponent* m_IrradianceForFilter;
+		// Per-pixel blur mask. Single-buffered scalar Float16 — produced
+		// by this pass and consumed entirely within the same frame by
+		// GIFilterHorizontalPass and GIFilterVerticalPass.
+		TextureComponent* m_BlurMask;
 
 		TextureComponent* GetPreviousResult();
 		TextureComponent* GetPreviousMoments();

@@ -42,10 +42,10 @@ Texture2D<uint> in_ProbeMask : register(t6);
 // effective sample weight without re-running the EMA.
 [[vk::binding(7, 1)]]
 Texture2D<float4> in_GIHistoryPrev : register(t7);
-// Previous-frame SVGF moments. Kept for CL1 so the existing GIATrous{1,2,4}
-// cascade keeps consuming temporal-variance derived edge-stops; CL2
-// replaces the cascade with a variable-radius blur driven by the history
-// count alone and this binding is removed.
+// Previous-frame SVGF moments. Dead under the §2.4.3 paper-faithful
+// filter — variance-driven edge-stops were Schied 2017 SVGF, not the
+// GI-1.0 paper. Texture and binding kept on this CL to keep the diff
+// tight; tracked as a CL2 follow-up cleanup task.
 [[vk::binding(8, 1)]]
 Texture2D<float4> in_MomentsPrev : register(t8);
 // Previous-frame world-space position per pixel. RGBA float16 ping-pong;
@@ -68,13 +68,22 @@ Texture2D<float> in_ColorDeltaPrev : register(t10);
 RWTexture2D<float4> out_GIHistory : register(u0);
 [[vk::binding(1, 2)]]
 RWTexture2D<float4> out_MomentsCurrent : register(u1);
-// Normalised irradiance for the GIATrous{1,2,4} cascade to consume in CL1.
-// rgb = lighting / max(N, 1), a = N (preserved for downstream parity with
-// the moments-based variance edge-stops). The cascade's HLSL reads only
-// rgb, so this is a transitional surface — CL2 deletes it once the
-// variable-radius blur reads sample-count-weighted history directly.
+// Per-pixel blur mask consumed by the GIFilter{Horizontal,Vertical}
+// passes. Capsaicin gi1.comp:4083, 4099:
+//   blur_mask = is_sky ? -1 : max(MAX_BLUR_MASK - lighting.w, 0)
+//   stored = blur_mask / MAX_BLUR_MASK
+// High-sample-count pixels (lighting.w → MAX_BLUR_MASK) get blur_mask 0
+// and the filter early-outs to the centre tap; low-sample-count pixels
+// get the full radius (max ~8 px per axis) so the spatial filter masks
+// undersampling. Sky pixels (-1 sentinel) clamp to 0 in the filter's
+// `if (blur_mask > 0)` branch.
+//
+// Computed BEFORE the new sample is appended to lighting so the radius
+// reacts to the *previous* frame's converged-ness — a pixel that just
+// moved from a 32-sample plateau to a 4-sample disocclusion gets the
+// large radius this frame, not on the next.
 [[vk::binding(2, 2)]]
-RWTexture2D<float4> out_IrradianceForFilter : register(u2);
+RWTexture2D<float> out_BlurMask : register(u2);
 // Current-frame world-space position (xyz = GPassRT0 position, w = 1 for
 // non-sky / 0 for sky). Becomes next frame's `in_PrevWorldPos`.
 [[vk::binding(3, 2)]]
@@ -141,13 +150,15 @@ void main(ComputeInputType input)
 	float4 GPassRT0 = in_opaquePassRT0[l_ScreenCoord];
 
 	// Sky / no geometry. Sentinel writes (zero everywhere) so next frame's
-	// reprojection rejects this tap by the prev-world alpha gate, the
-	// cascade reads zero irradiance, and LightPass keeps agreement.
+	// reprojection rejects this tap by the prev-world alpha gate, and
+	// LightPass keeps agreement. Blur mask gets the Capsaicin sky
+	// sentinel `-1` (gi1.comp:4083); the filter's `blur_mask > 0` branch
+	// then clamps it to a zero-radius (centre-tap-only) fetch.
 	if (GPassRT0.a == 0.0)
 	{
 		out_GIHistory[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		out_MomentsCurrent[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		out_IrradianceForFilter[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		out_BlurMask[l_ScreenCoord] = -1.0 / kGIDenoiser_MaxBlurMask;
 		out_PrevWorldPos[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		out_ColorDelta[l_ScreenCoord] = 0.0;
 		return;
@@ -272,6 +283,15 @@ void main(ComputeInputType input)
 		}
 	}
 
+	// Capsaicin gi1.comp:4083 — capture the blur mask BEFORE the new
+	// sample is appended, so the radius reacts to last frame's history
+	// count rather than this frame's post-append count. Stored
+	// normalised in [0, 1] so the filter shader and the consumer's
+	// disk format agree (it's also a single R Float16 texture; the
+	// sky sentinel `-1` propagated through the early-out branch above
+	// keeps the same encoding shape there).
+	float blur_mask = max(kGIDenoiser_MaxBlurMask - lighting.w, 0.0);
+
 	// Append the current sample (sample-count-weighted: rgb·1 + N·1).
 	if (color.w > 0.0 || lighting.w < 1.0)
 	{
@@ -303,12 +323,12 @@ void main(ComputeInputType input)
 		lighting *= (max_sample_count / lighting.w);
 	}
 
-	// Moments output retained for CL1 — GIATrous{1,2,4} still consume it.
-	// Population follows the same formula as before: per-pixel EMA on
-	// (E[L], E[L²], N). N stays bounded by the *temporal* MAX_HISTORY_N
-	// (32) because the cascade's σ_L formula calibrates against it; the
-	// dynamic cap above governs the GIHistory representation only. CL2
-	// removes both moments and this distinction.
+	// Moments output retained on this CL but unread — the §2.4.3
+	// filter no longer takes a luminance edge-stop, so the temporal
+	// (E[L], E[L²], N) state is dead weight. Kept on this CL to keep
+	// the binding-set diff tight; tracked as a CL2 follow-up cleanup.
+	// Population still uses the temporal MAX_HISTORY_N=32 it always did
+	// (the dynamic cap governs the separate GIHistory.w).
 	const float MAX_HISTORY_N = 32.0;
 	const float MIN_TEMPORAL_ALPHA = 0.05;
 
@@ -350,14 +370,13 @@ void main(ComputeInputType input)
 		l_M2 = l_CurrentLumaSq;
 	}
 
-	// Normalised irradiance for the cascade. lighting.w is the sample
-	// count after append + dynamic cap; rgb / max(N, 1) is the per-frame
-	// expected irradiance the cascade can edge-stop against.
-	float3 normalised_rgb = lighting.xyz / max(lighting.w, 1.0);
-
 	out_GIHistory[l_ScreenCoord] = lighting;
 	out_MomentsCurrent[l_ScreenCoord] = float4(l_M1, l_M2, l_HistoryCount, 0.0);
-	out_IrradianceForFilter[l_ScreenCoord] = float4(normalised_rgb, lighting.w);
+	// Normalised so the consumer doesn't need MAX_BLUR_MASK to interpret
+	// the value (Capsaicin gi1.comp:4099). The filter shader reads it via
+	// `in_BlurMask.Load(...)` and multiplies back to recover the raw
+	// pixel-radius range.
+	out_BlurMask[l_ScreenCoord] = blur_mask / kGIDenoiser_MaxBlurMask;
 	out_PrevWorldPos[l_ScreenCoord] = float4(world, 1.0);
 	out_ColorDelta[l_ScreenCoord] = color_delta;
 }

@@ -137,7 +137,7 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// u2 - Normalised irradiance for the cascade (transitional surface)
+	// u2 - Per-pixel blur mask (R Float16, Capsaicin gi1.comp:4099)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex = 2;
@@ -196,7 +196,7 @@ bool GIDenoisePass::Terminate()
 	g_Engine->Get<TextureResourceService>()->Delete(m_PrevWorldPos_Odd);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ColorDelta_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ColorDelta_Odd);
-	g_Engine->Get<TextureResourceService>()->Delete(m_IrradianceForFilter);
+	g_Engine->Get<TextureResourceService>()->Delete(m_BlurMask);
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
@@ -239,7 +239,7 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (!m_ColorDelta_Odd || m_ColorDelta_Odd->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	if (!m_IrradianceForFilter || m_IrradianceForFilter->m_ObjectStatus != ObjectStatus::Activated)
+	if (!m_BlurMask || m_BlurMask->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -269,7 +269,7 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(l_currentWorldPos, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->TryToTransitState(l_previousColorDelta, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_currentColorDelta, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_fmService->TryToTransitState(m_IrradianceForFilter, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_fmService->TryToTransitState(m_BlurMask, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
@@ -289,7 +289,7 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousColorDelta, 11);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentHistory, 12);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentMoments, 13);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IrradianceForFilter, 14);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_BlurMask, 14);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentWorldPos, 15);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentColorDelta, 16);
 
@@ -363,9 +363,9 @@ TextureComponent* GIDenoisePass::GetPreviousColorDelta()
 	return (l_frameCount % 2 == 1) ? m_ColorDelta_Even : m_ColorDelta_Odd;
 }
 
-TextureComponent* GIDenoisePass::GetIrradianceForFilter()
+TextureComponent* GIDenoisePass::GetBlurMask()
 {
-	return m_IrradianceForFilter;
+	return m_BlurMask;
 }
 
 bool GIDenoisePass::RenderTargetsCreationFunc()
@@ -386,8 +386,8 @@ bool GIDenoisePass::RenderTargetsCreationFunc()
 		g_Engine->Get<TextureResourceService>()->Delete(m_ColorDelta_Even);
 	if (m_ColorDelta_Odd)
 		g_Engine->Get<TextureResourceService>()->Delete(m_ColorDelta_Odd);
-	if (m_IrradianceForFilter)
-		g_Engine->Get<TextureResourceService>()->Delete(m_IrradianceForFilter);
+	if (m_BlurMask)
+		g_Engine->Get<TextureResourceService>()->Delete(m_BlurMask);
 
 	auto l_RenderPassDesc = g_Engine->Get<RenderingConfigurationService>()->GetDefaultRenderPassDesc();
 
@@ -411,12 +411,9 @@ bool GIDenoisePass::RenderTargetsCreationFunc()
 	m_Moments_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_Moments_Odd);
 
-	// Prev-world-pos: RGBA Float16 like the default. xyz = world position,
-	// w = 1 marks non-sky / 0 marks sky-or-uninitialised. Float16 trades
-	// some precision at far distances for half the bandwidth — adequate
-	// because the validity gate compares against `cell_size` which scales
-	// with depth (paper §2.1 / Algorithm 6), so absolute precision loss
-	// at distance scales the same way as the gate threshold.
+	// Prev-world-pos: RGBA Float16 default. xyz = world, w = 1/0 sky
+	// flag. Validity gate compares against depth-scaled `cell_size` so
+	// Float16 precision loss at distance scales with the gate threshold.
 	m_PrevWorldPos_Even = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass PrevWorldPos (Even)");
 	m_PrevWorldPos_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_PrevWorldPos_Even->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
@@ -442,12 +439,13 @@ bool GIDenoisePass::RenderTargetsCreationFunc()
 	m_ColorDelta_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_ColorDelta_Odd);
 
-	// Cascade input scratch — same default RGBA Float16, single-buffered
-	// (read+write inside the same frame, no cross-frame role).
-	m_IrradianceForFilter = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass IrradianceForFilter");
-	m_IrradianceForFilter->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_IrradianceForFilter->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_IrradianceForFilter);
+	// Per-pixel blur mask. Scalar R Float16, single-buffered — same
+	// PixelDataFormat treatment as the colour-delta scalar above. Read
+	// then overwritten within the same frame by GIFilter{H,V}Pass.
+	m_BlurMask = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass BlurMask");
+	m_BlurMask->m_TextureDesc = l_ColorDeltaDesc;
+	m_BlurMask->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
+	g_Engine->Get<TextureResourceService>()->Initialize(m_BlurMask);
 
 	return true;
 }

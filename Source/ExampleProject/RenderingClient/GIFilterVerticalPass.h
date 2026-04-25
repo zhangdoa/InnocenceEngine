@@ -3,13 +3,15 @@
 
 namespace Inno
 {
-	// SVGF à-trous iteration 1 (stride 1). Consumes the temporal output
-	// from GIDenoisePass + the moments texture; produces the first
-	// spatially-filtered GI irradiance. Feeds GIATrous2Pass.
-	class GIATrous1Pass : public IRenderPass
+	// GI-1.0 §2.4.3 paper-faithful spatial filter — vertical axis of the
+	// separable variable-radius bilateral blur. Reads the horizontal
+	// pass's scratch + the per-pixel blur mask; writes the final
+	// per-pixel irradiance (rgb / max(N, 1), 1) consumed by LightPass.
+	// Replaces GIATrous4Pass as LightPass's GI source.
+	class GIFilterVerticalPass : public IRenderPass
 	{
 	public:
-		INNO_CLASS_SINGLETON(GIATrous1Pass)
+		INNO_CLASS_SINGLETON(GIFilterVerticalPass)
 
 		bool Setup(IServiceConfig* systemConfig = nullptr) override;
 		bool Initialize() override;
