@@ -73,4 +73,4 @@ function emit(staged) {
   process.exit(2)
 }
 
-module.exports = { run }
+module.exports = { run, needsTranscript: true }
