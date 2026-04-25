@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/CMake/DeployRuntimePayload.cmake)
+
 add_executable(Main WIN32 WinMain.cpp)
 target_sources(Main PRIVATE WinMain.rc)
 set_target_properties(Main PROPERTIES FOLDER Engine/Main)
@@ -7,6 +9,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 target_link_libraries(Main Engine ExampleProjectFactory)
+inno_deploy_runtime_payload(Main)
 
 add_executable(RenderTest WIN32 WinMain.cpp)
 target_sources(RenderTest PRIVATE WinMain.rc)
@@ -17,3 +20,4 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 target_link_libraries(RenderTest Engine TestClientFactory)
+inno_deploy_runtime_payload(RenderTest)
