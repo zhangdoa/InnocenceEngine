@@ -14,16 +14,20 @@
  * Gate order (first failure wins) — split by transcript dependence:
  *
  * Phase 1 (no transcript needed; runs even if transcript I/O fails):
- *   1. file-size        — universal soft ratchet on code/script files.
- *   2. paper-port       — closing a paper-port task needs a fresh alignment artifact.
- *   3. attribution      — commit message needs the AI-authorship header.
+ *   1. data-generated   — never track files under `Data/Generated/`, never
+ *                         loosen the gitignore mask that protects it.
+ *                         Placed first: a structural "must never happen"
+ *                         rule that no later evidence can excuse.
+ *   2. file-size        — universal soft ratchet on code/script files.
+ *   3. paper-port       — closing a paper-port task needs a fresh alignment artifact.
+ *   4. attribution      — commit message needs the AI-authorship header.
  *                         MUST live in this phase so transcript-fail-open
  *                         cannot bypass it (see CL fixing 55cf6a72 gap).
  *
  * Phase 2 (transcript-dependent; skipped if transcript unreadable):
- *   4. test-run         — staged code needs integration-test evidence.
- *   5. live-engine      — editor code needs a real-engine / Playwright run.
- *   6. serialize-test   — serializer code needs a serialize-determinism run.
+ *   5. test-run         — staged code needs integration-test evidence.
+ *   6. live-engine      — editor code needs a real-engine / Playwright run.
+ *   7. serialize-test   — serializer code needs a serialize-determinism run.
  *
  * Each gate declares `needsTranscript: boolean` on its module exports;
  * the dispatcher partitions by that flag.
@@ -41,6 +45,7 @@ const {
 // transcript-independent gates run BEFORE the transcript fetch — that
 // way a missing/unreadable transcript can never bypass attribution.
 const GATES = [
+  require('./gates/data-generated'),  // needsTranscript: false (structural; first)
   require('./gates/file-size'),       // needsTranscript: false
   require('./gates/paper-port'),      // needsTranscript: false
   require('./gates/test-run'),        // needsTranscript: true
