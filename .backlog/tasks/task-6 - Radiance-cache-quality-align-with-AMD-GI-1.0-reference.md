@@ -102,6 +102,8 @@ Sized as a CL each.
 
 ### Chapter closed 2026-04-23 — with known divergence at [I.3e]
 
+**[STATUS NOTE 2026-04-25] Closure conflicts with TASK-127.** TASK-127 (filed 2026-04-25) documents that GI is geometrically applied to only the upper-left ~2/3 × 2/3 of every frame — a clean rectangular cutoff visible on every scene, indicative of a coordinate / extent mismatch somewhere along the GI dispatch → consume chain. TASK-127 is a hard blocker on declaring the umbrella truly delivered: a 2/3-coverage GI image is visibly wrong on every output, even if individual sub-slices ([F], [S1], [S2], [I], [W]) landed correctly in isolation. Treat this umbrella's Done status as **conditional on TASK-127 closing**; future agents should not optimistically reference this closure when reasoning about GI completeness. Other deliverables remain honestly closed — the conflict is localised to "the umbrella's combined output is geometrically cropped".
+
 All non-optional sub-umbrellas ([F], [S1], [S2], [I], [W]) landed and marked Done in their own tasks (TASK-114/115/116/117/118).
 
 **[CORRECTION 2026-04-24] The [I.3e] denoiser subslice diverged from paper §2.4.3.** The paper specifies an adaptive-radius single-pass blur driven by per-pixel history count (Figure 19 "Dilated blur mask"); we implemented a 3-pass SVGF à-trous cascade from an unrelated denoising paper (Schied 2017). See the [I.3e] commentary below and TASK-125 for the re-alignment plan. Code renders GI output today (the denoiser does *something*), but the shape does not match the paper, and the motion defects filed in TASK-125 are direct consequences. The port is not truly faithful until [I.3e] is re-implemented.
@@ -165,10 +167,10 @@ Save the PNG with a label tied to the CL (e.g. `S1_5_post.png`) so the next CL c
 | I.3b | Inline 3x3 depth-bilateral on history read | ☑ | |
 | I.3c | Inline 5x5 Gaussian bilateral + tighter temporal blend | ☑ | |
 | I.3d | Inline spatial-variance-adaptive blend rate | ☑ | |
-| I.3e.1 | Extract denoiser into standalone GIDenoisePass (zero-behavior-change prerequisite) | ☑ | |
-| I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | ☑ | |
-| I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | ☑ | |
-| I.3e.4 | Disocclusion mask dilation | ☑ | |
+| I.3e.1 | Extract denoiser into standalone GIDenoisePass (zero-behavior-change prerequisite) | superseded by TASK-125 (CLs 55cf6a72, 112ba702, a0bd684c) | |
+| I.3e.2 | SVGF temporal-variance-driven blend rate (2nd-moment history) | superseded by TASK-125 (CLs 55cf6a72, 112ba702, a0bd684c) | |
+| I.3e.3 | A-trous multi-stride spatial filter (3 passes @ stride 1/2/4) | superseded by TASK-125 (CLs 55cf6a72, 112ba702, a0bd684c) | |
+| I.3e.4 | Disocclusion mask dilation | superseded by TASK-125 (CLs 55cf6a72, 112ba702, a0bd684c) | |
 | W.1 | World cache: fingerprint hash + linear probing | ☑ | |
 | W.2 | World cache: directional descriptor + short-ray bit (leak fix) | ☑ | |
 | W.3a | World cache: decay-based eviction (stale-slot reuse) | ☑ | |

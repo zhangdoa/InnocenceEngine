@@ -1,14 +1,17 @@
 ---
 id: TASK-123
-title: 'GI black regions outside probe coverage (GITestBox) — no disocclusion fallback in GIDenoise'
+title: >-
+  GI black regions outside probe coverage (GITestBox) — no disocclusion fallback
+  in GIDenoise
 status: Done
 assignee: []
 created_date: '2026-04-23 20:00'
-updated_date: '2026-04-24 10:20'
+updated_date: '2026-04-25 19:44'
 labels:
   - rendering
   - GI
   - radiance-cache
+  - closed-with-residue
 dependencies: []
 references:
   - Source/Shaders/HLSL/GIDenoise.comp
@@ -93,4 +96,15 @@ Not verified:
 - Behaviour on scenes outside GISponza / GITestBox. The floor constant was picked to look right on these two; different lighting setups may want different values (and eventually a cheap world-cache read would replace the constant with a position-dependent estimate).
 - Motion-time behaviour — TASK-125 motion defects (SVGF smear, banding re-emergence) are orthogonal and remain open.
 - Path-tracer mode unaffected; the fix only applies to the rasterizer `LightPass.comp`.
+
+### Closure residue — reconciliation 2026-04-25
+
+**Status: closed-with-residue.** The diagnosis section above identified the right root cause (no world-cache fallback when ring-search exhausts); the shipped fix is a different mechanism — an unconditional scene-tinted constant `AMBIENT_FLOOR = (0.02, 0.025, 0.03)` in `lightPass.comp` — layered on top of a denoiser whose disocclusion handling has since been replaced by TASK-125's §2.4.3 paper-faithful filter.
+
+The constant-floor approach traded structural correctness for a 1-line shader change that delivered ~80% of the visible improvement on GISponza/GITestBox. Two follow-on conditions now make it suspect:
+
+- TASK-125's denoiser swap reshaped how disocclusion / under-sampled regions get blurred, so the original symptom (hard black corners under specific ring-search exhaustion paths) may now manifest differently — or not at all — on the post-CL3 pipeline.
+- The constant is scene-tinted (cool blue) and looks wrong outside GISponza/GITestBox; the noted limitation in the original Final Summary already flags this.
+
+The scoped successor — a world-cache fallback inside LightPass that activates when 4-corner ring-search exhausts, removing the AMBIENT_FLOOR constant — is filed as **TASK-6.3**. This task remains Done (not reopened) so the historical record of "what shipped vs. what should have shipped" is preserved at the diagnosis-vs-fix boundary.
 <!-- SECTION:FINAL_SUMMARY:END -->

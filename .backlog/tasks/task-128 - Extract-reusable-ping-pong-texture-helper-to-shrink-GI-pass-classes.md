@@ -1,18 +1,18 @@
 ---
 id: TASK-128
-title: 'Extract reusable ping-pong texture helper to shrink GI pass classes'
+title: Extract reusable ping-pong texture helper to shrink GI pass classes
 status: To Do
 assignee: []
 created_date: '2026-04-25 00:00'
+updated_date: '2026-04-25 19:46'
 labels:
   - rendering
   - refactor
   - code-quality
 dependencies:
-  - TASK-125
+  - TASK-6.2
 references:
   - Source/Engine/RenderingClient/GIDenoisePass.cpp
-parent_task_id: ''
 priority: low
 ---
 
@@ -33,19 +33,17 @@ A `PingPongTexture` (or similarly named) RAII type that:
 
 The implementer should grep the codebase for existing hand-rolled ping-pong patterns and list every site in this task's Implementation Notes before refactoring. Known starting points:
 
-- `Source/Engine/RenderingClient/GIDenoisePass.cpp` — at least four pairs after CL3 lands (CL3 deletes the moments pair, so post-CL3 the count will differ; survey at refactor time).
+- `Source/Engine/RenderingClient/GIDenoisePass.cpp` — surviving pairs after the GI denoiser dust settles. The pair count is in flux while TASK-6.2 lands (TASK-6.2 deletes the `m_Moments_{Even,Odd}` pair); survey at refactor time against the actual current state, not against any historical CL.
 - The radiance-cache passes (probe history, screen cache reprojection, world-cache MIPs — at least one of these ping-pongs by hand).
 - Any TAA / motion-blur passes that exist in the engine.
 
 The list above is a starting scope, not authoritative. Survey before extracting.
 
-### Schedule constraint: defer until AFTER TASK-125 CL2 + CL3 land
+### Schedule constraint: depends on TASK-6.2
 
-CL2 and CL3 of TASK-125 actively modify the set of ping-pong textures in `GIDenoisePass`:
-- CL3 deletes the moments ping-pong entirely (replaced by the dilated-blur-mask spatial filter from the paper §2.4.3).
-- CL2 / CL3 may add or remove additional pairs depending on how the paper-aligned denoiser is structured.
+TASK-6.2 deletes the `m_Moments_{Even,Odd}` pair and trims `GIDenoisePass`'s descriptor layout from 17 → 15 entries. Doing this extraction before TASK-6.2 lands means templating the wrong set of pairs and immediately re-doing the survey + descriptor accounting once TASK-6.2 trims the layout. Sequence: TASK-6.2 first (focused descriptor cleanup, no behaviour change), then TASK-128 (cross-cutting helper extraction).
 
-Doing this extraction before CL3 is wasted churn — the pairs we'd template would be the wrong set. Do it after CL3 lands so the survey reflects the final state.
+If TASK-6.2 stalls and TASK-128 becomes urgent for an unrelated reason (e.g. another pass adds a fifth pair and trips the file-size gate again), the two can be merged into one CL — but the default is sequential, since the helper extraction is naturally larger and benefits from a stable target.
 
 ### Why this is low priority
 
@@ -53,7 +51,7 @@ Pure quality-of-life cleanup. Not a defect, not a blocker on any feature, no use
 
 ### Cross-cutting: not a child of TASK-125 or any single feature
 
-This is foundation / shared-utility work. No parent task; the dependency on TASK-125 is only a scheduling constraint, not a parent-of relationship.
+This is foundation / shared-utility work. No parent task; the dependency on TASK-6.2 is only a scheduling constraint, not a parent-of relationship.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Definition of Done

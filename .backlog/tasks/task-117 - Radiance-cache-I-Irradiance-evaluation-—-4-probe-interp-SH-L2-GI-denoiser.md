@@ -6,6 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-04-20 17:36'
+updated_date: '2026-04-25 19:43'
 labels: []
 dependencies: []
 priority: medium
@@ -35,3 +36,20 @@ Parent: TASK-6 (see Implementation Notes §[I]).
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+### Reconciliation 2026-04-25 — divergence acknowledged at closure time
+
+This task closed Done on 2026-04-23 with the [I.3e.x] denoiser sub-deliverables ticked in TASK-6's Status table. **What actually shipped at [I.3e] was a Schied 2017 SVGF stack** (3-pass à-trous + moments variance + SVGF luminance edge-stop), not the paper §2.4.3 single-pass-radius-by-history filter the original [I] scope called for.
+
+The divergence was discovered after closure when TASK-125 root-caused the motion defects (spiral smear, banding re-emergence under rotation) to the wrong-paper denoiser. TASK-125 then re-implemented the §2.4.3 paper-faithful filter across CLs 55cf6a72, 112ba702, a0bd684c — superseding the SVGF cascade entirely.
+
+The [I.3e.x] entries in TASK-6's Status table have been re-marked accordingly. This task remains Done because [I.1], [I.2], [I.2b], and the [I.3]–[I.3d] inline denoiser stack landed as scoped; the divergence was localised to the [I.3e] subslices.
+
+See:
+- TASK-125 closure notes for the recovery scope.
+- TASK-6 Status table for the per-row supersession markers.
+- TASK-6 [I.3e] commentary block for the original CORRECTION 2026-04-24 footnote.
+<!-- SECTION:NOTES:END -->
