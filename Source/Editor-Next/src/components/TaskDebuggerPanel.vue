@@ -7,10 +7,10 @@ import {
   NText,
   NButton,
   NSwitch,
-  NDivider,
 } from 'naive-ui'
 import { taskGraphStore } from '../store/taskGraphStore'
 import { connectionStore } from '../store/connectionStore'
+import { uiStore } from '../store/uiStore'
 
 const autoRefresh = ref(true)
 const REFRESH_MS = 500
@@ -32,12 +32,9 @@ watch(
   () => connectionStore.isConnected,
   (connected) => {
     if (connected) {
-      // Store already refreshes on its own connect subscription; here we
-      // manage only the polling timer that's specific to this panel.
       startTimer()
     } else {
       stopTimer()
-      // Store handles the reset itself on disconnect.
     }
   },
 )
@@ -51,29 +48,59 @@ onMounted(() => {
 
 onUnmounted(stopTimer)
 
-// 100ns ticks (Win32 QPC-derived) → ms.
-const ticksToMs = (ticks) => Number(ticks) / 10000
+// TaskScheduler stamps reports with Timer::GetCurrentTimeFromEpoch in
+// microseconds (see Engine/Common/Thread.cpp). The previous implementation
+// divided by 10000, which assumed 100ns ticks — off by 10x. Correct factor
+// is 1000 (µs → ms).
+const usToMs = (us) => Number(us) / 1000
 
-const tasksByThread = computed(() =>
-  taskGraphStore.threads.map((t) => ({
-    index: t.index,
-    reports: [...(t.reports || [])]
-      .filter((r) => r.startTime && r.finishTime && r.finishTime >= r.startTime)
-      .sort((a, b) => Number(b.startTime) - Number(a.startTime))
+// Per-thread shape: index, valid reports (sorted newest first), total
+// active-time (sum of durations) and per-task durations for the detail
+// expansion. `durationMsTotal` is the workload metric the collapsed row
+// shows — see closure note: cycles (ms summed) over the buffered slice
+// is unit-stable and directly answers "what is this thread doing right
+// now," whereas % active conflates "no tasks scheduled" with "tasks
+// finished fast" without a wall-clock window we trust at this layer.
+const threadsView = computed(() =>
+  taskGraphStore.threads.map((t) => {
+    const valid = (t.reports || []).filter(
+      (r) => r.startTime && r.finishTime && BigInt(r.finishTime) >= BigInt(r.startTime),
+    )
+    const sortedRecent = [...valid]
+      .sort((a, b) => Number(BigInt(b.startTime) - BigInt(a.startTime)))
       .slice(0, 12)
       .map((r) => ({
         name: r.name,
-        durationMs: ticksToMs(BigInt(r.finishTime) - BigInt(r.startTime)),
-      })),
-  })),
+        durationMs: usToMs(BigInt(r.finishTime) - BigInt(r.startTime)),
+      }))
+    let totalUs = 0n
+    for (const r of valid) totalUs += BigInt(r.finishTime) - BigInt(r.startTime)
+    return {
+      index: t.index,
+      sampleCount: valid.length,
+      reports: sortedRecent,
+      durationMsTotal: usToMs(totalUs),
+    }
+  }),
 )
 
-const longestDuration = computed(() => {
+// Scaling: the workload sparkline scales against the busiest thread so
+// idle threads render visibly empty rather than full-width.
+const longestTotalMs = computed(() => {
   let max = 0
-  for (const t of tasksByThread.value)
+  for (const t of threadsView.value) if (t.durationMsTotal > max) max = t.durationMsTotal
+  return Math.max(max, 1)
+})
+
+const longestReportMs = computed(() => {
+  let max = 0
+  for (const t of threadsView.value)
     for (const r of t.reports) if (r.durationMs > max) max = r.durationMs
   return Math.max(max, 1)
 })
+
+const isExpanded = (index) => uiStore.isTaskThreadExpanded(index)
+const toggleThread = (index) => uiStore.toggleTaskThreadExpanded(index)
 </script>
 
 <template>
@@ -85,7 +112,7 @@ const longestDuration = computed(() => {
     <template v-else>
       <div class="toolbar">
         <n-space align="center" :size="12">
-          <n-text depth="3" class="section-label">Recent task reports</n-text>
+          <n-text depth="3" class="section-label">Thread workload</n-text>
           <n-space align="center" :size="6">
             <n-text depth="3" style="font-size: 11px">Auto</n-text>
             <n-switch v-model:value="autoRefresh" size="small" data-test="task-auto" />
@@ -97,32 +124,59 @@ const longestDuration = computed(() => {
       </div>
 
       <n-scrollbar>
-        <div v-for="thread in tasksByThread" :key="thread.index" class="thread-block">
-          <n-text strong>Thread {{ thread.index }}</n-text>
-          <n-empty
-            v-if="!thread.reports.length"
-            description="No reports yet"
-            size="small"
-            style="margin: 4px 0"
-          />
-          <div v-else class="report-list">
-            <div
-              v-for="(report, idx) in thread.reports"
-              :key="idx"
-              class="report-row"
-              :title="report.name"
+        <div class="thread-list" data-test="task-thread-list">
+          <template v-for="thread in threadsView" :key="thread.index">
+            <button
+              type="button"
+              class="thread-row"
+              :class="{ 'is-expanded': isExpanded(thread.index) }"
+              :data-test="`task-thread-row-${thread.index}`"
+              :data-thread-index="thread.index"
+              :data-expanded="isExpanded(thread.index) ? 'true' : 'false'"
+              :aria-expanded="isExpanded(thread.index)"
+              @click="toggleThread(thread.index)"
             >
-              <span class="report-name">{{ report.name }}</span>
+              <span class="chevron" aria-hidden="true">{{ isExpanded(thread.index) ? '▾' : '▸' }}</span>
+              <span class="thread-label">Thread {{ thread.index }}</span>
               <div class="bar-track">
                 <div
                   class="bar-fill"
-                  :style="{ width: ((report.durationMs / longestDuration) * 100).toFixed(1) + '%' }"
+                  :style="{ width: ((thread.durationMsTotal / longestTotalMs) * 100).toFixed(1) + '%' }"
                 />
               </div>
-              <span class="report-duration">{{ report.durationMs.toFixed(2) }} ms</span>
+              <span class="thread-total">{{ thread.durationMsTotal.toFixed(2) }} ms</span>
+            </button>
+
+            <div
+              v-if="isExpanded(thread.index)"
+              class="thread-detail"
+              :data-test="`task-thread-detail-${thread.index}`"
+            >
+              <n-empty
+                v-if="!thread.reports.length"
+                description="No reports yet"
+                size="small"
+                style="margin: 4px 0"
+              />
+              <div v-else class="report-list">
+                <div
+                  v-for="(report, idx) in thread.reports"
+                  :key="idx"
+                  class="report-row"
+                  :title="report.name"
+                >
+                  <span class="report-name">{{ report.name }}</span>
+                  <div class="bar-track">
+                    <div
+                      class="bar-fill"
+                      :style="{ width: ((report.durationMs / longestReportMs) * 100).toFixed(1) + '%' }"
+                    />
+                  </div>
+                  <span class="report-duration">{{ report.durationMs.toFixed(2) }} ms</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <n-divider style="margin: 6px 0" />
+          </template>
         </div>
       </n-scrollbar>
     </template>
@@ -158,12 +212,64 @@ const longestDuration = computed(() => {
   letter-spacing: 0.5px;
 }
 
-.thread-block {
-  padding: 8px 12px;
+.thread-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.thread-row {
+  display: grid;
+  grid-template-columns: 14px 80px 1fr 72px;
+  gap: 8px;
+  align-items: center;
+  height: 24px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ctp-surface0);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+
+.thread-row:hover {
+  background: var(--ctp-surface0);
+}
+
+.thread-row.is-expanded {
+  background: var(--ctp-surface0);
+}
+
+.chevron {
+  font-size: 10px;
+  color: var(--ctp-subtext0);
+  width: 14px;
+  text-align: center;
+}
+
+.thread-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ctp-subtext0);
+}
+
+.thread-detail {
+  padding: 6px 12px 10px 32px;
+  border-bottom: 1px solid var(--ctp-surface0);
+  background: var(--ctp-mantle);
 }
 
 .report-list {
-  margin-top: 4px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -185,9 +291,13 @@ const longestDuration = computed(() => {
 
 .bar-track {
   height: 6px;
-  background: var(--ctp-surface0);
+  background: var(--ctp-surface1);
   border-radius: 3px;
   overflow: hidden;
+}
+
+.thread-row .bar-track {
+  height: 5px;
 }
 
 .bar-fill {
