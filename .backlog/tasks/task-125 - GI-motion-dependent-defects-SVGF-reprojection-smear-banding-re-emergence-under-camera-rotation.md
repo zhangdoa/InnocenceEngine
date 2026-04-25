@@ -1,7 +1,7 @@
 ---
 id: TASK-125
 title: 'GI motion-dependent defects: SVGF reprojection smear + banding re-emergence under camera rotation'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-23 20:55'
 labels:
@@ -118,10 +118,10 @@ Guidance for whoever picks this up: match Capsaicin's shapes before attempting t
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
+- [x] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
+- [x] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
+- [x] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
+- [x] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
+- [x] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->

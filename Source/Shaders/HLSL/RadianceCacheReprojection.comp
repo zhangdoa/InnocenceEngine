@@ -64,7 +64,11 @@ RWTexture2D<float4> in_SideCache_Normal : register(u4);
 // the spatial scale (plane / distance) comes from the unified Algorithm 6
 // AdaptiveCellSize so reprojection, sampling, and filter agree on what
 // counts as "same surface".
-static const float NORMAL_THRESHOLD = 0.9;
+// Capsaicin gi1.comp:4051 uses 0.95 for the denoiser-pass reprojection
+// validity test. Matching that here keeps the probe and per-pixel passes
+// agreeing on "same surface" under camera rotation, where 0.9 admitted
+// neighbours up to ~25.8° apart and let stale SH leak into rotated tiles.
+static const float NORMAL_THRESHOLD = 0.95;
 static const float DEPTH_THRESHOLD = 0.1;
 static const float MIN_CONFIDENCE = 0.1;
 static const float MAX_CONFIDENCE = 0.95;
@@ -170,6 +174,14 @@ void main(ComputeInputType input)
         // scale so the "can I reuse this probe?" decision here and the
         // filter's "is this neighbor usable?" decision later are aligned.
         float cellSize = max(AdaptiveCellSize(currentDepth, g_Frame.viewportSize.xy, g_Frame.p_original), 0.1);
+        // Grazing-angle boost (Capsaicin gi1.comp:4026). At grazing view
+        // angles a tiny world-space difference projects to many screen
+        // pixels, so the same plane-distance check that's right at normal
+        // incidence over-rejects under rotation. Boost the gate by up to 5×
+        // as the view-vs-normal angle approaches 90°, matching the
+        // denoiser-pass reprojection cellSize.
+        float3 viewDir = normalize(g_Frame.camera_posWS.xyz - positionWS);
+        cellSize *= lerp(1.0, 5.0, pow(1.0 - max(dot(viewDir, normalWS), 0.0), 6.0));
 
         if (plane_dist < cellSize &&
             normal_check > NORMAL_THRESHOLD &&
