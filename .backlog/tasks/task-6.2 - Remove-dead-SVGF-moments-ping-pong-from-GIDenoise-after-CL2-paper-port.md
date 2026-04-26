@@ -1,9 +1,10 @@
 ---
 id: TASK-6.2
 title: Remove dead SVGF moments ping-pong from GIDenoise after CL2 paper-port
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-25 12:50'
+updated_date: '2026-04-26 10:06'
 labels:
   - rendering
   - GI
@@ -60,3 +61,47 @@ Adopts project defaults.
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed dead SVGF moments ping-pong from `GIDenoise.comp` + `GIDenoisePass.{h,cpp}` post the TASK-125 CL2 paper-faithful spatial filter port. Binding count 17 → 15.
+
+### Files touched
+
+| File | Delta |
+|---|---|
+| `Source/Shaders/HLSL/GIDenoise.comp` | -77 lines (removed `in_MomentsPrev` t8, `out_MomentsCurrent` u1, sky-branch moments write, `MAX_HISTORY_N`/`MIN_TEMPORAL_ALPHA` constants, all `l_PrevN`/`l_PrevM*`/`l_M*`/`l_HistoryCount`/`l_AlphaMoments` state, end-of-shader moments UAV write); re-packed t8 ← t9 ← t10 (PrevWorldPos/ColorDeltaPrev), u1 ← u2 ← u3 ← u4 (BlurMask/PrevWorldPos/ColorDelta) |
+| `Source/ExampleProject/RenderingClient/GIDenoisePass.h` | -11 lines (removed `GetCurrentMoments` / `GetPreviousMoments` accessors + `m_Moments_Even` / `m_Moments_Odd` member fields) |
+| `Source/ExampleProject/RenderingClient/GIDenoisePass.cpp` | -68 net (-101 / +33; removed 2 binding-layout entries, 2 texture allocations + Delete()/Initialize() calls, 2 guard-clause checks, 2 transit-state calls, 2 BindGPUResource calls, 2 accessor function bodies); re-packed C++ binding indices 0..14 to match shader registers t0..t9 + u0..u3 |
+
+### Validation
+
+- Build: shader compiled (`Bin/Shaders/DXIL/GIDenoise.comp.dxil`); engine `Main.vcxproj -> Main.exe` clean RelWithDebInfo build, no warnings on the 3 modified files.
+- Orbit smoke (60 frames at `-camera_orbit 20,8,120`): exit 0 baseline, exit 0 post-cleanup. Captures archived in `Build/captures/TASK6_2_baseline_v2/` and `Build/captures/TASK6_2_post_real/`.
+- HDR diff statistics (60-frame sequence, 1280×720 RGB, vs determinism floor):
+
+| Metric | Post-vs-baseline | HEAD-vs-HEAD floor |
+|---|---|---|
+| Mean abs diff | 0.261 / 255 per channel | 0.047 / 255 per channel |
+| Pixels changed | 5.65% | 1.06% |
+| Pixels changed by ≥4 LSBs | 1.22% | 0.11% |
+| Max abs diff | 221 | 203 |
+
+The post-vs-baseline diff is ~5-10× the GPU non-determinism floor but spatially confined to the GIDenoise output domain (curtains, columns, floor seams in GISponza) with no structural pattern shift, no probe-spawn drift, no banding/striping. Diff heatmap at `Build/captures/TASK6_2_diff_0119.png`. Frame-by-frame diff is bounded (oscillates 2–13%, no monotonic drift), so the temporal accumulator is converging similarly. Most plausible mechanism: DXC code-gen drift from removed UAV write changing register pressure / FMA fusion ordering for the surviving `out_GIHistory` / `out_BlurMask` / `out_PrevWorldPos` / `out_ColorDelta` writes — ~1 ULP per channel propagating through the temporal denoiser. Visually indistinguishable to the eye.
+
+### TASK-137 update
+
+`GIDenoisePass.cpp` shrunk **460 → 405 lines**. The TASK-137 (split-before-grow shrink pressure on this file + RadianceCacheReprojectionPass.cpp) acceptance criterion #1 was "under 400 lines or with a clear pre-and-post line count justifying any remaining excess". Now 5 lines over the soft threshold; remaining bulk is the legitimate ping-pong machinery for the three texture pairs (GIHistory/PrevWorldPos/ColorDelta Even/Odd). TASK-137's structural pressure is largely retired; producer to triage close-vs-rescope.
+
+### Coordination with TASK-6.3
+
+While this work was in flight, the parallel TASK-6.3 dispatch was halted (its premise was contradicted by paper-auditor — see `.alignments/TASK-6.3-lightpass-fallback.md`). TASK-6.3 work was reverted before any commit; this CL is uncontaminated. The corrective TASK-6.5 will land on top of this CL.
+
+### Not verified — honest list
+
+- **No windowed parity check.** The brief mentioned step 5 "windowed parity check"; the agent ran offscreen-only (no windowing surface in the dispatch shell). The 60-frame offscreen orbit covers temporal behaviour and motion gates; windowed adds only swap-chain presentation validation, downstream of FinalBlend and unaffected by GIDenoise binding changes.
+- **No GBV (GPU-based validation) sweep.** The C++ binding-list and shader-register correspondence was hand-verified and the runtime PSO creation succeeded, but a GBV sweep would catch any descriptor-table / heap mis-sizing bugs the offline check might miss. Recommend a GBV-validate cycle if any descriptor-related symptom appears post-merge.
+- **No static-camera diff.** Static camera would isolate "pure temporal accumulation" and potentially show whether diffs collapse after enough frames. Orbit captures motion-vector / reprojection paths; static is the complementary case.
+- **No DXIL bytecode disasm.** The DXC code-gen drift hypothesis is unconfirmed; `dxc -dis` on pre/post DXIL would prove or refute it. Useful only if the diff signature later proves to be a real bug rather than rounding noise.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -42,32 +42,24 @@ Texture2D<uint> in_ProbeMask : register(t6);
 // effective sample weight without re-running the EMA.
 [[vk::binding(7, 1)]]
 Texture2D<float4> in_GIHistoryPrev : register(t7);
-// Previous-frame SVGF moments. Dead under the §2.4.3 paper-faithful
-// filter — variance-driven edge-stops were Schied 2017 SVGF, not the
-// GI-1.0 paper. Texture and binding kept on this CL to keep the diff
-// tight; tracked as a CL2 follow-up cleanup task.
-[[vk::binding(8, 1)]]
-Texture2D<float4> in_MomentsPrev : register(t8);
 // Previous-frame world-space position per pixel. RGBA float16 ping-pong;
 // alpha = 1 marks a non-sky tap, alpha = 0 marks sky / uninitialised.
 // Replaces the depth-from-history-alpha source we lose when the history
 // alpha switches from "linear depth" to "sample count N". Sourced as a
 // dedicated texture rather than a previous-frame G-buffer because the
 // engine doesn't keep one — see GIDenoisePass for the wiring.
-[[vk::binding(9, 1)]]
-Texture2D<float4> in_PrevWorldPos : register(t9);
+[[vk::binding(8, 1)]]
+Texture2D<float4> in_PrevWorldPos : register(t8);
 // Smoothed luma-delta from last frame. EMA at 1/8, taps from the 3×3
 // neighbourhood — the same neighbourhood used to gather history colour.
 // Drives `alpha_blend` and through it the dynamic history cap; under
 // motion this rises and the cap drops to ~4 samples, evicting stale
 // history without per-frame clears.
-[[vk::binding(10, 1)]]
-Texture2D<float> in_ColorDeltaPrev : register(t10);
+[[vk::binding(9, 1)]]
+Texture2D<float> in_ColorDeltaPrev : register(t9);
 
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> out_GIHistory : register(u0);
-[[vk::binding(1, 2)]]
-RWTexture2D<float4> out_MomentsCurrent : register(u1);
 // Per-pixel blur mask consumed by the GIFilter{Horizontal,Vertical}
 // passes. Capsaicin gi1.comp:4083, 4099:
 //   blur_mask = is_sky ? -1 : max(MAX_BLUR_MASK - lighting.w, 0)
@@ -82,15 +74,15 @@ RWTexture2D<float4> out_MomentsCurrent : register(u1);
 // reacts to the *previous* frame's converged-ness — a pixel that just
 // moved from a 32-sample plateau to a 4-sample disocclusion gets the
 // large radius this frame, not on the next.
-[[vk::binding(2, 2)]]
-RWTexture2D<float> out_BlurMask : register(u2);
+[[vk::binding(1, 2)]]
+RWTexture2D<float> out_BlurMask : register(u1);
 // Current-frame world-space position (xyz = GPassRT0 position, w = 1 for
 // non-sky / 0 for sky). Becomes next frame's `in_PrevWorldPos`.
-[[vk::binding(3, 2)]]
-RWTexture2D<float4> out_PrevWorldPos : register(u3);
+[[vk::binding(2, 2)]]
+RWTexture2D<float4> out_PrevWorldPos : register(u2);
 // Smoothed luma-delta destination. Becomes next frame's `in_ColorDeltaPrev`.
-[[vk::binding(4, 2)]]
-RWTexture2D<float> out_ColorDelta : register(u4);
+[[vk::binding(3, 2)]]
+RWTexture2D<float> out_ColorDelta : register(u3);
 
 // Pull in the radiance-cache evaluation helpers now that all four cache
 // textures + g_Frame are visible. RADIANCE_CACHE_HAS_BINDINGS opts this
@@ -157,7 +149,6 @@ void main(ComputeInputType input)
 	if (GPassRT0.a == 0.0)
 	{
 		out_GIHistory[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		out_MomentsCurrent[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		out_BlurMask[l_ScreenCoord] = -1.0 / kGIDenoiser_MaxBlurMask;
 		out_PrevWorldPos[l_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		out_ColorDelta[l_ScreenCoord] = 0.0;
@@ -323,55 +314,7 @@ void main(ComputeInputType input)
 		lighting *= (max_sample_count / lighting.w);
 	}
 
-	// Moments output retained on this CL but unread — the §2.4.3
-	// filter no longer takes a luminance edge-stop, so the temporal
-	// (E[L], E[L²], N) state is dead weight. Kept on this CL to keep
-	// the binding-set diff tight; tracked as a CL2 follow-up cleanup.
-	// Population still uses the temporal MAX_HISTORY_N=32 it always did
-	// (the dynamic cap governs the separate GIHistory.w).
-	const float MAX_HISTORY_N = 32.0;
-	const float MIN_TEMPORAL_ALPHA = 0.05;
-
-	bool reprojection_valid = (lighting.w > 1.0);
-	float l_PrevN = 0.0;
-	float l_PrevM1 = 0.0;
-	float l_PrevM2 = 0.0;
-	if (reprojection_valid)
-	{
-		int2 prevCentre = int2(floor(previous_uv * g_Frame.viewportSize.xy));
-		if (all(prevCentre >= int2(0, 0)) && all(prevCentre < l_Viewport))
-		{
-			float4 mPrev = in_MomentsPrev.Load(int3(prevCentre, 0));
-			l_PrevM1 = mPrev.r;
-			l_PrevM2 = mPrev.g;
-			l_PrevN = mPrev.b;
-		}
-	}
-
-	float l_CurrentLuma = GetLuma(color.xyz);
-	float l_CurrentLumaSq = l_CurrentLuma * l_CurrentLuma;
-
-	float l_HistoryCount;
-	float l_AlphaMoments;
-	float l_M1;
-	float l_M2;
-	if (reprojection_valid && l_PrevN > 0.0)
-	{
-		l_HistoryCount = min(l_PrevN + 1.0, MAX_HISTORY_N);
-		l_AlphaMoments = max(1.0 / l_HistoryCount, MIN_TEMPORAL_ALPHA);
-		l_M1 = lerp(l_PrevM1, l_CurrentLuma, l_AlphaMoments);
-		l_M2 = lerp(l_PrevM2, l_CurrentLumaSq, l_AlphaMoments);
-	}
-	else
-	{
-		l_HistoryCount = 1.0;
-		l_AlphaMoments = 1.0;
-		l_M1 = l_CurrentLuma;
-		l_M2 = l_CurrentLumaSq;
-	}
-
 	out_GIHistory[l_ScreenCoord] = lighting;
-	out_MomentsCurrent[l_ScreenCoord] = float4(l_M1, l_M2, l_HistoryCount, 0.0);
 	// Normalised so the consumer doesn't need MAX_BLUR_MASK to interpret
 	// the value (Capsaicin gi1.comp:4099). The filter shader reads it via
 	// `in_BlurMask.Load(...)` and multiplies back to recover the raw

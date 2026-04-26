@@ -32,8 +32,11 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	// Layout: 1 CB + 11 SRVs + 5 UAVs = 17 descs.
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(17);
+	// Layout: 1 CB + 10 SRVs + 4 UAVs = 15 descs. The SVGF moments
+	// ping-pong (was t8 / u1) was retired in TASK-6.2 — the §2.4.3
+	// paper-faithful spatial filter no longer reads luminance variance,
+	// so the moments texture and its bindings are dead weight.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(15);
 
 	// b0 - PerFrame CBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -98,7 +101,7 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 7;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[8].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// t8 - Previous-frame SVGF moments
+	// t8 - Previous-frame world position (CL1 prev-depth source)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility = Accessibility::ReadWrite;
@@ -106,7 +109,7 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 8;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[9].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// t9 - Previous-frame world position (CL1 prev-depth source)
+	// t9 - Previous-frame colour-delta (R16_FLOAT)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;
@@ -114,53 +117,37 @@ bool GIDenoisePass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex = 9;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// t10 - Previous-frame colour-delta (R16_FLOAT)
+	// u0 - Current-frame GI history (write target)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex = 10;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// u0 - Current-frame GI history (write target)
+	// u1 - Per-pixel blur mask (R Float16, Capsaicin gi1.comp:4099)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[12].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// u1 - Current-frame SVGF moments (write target)
+	// u2 - Current-frame world position (write target — next frame's prev)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[13].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// u2 - Per-pixel blur mask (R Float16, Capsaicin gi1.comp:4099)
+	// u3 - Current-frame colour-delta (write target)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_GPUResourceType = GPUResourceType::Image;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex = 3;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[14].m_TextureUsage = TextureUsage::ComputeOnly;
-
-	// u3 - Current-frame world position (write target — next frame's prev)
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorIndex = 3;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[15].m_TextureUsage = TextureUsage::ComputeOnly;
-
-	// u4 - Current-frame colour-delta (write target)
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorIndex = 4;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[16].m_TextureUsage = TextureUsage::ComputeOnly;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -191,8 +178,6 @@ bool GIDenoisePass::Terminate()
 {
 	g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Odd);
-	g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Even);
-	g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Odd);
 	g_Engine->Get<TextureResourceService>()->Delete(m_PrevWorldPos_Even);
 	g_Engine->Get<TextureResourceService>()->Delete(m_PrevWorldPos_Odd);
 	g_Engine->Get<TextureResourceService>()->Delete(m_ColorDelta_Even);
@@ -222,12 +207,6 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (!m_GIHistory_Odd || m_GIHistory_Odd->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	if (!m_Moments_Even || m_Moments_Even->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	if (!m_Moments_Odd || m_Moments_Odd->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
 	if (!m_PrevWorldPos_Even || m_PrevWorldPos_Even->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
@@ -250,8 +229,6 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 
 	auto l_previousHistory = GetPreviousResult();
 	auto l_currentHistory = GetCurrentResult();
-	auto l_previousMoments = GetPreviousMoments();
-	auto l_currentMoments = GetCurrentMoments();
 	auto l_previousWorldPos = GetPreviousPrevWorldPos();
 	auto l_currentWorldPos = GetCurrentPrevWorldPos();
 	auto l_previousColorDelta = GetPreviousColorDelta();
@@ -264,8 +241,6 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(RadianceCacheReprojectionPass::Get().GetProbeMask(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_previousHistory, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_currentHistory, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
-	l_fmService->TryToTransitState(l_previousMoments, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
-	l_fmService->TryToTransitState(l_currentMoments, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->TryToTransitState(l_previousWorldPos, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(l_currentWorldPos, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
 	l_fmService->TryToTransitState(l_previousColorDelta, m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
@@ -285,14 +260,12 @@ bool GIDenoisePass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetCurrentProbeNormal(), 6);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, RadianceCacheReprojectionPass::Get().GetProbeMask(), 7);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousHistory, 8);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousMoments, 9);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousWorldPos, 10);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousColorDelta, 11);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentHistory, 12);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentMoments, 13);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_BlurMask, 14);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentWorldPos, 15);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentColorDelta, 16);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousWorldPos, 9);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_previousColorDelta, 10);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentHistory, 11);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_BlurMask, 12);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentWorldPos, 13);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_currentColorDelta, 14);
 
 	// Match the [numthreads(8,8,1)] in GIDenoise.comp: one group per
 	// RadianceCache::TILE_SIZE × TILE_SIZE pixel tile, ceiling-divided so a
@@ -328,20 +301,6 @@ TextureComponent* GIDenoisePass::GetPreviousResult()
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
 	return (l_frameCount % 2 == 1) ? m_GIHistory_Even : m_GIHistory_Odd;
-}
-
-TextureComponent* GIDenoisePass::GetCurrentMoments()
-{
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
-	return (l_frameCount % 2 == 1) ? m_Moments_Odd : m_Moments_Even;
-}
-
-TextureComponent* GIDenoisePass::GetPreviousMoments()
-{
-	auto l_fmService = g_Engine->Get<FrameManagementService>();
-	auto l_frameCount = l_fmService->GetFrameCountSinceLaunch();
-	return (l_frameCount % 2 == 1) ? m_Moments_Even : m_Moments_Odd;
 }
 
 TextureComponent* GIDenoisePass::GetCurrentPrevWorldPos()
@@ -383,10 +342,6 @@ bool GIDenoisePass::RenderTargetsCreationFunc()
 		g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Even);
 	if (m_GIHistory_Odd)
 		g_Engine->Get<TextureResourceService>()->Delete(m_GIHistory_Odd);
-	if (m_Moments_Even)
-		g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Even);
-	if (m_Moments_Odd)
-		g_Engine->Get<TextureResourceService>()->Delete(m_Moments_Odd);
 	if (m_PrevWorldPos_Even)
 		g_Engine->Get<TextureResourceService>()->Delete(m_PrevWorldPos_Even);
 	if (m_PrevWorldPos_Odd)
@@ -409,16 +364,6 @@ bool GIDenoisePass::RenderTargetsCreationFunc()
 	m_GIHistory_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_GIHistory_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
 	g_Engine->Get<TextureResourceService>()->Initialize(m_GIHistory_Odd);
-
-	m_Moments_Even = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass Moments (Even)");
-	m_Moments_Even->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_Moments_Even->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_Moments_Even);
-
-	m_Moments_Odd = g_Engine->Get<TextureResourceService>()->Add("GIDenoisePass Moments (Odd)");
-	m_Moments_Odd->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_Moments_Odd->m_TextureDesc.Usage = TextureUsage::ComputeOnly;
-	g_Engine->Get<TextureResourceService>()->Initialize(m_Moments_Odd);
 
 	// Prev-world-pos: RGBA Float16 default. xyz = world, w = 1/0 sky
 	// flag. Validity gate compares against depth-scaled `cell_size` so

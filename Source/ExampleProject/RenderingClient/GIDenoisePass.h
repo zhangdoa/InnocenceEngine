@@ -22,12 +22,6 @@ namespace Inno
 		// pass divides out N to produce the final irradiance.
 		TextureComponent* GetCurrentResult();
 
-		// Per-pixel temporal-variance moments (r=E[L], g=E[L²], b=N).
-		// Dead under the §2.4.3 paper-faithful filter — kept on this CL
-		// to keep the shader binding-set diff small; the moments
-		// ping-pong becomes a tracked follow-up (TASK-129).
-		TextureComponent* GetCurrentMoments();
-
 		// Per-pixel blur mask consumed by GIFilterHorizontal/Vertical.
 		// Stored normalised in [0, 1] (sky encoded as -1/MaxBlurMask),
 		// scalar R Float16. Capsaicin gi_denoiser.hlsl:32.
@@ -42,10 +36,6 @@ namespace Inno
 		// previous) swaps every frame based on frame count parity.
 		TextureComponent* m_GIHistory_Even;
 		TextureComponent* m_GIHistory_Odd;
-
-		// Ping-pong full-screen SVGF moments history.
-		TextureComponent* m_Moments_Even;
-		TextureComponent* m_Moments_Odd;
 
 		// Ping-pong previous-frame world-space position. Replaces the
 		// linear-depth-in-history-alpha source we lose when GIHistory.a
@@ -64,7 +54,6 @@ namespace Inno
 		TextureComponent* m_BlurMask;
 
 		TextureComponent* GetPreviousResult();
-		TextureComponent* GetPreviousMoments();
 		TextureComponent* GetCurrentPrevWorldPos();
 		TextureComponent* GetPreviousPrevWorldPos();
 		TextureComponent* GetCurrentColorDelta();
