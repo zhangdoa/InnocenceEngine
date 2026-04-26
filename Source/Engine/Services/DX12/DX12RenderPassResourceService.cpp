@@ -495,7 +495,12 @@ bool DX12RenderPassResourceService::CreateRaytracingPipelineStateObject(RenderPa
 	D3D12_GLOBAL_ROOT_SIGNATURE globalSig = { PSO->m_RootSignature.Get() };
 
 	D3D12_RAYTRACING_PIPELINE_CONFIG pipelineCfg = {};
-	pipelineCfg.MaxTraceRecursionDepth = 1;
+	// TASK-6.10: bumped 1 -> 2 to enable RadianceCacheClosestHit's nested
+	// shadow-ray TraceRay (sky NEE at the secondary vertex). PT bounce loop
+	// remains iterative-from-raygen so this is a no-op for that pipeline; the
+	// cap covers the radiance-cache pipeline's one level of CHS-issued shadow
+	// rays. Driver-level cost is one extra register per ray slot; trivial.
+	pipelineCfg.MaxTraceRecursionDepth = 2;
 
 	// Up to 9 subobjects: RayGen + ClosestHit + AnyHit + Miss + (opt ShadowMiss) + HitGroup + ShaderConfig + GlobalRS + PipelineCfg
 	D3D12_STATE_SUBOBJECT subobjects[9] = {};
