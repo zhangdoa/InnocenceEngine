@@ -61,6 +61,12 @@
       "glob": "Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl",
       "paper": "Reference path tracer — ground-truth comparator; no specific paper cited, but serves as the A/B target for radiance-cache quality assessments.",
       "reference": "Any path-tracer reference; this file is our own implementation."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/common/AgX.hlsl",
+      "paper": "Troy Sobotka — AgX (display rendering transform). Sigmoid contrast curve in log-encoded display-referred space; replaces ACES Filmic tonemapping.",
+      "reference": "https://github.com/sobotka/AgX (canonical) + https://github.com/google/filament/blob/main/filament/src/ToneMapper.cpp (Filament's polynomial-fit port) + https://github.com/mrdoob/three.js/blob/dev/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js (Three.js port the engine implementation follows)",
+      "notes": "Polynomial-fit AgX-Default — single-pass, no LUT. Matrices and EV bounds are named constants in the file; sigmoid is the AgXDefaultContrastApprox polynomial."
     }
   ]
 }

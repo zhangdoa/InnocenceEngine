@@ -28,6 +28,7 @@ RWStructuredBuffer<float> in_luminanceAverage : register(u0);
 RWTexture2D<float4> out_finalBlendPassRT0 : register(u1);
 
 #include "common/Tonemapping.hlsl"
+#include "common/AgX.hlsl"
 
 float ComputeEV100(float aperture, float shutterTime, float ISO)
 {
@@ -66,7 +67,7 @@ void main(ComputeInputType input)
 	basePass = XYY_RGB(basePassxyY);
 
 	// Tone Mapping
-	float3 finalColor = TonemapACES(basePass);
+	float3 finalColor = TonemapAGX(basePass);
 
 	// Gamma Correction
 	finalColor = AccurateLinearToSRGB(finalColor);

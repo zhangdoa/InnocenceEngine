@@ -32,18 +32,6 @@ float3 TonemapInvertMax3(float3 color)
 	return color / (1.0f - maxValue);
 }
 
-// Academy Color Encoding System
-// [http://www.oscars.org/science-technology/sci-tech-projects/aces]
-float3 TonemapACES(const float3 x)
-{
-	const float a = 2.51;
-	const float b = 0.03;
-	const float c = 2.43;
-	const float d = 0.59;
-	const float e = 0.14;
-	return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
-}
-
 // gamma correction with respect to human eyes non-linearity
 // [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 float3 AccurateLinearToSRGB(float3 linearCol)
