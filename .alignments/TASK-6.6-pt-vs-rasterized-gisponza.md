@@ -7,6 +7,21 @@
 - Audit date: 2026-04-26.
 - Engine binary: `Bin/RelWithDebInfo/Main.exe` built from `b829a474` (pre-TASK-6.7).
 
+## CAVEAT — comparison confounder added 2026-04-26 post-TASK-6.10
+
+This audit treats the GPU path tracer as ground truth for the GISponza brightness gap. The audit's directional finding (PT brighter, blue deficit, dimness is under-energy not paper-faithful) and resulting fix (TASK-6.10 sky NEE) are correct.
+
+**However, the rasterizer pipeline lacks shadow maps for point and sphere lights** (TASK-66, still open). Point/sphere lights leak through walls in rast; PT correctly occludes them via shadow rays. In shadow regions:
+- Rasterizer over-counts direct from unoccluded point/sphere
+- PT correctly under-counts (occluded)
+- The rast-vs-PT diff conflates "missing GI" (rast under-counts) and "missing shadow maps" (rast over-counts)
+
+The TASK-6.10 orbit `mean_L` match (144.79 rast vs 145.80 PT) is therefore likely partially the GI fix and partially the two errors cancelling in the same pixels. The directional finding stands; absolute targets should not be over-interpreted.
+
+**For future PT-vs-rast comparison work** on this codebase: either disable point/sphere lights in PT for the comparison (cleanest), or run two passes (with/without point/sphere) and partition the diff into "feature-attributable" buckets. Per `feedback_pt_comparison_must_account_for_rast_omissions.md` in user-scope memory.
+
+Re-validate this audit's per-pixel deltas after TASK-66 (point/sphere shadow maps) lands.
+
 ## Headline finding
 
 **The post-TASK-6.5 GISponza rasterized GI is ~10–20% under-energy vs the GPU PT reference.** At the default Sponza Main Camera pose with both paths sharing the same FinalBlend / auto-exposure / tonemap chain:

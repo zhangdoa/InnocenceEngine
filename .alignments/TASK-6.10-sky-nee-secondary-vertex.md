@@ -7,6 +7,18 @@
 - Implementation date: 2026-04-26.
 - Engine binary: `Bin/RelWithDebInfo/Main.exe` built from `f122dd58` + this CL.
 
+## CAVEAT — comparison confounder (added 2026-04-26 post-commit)
+
+The orbit `mean_L` 144.79 vs PT 145.80 match (≤1 unit) and the static-pose blue-ratio miss (0.670× vs target 0.85×) are both **partially confounded** by missing point/sphere shadow maps in the rasterizer (TASK-66, still open).
+
+- Rasterizer over-counts direct from unoccluded point/sphere lights in shadow regions.
+- PT correctly occludes via shadow rays.
+- Net rast-vs-PT diff conflates "missing GI" (rast under-counts) and "missing shadow maps" (rast over-counts).
+
+This CL's sky-NEE energy addition is real and necessary. The orbit `mean_L` match is likely partially this fix and partially the two errors cancelling in the same regions. The static-pose miss may be amplified by point/sphere over-bright depressing the relative blue ratio.
+
+**Re-validate after TASK-66 (point/sphere shadow maps) lands.** Per `feedback_pt_comparison_must_account_for_rast_omissions.md` in user-scope memory.
+
 ## Headline finding
 
 **Sky-NEE-at-secondary-vertex landed; ~30% of the blue gap closed at the static default-camera pose, ~64% closed at orbit poses, and ~100% closed in mean-luma at the orbit pose.** TASK-6.6's PT-truth target is a hard structural ceiling without the next-step material-routing fix.
