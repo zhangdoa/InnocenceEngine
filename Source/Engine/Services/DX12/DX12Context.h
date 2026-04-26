@@ -62,6 +62,29 @@ namespace Inno
 		// GPU error detection (set by debug callback or device health check, read by HasGPUError)
 		mutable std::atomic<bool> m_GPUErrorDetected{false};
 
+		// GPU timestamp queries — owned by DX12GraphicsHardwareService::CreateGpuTimerResources;
+		// stored on the context so DX12FrameManagementService and other DX12 services can
+		// reach them without a back-pointer to the hardware service.
+		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Graphics = nullptr;
+		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Compute = nullptr;
+		ComPtr<ID3D12QueryHeap> m_TimestampHeap_Copy = nullptr;
+		// Per-frame readback buffers: one per swapchain image, sized for
+		// 2 * GPU_TIMER_MAX_NAMED_TIMERS UINT64s per queue (begin+end).
+		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Graphics;
+		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Compute;
+		std::vector<ComPtr<ID3D12Resource>> m_TimestampReadback_Copy;
+		// Dedicated allocators + lists for ResolveQueryData. Per-frame so reset
+		// of frame N's allocator only happens after the prior submission of
+		// frame N has retired (BeginFrame waits for the matching fence). Sharing
+		// the global per-frame allocator would race with the in-flight pass
+		// command list that is still recording when ResolveGpuTimers fires.
+		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Graphics;
+		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Compute;
+		std::vector<ComPtr<ID3D12CommandAllocator>> m_TimestampResolveAllocators_Copy;
+		std::vector<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Graphics;
+		std::vector<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Compute;
+		std::vector<ComPtr<ID3D12GraphicsCommandList7>> m_TimestampResolveLists_Copy;
+
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
 		static constexpr bool m_enableValidationLayers = true;
 #else

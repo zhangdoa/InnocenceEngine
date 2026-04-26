@@ -32,6 +32,21 @@ using namespace DX12Helper;
 
 static std::atomic<bool> g_GPUErrorDetected{false};
 
+// GPU timer infrastructure constants (TASK-140).
+// Per-queue named-timer ceiling: each named timer claims one stable slot
+// for the lifetime of the run, so this also bounds total distinct pass
+// names ever recorded per queue. 256 leaves headroom for the current
+// ~30-pass renderer plus future RT/GI passes without ever resizing.
+static constexpr uint32_t GPU_TIMER_MAX_NAMED_TIMERS = 256;
+// Number of frames the readback path lags behind the recorded frame.
+// 3 matches the typical swapchain image count and avoids any CPU↔GPU
+// sync stall when reading the most recent fully-completed frame.
+static constexpr uint32_t GPU_TIMER_READBACK_FRAME_LATENCY = 3;
+// Two timestamps per named timer: begin + end.
+static constexpr uint32_t GPU_TIMER_QUERIES_PER_TIMER = 2;
+static constexpr uint32_t GPU_TIMER_TOTAL_QUERIES_PER_QUEUE = GPU_TIMER_MAX_NAMED_TIMERS * GPU_TIMER_QUERIES_PER_TIMER;
+static constexpr UINT64   GPU_TIMER_READBACK_BYTES_PER_QUEUE = GPU_TIMER_TOTAL_QUERIES_PER_QUEUE * sizeof(UINT64);
+
 // GPU-based validation on Release shaders runs in "Shader Patch Mode NONE":
 // DXC has stripped the metadata GBV relies on to correlate resource state
 // and root-binding info with shader accesses. The result is a family of
@@ -558,6 +573,586 @@ void DX12GraphicsHardwareService::DumpGPUDiagnostics()
 	{
 		Log(Warning, "Exception while querying GPU diagnostics, device may be in unrecoverable state.");
 	}
+}
+
+// --- PIX event runtime (dynamic load) ---
+
+void DX12GraphicsHardwareService::TryLoadPIXEventRuntime()
+{
+#ifdef _WIN32
+	// Load order mirrors RenderDoc:
+	// 1. Already in-process (PIX attached / pre-injected the DLL).
+	// 2. INNO_PIX_RUNTIME_DLL env var override.
+	// 3. PATH lookup for "WinPixEventRuntime.dll".
+	// We deliberately do NOT bundle the DLL — keeping it dynamic means a
+	// run with no PIX runtime present pays zero cost, and we don't have to
+	// vendor a binary. The user-facing contract: launch the engine under
+	// PIX (programmatic capture supported via -capture_frame N) or place
+	// WinPixEventRuntime.dll on PATH to get named events on the timeline.
+	HMODULE l_PIXModule = GetModuleHandleA("WinPixEventRuntime.dll");
+	const char* l_LoadedFrom = nullptr;
+	if (l_PIXModule)
+	{
+		l_LoadedFrom = "pre-injected";
+	}
+	else
+	{
+		char l_EnvOverride[MAX_PATH] = {};
+		DWORD l_EnvLen = GetEnvironmentVariableA("INNO_PIX_RUNTIME_DLL", l_EnvOverride, MAX_PATH);
+		if (l_EnvLen > 0 && l_EnvLen < MAX_PATH)
+		{
+			l_PIXModule = LoadLibraryA(l_EnvOverride);
+			if (l_PIXModule) l_LoadedFrom = l_EnvOverride;
+		}
+		if (!l_PIXModule)
+		{
+			l_PIXModule = LoadLibraryA("WinPixEventRuntime.dll");
+			if (l_PIXModule) l_LoadedFrom = "PATH";
+		}
+		if (!l_PIXModule)
+		{
+			// Not an error — PIX events are an opt-in profiling aid. Log Verbose so
+			// users running under PIX can confirm-by-absence-of-warning that they
+			// got the loaded path, but normal runs stay quiet.
+			Log(Verbose, "PIX: WinPixEventRuntime.dll not found (tried pre-injected, INNO_PIX_RUNTIME_DLL, PATH). PIX event markers disabled (timer queries unaffected).");
+			return;
+		}
+	}
+
+	auto l_PIXBegin = reinterpret_cast<PIXBeginEventOnCommandListFn>(GetProcAddress(l_PIXModule, "PIXBeginEventOnCommandList"));
+	auto l_PIXEnd   = reinterpret_cast<PIXEndEventOnCommandListFn>(GetProcAddress(l_PIXModule, "PIXEndEventOnCommandList"));
+	if (!l_PIXBegin || !l_PIXEnd)
+	{
+		Log(Warning, "PIX: WinPixEventRuntime.dll loaded but PIXBeginEventOnCommandList / PIXEndEventOnCommandList exports missing. PIX event markers disabled.");
+		return;
+	}
+
+	m_PIXModule = l_PIXModule;
+	m_PIXBeginEventOnCommandList = l_PIXBegin;
+	m_PIXEndEventOnCommandList = l_PIXEnd;
+	Log(Success, "PIX: WinPixEventRuntime loaded from ", l_LoadedFrom, ". GPU events will appear on PIX timeline.");
+#endif
+}
+
+bool DX12GraphicsHardwareService::BeginGpuEvent(CommandListComponent* commandList, const char* name, uint32_t color)
+{
+	// Zero-cost when PIX runtime isn't loaded. No log here: this is a
+	// per-pass per-frame call site — flooding would drown real diagnostics.
+	if (m_PIXBeginEventOnCommandList == nullptr)
+		return false;
+
+	auto l_commandList = AsDX12CommandList(commandList);
+	if (l_commandList == nullptr)
+		return false;
+
+	if (name == nullptr)
+	{
+		Log(Warning, "BeginGpuEvent: null name passed; skipping.");
+		return false;
+	}
+
+	// Color encoding is the PIX BYN convention; the public macro uses
+	// PIX_COLOR(r,g,b) but the export takes the packed UINT64 directly.
+	// 0 means "use PIX default" — fine for an unspecified pass.
+	m_PIXBeginEventOnCommandList(l_commandList, static_cast<uint64_t>(color), name);
+	return true;
+}
+
+bool DX12GraphicsHardwareService::EndGpuEvent(CommandListComponent* commandList)
+{
+	if (m_PIXEndEventOnCommandList == nullptr)
+		return false;
+
+	auto l_commandList = AsDX12CommandList(commandList);
+	if (l_commandList == nullptr)
+		return false;
+
+	m_PIXEndEventOnCommandList(l_commandList);
+	return true;
+}
+
+// --- GPU timer queries ---
+
+DX12GraphicsHardwareService::DX12GpuTimerQueueState* DX12GraphicsHardwareService::GetTimerState(GPUEngineType queueType)
+{
+	switch (queueType)
+	{
+	case GPUEngineType::Graphics: return &m_TimerState_Graphics;
+	case GPUEngineType::Compute:  return &m_TimerState_Compute;
+	case GPUEngineType::Copy:     return &m_TimerState_Copy;
+	default: return nullptr;
+	}
+}
+
+const DX12GraphicsHardwareService::DX12GpuTimerQueueState* DX12GraphicsHardwareService::GetTimerState(GPUEngineType queueType) const
+{
+	switch (queueType)
+	{
+	case GPUEngineType::Graphics: return &m_TimerState_Graphics;
+	case GPUEngineType::Compute:  return &m_TimerState_Compute;
+	case GPUEngineType::Copy:     return &m_TimerState_Copy;
+	default: return nullptr;
+	}
+}
+
+ComPtr<ID3D12QueryHeap> DX12GraphicsHardwareService::GetTimestampHeap(GPUEngineType queueType) const
+{
+	switch (queueType)
+	{
+	case GPUEngineType::Graphics: return m_DX12Context.m_TimestampHeap_Graphics;
+	case GPUEngineType::Compute:  return m_DX12Context.m_TimestampHeap_Compute;
+	case GPUEngineType::Copy:     return m_DX12Context.m_TimestampHeap_Copy;
+	default: return nullptr;
+	}
+}
+
+ComPtr<ID3D12Resource> DX12GraphicsHardwareService::GetTimestampReadback(GPUEngineType queueType, uint32_t frameIndex) const
+{
+	auto& l_buffers = (queueType == GPUEngineType::Graphics) ? m_DX12Context.m_TimestampReadback_Graphics
+	                : (queueType == GPUEngineType::Compute)  ? m_DX12Context.m_TimestampReadback_Compute
+	                : (queueType == GPUEngineType::Copy)     ? m_DX12Context.m_TimestampReadback_Copy
+	                : m_DX12Context.m_TimestampReadback_Graphics;
+	if (frameIndex >= l_buffers.size())
+		return nullptr;
+	return l_buffers[frameIndex];
+}
+
+uint32_t DX12GraphicsHardwareService::FindOrAllocateTimerSlot(GPUEngineType queueType, const char* name)
+{
+	auto* l_state = GetTimerState(queueType);
+	if (l_state == nullptr || name == nullptr)
+		return UINT32_MAX;
+
+	for (size_t i = 0; i < l_state->m_Slots.size(); ++i)
+	{
+		if (l_state->m_Slots[i].m_Name == name)
+			return static_cast<uint32_t>(i);
+	}
+
+	if (l_state->m_Slots.size() >= GPU_TIMER_MAX_NAMED_TIMERS)
+	{
+		Log(Warning, "GPU timer: queue=", static_cast<int32_t>(queueType),
+			" capacity exhausted (max=", GPU_TIMER_MAX_NAMED_TIMERS,
+			"); dropping timer for '", name, "'. Raise GPU_TIMER_MAX_NAMED_TIMERS or remove unused names.");
+		return UINT32_MAX;
+	}
+
+	DX12GpuTimerSlot l_slot;
+	l_slot.m_Name = name;
+	l_slot.m_SlotIndex = static_cast<uint32_t>(l_state->m_Slots.size());
+	l_state->m_Slots.push_back(l_slot);
+	return l_slot.m_SlotIndex;
+}
+
+uint32_t DX12GraphicsHardwareService::FindTimerSlot(GPUEngineType queueType, const char* name) const
+{
+	auto* l_state = GetTimerState(queueType);
+	if (l_state == nullptr || name == nullptr)
+		return UINT32_MAX;
+	for (size_t i = 0; i < l_state->m_Slots.size(); ++i)
+	{
+		if (l_state->m_Slots[i].m_Name == name)
+			return static_cast<uint32_t>(i);
+	}
+	return UINT32_MAX;
+}
+
+bool DX12GraphicsHardwareService::BeginGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType)
+{
+	auto l_heap = GetTimestampHeap(queueType);
+	if (l_heap == nullptr)
+		return false;
+
+	auto l_commandList = AsDX12CommandList(commandList);
+	if (l_commandList == nullptr)
+		return false;
+
+	if (name == nullptr || name[0] == '\0')
+	{
+		Log(Warning, "BeginGpuTimer: empty/null name on queue=", static_cast<int32_t>(queueType), "; skipping.");
+		return false;
+	}
+
+	auto l_slotIndex = FindOrAllocateTimerSlot(queueType, name);
+	if (l_slotIndex == UINT32_MAX)
+		return false;
+
+	auto* l_state = GetTimerState(queueType);
+	auto& l_slot = l_state->m_Slots[l_slotIndex];
+
+	if (l_slot.m_BeginRecorded)
+	{
+		Log(Warning, "BeginGpuTimer: nested Begin without matching End for '", name,
+			"' on queue=", static_cast<int32_t>(queueType), "; previous Begin will be overwritten (timing for this frame may be wrong).");
+	}
+
+	// D3D12 uses EndQuery for both ends of a TIMESTAMP query — the API name is
+	// historical; semantically each EndQuery records "the GPU reached this point".
+	l_commandList->EndQuery(l_heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, l_slot.m_SlotIndex * GPU_TIMER_QUERIES_PER_TIMER);
+	l_slot.m_BeginRecorded = true;
+	l_slot.m_EndRecordedThisFrame = false;
+	return true;
+}
+
+bool DX12GraphicsHardwareService::EndGpuTimer(CommandListComponent* commandList, const char* name, GPUEngineType queueType)
+{
+	auto l_heap = GetTimestampHeap(queueType);
+	if (l_heap == nullptr)
+		return false;
+
+	auto l_commandList = AsDX12CommandList(commandList);
+	if (l_commandList == nullptr)
+		return false;
+
+	if (name == nullptr || name[0] == '\0')
+	{
+		Log(Warning, "EndGpuTimer: empty/null name on queue=", static_cast<int32_t>(queueType), "; skipping.");
+		return false;
+	}
+
+	auto l_slotIndex = FindTimerSlot(queueType, name);
+	if (l_slotIndex == UINT32_MAX)
+	{
+		Log(Warning, "EndGpuTimer: no matching Begin for '", name,
+			"' on queue=", static_cast<int32_t>(queueType), "; ignoring.");
+		return false;
+	}
+
+	auto* l_state = GetTimerState(queueType);
+	auto& l_slot = l_state->m_Slots[l_slotIndex];
+
+	if (!l_slot.m_BeginRecorded)
+	{
+		Log(Warning, "EndGpuTimer: End without matching Begin for '", name,
+			"' on queue=", static_cast<int32_t>(queueType), "; ignoring.");
+		return false;
+	}
+
+	l_commandList->EndQuery(l_heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, l_slot.m_SlotIndex * GPU_TIMER_QUERIES_PER_TIMER + 1);
+	l_slot.m_BeginRecorded = false;
+	l_slot.m_EndRecordedThisFrame = true;
+	if (static_cast<int32_t>(l_slot.m_SlotIndex) > l_state->m_MaxEverFullyRecordedSlot)
+		l_state->m_MaxEverFullyRecordedSlot = static_cast<int32_t>(l_slot.m_SlotIndex);
+	return true;
+}
+
+bool DX12GraphicsHardwareService::ResolveGpuTimers()
+{
+	if (m_FrameManagementService == nullptr)
+		return false;
+	if (m_DX12Context.m_TimestampHeap_Graphics == nullptr)
+		return false;
+
+	auto l_currentFrame = m_FrameManagementService->GetCurrentFrame();
+	auto l_swapChainCount = m_FrameManagementService->GetSwapChainImageCount();
+	if (l_swapChainCount == 0)
+		return false;
+
+	// 1) Resolve THIS frame's queries into THIS frame's readback buffer.
+	//    Uses dedicated per-frame allocator + list so it doesn't share state
+	//    with the engine's pass-recording allocators. The per-frame allocator
+	//    is safe to Reset because BeginFrame waited on the matching fence
+	//    for this slot before we got here.
+	const GPUEngineType l_queues[] = { GPUEngineType::Graphics, GPUEngineType::Compute, GPUEngineType::Copy };
+	for (auto l_queue : l_queues)
+	{
+		auto* l_state = GetTimerState(l_queue);
+		auto l_heap = GetTimestampHeap(l_queue);
+		auto l_readback = GetTimestampReadback(l_queue, l_currentFrame);
+		if (!l_state || !l_heap || !l_readback)
+			continue;
+
+		// Skip queues with no recorded timers this frame — avoids submitting
+		// a no-op command list and the per-queue execute cost.
+		bool l_anyRecorded = false;
+		for (auto& l_slot : l_state->m_Slots)
+		{
+			if (l_slot.m_EndRecordedThisFrame)
+			{
+				l_anyRecorded = true;
+				break;
+			}
+		}
+		if (!l_anyRecorded)
+			continue;
+		// No slot has ever been fully recorded — nothing safe to resolve.
+		if (l_state->m_MaxEverFullyRecordedSlot < 0)
+			continue;
+
+		auto& l_allocs = (l_queue == GPUEngineType::Graphics) ? m_DX12Context.m_TimestampResolveAllocators_Graphics
+		               : (l_queue == GPUEngineType::Compute)  ? m_DX12Context.m_TimestampResolveAllocators_Compute
+		               :                                         m_DX12Context.m_TimestampResolveAllocators_Copy;
+		auto& l_lists = (l_queue == GPUEngineType::Graphics) ? m_DX12Context.m_TimestampResolveLists_Graphics
+		              : (l_queue == GPUEngineType::Compute)  ? m_DX12Context.m_TimestampResolveLists_Compute
+		              :                                         m_DX12Context.m_TimestampResolveLists_Copy;
+		if (l_currentFrame >= l_allocs.size() || l_currentFrame >= l_lists.size())
+			continue;
+
+		auto l_allocator = l_allocs[l_currentFrame];
+		auto l_list = l_lists[l_currentFrame];
+		if (!l_allocator || !l_list)
+			continue;
+
+		if (FAILED(l_allocator->Reset()))
+		{
+			Log(Warning, "ResolveGpuTimers: allocator Reset failed for queue=", static_cast<int32_t>(l_queue), " frame=", l_currentFrame);
+			continue;
+		}
+		if (FAILED(l_list->Reset(l_allocator.Get(), nullptr)))
+		{
+			Log(Warning, "ResolveGpuTimers: command list Reset failed for queue=", static_cast<int32_t>(l_queue), " frame=", l_currentFrame);
+			continue;
+		}
+
+		// Resolve only up through the highest slot ever fully recorded.
+		// D3D12 GBV rejects ResolveQueryData for queries that have never been
+		// performed (TASK-140 validation discovery), so we cannot blindly
+		// resolve the entire heap. Slots covered by this range whose End was
+		// not recorded *this* frame still resolve cleanly because their
+		// timestamp memory holds the previous successful pair.
+		const uint32_t l_resolveCount = static_cast<uint32_t>(l_state->m_MaxEverFullyRecordedSlot + 1) * GPU_TIMER_QUERIES_PER_TIMER;
+		l_list->ResolveQueryData(l_heap.Get(), D3D12_QUERY_TYPE_TIMESTAMP,
+			0, l_resolveCount,
+			l_readback.Get(), 0);
+
+		l_list->Close();
+		ID3D12CommandList* l_listsToExec[] = { l_list.Get() };
+		auto l_queue_d3d = m_DX12Context.GetGlobalCommandQueue(l_state->m_CommandListType);
+		if (l_queue_d3d)
+			l_queue_d3d->ExecuteCommandLists(1, l_listsToExec);
+	}
+
+	// 2) Read back the readback buffer from N frames ago — by then the GPU
+	//    has caught up and the data is safe to map without a sync stall.
+	if (m_TimerResolveFrameCounter >= GPU_TIMER_READBACK_FRAME_LATENCY)
+	{
+		uint32_t l_readbackFrame = static_cast<uint32_t>(
+			(m_TimerResolveFrameCounter - GPU_TIMER_READBACK_FRAME_LATENCY) % l_swapChainCount);
+
+		for (auto l_queue : l_queues)
+		{
+			auto* l_state = GetTimerState(l_queue);
+			auto l_readback = GetTimestampReadback(l_queue, l_readbackFrame);
+			if (!l_state || !l_readback)
+				continue;
+
+			auto l_queue_d3d = m_DX12Context.GetGlobalCommandQueue(l_state->m_CommandListType);
+			if (!l_queue_d3d)
+				continue;
+
+			UINT64 l_freq = 0;
+			if (FAILED(l_queue_d3d->GetTimestampFrequency(&l_freq)) || l_freq == 0)
+				continue;
+
+			if (l_state->m_MaxEverFullyRecordedSlot < 0)
+				continue;
+			const SIZE_T l_readBytes = static_cast<SIZE_T>(l_state->m_MaxEverFullyRecordedSlot + 1) * GPU_TIMER_QUERIES_PER_TIMER * sizeof(UINT64);
+			D3D12_RANGE l_readRange = { 0, l_readBytes };
+			void* l_mapped = nullptr;
+			if (FAILED(l_readback->Map(0, &l_readRange, &l_mapped)) || l_mapped == nullptr)
+				continue;
+			const UINT64* l_timestamps = static_cast<const UINT64*>(l_mapped);
+
+			l_state->m_LatestTimings.clear();
+			l_state->m_LatestTimings.reserve(l_state->m_Slots.size());
+			for (auto& l_slot : l_state->m_Slots)
+			{
+				if (static_cast<int32_t>(l_slot.m_SlotIndex) > l_state->m_MaxEverFullyRecordedSlot)
+					continue;
+				const UINT64 l_begin = l_timestamps[l_slot.m_SlotIndex * GPU_TIMER_QUERIES_PER_TIMER];
+				const UINT64 l_end   = l_timestamps[l_slot.m_SlotIndex * GPU_TIMER_QUERIES_PER_TIMER + 1];
+				// Stale slot or end-before-begin (clock wrap on idle queues) — skip.
+				if (l_end <= l_begin)
+					continue;
+				const double l_ms = static_cast<double>(l_end - l_begin) * 1000.0 / static_cast<double>(l_freq);
+				GpuTimingResult l_result;
+				l_result.m_Name = l_slot.m_Name;
+				l_result.m_Milliseconds = l_ms;
+				l_result.m_QueueType = l_queue;
+				l_state->m_LatestTimings.push_back(std::move(l_result));
+			}
+
+			D3D12_RANGE l_writeRange = { 0, 0 };
+			l_readback->Unmap(0, &l_writeRange);
+		}
+	}
+
+	// 3) Advance frame counter and clear "recorded this frame" flags so the
+	//    next frame's Begin/End run cleanly.
+	for (auto l_queue : l_queues)
+	{
+		auto* l_state = GetTimerState(l_queue);
+		if (!l_state)
+			continue;
+		for (auto& l_slot : l_state->m_Slots)
+			l_slot.m_EndRecordedThisFrame = false;
+	}
+	++m_TimerResolveFrameCounter;
+
+	// Periodic Verbose dump for validation / "is the timer infra wired" checks.
+	// First dump fires the moment readback becomes live (cf. FRAME_LATENCY)
+	// so short -total_frames smoke runs still get a baseline; subsequent
+	// dumps respect GPU_TIMER_LOG_PERIOD_FRAMES so long runs aren't spammed.
+	static constexpr uint32_t GPU_TIMER_LOG_PERIOD_FRAMES = 30;
+	const bool l_firstReadbackReady = (m_TimerResolveFrameCounter == GPU_TIMER_READBACK_FRAME_LATENCY + 1);
+	const bool l_periodicHit = (m_TimerResolveFrameCounter > GPU_TIMER_READBACK_FRAME_LATENCY)
+		&& (m_TimerResolveFrameCounter % GPU_TIMER_LOG_PERIOD_FRAMES) == 0;
+	if (l_firstReadbackReady || l_periodicHit)
+	{
+		auto l_timings = GetGpuTimings();
+		for (auto& l_t : l_timings)
+		{
+			Log(Verbose, "GpuTimer[", static_cast<int32_t>(l_t.m_QueueType), "] ", l_t.m_Name.c_str(), " = ", l_t.m_Milliseconds, " ms");
+		}
+	}
+
+	return true;
+}
+
+std::vector<GpuTimingResult> DX12GraphicsHardwareService::GetGpuTimings() const
+{
+	std::vector<GpuTimingResult> l_all;
+	const GPUEngineType l_queues[] = { GPUEngineType::Graphics, GPUEngineType::Compute, GPUEngineType::Copy };
+	for (auto l_queue : l_queues)
+	{
+		auto* l_state = GetTimerState(l_queue);
+		if (!l_state)
+			continue;
+		l_all.insert(l_all.end(), l_state->m_LatestTimings.begin(), l_state->m_LatestTimings.end());
+	}
+	return l_all;
+}
+
+bool DX12GraphicsHardwareService::CreateGpuTimerResources()
+{
+	if (m_DX12Context.m_device == nullptr)
+	{
+		Log(Error, "CreateGpuTimerResources: device is null.");
+		return false;
+	}
+	if (m_FrameManagementService == nullptr)
+	{
+		Log(Error, "CreateGpuTimerResources: FrameManagementService not wired.");
+		return false;
+	}
+
+	auto l_swapChainCount = m_FrameManagementService->GetSwapChainImageCount();
+	if (l_swapChainCount == 0)
+	{
+		Log(Error, "CreateGpuTimerResources: swap-chain image count is 0.");
+		return false;
+	}
+
+	auto l_createForQueue = [this, l_swapChainCount](
+		GPUEngineType queueType,
+		D3D12_QUERY_HEAP_TYPE heapType,
+		D3D12_COMMAND_LIST_TYPE cmdListType,
+		ComPtr<ID3D12QueryHeap>& outHeap,
+		std::vector<ComPtr<ID3D12Resource>>& outReadback,
+		std::vector<ComPtr<ID3D12CommandAllocator>>& outAllocators,
+		std::vector<ComPtr<ID3D12GraphicsCommandList7>>& outLists,
+		const wchar_t* heapName,
+		const char* readbackName,
+		const wchar_t* allocatorNameStem,
+		const wchar_t* listNameStem)
+	{
+		D3D12_QUERY_HEAP_DESC l_heapDesc = {};
+		l_heapDesc.Type = heapType;
+		l_heapDesc.Count = GPU_TIMER_TOTAL_QUERIES_PER_QUEUE;
+		l_heapDesc.NodeMask = 0;
+		auto l_HResult = m_DX12Context.m_device->CreateQueryHeap(&l_heapDesc, IID_PPV_ARGS(&outHeap));
+		if (FAILED(l_HResult))
+		{
+			LogD3D12CreateFailure(m_DX12Context.m_device.Get(), "QueryHeap (timestamp)", heapName, l_HResult);
+			return false;
+		}
+		outHeap->SetName(heapName);
+
+		outReadback.clear();
+		outReadback.resize(l_swapChainCount);
+		outAllocators.clear();
+		outAllocators.resize(l_swapChainCount);
+		outLists.clear();
+		outLists.resize(l_swapChainCount);
+		for (uint32_t i = 0; i < l_swapChainCount; ++i)
+		{
+			outReadback[i] = m_DX12Context.CreateReadBackHeapBuffer(GPU_TIMER_READBACK_BYTES_PER_QUEUE, readbackName);
+			if (outReadback[i] == nullptr)
+				return false;
+			outAllocators[i] = m_DX12Context.CreateCommandAllocator(cmdListType, (std::wstring(allocatorNameStem) + std::to_wstring(i)).c_str());
+			if (outAllocators[i] == nullptr)
+				return false;
+			outLists[i] = m_DX12Context.CreateCommandList(cmdListType, outAllocators[i], (std::wstring(listNameStem) + std::to_wstring(i)).c_str());
+			if (outLists[i] == nullptr)
+				return false;
+			// CreateCommandList leaves the list in the recording state; close it so
+			// the first ResolveGpuTimers Reset call sees the expected state.
+			outLists[i]->Close();
+		}
+		// Reserve slot vector capacity once; growth would be cheap but reserving
+		// also documents the per-queue bound at allocation time.
+		auto* l_state = GetTimerState(queueType);
+		if (l_state)
+		{
+			l_state->m_Slots.reserve(GPU_TIMER_MAX_NAMED_TIMERS);
+			l_state->m_CommandListType = cmdListType;
+		}
+		return true;
+	};
+
+	bool l_ok = true;
+	l_ok &= l_createForQueue(GPUEngineType::Graphics, D3D12_QUERY_HEAP_TYPE_TIMESTAMP, D3D12_COMMAND_LIST_TYPE_DIRECT,
+		m_DX12Context.m_TimestampHeap_Graphics, m_DX12Context.m_TimestampReadback_Graphics,
+		m_DX12Context.m_TimestampResolveAllocators_Graphics, m_DX12Context.m_TimestampResolveLists_Graphics,
+		L"GpuTimer_TimestampHeap_Graphics", "GpuTimer_TimestampReadback_Graphics",
+		L"GpuTimer_ResolveAllocator_Graphics_", L"GpuTimer_ResolveList_Graphics_");
+	l_ok &= l_createForQueue(GPUEngineType::Compute, D3D12_QUERY_HEAP_TYPE_TIMESTAMP, D3D12_COMMAND_LIST_TYPE_COMPUTE,
+		m_DX12Context.m_TimestampHeap_Compute, m_DX12Context.m_TimestampReadback_Compute,
+		m_DX12Context.m_TimestampResolveAllocators_Compute, m_DX12Context.m_TimestampResolveLists_Compute,
+		L"GpuTimer_TimestampHeap_Compute", "GpuTimer_TimestampReadback_Compute",
+		L"GpuTimer_ResolveAllocator_Compute_", L"GpuTimer_ResolveList_Compute_");
+	// Copy queues only support a different heap type: D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP.
+	// (The DIRECT/COMPUTE TIMESTAMP heap binds to those queues only — submitting a copy queue
+	// EndQuery into a regular timestamp heap fails GBV.)
+	l_ok &= l_createForQueue(GPUEngineType::Copy, D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP, D3D12_COMMAND_LIST_TYPE_COPY,
+		m_DX12Context.m_TimestampHeap_Copy, m_DX12Context.m_TimestampReadback_Copy,
+		m_DX12Context.m_TimestampResolveAllocators_Copy, m_DX12Context.m_TimestampResolveLists_Copy,
+		L"GpuTimer_TimestampHeap_Copy", "GpuTimer_TimestampReadback_Copy",
+		L"GpuTimer_ResolveAllocator_Copy_", L"GpuTimer_ResolveList_Copy_");
+
+	if (l_ok)
+		Log(Success, "GPU timer resources created (per-queue heap=", GPU_TIMER_TOTAL_QUERIES_PER_QUEUE,
+			" queries, readback per-frame=", GPU_TIMER_READBACK_BYTES_PER_QUEUE, " B, frames=", l_swapChainCount, ").");
+	else
+		Log(Warning, "GPU timer resources partial-create failed; timer API will return false on the affected queue(s).");
+
+	return l_ok;
+}
+
+void DX12GraphicsHardwareService::ReleaseGpuTimerResources()
+{
+	m_DX12Context.m_TimestampResolveLists_Graphics.clear();
+	m_DX12Context.m_TimestampResolveLists_Compute.clear();
+	m_DX12Context.m_TimestampResolveLists_Copy.clear();
+	m_DX12Context.m_TimestampResolveAllocators_Graphics.clear();
+	m_DX12Context.m_TimestampResolveAllocators_Compute.clear();
+	m_DX12Context.m_TimestampResolveAllocators_Copy.clear();
+	m_DX12Context.m_TimestampReadback_Graphics.clear();
+	m_DX12Context.m_TimestampReadback_Compute.clear();
+	m_DX12Context.m_TimestampReadback_Copy.clear();
+	m_DX12Context.m_TimestampHeap_Graphics = nullptr;
+	m_DX12Context.m_TimestampHeap_Compute = nullptr;
+	m_DX12Context.m_TimestampHeap_Copy = nullptr;
+	m_TimerState_Graphics.m_Slots.clear();
+	m_TimerState_Graphics.m_LatestTimings.clear();
+	m_TimerState_Graphics.m_MaxEverFullyRecordedSlot = -1;
+	m_TimerState_Compute.m_Slots.clear();
+	m_TimerState_Compute.m_LatestTimings.clear();
+	m_TimerState_Compute.m_MaxEverFullyRecordedSlot = -1;
+	m_TimerState_Copy.m_Slots.clear();
+	m_TimerState_Copy.m_LatestTimings.clear();
+	m_TimerState_Copy.m_MaxEverFullyRecordedSlot = -1;
+	m_TimerResolveFrameCounter = 0;
 }
 
 // --- Public accessors ---
@@ -1147,6 +1742,7 @@ bool DX12GraphicsHardwareService::CreateHardwareResources()
     bool l_result = true;
 
     TryLoadRenderDocAPI();
+    TryLoadPIXEventRuntime();
 
 #if defined(INNO_DEBUG) || defined(INNO_RELWITHDEBINFO)
     if (g_Engine->getInitConfig().enableGPUValidation)
@@ -1159,6 +1755,9 @@ bool DX12GraphicsHardwareService::CreateHardwareResources()
     l_result &= CreateGlobalCommandAllocators();
     l_result &= CreateSyncPrimitives();
     l_result &= CreateGlobalDescriptorHeaps();
+    // Timer resources need m_FrameManagementService->GetSwapChainImageCount,
+    // which is set by FrameManagement Setup before HardwareService Setup runs.
+    l_result &= CreateGpuTimerResources();
 
     auto l_textureService = static_cast<DX12TextureResourceService*>(g_Engine->Get<TextureResourceService>());
     auto l_gpuBufferService = static_cast<DX12GPUBufferResourceService*>(g_Engine->Get<GPUBufferResourceService>());
@@ -1174,6 +1773,17 @@ bool DX12GraphicsHardwareService::ReleaseHardwareResources()
     auto l_textureService = static_cast<DX12TextureResourceService*>(g_Engine->Get<TextureResourceService>());
     l_gpuBufferService->ReleaseRaytracingResources();
     l_textureService->ReleaseMipmapGenerator();
+
+    ReleaseGpuTimerResources();
+    if (m_PIXModule)
+    {
+#ifdef _WIN32
+        FreeLibrary(static_cast<HMODULE>(m_PIXModule));
+#endif
+        m_PIXModule = nullptr;
+        m_PIXBeginEventOnCommandList = nullptr;
+        m_PIXEndEventOnCommandList = nullptr;
+    }
 
     m_DX12Context.m_SamplerDescHeapAccessor.Reset();
     m_DX12Context.m_SamplerDescHeap = nullptr;

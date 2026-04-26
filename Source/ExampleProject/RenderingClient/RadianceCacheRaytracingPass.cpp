@@ -16,6 +16,7 @@
 #include "../../Engine/Services/GPUBufferResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 
 using namespace Inno;
 
@@ -253,7 +254,15 @@ bool RadianceCacheRaytracingPass::PrepareCommandList(IRenderingContext* renderin
 	auto dispatch_x = (l_result->m_TextureDesc.Width + RadianceCache::SPAWN_TILE_SIZE_X - 1u) / RadianceCache::SPAWN_TILE_SIZE_X;
 	auto dispatch_y = (l_result->m_TextureDesc.Height + RadianceCache::SPAWN_TILE_SIZE_Y - 1u) / RadianceCache::SPAWN_TILE_SIZE_Y;
 
+	// TASK-140 sample integration: same pattern as LightPass — gives PIX a
+	// "RadianceCacheRT" timeline event and lets GetGpuTimings() report the
+	// per-frame ms cost of the RT dispatch (ray budget tuning lever).
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	l_hwService->BeginGpuPass(m_CommandListComp_Compute, "RadianceCacheRT", GPUEngineType::Compute);
+
 	l_fmService->DispatchRays(m_RenderPassComp, m_CommandListComp_Compute, dispatch_x, dispatch_y, 1);
+
+	l_hwService->EndGpuPass(m_CommandListComp_Compute, "RadianceCacheRT", GPUEngineType::Compute);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;

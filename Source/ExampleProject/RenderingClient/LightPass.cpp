@@ -21,6 +21,7 @@
 #include "../../Engine/Services/SamplerResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 
 using namespace Inno;
 
@@ -317,7 +318,16 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Linear, 20);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Point, 21);
 
+	// TASK-140 sample integration: wrap the dispatch in a paired GPU timer +
+	// PIX event so PIX shows "LightPass" on the timeline and GetGpuTimings()
+	// returns the per-frame ms cost. Pattern for further pass instrumentation
+	// (TASK-138 RT sun shadows decision et al.) lives on GraphicsHardwareService.
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	l_hwService->BeginGpuPass(m_CommandListComp_Compute, "LightPass", GPUEngineType::Compute);
+
 	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+
+	l_hwService->EndGpuPass(m_CommandListComp_Compute, "LightPass", GPUEngineType::Compute);
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 

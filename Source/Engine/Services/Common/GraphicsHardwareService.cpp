@@ -51,3 +51,22 @@ bool GraphicsHardwareService::WaitOnGPU(RenderPassComponent* renderPass, GPUEngi
 	auto l_semaphore = renderPass->m_Semaphores[renderPass->m_CurrentFrame];
 	return WaitOnGPU(l_semaphore, queueType, semaphoreType);
 }
+
+bool GraphicsHardwareService::BeginGpuPass(CommandListComponent* commandList, const char* name, GPUEngineType queueType, uint32_t color)
+{
+	// PIX event first, timer second: the timer slot picks the smallest
+	// possible interval, while the PIX event nests around any
+	// non-instrumented work between the calls.
+	bool l_eventOk = BeginGpuEvent(commandList, name, color);
+	bool l_timerOk = BeginGpuTimer(commandList, name, queueType);
+	return l_eventOk && l_timerOk;
+}
+
+bool GraphicsHardwareService::EndGpuPass(CommandListComponent* commandList, const char* name, GPUEngineType queueType)
+{
+	// End in reverse order of Begin so the PIX event always fully
+	// encloses the timer interval.
+	bool l_timerOk = EndGpuTimer(commandList, name, queueType);
+	bool l_eventOk = EndGpuEvent(commandList);
+	return l_eventOk && l_timerOk;
+}

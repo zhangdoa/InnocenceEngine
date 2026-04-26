@@ -180,6 +180,13 @@ bool FrameManagementService::Update()
 
 		m_CommandExecutionCallback();
 
+		// Resolve this frame's GPU timer queries into the per-frame readback
+		// buffer (TASK-140). Runs AFTER the per-pass command lists have been
+		// submitted so the resolve sees the queries in-flight; the readback
+		// of an older frame from this same call is safe because BeginFrame's
+		// WaitOnCPU has already drained that older slot.
+		m_HardwareService->ResolveGpuTimers();
+
 		m_HardwareService->WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Graphics);
 		m_HardwareService->WaitOnGPU(m_GlobalSemaphore, GPUEngineType::Graphics, GPUEngineType::Compute);
 
