@@ -1,45 +1,59 @@
 // shadertype=hlsl
-// AgX tonemap — polynomial-fit display transform.
+// AgX tonemap - polynomial-fit display transform.
 //
 // Reference: Troy Sobotka's AgX
 //   [https://github.com/sobotka/AgX]
-// Polynomial / matrix port follows the Three.js implementation
+// Matrix port follows Filament's tonemap_AgX (canonical inset/outset matrices
+// folded with the Rec2020 round-trip; no separate sRGB<->Rec2020 step needed):
+//   [https://github.com/google/filament/blob/main/filament/src/ToneMapper.cpp]
+// Cross-checked against Three.js' AgXToneMapping (same nine matrix values, same
+// polynomial, same EV bounds; Three.js exposes the Rec2020 round-trip as a
+// separate matrix multiply but the algebra collapses to Filament's inset/outset):
 //   [https://github.com/mrdoob/three.js/blob/dev/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js]
-// which itself follows Filament's tonemap_AgX
-//   [https://github.com/google/filament/blob/main/filament/src/ToneMapper.cpp].
+//
+// Output: gamma-encoded display-referred sRGB ready for the swapchain. The
+// pow(2.2) inside this function IS the gamma encode. CALLER MUST NOT RE-ENCODE
+// (no AccurateLinearToSRGB, no extra pow(1/2.2)). Doubling the encode produces
+// pastel/washed-out output - this was the TASK-141 regression.
 //
 // Pipeline:
 //   1. NaN/Inf guard (loud-fail-quiet: clamp to zero, debug captures will read black).
-//   2. Convert linear-sRGB scene-referred radiance into AgX log-encoded space
-//      (matrix multiply + EV-clamped log2 normalised to AgX min/max EV).
-//   3. Apply the 6th-order polynomial sigmoid that approximates the AgX "Default"
-//      contrast LUT.
-//   4. Inverse-transform back to display-referred sRGB-linear (the caller's
-//      AccurateLinearToSRGB step then encodes for display).
+//   2. Apply AgX inset matrix (linear-sRGB -> AgX wide-gamut working space).
+//   3. EV-clamped log2 normalised to AgX min/max EV.
+//   4. 6th-order polynomial sigmoid approximating the AgX "Default" contrast LUT.
+//   5. Apply AgX outset matrix (back to display-referred linear sRGB).
+//   6. pow(2.2) - the canonical AgX gamma encode for an sRGB-ish display.
 
-// AgX log range. Scene EV is clamped to [-12.47, +4.026] before the sigmoid.
-// Source: Three.js AgX implementation — same numbers as Filament & Sobotka's
-// reference notebook (AgX-default config).
+// AgX log range. Scene EV is clamped to [-12.47393, +4.026069] before the sigmoid.
+// Source: Filament & Three.js (both match Sobotka's reference notebook).
 static const float AGX_MIN_EV  = -12.47393f;
 static const float AGX_MAX_EV  =   4.026069f;
 static const float AGX_EV_SPAN = AGX_MAX_EV - AGX_MIN_EV;
 
-// Linear sRGB -> AgX log encoding matrix. Row-major as authored; we use it
-// row-vector × matrix in HLSL (engine convention).
-static const float3x3 AGX_INPUT_MATRIX = float3x3(
-    0.842479062253094f,  0.0423282422610123f, 0.0423756549057051f,
-    0.0784335999999992f, 0.878468636469772f,  0.0784336f,
-    0.0792237451477643f, 0.0791661274605434f, 0.879142973793104f);
+// AgX gamma encode exponent. Both Three.js and Filament hardcode 2.2 here; this
+// is the AgX-Default convention (sRGB-ish display, not the strict sRGB EOTF).
+static const float AGX_GAMMA_ENCODE_EXPONENT = 2.2f;
 
-// Inverse: AgX log -> linear sRGB after the sigmoid.
+// AgX inset matrix - linear-sRGB scene-referred radiance -> AgX working space.
+// Nine values verbatim from Filament's AgXInsetMatrix (also identical to
+// Three.js' AgXInsetMatrix). HLSL convention here is row-vector x matrix
+// (mul(v, M)), so the literal matches the GLSL/Filament source order.
+static const float3x3 AGX_INPUT_MATRIX = float3x3(
+    0.856627153315983f,  0.137318972929847f,  0.11189821299995f,
+    0.0951212405381588f, 0.761241990602591f,  0.0767994186031903f,
+    0.0482516061458583f, 0.101439036467562f,  0.811302368396859f);
+
+// AgX outset matrix - inverse of the inset, back to display-referred linear sRGB
+// after the sigmoid. Nine values verbatim from Filament's AgXOutsetMatrix
+// (identical to Three.js' AgXOutsetMatrix).
 static const float3x3 AGX_OUTPUT_MATRIX = float3x3(
-     1.19687900512017f,   -0.0528968517574562f, -0.0529716355144438f,
-    -0.0980208811401368f,  1.15190312990417f,   -0.0980434501171241f,
-    -0.0990297440797205f, -0.0989611768448433f,  1.15107367264116f);
+     1.1271005818144368f,  -0.1413297634984383f,  -0.14132976349843826f,
+    -0.11060664309660323f,  1.157823702216272f,   -0.11060664309660294f,
+    -0.016493938717834573f,-0.016493938717834257f, 1.2519364065950405f);
 
 // 6th-order polynomial fit of the AgX "Default" sigmoid contrast curve.
-// Coefficients from Three.js / Filament; equivalent to evaluating Sobotka's
-// reference 1D LUT to within float32 precision.
+// Coefficients verbatim from Filament's agxDefaultContrastApprox; equivalent to
+// evaluating Sobotka's reference 1D LUT to within float32 precision.
 float3 AgXDefaultContrastApprox(float3 x)
 {
     const float3 x2 = x * x;
@@ -78,7 +92,12 @@ float3 TonemapAGX(const float3 x)
     // AgX log -> display-referred linear sRGB.
     v = mul(v, AGX_OUTPUT_MATRIX);
 
-    // The polynomial overshoots [0,1] slightly at the extremes; clamp before
-    // gamma so the LDR encode stage does not see negatives.
+    // Canonical AgX gamma encode (Filament & Three.js both apply pow(2.2) HERE,
+    // inside the tonemap function). The output is gamma-encoded display-referred
+    // sRGB ready for the swapchain. Caller MUST NOT apply AccurateLinearToSRGB
+    // or any other gamma encode after this - doing so double-encodes (pastel).
+    v = pow(max(v, float3(0.0f, 0.0f, 0.0f)), AGX_GAMMA_ENCODE_EXPONENT);
+
+    // Final clamp to LDR display range.
     return saturate(v);
 }

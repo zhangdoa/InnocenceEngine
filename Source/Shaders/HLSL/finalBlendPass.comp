@@ -66,11 +66,10 @@ void main(ComputeInputType input)
 
 	basePass = XYY_RGB(basePassxyY);
 
-	// Tone Mapping
+	// Tone Mapping. TonemapAGX returns gamma-encoded display-referred sRGB
+	// (pow(2.2) is applied inside the function per Filament/Three.js canonical
+	// AgX). Do NOT re-encode here - that was the TASK-141 double-gamma bug.
 	float3 finalColor = TonemapAGX(basePass);
-
-	// Gamma Correction
-	finalColor = AccurateLinearToSRGB(finalColor);
 
 	// billboard overlay
 	finalColor += billboardPass.rgb;
