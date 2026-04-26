@@ -4,6 +4,7 @@ title: 'GI noise-floor reduction roadmap (post-TASK-6.5 audit recommendations #2
 status: To Do
 assignee: []
 created_date: '2026-04-26 13:01'
+updated_date: '2026-04-26 16:43'
 labels:
   - rendering
   - GI
@@ -32,15 +33,15 @@ This task tracks the remaining recommendations (#2-#6) so they don't get lost. E
 
 **#3 — Drop `kGIDenoiser_MaxBlurMask` 16→8** (15 min). `GIDenoise.comp:101`, `GIFilterCommon.hlsl:34`, derived `MaxCapFactor` at `GIDenoise.comp:113`. Matches Capsaicin's `gi_denoiser.hlsl:26`. Tightens edge preservation once upstream noise is reduced. Should land *after* #1 — before #1 the wider blur is compensating for upstream noise.
 
-**#4 — Lower `COVERAGE_ACTIVATION_THRESHOLD` 0.9→0.5** (15 min). `RadianceCacheIntegration.comp:90`. Resolves D5: at our current 1-ray density the gate never fires; SH DC coefficient is biased low by 64×. Once #1 raises samples-per-probe-per-frame, lower the gate so the per-probe-average backup actually fills cold cells. Auditor notes: "Capsaicin equivalent: backup is unconditional".
+**#4 — Lower `COVERAGE_ACTIVATION_THRESHOLD` 0.9→0.5** (15 min). LANDED in TASK-6.9 (commit 94949890).
 
-**#5 — Sub-pixel jitter in `SampleRadianceCache`** (1h). `RadianceCacheCommon.hlsl:250`. Resolves D3: every pixel reads the same 4 probes every frame, so noise is fixed-pattern that bilateral kernel reads as signal. Capsaicin pattern at `gi1.comp:1540-1553` (blue-noise jittered ±probe_spawn_tile_size + world-plane gate). Halton(2)/Halton(3) on `g_Frame.frameIndex` is also paper-acceptable, no new bindings needed. **Compounds with #1**; safe to bundle if user wants one bigger CL.
+**#5 — Sub-pixel jitter in `SampleRadianceCache`** (1h). `RadianceCacheCommon.hlsl:250`. Resolves D3: every pixel reads the same 4 probes every frame, so noise is fixed-pattern that bilateral kernel reads as signal. Capsaicin pattern at `gi1.comp:1540-1553` (blue-noise jittered ±probe_spawn_tile_size + world-plane gate). Halton(2)/Halton(3) on `g_Frame.frameIndex` is also paper-acceptable, no new bindings needed.
 
 **#6 — Probe-mask MIP chain** (30 min interim / 2-3h full). Resolves D2: our `FindClosestProbe` Chebyshev ring bails at radius 2; Capsaicin cascades up MIP chain to whole screen O(log r). Adds disocclusion-edge noise specifically. Interim: raise `PROBE_SEARCH_MAX_RING` from 2 to 4 (each step costs (2k+1)² - (2k-1)² = 8k texels). Full: add `FilterProbeMask` dispatch + multi-mip RTexture2D + port Capsaicin `screen_probes.hlsl:110-166`.
 
-### #7 (separate scope, file separately if pursued)
+### #7 — WITHDRAWN 2026-04-26 (wrong premise)
 
-**D4 closest-hit reads previous-frame LightPass output (energy double-count risk)** — `RadianceCacheClosestHit.hlsl:48-58`. Bias correction, not noise. Defer until #1-6 done. Fix is store a direct-only-luminance LightPass output (separate from RT0 = direct + indirect), or compute direct lighting inline at the hit point.
+**D4 closest-hit reads previous-frame LightPass output (energy double-count risk)** was originally tracked here and promoted to TASK-6.11. TASK-6.11 verified the audit's premise is wrong: the closest-hit's `in_LightPassOutgoingLuminance` SRV maps to `LightPass::GetIlluminanceResult()` = `out_lightPassRT1` = Lambertian-only direct (not RT0 = direct + indirect). The shader's own design comment at `lightPass.comp:140-143` confirms the engine is already paper-faithful on this point. TASK-6.11 closed wrong-premise; the post-TASK-6.5 audit's D4 entry annotated WITHDRAWN. **Do not re-open.**
 
 ### Measurement-driven sequencing
 

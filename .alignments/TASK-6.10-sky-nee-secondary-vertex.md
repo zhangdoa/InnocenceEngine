@@ -7,6 +7,20 @@
 - Implementation date: 2026-04-26.
 - Engine binary: `Bin/RelWithDebInfo/Main.exe` built from `f122dd58` + this CL.
 
+## CORRECTION — D4 / "feedback loop" references are wrong (added 2026-04-26 post-TASK-6.11)
+
+This artifact references "TASK-6.8 #7/D4 (direct-only LightPass output)" as a sibling fix that would compound with sky NEE to lift warm channels and break a "converge-from-below feedback loop." **That premise is wrong.** TASK-6.11 verified end-to-end that the closest-hit's `in_LightPassOutgoingLuminance` SRV (slot t5) maps to `LightPass::GetIlluminanceResult()` = `m_IlluminanceResult` = `out_lightPassRT1` = Lambertian-only direct lighting (per `lightPass.comp:150` writing `l_IndirectSeedLuminance`). NOT RT0 = direct + indirect.
+
+The shader's own comment at `lightPass.comp:140-143` makes the design intent explicit: *"GI composes into the visual RT only; the illuminance RT carries direct lighting only so next-frame ray hits do not re-accumulate already-accumulated indirect energy."* The feedback loop the audit described does not exist; the engine is already paper-faithful on this point.
+
+**The static-pose miss attribution in this artifact (Section "Coordination with sibling work" and the partial-close discussion in the L/B target rows) needs revision.** The full residual gap routes to:
+- Material routing (placeholder 0.5 albedo at the secondary vertex)
+- TASK-66 missing point/sphere shadow maps (PT-comparison confounder)
+- World-up sampling proxy (no shading normal in RC pipeline)
+- World-cache write doesn't pick up sky-NEE term yet
+
+TASK-6.11 closed wrong-premise (see its closure note). The post-TASK-6.5 noise-gap audit's D4 entry has been annotated WITHDRAWN.
+
 ## CAVEAT — comparison confounder (added 2026-04-26 post-commit)
 
 The orbit `mean_L` 144.79 vs PT 145.80 match (≤1 unit) and the static-pose blue-ratio miss (0.670× vs target 0.85×) are both **partially confounded** by missing point/sphere shadow maps in the rasterizer (TASK-66, still open).

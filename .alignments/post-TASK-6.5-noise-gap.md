@@ -184,7 +184,11 @@ Every screen pixel reads the same 4 probes every frame. There's no per-frame, pe
 
 ---
 
-### D4 — Closest-hit reads previous-frame LightPass output for on-screen bounces (energy double-count risk)
+### D4 — Closest-hit reads previous-frame LightPass output for on-screen bounces (energy double-count risk) — **WITHDRAWN 2026-04-26**
+
+> **CORRECTION (2026-04-26)**: this entry is wrong. Verified during TASK-6.11 implementation that the closest-hit's `in_LightPassOutgoingLuminance` SRV (slot t5) is bound to `LightPass::GetIlluminanceResult()` = `m_IlluminanceResult` = `out_lightPassRT1`, which `lightPass.comp:150` writes as `l_IndirectSeedLuminance` = `albedo * Illuminance / PI` — Lambertian-only direct lighting. NOT RT0 = `direct + indirect`. The variable name `in_LightPassOutgoingLuminance` was the trap (sounds like "outgoing radiance" / final RT). The shader's own design comment at `lightPass.comp:140-143` makes the intent explicit: *"GI composes into the visual RT only; the illuminance RT carries direct lighting only so next-frame ray hits do not re-accumulate already-accumulated indirect energy."* The "feedback loop" described below does not exist in the current codebase. TASK-6.11 was closed wrong-premise. The original entry text is preserved below for the historical record but should not be cited as a source for engine claims.
+
+
 
 **Capsaicin** (`gi1.comp:2517–2529` ResolveCells + closest-hit hash-grid reads at `gi1.comp:1962, 2377, 2381`): secondary path vertices read `HashGridCache_FilteredRadianceDirect/Indirect` — *direct* lighting only at MIP-cascade level, then the multibounce path (gi1.comp:2891–2895) adds indirect on top. Critically, the hash-grid stores **direct lighting evaluated by `LightSampler::sample`**, not the resolved indirect-included LightPass output. There's no path where bounce contribution comes from a buffer that already includes integrated GI.
 

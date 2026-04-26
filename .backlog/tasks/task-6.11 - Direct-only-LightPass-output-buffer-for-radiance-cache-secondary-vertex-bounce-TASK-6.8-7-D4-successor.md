@@ -3,9 +3,10 @@ id: TASK-6.11
 title: >-
   Direct-only LightPass output buffer for radiance-cache secondary-vertex bounce
   (TASK-6.8 #7/D4 successor)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-26 16:31'
+updated_date: '2026-04-26 16:43'
 labels:
   - rendering
   - GI
@@ -80,6 +81,76 @@ Sibling to TASK-6.10. Compounds predictably. Closes the dominant remaining struc
 - [ ] #7 Default-camera PT comparison: warm channels lift toward PT, mean_L moves closer to 145.80; document any remaining gap (blue-ratio target 0.85× may still be unreached pending TASK-66)
 - [ ] #8 No noise regression on consec-frame mean luma-delta (≤39.20 from TASK-6.10)
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**Closed wrong-premise.** The work this task asked for is already implemented in the codebase. The closest-hit secondary-vertex bounce already reads a Lambertian-only direct buffer, not `direct + indirect`. The audit (`.alignments/post-TASK-6.5-noise-gap.md` D4 entry) was wrong about which RT is bound at the closest-hit's `in_LightPassOutgoingLuminance` SRV.
+
+### Verification chain (rendering-researcher dispatched 2026-04-26 traced end-to-end before editing)
+
+| Layer | File:line | Object |
+|---|---|---|
+| Shader: `out_lightPassRT0` write | `lightPass.comp:148` | `float4(l_DirectLuminance, 1.0)` where `l_DirectLuminance += l_IndirectLuminance` at line 143 → **direct + indirect** (consumed by tonemap path only) |
+| Shader: `out_lightPassRT1` write | `lightPass.comp:150` | `float4(l_IndirectSeedLuminance, 1.0)` → **Lambertian-only direct** (`albedo * Illuminance / PI`), no specular, no GI |
+| Shader binding (cache pass): `in_LightPassOutgoingLuminance` | `RayTracingBindings.hlsl:24` | `Texture2D ... : register(t5)` |
+| C++ slot 6 maps to t5 | `RadianceCacheRaytracingPass.cpp:94-99` | comment "t5 - light pass illuminance result" |
+| C++ binds slot 6 | `RadianceCacheRaytracingPass.cpp:240` | `LightPass::Get().GetIlluminanceResult()` |
+| `GetIlluminanceResult()` returns | `LightPass.cpp:339-342` | `m_IlluminanceResult` |
+| `m_IlluminanceResult` is bound to RT1 | `LightPass.cpp:316` | slot 19 = `out_lightPassRT1` |
+
+Conclusion: closest-hit reads Lambertian-only direct lighting at `RadianceCacheClosestHit.hlsl:167`. Not RT0. The misleading variable name `in_LightPassOutgoingLuminance` (sounds like "outgoing radiance" / final RT) was the trap.
+
+### Confirmation in the shader's own design comment
+
+`lightPass.comp:140-143`:
+
+```
+// GI composes into the visual RT only; the illuminance RT carries
+// direct lighting only so next-frame ray hits do not re-accumulate
+// already-accumulated indirect energy.
+l_DirectLuminance += l_IndirectLuminance;
+```
+
+This comment is the design intent the task asked the implementer to add. It already exists.
+
+### Why this matters
+
+If the implementer had executed without verifying:
+1. Would have added a duplicate `m_DirectOnlyLuminance` RT identical in content to `m_IlluminanceResult` — duplication of state, two RTs writing the same thing.
+2. Would have added a duplicate SRV binding identical to slot 6 in `RadianceCacheRaytracingPass.cpp` — wasted descriptor slot.
+3. Validation captures would show zero change because the swap is `RT_A → RT_B` where `RT_A == RT_B`. Either bait-and-switch on the user with "validation showed no change as predicted," or reverse-engineer a justification for measurement noise.
+
+The implementer correctly stopped and reported per the brief's anchored constraint and per `feedback_no_data_integrity_assumptions.md` / `feedback_verify_source_before_chasing.md`.
+
+### Documentation updates landed alongside this closure
+
+- `.alignments/post-TASK-6.5-noise-gap.md` D4 entry annotated **WITHDRAWN** with correction note pointing here.
+- `.alignments/TASK-6.10-sky-nee-secondary-vertex.md` got a **CORRECTION** section pointing here; the artifact's references to "feedback loop" and "TASK-6.8 #7/D4 sibling" are now flagged as wrong-premise.
+- TASK-6.8 roadmap's #7 entry annotated WITHDRAWN.
+
+### Reframing the residual gap (TASK-6.10 closure had a wrong attribution)
+
+The TASK-6.10 closure attributed the static-pose blue-ratio miss (0.670× vs target 0.85×) partly to "D4 needing to land." That attribution was wrong. The full residual gap routes to:
+
+1. **Material routing** at the secondary vertex (placeholder `SECONDARY_VERTEX_ALBEDO_FALLBACK = 0.5`; real Sponza limestone is ~(0.7, 0.65, 0.55)). This is the dominant remaining gap. Worth filing as its own task when prioritized.
+2. **TASK-66** missing point/sphere shadow maps — PT-comparison confounder. Per recently-saved `feedback_pt_comparison_must_account_for_rast_omissions.md`.
+3. **World-up sampling proxy** at the secondary vertex (no shading normal in RC pipeline). Documented in TASK-6.10's alignment artifact.
+4. **World-cache write-side** doesn't pick up the sky-NEE term yet (one-frame propagation latency through screen-probe chain). Documented in TASK-6.10's closure.
+
+### Optional micro-CL not executed
+
+The implementer flagged that renaming `in_LightPassOutgoingLuminance` → `in_LightPassDirectLuminance` (or `…IlluminanceResult` to match C++) in `RayTracingBindings.hlsl:24` and `RadianceCacheClosestHit.hlsl:167` would prevent future audits from making the same misread. Single-purpose rename, ~5 lines. **Not in this CL.** File as a follow-up if desired; per `feedback_no_dismissing_tool_noise.md` it would be the principled fix to the source of the confusion.
+
+### Files NOT modified (correct outcome)
+
+- `Source/ExampleProject/RenderingClient/LightPass.cpp` — would have added duplicate RT.
+- `Source/ExampleProject/RenderingClient/LightPass.h` — would have added duplicate accessor.
+- `Source/Shaders/HLSL/lightPass.comp` — would have added duplicate write.
+- `Source/Shaders/HLSL/RadianceCacheClosestHit.hlsl` — current read is correct.
+- `Source/ExampleProject/RenderingClient/RadianceCacheRaytracingPass.cpp` — would have added duplicate slot.
+- `Source/Shaders/HLSL/RayTracingBindings.hlsl` — would have added duplicate SRV decl.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
