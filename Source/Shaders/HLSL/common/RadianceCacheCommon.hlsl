@@ -234,7 +234,14 @@ float ComputeProbeWeight(uint2 probeCoord, uint2 maxProbeIdx,
 // + normal). Relaxed-interpolation fallback (paper §2.4.1): equal-weight
 // screen-bilinear blend so edge pixels don't go black when the local
 // neighbourhood has no good probe.
-float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNormal)
+//
+// Returns float4(irradiance, denoiser_hint) per Capsaicin gi1.comp:1636-1638:
+// hint = 1.0 when the converged weighted blend ran, hint = 0.0 when the
+// relaxed-equal-weight backup ran. The temporal accumulator (GIDenoise.comp)
+// translates hint == 0.0 into a `lighting.w = -1.0` push so the spatial
+// filter's blur radius widens for the relaxed pixel and the bilateral blur
+// reaches into surrounding well-sampled neighbours (paper §2.4.3).
+float4 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNormal)
 {
 	// Probe (i, j) is anchored at tile centre TILE_SIZE * (i + 0.5). Shift the
 	// screen coord into probe-grid space (subtract half a tile) so `probeFloor`
@@ -283,6 +290,7 @@ float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNorm
 	float totalWeight = fTL + fTR + fBL + fBR;
 
 	float3 result;
+	float hint;
 	if (totalWeight > 0.0)
 	{
 		float3 ITL = LoadIrradiance(tl * SH_TILE_SIZE, pixelNormal);
@@ -290,6 +298,7 @@ float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNorm
 		float3 IBL = LoadIrradiance(bl * SH_TILE_SIZE, pixelNormal);
 		float3 IBR = LoadIrradiance(br * SH_TILE_SIZE, pixelNormal);
 		result = (fTL * ITL + fTR * ITR + fBL * IBL + fBR * IBR) / totalWeight;
+		hint = 1.0;
 	}
 	else
 	{
@@ -298,9 +307,10 @@ float3 SampleRadianceCache(float2 screenCoord, float3 pixelPos, float3 pixelNorm
 		float3 IBL = LoadIrradiance(bl * SH_TILE_SIZE, pixelNormal);
 		float3 IBR = LoadIrradiance(br * SH_TILE_SIZE, pixelNormal);
 		result = wTL * ITL + wTR * ITR + wBL * IBL + wBR * IBR;
+		hint = 0.0;
 	}
 
-	return max(result, float3(0.0, 0.0, 0.0));
+	return float4(max(result, float3(0.0, 0.0, 0.0)), hint);
 }
 
 #endif // RADIANCE_CACHE_HAS_BINDINGS
