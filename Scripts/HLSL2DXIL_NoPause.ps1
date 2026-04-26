@@ -1,4 +1,4 @@
-# HLSL -> DXIL compile wrapper.
+# HLSL -> DXIL compile wrapper (no-pause / automation variant).
 #
 # Thin entry point that delegates to Scripts/Lib/Compile-HLSL.psm1. The shared
 # module enforces mirror semantics on Bin/Shaders/DXIL/ — orphan .dxil files
@@ -10,8 +10,8 @@
 # Pass -FullClean to additionally wipe the entire output directory at start
 # (forces full rebuild; useful for paranoid bisects).
 #
-# This script ends with `Pause` for interactive double-click invocation; the
-# Scripts/HLSL2DXIL_NoPause.ps1 wrapper omits the pause for CI / automation.
+# This script omits the trailing Pause from Scripts/HLSL2DXIL.ps1 so it can
+# be invoked from CI / msbuild / hooks without blocking on user input.
 
 param([switch]$FullClean)
 
@@ -27,5 +27,3 @@ Invoke-HlslToDxil `
     -DxilOutputDir (Join-Path $repoRoot 'Bin\Shaders\DXIL') `
     -DxcExePath    (Join-Path $repoRoot 'Build\Tools\dxc\bin\x64\dxc.exe') `
     -FullClean:$FullClean
-
-Pause

@@ -71,7 +71,7 @@ Caster pass (TASK-148) needs the constant buffer to know face matrices + atlas b
 <!-- SECTION:NOTES:BEGIN -->
 **Sequencing**: BLOCKED on the TASK-66 design call (VSM vs PCF on cube atlas; atlas resolution + slot count). `rendering-researcher` resolves both and amends this task before implementation begins. Until then the AC#1/AC#2 details are placeholders.
 
-**Build-cache hygiene**: TASK-146 is in flight (mirror-semantic shader deploy). Until it lands, every iteration on this subtask must manually nuke `Bin/Shaders/DXIL/` + `Bin/RelWithDebInfo/Shaders/DXIL/` and rerun `Build/HLSL2DXIL_NoPause.ps1` before `cmake --build`. See `.claude/disciplines/regression-fix-flow.md` § "Build-cache contamination — bisect prerequisite".
+**Build-cache hygiene**: TASK-146 has landed (mirror-semantic shader deploy via `Scripts/Lib/Compile-HLSL.psm1` + `CMake/DeployRuntimePayload.cmake`). `Scripts/HLSL2DXIL_NoPause.ps1` deletes orphan `.dxil` automatically; `cmake --build` wipes-and-recopies the per-Config deploy target. No manual nuke needed; pass `-FullClean` to the script for paranoid bisects.
 
 **Prior art to mirror**:
 - `SunShadowGeometryProcessPass::Setup()` for render-target descriptor shape (texture-array, packed depth color, viewport sizing, comparison function).

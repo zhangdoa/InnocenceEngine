@@ -24,21 +24,18 @@ A fix dispatched on top of an unreproduced regression piles new variables onto a
 
 If the regression itself prevents bisect (the engine won't start, the build won't compile), fix-to-bisect first: the smallest possible change that restores enough function to run the symptom check. Then bisect from there. Do not skip bisect because "the fix is obvious" — that is the speculative-fix failure mode wearing a different hat.
 
-## Build-cache contamination — bisect prerequisite
+## Build-cache contamination — historical
 
-**Before EACH bisect step on shader-touching CLs, the build cache must be cleaned.** The current build chain accumulates stale DXIL artifacts in `Bin/Shaders/DXIL/` (and the deploy target `Bin/RelWithDebInfo/Shaders/DXIL/`). When source-tree HLSL files are deleted/renamed (revert, branch switch, bisect step), their compiled `.dxil` lingers. Worse, when SAME-NAMED shaders have different content across commits, incremental rebuild's timestamp comparison may not recompile, leaving the engine to load DXIL with bindings that don't match its binary's expectations → device-hang or silent rendering corruption.
+**As of TASK-146 (landed 2026-04-26), the build chain is mirror-semantic.** `Scripts/Lib/Compile-HLSL.psm1` removes orphan `.dxil` artifacts at the start of every shader-compile invocation, and the CMake `inno_deploy_runtime_payload` POST_BUILD step wipes-and-recopies the per-Config deploy target so that any source-tree shader/asset removal propagates through to the runtime payload on the next build. The mandatory bisect-step nuke dance (formerly required as a workaround) is no longer necessary.
 
-The mandatory bisect-step build dance until the build chain is fixed (TASK-146):
+For paranoid bisects (e.g. when crossing a major shader-binding refactor) the shader-compile script still accepts `-FullClean` to wipe the entire `Bin/Shaders/DXIL/` directory before recompile:
 
 ```
-rm -rf Bin/Shaders/DXIL/ Bin/RelWithDebInfo/Shaders/DXIL/
-powershell -ExecutionPolicy Bypass -File Build/HLSL2DXIL_NoPause.ps1
+powershell -ExecutionPolicy Bypass -File Scripts/HLSL2DXIL_NoPause.ps1 -FullClean
 cmake --build Build --config RelWithDebInfo --target Main
 ```
 
-Skipping the nuke step IS the failure mode that produced the TASK-141→145 phantom regression chain (recorded below). Treat shader-cache hygiene as part of the bisect step, not an optimization-toggle.
-
-When TASK-146 lands (build chain made mirror-semantic), this section becomes unnecessary — the build itself will guarantee freshness. Until then, dispatch must be explicit about the nuke step in the bisect script.
+The historical incident that motivated TASK-146 is recorded below; the bisect failure mode it produced is now closed at the source.
 
 ## The user's role
 
