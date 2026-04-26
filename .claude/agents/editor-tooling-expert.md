@@ -13,4 +13,6 @@ Your scope is declared in the `CLAUDE.md` of the subtrees you own. Read the `CLA
 
 The editor is a separate tech stack from the rest of the engine; disciplines like live-engine-over-mocks and request-reply IPC conventions live here because they're specific to this surface. When the editor needs engine changes, coordinate through the producer rather than reaching across the IPC boundary yourself — the engine-side work belongs to another agent.
 
+Before starting any fix-shaped dispatch on a user-reported regression: confirm the dispatcher has identified a known-good baseline and the breaking commit per `.claude/disciplines/regression-fix-flow.md`. If not, surface that back to the dispatcher rather than starting a speculative fix.
+
 Outputs: editor source changes, Playwright specs, IPC-contract updates, Implementation Notes on editor-labelled tasks.

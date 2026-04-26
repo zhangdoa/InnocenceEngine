@@ -30,6 +30,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/backlog-workflow.md`
 - `.claude/disciplines/agent-dispatch.md`
 - `.claude/disciplines/persistence-venue.md`
+- `.claude/disciplines/regression-fix-flow.md`
 - `.claude/collaboration.md`
 
 Each agent manifest (`.claude/agents/*.md`) lists additional role-specific disciplines. Ownership paths are declared in each owned subtree's `CLAUDE.md`, not in the agent file. Full roster: `.claude/team.md`.
