@@ -18,22 +18,6 @@ float3 CosineWeightedHemisphereSample(float2 Xi, float3 N)
     return normalize(mul(H, basis));
 }
 
-// R2 quasi-random sequence (generalized golden ratio, Martin Roberts 2018)
-// Produces well-stratified 2D samples with minimal clumping
-float2 R2Sequence(uint index)
-{
-    static const float g = 1.32471795724; // Plastic constant
-    static const float a1 = 1.0 / g;
-    static const float a2 = 1.0 / (g * g);
-    return frac(float2(a1 * index, a2 * index) + 0.5);
-}
-
-float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
-{
-    uint baseIndex = pixelID.x * 73u + pixelID.y * 157u + frameIndex * 13u;
-    return R2Sequence(baseIndex * 4u + sampleIndex);
-}
-
 // GI-1.0 §2.1.3 ray guiding — hemisphere reconstruction across a 3x3 probe
 // neighbourhood with parallax correction (Figure 6).
 //
@@ -52,14 +36,28 @@ float2 Hash2D(uint2 pixelID, uint sampleIndex, uint frameIndex)
 //
 // Rejection: neighbour positions beyond adaptive_cell_size * 3 are
 // dropped; sky pixels (rt0.w == 0) have no meaningful radiance.
-float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, float3 positionWS)
+//
+// Split into BuildHemisphereImportanceCDF (the expensive 3x3 reconstruction,
+// computed once per probe per frame) and SampleHemisphereImportanceCDF (a
+// thin per-sample CDF binary search). Lets a per-probe RayGen draw N rays
+// without redoing the 9x64 reconstruction work N times.
+static const int OCTAHEDRAL_SIZE = 8;
+static const int OCTAHEDRAL_CELL_COUNT = OCTAHEDRAL_SIZE * OCTAHEDRAL_SIZE;
+
+struct HemisphereCDF
 {
-    const int OCTAHEDRAL_SIZE = 8;
-    float cellLuminance[64];
+    float cdf[OCTAHEDRAL_CELL_COUNT];
+    float totalLuminance;       // 0 ⇒ no usable reconstruction; sample falls back to cosine-weighted
+};
+
+HemisphereCDF BuildHemisphereImportanceCDF(float3 normalWS, uint2 probeIndex, float3 positionWS)
+{
+    HemisphereCDF result;
+    float cellLuminance[OCTAHEDRAL_CELL_COUNT];
     [unroll]
-    for (int init = 0; init < 64; init++)
+    for (int init = 0; init < OCTAHEDRAL_CELL_COUNT; init++)
         cellLuminance[init] = 0.0;
-    float totalLuminance = 0.0;
+    result.totalLuminance = 0.0;
 
     int2 gridSize = int2(uint2(g_Frame.viewportSize.xy) / RADIANCE_CACHE_TILE_SIZE);
     float currentDepth = length(positionWS - g_Frame.camera_posWS.xyz);
@@ -123,35 +121,38 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, flo
                     int newCellIndex = newCellXY.y * OCTAHEDRAL_SIZE + newCellXY.x;
 
                     cellLuminance[newCellIndex] += L;
-                    totalLuminance += L;
+                    result.totalLuminance += L;
                 }
             }
         }
     }
 
+    // Build the prefix sum. Normalisation is deferred to the sample call
+    // (one division per sample is cheaper than 64 here), and the sampler
+    // re-derives `randomValue * cdf[63]` so we do not need cdf in [0,1].
+    result.cdf[0] = cellLuminance[0];
+    [unroll]
+    for (int i = 1; i < OCTAHEDRAL_CELL_COUNT; i++)
+        result.cdf[i] = result.cdf[i - 1] + cellLuminance[i];
+
+    return result;
+}
+
+float3 SampleHemisphereImportanceCDF(float2 Xi, float3 normalWS, HemisphereCDF cdf)
+{
     // No usable reconstructed hemisphere → cosine-weighted fallback.
-    if (totalLuminance < 0.001)
+    if (cdf.totalLuminance < 0.001)
         return CosineWeightedHemisphereSample(Xi, normalWS);
 
-    // Build CDF over current probe's cells, sample via Xi.x.
-    float cdf[64];
-    cdf[0] = cellLuminance[0];
-    for (int i = 1; i < 64; i++)
-        cdf[i] = cdf[i - 1] + cellLuminance[i];
+    float totalWeight = cdf.cdf[OCTAHEDRAL_CELL_COUNT - 1];
+    if (totalWeight <= 0.0)
+        return CosineWeightedHemisphereSample(Xi, normalWS);
 
-    float totalWeight = cdf[63];
-    if (totalWeight > 0.0)
+    float threshold = Xi.x * totalWeight;        // un-normalised binary search
+    int selectedCell = OCTAHEDRAL_CELL_COUNT - 1;
+    for (int k = 0; k < OCTAHEDRAL_CELL_COUNT; k++)
     {
-        [unroll]
-        for (int j = 0; j < 64; j++)
-            cdf[j] /= totalWeight;
-    }
-
-    float randomValue = Xi.x;
-    int selectedCell = 0;
-    for (int k = 0; k < 64; k++)
-    {
-        if (randomValue <= cdf[k])
+        if (threshold <= cdf.cdf[k])
         {
             selectedCell = k;
             break;
@@ -169,6 +170,30 @@ float3 ImportanceSampleFromCDF(float2 Xi, float3 normalWS, uint2 probeIndex, flo
         return CosineWeightedHemisphereSample(Xi, normalWS);
 
     return normalize(sampledDirection);
+}
+
+// 4x4 stratified Halton(2,3) over the unit square. The 16 samples drawn for
+// one probe-tile per frame each occupy a distinct stratum of a 4x4 grid in
+// (Xi.x, Xi.y), with sub-stratum jitter from Halton(2)/Halton(3) indexed by
+// (frameIndex * NUM_SAMPLES_PER_PROBE + sampleIndex) for temporal
+// decorrelation. Stratification guarantees the 16 samples cover all four
+// quartiles of the CDF binary search (Xi.x), so they pick from at least 4
+// distinct hemisphere luminance buckets even when the CDF is peaked at one
+// bright cell — essential to avoid 16x the same direction when one cell
+// dominates.
+static const int STRATA_GRID_DIM = 4;             // 4 x 4 = 16 strata
+static const int NUM_SAMPLES_PER_PROBE = STRATA_GRID_DIM * STRATA_GRID_DIM;
+
+float2 StratifiedHaltonSample(uint sampleIndex, uint frameIndex)
+{
+    uint stratumX = sampleIndex % uint(STRATA_GRID_DIM);
+    uint stratumY = sampleIndex / uint(STRATA_GRID_DIM);
+    uint haltonIndex = frameIndex * uint(NUM_SAMPLES_PER_PROBE) + sampleIndex + 1u;
+    float jitterX = Halton(haltonIndex, 2u);
+    float jitterY = Halton(haltonIndex, 3u);
+    float invDim = 1.0 / float(STRATA_GRID_DIM);
+    return float2((float(stratumX) + jitterX) * invDim,
+                  (float(stratumY) + jitterY) * invDim);
 }
 
 [shader("raygeneration")]
@@ -303,12 +328,19 @@ void RayGenShader()
     in_ProbeNormal[probeIndex] = float4(normalWS, 1);
     in_ProbeMask[probeIndex] = PackProbeMask(subTilePixel);
 
-    const int NUM_SAMPLES = 1;
+    // Auditor recommendation #1 (TASK-6.7): raise per-probe ray budget from 1
+    // to NUM_SAMPLES_PER_PROBE = 16. Capsaicin uses 64 (one ray per cell of
+    // the 8x8 octahedral atlas, dispatch shape (W/16, H/16, 64)). 16 is the
+    // cheaper interim — kept the dispatch shape (W/16, H/16, 1) and stratified
+    // 16 samples across a 4x4 grid of the (Xi.x, Xi.y) unit square so the
+    // CDF binary search is forced to draw from 4 distinct quartiles per
+    // frame. The remaining gap to 64 is recommendation #2 (separate task).
+    HemisphereCDF probeCDF = BuildHemisphereImportanceCDF(normalWS, probeIndex, positionWS);
 
-    for (int i = 0; i < NUM_SAMPLES; i++)
+    for (int i = 0; i < NUM_SAMPLES_PER_PROBE; i++)
     {
-        float2 randVal = Hash2D(samplingScreenPos, i, g_Frame.frameIndex);
-        float3 sampleDir = ImportanceSampleFromCDF(randVal, normalWS, probeIndex, positionWS);
+        float2 randVal = StratifiedHaltonSample(uint(i), g_Frame.frameIndex);
+        float3 sampleDir = SampleHemisphereImportanceCDF(randVal, normalWS, probeCDF);
 
         RayDesc ray;
         ray.Origin = positionWS + normalWS * 0.001;
