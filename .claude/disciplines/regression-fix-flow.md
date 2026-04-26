@@ -24,6 +24,22 @@ A fix dispatched on top of an unreproduced regression piles new variables onto a
 
 If the regression itself prevents bisect (the engine won't start, the build won't compile), fix-to-bisect first: the smallest possible change that restores enough function to run the symptom check. Then bisect from there. Do not skip bisect because "the fix is obvious" — that is the speculative-fix failure mode wearing a different hat.
 
+## Build-cache contamination — bisect prerequisite
+
+**Before EACH bisect step on shader-touching CLs, the build cache must be cleaned.** The current build chain accumulates stale DXIL artifacts in `Bin/Shaders/DXIL/` (and the deploy target `Bin/RelWithDebInfo/Shaders/DXIL/`). When source-tree HLSL files are deleted/renamed (revert, branch switch, bisect step), their compiled `.dxil` lingers. Worse, when SAME-NAMED shaders have different content across commits, incremental rebuild's timestamp comparison may not recompile, leaving the engine to load DXIL with bindings that don't match its binary's expectations → device-hang or silent rendering corruption.
+
+The mandatory bisect-step build dance until the build chain is fixed (TASK-146):
+
+```
+rm -rf Bin/Shaders/DXIL/ Bin/RelWithDebInfo/Shaders/DXIL/
+powershell -ExecutionPolicy Bypass -File Build/HLSL2DXIL_NoPause.ps1
+cmake --build Build --config RelWithDebInfo --target Main
+```
+
+Skipping the nuke step IS the failure mode that produced the TASK-141→145 phantom regression chain (recorded below). Treat shader-cache hygiene as part of the bisect step, not an optimization-toggle.
+
+When TASK-146 lands (build chain made mirror-semantic), this section becomes unnecessary — the build itself will guarantee freshness. Until then, dispatch must be explicit about the nuke step in the bisect script.
+
 ## The user's role
 
 This is a single-developer project. The user is the only one who can run windowed visual tests and confirm whether a symptom is present at a given commit. Bisect therefore requires their participation at every step.
@@ -43,3 +59,7 @@ Any agent receiving a fix dispatch on a user-reported regression should check: *
 ## Recorded incident
 
 TASK-122 → TASK-141 → TASK-142 → TASK-145 (2026-04-26). User reported "GISponza pastel" after the ACES → AGX swap (TASK-122). The dispatcher shipped TASK-141 (AGX matrix + encoding), then TASK-142 (K retune), then TASK-145 (diagnostic — against the regressed state, no baseline). When the user reported shadows totally gone, the bisect surface had been contaminated by ~5 commits' worth of accumulated changes; the diagnostic could not isolate root cause because there was no comparison anchor. User: *"we have been violating regression fix flows."*
+
+**The deeper finding:** once the discipline was applied and a proper bisect was driven, the "shadows gone" regression turned out to be **entirely build-cache contamination** (TASK-146) — not a source-code bug at all. Stale `Bin/Shaders/DXIL/` artifacts from a TASK-138 WIP that had been reverted earlier in the session were polluting every incremental build. Once the cache was nuked + repopulated at HEAD, shadows worked. The phantom regression had cost ~5 speculative-fix commits + multiple agent dispatches before being caught. The real surface-level cost: the dispatcher's failure to apply bisect discipline FROM THE START. The real root-cause: the build chain not being mirror-semantic.
+
+The double lesson: (a) bisect first or chase phantoms; (b) when bisect is followed, infrastructure failures (build-cache contamination, etc.) become tractable — they reveal themselves quickly because every step has a known anchor.
