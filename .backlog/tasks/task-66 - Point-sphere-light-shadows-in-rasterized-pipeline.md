@@ -4,6 +4,7 @@ title: Point / sphere light shadows in rasterized pipeline
 status: To Do
 assignee: []
 created_date: '2026-04-18 14:56'
+updated_date: '2026-04-26 21:36'
 labels:
   - feature
   - rendering
@@ -11,7 +12,7 @@ labels:
   - shadows
   - rasterizer
 dependencies: []
-priority: medium
+priority: high
 ---
 
 ## Description
