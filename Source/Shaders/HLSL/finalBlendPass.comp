@@ -54,7 +54,16 @@ void main(ComputeInputType input)
 
 	// HDR to LDR
 #ifdef AUTO_EXPOSURE
-	float maxLuminance = in_luminanceAverage[0] * 9.6f; // precomputed EV100
+	// Auto-exposure key value. Tuned for the AgX-Default DRT (TASK-141).
+	// At K=6.0, Y_avg maps to 8-bit ~51 (canonical AgX middle grey ~54
+	// for linear input 0.18). The legacy K=9.6 was tuned for the older
+	// ACES Filmic pipeline where the steeper sigmoid pushed Y_avg to
+	// ~8-bit 102; under AgX the same K rendered Y_avg at ~8-bit 34
+	// (visible as universal dimness). See
+	// .alignments/post-TASK-141-dark-pumping-shadow-diagnostic.md
+	// for the full math chain. Lower K → brighter; higher K → dimmer.
+	const float K = 6.0f;
+	float maxLuminance = in_luminanceAverage[0] * K;
 	float exposure = 1.0f / max(maxLuminance, EPSILON);
 #else
 	float EV100 = ComputeEV100(g_Frame.aperture, g_Frame.shutterTime, g_Frame.ISO);
