@@ -3,7 +3,7 @@ id: TASK-133
 title: >-
   Build deploy: Bin/<Config>/Shaders + Bin/Data missing — engine cannot run from
   fresh checkout without manual junctions
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-25 15:00'
 labels:

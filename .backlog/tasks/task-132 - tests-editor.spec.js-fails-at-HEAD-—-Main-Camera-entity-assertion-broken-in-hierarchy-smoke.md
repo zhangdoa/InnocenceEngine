@@ -3,7 +3,7 @@ id: TASK-132
 title: >-
   tests/editor.spec.js fails at HEAD — Main Camera entity assertion broken in
   hierarchy smoke
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-25 13:25'
 labels:
