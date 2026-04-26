@@ -78,16 +78,18 @@ void main(ComputeInputType input)
     }
 
     // Coverage gate: paper's backup assumes enough ray budget that a probe
-    // is near-saturated (most of 64 cells traced), and fills the few
-    // remaining untraced cells with the average so SH DC isn't biased by
-    // zero-radiance directions. Below the threshold we leave untraced
-    // cells at zero — our sparse-spawning configuration (1 ray per spawn
-    // tile per frame) hits only ~20% coverage for most of the scene, and
-    // filling 80% of a probe with an avg-of-a-dozen-cells doubles SH DC
-    // and produces strong per-probe brightness banding. If ray budget
-    // grows (e.g. [S1.5c-override-full] adds extra rays) this gate
-    // activates automatically for the probes that become dense enough.
-    const float COVERAGE_ACTIVATION_THRESHOLD = 0.9;
+    // is near-saturated (most of 64 cells traced), and fills the remaining
+    // untraced cells with the average so SH DC isn't biased by zero-radiance
+    // directions. Capsaicin equivalent (gi1.comp:1213-1232) is unconditional
+    // — every empty cell of a spawned probe gets the per-probe sample-count-
+    // weighted average. Post-TASK-6.7 we trace 16 stratified Halton rays per
+    // probe per frame, so coverage reliably reaches >=0.25 per frame and the
+    // ~10-frame EMA at the integration write site fills the remainder over
+    // ~4 frames. 0.5 is the halfway compromise between Capsaicin's
+    // unconditional fill and the prior 0.9 workaround that prevented over-
+    // firing at the obsolete 1-ray-per-probe density. See
+    // .alignments/post-TASK-6.5-noise-gap.md (D5).
+    const float COVERAGE_ACTIVATION_THRESHOLD = 0.5;
     float coverage = gs_avgCount[0] / float(THREAD_COUNT);
     float3 tracedAvg = gs_avgCount[0] > 0.5 ? (gs_avgSum[0] / gs_avgCount[0]) : float3(0, 0, 0);
     if (!tracedCell && coverage > COVERAGE_ACTIVATION_THRESHOLD)
