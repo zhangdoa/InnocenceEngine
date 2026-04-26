@@ -89,7 +89,11 @@ struct PerFrame_CB
 	float radianceCacheJitter_y; // Tight packing 27
 	uint frameIndex; // Tight packing 27
 	uint modelCount; // Tight packing 27
-	float4 padding_c[4]; // 28 - 31 (to maintain 16-byte alignment)
+	uint exposureMode; // Tight packing 28 (0 = Manual, 1 = Auto)
+	float autoExposureKey; // Tight packing 28
+	float autoExposureCompensation; // Tight packing 28 (EV stops bias on auto)
+	float exposurePadding; // Tight packing 28
+	float4 padding_c[3]; // 29 - 31 (to maintain 16-byte alignment)
 };
 
 struct Transform_CB

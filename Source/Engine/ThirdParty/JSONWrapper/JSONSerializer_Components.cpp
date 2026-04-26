@@ -57,6 +57,9 @@ void JSONWrapper::to_json(json& j, const CameraComponent& component)
         {"Aperture", component.m_Aperture},
         {"ShutterTime", component.m_ShutterTime},
         {"ISO", component.m_ISO},
+        {"ExposureMode", static_cast<uint32_t>(component.m_ExposureMode)},
+        {"AutoExposureKey", component.m_AutoExposureKey},
+        {"AutoExposureCompensation", component.m_AutoExposureCompensation},
     };
 }
 
@@ -416,6 +419,14 @@ bool JSONWrapper::Load(const char* fileName, CameraComponent& component)
     component.m_Aperture = j["Aperture"];
     component.m_ShutterTime = j["ShutterTime"];
     component.m_ISO = j["ISO"];
+
+    // New in TASK-144: data-driven auto-exposure key + mode toggle. Use
+    // value() with the in-struct defaults so older scene files (which lack
+    // these keys) round-trip without erroring; the defaults preserve the
+    // pre-TASK-144 hardcoded behavior (Auto mode, K=6.0, no EV bias).
+    component.m_ExposureMode = static_cast<ExposureMode>(j.value("ExposureMode", static_cast<uint32_t>(component.m_ExposureMode)));
+    component.m_AutoExposureKey = j.value("AutoExposureKey", component.m_AutoExposureKey);
+    component.m_AutoExposureCompensation = j.value("AutoExposureCompensation", component.m_AutoExposureCompensation);
 
     return true;
 }

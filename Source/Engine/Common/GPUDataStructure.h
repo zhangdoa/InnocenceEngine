@@ -40,7 +40,11 @@ namespace Inno
 		Vec2 radianceCacheHaltonJitter;
 		uint32_t frameIndex;
 		uint32_t modelCount;
-		float padding[16]; // Reduced padding after adding modelCount
+		uint32_t exposureMode; // 0 = Manual (aperture/shutter/ISO), 1 = Auto (K + log-luminance)
+		float autoExposureKey;
+		float autoExposureCompensation; // EV stops applied on top of auto-exposure result
+		float exposurePadding;
+		float padding[12]; // Reduced padding after adding exposure mode/key/compensation
 	};
 
 	struct alignas(16) CSMConstantBuffer

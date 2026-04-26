@@ -1,6 +1,15 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
-#define AUTO_EXPOSURE
+
+// Exposure-mode constants must match Inno::ExposureMode in CameraComponent.h.
+#define EXPOSURE_MODE_MANUAL 0u
+#define EXPOSURE_MODE_AUTO   1u
+
+// Floor for the auto-exposure key K. K = 0 (or denormal/NaN) would push
+// maxLuminance through max(EPSILON) and produce an exposure of ~1/EPSILON,
+// blowing the frame to white. Per feedback_no_data_integrity_assumptions.md
+// we clamp loudly to a sane minimum rather than divide-by-zero silently.
+static const float AUTO_EXPOSURE_KEY_MIN = 0.01f;
 
 struct ComputeInputType
 {
@@ -52,23 +61,29 @@ void main(ComputeInputType input)
 	float4 billboardPass = in_billboardPassRT0[input.dispatchThreadID.xy];
 	float4 debugPass = in_debugPassRT0[input.dispatchThreadID.xy];
 
-	// HDR to LDR
-#ifdef AUTO_EXPOSURE
-	// Auto-exposure key value. Tuned for the AgX-Default DRT (TASK-141).
-	// At K=6.0, Y_avg maps to 8-bit ~51 (canonical AgX middle grey ~54
-	// for linear input 0.18). The legacy K=9.6 was tuned for the older
-	// ACES Filmic pipeline where the steeper sigmoid pushed Y_avg to
-	// ~8-bit 102; under AgX the same K rendered Y_avg at ~8-bit 34
-	// (visible as universal dimness). See
-	// .alignments/post-TASK-141-dark-pumping-shadow-diagnostic.md
-	// for the full math chain. Lower K → brighter; higher K → dimmer.
-	const float K = 6.0f;
-	float maxLuminance = in_luminanceAverage[0] * K;
-	float exposure = 1.0f / max(maxLuminance, EPSILON);
-#else
-	float EV100 = ComputeEV100(g_Frame.aperture, g_Frame.shutterTime, g_Frame.ISO);
-	float exposure = ConvertEV100ToExposure(EV100);
-#endif
+	// HDR to LDR. Mode + key now data-driven from CameraComponent
+	// (TASK-144); see PerFrame_CB.exposureMode / autoExposureKey /
+	// autoExposureCompensation. Defaults preserve TASK-142 behavior
+	// (Auto mode, K=6.0, no EV bias).
+	float exposure;
+	if (g_Frame.exposureMode == EXPOSURE_MODE_AUTO)
+	{
+		// AgX-Default DRT auto-exposure (TASK-141/142). K is the average-luminance
+		// scale that maps Y_avg to the tonemap's mid-grey target. Lower K → brighter,
+		// higher K → dimmer. K is clamped to AUTO_EXPOSURE_KEY_MIN to keep the
+		// exposure denominator finite when scene data is degenerate.
+		float K = max(g_Frame.autoExposureKey, AUTO_EXPOSURE_KEY_MIN);
+		float maxLuminance = in_luminanceAverage[0] * K;
+		exposure = 1.0f / max(maxLuminance, EPSILON);
+		// EV-stops bias on top of the auto result, for content tweaking
+		// without re-tuning K. exp2(EV) is the standard EV-to-multiplier mapping.
+		exposure *= exp2(g_Frame.autoExposureCompensation);
+	}
+	else
+	{
+		float EV100 = ComputeEV100(g_Frame.aperture, g_Frame.shutterTime, g_Frame.ISO);
+		exposure = ConvertEV100ToExposure(EV100);
+	}
 
 	float3 basePassxyY = RGB_XYY(basePass);
 	basePassxyY.z *= exposure;

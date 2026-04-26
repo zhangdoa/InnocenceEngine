@@ -166,6 +166,10 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	l_perFrameCB.aperture = l_camera->m_Aperture;
 	l_perFrameCB.shutterTime = l_camera->m_ShutterTime;
 	l_perFrameCB.ISO = l_camera->m_ISO;
+	l_perFrameCB.exposureMode = static_cast<uint32_t>(l_camera->m_ExposureMode);
+	l_perFrameCB.autoExposureKey = l_camera->m_AutoExposureKey;
+	l_perFrameCB.autoExposureCompensation = l_camera->m_AutoExposureCompensation;
+	l_perFrameCB.exposurePadding = 0.0f;
 
 	auto& l_LightStorage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
 	if (l_LightStorage.All().empty())
