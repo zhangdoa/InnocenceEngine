@@ -35,6 +35,7 @@ bool OpaquePass::Setup(IServiceConfig *systemConfig)
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
 	l_RenderPassDesc.m_IndirectDraw = true;
+	l_RenderPassDesc.m_PostCLState = CrossQueueExit::ToCommon;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;

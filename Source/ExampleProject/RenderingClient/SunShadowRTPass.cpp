@@ -165,13 +165,7 @@ bool SunShadowRTPass::PrepareCommandList(IRenderingContext* renderingContext)
 	auto l_PerFrameCBufferGPUBufferComp = g_Engine->Get<PerFrameDataService>()->GetCurrentFrameBuffer();
 	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
 
-	// Graphics CL: cross-queue transitions for resources that may carry
-	// PIXEL_SHADER_RESOURCE state from the swap chain or the rasterizer
-	// pipeline. Required because compute command lists can't validly
-	// transition out of pixel-shader-resource states.
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
-	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[0]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::CrossQueueTransition);
-	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(OpaquePass::Get().GetRenderPassComp()->m_OutputMergerTarget->m_ColorOutputs[1]), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::CrossQueueTransition);
 	l_fmService->TryToTransitState(m_SunVisibility, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
