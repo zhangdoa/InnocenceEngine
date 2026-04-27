@@ -20,6 +20,10 @@ RenderingConfigurationService::RenderingConfigurationService()
 	m_renderingCapability.maxCSMSplits = 4;
 	m_renderingCapability.maxPointLights = 1024;
 	m_renderingCapability.maxSphereLights = 128;
+	// TASK-66/TASK-150: simultaneous shadow-casting point/sphere lights packed into a
+	// 6-slice-per-light Texture2DArray atlas. 8 × 6 = 48 slices at 256² R32G32B32A32_FLOAT
+	// mirrors sun shadow's packed-depth color RT (no LRU eviction in v1).
+	m_renderingCapability.maxPointShadows = 8;
 	m_renderingCapability.maxMeshes = 1024;
 	m_renderingCapability.maxTextures = 2048;
 	m_renderingCapability.maxMaterials = 4096;

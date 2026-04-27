@@ -33,5 +33,15 @@ namespace Inno
 		float m_LuminousFlux = 1.0f;
 
 		bool m_UseColorTemperature = true;
+
+		// Default true: legacy point/sphere lights authored before TASK-66
+		// were written with the implicit assumption that any positional light
+		// might cast a shadow (the rasterizer just never honored it). Defaulting
+		// true means TASK-148 begins shadowing existing scenes immediately;
+		// authors opt out per-light for decorative fills. Directional lights
+		// take the CSM path (LightDataService::UpdateCSMData) and ignore this
+		// field — the cube-atlas allocator (TASK-147) only reads it for
+		// LightType::Point and LightType::Sphere.
+		bool m_CastShadow = true;
 	};
 }

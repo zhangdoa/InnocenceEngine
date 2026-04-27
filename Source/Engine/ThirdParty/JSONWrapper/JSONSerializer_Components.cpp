@@ -41,6 +41,7 @@ void JSONWrapper::to_json(json& j, const LightComponent& component)
         {"ColorTemperature", component.m_ColorTemperature},
         {"LuminousFlux", component.m_LuminousFlux},
         {"UseColorTemperature", component.m_UseColorTemperature},
+        {"CastShadow", component.m_CastShadow},
     };
 }
 
@@ -401,6 +402,11 @@ bool JSONWrapper::Load(const char* fileName, LightComponent& component)
     component.m_ColorTemperature = j["ColorTemperature"];
     component.m_LuminousFlux = j["LuminousFlux"];
     component.m_UseColorTemperature = j["UseColorTemperature"];
+
+    // Older scene files lack CastShadow; fall back to the in-struct default
+    // so the rasterizer-side shadow flag round-trips cleanly. Mirrors the
+    // CameraComponent ExposureMode default-fallback idiom (TASK-144).
+    component.m_CastShadow = j.value("CastShadow", component.m_CastShadow);
 
     return true;
 }
