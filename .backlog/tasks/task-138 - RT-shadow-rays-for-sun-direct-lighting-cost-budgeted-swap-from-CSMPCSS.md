@@ -87,10 +87,16 @@ LightPass binding extended with t13 = `Texture2D<float> in_SunShadowRTVisibility
 - `SunShadowCSM` (cascade rasterize alone, Graphics queue): **1.17 ms**
 - `SunShadowRT` (full hardware-RT path, Compute queue): **0.21 ms**
 - `RadianceCacheRT` (control, same hardware): **1.20 ms**
-- `LightPass` total (consumer with USE_RT_SHADOWS=0; PCSS evaluator subset not isolatable from total via engine timer): **0.58 ms**
-- User's PIX baseline (CSM cascade rasterize + PCSS evaluator combined): **~3 ms**
+- `LightPass` (consumer with `USE_RT_SHADOWS=0`, includes inline PCSS evaluator): **0.58 ms**
+- `LightPass` (consumer with `USE_RT_SHADOWS=1`, simple texture read instead of PCSS): **0.26 ms**
+- **Implied PCSS-evaluator cost inside LightPass = 0.58 – 0.26 = ~0.32 ms**
+- **CSM path total** = SunShadowCSM rasterize + LightPass PCSS = 1.17 + 0.32 = **~1.49 ms**
+- **RT path total** = SunShadowRT + (LightPass texture-read cost already in baseline) = **~0.21 ms**
+- User's PIX baseline (CSM cascade + PCSS combined): **~3 ms** (likely includes some overhead the engine timer doesn't capture; ratio is the same direction)
 
-**Decision: SWAP (with phase-2 follow-up).** RT cost (0.21 ms) is ≈ 5.5× cheaper than the CSM cascade rasterize alone (1.17 ms) and ≈ 14× cheaper than the user's PIX-measured CSM+PCSS combined baseline (~3 ms). Far below the task brief's "≤ baseline" threshold. Quality benefit on top: paper-faithful angular-sun soft shadows, no cascade seams, no acne/peter-panning bias-tuning, single physically-meaningful parameter (`SUN_ANGULAR_RADIUS`) instead of `LIGHT_SIZE`/`PENUMBRA_MAX_TEXELS`/`MIN/MAX_SHADOW_BIAS` knobs.
+**Decision: SWAP (with phase-2 follow-up).** RT cost is **~7× cheaper** than the CSM+PCSS path on engine-timer measurement (~14× vs the user's PIX baseline). Far below the task brief's "≤ baseline" threshold. Quality benefit on top: paper-faithful angular-sun soft shadows, no cascade seams, no acne/peter-panning bias-tuning, single physically-meaningful parameter (`SUN_ANGULAR_RADIUS`) instead of `LIGHT_SIZE`/`PENUMBRA_MAX_TEXELS`/`MIN/MAX_SHADOW_BIAS` knobs.
+
+**End-to-end consumer validation:** Toggled `USE_RT_SHADOWS=1`, recompiled lightPass.comp DXIL, ran 30-frame offscreen smoke — exits 0, no D3D12 errors, no missing-texture warnings. Confirms the RT visibility texture is consumable in `EvaluateSunLighting` end-to-end (not just produced and discarded).
 
 **Phase 2 (separate CL) will:**
 1. Flip `USE_RT_SHADOWS` to 1 (or remove the toggle entirely once committed).
