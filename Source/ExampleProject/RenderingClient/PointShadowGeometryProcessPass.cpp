@@ -1,5 +1,5 @@
 #include "PointShadowGeometryProcessPass.h"
-#include "SunShadowCullingPass.h"
+#include "ShadowCasterCullingPass.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/LightDataService.h"
@@ -214,12 +214,12 @@ bool PointShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* /*ren
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel,    nullptr,              5);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Graphics, ShaderStage::Pixel,    m_SamplerComp,        6);
 
-	// Reuse the sun-shadow indirect draw command buffer — point shadow casts
-	// the same opaque scene with a different projection. A dedicated point-
-	// shadow culling pass is a follow-up optimization (per-light frustum
-	// culling could roughly halve draw count); for v1 we trade the (small)
-	// extra GS bandwidth for a much shorter integration path.
-	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(SunShadowCullingPass::Get().GetResult());
+	// Shares the shadow-caster indirect draw command buffer with other shadow
+	// passes — point shadow casts the same opaque scene with a different
+	// projection. Per-light frustum culling could roughly halve draw count
+	// (follow-up optimization); current trade is a small extra GS bandwidth
+	// cost for a shorter integration path.
+	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(ShadowCasterCullingPass::Get().GetResult());
 	l_fmService->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);

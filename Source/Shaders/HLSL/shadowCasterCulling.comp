@@ -1,4 +1,5 @@
-// Sun shadow map culling compute shader
+// Shadow caster culling compute shader — emits indirect draw commands consumed
+// by shadow-caster geometry passes (currently the point/cube shadow caster).
 #include "common/common.hlsl"
 
 // Constant buffer for per-frame data (contains modelCount)

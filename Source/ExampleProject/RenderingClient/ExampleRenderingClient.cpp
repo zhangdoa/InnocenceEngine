@@ -2,12 +2,7 @@
 #include "ExampleRenderingClient.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
-// TASK-138: sun CSM caster path removed. SunShadowCullingPass is retained —
-// PointShadowGeometryProcessPass (TASK-148) reuses its indirect draw command
-// buffer (PointShadowGeometryProcessPass.cpp:222), so deletion would break
-// the cube-shadow caster. Renaming SunShadowCullingPass → ShadowCasterCullingPass
-// is a follow-up structural cleanup.
-#include "SunShadowCullingPass.h"
+#include "ShadowCasterCullingPass.h"
 #include "SunShadowRTPass.h"
 #include "PointShadowGeometryProcessPass.h"
 #include "OpaqueCullingPass.h"
@@ -174,11 +169,9 @@ namespace Inno
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
-		// SunShadowCullingPass kept for PointShadowGeometryProcessPass's
-		// indirect-draw consumer (TASK-148 reuse — see include comment above).
-		SunShadowCullingPass::Get().Setup();
-		// TASK-138 hardware-RT sun shadows — sole sun-shadow path after the
-		// CSM swap.
+		// Produces the indirect-draw command buffer consumed by
+		// PointShadowGeometryProcessPass.
+		ShadowCasterCullingPass::Get().Setup();
 		SunShadowRTPass::Get().Setup();
 		PointShadowGeometryProcessPass::Get().Setup();
 
@@ -244,7 +237,7 @@ namespace Inno
 		BRDFLUTPass::Get().Initialize();
 		BRDFLUTMSPass::Get().Initialize();
 
-		SunShadowCullingPass::Get().Initialize();
+		ShadowCasterCullingPass::Get().Initialize();
 		SunShadowRTPass::Get().Initialize();
 		PointShadowGeometryProcessPass::Get().Initialize();
 
@@ -321,7 +314,7 @@ namespace Inno
 				BRDFLUTMSPass::Get().PrepareCommandList();
 			}
 
-			SunShadowCullingPass::Get().PrepareCommandList();
+			ShadowCasterCullingPass::Get().PrepareCommandList();
 			// TASK-138: dispatch RT sun-shadow rays after the GBuffer is
 			// available (PrepareCommandList only records — sequencing is
 			// enforced in ExecuteCommands via WaitOnGPU on OpaquePass).
@@ -449,19 +442,19 @@ namespace Inno
 		if (!m_GPUPathTracerActive)
 		{
 
-		if (SunShadowCullingPass::Get().GetStatus() == ObjectStatus::Activated)
+		if (ShadowCasterCullingPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			auto l_commandList = SunShadowCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			auto l_commandList = ShadowCasterCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_commandList, GPUEngineType::Compute);
-			auto l_renderPass = SunShadowCullingPass::Get().GetRenderPassComp();
+			auto l_renderPass = ShadowCasterCullingPass::Get().GetRenderPassComp();
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			// Consumes SunShadowCullingPass's indirect draw command buffer; signal
+			// Consumes ShadowCasterCullingPass's indirect draw command buffer; signal
 			// own renderpass so LightPass's WaitOnGPU consumes the correct fence.
-			l_hwService->WaitOnGPU(SunShadowCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_hwService->WaitOnGPU(ShadowCasterCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_commandList = PointShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
 			auto l_renderPass = PointShadowGeometryProcessPass::Get().GetRenderPassComp();
@@ -1106,7 +1099,7 @@ namespace Inno
 
 		PointShadowGeometryProcessPass::Get().Terminate();
 		SunShadowRTPass::Get().Terminate();
-		SunShadowCullingPass::Get().Terminate();
+		ShadowCasterCullingPass::Get().Terminate();
 
 		BRDFLUTMSPass::Get().Terminate();
 		BRDFLUTPass::Get().Terminate();
