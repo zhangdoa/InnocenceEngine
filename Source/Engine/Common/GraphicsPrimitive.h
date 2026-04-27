@@ -286,6 +286,17 @@ namespace Inno
 
 		INNO_ENUM_OPERATORS(ShaderStage);
 
+		// Declarative producer-side cross-queue handoff (TASK-155 F2).
+		// Set on a graphics-queue producer pass when its render targets will be
+		// read by a different queue type before the next graphics-queue use; the
+		// FrameManagementService then emits the RENDER_TARGET -> COMMON barrier
+		// at the end of the producer CL. Default None preserves existing behaviour.
+		enum class CrossQueueExit
+		{
+			None,
+			ToCommon
+		};
+
 		struct RenderPassDesc
 		{
 			bool m_UseMultiFrames = false;
@@ -297,6 +308,7 @@ namespace Inno
 			bool m_UseOutputMerger = true;
 			bool m_IndirectDraw = false;
 			bool m_UseRaytracing = false;
+			CrossQueueExit m_PostCLState = CrossQueueExit::None;
 			TextureDesc m_RenderTargetDesc = {};
 			GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 			std::function<bool()> m_RenderTargetsCreationFunc;
