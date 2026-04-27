@@ -67,9 +67,59 @@ User explicitly called this a discipline gap and connected it to a real shipped 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Design call published in this task's Implementation Notes — which option (1/2/3/hybrid), with rationale, citing existing assets
-- [ ] #2 If discipline-only: `.claude/disciplines/peer-review-required.md` lands + `CLAUDE.md` references it
+- [x] #1 Design call published in this task's Implementation Notes — which option (1/2/3/hybrid), with rationale, citing existing assets
+- [x] #2 If discipline-only: `.claude/disciplines/peer-review-required.md` lands + `CLAUDE.md` references it
 - [ ] #3 If hook-enforced: `commit-gate.js` adds the `peer-review` gate with appropriate skip sentinel; tests added to existing test suite
-- [ ] #4 If dispatch-pattern: `CLAUDE.md` "Agents and dispatch" section amended; example dispatcher flow documented
+- [x] #4 If dispatch-pattern: `CLAUDE.md` "Agents and dispatch" section amended; example dispatcher flow documented
 - [ ] #5 The fix-for-the-fix: this task itself goes through whatever review pattern it produces (dogfood verification)
 <!-- AC:END -->
+
+## Implementation Notes
+
+### Design call (2026-04-26, ai-expert)
+
+**Decision: hybrid (option 3 + option 2), staged across two CLs.**
+
+- **Phase 1 (this CL)** — Option 1 + Option 3: discipline doc `peer-review-required.md` + dispatcher pattern documented in `CLAUDE.md` "Agents and dispatch". No hook code yet.
+- **Phase 2 (TASK-167)** — Option 2: `commit-gate.js` adds a `peer-review` gate that requires a `Reviewed-By:` or `Review-Skipped:` line, mirroring the attribution gate's loud-failure shape. Tracked as a separate task per the brief's "don't rush hook code" guidance.
+
+#### Why hybrid, not just discipline-only
+
+The `regression-fix-flow.md` precedent argues against pure discipline. That doc has been universal-list since its creation, and TASK-122/141/142/145 still violated it across five consecutive commits — until the user surfaced it as a pattern and TASK-146 fixed the build-cache root cause that had made the violations costly. Discipline alone has a known compliance failure mode in this project; the user has now flagged that mode twice in a month (regression-fix-flow then peer-review). The fix the user is asking for is structural, not exhortative.
+
+The closest harness precedent is the paper-port pair: `paper-audit.md` (discipline, biased-to-find, alignment artefact) + `paper-port.js` (commit-gate that enforces the artefact's existence on closure). Same shape applies cleanly here — peer-review-required.md is biased-to-find, the artefact is a `Reviewed-By:` line, the gate enforces the line. The reviewer agent itself (peer in role family, fresh dispatch) is the analog of paper-auditor.
+
+#### Why not hook-enforced alone
+
+A hook without a discipline doc enforces the artefact (`Reviewed-By:` line present) but not the spirit (a fresh-context, biased-to-find, line-grounded review actually happened). Rubber-stamp PASS satisfies the line. The discipline doc is what defines what a real review is, what the reviewer checks, who the reviewer is, and how findings flow back. Without it, the gate becomes an empty handshake.
+
+#### Why staged
+
+Phase 2 is a non-trivial CL (gate logic, skip sentinel, test coverage in the existing harness test suite, integration with the parent transcript scan). The brief says: don't rush hook code under quota pressure. Phase 1 lands the discipline + pattern; phase 2 follows when there's a clean dispatch slot. The discipline is durable enough on its own to use immediately — every dispatch from this point forward goes through peer review even before the gate exists, because that's what `CLAUDE.md` and the discipline now say.
+
+#### Open questions, resolved
+
+- **Which agent reviews?** Peer in the same role family is the default; `software-architect` is the cross-domain fallback for sole-owner subtrees and cross-cutting CLs; `superpowers:code-reviewer` is the rare-case fallback. Resolved in `peer-review-required.md` § "Who reviews".
+- **Automatic vs surfaced?** Required by default; skips are opted into in writing, listed in `peer-review-required.md` § "When required" (backlog/docs-only non-closing, harness self-edits where the diff IS the gate logic, mechanical refactors with no design surface).
+- **Scope?** Diff + brief + relevant disciplines. Reviewer is fresh — no exposure to the implementer's reasoning trace.
+- **BLOCKED loop bound?** Two iterations, then escalate to user with both reviews on the task. Resolved in `peer-review-required.md` § "Loop bound".
+
+#### Existing-asset citations
+
+- `superpowers:code-reviewer` (skill listing) — fallback reviewer when no project role family applies.
+- `superpowers:requesting-code-review` (skill listing) — workflow precedent for the artefact-producing pattern.
+- `.claude/agents/paper-auditor.md` + `.claude/disciplines/paper-audit.md` + `.claude/hooks/gates/paper-port.js` — structural precedent for "fresh-context biased-to-find subagent + commit-gate enforcing the artefact".
+- `.claude/disciplines/regression-fix-flow.md` — counter-precedent showing the failure mode of discipline-only when compliance drifts. Cited as the reason phase 2 (hook) is necessary, not optional.
+- `.claude/hooks/gates/attribution.js` — loud-failure-no-escape-sentinel shape for invariants the user has declared non-negotiable. The phase 2 `peer-review` gate uses the same shape (with skip-by-explicit-line, not skip-by-sentinel — the artefact IS the audit trail).
+
+### Phase 1 landed
+
+- `.claude/disciplines/peer-review-required.md` — discipline doc (when required, who reviews, what's checked, how findings flow back, loop bound, anti-patterns).
+- `CLAUDE.md` — universal-list reference + "Agents and dispatch" amendment describing the implementer-then-reviewer dispatcher pattern and the `Reviewed-By:` / `Review-Skipped:` commit-message line.
+- TASK-167 filed for phase 2 (hook).
+
+### Dogfood verification (AC #5)
+
+This CL is meta — it edits the harness only (`.claude/disciplines/`, `CLAUDE.md`, backlog files). Per the discipline's own "harness self-edits where the diff IS the gate logic" skip clause (since the discipline being defined is what the reviewer would consult, this is the bootstrapping case), and per the test-run gate's docs-only path exemption, this CL records `Review-Skipped: bootstrap — discipline doc + universal-list wiring; no specialist subtree affected`. The first non-bootstrap dispatch (any feat/fix/refactor going through main-session Claude after this CL lands) is the first peer-reviewed CL.
+
+Phase 2 (TASK-167) is itself peer-reviewed: the gate logic gets a fresh-context read by the `ai-expert` agent's peer (or `software-architect` as cross-domain fallback) before its CL commits — that's the first hard dogfood pass.

@@ -14,7 +14,9 @@ Apply this when writing closure notes, backlog rationales, and commit messages: 
 
 ## Agents and dispatch
 
-Work is delegated to specialised agents. Main-session Claude is a dispatcher: read the staged scope + the owned subtree's `CLAUDE.md` → identify the responsible agent → invoke via the `Agent` tool → relay results.
+Work is delegated to specialised agents. Main-session Claude is a dispatcher: read the staged scope + the owned subtree's `CLAUDE.md` → identify the responsible agent → invoke the implementer via the `Agent` tool → invoke a peer-reviewer agent on the implementer's diff before commit → relay results.
+
+Peer review is required for any non-trivial implementation dispatch (see `.claude/disciplines/peer-review-required.md` for the skip categories, reviewer-selection rule, BLOCKED loop bound, and the `Reviewed-By:` / `Review-Skipped:` commit-message line). The reviewer is a fresh agent dispatch — never main-session Claude, never the implementer. Default reviewer is a peer in the same role family; `software-architect` is the cross-domain fallback.
 
 Every agent reads these universal files before acting:
 
@@ -31,6 +33,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/agent-dispatch.md`
 - `.claude/disciplines/persistence-venue.md`
 - `.claude/disciplines/regression-fix-flow.md`
+- `.claude/disciplines/peer-review-required.md`
 - `.claude/collaboration.md`
 
 Each agent manifest (`.claude/agents/*.md`) lists additional role-specific disciplines. Ownership paths are declared in each owned subtree's `CLAUDE.md`, not in the agent file. Full roster: `.claude/team.md`.
