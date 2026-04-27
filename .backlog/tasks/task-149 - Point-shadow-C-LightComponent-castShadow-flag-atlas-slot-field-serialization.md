@@ -3,11 +3,11 @@ id: TASK-149
 title: >-
   Point shadow C: LightComponent castShadow flag + atlas-slot field +
   serialization
-status: In Progress
+status: Done
 assignee:
   - software-architect
 created_date: '2026-04-26 22:30'
-updated_date: '2026-04-27 07:11'
+updated_date: '2026-04-27 07:35'
 labels:
   - feature
   - rendering
@@ -107,6 +107,41 @@ In all three runs, the only DIFFs reported were unrelated to LightComponent. Zer
 
 These touch `Source/Editor-Next/` (editor-tooling-expert ownership) and the WebSocket IPC contract — out of software-architect scope per the dispatch brief.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Landed in commit 055b5c9d as combined TASK-147 + TASK-149 foundation (the two pieces are inseparable once integrated; graphics-api-expert prepared the merged commit while my dispatch ran in parallel).
+
+**My deliverables (TASK-149 scope) — all green:**
+
+- **AC #1**: `LightComponent::m_CastShadow` field with default-true policy + in-source rationale (legacy authoring intent, directional-bypass note, opt-out workflow). Source: `Source/Engine/Component/LightComponent.h`.
+- **AC #2**: `to_json` writes `"CastShadow"`; loader uses `j.value("CastShadow", component.m_CastShadow)` for missing-field fallback. Mirrors TASK-144 CameraComponent ExposureMode idiom. Source: `Source/Engine/ThirdParty/JSONWrapper/JSONSerializer_Components.cpp`.
+- **AC #4**: Per-frame atlas-slot index lives in sidecar (NOT on the component — POD invariant preserved). `LightDataServiceImpl::m_PointLightAtlasSlot` and `m_SphereLightAtlasSlot` parallel-indexed to per-type CB vectors, populated to `INVALID_ATLAS_SLOT` in `UpdateLightData()`, overwritten by TASK-147's `UpdatePointShadowData()` allocator for shadow-casters. Read accessors `GetPointLightAtlasSlot`/`GetSphereLightAtlasSlot` with out-of-range Warning + sentinel return (extracted via `LookupAtlasSlot` helper to avoid copy-paste per safety-observability discipline).
+- **AC #6**: Live-engine `-serialize_test` round-trip on UnitTest.InnoScene, GISponza.InnoScene, GITestBox.InnoScene — all PASSED. Zero LightComponent DIFFs across all three scenes. Pre-existing unrelated fixture rot (CameraComponent missing TASK-144 fields, various MaterialComponent staleness) was first-run-migrated and is NOT a TASK-149 concern.
+
+**Sentinel constant**: `INVALID_ATLAS_SLOT = 0xFFFFFFFF` in `Source/Engine/Common/GPUDataStructure.h` next to `INVALID_TEXTURE_INDEX` (CPU+GPU shared, mirroring shape and value).
+
+**Deferred (per dispatch brief — NOT my scope, surfaced for re-dispatch):**
+
+- **AC #3** — Vue inspector `m_CastShadow` checkbox in `Source/Editor-Next/src/components/inspector/LightEditor.vue`.
+- **AC #5** — `Source/Editor-Next/tests/entity-property-symmetry.spec.js` extension covering the new field.
+- Editor IPC GET_ENTITY_DETAILS / UPDATE_ENTITY roundtrip in `EditorService.cpp` (currently exposes `lightType`/`color`/`shape`/`intensity` but not `castShadow`).
+
+These belong to `editor-tooling-expert`'s dispatch; producer should kick that next.
+
+**What was NOT verified (honest disclosure):**
+
+- No live windowed render test — TASK-148's caster pass hasn't landed, so there's nothing visually different to observe yet. `-serialize_test` is the strongest validation available at this layer.
+- No per-frame allocator stress test (e.g., 100+ shadow-casting lights to confirm INVALID_ATLAS_SLOT path is hit cleanly past `maxPointShadows = 8`). TASK-147's allocator implementation is responsible for that bounds behavior; I added the sentinel-init scaffolding it depends on.
+- The `[skip-size-gate]` sentinel was used because LightDataService.cpp grew 378→605 across the joint TASK-147 + TASK-149 footprint. My TASK-149 share is ~25 lines (sidecar vectors + sentinel-init in UpdateLightData + 2 thin accessor wrappers + 7-line shared `LookupAtlasSlot` helper). Splitting LightDataService.cpp into per-domain TUs is a backlog-able follow-up refactor; the joint commit was necessary because the contract between TASK-147 and TASK-149 is interdependent.
+
+**Pre-existing fixture rot warranting backlog task (separate from TASK-149):**
+
+- `Data/ExampleProject/Components/GITestBox.Camera.CameraComponent.json` lacks the TASK-144 `ExposureMode`/`AutoExposureKey`/`AutoExposureCompensation` fields; serialize-test catches this on first run.
+- Various GISponza / GITestBox MaterialComponent files have similar drift.
+- These are independent of TASK-149's scope but flag a fixture-maintenance gap worth tracking.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
