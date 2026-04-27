@@ -20,14 +20,19 @@
  *                         rule that no later evidence can excuse.
  *   2. file-size        — universal soft ratchet on code/script files.
  *   3. paper-port       — closing a paper-port task needs a fresh alignment artifact.
- *   4. attribution      — commit message needs the AI-authorship header.
+ *   4. peer-review      — commit message needs Reviewed-By: or
+ *                         Review-Skipped: <reason>. Placed before
+ *                         attribution because it is the richer claim:
+ *                         if both are missing the user gets the more
+ *                         informative error first.
+ *   5. attribution      — commit message needs the AI-authorship header.
  *                         MUST live in this phase so transcript-fail-open
  *                         cannot bypass it (see CL fixing 55cf6a72 gap).
  *
  * Phase 2 (transcript-dependent; skipped if transcript unreadable):
- *   5. test-run         — staged code needs integration-test evidence.
- *   6. live-engine      — editor code needs a real-engine / Playwright run.
- *   7. serialize-test   — serializer code needs a serialize-determinism run.
+ *   6. test-run         — staged code needs integration-test evidence.
+ *   7. live-engine      — editor code needs a real-engine / Playwright run.
+ *   8. serialize-test   — serializer code needs a serialize-determinism run.
  *
  * Each gate declares `needsTranscript: boolean` on its module exports;
  * the dispatcher partitions by that flag.
@@ -48,6 +53,7 @@ const GATES = [
   require('./gates/data-generated'),  // needsTranscript: false (structural; first)
   require('./gates/file-size'),       // needsTranscript: false
   require('./gates/paper-port'),      // needsTranscript: false
+  require('./gates/peer-review'),     // needsTranscript: false (before attribution — richer claim first)
   require('./gates/test-run'),        // needsTranscript: true
   require('./gates/live-engine'),     // needsTranscript: true
   require('./gates/serialize-test'),  // needsTranscript: true

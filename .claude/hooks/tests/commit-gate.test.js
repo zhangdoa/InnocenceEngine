@@ -14,7 +14,8 @@
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { collectCommitMessageText } = require('../lib/common')
+const { collectCommitMessageText, ATTRIBUTION_RE } = require('../lib/common')
+const peerReview = require('../gates/peer-review')
 
 let passed = 0
 let failed = 0
@@ -91,6 +92,82 @@ group('collectCommitMessageText — quoted -F argument', () => {
   const r = collectCommitMessageText(`git commit -F "${nativeAbs}"`, tmpRoot)
   assert(r.fileError === null, 'quoted path: no fileError')
   assert(r.text.includes('Code-AI-Generated-By:'), 'quoted path: file content appended')
+})
+
+// ---------------------------------------------------------------------------
+// peer-review gate (TASK-167)
+// ---------------------------------------------------------------------------
+// The gate's run() takes a context object with `messageText`. PASS returns
+// `{ ok: true }`; BLOCK returns `{ ok: false, block: <fn> }`. We don't
+// invoke `block()` here because it process.exits — presence of the block
+// callback is the assertion. Direct ATTRIBUTION_RE checks in the
+// attribution-without-review case keep the gate-pair semantics explicit.
+
+function ctxOf(text) { return { messageText: text } }
+
+group('peer-review gate — pass forms', () => {
+  const r1 = peerReview.run(ctxOf('Subject\n\nBody.\n\nReviewed-By: ai-expert\nCode-AI-Generated-By: Claude\n'))
+  assert(r1.ok === true, 'Reviewed-By: present → pass')
+
+  const r2 = peerReview.run(ctxOf('Subject\n\nBody.\n\nReview-Skipped: hook-internal\nCode-AI-Generated-By: Claude\n'))
+  assert(r2.ok === true, 'Review-Skipped: present → pass')
+
+  const r3 = peerReview.run(ctxOf([
+    'Subject',
+    '',
+    'Body.',
+    '',
+    'Reviewed-By: ai-expert',
+    'Reviewed-By: software-architect',
+    'Code-AI-Generated-By: Claude',
+    '',
+  ].join('\n')))
+  assert(r3.ok === true, 'multiple Reviewed-By: lines → pass')
+
+  // Skip categories from peer-review-required.md § "When required" all
+  // satisfy the gate (it does not enumerate them — reviewer discipline does).
+  for (const reason of ['backlog-only', 'mechanical-rename', 'bootstrap']) {
+    const r = peerReview.run(ctxOf(`Subject\n\nBody.\n\nReview-Skipped: ${reason}\nCode-AI-Generated-By: Claude\n`))
+    assert(r.ok === true, `Review-Skipped: ${reason} → pass`)
+  }
+})
+
+group('peer-review gate — block forms', () => {
+  const r1 = peerReview.run(ctxOf('Subject\n\nBody.\n\nCode-AI-Generated-By: Claude\n'))
+  assert(r1.ok === false, 'attribution present but no review line → block')
+  assert(typeof r1.block === 'function', 'block callback is a function')
+  // Confirm the fixture really does have attribution — i.e. attribution
+  // gate would NOT block; only peer-review does. Pair-semantics check.
+  assert(ATTRIBUTION_RE.test('Code-AI-Generated-By: Claude\n'), 'fixture has attribution (pair-semantics check)')
+
+  const r2 = peerReview.run(ctxOf('Subject\n\nBody only, no footer at all.\n'))
+  assert(r2.ok === false, 'no review line and no attribution → block')
+
+  // Bare "Reviewed-By" without colon at all — mirrors attribution gate's
+  // colon-required shape.
+  const r3 = peerReview.run(ctxOf('Subject\n\nReviewed-By ai-expert\n\nCode-AI-Generated-By: Claude\n'))
+  assert(r3.ok === false, 'Reviewed-By without colon → block')
+})
+
+group('peer-review gate — file-mode (-F) integration', () => {
+  // Write a fresh message file with the review line in it; run
+  // collectCommitMessageText to produce the gate's effective input;
+  // confirm the gate sees the line and passes.
+  const reviewMsgFile = path.join(tmpRoot, 'review-message.txt')
+  fs.writeFileSync(reviewMsgFile, [
+    'Subject',
+    '',
+    'Body.',
+    '',
+    'Reviewed-By: ai-expert',
+    'Code-AI-Generated-By: Claude',
+    '',
+  ].join('\n'), 'utf8')
+  const collected = collectCommitMessageText(`git commit -F ${reviewMsgFile.replace(/\\/g, '/')}`, tmpRoot)
+  assert(collected.fileError === null, 'file-mode: file readable')
+  const r = peerReview.run({ messageText: collected.text })
+  assert(r.ok === true, 'file-mode: Reviewed-By: in -F file → pass')
+  try { fs.unlinkSync(reviewMsgFile) } catch {}
 })
 
 // Cleanup.
