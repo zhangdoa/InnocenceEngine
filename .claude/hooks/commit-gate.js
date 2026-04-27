@@ -72,7 +72,8 @@ async function main() {
   if (!/\bgit\s+commit\b/.test(unquoted)) return process.exit(0)
 
   const cwd = input.cwd || process.cwd()
-  const messageText = collectCommitMessageText(cmd, cwd)
+  const { text: messageText, fileError } = collectCommitMessageText(cmd, cwd)
+  if (fileError) { blockUnreadableMessageFile(fileError); return }
 
   // Staged set.
   let stagedRaw = ''
@@ -139,4 +140,33 @@ async function main() {
 function failOpen(err) {
   process.stderr.write(`[commit-gate] internal error — failing open: ${err?.message || err}\n`)
   process.exit(0)
+}
+
+// Loud failure when -F / --file / -c / --template points at a path the
+// gate could not read in any form (native or MSYS-translated). Silently
+// falling through to an empty message would hide attribution and
+// content-based gates' true verdict — feedback_silent_failures.md.
+function blockUnreadableMessageFile(fileError) {
+  const lines = [
+    '',
+    '[commit-gate] git commit blocked — message file unreadable.',
+    '',
+    `Argument: ${fileError.rawPath}`,
+    'Tried:',
+  ]
+  for (const a of fileError.attempts) lines.push(`  - ${a.path}  (${a.code})`)
+  lines.push(
+    '',
+    'If you are running from Git Bash with an MSYS-style absolute path',
+    '(e.g. /c/GitRepo/...), the gate translates `/<letter>/...` to',
+    '`<letter>:/...` automatically. The translated form also failed,',
+    'which means the file genuinely does not exist or is unreadable.',
+    '',
+    'Fix: re-issue the commit with a project-relative path',
+    '(e.g. `git commit -F Build/commit-message.txt`) or a native Windows',
+    'absolute path the Node fs API accepts.',
+    '',
+  )
+  process.stderr.write(lines.join('\n'))
+  process.exit(2)
 }

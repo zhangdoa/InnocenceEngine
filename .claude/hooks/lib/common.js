@@ -241,18 +241,46 @@ function resolveActiveTranscriptPath(xpFromHook, currentCmd) {
 }
 
 // Collect the effective commit message text from both inline flags and
-// any -F / --file argument that points at a message file.
+// any -F / --file / -c / --template argument that points at a message file.
+//
+// Returns { text, fileError }:
+//   - `text`     — `cmd` plus any successfully-read file content.
+//   - `fileError`— null on success (or no -F arg). When -F was passed but
+//                  every read attempt failed, an object describing the
+//                  attempts so the dispatcher can block loudly. The gate
+//                  must NOT silently fall through to "empty message" —
+//                  that hides bugs (per feedback_silent_failures.md).
+//
+// MSYS handling: Git Bash on Windows produces absolute paths of the form
+// `/c/GitRepo/...` (POSIX-style with drive letter). Node's Win32 path
+// parser flags those as absolute, so the join-with-cwd branch is skipped,
+// but `fs.readFileSync('/c/GitRepo/...')` resolves it as drive-relative
+// (`C:\c\GitRepo\...`) and fails with ENOENT. Translate `/<letter>/...`
+// → `<letter>:/...` and retry before declaring the path unreadable.
 function collectCommitMessageText(cmd, cwd) {
-  let text = cmd
+  const text0 = cmd
   const fileArg = cmd.match(/\s(?:-F|--file|-c|--template)\s+("[^"]+"|'[^']+'|\S+)/)
-  if (fileArg) {
-    const p = fileArg[1].replace(/^['"]|['"]$/g, '')
+  if (!fileArg) return { text: text0, fileError: null }
+
+  const path = require('path')
+  const rawPath = fileArg[1].replace(/^['"]|['"]$/g, '')
+
+  const candidates = []
+  const native = path.isAbsolute(rawPath) ? rawPath : path.join(cwd, rawPath)
+  candidates.push(native)
+  const msysTranslated = rawPath.replace(/^\/([a-zA-Z])\//, '$1:/')
+  if (msysTranslated !== rawPath) candidates.push(msysTranslated)
+
+  const attempts = []
+  for (const candidate of candidates) {
     try {
-      const abs = require('path').isAbsolute(p) ? p : require('path').join(cwd, p)
-      text += '\n' + fs.readFileSync(abs, 'utf8')
-    } catch { /* unreadable — attribution gate will fail naturally */ }
+      const content = fs.readFileSync(candidate, 'utf8')
+      return { text: text0 + '\n' + content, fileError: null }
+    } catch (err) {
+      attempts.push({ path: candidate, code: err.code || 'EUNKNOWN', message: err.message })
+    }
   }
-  return text
+  return { text: text0, fileError: { rawPath, attempts } }
 }
 
 module.exports = {
