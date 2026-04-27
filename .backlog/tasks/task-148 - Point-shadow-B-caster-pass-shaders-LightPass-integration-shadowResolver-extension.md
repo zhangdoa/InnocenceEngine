@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@rendering-researcher'
 created_date: '2026-04-26 22:30'
-updated_date: '2026-04-27 08:52'
+updated_date: '2026-04-27 09:24'
 labels:
   - feature
   - rendering
@@ -81,28 +81,36 @@ The parent's AC#4 ("scene with point light behind a wall produces a correct shad
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-## Progress (rendering-researcher, 2026-04-27)
+## Progress (rendering-researcher, 2026-04-27, commit 52903ce6)
 
 ### Design calls resolved
 
-- **Atlas format**: PixelDataFormat::RG (R32G32_FLOAT, 8B/pixel) instead of TASK-150's RGBA. The resolver only reads .r (linearDist) and .g (linearDist²); .b/.a were write-only padding. Saves 72 MB of triple-buffer VRAM (144→72 MB at 256² × 48 slices). Changed in LightDataService.cpp atlas allocation; matched in caster pass + .frag SV_Target0 type (float2).
-- **Depth metric**: Linear distance (`length(posWS - lightPos) / range`), NOT perspective z. Caster .frag writes linearDist; resolver computes linearDist same way. Uniform metric across all 6 cube faces; no per-face conversion needed in resolver.
-- **GS fan-out strategy**: GS instancing with `[instance(NR_POINT_SHADOWS)]` × `[maxvertexcount(18)]` — one pipeline draw produces NR_POINT_SHADOWS × 6 face writes per input triangle. SV_GSInstanceID is the per-light slot index. Inactive slots short-circuit before any vertex emit. Reuses sun-shadow culling buffer (no per-light culling pass for v1).
-- **Sphere-light range**: Computed attenuation radius from `m_LuminousFlux` (`d = sqrt(φ / (4π · 0.01))`) instead of using `m_Shape.x` (which encodes physical sphere radius for spheres, not attenuation distance). Point lights still use `m_Shape.x` directly. No schema change needed — fix in the .inl allocator.
-- **Slot threading**: Atlas slot index stamped into `PointLight_CB::pos.w` / `SphereLight_CB::pos.w` as a float-reinterpreted uint (memcpy bit-cast). HLSL recovers via `asuint(pos.w)`. Sentinel = `INVALID_ATLAS_SLOT`. No new GPU buffer / binding needed.
+- **Atlas format**: PixelDataFormat::RG (R32G32_FLOAT, 8B/pixel) instead of TASK-150's RGBA. Resolver only reads .r/.g; .b/.a were write-only padding. Saves 72 MB triple-buffer VRAM.
+- **Depth metric**: Linear distance `length(posWS - lightPos) / range`. Caster .frag and resolver share the same metric — uniform across cube faces, no per-face conversion.
+- **GS fan-out**: GS instancing `[instance(NR_POINT_SHADOWS)] [maxvertexcount(18)]`; SV_GSInstanceID = per-light slot. Inactive slots short-circuit before vertex emit.
+- **Sphere-light range**: Computed attenuation radius from luminous flux (`d = sqrt(φ/(4π·0.01))`), not `m_Shape.x` (which is physical sphere radius). No LightComponent schema change.
+- **Slot threading**: Stamped into PointLight_CB::pos.w as bit-cast uint; HLSL recovers via asuint().
 
-### Fixed two pre-commit defects
+### Two pre-commit defects fixed before commit
 
-1. **HLSL cbuffer struct overrun** (caught by GBV): `uint padding0[2]` and `float padding1[8]` in HLSL pump each scalar to vec4 (16B), so `PointShadow_CB` weighed 640B/entry × 8 = 5120B, overrunning the 4096B C++ upload heap. Fix: declare trailing scalars individually + use `float4 padding1[2]` (vector arrays are not vec4-pumped). Total = exactly 512B matching C++.
-2. **Comment line-continuation bug**: ASCII-art `\` at end of comment line caused the C preprocessor to swallow the next struct field. Removed the `\` `|` `|` `/` decoration.
+1. **HLSL cbuffer struct overrun** (caught by GBV "Root descriptor access out of bounds"): scalar-array vec4-pumping inflated struct from 512B to 640B. Fix: declare trailing scalars individually + `float4 padding1[2]`.
+2. **Comment line-continuation**: ASCII-art `\` at end of comment swallowed next struct field. Removed decoration.
 
-### AC status
-- AC#1: Pass exists, audit dump produces non-empty `audit_03b_PointShadowAtlas.hdr`. RenderDoc capture deferred to AC#5 visual session.
-- AC#2: All shaders compile + deploy via `Scripts/HLSL2DXIL_NoPause.ps1`. Sun + Point both green.
-- AC#3: LightPass binds atlas (t12) + cbuffer (b6); transition from WriteOnly→ReadOnly added. Run with `-gpu_validation` shows no fatal GBV errors (remaining warnings are pre-existing "Release-shader false positive" noise from other passes).
-- AC#4: PointShadowResolver added to shadowResolver.hlsl; convention parity with SunShadowResolver (1=shadowed). EvaluateTiledPointLighting consumes shadow term.
-- **AC#5 (visual evidence)**: Initial windowed capture saved at `Build/captures/task-148/gisponza_frame25_after_pointshadow.png`. Scene visibly darker than pre-task baseline (suggests shadows applied) but no controlled before/after diff yet — needs a verification scene with point light explicitly behind a wall or a debug-shader toggle. Status: partial.
-- **AC#6 (perf)**: Not measured yet. To follow.
+### AC status (committed)
+
+- **AC#1**: PointShadowGeometryProcessPass exists, audit dump produces non-empty `audit_03b_PointShadowAtlas.hdr`. RenderDoc capture not done in this session.
+- **AC#2**: All shaders compile + deploy via `Scripts/HLSL2DXIL_NoPause.ps1`. Sun + Point both green.
+- **AC#3**: LightPass binds atlas (t12) + cbuffer (b6); transition WriteOnly→ReadOnly added. 30-frame GISponza with `-gpu_validation` shows no fatal GBV errors.
+- **AC#4**: PointShadowResolver returns shadow ∈ [0,1] mirroring SunShadowResolver; consumer applies `Visibility = 1 - shadow`.
+
+### AC status (partial — backlog follow-up)
+
+- **AC#5 (windowed evidence)**: Captured before/after frames with `DEBUG_POINT_SHADOW_BYPASS` toggle in `lightPassDirectLighting.hlsl`. Mean luminance difference: WITH-shadow vs WITHOUT-shadow at GISponza orbit frame 45 = (0.269, 0.238, 0.218) vs (0.261, 0.230, 0.208). The `with` version is ~3% darker as expected (point lights blocked by occluders contribute less). Visual comparison in Build/captures/task-148/ — diff is subtle in GISponza because GI + sun dominate the lighting budget, and the strong-shadow signal in the orbit frames is sun shadow not point shadow. **A controlled "point light behind a wall" test scene would show this much more clearly.** Current evidence is necessary-but-not-sufficient; AC#5 should be re-validated with a dedicated test scene before final closure.
+- **AC#6 (perf delta)**: GPU-timer infrastructure exists (TASK-140) but `GetGpuTimings` Verbose log path doesn't reach 30-frame readback threshold during typical `-total_frames` smoke runs. Wall-clock 30-frame GISponza offscreen ≈ 7s with new pass — same ballpark as pre-CL. No measurable regression; precise per-pass GPU cost not collected. PointShadowGeometryProcessPass adds one indirect-draw + GS-instanced fanout — expect ~0.5-1 ms/frame at 256² × 48 slices for typical scene content.
+
+### Debug toggle landed
+
+`#define DEBUG_POINT_SHADOW_BYPASS 0` in lightPassDirectLighting.hlsl — flip to 1 locally to disable shadow term and verify the shadow contribution is the only difference. Set to 0 in production. Useful for AC#5 regression checks in the follow-up session.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

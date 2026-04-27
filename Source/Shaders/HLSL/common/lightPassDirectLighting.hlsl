@@ -112,6 +112,12 @@ void EvaluateTiledPointLighting(
 		// LightDataService_PointShadow.inl as a uint reinterpreted to float
 		// (asuint() recovers the uint). Sentinel == INVALID_ATLAS_SLOT short-
 		// circuits the resolver before any atlas sample.
+		// DEBUG_POINT_SHADOW_BYPASS forces visibility=1 for visual comparison;
+		// flip to 1 locally to confirm the shadow term is the ONLY difference.
+#define DEBUG_POINT_SHADOW_BYPASS 0
+#if DEBUG_POINT_SHADOW_BYPASS
+		float l_ShadowFactor = 0.0;
+#else
 		uint l_ShadowSlot = asuint(l_PointLight.position.w);
 		float l_ShadowFactor = 0.0;
 		if (l_ShadowSlot != INVALID_ATLAS_SLOT)
@@ -119,6 +125,7 @@ void EvaluateTiledPointLighting(
 			PointShadow_CB l_ShadowCB = g_PointShadows[l_ShadowSlot];
 			l_ShadowFactor = PointShadowResolver(in_PositionWS, in_NormalWS, in_PointShadow, in_LinearSampler, l_ShadowSlot, l_ShadowCB, in_ScreenCoord);
 		}
+#endif
 		float l_Visibility = 1.0 - l_ShadowFactor;
 		io_DirectLuminance += l_LightDirect * l_Visibility;
 		io_IndirectSeedLuminance += l_LightIndirectSeed * l_Visibility;
