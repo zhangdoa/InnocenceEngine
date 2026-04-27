@@ -15,12 +15,18 @@
         :step="10"
       />
     </n-form-item>
+    <n-form-item label="Cast Shadow" style="margin-top: 12px;">
+      <n-checkbox
+        :checked="draft.castShadow"
+        @update:checked="onCastShadow"
+      />
+    </n-form-item>
   </n-form>
 </template>
 
 <script setup>
 import { reactive, watch } from 'vue'
-import { NForm, NFormItem, NInputNumber, NColorPicker } from 'naive-ui'
+import { NForm, NFormItem, NInputNumber, NColorPicker, NCheckbox } from 'naive-ui'
 import { sceneStore } from '../../store/sceneStore'
 
 const props = defineProps({
@@ -31,15 +37,17 @@ const props = defineProps({
 // binds here, never on props. Re-syncs from the store after the engine
 // commits so clamped/normalized values show up in the UI.
 const draft = reactive({
-  color:     [...(props.component.color ?? [1, 1, 1])],
-  intensity: props.component.intensity ?? 0,
+  color:      [...(props.component.color ?? [1, 1, 1])],
+  intensity:  props.component.intensity ?? 0,
+  castShadow: props.component.castShadow ?? true,
 })
 
 watch(
   () => props.component,
   (next) => {
-    draft.color     = [...(next.color ?? [1, 1, 1])]
-    draft.intensity = next.intensity ?? 0
+    draft.color      = [...(next.color ?? [1, 1, 1])]
+    draft.intensity  = next.intensity ?? 0
+    draft.castShadow = next.castShadow ?? true
   },
   { deep: true },
 )
@@ -80,5 +88,10 @@ const onColor = (hex) => {
 const onIntensity = (value) => {
   draft.intensity = value
   commit('intensity', value)
+}
+
+const onCastShadow = (value) => {
+  draft.castShadow = value
+  commit('castShadow', value)
 }
 </script>

@@ -212,6 +212,25 @@ test('GET/UPDATE symmetry across every exposed component property', async () => 
     // zero entities (would otherwise vacuous-pass).
     expect(audit.entityCount).toBeGreaterThan(0);
     expect(oks.length + readOnly.length).toBeGreaterThan(0);
+
+    // Per-field presence pins. The generic loop above auto-covers every
+    // property the GET payload exposes, so a property dropped from the GET
+    // side disappears from the audit silently. These pins fail loudly when
+    // a writable field stops appearing — protects TASK-101 contract from
+    // drift (LightComponent.castShadow added in TASK-149 AC #5; mirrors
+    // intensity/color which are GISponza-resident on the four light
+    // entities).
+    const writableLightFields = ['intensity', 'color', 'castShadow'];
+    for (const field of writableLightFields) {
+      const hits = oks.filter(r =>
+        r.component === 'LightComponent' && r.property === field
+      );
+      expect(
+        hits.length,
+        `LightComponent.${field} must appear in GET_ENTITY_DETAILS and round-trip ` +
+        'through UPDATE_ENTITY_PROPERTY successfully on at least one GISponza light',
+      ).toBeGreaterThan(0);
+    }
   } finally {
     await electronApp.close().catch(() => {});
   }

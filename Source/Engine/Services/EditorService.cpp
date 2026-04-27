@@ -309,11 +309,12 @@ void EditorService::RegisterBuiltinHandlers()
 		if (l_light)
 		{
 			json l_comp;
-			l_comp["type"]      = "LightComponent";
-			l_comp["color"]     = SerializeVec(l_light->m_RGBColor);
-			l_comp["shape"]     = SerializeVec(l_light->m_Shape);
-			l_comp["lightType"] = (int)l_light->m_LightType;
-			l_comp["intensity"] = l_light->m_LuminousFlux;
+			l_comp["type"]       = "LightComponent";
+			l_comp["color"]      = SerializeVec(l_light->m_RGBColor);
+			l_comp["shape"]      = SerializeVec(l_light->m_Shape);
+			l_comp["lightType"]  = (int)l_light->m_LightType;
+			l_comp["intensity"]  = l_light->m_LuminousFlux;
+			l_comp["castShadow"] = l_light->m_CastShadow;
 			l_components.push_back(l_comp);
 		}
 
@@ -609,6 +610,11 @@ void EditorService::RegisterBuiltinHandlers()
 			{
 				l_light->m_RGBColor = Vec4(l_val[0], l_val[1], l_val[2], 1.0f);
 				committed = SerializeVec(l_light->m_RGBColor);
+			}
+			else if (l_prop == "castShadow")
+			{
+				l_light->m_CastShadow = l_val.get<bool>();
+				committed = l_light->m_CastShadow;
 			}
 			else if (l_prop == "shape" || l_prop == "lightType")
 			{
