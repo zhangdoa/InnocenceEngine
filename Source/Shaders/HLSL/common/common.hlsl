@@ -25,7 +25,6 @@ static const uint INVALID_TEXTURE_INDEX = 0xFFFFFFFF;
 
 static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
-static const int NR_CSM_SPLITS = 4;
 // Must match RenderingCapability::maxPointShadows (TASK-66 / TASK-150). The
 // cube-shadow atlas is a Texture2DArray with DepthOrArraySize = NR_POINT_SHADOWS * 6.
 static const int NR_POINT_SHADOWS = 8;
@@ -92,7 +91,7 @@ struct PerFrame_CB
 	float aperture; // Tight packing 26
 	float shutterTime; // Tight packing 26
 	float ISO; // Tight packing 26
-	uint activeCascade; // Tight packing 26
+	uint padding_a; // Tight packing 26
 	float radianceCacheJitter_x; // Tight packing 27
 	float radianceCacheJitter_y; // Tight packing 27
 	uint frameIndex; // Tight packing 27
@@ -152,15 +151,6 @@ struct SH9
 	float4 L2_2;
 	float4 L20;
 	float4 L22;
-};
-
-struct CSM_CB
-{
-	float4x4 p;
-	float4x4 v;
-	float4 AABBMax;
-	float4 AABBMin;
-	float4 padding[6];
 };
 
 // Mirror of PointShadowConstantBuffer (Source/Engine/Common/GPUDataStructure.h).

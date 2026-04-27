@@ -20,7 +20,6 @@ namespace Inno
 
 		GPUBufferComponent* GetPointLightBuffer();
 		GPUBufferComponent* GetSphereLightBuffer();
-		GPUBufferComponent* GetCSMBuffer();
 		GPUBufferComponent* GetGIBuffer();
 		// Per shadow-casting point/sphere light, packed densely up to
 		// RenderingCapability::maxPointShadows (TASK-66 / TASK-150). Resolver

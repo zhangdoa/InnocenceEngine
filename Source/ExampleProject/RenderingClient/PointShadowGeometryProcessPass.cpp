@@ -83,9 +83,9 @@ bool PointShadowGeometryProcessPass::Setup(IServiceConfig* /*systemConfig*/)
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	// Same rationale as SunShadowGeometryProcessPass:74 — render both faces of
-	// every triangle so thin / single-sided occluders write depth. Adaptive
-	// depth bias in shadowResolver.hlsl handles Peter-Panning.
+	// Render both faces of every triangle so thin / single-sided occluders
+	// write depth. Adaptive depth bias in shadowResolver.hlsl handles
+	// Peter-Panning.
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;

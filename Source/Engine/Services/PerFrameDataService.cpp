@@ -182,10 +182,11 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 		l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_SunTransform->m_LocalRot);
 	l_perFrameCB.sun_illuminance = l_sun.m_RGBColor * l_sun.m_LuminousFlux;
 
-	static uint32_t currentCascade = 0;
-	auto l_renderingCapability = l_renderingConfigurationService->GetRenderingCapability();
-	currentCascade = currentCascade < l_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
-	l_perFrameCB.activeCascade = currentCascade;
+	// activeCascade is dead state after TASK-138's CSM removal. The engine-side
+	// PerFrameConstantBuffer field is retained for ABI stability with the
+	// shader-side b0 cbuffer (renamed to padding_a in common.hlsl); zeroing it
+	// avoids leaking the previous frame's cycle counter into shaders.
+	l_perFrameCB.activeCascade = 0;
 
 	m_perFrameCBs[g_Engine->Get<FrameManagementService>()->GetCurrentFrame()] = l_perFrameCB;
 

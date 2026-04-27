@@ -7,11 +7,9 @@ namespace Inno
 	// (Texture2DArray, DepthOrArraySize = maxPointShadows * 6) and for every
 	// active shadow-casting point/sphere light writes packed depth (depth, depth²)
 	// to slices [base..base+5] via geometry-shader instanced cube-face fan-out.
-	//
-	// Mirrors SunShadowGeometryProcessPass (CSM packed-depth) — the resolver
-	// (shadowResolver.hlsl::PointShadowResolver) reads .r as blocker depth and
-	// .g for the variance/depth² channel using the same convention as
-	// SunShadowResolver (returned shadow ∈ [0,1] where 1 = fully shadowed).
+	// The resolver (shadowResolver.hlsl::PointShadowResolver) reads .r as
+	// blocker depth and .g for the variance/depth² channel; returned shadow ∈
+	// [0,1] where 1 = fully shadowed (caller computes Visibility = 1 - shadow).
 	class PointShadowGeometryProcessPass : public IRenderPass
 	{
 	public:

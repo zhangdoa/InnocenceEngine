@@ -1,8 +1,7 @@
 // shadertype=hlsl
 //
-// Point/sphere cube-shadow caster — VS pass.
-// Mirrors sunShadowGeometryProcessPass.vert: passthrough world-space transform.
-// The GS does the cube-face fan-out per active shadow-casting light and the
+// Point/sphere cube-shadow caster — VS pass. Passthrough world-space transform;
+// the GS does the cube-face fan-out per active shadow-casting light and the
 // PS writes packed linear distance to the per-face atlas slice.
 #include "common/common.hlsl"
 

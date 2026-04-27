@@ -2,10 +2,12 @@
 #include "ExampleRenderingClient.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
+// TASK-138: sun CSM caster path removed. SunShadowCullingPass is retained —
+// PointShadowGeometryProcessPass (TASK-148) reuses its indirect draw command
+// buffer (PointShadowGeometryProcessPass.cpp:222), so deletion would break
+// the cube-shadow caster. Renaming SunShadowCullingPass → ShadowCasterCullingPass
+// is a follow-up structural cleanup.
 #include "SunShadowCullingPass.h"
-#include "SunShadowGeometryProcessPass.h"
-#include "SunShadowBlurOddPass.h"
-#include "SunShadowBlurEvenPass.h"
 #include "SunShadowRTPass.h"
 #include "PointShadowGeometryProcessPass.h"
 #include "OpaqueCullingPass.h"
@@ -172,11 +174,11 @@ namespace Inno
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
+		// SunShadowCullingPass kept for PointShadowGeometryProcessPass's
+		// indirect-draw consumer (TASK-148 reuse — see include comment above).
 		SunShadowCullingPass::Get().Setup();
-		SunShadowGeometryProcessPass::Get().Setup();
-		// TASK-138 phase 1: hardware-RT sun shadows. Additive — co-exists with
-		// CSM+PCSS until cost-budgeted swap decision (see task-138 description
-		// + .alignments/TASK-138-rt-sun-shadows-design.md).
+		// TASK-138 hardware-RT sun shadows — sole sun-shadow path after the
+		// CSM swap.
 		SunShadowRTPass::Get().Setup();
 		PointShadowGeometryProcessPass::Get().Setup();
 
@@ -209,9 +211,6 @@ namespace Inno
 
 		FinalBlendPass::Get().Setup();
 		GPUPathTracerPass::Get().Setup();
-
-		// SunShadowBlurOddPass::Get().Setup();
-		// SunShadowBlurEvenPass::Get().Setup();
 
 		// AnimationPass::Get().Setup();
 
@@ -246,7 +245,6 @@ namespace Inno
 		BRDFLUTMSPass::Get().Initialize();
 
 		SunShadowCullingPass::Get().Initialize();
-		SunShadowGeometryProcessPass::Get().Initialize();
 		SunShadowRTPass::Get().Initialize();
 		PointShadowGeometryProcessPass::Get().Initialize();
 
@@ -324,8 +322,7 @@ namespace Inno
 			}
 
 			SunShadowCullingPass::Get().PrepareCommandList();
-			SunShadowGeometryProcessPass::Get().PrepareCommandList();
-			// TASK-138 phase 1: dispatch RT sun-shadow rays after the GBuffer is
+			// TASK-138: dispatch RT sun-shadow rays after the GBuffer is
 			// available (PrepareCommandList only records — sequencing is
 			// enforced in ExecuteCommands via WaitOnGPU on OpaquePass).
 			SunShadowRTPass::Get().PrepareCommandList();
@@ -460,20 +457,10 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		if (SunShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
-		{
-			l_hwService->WaitOnGPU(SunShadowCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			auto l_commandList = SunShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
-			auto l_renderPass = SunShadowGeometryProcessPass::Get().GetRenderPassComp();
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-		}
-
 		if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			// Reuses SunShadowCullingPass's indirect draw command buffer; the
-			// wait there is the same as the sun shadow pass. Signal own
-			// renderpass so LightPass's WaitOnGPU consumes the correct fence.
+			// Consumes SunShadowCullingPass's indirect draw command buffer; signal
+			// own renderpass so LightPass's WaitOnGPU consumes the correct fence.
 			l_hwService->WaitOnGPU(SunShadowCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			auto l_commandList = PointShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
@@ -699,11 +686,10 @@ namespace Inno
 
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			l_hwService->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			// TASK-138 phase 1: also wait on RT sun-shadow dispatch so the
-			// visibility texture is consumable when LightPass binds slot t13.
-			// Even when the consumer toggle isn't flipped, waiting is cheap
-			// (the wait is a fence value, not a cost) and keeps the path live.
+			// TASK-138: wait on RT sun-shadow dispatch so the visibility texture
+			// is consumable when LightPass binds slot t13. Suspended (e.g. early
+			// frames before TLAS build) means LightPass binds nullptr and the
+			// sun is treated as fully shadowed for that frame.
 			if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
 				l_hwService->WaitOnGPU(SunShadowRTPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
@@ -1027,12 +1013,16 @@ namespace Inno
 		Dump("audit_01_BRDFLUTPass.hdr",   BRDFLUTPass::Get().GetRenderPassComp(),   static_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()));
 		Dump("audit_02_BRDFLUTMSPass.hdr",  BRDFLUTMSPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()));
 
-		// 3: Shadow maps
-		DumpRP("audit_03a_SunShadow_RT0.hdr", SunShadowGeometryProcessPass::Get().GetRenderPassComp(), 0);
+		// 3: Shadow maps. Sun shadow is now an R8 visibility texture from
+		// SunShadowRTPass (TASK-138) — see audit_06_SunShadowRT below.
 		// Point-shadow atlas — owned by LightDataService; getter proxies to it.
 		Dump("audit_03b_PointShadowAtlas.hdr",
 			PointShadowGeometryProcessPass::Get().GetRenderPassComp(),
 			static_cast<TextureComponent*>(PointShadowGeometryProcessPass::Get().GetResult()));
+		if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
+			Dump("audit_03c_SunShadowRT.hdr",
+				SunShadowRTPass::Get().GetRenderPassComp(),
+				SunShadowRTPass::Get().GetResult());
 
 		// 4: Opaque G-buffer
 		DumpRP("audit_04a_Opaque_RT0.hdr", OpaquePass::Get().GetRenderPassComp(), 0);
@@ -1116,7 +1106,7 @@ namespace Inno
 
 		PointShadowGeometryProcessPass::Get().Terminate();
 		SunShadowRTPass::Get().Terminate();
-		SunShadowGeometryProcessPass::Get().Terminate();
+		SunShadowCullingPass::Get().Terminate();
 
 		BRDFLUTMSPass::Get().Terminate();
 		BRDFLUTPass::Get().Terminate();

@@ -4,8 +4,7 @@
 // Outputs packed linear distance `(linearDist, linearDist², 0, 1)` to RG32F.
 // Linear distance (vs. perspective z) is the canonical omnidirectional shadow
 // metric: uniform across all 6 cube faces, no metric drift, simple to compare
-// in the resolver. Mirrors sun shadow's packed-depth idiom (sunShadowGeometryProcessPass.frag:61)
-// but with linear depth instead of clip-space z.
+// in the resolver.
 #include "common/common.hlsl"
 
 [[vk::binding(0, 0)]]
@@ -53,9 +52,9 @@ PixelOutputType main(PixelInputType input)
 	uint materialIndex = g_ModelDataBuffer[m_ObjectIndex].m_MaterialIndex;
 	Material_CB materialCBuffer = g_Materials[materialIndex];
 
-	// Alpha-test: same idiom as sunShadowGeometryProcessPass.frag:42-58 — thin
-	// or transparent meshes (curtains, foliage, decals) discard so the shadow
-	// map records light leaks correctly through cut-out geometry.
+	// Alpha-test: thin or transparent meshes (curtains, foliage, decals)
+	// discard so the shadow map records light leaks correctly through cut-out
+	// geometry.
 	float transparency;
 	uint albedoTextureIndex = materialCBuffer.m_TextureIndices_1;
 	if (albedoTextureIndex != INVALID_TEXTURE_INDEX)

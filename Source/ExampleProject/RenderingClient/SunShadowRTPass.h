@@ -5,18 +5,17 @@ namespace Inno
 {
 	class TextureComponent;
 
-	// TASK-138 phase 1 — hardware-RT sun-shadow visibility producer.
+	// TASK-138 — hardware-RT sun-shadow visibility producer (sole sun-shadow
+	// path after the CSM+PCSS swap landed).
 	//
 	// Per-pixel R8 visibility texture. One thread per screen pixel traces a
 	// single cone-jittered shadow ray toward the sun (~0.5° half-angle from
 	// SUN_ANGULAR_RADIUS in common.hlsl). Output: 0.0 = fully shadowed,
 	// 1.0 = lit. TAA accumulation across frames softens the penumbra.
 	//
-	// Phase 1 ships ADDITIVE: this pass produces a texture that LightPass can
-	// optionally consume, but CSM+PCSS (SunShadowGeometryProcessPass +
-	// SunShadowResolver) stays the default. The cost decision (swap, keep
-	// both with gate, or hold off) is driven by post-CL PIX measurement —
-	// see TASK-138 task description and `.alignments/TASK-138-rt-sun-shadows-design.md`.
+	// LightPass binds this at slot t13 and consumes it in
+	// lightPassDirectLighting.hlsl::EvaluateSunLighting. See TASK-138
+	// description + `.alignments/TASK-138-rt-sun-shadows-design.md`.
 	class SunShadowRTPass : public IRenderPass
 	{
 	public:
@@ -31,8 +30,7 @@ namespace Inno
 		RenderPassComponent* GetRenderPassComp() override;
 
 		// Per-pixel sun visibility. R8 single-channel float. Consumed by
-		// LightPass at slot t13 (additive — co-exists with the CSM atlas at
-		// t7 until the swap decision is made).
+		// LightPass at slot t13.
 		TextureComponent* GetResult();
 
 	private:

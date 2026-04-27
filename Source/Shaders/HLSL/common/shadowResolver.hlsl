@@ -19,7 +19,8 @@ static const float2 PoissonDisk[16] =
 	float2(0.14383161, -0.14100790)
 };
 
-// Soft Shadow Tuning Parameters.
+// PCSS tuning for the cube-shadow path (sun shadows now go through
+// SunShadowRTPass — no PCSS evaluator on that path).
 // LIGHT_SIZE scales (receiverDepth - blockerDepth) → penumbra-size in texels.
 // PENUMBRA_MAX_TEXELS bounds the PCF kernel radius so near-camera blockers
 // don't explode the sample area.
@@ -98,75 +99,6 @@ float ComputePenumbraSize(float receiverDepth, float blockerDepth)
 	return clamp((receiverDepth - blockerDepth) * LIGHT_SIZE, 0.0f, PENUMBRA_MAX_TEXELS);
 }
 
-// PCSS Soft Shadows. Early-outs when no blockers were seen in the search
-// (fragment is lit — skip the 16-tap PCF). The (sinA, cosA) rotation is
-// applied to the same Poisson disk used for blocker search, so the two
-// passes share a coherent per-pixel pattern.
-float PCSS(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize, float shadowBias, float sinA, float cosA)
-{
-	int blockerCount = 0;
-	float blockerDepth = FindBlockerDepth(projCoords, shadowMap, in_sampler, shadowMapIndex, currentDepth, texelSize, sinA, cosA, blockerCount);
-
-	if (blockerCount == 0)
-		return 0.0;
-
-	float penumbraSize = ComputePenumbraSize(currentDepth, blockerDepth);
-
-	float shadow = 0.0;
-	const int filterSamples = 16;
-
-	for (int i = 0; i < filterSamples; ++i)
-	{
-		float2 offset = RotateOffset(PoissonDisk[i], sinA, cosA) * texelSize * penumbraSize;
-		float3 coord = float3(projCoords.xy + offset, shadowMapIndex);
-		float depthSample = shadowMap.SampleLevel(in_sampler, coord, 0).r;
-
-		shadow += (currentDepth - shadowBias > depthSample) ? 1.0 : 0.0;
-	}
-
-	return shadow / filterSamples;
-}
-
-// Width (as a fraction of the half-extent) of the blend band at the edge
-// of each cascade. 0.15 → outer 15% of the cascade fades out into the
-// next cascade. Too small and the seam stays visible; too large and we
-// pay for two PCSS evaluations on a lot of pixels.
-#define CASCADE_BLEND_BAND 0.15
-
-// Evaluates PCSS for a single cascade. Returns 0 if the fragment is not
-// inside this cascade's projected depth/UV range (caller should treat
-// that as "unshadowed by this cascade").
-float EvaluateCascadeShadow(float3 positionWS, int splitIndex, Texture2DArray shadowMap, SamplerState in_sampler, float2 texelSize, float shadowBias, float sinA, float cosA)
-{
-	float4 lightSpacePos = mul(float4(positionWS, 1.0f), CSMs[splitIndex].v);
-	lightSpacePos = mul(lightSpacePos, CSMs[splitIndex].p);
-	// Orthographic projection — no perspective divide needed.
-
-	float3 projCoords = lightSpacePos.xyz;
-	if (projCoords.x > 1.0 || projCoords.x < -1.0 ||
-	    projCoords.y > 1.0 || projCoords.y < -1.0 ||
-	    projCoords.z > 1.0 || projCoords.z < 0.0)
-		return 0.0;
-
-	projCoords.xy = projCoords.xy * 0.5 + 0.5;
-	projCoords.y  = 1.0 - projCoords.y;
-
-	return PCSS(projCoords, shadowMap, in_sampler, splitIndex, projCoords.z, texelSize, shadowBias, sinA, cosA);
-}
-
-// Returns 1.0 in the interior of the cascade, fading to 0.0 over
-// CASCADE_BLEND_BAND near the AABB edge. Used as the primary cascade's
-// weight when blending into the next cascade.
-float ComputeCascadeEdgeWeight(float3 positionWS, int splitIndex)
-{
-	float3 center     = 0.5 * (CSMs[splitIndex].AABBMin.xyz + CSMs[splitIndex].AABBMax.xyz);
-	float3 halfExtent = 0.5 * (CSMs[splitIndex].AABBMax.xyz - CSMs[splitIndex].AABBMin.xyz);
-	// Normalized distance from the edge, per axis: 0 at the edge, 1 at the center.
-	float3 distToEdge = 1.0 - abs(positionWS - center) / max(halfExtent, 1e-5);
-	float  edgeFactor = min(distToEdge.x, min(distToEdge.y, distToEdge.z));
-	return saturate(edgeFactor / CASCADE_BLEND_BAND);
-}
-
 // Cube-face selection for an omnidirectional shadow map. Returns face index
 // 0..5 = +X, -X, +Y, -Y, +Z, -Z. The face whose forward axis dominates the
 // input world-space direction wins. Matches the look-at orientation in
@@ -184,11 +116,8 @@ int CubeFaceFromDirection(float3 dir)
 	return dir.z > 0 ? 4 : 5;
 }
 
-// Cube-shadow PCSS: same convention as PCSS() above but the projected coords
-// are precomputed to face-local UV. shadowMapIndex is `atlasBaseSlot + face`.
-// Returns shadow ∈ [0,1] where 1 = fully shadowed (mirrors SunShadowResolver
-// — see feedback_verify_source_before_chasing.md / TASK-145 hypothesis 2 for
-// why convention parity matters).
+// Cube-shadow PCSS. shadowMapIndex is `atlasBaseSlot + face`. Returns shadow
+// ∈ [0,1] where 1 = fully shadowed; caller computes Visibility = 1 - shadow.
 float PointPCSS(float2 faceUV, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize, float shadowBias, float sinA, float cosA)
 {
 	float3 projCoords = float3(faceUV, 0.0f);
@@ -211,8 +140,8 @@ float PointPCSS(float2 faceUV, Texture2DArray shadowMap, SamplerState in_sampler
 	return shadow / filterSamples;
 }
 
-// Cube-shadow resolver. Same return convention as SunShadowResolver:
-// shadow ∈ [0,1] where 1 = fully shadowed; caller computes Visibility = 1 - shadow.
+// Cube-shadow resolver. Returns shadow ∈ [0,1] where 1 = fully shadowed;
+// caller computes Visibility = 1 - shadow.
 //
 // lightSlot is the per-light slot the LightDataService allocator stamped on
 // PointLight_CB / SphereLight_CB. INVALID_ATLAS_SLOT means the light is
@@ -222,10 +151,7 @@ float PointPCSS(float2 faceUV, Texture2DArray shadowMap, SamplerState in_sampler
 // UV computation: re-applies the caster's per-face view × projection on the
 // receiver position. This guarantees the resolver hits exactly the texel the
 // caster wrote, regardless of the per-face axis convention chosen in
-// LightDataService_PointShadow.inl. Re-deriving an (s,t) basis manually is
-// the inversion-class-of-bug feedback_verify_source_before_chasing.md warns
-// about (TASK-145 hypothesis 2 cost ~5 speculative-fix commits before the
-// proper bisect).
+// LightDataService_PointShadow.inl.
 float PointShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shadowMap, SamplerState in_sampler, uint lightSlot, PointShadow_CB lightCB, uint2 screenCoord)
 {
 	if (lightSlot == INVALID_ATLAS_SLOT || lightCB.isActive == 0)
@@ -271,58 +197,4 @@ float PointShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray sha
 	sincos(angle, sinA, cosA);
 
 	return PointPCSS(faceUV, shadowMap, in_sampler, shadowMapIndex, currentDepth, texelSize, shadowBias, sinA, cosA);
-}
-
-// Sun Shadow Resolver (CSM Support + PCSS + cross-cascade blending).
-// screenCoord is the compute-shader thread index; used only as a stable
-// seed for the per-pixel Poisson rotation.
-float SunShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shadowMap, SamplerState in_sampler, float3 lightDir, uint2 screenCoord)
-{
-	int primaryIdx = NR_CSM_SPLITS;
-	[unroll]
-	for (int i = 0; i < NR_CSM_SPLITS; i++)
-	{
-		if (positionWS.x >= CSMs[i].AABBMin.x &&
-			positionWS.y >= CSMs[i].AABBMin.y &&
-			positionWS.z >= CSMs[i].AABBMin.z &&
-			positionWS.x <= CSMs[i].AABBMax.x &&
-			positionWS.y <= CSMs[i].AABBMax.y &&
-			positionWS.z <= CSMs[i].AABBMax.z)
-		{
-			primaryIdx = i;
-			break;
-		}
-	}
-
-	if (primaryIdx == NR_CSM_SPLITS)
-		return 0.0;
-
-	float2 shadowMapSize;
-	float level, elements;
-	shadowMap.GetDimensions(0, shadowMapSize.x, shadowMapSize.y, elements, level);
-	float2 texelSize = 1.0 / shadowMapSize;
-
-	float shadowBias = ComputeShadowBias(normalWS, lightDir);
-
-	// Per-pixel rotation of the Poisson kernel. Both blocker-search and PCF
-	// loops share the same (sinA, cosA) so a given pixel samples a coherent
-	// rotated pattern; across pixels the pattern varies and hides the
-	// 16-tap dot signature.
-	float angle = ShadowKernelRotationAngle(float2(screenCoord));
-	float sinA, cosA;
-	sincos(angle, sinA, cosA);
-
-	float primaryShadow = EvaluateCascadeShadow(positionWS, primaryIdx, shadowMap, in_sampler, texelSize, shadowBias, sinA, cosA);
-	float primaryWeight = ComputeCascadeEdgeWeight(positionWS, primaryIdx);
-
-	// Only blend when we're in the fade band and a further cascade exists.
-	// The outermost cascade fades out to "unshadowed" at its edge, which
-	// is already the correct behavior (beyond-cascade = no shadow data).
-	if (primaryWeight < 1.0 && primaryIdx + 1 < NR_CSM_SPLITS)
-	{
-		float secondaryShadow = EvaluateCascadeShadow(positionWS, primaryIdx + 1, shadowMap, in_sampler, texelSize, shadowBias, sinA, cosA);
-		return lerp(secondaryShadow, primaryShadow, primaryWeight);
-	}
-
-	return primaryShadow * primaryWeight;
 }

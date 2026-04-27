@@ -4,11 +4,9 @@
 #include "../Common/MathHelper.h"
 #include "../Common/GPUDataStructure.h"
 #include "EntityRegistry.h"
-#include "CameraService.h"
 #include "RenderingConfigurationService.h"
 #include "../Component/LightComponent.h"
 #include "../Component/TransformComponent.h"
-#include "../Component/CameraComponent.h"
 #include "../Engine.h"
 #include "GPUBufferResourceService.h"
 #include "TextureResourceService.h"
@@ -18,29 +16,6 @@ using namespace Inno;
 
 namespace
 {
-	AABB SnapAABBToShadowMap(const AABB& Rhs, float ShadowMapResolution)
-	{
-		Vec4 l_UnitsPerTexel = Rhs.m_extend / ShadowMapResolution;
-		Vec4 l_TexelPerUnit  = l_UnitsPerTexel.reciprocal();
-
-		Vec4 l_SnappedCenter = Rhs.m_center.scale(l_TexelPerUnit) + 0.5f;
-		l_SnappedCenter = Vec4(floor(l_SnappedCenter.x), floor(l_SnappedCenter.y), floor(l_SnappedCenter.z), 1.0f);
-		l_SnappedCenter = l_SnappedCenter.scale(l_UnitsPerTexel);
-
-		AABB l_Result;
-		l_Result.m_center   = l_SnappedCenter;
-		l_Result.m_extend   = Rhs.m_extend;
-		l_Result.m_boundMin = l_Result.m_center - l_Result.m_extend * 0.5f;
-		l_Result.m_boundMax = l_Result.m_center + l_Result.m_extend * 0.5f;
-		return l_Result;
-	}
-
-	void AlignMatrixToTexels(Mat4& Matrix, float ShadowMapResolution)
-	{
-		Matrix.m30 = floor(Matrix.m30 * ShadowMapResolution) / ShadowMapResolution;
-		Matrix.m31 = floor(Matrix.m31 * ShadowMapResolution) / ShadowMapResolution;
-	}
-
 	uint32_t LookupAtlasSlot(const std::vector<uint32_t>& Slots, uint32_t Index, const char* Caller)
 	{
 		if (Index >= Slots.size())
@@ -60,7 +35,6 @@ namespace Inno
 
 		std::vector<PointLightConstantBuffer>  m_PointLightCBVector;
 		std::vector<SphereLightConstantBuffer> m_SphereLightCBVector;
-		std::vector<CSMConstantBuffer>         m_CSMCBVector;
 		std::vector<PointShadowConstantBuffer> m_PointShadowCBVector;
 
 		// Parallel-indexed to m_PointLightCBVector / m_SphereLightCBVector;
@@ -71,7 +45,6 @@ namespace Inno
 
 		GPUBufferComponent* m_PointLightGPUBufferComp   = nullptr;
 		GPUBufferComponent* m_SphereLightGPUBufferComp  = nullptr;
-		GPUBufferComponent* m_CSMGPUBufferComp          = nullptr;
 		GPUBufferComponent* m_GICBufferGPUBufferComp    = nullptr;
 		GPUBufferComponent* m_PointShadowGPUBufferComp  = nullptr;
 
@@ -91,7 +64,6 @@ namespace Inno
 		bool Terminate();
 
 		bool UpdateLightData();
-		bool UpdateCSMData();
 		// Slot allocator + cbuffer populator (TASK-147). Walks point/sphere lights
 		// in deterministic storage order; for each m_CastShadow == true light,
 		// assigns the next free atlas slot in [0..maxPointShadows-1] and writes
@@ -107,7 +79,6 @@ bool LightDataServiceImpl::Setup(IServiceConfig* systemConfig)
 
 	m_PointLightGPUBufferComp = l_rsService->Add("PointLightCBuffer");
 	m_SphereLightGPUBufferComp = l_rsService->Add("SphereLightCBuffer");
-	m_CSMGPUBufferComp = l_rsService->Add("CSMCBuffer");
 	m_GICBufferGPUBufferComp = l_rsService->Add("GICBuffer");
 	m_PointShadowGPUBufferComp = l_rsService->Add("PointShadowCBuffer");
 
@@ -133,11 +104,6 @@ bool LightDataServiceImpl::Initialize()
 		m_SphereLightGPUBufferComp->m_ElementSize = sizeof(SphereLightConstantBuffer);
 
 		l_rsService->Initialize(m_SphereLightGPUBufferComp);
-
-		m_CSMGPUBufferComp->m_ElementCount = l_RenderingCapability.maxCSMSplits;
-		m_CSMGPUBufferComp->m_ElementSize = sizeof(CSMConstantBuffer);
-
-		l_rsService->Initialize(m_CSMGPUBufferComp);
 
 		m_GICBufferGPUBufferComp->m_ElementSize = sizeof(GIConstantBuffer);
 		m_GICBufferGPUBufferComp->m_ElementCount = 1;
@@ -172,10 +138,9 @@ bool LightDataServiceImpl::Initialize()
 		m_PointShadowAtlas->m_TextureDesc.Height            = l_PerFaceResolution;
 		m_PointShadowAtlas->m_TextureDesc.DepthOrArraySize  = l_AtlasSliceCount;
 		m_PointShadowAtlas->m_TextureDesc.MipLevels         = 1;
-		// Mirror SunShadowGeometryProcessPass.cpp:49-59: clear/border to far
-		// plane (linearDist=1) so unrendered texels don't register as blockers
-		// at depth 0 in PCSS. Only .r and .g matter — caster writes the same
-		// shape and resolver only reads the same shape.
+		// Clear/border to far plane (linearDist=1) so unrendered texels don't
+		// register as blockers at depth 0 in PCSS. Only .r and .g matter —
+		// caster writes the same shape and resolver only reads the same shape.
 		m_PointShadowAtlas->m_TextureDesc.BorderColor[0] = 1.0f;
 		m_PointShadowAtlas->m_TextureDesc.BorderColor[1] = 1.0f;
 		m_PointShadowAtlas->m_TextureDesc.BorderColor[2] = 0.0f;
@@ -255,122 +220,6 @@ bool LightDataServiceImpl::UpdateLightData()
 	return true;
 }
 
-bool LightDataServiceImpl::UpdateCSMData()
-{
-	auto& l_LightStorage = g_Engine->Get<EntityRegistry>()->Storage<LightComponent>();
-	const auto& l_Lights  = l_LightStorage.All();
-	const auto& l_LightOwners = l_LightStorage.AllOwners();
-
-	if (l_Lights.empty())
-		return false;
-
-	EntityID l_SunEntityID = INVALID_ENTITY;
-	for (size_t i = 0; i < l_Lights.size(); i++)
-	{
-		if (l_Lights[i].m_LightType == LightType::Directional)
-		{
-			l_SunEntityID = l_LightOwners[i];
-			break;
-		}
-	}
-	if (l_SunEntityID == INVALID_ENTITY)
-		return false;
-
-	auto* l_SunTransform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_SunEntityID);
-	if (!l_SunTransform)
-		return false;
-
-	auto* l_Camera = static_cast<ICameraService*>(g_Engine->Get<CameraService>())->GetMainCamera();
-	if (!l_Camera)
-		return false;
-
-	const uint32_t l_MaxCSMCount = 4;
-	const float    l_Lambda      = 0.75f;
-	const float    l_ZNear       = l_Camera->m_ZNear;
-	const float    l_ZFar        = l_Camera->m_ZFar;
-	if (l_ZFar <= l_ZNear)
-		return false;
-
-	std::array<float, 4> l_SplitFactors;
-	for (int i = 1; i <= (int)l_MaxCSMCount; i++)
-	{
-		float l_Log     = l_ZNear * std::pow(l_ZFar / l_ZNear, (float)i / (float)l_MaxCSMCount);
-		float l_Uniform = l_ZNear + (l_ZFar - l_ZNear) * ((float)i / (float)l_MaxCSMCount);
-		l_SplitFactors[i - 1] = l_Log * l_Lambda + l_Uniform * (1.0f - l_Lambda);
-	}
-
-	const auto& l_FrustumWS = l_Camera->m_FrustumVerticesWS;
-
-	// l_CornerPos layout:
-	//   [0..3]        — near-plane corners (shared across all cascades)
-	//   [4 + i*4 + j] — far-plane corner j of cascade i  (i in [0,3], j in [0,3])
-	std::array<Vec3, 20> l_CornerPos;
-	for (size_t i = 0; i < 4; i++)
-		l_CornerPos[i] = l_FrustumWS[i].m_pos;
-	for (size_t i = 0; i < l_MaxCSMCount; i++)
-	{
-		for (size_t j = 0; j < 4; j++)
-		{
-			auto l_Dir = (l_FrustumWS[j + 4].m_pos - l_FrustumWS[j].m_pos).normalize();
-			l_CornerPos[4 + i * 4 + j] = l_FrustumWS[j].m_pos + l_Dir * l_SplitFactors[i];
-		}
-	}
-
-	auto l_RenderingConfig = g_Engine->Get<RenderingConfigurationService>()->GetRenderingConfig();
-	auto l_ShadowMapRes    = (float)l_RenderingConfig.shadowMapResolution;
-	auto l_RotInv          = Math::toRotationMatrix(l_SunTransform->m_LocalRot).inverse();
-
-	m_CSMCBVector.clear();
-	for (size_t i = 0; i < l_MaxCSMCount; i++)
-	{
-		std::array<Vertex, 8> l_CascadeVerts;
-		if (l_RenderingConfig.CSMFitToScene)
-		{
-			for (size_t j = 0; j < 4; j++)
-				l_CascadeVerts[j].m_pos = l_CornerPos[j];
-			for (size_t j = 0; j < 4; j++)
-				l_CascadeVerts[j + 4].m_pos = l_CornerPos[4 + i * 4 + j];
-		}
-		else
-		{
-			if (i == 0)
-			{
-				for (size_t j = 0; j < 4; j++)
-					l_CascadeVerts[j].m_pos = l_CornerPos[j];
-			}
-			else
-			{
-				for (size_t j = 0; j < 4; j++)
-					l_CascadeVerts[j].m_pos = l_CornerPos[4 + (i - 1) * 4 + j];
-			}
-			for (size_t j = 0; j < 4; j++)
-				l_CascadeVerts[j + 4].m_pos = l_CornerPos[4 + i * 4 + j];
-		}
-
-		AABB l_AABBWorld = Math::GenerateAABB(&l_CascadeVerts[0], 8);
-		AABB l_AABBLight = Math::ExtendAABBToBoundingSphere(l_AABBWorld);
-		l_AABBLight = Math::RotateAABBToNewSpace(l_AABBLight, l_RotInv);
-		l_AABBLight = SnapAABBToShadowMap(l_AABBLight, l_ShadowMapRes);
-
-		Mat4 l_View = l_RotInv;
-		AlignMatrixToTexels(l_View, l_ShadowMapRes);
-
-		Mat4 l_Proj = Math::GenerateOrthographicMatrix(
-			l_AABBLight.m_boundMin.x, l_AABBLight.m_boundMax.x,
-			l_AABBLight.m_boundMin.y, l_AABBLight.m_boundMax.y,
-			l_AABBLight.m_boundMax.z, l_AABBLight.m_boundMin.z);
-
-		CSMConstantBuffer l_CB;
-		l_CB.v       = l_View;
-		l_CB.p       = l_Proj;
-		l_CB.AABBMax = l_AABBWorld.m_boundMax;
-		l_CB.AABBMin = l_AABBWorld.m_boundMin;
-		m_CSMCBVector.emplace_back(l_CB);
-	}
-
-	return true;
-}
-
 // UpdatePointShadowData lives in a sibling .inl to keep LightDataService.cpp
 // under the file-size soft ratchet (.claude/disciplines/split-before-grow.md).
 #include "LightDataService_PointShadow.inl"
@@ -380,7 +229,6 @@ bool LightDataServiceImpl::Update()
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
 		UpdateLightData();
-		UpdateCSMData();
 		UpdatePointShadowData();
 
 	auto l_rsService = g_Engine->Get<GPUBufferResourceService>();
@@ -392,10 +240,6 @@ bool LightDataServiceImpl::Update()
 		if (m_SphereLightCBVector.size() > 0)
 		{
 			l_rsService->Upload(m_SphereLightGPUBufferComp, m_SphereLightCBVector, 0, m_SphereLightCBVector.size());
-		}
-		if (m_CSMCBVector.size() > 0)
-		{
-			l_rsService->Upload(m_CSMGPUBufferComp, m_CSMCBVector, 0, m_CSMCBVector.size());
 		}
 		if (m_PointShadowCBVector.size() > 0)
 		{
@@ -417,7 +261,6 @@ bool LightDataServiceImpl::Terminate()
 
 	l_rsService->Delete(m_PointLightGPUBufferComp);
 	l_rsService->Delete(m_SphereLightGPUBufferComp);
-	l_rsService->Delete(m_CSMGPUBufferComp);
 	l_rsService->Delete(m_GICBufferGPUBufferComp);
 	l_rsService->Delete(m_PointShadowGPUBufferComp);
 
@@ -465,11 +308,6 @@ GPUBufferComponent* LightDataService::GetPointLightBuffer()
 GPUBufferComponent* LightDataService::GetSphereLightBuffer()
 {
 	return m_Impl->m_SphereLightGPUBufferComp;
-}
-
-GPUBufferComponent* LightDataService::GetCSMBuffer()
-{
-	return m_Impl->m_CSMGPUBufferComp;
 }
 
 GPUBufferComponent* LightDataService::GetGIBuffer()

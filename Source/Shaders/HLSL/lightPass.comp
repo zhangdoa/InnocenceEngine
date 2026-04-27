@@ -40,11 +40,9 @@ cbuffer SphereLightCBuffer : register(b2)
 	SphereLight_CB g_SphereLights[NR_SPHERE_LIGHTS];
 };
 
-[[vk::binding(3, 0)]]
-cbuffer CSMCBuffer : register(b3)
-{
-	CSM_CB CSMs[NR_CSM_SPLITS];
-};
+// HLSL register b3 (was CSMCBuffer) is intentionally unused after the TASK-138
+// CSM swap — keeping the slot empty avoids cascading renumbers across the
+// other lightPass cbuffers.
 
 [[vk::binding(4, 0)]]
 cbuffer VoxelizationPassCBuffer : register(b4)
@@ -82,8 +80,8 @@ Texture2D in_BRDFLUT : register(t4);
 Texture2D in_BRDFMSLUT : register(t5);
 [[vk::binding(6, 1)]]
 Texture2D in_SSAO : register(t6);
-[[vk::binding(7, 1)]]
-Texture2DArray in_SunShadow : register(t7);
+// HLSL register t7 (was the sun CSM atlas) is intentionally unused after the
+// TASK-138 swap; LightPass binds RT visibility at t13 instead.
 [[vk::binding(8, 1)]]
 Texture2D<uint2> in_LightGrid : register(t8);
 [[vk::binding(9, 1)]]
@@ -99,10 +97,8 @@ Texture3D<float4> in_VolumetricFog : register(t11);
 // .g=linearDist²). Sampled via PointShadowResolver in shadowResolver.hlsl.
 [[vk::binding(12, 1)]]
 Texture2DArray in_PointShadow : register(t12);
-// TASK-138 phase 1: per-pixel hardware-RT sun-shadow visibility. R8 unorm,
-// 0 = fully shadowed, 1 = lit. Produced by SunShadowRTPass; consumed by
-// EvaluateSunLighting when USE_RT_SHADOWS is set in lightPassDirectLighting.
-// Co-exists with the CSM atlas at t7 until cost-budgeted swap decision.
+// Per-pixel hardware-RT sun-shadow visibility. R8 unorm, 0 = fully shadowed,
+// 1 = lit. Produced by SunShadowRTPass; consumed by EvaluateSunLighting.
 [[vk::binding(13, 1)]]
 Texture2D<float> in_SunShadowRTVisibility : register(t13);
 [[vk::binding(0, 2)]]
@@ -120,8 +116,8 @@ RWTexture2D<float4> out_lightPassRT1 : register(u1);
 #include "common/lightPassDirectLighting.hlsl"
 #include "common/lightPassIndirectCompose.hlsl"
 
-// Debug toggles. Both compile-time false in shipping; flip locally to
-// inspect cascade coverage / isolated GI compose without redispatching.
+// Debug toggle. False in shipping; flip locally to inspect isolated GI
+// compose without redispatching.
 #define DEBUG_INDIRECT_FROM_CACHE_ONLY 0
 
 [numthreads(8, 8, 1)]
@@ -147,7 +143,6 @@ void main(ComputeInputType input)
 
 	EvaluateSunLighting(
 		in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint,
-		in_SunShadow, in_samplerTypeLinear,
 		in_SunShadowRTVisibility,
 		l_Material, l_PositionWS, l_NormalWS, l_V, l_ScreenCoord,
 		l_DirectLuminance, l_IndirectSeedLuminance);
