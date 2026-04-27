@@ -1,7 +1,7 @@
 ---
 id: TASK-155
 title: 'GBV: OpaquePass_RT_0 cross-queue tracker mismatch (pre-existing)'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-27 02:00'
 labels:
@@ -58,4 +58,77 @@ GBV warnings are not engine-fatal, but each one is a real symbol the validator s
 ## Implementation Notes
 <!-- SECTION:NOTES:BEGIN -->
 **2026-04-27**: First dispatch attempt (graphics-api-expert) hit quota wall after ~50 min / 181 tool uses with no commits landed. Working tree clean post-attempt — investigation context lost. Re-dispatch recommended after quota refresh; consider tighter scoping (e.g. start with read-only audit pass, then propose the fix in a separate dispatch) to avoid the same wall.
+
+**2026-04-27 (read-only audit, graphics-api-expert)**: Root cause identified. Bucket **(c) — engine-side cross-queue tracker drift**, with a specific mechanism: **the engine tracks resource state in CL-record-order, but the GPU sees barriers in CL-execute-order. These two orders disagree for `OpaquePass_RT_*` because every cross-queue consumer records its `CrossQueueTransition` barrier BEFORE OpaquePass records its own RT-bind barrier, while at execute time OpaquePass's CL is submitted first.**
+
+### Exact GBV error
+From `Bin/RelWithDebInfo/Main.exe -gpu_validation -total_frames 30 -renderer DX12` (run from `Bin/RelWithDebInfo/`, exits with code 1 on first error):
+
+```
+D3D12 ERROR: ID3D12CommandQueue1::ExecuteCommandLists: Using ResourceBarrier on Command List
+(0x...:'OpaquePass/Graphics_CommandList'): Before state (0x0: D3D12_RESOURCE_STATE_[COMMON|PRESENT])
+of resource (0x...:'OpaquePass_RT_0_DefaultHeap_Texture_Frame0') (subresource: 0) specified by
+transition barrier does not match with the state (0x4: D3D12_RESOURCE_STATE_RENDER_TARGET)
+specified in preceding ResourceBarrier or as InitialState
+```
+
+### Producer / consumer cross-queue boundary
+- **Producer** (writes RENDER_TARGET): `OpaquePass::PrepareCommandList` → `BindRenderPassComponent` → `ChangeRenderTargetStates(ReadOnly→WriteOnly)` → `TryToTransitState(RT_0, gfxList, ReadOnly, WriteOnly)`. `Source/ExampleProject/RenderingClient/OpaquePass.cpp:157` and `Source/Engine/Services/DX12/DX12FrameManagementService.cpp:94`. RT_0 initial state from `DX12TextureResourceService.cpp:61` is `m_WriteState = RENDER_TARGET` (`DX12Helper_Texture.cpp:428`, `TextureUsage::ColorAttachment` branch). `m_CurrentState` is per-frame, sized to `m_swapChainImageCount` because `IsMultiBuffer = true` (`RenderingConfigurationService.cpp:34`).
+- **Consumers (cross-queue, on Graphics CL → Compute queue)**:
+  - `SunShadowRTPass.cpp:173-174` — RT_0, RT_1
+  - `RadianceCacheReprojectionPass.cpp:224-226` — RT_0, RT_1, RT_3
+  - `RadianceCacheRaytracingPass.cpp:220-223` — RT_0, RT_1, RT_2, RT_3
+  - `SSAOPass.cpp:220-221` — RT_0, RT_1
+
+  All call `TryToTransitState(..., m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::CrossQueueTransition)`. Per `DX12FrameManagementService.cpp:265-266`, `IsCrossQueue` forces `l_newState = COMMON` and updates `m_CurrentState[frameIndex] = COMMON` (line 283).
+
+### The drift mechanism (record vs execute order)
+**`PrepareCommandList` (record) order** in `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp:321-342`:
+1. SunShadowRTPass (line 321) — records `RT_0: RENDER_TARGET → COMMON` on its graphics CL; engine `m_CurrentState[0] = COMMON`.
+2. OpaquePass (line 325) — records `RT_0: COMMON → RENDER_TARGET` on its graphics CL (reads stale `m_CurrentState[0] = COMMON`); engine `m_CurrentState[0] = RENDER_TARGET`.
+3. RadianceCacheReprojectionPass, RadianceCacheRaytracingPass, GIDenoisePass, GIFilterH, GIFilterV, SSAOPass, LightPass — further mutate `m_CurrentState`.
+
+**`Execute` (submission) order** in `ExampleRenderingClient.cpp:472-500`:
+1. OpaquePass at line 476 — its CL reaches the queue first. The CL's recorded barrier `BeforeState=COMMON` is checked against the GPU's actual state, which is the resource's **InitialState = RENDER_TARGET** (no prior barrier has run). GBV: "Before state (COMMON) does not match … RENDER_TARGET specified … as InitialState" — this is the observed error.
+2. SunShadowRTPass at line 493 — its CL (recorded with `BeforeState=RENDER_TARGET, AfterState=COMMON`) would also be wrong (the OpaquePass CL would have left state in some indeterminate flavour), but the run aborts on the first ERROR before this is reported.
+
+`DX12GraphicsHardwareService::Execute` (line 307) submits immediately via `ExecuteCommandLists(1, ...)` — there is no batching that could re-order graphics submissions.
+
+### Why this is bucket (c) and not (a) or (b)
+- (a) is wrong: a missing transition would manifest as "before state X does not match what the previous-on-this-queue CL left it in". Here the discrepancy is against `InitialState`, on frame 0 — there is no upstream cross-queue producer to insert a missing barrier from.
+- (b) is wrong: the consumer queue is correctly a compute queue (RT/dispatch work), and the sample of the GBuffer textures from compute is the intended cross-queue use; moving consumers off compute defeats the point.
+- (c) is correct: the engine's state-tracker (`m_CurrentState`) mutates at *record time* and is consulted by later record-time barrier emission, but submitted barriers run in *execute order*. When a consumer pass records before its producer pass on the same queue, the producer reads stale state from the consumer and emits an incorrect `BeforeState`.
+
+The contributing detail is that `TryToTransitState`'s `sourceAccessibility` parameter is **never read** (`DX12FrameManagementService.cpp:250-287`); the function trusts `m_CurrentState[frameIndex]` exclusively. The "WriteOnly" source hint that callers pass into the cross-queue transition is documentation, not a check.
+
+### Recommended fix
+**Site**: `Source/Engine/Services/DX12/DX12FrameManagementService.cpp:250` (`TryToTransitState(TextureComponent*, ...)`) and `:289` (`TryToTransitState(GPUBufferComponent*, ...)`).
+
+**Option F1 — make `m_CurrentState` execute-order-correct via deferred barriers** (preferred). Stop recording `ResourceBarrier(...)` directly into the per-pass CL inside `TryToTransitState`. Instead, queue the *intent* (which resource, which target state, recording slot index) and have a frame-level resolver — invoked between `PrepareCommands` and the first `Execute` of that frame — walk the actual CL submission order, compute the correct `BeforeState` per resource per submission, and patch barriers into a small set of dedicated transition CLs that the dispatcher submits at the right boundaries. This is the same problem solved by D3D12 render-graphs (e.g. AMD GPUOpen RPS, frostbite render-graph paper); the canonical solution is "track resource state along the submission timeline, not the recording timeline." Heaviest fix, but matches the actual graph semantics.
+
+**Option F2 — declarative producer-first invariant + explicit barrier API at the producer side** (lighter). Forbid consumers from calling `TryToTransitState(...CrossQueueTransition)` on a producer's RT. Instead, give the producer pass an "I have completed writing — drop to COMMON" hook (e.g. a `CommandListEnd_TransitionForCrossQueue` or a `RenderPassDesc::m_CrossQueueExitState`). The producer records the `RENDER_TARGET → COMMON` barrier at the *end* of its own CL, where it is contiguous with its own state mutations and `m_CurrentState` updates. Consumers on the next queue then implicitly promote from COMMON without recording any barrier on the graphics queue at all. Removes 11 lines of cross-queue transition calls in the consumer passes (`SunShadowRTPass.cpp:173-174`, `RadianceCacheReprojectionPass.cpp:224-226`, `RadianceCacheRaytracingPass.cpp:220-223`, `SSAOPass.cpp:220-221`) and centralises the contract in the producer. Lower cost, narrower correctness story, but does not generalise to arbitrary multi-producer/multi-consumer DAGs.
+
+**Recommendation: F2 first** — the current cross-queue topology in `ExampleRenderingClient.cpp:321-342` is a single producer (OpaquePass) feeding several compute consumers, which is exactly the shape F2 is designed for. F1 is the right destination if the topology grows (multi-producer, queue ping-pong). Open a separate task (TASK-155-followup) to migrate to F1 if/when a future RT pass needs to write a resource that another graphics-queue pass later reads.
+
+**Specific code change for F2** (no edits applied in this dispatch):
+- Add `Accessibility m_PostCLState = Accessibility::ReadOnly;` (or a dedicated `enum class CrossQueueExitState`) to `RenderPassDesc` — `Source/Engine/Common/GraphicsPrimitive.h` (low-level-expert subtree).
+- In `DX12FrameManagementService::CommandListEnd` for graphics-queue render passes, if `renderPass->m_RenderPassDesc.m_PostCLState == CrossQueueExit`, emit `ChangeRenderTargetStates(WriteOnly, CrossQueueTransition)` at end of CL. The producer's `m_CurrentState` is now correctly `COMMON` from the producer's own record, which is also the producer's execute order — the bug class disappears.
+- In `OpaquePass::Setup` (`Source/ExampleProject/RenderingClient/OpaquePass.cpp:46`, rendering-researcher subtree), set `l_RenderPassDesc.m_PostCLState = CrossQueueExit;`.
+- Delete the four call sites in the consumer passes listed above (SunShadowRTPass, RadianceCacheReprojection, RadianceCacheRaytracing, SSAOPass — all `*Pass.cpp` files, rendering-researcher subtree).
+
+The fix touches both subtrees; dispatch should be a coordinated pair (graphics-api-expert for FM service + GraphicsPrimitive enum, rendering-researcher for pass-side changes), not parallel.
+
+### Audit — other RT pass resources with the same bug class (enumerated, not analysed)
+Same record-order-vs-execute-order pattern applies to any resource whose `TryToTransitState(..., CrossQueueTransition)` is called on the graphics CL of a pass that records *before* the producer pass and executes *after* it. Surveyed `Source/ExampleProject/RenderingClient/*.cpp` for `CrossQueueTransition` callers:
+1. `RadianceCacheRaytracingPass.cpp:220-223` — OpaquePass RT_0, RT_1, RT_2, RT_3 (same producer; same bug class — would also error if it got past frame 0).
+2. `RadianceCacheReprojectionPass.cpp:224-226` — OpaquePass RT_0, RT_1, RT_3 (same).
+3. `SSAOPass.cpp:220-221` — OpaquePass RT_0, RT_1 (same).
+4. `SunShadowRTPass.cpp:173-174` — OpaquePass RT_0, RT_1 (the trigger of the observed error).
+
+All four sites cluster around a single producer (OpaquePass). No other pass in the rendering client exposes its outputs via `CrossQueueTransition` from a non-producer pass — the F2 fix at OpaquePass therefore covers the entire current bug surface. If/when point-shadow RT or any future graphics-queue pass becomes a cross-queue producer, the same `m_PostCLState = CrossQueueExit` declaration generalises.
+
+### Closure for THIS dispatch
+- No source code edits.
+- Recommendation documented.
+- Status remains In Progress — a separate dispatch (graphics-api-expert + rendering-researcher coordinated) will apply F2 and close AC #2 / #3.
 <!-- SECTION:NOTES:END -->
