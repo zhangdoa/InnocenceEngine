@@ -993,16 +993,23 @@ bool DX12GraphicsHardwareService::ResolveGpuTimers()
 	// First dump fires the moment readback becomes live (cf. FRAME_LATENCY)
 	// so short -total_frames smoke runs still get a baseline; subsequent
 	// dumps respect GPU_TIMER_LOG_PERIOD_FRAMES so long runs aren't spammed.
-	static constexpr uint32_t GPU_TIMER_LOG_PERIOD_FRAMES = 30;
-	const bool l_firstReadbackReady = (m_TimerResolveFrameCounter == GPU_TIMER_READBACK_FRAME_LATENCY + 1);
-	const bool l_periodicHit = (m_TimerResolveFrameCounter > GPU_TIMER_READBACK_FRAME_LATENCY)
-		&& (m_TimerResolveFrameCounter % GPU_TIMER_LOG_PERIOD_FRAMES) == 0;
-	if (l_firstReadbackReady || l_periodicHit)
+	// Silent by default — opt in with -gpu_timer_log on the command line
+	// (mirrors -gpu_validation). Per-frame, per-pass log lines drown the
+	// signal at any non-default loglevel; the gate keeps the timer
+	// collection live but suppresses the readout unless explicitly asked.
+	if (g_Engine->getInitConfig().enableGpuTimerLog)
 	{
-		auto l_timings = GetGpuTimings();
-		for (auto& l_t : l_timings)
+		static constexpr uint32_t GPU_TIMER_LOG_PERIOD_FRAMES = 30;
+		const bool l_firstReadbackReady = (m_TimerResolveFrameCounter == GPU_TIMER_READBACK_FRAME_LATENCY + 1);
+		const bool l_periodicHit = (m_TimerResolveFrameCounter > GPU_TIMER_READBACK_FRAME_LATENCY)
+			&& (m_TimerResolveFrameCounter % GPU_TIMER_LOG_PERIOD_FRAMES) == 0;
+		if (l_firstReadbackReady || l_periodicHit)
 		{
-			Log(Verbose, "GpuTimer[", static_cast<int32_t>(l_t.m_QueueType), "] ", l_t.m_Name.c_str(), " = ", l_t.m_Milliseconds, " ms");
+			auto l_timings = GetGpuTimings();
+			for (auto& l_t : l_timings)
+			{
+				Log(Verbose, "GpuTimer[", static_cast<int32_t>(l_t.m_QueueType), "] ", l_t.m_Name.c_str(), " = ", l_t.m_Milliseconds, " ms");
+			}
 		}
 	}
 

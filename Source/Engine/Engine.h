@@ -47,6 +47,7 @@ namespace Inno
 		float cameraOrbitRadius = 0.0f;
 		int   cameraOrbitDuration = 0;
 		bool enableGPUValidation = false;  // enable D3D12 GPU-based validation + sync queue validation
+		bool enableGpuTimerLog = false;    // -gpu_timer_log: opt-in per-pass GPU timer Verbose dump (silent by default)
 		// Bake mode: run a one-shot asset-import-then-exit pass with no rendering
 		// services or window. `-bake "path1;path2;..."` sets isBakeMode=true,
 		// copies the `;`-separated list into bakeInputs, and implies isHeadless.

@@ -352,6 +352,12 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		Log(Success, "D3D12 GPU-based validation enabled.");
 	}
 
+	if (arg.find("-gpu_timer_log") != std::string::npos)
+	{
+		l_result.enableGpuTimerLog = true;
+		Log(Success, "Per-pass GPU timer Verbose dump enabled.");
+	}
+
 	auto l_serializeTestPos = arg.find("-serialize_test");
 	if (l_serializeTestPos != std::string::npos)
 	{
