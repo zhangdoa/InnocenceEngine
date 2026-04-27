@@ -67,4 +67,16 @@ if (-not (Test-Path $dbInIndex)) {
 Copy-Item -Path $dbInIndex -Destination $dbAtRoot -Force
 
 Write-Host "Wrote $dbAtRoot ($(((Get-Item $dbAtRoot).Length / 1KB).ToString('N0')) KB)"
+
+# Mirror-semantic step (TASK-151): regenerating compile_commands.json does
+# NOT invalidate clangd's persistent .cache/clangd/index/*.idx entries for
+# now-deleted source files. Purge those here so the user only has one
+# command to run after a revert/branch-switch.
+$purgeScript = Join-Path $PSScriptRoot 'PurgeStaleClangdIndex.ps1'
+if (Test-Path $purgeScript) {
+    & $purgeScript
+} else {
+    Write-Warning "PurgeStaleClangdIndex.ps1 not found at $purgeScript; skipping orphan-index purge."
+}
+
 Write-Host "clangd will pick this up on its next reload."

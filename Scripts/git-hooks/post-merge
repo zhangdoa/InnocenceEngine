@@ -1,0 +1,29 @@
+#!/bin/sh
+# post-merge: fires after `git merge` (and `git pull`, which calls merge).
+#
+# Same rationale as post-checkout (TASK-151): a merge that deletes files
+# leaves orphan .idx entries in clangd's persistent cache. Mirror them
+# back to the live working tree.
+
+repo_root=$(git rev-parse --show-toplevel)
+purge_script="$repo_root/Scripts/PurgeStaleClangdIndex.ps1"
+
+if [ ! -f "$purge_script" ]; then
+    echo "post-merge: PurgeStaleClangdIndex.ps1 not found at $purge_script -- skipping clangd index hygiene." >&2
+    exit 0
+fi
+
+if command -v powershell.exe >/dev/null 2>&1; then
+    ps_exe=powershell.exe
+elif command -v pwsh.exe >/dev/null 2>&1; then
+    ps_exe=pwsh.exe
+else
+    echo "post-merge: no PowerShell on PATH -- skipping clangd index hygiene." >&2
+    exit 0
+fi
+
+"$ps_exe" -NoProfile -ExecutionPolicy Bypass -File "$purge_script" || {
+    echo "post-merge: clangd index purge exited non-zero (continuing)." >&2
+}
+
+exit 0

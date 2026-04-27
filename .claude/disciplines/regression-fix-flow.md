@@ -37,6 +37,38 @@ cmake --build Build --config RelWithDebInfo --target Main
 
 The historical incident that motivated TASK-146 is recorded below; the bisect failure mode it produced is now closed at the source.
 
+## clangd index contamination — C++ analog (TASK-151)
+
+**As of TASK-151 (landed 2026-04-26), the clangd index is also mirror-semantic.** `Scripts/PurgeStaleClangdIndex.ps1` deletes any `.cache/clangd/index/<basename>.<hash>.idx` whose primary source path no longer exists on disk. The script runs automatically via `Scripts/git-hooks/post-checkout` and `post-merge` (installed by `Scripts/git-hooks/InstallHooks.ps1`), and is also invoked at the tail of `Scripts/RegenClangdIndex.ps1`.
+
+The analog to TASK-146's stale `.dxil` failure mode is "ghost diagnostics": clangd reports errors against deleted files because their `.idx` entries linger and cross-reference live source. Symptoms:
+
+- `'<file>.h' file not found` on tracked files that don't `#include` it.
+- `Use of undeclared identifier 'X'` at lines whose actual content does not reference X.
+- False inheritance / template errors on classes that are clean in the live source.
+
+**Real `cmake --build` is unaffected** — this is purely IDE noise. But the noise wastes triage time and can mask real diagnostics. Per `feedback_no_dismissing_tool_noise.md`, the source is fixed rather than learned-around.
+
+### Triage path when you see a clangd diagnostic that looks suspicious
+
+Run this checklist before assuming the diagnostic is real (each step is cheap; do all of them, in order, before reading source):
+
+1. `git ls-files <file>` — if the file is not tracked, the diagnostic is stale.
+2. `Grep <symbol>` over `Source/` — if zero hits in tracked source, the diagnostic is stale.
+3. `Read <file>:<line>` — if the actual line content is unrelated to the reported error (e.g. line 13 is `#include "OtherFile.h"`, not `#include "GhostFile.h"`), the diagnostic is stale.
+
+If any of those say "stale," run `Scripts/PurgeStaleClangdIndex.ps1` (or trigger any `git checkout` to fire the post-checkout hook) and re-check. Restart clangd (or reload the IDE window) to evict any in-memory state the persistent purge can't reach.
+
+### When the automation is not enough
+
+The hooks fire on `git checkout`, `git switch`, `git merge`, `git pull`. They do NOT fire on:
+
+- `git restore <file>` (no checkout-event in some git versions).
+- `rm <file>` outside of git (deleting a file directly from the working tree).
+- Branch-switch via tools other than git (rare).
+
+In those cases, run `Scripts/PurgeStaleClangdIndex.ps1` manually. The script is fast (<1s for ~850 idx entries) and idempotent.
+
 ## The user's role
 
 This is a single-developer project. The user is the only one who can run windowed visual tests and confirm whether a symptom is present at a given commit. Bisect therefore requires their participation at every step.

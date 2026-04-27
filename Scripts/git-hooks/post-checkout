@@ -1,0 +1,46 @@
+#!/bin/sh
+# post-checkout: fires after `git checkout`, `git switch`, and `git clone`.
+#
+# Why this exists (TASK-151)
+# --------------------------
+# Branch-switch / file-deletion via checkout leaves clangd's persistent
+# index referencing files that no longer exist on disk -- the C++ analog
+# of TASK-146's stale-DXIL bug. Mirror semantics: the local .idx cache
+# must reflect the current working tree, not the union of every state
+# the working tree has ever been in.
+#
+# Args from git: $1 = previous HEAD, $2 = new HEAD, $3 = branch-flag
+# (1 = branch checkout, 0 = file checkout). We run on every invocation;
+# the purge script is fast (~1s for ~850 idx entries) and idempotent.
+
+repo_root=$(git rev-parse --show-toplevel)
+purge_script="$repo_root/Scripts/PurgeStaleClangdIndex.ps1"
+
+if [ ! -f "$purge_script" ]; then
+    # Don't fail the checkout if the script is missing (e.g. on a branch
+    # that predates TASK-151). Loud warning only -- per
+    # feedback_silent_failures.md, a guard clause that returns must say so.
+    echo "post-checkout: PurgeStaleClangdIndex.ps1 not found at $purge_script -- skipping clangd index hygiene." >&2
+    exit 0
+fi
+
+# powershell.exe is preferred (Windows PowerShell 5.1, ships with Windows);
+# pwsh.exe (PowerShell 7) is a fallback.
+if command -v powershell.exe >/dev/null 2>&1; then
+    ps_exe=powershell.exe
+elif command -v pwsh.exe >/dev/null 2>&1; then
+    ps_exe=pwsh.exe
+else
+    echo "post-checkout: no PowerShell on PATH -- skipping clangd index hygiene." >&2
+    exit 0
+fi
+
+# Run with -NoProfile to avoid user profile load cost; -ExecutionPolicy Bypass
+# because the script is local-only and not signed. Errors are logged but never
+# fail the git operation -- a stale index is a nuisance, a failed checkout
+# is a workflow break.
+"$ps_exe" -NoProfile -ExecutionPolicy Bypass -File "$purge_script" || {
+    echo "post-checkout: clangd index purge exited non-zero (continuing)." >&2
+}
+
+exit 0
