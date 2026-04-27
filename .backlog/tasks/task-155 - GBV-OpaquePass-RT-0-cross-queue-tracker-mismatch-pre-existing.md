@@ -1,9 +1,10 @@
 ---
 id: TASK-155
 title: 'GBV: OpaquePass_RT_0 cross-queue tracker mismatch (pre-existing)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-27 02:00'
+updated_date: '2026-04-27 19:00'
 labels:
   - graphics
   - dx12
@@ -50,9 +51,9 @@ GBV warnings are not engine-fatal, but each one is a real symbol the validator s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Root cause identified — cross-queue producer/consumer pair for `OpaquePass_RT_0` enumerated, missing transition or tracker drift located
-- [ ] #2 Fix lands; `-gpu_validation -total_frames 30` clean (zero `D3D12 ERROR` / `D3D12 WARNING` / cross-queue tracker matches)
-- [ ] #3 Audit pass on other RT pass resources for the same bug class (anything created via RT pass + consumed in compute / graphics queue)
+- [x] #1 Root cause identified — cross-queue producer/consumer pair for `OpaquePass_RT_0` enumerated, missing transition or tracker drift located (audit `ce0a5947`; bucket-(c) record-vs-execute order drift)
+- [~] #2 Fix lands; `-gpu_validation -total_frames 30` — **partial/qualified**: the OpaquePass_RT_0 cross-queue tracker mismatch ERROR is fully eliminated by F2 (`d734ce91` + `00a2cf52`). Frame 30 is NOT reached cleanly because a previously-masked autocapture-readback ERROR on `Final Blend Pass Result_DefaultHeap_Texture_Frame0` (different resource, different code path: `DX12TextureResourceService::ReadTextureBackToCPU` ← `ExampleRenderingClientImpl::TryWriteAutoCapture`) is now exposed. Same class of bug (record-vs-execute `m_CurrentState` drift) but different instance. Filed as **TASK-163** for `graphics-api-expert`.
+- [x] #3 Audit pass — 4 callers all clustered around OpaquePass; deleted in TASK-162; post-fix grep over `Source/` confirms zero `CrossQueueTransition` consumer call sites remain
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -139,4 +140,21 @@ F2 fix decomposed into two agent-scoped subtasks (per `.claude/disciplines/task-
 - **TASK-162** (`rendering-researcher`) — depends on TASK-161. `OpaquePass::Setup` flips the flag + four consumer-side `CrossQueueTransition` calls deleted (SunShadowRTPass, RadianceCacheReprojectionPass, RadianceCacheRaytracingPass, SSAOPass). Owns the GBV-clean validation gate (parent AC #2) and audit-coverage confirmation (parent AC #3).
 
 Dispatch order: TASK-161 → commit → TASK-162. Each commitable in a single dispatch with build green at boundary; only TASK-162 needs the GBV pass.
+
+### Final Summary (2026-04-27, producer-close)
+
+F2 fix landed across two commits:
+- `d734ce91` (TASK-161, graphics-api-expert) — `enum class CrossQueueExit { None, ToCommon }` + `RenderPassDesc::m_PostCLState` field in `GraphicsPrimitive.h`; `DX12FrameManagementService::CommandListEnd` handler emits `ChangeRenderTargetStates(WriteOnly, CrossQueueTransition)` at end of CL when flag is set on a graphics-queue pass.
+- `00a2cf52` (TASK-162, rendering-researcher) — `OpaquePass::Setup` flips the flag; deletes 11 consumer-side `CrossQueueTransition` calls across 4 passes (SunShadowRTPass, RadianceCacheReprojectionPass, RadianceCacheRaytracingPass, SSAOPass).
+
+**Outcome on parent ACs**:
+- AC#1 root-cause: closed by audit `ce0a5947`. Bucket (c) — engine `m_CurrentState` mutates in record order; D3D12 sees barriers in execute order; the two disagree when a consumer pass records its CL before its producer pass on the same queue.
+- AC#2 GBV clean: closed for the OpaquePass cross-queue class; the tracker-mismatch ERROR on `OpaquePass_RT_0` is fully eliminated. The run does not reach frame 30 cleanly because a previously-masked autocapture-readback ERROR on `Final Blend Pass Result` is now exposed. Same bug class (record-vs-execute m_CurrentState drift), different instance. Filed as **TASK-163** (graphics-api-expert, medium).
+- AC#3 audit: closed by TASK-162's grep — zero consumer call sites remain post-fix.
+
+**Class-vs-instance**: F2 is a per-pass declarative flag that closes one instance of the wider class. The canonical fix is **F1 (graph-aware deferred-barrier resolver)** — track resource state along the *submission* timeline, not the *recording* timeline; same problem solved by render-graph papers (Frostbite, AMD GPUOpen RPS). F1 is multi-month scope and not in flight; deferring until point-shadow RT or another graphics-queue cross-queue producer makes the topology multi-producer.
+
+**Masking note (parallels TASK-160)**: GBV's `_Exit(1)` on first ERROR meant the autocapture ERROR was invisible until the OpaquePass ERROR was eliminated. Same shape as TASK-160 (LogService Error early-exit hides downstream batch failures). Surfacing this as a class to the team via the retrospective; no separate task because the GBV `_Exit(1)` is a D3D12 runtime contract we do not own.
+
+**Logs**: `Build/task162_baseline_gbv.log`, `Build/task162_gbv.log`, `Build/task162_postfix_gbv.log`.
 <!-- SECTION:NOTES:END -->
