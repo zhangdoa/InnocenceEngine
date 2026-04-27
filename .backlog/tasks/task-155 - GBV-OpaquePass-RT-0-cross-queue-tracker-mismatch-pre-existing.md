@@ -54,3 +54,8 @@ GBV warnings are not engine-fatal, but each one is a real symbol the validator s
 - [ ] #2 Fix lands; `-gpu_validation -total_frames 30` clean (zero `D3D12 ERROR` / `D3D12 WARNING` / cross-queue tracker matches)
 - [ ] #3 Audit pass on other RT pass resources for the same bug class (anything created via RT pass + consumed in compute / graphics queue)
 <!-- AC:END -->
+
+## Implementation Notes
+<!-- SECTION:NOTES:BEGIN -->
+**2026-04-27**: First dispatch attempt (graphics-api-expert) hit quota wall after ~50 min / 181 tool uses with no commits landed. Working tree clean post-attempt — investigation context lost. Re-dispatch recommended after quota refresh; consider tighter scoping (e.g. start with read-only audit pass, then propose the fix in a separate dispatch) to avoid the same wall.
+<!-- SECTION:NOTES:END -->
