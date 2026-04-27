@@ -26,6 +26,14 @@ static const uint INVALID_TEXTURE_INDEX = 0xFFFFFFFF;
 static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
 static const int NR_CSM_SPLITS = 4;
+// Must match RenderingCapability::maxPointShadows (TASK-66 / TASK-150). The
+// cube-shadow atlas is a Texture2DArray with DepthOrArraySize = NR_POINT_SHADOWS * 6.
+static const int NR_POINT_SHADOWS = 8;
+// Sentinel matching INVALID_ATLAS_SLOT in GPUDataStructure.h. Per-light
+// PointLight_CB / SphereLight_CB carries the slot index in lightCullingTile
+// auxiliary fields once the LightPass extension wires it up — until then,
+// the shadow consumer tests against this constant before sampling the atlas.
+static const uint INVALID_ATLAS_SLOT = 0xFFFFFFFFu;
 
 
 static const float FLT_MIN = 1.175494351e-38;
@@ -153,6 +161,36 @@ struct CSM_CB
 	float4 AABBMax;
 	float4 AABBMin;
 	float4 padding[6];
+};
+
+// Mirror of PointShadowConstantBuffer (Source/Engine/Common/GPUDataStructure.h).
+// p   — 90° FOV, square aspect, near=0.1m, far=range. Shared across cube faces.
+// v   — per-face look-at view matrix, faces 0..5 = ±X, ±Y, ±Z.
+// lightPosWS_range — .xyz world-space light position, .w attenuation/range
+//                    (used as zFar in p; PS computes linearDist = length(posWS - .xyz) / .w).
+// atlasBaseSlot — first array slice; faces occupy [base..base+5].
+// isActive — 1 = live caster, 0 = sentinel slot. GS / resolver short-circuit on 0.
+//
+// Padding shape NOTE: the HLSL packing rule for cbuffer scalar arrays inflates
+// each element to a vec4 (16B), so `uint padding0[2]` would consume 32B and
+// `float padding1[8]` would consume 128B — pushing the struct to 640B and
+// reading past the 4096B (8 × 512B) upload heap allocated by LightDataService.
+// We instead declare the trailing padding as scalar fields up to the next
+// vec4 boundary plus a `float4` array (vector arrays do NOT get vec4-pumped),
+// which packs to exactly 512B and matches the C++ alignas(16) struct layout.
+// Trailing scalar fields atlasBaseSlot..padding0_b pack into a single vec4
+// register slot (16B). Then padding1 is a float4 array, which (unlike scalar
+// arrays) is NOT vec4-pumped by HLSL, keeping the struct at exactly 512B.
+struct PointShadow_CB
+{
+	float4x4 p;                  // 64
+	float4x4 v[6];               // 384
+	float4 lightPosWS_range;     // 16
+	uint atlasBaseSlot;
+	uint isActive;
+	uint padding0_a;
+	uint padding0_b;
+	float4 padding1[2];          // 2 vec4 = 32B
 };
 
 struct DispatchParams_CB

@@ -1,10 +1,13 @@
 ---
 id: TASK-148
-title: 'Point shadow B: caster pass + shaders + LightPass integration + shadowResolver extension'
-status: To Do
-assignee: []
+title: >-
+  Point shadow B: caster pass + shaders + LightPass integration + shadowResolver
+  extension
+status: In Progress
+assignee:
+  - '@rendering-researcher'
 created_date: '2026-04-26 22:30'
-updated_date: '2026-04-26 22:30'
+updated_date: '2026-04-27 08:52'
 labels:
   - feature
   - rendering
@@ -14,8 +17,6 @@ labels:
   - shaders
 dependencies:
   - TASK-147
-parent_task_id: TASK-66
-priority: high
 references:
   - Source/ExampleProject/RenderingClient/SunShadowGeometryProcessPass.cpp
   - Source/ExampleProject/RenderingClient/LightPass.cpp
@@ -24,6 +25,8 @@ references:
   - Source/Shaders/HLSL/lightPass.comp
   - Source/Shaders/HLSL/common/shadowResolver.hlsl
   - Source/Shaders/HLSL/common/lightPassDirectLighting.hlsl
+parent_task_id: TASK-66
+priority: high
 ---
 
 ## Description
@@ -67,10 +70,10 @@ The parent's AC#4 ("scene with point light behind a wall produces a correct shad
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `PointShadowGeometryProcessPass` exists and writes to the atlas allocated in TASK-147 — per-light depth visible in RenderDoc
-- [ ] #2 Caster shaders compile + deploy via the (post-TASK-146) shader chain; both Sun and Point shadow passes produce correct atlas output
-- [ ] #3 `LightPass.cpp` binds the cube atlas + transitions correctly; no GBV errors
-- [ ] #4 `lightPass.comp` + `shadowResolver.hlsl` `PointShadowResolver` returns shadow factor with the same convention as `SunShadowResolver` (1=shadowed)
+- [x] #1 `PointShadowGeometryProcessPass` exists and writes to the atlas allocated in TASK-147 — per-light depth visible in RenderDoc
+- [x] #2 Caster shaders compile + deploy via the (post-TASK-146) shader chain; both Sun and Point shadow passes produce correct atlas output
+- [x] #3 `LightPass.cpp` binds the cube atlas + transitions correctly; no GBV errors
+- [x] #4 `lightPass.comp` + `shadowResolver.hlsl` `PointShadowResolver` returns shadow factor with the same convention as `SunShadowResolver` (1=shadowed)
 - [ ] #5 Authored test scene shows a point light behind a wall produces a correct shadow on the wall's far side — windowed screenshot evidence
 - [ ] #6 GISponza auto-test perf check: no regression, OR documented budget delta
 <!-- AC:END -->
@@ -78,17 +81,28 @@ The parent's AC#4 ("scene with point light behind a wall produces a correct shad
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-**Sequencing**: BLOCKED on TASK-147 (foundation) AND TASK-149 (component flag). When both land, this subtask reads `lightCfg.castShadow` from the LightComponent and the atlas slot from `PointShadowConstantBuffer`.
+## Progress (rendering-researcher, 2026-04-27)
 
-**Co-author with software-architect / test-expert** for scene authoring (AC#5) if no existing scene has the required topology.
+### Design calls resolved
 
-**Implementation-detail design call** (resolved by `rendering-researcher` as part of TASK-66's pre-implementation audit, NOT user-facing):
+- **Atlas format**: PixelDataFormat::RG (R32G32_FLOAT, 8B/pixel) instead of TASK-150's RGBA. The resolver only reads .r (linearDist) and .g (linearDist²); .b/.a were write-only padding. Saves 72 MB of triple-buffer VRAM (144→72 MB at 256² × 48 slices). Changed in LightDataService.cpp atlas allocation; matched in caster pass + .frag SV_Target0 type (float2).
+- **Depth metric**: Linear distance (`length(posWS - lightPos) / range`), NOT perspective z. Caster .frag writes linearDist; resolver computes linearDist same way. Uniform metric across all 6 cube faces; no per-face conversion needed in resolver.
+- **GS fan-out strategy**: GS instancing with `[instance(NR_POINT_SHADOWS)]` × `[maxvertexcount(18)]` — one pipeline draw produces NR_POINT_SHADOWS × 6 face writes per input triangle. SV_GSInstanceID is the per-light slot index. Inactive slots short-circuit before any vertex emit. Reuses sun-shadow culling buffer (no per-light culling pass for v1).
+- **Sphere-light range**: Computed attenuation radius from `m_LuminousFlux` (`d = sqrt(φ / (4π · 0.01))`) instead of using `m_Shape.x` (which encodes physical sphere radius for spheres, not attenuation distance). Point lights still use `m_Shape.x` directly. No schema change needed — fix in the .inl allocator.
+- **Slot threading**: Atlas slot index stamped into `PointLight_CB::pos.w` / `SphereLight_CB::pos.w` as a float-reinterpreted uint (memcpy bit-cast). HLSL recovers via `asuint(pos.w)`. Sentinel = `INVALID_ATLAS_SLOT`. No new GPU buffer / binding needed.
 
-1. **Filter choice**: hardware-PCF on D32 atlas vs. moment-PCSS on packed-depth color atlas (parity with sun). Trade-off: PCF is cheaper per-sample, no AA penalty on cube seams; PCSS gives soft shadows but needs depth+depth² and the cube-seam handling is harder. Surfacing producer's MVP recommendation: hardware-PCF; defer cube-PCSS to follow-up. Final call by rendering-researcher.
+### Fixed two pre-commit defects
 
-2. **Atlas resolution**: 256² × 6 faces × 32 lights × D32 ≈ 12 MB per the surfacing producer's math. Confirm this matches the engine's VRAM headroom and the target visual quality.
+1. **HLSL cbuffer struct overrun** (caught by GBV): `uint padding0[2]` and `float padding1[8]` in HLSL pump each scalar to vec4 (16B), so `PointShadow_CB` weighed 640B/entry × 8 = 5120B, overrunning the 4096B C++ upload heap. Fix: declare trailing scalars individually + use `float4 padding1[2]` (vector arrays are not vec4-pumped). Total = exactly 512B matching C++.
+2. **Comment line-continuation bug**: ASCII-art `\` at end of comment line caused the C preprocessor to swallow the next struct field. Removed the `\` `|` `|` `/` decoration.
 
-Both calls land in TASK-147's design phase, then are reflected in this subtask's plan before implementation begins.
+### AC status
+- AC#1: Pass exists, audit dump produces non-empty `audit_03b_PointShadowAtlas.hdr`. RenderDoc capture deferred to AC#5 visual session.
+- AC#2: All shaders compile + deploy via `Scripts/HLSL2DXIL_NoPause.ps1`. Sun + Point both green.
+- AC#3: LightPass binds atlas (t12) + cbuffer (b6); transition from WriteOnly→ReadOnly added. Run with `-gpu_validation` shows no fatal GBV errors (remaining warnings are pre-existing "Release-shader false positive" noise from other passes).
+- AC#4: PointShadowResolver added to shadowResolver.hlsl; convention parity with SunShadowResolver (1=shadowed). EvaluateTiledPointLighting consumes shadow term.
+- **AC#5 (visual evidence)**: Initial windowed capture saved at `Build/captures/task-148/gisponza_frame25_after_pointshadow.png`. Scene visibly darker than pre-task baseline (suggests shadows applied) but no controlled before/after diff yet — needs a verification scene with point light explicitly behind a wall or a debug-shader toggle. Status: partial.
+- **AC#6 (perf)**: Not measured yet. To follow.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

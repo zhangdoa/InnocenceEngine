@@ -149,27 +149,33 @@ bool LightDataServiceImpl::Initialize()
 
 		l_rsService->Initialize(m_PointShadowGPUBufferComp);
 
-		// Atlas resource: Texture2DArray, R32G32B32A32_FLOAT, DepthOrArraySize =
-		// maxPointShadows * 6 — exact mirror of SunShadowGeometryProcessPass.cpp
-		// render-target descriptor. Per design call (TASK-150), per-face is 256²
-		// and the caster `frag` (TASK-148) writes (depth, depth², 0, 1).
-		// IsMultiBuffer=true matches sun-shadow precedent for swap-chain cycling;
-		// ColorAttachment usage routes through the RT bind-flag path
+		// Atlas resource: Texture2DArray, R32G32_FLOAT, DepthOrArraySize =
+		// maxPointShadows * 6. Per design call (TASK-150) the caster (TASK-148)
+		// writes packed-depth `(linearDist, linearDist², 0, 1)` and the resolver
+		// only reads `.r` (depth) and `.g` (depth²). RGBA32F at 256² × 48 slices
+		// × triple-buffer = 144 MB; RG32F is exactly half that = 72 MB. The
+		// surfacing producer's "12 MB" estimate was 4 B/pixel arithmetic that
+		// did not account for color-RT format width. Saving 72 MB of VRAM is
+		// the primary gain; rendering output is unchanged because the unread
+		// .b/.a channels were write-only padding.
+		// IsMultiBuffer=true matches sun-shadow precedent for swap-chain
+		// cycling; ColorAttachment usage routes through the RT bind-flag path
 		// (DX12Helper::GetTextureBindFlags).
 		const uint32_t l_PerFaceResolution = 256;
 		const uint32_t l_AtlasSliceCount   = l_RenderingCapability.maxPointShadows * 6;
 		m_PointShadowAtlas->m_TextureDesc.Sampler           = TextureSampler::Sampler2DArray;
 		m_PointShadowAtlas->m_TextureDesc.Usage             = TextureUsage::ColorAttachment;
 		m_PointShadowAtlas->m_TextureDesc.IsMultiBuffer     = true;
-		m_PointShadowAtlas->m_TextureDesc.PixelDataFormat   = TexturePixelDataFormat::RGBA;
+		m_PointShadowAtlas->m_TextureDesc.PixelDataFormat   = TexturePixelDataFormat::RG;
 		m_PointShadowAtlas->m_TextureDesc.PixelDataType     = TexturePixelDataType::Float32;
 		m_PointShadowAtlas->m_TextureDesc.Width             = l_PerFaceResolution;
 		m_PointShadowAtlas->m_TextureDesc.Height            = l_PerFaceResolution;
 		m_PointShadowAtlas->m_TextureDesc.DepthOrArraySize  = l_AtlasSliceCount;
 		m_PointShadowAtlas->m_TextureDesc.MipLevels         = 1;
-		// Match SunShadowGeometryProcessPass.cpp:49-59: clear/border to
-		// (1, 1, 0, 1) so unrendered texels at far plane don't register as
-		// blockers at depth 0 in PCSS.
+		// Mirror SunShadowGeometryProcessPass.cpp:49-59: clear/border to far
+		// plane (linearDist=1) so unrendered texels don't register as blockers
+		// at depth 0 in PCSS. Only .r and .g matter — caster writes the same
+		// shape and resolver only reads the same shape.
 		m_PointShadowAtlas->m_TextureDesc.BorderColor[0] = 1.0f;
 		m_PointShadowAtlas->m_TextureDesc.BorderColor[1] = 1.0f;
 		m_PointShadowAtlas->m_TextureDesc.BorderColor[2] = 0.0f;
@@ -212,6 +218,16 @@ bool LightDataServiceImpl::UpdateLightData()
 		EntityID l_EntityID = l_Owners[i];
 		auto* l_Transform = g_Engine->Get<EntityRegistry>()->Get<TransformComponent>(l_EntityID);
 
+		// pos.w carries the atlas slot index (TASK-148): seeded to a sentinel
+		// (INVALID_ATLAS_SLOT bit-cast to float), overwritten by
+		// UpdatePointShadowData() for shadow-casting lights before upload. The
+		// shader recovers via asuint(pos.w) — sentinel matches the
+		// INVALID_TEXTURE_INDEX idiom on Material_CB. We use memcpy rather than
+		// std::bit_cast because the project is C++17.
+		float l_SentinelSlot;
+		const uint32_t l_SentinelBits = INVALID_ATLAS_SLOT;
+		std::memcpy(&l_SentinelSlot, &l_SentinelBits, sizeof(l_SentinelSlot));
+
 		if (l_Light.m_LightType == LightType::Point)
 		{
 			PointLightConstantBuffer l_data;
@@ -219,6 +235,7 @@ bool LightDataServiceImpl::UpdateLightData()
 				l_data.pos = l_Transform->m_LocalPos;
 			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
 			l_data.luminance.w = l_Light.m_Shape.x;
+			l_data.pos.w = l_SentinelSlot;
 			m_PointLightCBVector.emplace_back(l_data);
 			m_PointLightAtlasSlot.emplace_back(INVALID_ATLAS_SLOT);
 		}
@@ -229,6 +246,7 @@ bool LightDataServiceImpl::UpdateLightData()
 				l_data.pos = l_Transform->m_LocalPos;
 			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
 			l_data.luminance.w = l_Light.m_Shape.x;
+			l_data.pos.w = l_SentinelSlot;
 			m_SphereLightCBVector.emplace_back(l_data);
 			m_SphereLightAtlasSlot.emplace_back(INVALID_ATLAS_SLOT);
 		}

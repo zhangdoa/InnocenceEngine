@@ -10,6 +10,7 @@
 #include "SSAOPass.h"
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurEvenPass.h"
+#include "PointShadowGeometryProcessPass.h"
 #include "LightCullingPass.h"
 #include "GIFilterVerticalPass.h"
 #include "VolumetricPass.h"
@@ -44,7 +45,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(22);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(24);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -183,6 +184,24 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorIndex = 1;
 
+	// t12 - Point shadow atlas (TASK-148). Texture2DArray of packed linear
+	// distance written by PointShadowGeometryProcessPass. The resolver
+	// (shadowResolver.hlsl::PointShadowResolver) samples per active light's
+	// atlasBaseSlot+face slice and applies the shadow term to tiled point
+	// lighting in lightPassDirectLighting.hlsl::EvaluateTiledPointLighting.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorIndex = 12;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_TextureUsage = TextureUsage::ColorAttachment;
+
+	// b6 - PointShadowCBuffer (TASK-148). Per-light cube-shadow metadata:
+	// world-space light pos, range, atlas slot, isActive flag, view matrices.
+	// The resolver reads lightPosWS_range and atlasBaseSlot; matrices are
+	// caster-only.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorSetIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorIndex = 6;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
@@ -287,6 +306,10 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(SSAOPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(SunShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	// TASK-148: cube-shadow atlas — written by PointShadowGeometryProcessPass
+	// as RTV (WriteOnly), consumed here as SRV (ReadOnly). Mirrors the sun
+	// shadow transition.
+	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(PointShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(GIFilterVerticalPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -317,6 +340,9 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IlluminanceResult, 19);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Linear, 20);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Point, 21);
+	// TASK-148: cube-shadow atlas (t12) + per-light cbuffer (b6).
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, PointShadowGeometryProcessPass::Get().GetResult(), 22);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<LightDataService>()->GetPointShadowBuffer(), 23);
 
 	// TASK-140 sample integration: wrap the dispatch in a paired GPU timer +
 	// PIX event so PIX shows "LightPass" on the timeline and GetGpuTimings()

@@ -6,6 +6,7 @@
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurOddPass.h"
 #include "SunShadowBlurEvenPass.h"
+#include "PointShadowGeometryProcessPass.h"
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
 #include "AnimationPass.h"
@@ -172,6 +173,7 @@ namespace Inno
 
 		SunShadowCullingPass::Get().Setup();
 		SunShadowGeometryProcessPass::Get().Setup();
+		PointShadowGeometryProcessPass::Get().Setup();
 
 		OpaqueCullingPass::Get().Setup();
 		OpaquePass::Get().Setup();
@@ -240,6 +242,7 @@ namespace Inno
 
 		SunShadowCullingPass::Get().Initialize();
 		SunShadowGeometryProcessPass::Get().Initialize();
+		PointShadowGeometryProcessPass::Get().Initialize();
 
 		OpaqueCullingPass::Get().Initialize();
 		OpaquePass::Get().Initialize();
@@ -316,6 +319,7 @@ namespace Inno
 
 			SunShadowCullingPass::Get().PrepareCommandList();
 			SunShadowGeometryProcessPass::Get().PrepareCommandList();
+			PointShadowGeometryProcessPass::Get().PrepareCommandList();
 
 			OpaqueCullingPass::Get().PrepareCommandList();
 			OpaquePass::Get().PrepareCommandList();
@@ -452,6 +456,18 @@ namespace Inno
 			auto l_commandList = SunShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
 			auto l_renderPass = SunShadowGeometryProcessPass::Get().GetRenderPassComp();
+			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+		}
+
+		if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			// Reuses SunShadowCullingPass's indirect draw command buffer; the
+			// wait there is the same as the sun shadow pass. Signal own
+			// renderpass so LightPass's WaitOnGPU consumes the correct fence.
+			l_hwService->WaitOnGPU(SunShadowCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			auto l_commandList = PointShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
+			auto l_renderPass = PointShadowGeometryProcessPass::Get().GetRenderPassComp();
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 		}
 
@@ -653,6 +669,8 @@ namespace Inno
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_hwService->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
+				l_hwService->WaitOnGPU(PointShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(SSAOPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_hwService->WaitOnGPU(LightCullingPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
@@ -972,8 +990,12 @@ namespace Inno
 		Dump("audit_01_BRDFLUTPass.hdr",   BRDFLUTPass::Get().GetRenderPassComp(),   static_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()));
 		Dump("audit_02_BRDFLUTMSPass.hdr",  BRDFLUTMSPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()));
 
-		// 3: Shadow map
-		DumpRP("audit_03_SunShadow_RT0.hdr", SunShadowGeometryProcessPass::Get().GetRenderPassComp(), 0);
+		// 3: Shadow maps
+		DumpRP("audit_03a_SunShadow_RT0.hdr", SunShadowGeometryProcessPass::Get().GetRenderPassComp(), 0);
+		// Point-shadow atlas — owned by LightDataService; getter proxies to it.
+		Dump("audit_03b_PointShadowAtlas.hdr",
+			PointShadowGeometryProcessPass::Get().GetRenderPassComp(),
+			static_cast<TextureComponent*>(PointShadowGeometryProcessPass::Get().GetResult()));
 
 		// 4: Opaque G-buffer
 		DumpRP("audit_04a_Opaque_RT0.hdr", OpaquePass::Get().GetRenderPassComp(), 0);
@@ -1055,6 +1077,7 @@ namespace Inno
 		OpaqueCullingPass::Get().Terminate();
 		OpaquePass::Get().Terminate();
 
+		PointShadowGeometryProcessPass::Get().Terminate();
 		SunShadowGeometryProcessPass::Get().Terminate();
 
 		BRDFLUTMSPass::Get().Terminate();

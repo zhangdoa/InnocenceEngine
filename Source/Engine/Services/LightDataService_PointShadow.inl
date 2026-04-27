@@ -6,6 +6,21 @@
 // references LightDataServiceImpl (declared above), PointShadowConstantBuffer
 // (GPUDataStructure.h), and Math::GeneratePerspectiveMatrix / Math::lookAt.
 
+namespace
+{
+	// pos.w on PointLight_CB / SphereLight_CB carries the cube-shadow atlas
+	// slot index (TASK-148). The shader recovers the uint via asuint(pos.w);
+	// here we go the other way. Project is C++17 so std::bit_cast is unavailable
+	// — memcpy is the canonical type-punning idiom (well-defined, no aliasing
+	// violation, optimized to a register copy by every modern compiler).
+	float SlotIndexAsFloat(uint32_t Slot)
+	{
+		float l_Result;
+		std::memcpy(&l_Result, &Slot, sizeof(l_Result));
+		return l_Result;
+	}
+}
+
 bool LightDataServiceImpl::UpdatePointShadowData()
 {
 	m_PointShadowCBVector.clear();
@@ -84,8 +99,31 @@ bool LightDataServiceImpl::UpdatePointShadowData()
 			continue;
 		}
 
-		const Vec4  l_LightPos = l_Transform->m_LocalPos;
-		const float l_Range    = l_Light.m_Shape.x;
+		// Cube-shadow zFar / attenuation range:
+		//   Point  → m_Shape.x is the author-set attenuation radius (per
+		//            LightComponent.h schema). Use directly.
+		//   Sphere → m_Shape.x is the *physical sphere radius*, not an
+		//            attenuation distance. Using it as zFar would clip nearly
+		//            everything beyond the sphere itself. Compute attenuation
+		//            radius from luminous flux (point-source inverse-square
+		//            falloff to a perceptual cutoff of 0.01 cd/m²):
+		//                d = sqrt(φ / (4π · L_min))
+		//            Same idiom as `EvaluateTiledPointLighting` uses internally
+		//            for sphere lights. Keeps the LightComponent schema
+		//            untouched (TASK-149 ECS POD invariant) and matches the
+		//            light-attenuation falloff the lighting evaluator already
+		//            applies.
+		Vec4 l_LightPos = l_Transform->m_LocalPos;
+		float l_Range   = l_Light.m_Shape.x;
+		if (l_IsSphere)
+		{
+			const float l_LuminanceCutoff   = 0.01f; // cd/m², perceptual
+			const float l_FourPi            = 4.0f * 3.14159265358979323846f;
+			const float l_AttenuationRadius = std::sqrt(
+				std::max(l_Light.m_LuminousFlux, 0.0f)
+				/ (l_FourPi * l_LuminanceCutoff));
+			l_Range = l_AttenuationRadius;
+		}
 		if (l_Range <= l_NearPlane)
 		{
 			Log(Warning, "LightDataService: shadow-casting light at storage index ", i,
@@ -108,11 +146,23 @@ bool LightDataServiceImpl::UpdatePointShadowData()
 		m_PointShadowCBVector.emplace_back(l_CB);
 
 		// Stamp the parallel-indexed sidecar so LightPass can correlate
-		// PointLight_CB[k] with PointShadowConstantBuffer[slot].
+		// PointLight_CB[k] with PointShadowConstantBuffer[slot]. Also stamp
+		// the slot into PointLight_CB::pos.w / SphereLight_CB::pos.w so the
+		// resolver shader can recover the slot from the cbuffer entry the
+		// LightCullingPass already binds (no separate slot-sidecar SRV).
+		const float l_SlotAsFloat = SlotIndexAsFloat(l_NextSlot);
 		if (l_IsPoint && l_ParallelIdx < m_PointLightAtlasSlot.size())
+		{
 			m_PointLightAtlasSlot[l_ParallelIdx] = l_NextSlot;
+			if (l_ParallelIdx < m_PointLightCBVector.size())
+				m_PointLightCBVector[l_ParallelIdx].pos.w = l_SlotAsFloat;
+		}
 		else if (l_IsSphere && l_ParallelIdx < m_SphereLightAtlasSlot.size())
+		{
 			m_SphereLightAtlasSlot[l_ParallelIdx] = l_NextSlot;
+			if (l_ParallelIdx < m_SphereLightCBVector.size())
+				m_SphereLightCBVector[l_ParallelIdx].pos.w = l_SlotAsFloat;
+		}
 
 		l_NextSlot++;
 	}

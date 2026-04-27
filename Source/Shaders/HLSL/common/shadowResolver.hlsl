@@ -167,6 +167,112 @@ float ComputeCascadeEdgeWeight(float3 positionWS, int splitIndex)
 	return saturate(edgeFactor / CASCADE_BLEND_BAND);
 }
 
+// Cube-face selection for an omnidirectional shadow map. Returns face index
+// 0..5 = +X, -X, +Y, -Y, +Z, -Z. The face whose forward axis dominates the
+// input world-space direction wins. Matches the look-at orientation in
+// LightDataService_PointShadow.inl (face 0 = +X looks toward +X, etc.).
+//
+// UV is computed below by re-running the caster's per-face view + projection
+// matrices on the receiver position — that avoids re-deriving the per-face
+// (s, t) basis here and drifting from the caster, which is the class of bug
+// feedback_verify_source_before_chasing.md warns against.
+int CubeFaceFromDirection(float3 dir)
+{
+	float3 a = abs(dir);
+	if (a.x >= a.y && a.x >= a.z) return dir.x > 0 ? 0 : 1;
+	if (a.y >= a.z)               return dir.y > 0 ? 2 : 3;
+	return dir.z > 0 ? 4 : 5;
+}
+
+// Cube-shadow PCSS: same convention as PCSS() above but the projected coords
+// are precomputed to face-local UV. shadowMapIndex is `atlasBaseSlot + face`.
+// Returns shadow ∈ [0,1] where 1 = fully shadowed (mirrors SunShadowResolver
+// — see feedback_verify_source_before_chasing.md / TASK-145 hypothesis 2 for
+// why convention parity matters).
+float PointPCSS(float2 faceUV, Texture2DArray shadowMap, SamplerState in_sampler, int shadowMapIndex, float currentDepth, float2 texelSize, float shadowBias, float sinA, float cosA)
+{
+	float3 projCoords = float3(faceUV, 0.0f);
+	int blockerCount = 0;
+	float blockerDepth = FindBlockerDepth(projCoords, shadowMap, in_sampler, shadowMapIndex, currentDepth, texelSize, sinA, cosA, blockerCount);
+	if (blockerCount == 0)
+		return 0.0f;
+
+	float penumbraSize = ComputePenumbraSize(currentDepth, blockerDepth);
+
+	float shadow = 0.0f;
+	const int filterSamples = 16;
+	for (int i = 0; i < filterSamples; ++i)
+	{
+		float2 offset = RotateOffset(PoissonDisk[i], sinA, cosA) * texelSize * penumbraSize;
+		float3 coord = float3(faceUV + offset, shadowMapIndex);
+		float depthSample = shadowMap.SampleLevel(in_sampler, coord, 0).r;
+		shadow += (currentDepth - shadowBias > depthSample) ? 1.0f : 0.0f;
+	}
+	return shadow / filterSamples;
+}
+
+// Cube-shadow resolver. Same return convention as SunShadowResolver:
+// shadow ∈ [0,1] where 1 = fully shadowed; caller computes Visibility = 1 - shadow.
+//
+// lightSlot is the per-light slot the LightDataService allocator stamped on
+// PointLight_CB / SphereLight_CB. INVALID_ATLAS_SLOT means the light is
+// non-shadow-casting (m_CastShadow=false) or exceeded the per-frame budget;
+// the resolver returns 0 (lit) immediately.
+//
+// UV computation: re-applies the caster's per-face view × projection on the
+// receiver position. This guarantees the resolver hits exactly the texel the
+// caster wrote, regardless of the per-face axis convention chosen in
+// LightDataService_PointShadow.inl. Re-deriving an (s,t) basis manually is
+// the inversion-class-of-bug feedback_verify_source_before_chasing.md warns
+// about (TASK-145 hypothesis 2 cost ~5 speculative-fix commits before the
+// proper bisect).
+float PointShadowResolver(float3 positionWS, float3 normalWS, Texture2DArray shadowMap, SamplerState in_sampler, uint lightSlot, PointShadow_CB lightCB, uint2 screenCoord)
+{
+	if (lightSlot == INVALID_ATLAS_SLOT || lightCB.isActive == 0)
+		return 0.0f;
+
+	float3 lightPos = lightCB.lightPosWS_range.xyz;
+	float range = lightCB.lightPosWS_range.w;
+	if (range <= 0.0f)
+		return 0.0f;
+
+	// Direction = receiver - light. linearDist matches the caster's PS output
+	// (linearDist = length(posWS - lightPos) / range). Range comparison metric
+	// is unit-domain so the resolver is identical for all cube faces.
+	float3 dir = positionWS - lightPos;
+	float distance = length(dir);
+	float currentDepth = distance / range;
+	if (currentDepth >= 1.0f)
+		return 0.0f;
+
+	int face = CubeFaceFromDirection(dir);
+	int shadowMapIndex = (int)lightCB.atlasBaseSlot + face;
+
+	// Re-run caster's transform on receiver position to recover the same UV
+	// the rasterizer wrote. mul(row-vector, row-major matrix) order — same
+	// convention as the GS (pointShadowGeometryProcessPass.geom).
+	float4 posV = mul(float4(positionWS, 1.0f), lightCB.v[face]);
+	float4 posCS = mul(posV, lightCB.p);
+	posCS /= posCS.w;
+	// NDC → texture UV: x maps directly (UV.x ∈ [0,1] left-right matches
+	// NDC.x ∈ [-1,1]); y flips because texture origin is top-left while
+	// NDC.y ∈ [-1,1] is bottom-up.
+	float2 faceUV = float2(posCS.x * 0.5f + 0.5f, 1.0f - (posCS.y * 0.5f + 0.5f));
+
+	float2 shadowMapSize;
+	float level, elements;
+	shadowMap.GetDimensions(0, shadowMapSize.x, shadowMapSize.y, elements, level);
+	float2 texelSize = 1.0f / shadowMapSize;
+
+	float shadowBias = ComputeShadowBias(normalWS, normalize(-dir));
+
+	float angle = ShadowKernelRotationAngle(float2(screenCoord));
+	float sinA, cosA;
+	sincos(angle, sinA, cosA);
+
+	return PointPCSS(faceUV, shadowMap, in_sampler, shadowMapIndex, currentDepth, texelSize, shadowBias, sinA, cosA);
+}
+
 // Sun Shadow Resolver (CSM Support + PCSS + cross-cascade blending).
 // screenCoord is the compute-shader thread index; used only as a stable
 // seed for the per-pixel Poisson rotation.

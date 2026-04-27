@@ -58,14 +58,23 @@ void EvaluateSunLighting(
 
 // Tiled point lights. Looks the visible-light list for this tile out of
 // the LightCullingPass grid (LIGHT_CULLING_BLOCK_SIZE-pixel tiles), then
-// runs the BSDF accumulator for each. Point lights have no shadow
-// implementation today (visibility = 1).
+// runs the BSDF accumulator for each. Per-light visibility comes from the
+// cube-shadow resolver (TASK-148): an INVALID_ATLAS_SLOT in
+// PointLight_CB::position.w means the light is non-shadow-casting (or was
+// rejected by the per-frame atlas budget) and the resolver returns 0.
+//
+// Convention parity with sun shadow: PointShadowResolver returns shadow ∈ [0,1]
+// where 1 = fully shadowed, the consumer applies Visibility = 1 - shadow. See
+// feedback_verify_source_before_chasing.md / TASK-145 hypothesis 2 for why
+// the convention must match.
 void EvaluateTiledPointLighting(
 	in Texture2D in_BRDFLUT,
 	in Texture2D in_BRDFMSLUT,
 	in SamplerState in_PointSampler,
 	in Texture2D<uint2> in_LightGrid,
 	in StructuredBuffer<uint> in_LightIndexList,
+	in Texture2DArray in_PointShadow,
+	in SamplerState in_LinearSampler,
 	in MaterialAttributes in_Material,
 	in float3 in_PositionWS,
 	in float3 in_NormalWS,
@@ -99,9 +108,20 @@ void EvaluateTiledPointLighting(
 			l_PointLight.luminousFlux.xyz, l_AttenuationFactor,
 			l_LightDirect, l_LightIndirectSeed);
 
-		// @TODO: implement shadow mapping for point lights — visibility = 1 today.
-		io_DirectLuminance += l_LightDirect;
-		io_IndirectSeedLuminance += l_LightIndirectSeed;
+		// Shadow term — slot stamped on PointLight_CB::position.w by
+		// LightDataService_PointShadow.inl as a uint reinterpreted to float
+		// (asuint() recovers the uint). Sentinel == INVALID_ATLAS_SLOT short-
+		// circuits the resolver before any atlas sample.
+		uint l_ShadowSlot = asuint(l_PointLight.position.w);
+		float l_ShadowFactor = 0.0;
+		if (l_ShadowSlot != INVALID_ATLAS_SLOT)
+		{
+			PointShadow_CB l_ShadowCB = g_PointShadows[l_ShadowSlot];
+			l_ShadowFactor = PointShadowResolver(in_PositionWS, in_NormalWS, in_PointShadow, in_LinearSampler, l_ShadowSlot, l_ShadowCB, in_ScreenCoord);
+		}
+		float l_Visibility = 1.0 - l_ShadowFactor;
+		io_DirectLuminance += l_LightDirect * l_Visibility;
+		io_IndirectSeedLuminance += l_LightIndirectSeed * l_Visibility;
 	}
 }
 
