@@ -48,7 +48,14 @@ The minimum-viable cut: per-pass `m_Bypassed` field + editor checkbox. If pass-l
 
 ### Owner
 
-Likely a coordinated `rendering-researcher` (pass interface) + `editor-tooling-expert` (inspector + IPC). Producer to decompose.
+Decomposed 2026-04-26 by producer:
+
+- **TASK-171** (subtask A) — `IRenderPass::m_Bypassed` field, dispatch-loop honour, pass-listing entry point. Owner: `rendering-researcher`. Peer review: `graphics-api-expert`.
+- **TASK-172** (subtask B) — Editor inspector panel + IPC GET/UPDATE per TASK-101 contract. Owner: `editor-tooling-expert`. Depends on TASK-171. Peer review: `rendering-researcher`.
+
+Sequencing rationale: TASK-171 lands the engine surface (atomic field + dispatch check + listing entry point). TASK-172 then binds the editor UI to that surface. The editor cannot start cleanly without the listing entry point, so this is sequential, not parallel. The 60-FPS Sponza bar (rendering-researcher manifest, 2026-04-27) is anchored in TASK-171's brief.
+
+This toggle is itself the leverage tool that unblocks TASK-169 (Sponza ≥60 FPS) and TASK-170 (sun-shadow artifact narrowing). Land it cheaply and well so user can self-serve perf isolation.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
