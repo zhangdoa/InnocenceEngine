@@ -17,7 +17,6 @@ RenderingConfigurationService::RenderingConfigurationService()
 	m_renderingConfig.CSMAdjustDrawDistance = true;
 	m_renderingConfig.CSMAdjustSidePlane = false;
 
-	m_renderingCapability.maxCSMSplits = 4;
 	m_renderingCapability.maxPointLights = 1024;
 	m_renderingCapability.maxSphereLights = 128;
 	// TASK-66/TASK-150: simultaneous shadow-casting point/sphere lights packed into a

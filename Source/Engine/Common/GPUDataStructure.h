@@ -41,7 +41,7 @@ namespace Inno
 		float aperture;
 		float shutterTime;
 		float ISO;
-		uint32_t activeCascade;
+		uint32_t padding_a;
 		Vec2 radianceCacheHaltonJitter;
 		uint32_t frameIndex;
 		uint32_t modelCount;
@@ -52,18 +52,9 @@ namespace Inno
 		float padding[12]; // Reduced padding after adding exposure mode/key/compensation
 	};
 
-	struct alignas(16) CSMConstantBuffer
-	{
-		Mat4 p;
-		Mat4 v;
-		Vec4 AABBMax;
-		Vec4 AABBMin;
-		float padding[24];
-	};
-
 	// Per shadow-casting point/sphere light, packed into a Texture2DArray atlas
-	// (DepthOrArraySize = maxPointShadows * 6). Mirrors CSMConstantBuffer's
-	// alignment idiom and GIConstantBuffer's `r[6]/v_inv[6]` 6-face precedent.
+	// (DepthOrArraySize = maxPointShadows * 6). Mirrors GIConstantBuffer's
+	// `r[6]/v_inv[6]` 6-face precedent.
 	// Element count of GPUBufferComponent <= maxPointShadows.
 	//
 	// `p` is shared across all 6 cube faces (90° FOV, square aspect, near/far from

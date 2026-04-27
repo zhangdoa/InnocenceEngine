@@ -22,7 +22,6 @@ namespace Inno
 
 	struct RenderingCapability
 	{
-		uint32_t maxCSMSplits;
 		uint32_t maxPointLights;
 		uint32_t maxSphereLights;
 		uint32_t maxPointShadows;
