@@ -1,6 +1,21 @@
 # TestGIScene.ps1 - Autonomous GI scene load test
-# Runs Main.exe: loads UnitTest scene, then GITestBox, renders N frames, exits.
-# Exits 0 if no D3D12 errors found, 1 otherwise.
+# Runs Main.exe: loads UnitTest scene, switches to GISponza at frame 5,
+# renders N total frames, exits. Exits 0 on a clean run with the GPU
+# output matching the CPU reference within MAE threshold; 1 otherwise.
+#
+# IMPORTANT — these knobs must stay in sync with the engine:
+#   1. -loglevel must be <= 1 (Success). The success-path markers grep'd
+#      below ("Scene ... has been loaded.", "Auto-test: ... terminating")
+#      are emitted at LogLevel::Success (see Source/Engine/Common/LogService.h:6
+#      and Engine.cpp/World.inl call sites). Loglevel 2 (Warning) suppresses
+#      them and the script reports a false FAIL on a working engine.
+#   2. The auto-terminate frame-budget flag is -total_frames (parsed in
+#      Source/Engine/Engine.cpp). -frames is silently ignored, so the engine
+#      runs forever and the script hangs / fails the auto-terminate grep.
+#   3. The GI scene name must match the scene the auto-test path actually
+#      loads. World.inl currently loads GISponza.InnoScene at frame 5. If
+#      that scene is renamed or replaced, update the grep below.
+# If either side changes, update both. See TASK-158.
 
 param(
     [int]$Frames = 120,
@@ -10,11 +25,11 @@ param(
 $mainExe = Join-Path $BinDir "Main.exe"
 Set-Location (Split-Path $BinDir -Parent)
 
-Write-Host "Running: $mainExe -renderer 0 -loglevel 2 -frames $Frames"
+Write-Host "Running: $mainExe -renderer 0 -loglevel 1 -total_frames $Frames"
 
 $proc = Start-Process `
     -FilePath $mainExe `
-    -ArgumentList "-renderer 0 -loglevel 2 -frames $Frames" `
+    -ArgumentList "-renderer 0 -loglevel 1 -total_frames $Frames" `
     -Wait -PassThru
 
 Write-Host "Exit code: $($proc.ExitCode)"
@@ -35,12 +50,12 @@ $d3dErrors = Select-String -LiteralPath $logFile.FullName `
     -Pattern "D3D12 ERROR|CORRUPTION|Validation Error" -SimpleMatch
 
 $sceneLoaded = Select-String -LiteralPath $logFile.FullName `
-    -Pattern "GITestBox.InnoScene has been loaded" -SimpleMatch
+    -Pattern "GISponza.InnoScene has been loaded" -SimpleMatch
 
 $autoTerminated = Select-String -LiteralPath $logFile.FullName `
     -Pattern "Auto-test:.*terminating"
 
-Write-Host "GITestBox loaded: $($null -ne $sceneLoaded)"
+Write-Host "GISponza loaded: $($null -ne $sceneLoaded)"
 Write-Host "Auto-terminated:  $($null -ne $autoTerminated)"
 Write-Host "D3D12 errors:     $($d3dErrors.Count)"
 
@@ -51,7 +66,9 @@ if ($d3dErrors) {
 }
 
 if (-not $sceneLoaded) {
-    Write-Host "FAIL - GITestBox.InnoScene was not loaded."
+    Write-Host "FAIL - GISponza.InnoScene was not loaded."
+    Write-Host "       (auto-test path in World.inl loads it at frame 5; if the scene"
+    Write-Host "        was renamed, update both this script and World.inl together.)"
     exit 1
 }
 
