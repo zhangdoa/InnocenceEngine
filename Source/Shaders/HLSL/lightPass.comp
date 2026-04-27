@@ -99,6 +99,12 @@ Texture3D<float4> in_VolumetricFog : register(t11);
 // .g=linearDist²). Sampled via PointShadowResolver in shadowResolver.hlsl.
 [[vk::binding(12, 1)]]
 Texture2DArray in_PointShadow : register(t12);
+// TASK-138 phase 1: per-pixel hardware-RT sun-shadow visibility. R8 unorm,
+// 0 = fully shadowed, 1 = lit. Produced by SunShadowRTPass; consumed by
+// EvaluateSunLighting when USE_RT_SHADOWS is set in lightPassDirectLighting.
+// Co-exists with the CSM atlas at t7 until cost-budgeted swap decision.
+[[vk::binding(13, 1)]]
+Texture2D<float> in_SunShadowRTVisibility : register(t13);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerTypeLinear : register(s0);
 [[vk::binding(1, 2)]]
@@ -142,6 +148,7 @@ void main(ComputeInputType input)
 	EvaluateSunLighting(
 		in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint,
 		in_SunShadow, in_samplerTypeLinear,
+		in_SunShadowRTVisibility,
 		l_Material, l_PositionWS, l_NormalWS, l_V, l_ScreenCoord,
 		l_DirectLuminance, l_IndirectSeedLuminance);
 

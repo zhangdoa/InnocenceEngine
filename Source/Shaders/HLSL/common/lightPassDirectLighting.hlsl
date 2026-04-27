@@ -12,9 +12,26 @@
 #ifndef LIGHTPASS_DIRECT_LIGHTING_HLSL
 #define LIGHTPASS_DIRECT_LIGHTING_HLSL
 
+// USE_RT_SHADOWS gates the sun-shadow consumer between CSM+PCSS (TASK-106)
+// and hardware-RT shadows (TASK-138 phase 1).
+//   0 = CSM+PCSS via SunShadowResolver (default; ships unchanged)
+//   1 = R8 visibility produced by SunShadowRTPass
+// Both paths are simultaneously bound (t7 = CSM atlas, t13 = RT visibility);
+// the toggle picks which one is consumed. Switching the toggle is a one-line
+// shader edit + DXIL recompile, exactly what the task brief calls for to
+// PIX-profile both paths and pick by cost.
+//
+// Cost-decision workflow (TASK-138 phase 1):
+//   1. Build with USE_RT_SHADOWS=0, capture PIX, sum SunShadowGeometryProcess
+//      + the LightPass section consuming SunShadowResolver.
+//   2. Flip to USE_RT_SHADOWS=1, rebuild, capture PIX, read SunShadowRT event
+//      + the (cheaper) LightPass section.
+//   3. Compare the two totals; apply the brief's decision matrix.
+#define USE_RT_SHADOWS 0
+
 // Sun light. Constructs the directional light vector with sun-disc
 // clamping (when V points inside the sun disc, L collapses to V), runs
-// the BSDF accumulator, then attenuates by CSM PCSS shadow.
+// the BSDF accumulator, then attenuates by sun shadow visibility.
 //
 // io_DirectLuminance and io_IndirectSeedLuminance are accumulators —
 // the function adds the sun's contribution, it does not overwrite.
@@ -24,6 +41,7 @@ void EvaluateSunLighting(
 	in SamplerState in_PointSampler,
 	in Texture2DArray in_SunShadow,
 	in SamplerState in_LinearSampler,
+	in Texture2D<float> in_SunShadowRTVisibility,
 	in MaterialAttributes in_Material,
 	in float3 in_PositionWS,
 	in float3 in_NormalWS,
@@ -50,8 +68,15 @@ void EvaluateSunLighting(
 		g_Frame.sun_illuminance.xyz, 1.0,
 		l_SunDirect, l_SunIndirectSeed);
 
+#if USE_RT_SHADOWS
+	// TASK-138 phase 1: hardware-RT visibility. Direct read; SunShadowRTPass
+	// produced 0 (shadowed) or 1 (lit) per pixel via cone-jittered TraceRay.
+	// TAA accumulates the per-frame jittered samples into a soft penumbra.
+	float l_Visibility = in_SunShadowRTVisibility.Load(int3(in_ScreenCoord, 0));
+#else
 	float l_ShadowFactor = SunShadowResolver(in_PositionWS, in_NormalWS, in_SunShadow, in_LinearSampler, L, in_ScreenCoord);
 	float l_Visibility = 1.0 - l_ShadowFactor;
+#endif
 	io_DirectLuminance += l_SunDirect * l_Visibility;
 	io_IndirectSeedLuminance += l_SunIndirectSeed * l_Visibility;
 }

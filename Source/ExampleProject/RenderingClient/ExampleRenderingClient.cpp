@@ -6,6 +6,7 @@
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurOddPass.h"
 #include "SunShadowBlurEvenPass.h"
+#include "SunShadowRTPass.h"
 #include "PointShadowGeometryProcessPass.h"
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
@@ -173,6 +174,10 @@ namespace Inno
 
 		SunShadowCullingPass::Get().Setup();
 		SunShadowGeometryProcessPass::Get().Setup();
+		// TASK-138 phase 1: hardware-RT sun shadows. Additive — co-exists with
+		// CSM+PCSS until cost-budgeted swap decision (see task-138 description
+		// + .alignments/TASK-138-rt-sun-shadows-design.md).
+		SunShadowRTPass::Get().Setup();
 		PointShadowGeometryProcessPass::Get().Setup();
 
 		OpaqueCullingPass::Get().Setup();
@@ -242,6 +247,7 @@ namespace Inno
 
 		SunShadowCullingPass::Get().Initialize();
 		SunShadowGeometryProcessPass::Get().Initialize();
+		SunShadowRTPass::Get().Initialize();
 		PointShadowGeometryProcessPass::Get().Initialize();
 
 		OpaqueCullingPass::Get().Initialize();
@@ -319,6 +325,10 @@ namespace Inno
 
 			SunShadowCullingPass::Get().PrepareCommandList();
 			SunShadowGeometryProcessPass::Get().PrepareCommandList();
+			// TASK-138 phase 1: dispatch RT sun-shadow rays after the GBuffer is
+			// available (PrepareCommandList only records — sequencing is
+			// enforced in ExecuteCommands via WaitOnGPU on OpaquePass).
+			SunShadowRTPass::Get().PrepareCommandList();
 			PointShadowGeometryProcessPass::Get().PrepareCommandList();
 
 			OpaqueCullingPass::Get().PrepareCommandList();
@@ -486,6 +496,27 @@ namespace Inno
 			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
 			auto l_renderPass = OpaquePass::Get().GetRenderPassComp();
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+		}
+
+		// TASK-138 phase 1: RT sun-shadow dispatch. Same wait/signal pattern
+		// as RadianceCacheRaytracingPass — graphics CL transitions resources,
+		// signals the renderpass; compute CL waits on that fence + on
+		// OpaquePass (needs GBuffer position/normal), executes ray dispatch,
+		// signals own renderpass for LightPass to wait on.
+		if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
+		{
+			l_hwService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+
+			auto l_renderPass = SunShadowRTPass::Get().GetRenderPassComp();
+
+			auto l_graphicsCommandList = SunShadowRTPass::Get().GetCommandListComp(GPUEngineType::Graphics);
+			l_hwService->Execute(l_graphicsCommandList, GPUEngineType::Graphics);
+			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
+			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
+
+			auto l_computeCommandList = SunShadowRTPass::Get().GetCommandListComp(GPUEngineType::Compute);
+			l_hwService->Execute(l_computeCommandList, GPUEngineType::Compute);
+			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
 		if (RadianceCacheReprojectionPass::Get().GetStatus() == ObjectStatus::Activated)
@@ -669,6 +700,12 @@ namespace Inno
 		if (LightPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
 			l_hwService->WaitOnGPU(SunShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			// TASK-138 phase 1: also wait on RT sun-shadow dispatch so the
+			// visibility texture is consumable when LightPass binds slot t13.
+			// Even when the consumer toggle isn't flipped, waiting is cheap
+			// (the wait is a fence value, not a cost) and keeps the path live.
+			if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
+				l_hwService->WaitOnGPU(SunShadowRTPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated)
 				l_hwService->WaitOnGPU(PointShadowGeometryProcessPass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(OpaquePass::Get().GetRenderPassComp(), GPUEngineType::Graphics, GPUEngineType::Graphics);
@@ -1078,6 +1115,7 @@ namespace Inno
 		OpaquePass::Get().Terminate();
 
 		PointShadowGeometryProcessPass::Get().Terminate();
+		SunShadowRTPass::Get().Terminate();
 		SunShadowGeometryProcessPass::Get().Terminate();
 
 		BRDFLUTMSPass::Get().Terminate();

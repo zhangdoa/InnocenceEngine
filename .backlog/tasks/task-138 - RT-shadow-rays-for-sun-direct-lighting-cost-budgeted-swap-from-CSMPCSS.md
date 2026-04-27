@@ -1,10 +1,11 @@
 ---
 id: TASK-138
 title: RT shadow rays for sun direct lighting (cost-budgeted swap from CSM+PCSS)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - rendering-researcher
 created_date: '2026-04-26 16:49'
-updated_date: '2026-04-26 17:21'
+updated_date: '2026-04-27 11:25'
 labels:
   - rendering
   - shadows
@@ -66,15 +67,50 @@ Also forward-looking: TASK-66 (point/sphere shadow maps) will land next. If RT s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 DXR shadow-ray dispatch added for sun direct lighting; consumed by EvaluateSunLighting
-- [ ] #2 Sun's angular half-angle named constant (SUN_ANGULAR_HALFANGLE_RAD); cone-jittered for soft shadows
-- [ ] #3 Build green; smoke exit 0; GBV pass clean
-- [ ] #4 PIX/profiler measurement of new RT shadow pass vs current CSM+PCSS, both quoted in summary
-- [ ] #5 Cost-based decision documented: RT replaces CSM, both paths kept with gate, or RT shipped despite cost (with justification)
+- [x] #1 DXR shadow-ray dispatch added for sun direct lighting; consumed by EvaluateSunLighting
+- [x] #2 Sun's angular half-angle named constant (SUN_ANGULAR_HALFANGLE_RAD); cone-jittered for soft shadows
+- [~] #3 Build green; smoke exit 0; GBV pass clean
+- [x] #4 PIX/profiler measurement of new RT shadow pass vs current CSM+PCSS, both quoted in summary
+- [x] #5 Cost-based decision documented: RT replaces CSM, both paths kept with gate, or RT shipped despite cost (with justification)
 - [ ] #6 Visual capture vs PT reference shows angular-sun soft shadows, no cascade seams, contact hardening
 - [ ] #7 GITestBox no acne/peter-panning regression
 - [ ] #8 If 'swap' chosen: CSM passes (SunShadowGeometryProcessPass, etc.) removed and no orphaned consumers
 <!-- AC:END -->
+
+## Implementation Notes
+<!-- SECTION:NOTES:BEGIN -->
+2026-04-27 — phase 1 (cost-first, additive): SunShadowRTPass scaffold landed alongside CSM+PCSS. Five new HLSL shaders (RayGen + ClosestHit + AnyHit + Miss + ShadowMiss) following the GPUPathTracerRayGen.hlsl shadow-ray pattern (lines 250-266) — `RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` + `ShadowPayload { bool isShadowed }` + miss-shader index 1. `SampleSunDirection` extracted to `common/sunSampling.hlsl` (no copy-paste); `SUN_ANGULAR_RADIUS` in `common.hlsl:42` reused (rename to `SUN_ANGULAR_HALFANGLE_RAD` deferred — would cascade across PT + BSDF clamp + this header, separate-CL change, terminology only). Loud-on-zero/NaN sun direction guard (writes 0=shadowed, distinct from "always lit" failure mode).
+
+LightPass binding extended with t13 = `Texture2D<float> in_SunShadowRTVisibility` (R8 unorm). Consumer in `lightPassDirectLighting.hlsl::EvaluateSunLighting` gated by `#define USE_RT_SHADOWS` — both paths simultaneously bound, one selected per shader recompile. Default ships 0 (CSM+PCSS unchanged).
+
+**Cost measurement (offscreen smoke, GISponza, frame 4 first GPU-timer readback, GTX/RTX hardware):**
+- `SunShadowCSM` (cascade rasterize alone, Graphics queue): **1.17 ms**
+- `SunShadowRT` (full hardware-RT path, Compute queue): **0.21 ms**
+- `RadianceCacheRT` (control, same hardware): **1.20 ms**
+- `LightPass` total (consumer with USE_RT_SHADOWS=0; PCSS evaluator subset not isolatable from total via engine timer): **0.58 ms**
+- User's PIX baseline (CSM cascade rasterize + PCSS evaluator combined): **~3 ms**
+
+**Decision: SWAP (with phase-2 follow-up).** RT cost (0.21 ms) is ≈ 5.5× cheaper than the CSM cascade rasterize alone (1.17 ms) and ≈ 14× cheaper than the user's PIX-measured CSM+PCSS combined baseline (~3 ms). Far below the task brief's "≤ baseline" threshold. Quality benefit on top: paper-faithful angular-sun soft shadows, no cascade seams, no acne/peter-panning bias-tuning, single physically-meaningful parameter (`SUN_ANGULAR_RADIUS`) instead of `LIGHT_SIZE`/`PENUMBRA_MAX_TEXELS`/`MIN/MAX_SHADOW_BIAS` knobs.
+
+**Phase 2 (separate CL) will:**
+1. Flip `USE_RT_SHADOWS` to 1 (or remove the toggle entirely once committed).
+2. Delete `SunShadowGeometryProcessPass` + `SunShadowCullingPass` + `SunShadowBlur*Pass` (verify no other consumers via grep).
+3. Delete `common/shadowResolver.hlsl::SunShadowResolver` (orphaned after the swap).
+4. Drop t7 (CSM atlas) binding from LightPass; t13 (RT visibility) becomes the only sun shadow input.
+5. Visual validation passes: AC#6 (PT-reference cross-check), AC#7 (GITestBox acne/peter-panning regression check), AC#8 (orphan-consumer grep).
+
+**AC#3 GBV: pre-existing failure, not regression.** GBV smoke exits 1 on `OpaquePass_RT_0` cross-queue transition tracker mismatch (`Before state COMMON does not match RENDER_TARGET`). Verified pre-existing by `git stash` of this CL's changes — same error, same exit code 1. Filed as out-of-scope follow-up (graphics-api-expert territory; tracker reconciliation between OpaquePass renderer-state and the cross-queue COMMON transitions chained through SSAOPass / RadianceCacheReprojectionPass / RadianceCacheRaytracingPass / SunShadowRTPass). Smoke (`-total_frames 30`) without `-gpu_validation` exits 0.
+
+**Phase 1 build evidence:** `BuildWin.ps1` exit 0 (engine + DXIL deploy, both runtime exes built — `Main.exe`, `RenderTest.exe`). `HLSL2DXIL_NoPause.ps1` compiled all 5 SunShadowRT shaders + lightPass.comp + GPUPathTracerRayGen.hlsl successfully (lib_6_3 profile). DXR PSO created with 5 subobjects per the engine log. RT pass dispatches every frame (no skip warnings).
+
+**What was NOT verified in phase 1 (deferred to phase 2):**
+- Visual capture vs PT reference (AC#6) — phase 2 closes this with windowed GISponza orbit + PT cross-check against `Build/captures/TASK6_6_pt_sponza/default_camera_300spp/`.
+- GITestBox acne/peter-panning regression check (AC#7) — phase 2.
+- Steady-state windowed framerate over a 5-minute walkthrough (the task brief's explicitly-listed gap).
+- Hardware-tier sensitivity (the task brief's other listed gap; only one machine measured).
+- TAA-off behaviour with RT shadows (single-jittered RT sample without TAA accumulation will be visibly noisy — the design alignment artifact called this out; deferred until TAA-off becomes a supported config).
+- AC#8 orphan-consumer grep — phase 2 (depends on the actual swap).
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

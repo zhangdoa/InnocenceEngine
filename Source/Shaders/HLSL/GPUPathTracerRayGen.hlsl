@@ -2,6 +2,7 @@
 #include "common/common.hlsl"
 #include "common/skyResolver.hlsl"
 #include "common/pathTracerPayload.hlsli"
+#include "common/sunSampling.hlsl"
 
 [[vk::binding(0, 0)]]
 cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
@@ -156,23 +157,8 @@ float3 CosineSampleHemisphere(float2 xi, float3 N)
     return normalize(tangent * H.x + bitangent * H.y + N * H.z);
 }
 
-float3 SampleSunDirection(float3 sunDir, float2 xi)
-{
-    float r = sin(SUN_ANGULAR_RADIUS);
-    float d = cos(SUN_ANGULAR_RADIUS);
-
-    float phi = TWO_PI * xi.x;
-    float cosTheta = 1.0f - xi.y * (1.0f - d);
-    float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
-
-    float3 H = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-
-    float3 up    = abs(sunDir.z) < 0.999f ? float3(0, 0, 1) : float3(1, 0, 0);
-    float3 tangent   = normalize(cross(up, sunDir));
-    float3 bitangent = cross(sunDir, tangent);
-
-    return normalize(tangent * H.x + bitangent * H.y + sunDir * H.z);
-}
+// SampleSunDirection lives in common/sunSampling.hlsl now (TASK-138 — shared
+// with SunShadowRTRayGen.hlsl). Behaviour-preserving extraction.
 
 float3 SkyColor(float3 dir)
 {

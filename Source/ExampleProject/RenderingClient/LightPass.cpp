@@ -10,6 +10,7 @@
 #include "SSAOPass.h"
 #include "SunShadowGeometryProcessPass.h"
 #include "SunShadowBlurEvenPass.h"
+#include "SunShadowRTPass.h"
 #include "PointShadowGeometryProcessPass.h"
 #include "LightCullingPass.h"
 #include "GIFilterVerticalPass.h"
@@ -45,7 +46,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(24);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(25);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -202,6 +203,15 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorSetIndex = 0;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorIndex = 6;
 
+	// t13 - SunShadowRT visibility (TASK-138 phase 1). Per-pixel R8 unorm
+	// produced by SunShadowRTPass. Bound in addition to the CSM atlas at t7
+	// so both shadow paths can be PIX-profiled side-by-side. The HLSL
+	// consumer (lightPassDirectLighting.hlsl) picks one via USE_RT_SHADOWS.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_DescriptorIndex = 13;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[24].m_TextureUsage = TextureUsage::ComputeOnly;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
@@ -306,6 +316,12 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(SSAOPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(SunShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
+	// TASK-138 phase 1: SunShadowRT visibility transitions to ReadOnly here.
+	// Pass already left it in ReadOnly at the end of its compute CL — this
+	// is a tracker reconciliation no-op on the GPU side. Skipped if the RT
+	// pass is suspended (e.g. TLAS not yet built post scene load).
+	if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
+		l_fmService->TryToTransitState(SunShadowRTPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::ReadWrite, Accessibility::ReadOnly);
 	// TASK-148: cube-shadow atlas — written by PointShadowGeometryProcessPass
 	// as RTV (WriteOnly), consumed here as SRV (ReadOnly). Mirrors the sun
 	// shadow transition.
@@ -343,6 +359,13 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// TASK-148: cube-shadow atlas (t12) + per-light cbuffer (b6).
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, PointShadowGeometryProcessPass::Get().GetResult(), 22);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<LightDataService>()->GetPointShadowBuffer(), 23);
+	// TASK-138 phase 1: SunShadowRT visibility (t13). Bound when available;
+	// nullptr when the pass hasn't activated yet (e.g. early frames before
+	// TLAS build) — engine binds a default zero descriptor on null. The
+	// HLSL consumer's USE_RT_SHADOWS toggle is the runtime gate; this slot
+	// is always populated in the layout regardless.
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute,
+	    SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated ? SunShadowRTPass::Get().GetResult() : nullptr, 24);
 
 	// TASK-140 sample integration: wrap the dispatch in a paired GPU timer +
 	// PIX event so PIX shows "LightPass" on the timeline and GetGpuTimings()

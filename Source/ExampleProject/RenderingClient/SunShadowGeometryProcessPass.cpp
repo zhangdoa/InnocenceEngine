@@ -11,6 +11,7 @@
 #include "../../Engine/Services/SamplerResourceService.h"
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Common/Timer.h"
 
 using namespace Inno;
@@ -196,7 +197,17 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 
 	// Use the indirect draw command buffer from SunShadowCullingPass
 	auto l_indirectDrawCommandBuffer = reinterpret_cast<GPUBufferComponent*>(SunShadowCullingPass::Get().GetResult());
+
+	// TASK-138 cost comparison: time the CSM cascade rasterization (the
+	// "old" sun shadow path) so it shows up alongside SunShadowRT in
+	// GetGpuTimings(). Pairs with the LightPass cost number to give a
+	// CSM+PCSS total comparable against SunShadowRT.
+	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
+	l_hwService->BeginGpuPass(m_CommandListComp_Graphics, "SunShadowCSM", GPUEngineType::Graphics);
+
 	l_fmService->ExecuteIndirect(m_RenderPassComp, m_CommandListComp_Graphics, l_indirectDrawCommandBuffer);
+
+	l_hwService->EndGpuPass(m_CommandListComp_Graphics, "SunShadowCSM", GPUEngineType::Graphics);
 
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
 
