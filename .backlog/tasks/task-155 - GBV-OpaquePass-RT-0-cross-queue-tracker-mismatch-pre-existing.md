@@ -131,4 +131,12 @@ All four sites cluster around a single producer (OpaquePass). No other pass in t
 - No source code edits.
 - Recommendation documented.
 - Status remains In Progress — a separate dispatch (graphics-api-expert + rendering-researcher coordinated) will apply F2 and close AC #2 / #3.
+
+### Decomposition (2026-04-27, producer)
+F2 fix decomposed into two agent-scoped subtasks (per `.claude/disciplines/task-decomposition.md`; precedent: TASK-66 → TASK-147/148/149/150 sequential chain). Sequential, not parallel — types must land before any caller flips.
+
+- **TASK-161** (`graphics-api-expert`) — engine-layer types + FM-service handler. `RenderPassDesc::m_PostCLState` field in `GraphicsPrimitive.h` + `DX12FrameManagementService::CommandListEnd` consumer of the flag. No call sites flip; build green; GBV unchanged.
+- **TASK-162** (`rendering-researcher`) — depends on TASK-161. `OpaquePass::Setup` flips the flag + four consumer-side `CrossQueueTransition` calls deleted (SunShadowRTPass, RadianceCacheReprojectionPass, RadianceCacheRaytracingPass, SSAOPass). Owns the GBV-clean validation gate (parent AC #2) and audit-coverage confirmation (parent AC #3).
+
+Dispatch order: TASK-161 → commit → TASK-162. Each commitable in a single dispatch with build green at boundary; only TASK-162 needs the GBV pass.
 <!-- SECTION:NOTES:END -->
