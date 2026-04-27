@@ -1,16 +1,31 @@
 {
     "ComponentType": 7,
     "ShaderModel": 1,
-    "Albedo": { "R": 1.0, "G": 1.0, "B": 1.0, "A": 1.0 },
+    "Albedo": {
+        "R": 1.0,
+        "G": 1.0,
+        "B": 1.0,
+        "A": 1.0
+    },
     "Metallic": 0.0,
     "Roughness": 1.0,
     "AO": 1.0,
     "Thickness": 1.0,
     "TextureComponents": [
-        { "Name": "Tiles074_NormalGL.TextureComponent" },
-        { "Name": "Tiles074_Color.TextureComponent" },
-        { "Name": "BasicMetallicTexture.TextureComponent" },
-        { "Name": "Tiles074_Roughness.TextureComponent" },
-        { "Name": "BasicAOTexture.TextureComponent" }
+        {
+            "Name": "Tiles074_NormalGL.TextureComponent"
+        },
+        {
+            "Name": "Tiles074_Color.TextureComponent"
+        },
+        {
+            "Name": "BasicMetallicTexture.TextureComponent"
+        },
+        {
+            "Name": "Tiles074_Roughness.TextureComponent"
+        },
+        {
+            "Name": "BasicAOTexture.TextureComponent"
+        }
     ]
 }

@@ -1,9 +1,20 @@
 {
     "ComponentType": 3,
+    "RGBColor": {
+        "X": 1.0,
+        "Y": 0.755034,
+        "Z": 0.552261,
+        "W": 1.0
+    },
+    "Shape": {
+        "X": 35.2099,
+        "Y": 1.0,
+        "Z": 1.0,
+        "W": 1.0
+    },
     "LightType": 1,
-    "LuminousFlux": 1000.0,
     "ColorTemperature": 3500.0,
+    "LuminousFlux": 1000.0,
     "UseColorTemperature": true,
-    "RGBColor": {"X": 1.0, "Y": 0.755034327507019, "Z": 0.5522610545158386, "W": 1.0},
-    "Shape": {"X": 35.20989990234375, "Y": 1.0, "Z": 1.0, "W": 1.0}
+    "CastShadow": true
 }

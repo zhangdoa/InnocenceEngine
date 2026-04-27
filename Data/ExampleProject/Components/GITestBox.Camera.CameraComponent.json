@@ -7,5 +7,8 @@
     "zFar": 1000.0,
     "Aperture": 2.2,
     "ShutterTime": 0.0005,
-    "ISO": 100.0
+    "ISO": 100.0,
+    "ExposureMode": 1,
+    "AutoExposureKey": 6.0,
+    "AutoExposureCompensation": 0.0
 }

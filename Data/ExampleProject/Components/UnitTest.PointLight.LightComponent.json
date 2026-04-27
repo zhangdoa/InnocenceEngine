@@ -15,5 +15,6 @@
     "LightType": 1,
     "ColorTemperature": 5780.0,
     "LuminousFlux": 3000.0,
-    "UseColorTemperature": true
+    "UseColorTemperature": true,
+    "CastShadow": true
 }

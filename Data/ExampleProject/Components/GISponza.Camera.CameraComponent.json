@@ -3,27 +3,12 @@
     "FOVX": 90.0,
     "WidthScale": 16.0,
     "HeightScale": 9.0,
-    "zNear": 0.0010000000474974513,
+    "zNear": 0.001,
     "zFar": 1000.0,
-    "Aperture": 2.200000047683716,
-    "ShutterTime": 0.0005000000237487257,
+    "Aperture": 2.2,
+    "ShutterTime": 0.0005,
     "ISO": 100.0,
-    "Transform": {
-        "Position": {
-            "X": 0.0,
-            "Y": 2.0,
-            "Z": 0.0
-        },
-        "Rotation": {
-            "X": 0.0,
-            "Y": 0.0,
-            "Z": 0.0,
-            "W": 1.0
-        },
-        "Scale": {
-            "X": 1.0,
-            "Y": 1.0,
-            "Z": 1.0
-        }
-    }
+    "ExposureMode": 1,
+    "AutoExposureKey": 6.0,
+    "AutoExposureCompensation": 0.0
 }
