@@ -78,6 +78,15 @@ void RayGenShader()
 	}
 
 	float3 positionWS = rt0.xyz;
+	// RT1 stores the *shading* normal (normal-mapped, see
+	// opaqueGeometryProcessPass.frag:127). With strong normal-map
+	// perturbation the shading normal can deviate from the source
+	// triangle's plane normal by tens of degrees, so a tight origin
+	// offset along the shading normal can fail to escape the source
+	// triangle (or land inside a neighbour triangle) — that reads as
+	// Peter-Panning-style surface acne even though no shadow-map bias
+	// is involved. The offset constant below is sized to absorb that
+	// divergence.
 	float3 normalWS   = normalize(in_opaquePassRT1.Load(int3(pixel, 0)).xyz);
 
 	float3 sunDir = g_Frame.sun_direction.xyz;
@@ -108,10 +117,21 @@ void RayGenShader()
 	shadow.isShadowed = true;
 
 	RayDesc shadowRay;
-	// Origin offset along surface normal — escapes self-intersection at
-	// grazing angles. RAY_EPSILON = 0.001 (common.hlsl). Same offset PT uses
-	// at GPUPathTracerRayGen.hlsl:256, no per-cascade bias-tuning needed.
-	shadowRay.Origin    = positionWS + normalWS * RAY_EPSILON;
+	// Larger normal offset than RAY_EPSILON (5 mm at the engine's
+	// meter-scale scenes) absorbs the divergence between the GBuffer
+	// shading normal (normal-mapped) and the actual triangle's geometric
+	// normal — RAY_EPSILON = 0.001 m was tuned for PT, where the normal
+	// passed in is the vertex-interpolated geometric normal and is
+	// guaranteed to escape the source triangle.  Offset always +N so
+	// that back-facing pixels (N·L < 0, shadowed by their own surface
+	// in EvaluateSunLighting's BSDF clamp) self-shadow consistently in
+	// the visibility texture too — flipping the offset sign there would
+	// risk reading visibility=1 from open space behind the surface.
+	// TMin remains RAY_EPSILON — once the origin is reliably above the
+	// surface, an additional 1 mm along ray direction cheaply guards
+	// against precision dust from the BVH near-hit logic.
+	static const float SHADOW_RAY_NORMAL_OFFSET = 0.005f;
+	shadowRay.Origin    = positionWS + normalWS * SHADOW_RAY_NORMAL_OFFSET;
 	shadowRay.Direction = lightDir;
 	shadowRay.TMin      = RAY_EPSILON;
 	shadowRay.TMax      = RAY_MAX_DISTANCE;

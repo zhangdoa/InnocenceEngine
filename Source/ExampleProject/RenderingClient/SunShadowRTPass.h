@@ -9,9 +9,10 @@ namespace Inno
 	// path after the CSM+PCSS swap landed).
 	//
 	// Per-pixel R8 visibility texture. One thread per screen pixel traces a
-	// single cone-jittered shadow ray toward the sun (~0.5° half-angle from
-	// SUN_ANGULAR_RADIUS in common.hlsl). Output: 0.0 = fully shadowed,
-	// 1.0 = lit. TAA accumulation across frames softens the penumbra.
+	// single cone-jittered shadow ray toward the sun (~0.27° half-angle from
+	// SUN_ANGULAR_RADIUS in common.hlsl, the physical sun's apparent
+	// disc as seen from Earth). Output: 0.0 = fully shadowed, 1.0 = lit.
+	// TAA accumulation across frames softens the penumbra.
 	//
 	// LightPass binds this at slot t13 and consumes it in
 	// lightPassDirectLighting.hlsl::EvaluateSunLighting. See TASK-138

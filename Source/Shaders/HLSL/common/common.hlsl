@@ -38,7 +38,12 @@ static const uint INVALID_ATLAS_SLOT = 0xFFFFFFFFu;
 static const float FLT_MIN = 1.175494351e-38;
 static const float FLT_MAX = 3.402823466e+38;
 
-static const float SUN_ANGULAR_RADIUS = 0.000071;
+// Half-angle of the sun's apparent disc, radians. Earth-from-sun: R_sun /
+// 1 AU = 695,700 km / 149,597,871 km ≈ 4.65e-3 rad ≈ 0.266° half-angle
+// (~0.53° angular diameter). Consumed by the cone-jitter sampler in
+// common/sunSampling.hlsl (PT and SunShadowRTPass) and the BSDF sun-disc
+// clamp in common/lightPassDirectLighting.hlsl.
+static const float SUN_ANGULAR_RADIUS = 0.00465;
 
 // Listing 45 [https://google.github.io/filament/Filament.md.html]
 static const float4 debugColors[16] = {
