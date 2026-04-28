@@ -178,4 +178,73 @@ All three agree. No descriptor-set-layout drift between C++ and HLSL.
 ### Rolled-up verdict
 
 Diff is a clean structural deletion. CL1 scope completes; CL2 (engine-common) is correctly deferred. Binding-layout integrity verified C++ ↔ HLSL. No anchored-invariant drift. Implementer may commit; record `Reviewed-By: graphics-api-expert` in the commit message.
+
+## Review (software-architect peer, 2026-04-28)
+
+**Verdict: PASS**
+
+CL2 scope = engine-common subtree (`Source/Engine/Common/GPUDataStructure.h`, `Source/Engine/Services/LightDataService.{h,cpp,_PointShadow.inl}`, `Source/Engine/Services/RenderingConfigurationService.{h,cpp}`, `Source/Shaders/HLSL/common/common.hlsl`). Reviewed against `git diff --cached` over the 7 staged paths (6 modified + 1 deleted), not implementer assertions. `software-architect` chosen because `LightDataService` is sole-owner-subtree (no peer `low-level-expert` family for this CL) and the deletion touches code-data coupling per `peer-review-required.md` §"Who reviews" rule 2.
+
+### Acceptance criteria — line-grounded
+
+- AC #4 met (engine-common half). `GPUDataStructure.h:50-79` (post-CL2): `PointShadowConstantBuffer` struct fully removed; the surviving `PointLightConstantBuffer` declaration preserves `uint32_t m_CastShadow = 1` (line 59) — TASK-176's wire field intact. `common.hlsl:25-32` removed `NR_POINT_SHADOWS`, `INVALID_ATLAS_SLOT`, and `PointShadow_CB` struct.
+- AC #5 met. `LightDataService.h:20-26` retains only `GetPointLightBuffer / GetSphereLightBuffer / GetGIBuffer / GetPointLightCount / GetSphereLightCount`. The 5 deleted accessors (`GetPointShadowAtlas`, `GetPointShadowBuffer`, `GetPointShadowCount`, `GetPointLightAtlasSlot`, `GetSphereLightAtlasSlot`) are gone. `LightDataService.cpp:14-34` `LightDataServiceImpl` struct lost `m_PointShadowCBVector`, `m_PointShadowGPUBufferComp`, `m_PointShadowAtlas`, `m_PointLightAtlasSlot`, `m_SphereLightAtlasSlot`, and `UpdatePointShadowData()`. `LightDataService_PointShadow.inl` deleted. The anonymous-namespace `LookupAtlasSlot` helper deleted with its sole consumers. `MathHelper.h` and `TextureResourceService.h` / `TextureComponent.h` includes correctly dropped — verified by `Grep "Math::|TextureResourceService|TextureComponent"` over the new `LightDataService.{h,cpp}` returning zero matches; remaining symbols (`Vec4`, `Mat4`) come transitively via `GPUDataStructure.h → MathHelper.h`.
+- AC #6 met. `RenderingConfigurationService.h:24-30` `RenderingCapability` lost `maxPointShadows`. `RenderingConfigurationService.cpp:19-22` initializer block lost the `m_renderingCapability.maxPointShadows = 8` assignment along with its 3-line TASK-66/TASK-150 docstring.
+- AC #8 preserved. `LightComponent.h:45 bool m_CastShadow = true` untouched (verified via `Grep "m_CastShadow"`); `JSONSerializer_Components.cpp:44, 409` round-trip untouched; `EditorService.cpp:317, 616-617` IPC untouched. Editor-Next `LightEditor.vue` checkbox untouched (no `Source/Editor-Next` matches for the deleted symbols at all). End-to-end: editor flag → JSON → component → cbuffer field is a single-write at `LightDataService.cpp:108`.
+- AC #9 met. Final-tree grep for `PointShadow|PointPCSS|INVALID_ATLAS_SLOT|maxPointShadows|NR_POINT_SHADOWS|shadowCasterCulling` over `Source/`, `Data/`, `Scripts/` returns **zero matches** (Grep over `Source` shows "No matches found"; case-insensitive variants `pointShadow|atlasSlot|InvalidAtlasSlot` confined to `.backlog/tasks/*.md` historical docs and one citation in `.claude/disciplines/tech-choice-vs-default.md`). `GetPointShadow*` / `GetPointLightAtlasSlot` / `GetSphereLightAtlasSlot` accessors have zero callers tree-wide (verified independently by grepping each accessor name).
+- AC #10 / #11 / #12 — implementer reports build clean, smoke clean (30-frame `Main.exe`); not re-verified statically. No header/source ordering defect or contract drift visible in the diff that would invalidate the build claim. Visual parity is structural: cube path was already bound-but-unused after CL1, so CL2 cannot regress pixels (it only removes resources nothing samples).
+
+### Anchored invariants
+
+- **TASK-149 `m_CastShadow` flag, editor checkbox, JSON round-trip** — preserved end-to-end. `LightComponent.h:45` declaration unchanged, `JSONSerializer_Components.cpp:44 / :409` write/read unchanged, `EditorService.cpp:317 / :616-617` IPC unchanged, `Editor-Next/src/components/inspector/LightEditor.vue` not in diff.
+- **TASK-176 `PointLightConstantBuffer::m_CastShadow` field + cbuffer→shader contract** — preserved. `GPUDataStructure.h:55-62`:
+  ```
+  struct alignas(16) PointLightConstantBuffer
+  {
+      Vec4 pos;
+      Vec4 luminance;
+      uint32_t m_CastShadow = 1;
+      uint32_t padding[3] = { 0, 0, 0 };
+  };
+  ```
+  `LightDataService.cpp:99-110` Point-light branch fills `l_data.m_CastShadow = l_Light.m_CastShadow ? 1u : 0u` unconditionally before `emplace_back` — i.e. the field is set for **every** point light, not only shadow-casters. `lightPassDirectLighting.hlsl:135` `if (l_PointLight.shadow.x != 0u)` reads via the existing struct alias on the HLSL side; gate behaviour identical post-CL2.
+- **Default-init guard for non-shadow lights** — `m_CastShadow = 1` default on the C++ side at `GPUDataStructure.h:59` is paired with the unconditional assignment at `LightDataService.cpp:108`. Even if a future caller default-constructed a `PointLightConstantBuffer` and bypassed the assignment, the default value is the safe one (visibility-tested = trace ray, which always returns 1 in an empty BVH). The CL2 deletion did not regress this safety property.
+- **TASK-138 SunShadowRT** — `Source/ExampleProject/RenderingClient/SunShadow*` not in CL2 diff; sun path untouched.
+- **TASK-161 OpaquePass exit barrier** — not in CL2 diff.
+
+### Code-data coupling (architect lens)
+
+- **`PointShadowConstantBuffer` was per-frame ephemeral GPU upload.** `Grep "PointShadow"` over `Source/Engine/ThirdParty/JSONWrapper/` returns zero matches — never serialized. `Grep "PointShadow"` over `Data/` returns zero matches — never persisted as scene/asset config. Deletion is safe at the schema layer; no migration needed.
+- **`maxPointShadows` was hard-coded at `RenderingConfigurationService.cpp:22`,** not loaded from JSON or external config (verified: zero `Grep` matches in `Data/`, `Scripts/`, or any `.json` file). No external tooling dependency. RenderingCapability is reconstructed fresh on each engine boot from the constructor; deletion is binary-compatible since no consumer reads the field.
+- **`INVALID_ATLAS_SLOT` was a CPU/GPU-shared sentinel.** Both copies (`GPUDataStructure.h:8` C++ and `common.hlsl:30` HLSL) deleted in this CL. No remaining consumer (case-insensitive grep clean across `Source/`). The brief flagged "may be reused by the future bindless atlas plan — if so, keep with a comment"; the implementer's call to delete is correct because no current code path uses it, and resurrecting it from `git log` is trivial when the bindless plan lands.
+- **`pos.w` slot-stamping retired.** `LightDataService.cpp:99-110` Point-light `l_data.pos = l_Transform->m_LocalPos;` — pos.w now carries `l_Transform->m_LocalPos.w` (typically 1.0 for a position; depends on `Vec4` semantics). The shader `lightPassDirectLighting.hlsl:108` reads `l_PointLight.position.xyz`, never `.w` — confirmed by `Grep "position\.w" Source/Shaders/HLSL/lightPass*` returning no matches. Sphere branch likewise. No silent regression from the field's repurpose; `.w` is now dead-channel padding (which is an ADVISORY tail, not a defect).
+
+### Universal disciplines
+
+- **`coding-principles.md` — fix at the right layer.** Engine-common deletion is exactly the right layer: rendering-side consumers (CL1) had to die first or this CL would not link; engine-common deletion happens once consumers are gone. Two-CL split per the brief honoured.
+- **`comment-discipline.md` — no history narration.** New comment at `LightDataService.cpp:106-107` ("TASK-176: inline-RT shadow trace gate consumed by lightPass.comp::EvaluateTiledPointLighting.") is rationale-citing (points the reader at the consumer), not "what changed" narration; replaces the prior TASK-176 comment which had a TASK-177-pending forward-reference now stale. Correct shape — keep concept docs, drop now-historical promise.
+- **`safety-observability.md` — guard clauses log loudly.** No new silent guards introduced. Prior `LookupAtlasSlot` helper (which logged Warning on out-of-range) deleted with its consumers — no orphaned guard remains. The `if (l_Lights.empty()) return false;` at `LightDataService.cpp:90-91` is unchanged from pre-CL2.
+- **`threading-contracts.md`.** No new container or API added; deletion only. `LightDataService` thread-safety contract (caller-synchronised, single-thread `Update()` per frame) unchanged.
+- **`cpp-style.md`.** Naming (`m_PointLightCBVector`, `l_data`, `l_Light`) unchanged, header/source split preserved, engine STL wrappers (`std::vector` via `STL14.h`/`STL17.h` transitively) unchanged. The `<cstring>` for `std::memcpy` previously needed by the deleted `LookupAtlasSlot`/sentinel-pun and the deleted `_PointShadow.inl`'s `SlotIndexAsFloat` is no longer used in `LightDataService.cpp` — verified `Grep "memcpy" LightDataService.cpp` returns no matches; the stale sentinel-bit-cast block at the old `:188-198` is gone with the surrounding `pos.w` stamping logic.
+- **`tech-choice-vs-default.md`.** Brief mandates (c) "TASK-138 phase 2 + TASK-157 precedent — delete outright, no fallback retained"; CL2 follows that. No new vestigial `#if 0` block, no commented-out struct kept "in case", no migration-shim layer.
+- **`feedback_no_data_integrity_assumptions.md`.** Schema deletion is loud-by-construction — any surviving consumer would fail the C++ link or the HLSL compile. Static "fail loud at boundary" check holds: there is no possible silent-data-shape mismatch because the data shape no longer exists.
+
+### Defects implementer is least primed to see
+
+- **Header/source ordering** — checked. `LightDataService.h` declares only the 5 surviving accessors; `LightDataService.cpp:193-216` defines exactly those 5. No "header declares but source doesn't define" or vice versa. No dangling `INNO_DEFINE_*` macro mismatch.
+- **`compile_commands.json` / build-system artefacts** — not staged, no concern. CMakeLists / vcxproj files do not list `_PointShadow.inl` (it was `#include`d, not compiled directly), so no build-system entry needs deletion. Verified by `Grep "_PointShadow"` over the tree returning zero non-CL2-territory matches.
+- **`PointLightConstantBuffer::m_CastShadow` set for ALL lights, not just shadow-casters.** Confirmed — the assignment at `LightDataService.cpp:108` is unconditional inside the `LightType::Point` branch, executing for every point light regardless of `m_CastShadow` value. Combined with the default `= 1` at `GPUDataStructure.h:59`, no path produces an undefined `m_CastShadow` value in the uploaded buffer. Non-shadow-casting point lights correctly receive `0u` and the inline-RT gate at `lightPassDirectLighting.hlsl:135` short-circuits.
+- **Sphere-light shadow asymmetry** — `SphereLightConstantBuffer` (`GPUDataStructure.h:65-70`) has no `m_CastShadow` field; sphere lights receive no inline-RT shadow trace at all. This was inherited from TASK-176's design (point-only inline-RT) and predates CL2. Out-of-scope finding; not introduced or regressed by this CL.
+- **`Vec4` operator semantics on `pos.w`** — `LightDataService.cpp:103/115` `l_data.pos = l_Transform->m_LocalPos;` copies `.w` from the transform. Since the shader no longer reads `.w`, the value is harmless padding. No defect.
+- **Indentation drift at `LightDataService.cpp:52, 131`.** Lines `auto l_rsService = g_Engine->Get<GPUBufferResourceService>();` use a single tab where the surrounding scope is 2-tab — pre-existing in the file, not introduced by CL2. Out-of-scope advisory, see A2 below.
+
+### Advisory (non-blocking)
+
+- **A1.** `RenderingCapability` field-order: `maxPointLights / maxSphereLights / maxMeshes / maxTextures / maxMaterials`. The deletion left a clean alphabetical-by-domain ordering — no visible-ordering defect. If a future "bindless point-shadow atlas" feature lands (per task-177 brief footnote), the new capability field can append cleanly without shuffling.
+- **A2.** Pre-existing 1-tab/2-tab indentation drift at `LightDataService.cpp:52, 131` (the `auto l_rsService = ...` lines inside a 2-tab block use 1 tab). Not introduced by CL2. Worth a tiny whitespace-only follow-up commit, or roll into a future `LightDataService.cpp` touch — out of CL2 scope.
+- **A3.** `LightDataService.cpp:106-107` comment "TASK-176: inline-RT shadow trace gate consumed by lightPass.comp::EvaluateTiledPointLighting." is a forward-reference comment by file path. Acceptable per `comment-discipline.md` (concept-citing, not history-narrating). When the inline-RT gate evolves (e.g. attenuation-skip per TASK-181), update the comment in lockstep — no action now.
+
+### Rolled-up verdict
+
+Engine-common cube-shadow stack deletion is a clean schema removal. All 12 ACs covered (rendering-half AC1-#3/#4-#7 by CL1 review; engine-common AC #4-#6 + cross-CL #8-#9-#12 by this review; AC #10/#11 by implementer's smoke + the static absence of any path that could regress visuals after CL1 already unbound the cube atlas). TASK-149 / TASK-176 invariants preserved end-to-end. No code-data coupling defects: `PointShadowConstantBuffer` was never serialized, `maxPointShadows` was never persisted, `INVALID_ATLAS_SLOT` had no surviving consumer. Implementer may commit; record `Reviewed-By: software-architect` in the commit message (alongside the existing `Reviewed-By: graphics-api-expert` from CL1, if a single combined commit, or as the sole reviewer line if CL2 commits separately).
 <!-- SECTION:NOTES:END -->

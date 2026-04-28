@@ -24,7 +24,6 @@ namespace Inno
 	{
 		uint32_t maxPointLights;
 		uint32_t maxSphereLights;
-		uint32_t maxPointShadows;
 		uint32_t maxMeshes;
 		uint32_t maxTextures;
 		uint32_t maxMaterials;

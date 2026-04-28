@@ -7,11 +7,6 @@ namespace Inno
 	// Texture indexing constants - shared between CPU and GPU
 	static constexpr uint32_t INVALID_TEXTURE_INDEX = 0xFFFFFFFF;
 
-	// Per-frame point/sphere shadow atlas slot sentinel (TASK-149 / TASK-66).
-	// Lights with m_CastShadow=false, or shadow-casters that exceeded the
-	// per-frame atlas budget, carry this value through LightDataService output.
-	static constexpr uint32_t INVALID_ATLAS_SLOT = 0xFFFFFFFF;
-
 	class MeshComponent;
 	class TextureComponent;
 
@@ -50,35 +45,6 @@ namespace Inno
 		float autoExposureCompensation; // EV stops applied on top of auto-exposure result
 		float exposurePadding;
 		float padding[12]; // Reduced padding after adding exposure mode/key/compensation
-	};
-
-	// Per shadow-casting point/sphere light, packed into a Texture2DArray atlas
-	// (DepthOrArraySize = maxPointShadows * 6). Mirrors GIConstantBuffer's
-	// `r[6]/v_inv[6]` 6-face precedent.
-	// Element count of GPUBufferComponent <= maxPointShadows.
-	//
-	// `p` is shared across all 6 cube faces (90° FOV, square aspect, near/far from
-	// the light's range). The GS fans out per-face in TASK-148 using v[face] and
-	// SV_RenderTargetArrayIndex = atlasBaseSlot + face.
-	//
-	// `lightPosWS_range`: .xyz world-space light position (used by caster frag for
-	// linear depth = length(posWS - lightPosWS) / range), .w = far plane / range.
-	//
-	// `atlasBaseSlot`: first array slice in the atlas; faces occupy [base..base+5].
-	// Equals INVALID_ATLAS_SLOT for sentinel (no caster active in this slot).
-	//
-	// `isActive`: 1 if this slot has a live shadow caster, 0 if sentinel. Caster
-	// pass and resolver use this to short-circuit; redundant with atlasBaseSlot ==
-	// INVALID_ATLAS_SLOT but kept explicit for readability in shader code.
-	struct alignas(16) PointShadowConstantBuffer
-	{
-		Mat4 p;
-		Mat4 v[6];
-		Vec4 lightPosWS_range;
-		uint32_t atlasBaseSlot;
-		uint32_t isActive;
-		uint32_t padding0[2];
-		float padding1[8];
 	};
 
 	// w component of luminance is attenuationRadius
