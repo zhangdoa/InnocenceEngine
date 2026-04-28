@@ -20,19 +20,25 @@
  *                         rule that no later evidence can excuse.
  *   2. file-size        — universal soft ratchet on code/script files.
  *   3. paper-port       — closing a paper-port task needs a fresh alignment artifact.
- *   4. peer-review      — commit message needs Reviewed-By: or
+ *   4. closure-staleness— code-bearing commits citing TASK-N must flip
+ *                         the task in the same CL or use the
+ *                         [task-stays-open] sentinel. Symmetric to
+ *                         closure-evidence (test-run.js) on the upstream
+ *                         side: catches "wrote code, didn't close" before
+ *                         the same gap surfaces as "claimed Done, no test."
+ *   5. peer-review      — commit message needs Reviewed-By: or
  *                         Review-Skipped: <reason>. Placed before
  *                         attribution because it is the richer claim:
  *                         if both are missing the user gets the more
  *                         informative error first.
- *   5. attribution      — commit message needs the AI-authorship header.
+ *   6. attribution      — commit message needs the AI-authorship header.
  *                         MUST live in this phase so transcript-fail-open
  *                         cannot bypass it (see CL fixing 55cf6a72 gap).
  *
  * Phase 2 (transcript-dependent; skipped if transcript unreadable):
- *   6. test-run         — staged code needs integration-test evidence.
- *   7. live-engine      — editor code needs a real-engine / Playwright run.
- *   8. serialize-test   — serializer code needs a serialize-determinism run.
+ *   7. test-run         — staged code needs integration-test evidence.
+ *   8. live-engine      — editor code needs a real-engine / Playwright run.
+ *   9. serialize-test   — serializer code needs a serialize-determinism run.
  *
  * Each gate declares `needsTranscript: boolean` on its module exports;
  * the dispatcher partitions by that flag.
@@ -53,6 +59,7 @@ const GATES = [
   require('./gates/data-generated'),  // needsTranscript: false (structural; first)
   require('./gates/file-size'),       // needsTranscript: false
   require('./gates/paper-port'),      // needsTranscript: false
+  require('./gates/closure-staleness'),// needsTranscript: false (symmetric to closure-evidence)
   require('./gates/peer-review'),     // needsTranscript: false (before attribution — richer claim first)
   require('./gates/test-run'),        // needsTranscript: true
   require('./gates/live-engine'),     // needsTranscript: true

@@ -53,6 +53,17 @@ At the end of any landing CL on a multi-session task:
 
 At the start of a session, the producer reads in-progress tasks and their Implementation Notes; that is the hand-off. Never infer "what's next" from commit subjects or prior-conversation memory.
 
+### Harness enforcement — closure-staleness gate
+
+Compliance with the rule above is structurally enforced by `.claude/hooks/gates/closure-staleness.js` (wired through `.claude/hooks/commit-gate.js`). The gate:
+
+- Parses `TASK-\d+` references from the commit message.
+- Resolves each referenced task file (staged-first so a same-CL flip is honored, on-disk fallback) and reads the effective `status:` frontmatter.
+- Blocks the commit when any referenced task is `In Progress` or `To Do` AND at least one staged file is non-docs-only (a pure `docs(backlog)` flip CL passes through).
+- Allows the commit when `[task-stays-open]` appears in the message — the audit-trail escape hatch for genuinely partial work.
+
+Symmetric to the `closure-evidence` rule inside `test-run.js` (closure-evidence catches "claimed Done with no test"; closure-staleness catches the upstream half — "wrote code citing TASK-N without closing it"). Fail-open on internal errors, same as every other gate.
+
 ## MCP reference (when available)
 
 The Backlog.md MCP server, when connected, exposes detailed workflow guides at `backlog://workflow/overview` (or `backlog.get_backlog_instructions()`) covering the decision framework for task creation, search-first-to-avoid-duplicates, and finalisation checklists. Consult it for non-obvious operations — e.g. milestone organisation, archival criteria.
