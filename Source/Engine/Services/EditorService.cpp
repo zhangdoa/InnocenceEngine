@@ -608,7 +608,13 @@ void EditorService::RegisterBuiltinHandlers()
 			}
 			else if (l_prop == "color")
 			{
+				// An explicit color edit is a user signal to leave K-mode;
+				// otherwise LightSimulationService::Update() overwrites the
+				// commit with ColorTemperatureToRGB(m_ColorTemperature) on
+				// the next frame and the inspector readback drifts back to
+				// the K-derived value (TASK-184).
 				l_light->m_RGBColor = Vec4(l_val[0], l_val[1], l_val[2], 1.0f);
+				l_light->m_UseColorTemperature = false;
 				committed = SerializeVec(l_light->m_RGBColor);
 			}
 			else if (l_prop == "castShadow")
