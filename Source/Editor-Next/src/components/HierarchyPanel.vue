@@ -14,12 +14,26 @@ const dialog = useDialog()
 
 const searchQuery = ref('')
 
+// Split the engine's flat entity name into a (qualifier, label) pair so the
+// outliner can disambiguate look-alikes such as `Bunny` (top-level placeholder
+// in GISponza) versus `GISponza.Bunny.0` (mesh instance loaded from the
+// GISponza.Bunny sub-scene). Both are real distinct entities; without this
+// split they read as duplicates in the search results. Splitting on the first
+// dot matches the engine's sub-scene-prefix convention (sub-scene entities
+// inherit the parent scene's name as a leading qualifier).
+const splitEntityName = (name) => {
+  if (!name) return { qualifier: '', label: '' }
+  const dot = name.indexOf('.')
+  if (dot === -1) return { qualifier: '', label: name }
+  return { qualifier: name.slice(0, dot), label: name.slice(dot + 1) }
+}
+
 const filteredEntities = computed(() => {
   const entities = sceneStore.entities || []
-  if (!searchQuery.value) return entities
-  return entities.filter(e =>
-    e.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  const decorated = entities.map(e => ({ ...e, ...splitEntityName(e.name) }))
+  if (!searchQuery.value) return decorated
+  const q = searchQuery.value.toLowerCase()
+  return decorated.filter(e => e.name.toLowerCase().includes(q))
 })
 
 const selectEntity = (id) => {
@@ -127,13 +141,18 @@ const onDelete = () => {
           :class="['entity-item', sceneStore.selectedEntityId === entity.id ? 'selected' : '']"
           @click="selectEntity(entity.id)"
         >
-          <n-space align="center" :size="8">
+          <n-space align="center" :size="8" :wrap="false">
             <n-icon size="16">
               <cube-outline />
             </n-icon>
-            <n-text :strong="sceneStore.selectedEntityId === entity.id">
-              {{ entity.name }}
-            </n-text>
+            <span class="entity-label">
+              <n-text :strong="sceneStore.selectedEntityId === entity.id">
+                {{ entity.label }}
+              </n-text>
+              <n-text v-if="entity.qualifier" depth="3" class="entity-qualifier">
+                {{ entity.qualifier }}
+              </n-text>
+            </span>
           </n-space>
         </n-list-item>
       </n-list>
@@ -165,5 +184,16 @@ const onDelete = () => {
 
 .entity-item.selected {
   position: relative;
+}
+
+.entity-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.entity-qualifier {
+  font-size: 11px;
 }
 </style>

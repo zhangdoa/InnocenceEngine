@@ -30,24 +30,31 @@
     </n-text>
 
     <n-scrollbar v-else class="asset-content">
-      <n-grid :cols="10" :x-gap="12" :y-gap="12" item-responsive responsive="screen">
-        <n-grid-item v-for="item in items" :key="item.name" span="2 m:1">
-          <div 
-            class="asset-item" 
-            :title="item.name"
-            @dblclick="onItemDblClick(item)"
-          >
-            <div class="icon-wrapper">
-              <n-icon size="32">
-                <folder-outline v-if="item.isDir" />
-                <planet-outline v-else-if="item.name.endsWith('.InnoScene')" />
-                <document-outline v-else />
-              </n-icon>
-            </div>
-            <n-text class="asset-name">{{ item.name }}</n-text>
+      <!-- CSS-grid auto-fill replaces the previous n-grid :cols="10" layout:
+           that fixed 10-column scheme made each cell as narrow as 42px on
+           the default panel width, clipping filenames to fewer characters
+           than the 32px icon. minmax(96px, 1fr) guarantees enough room for
+           a multi-character filename under the icon while still wrapping
+           to fill wider panels — matches common file-browser conventions
+           (VS Code grid view, Finder small icons, Windows Explorer Tiles). -->
+      <div class="asset-grid">
+        <div
+          v-for="item in items"
+          :key="item.name"
+          class="asset-item"
+          :title="item.name"
+          @dblclick="onItemDblClick(item)"
+        >
+          <div class="icon-wrapper">
+            <n-icon size="32">
+              <folder-outline v-if="item.isDir" />
+              <planet-outline v-else-if="item.name.endsWith('.InnoScene')" />
+              <document-outline v-else />
+            </n-icon>
           </div>
-        </n-grid-item>
-      </n-grid>
+          <n-text class="asset-name">{{ item.name }}</n-text>
+        </div>
+      </div>
     </n-scrollbar>
   </div>
 </template>
@@ -55,7 +62,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  NGrid, NGridItem, NBreadcrumb, NBreadcrumbItem, NButton, NButtonGroup,
+  NBreadcrumb, NBreadcrumbItem, NButton, NButtonGroup,
   NSpace, NText, NScrollbar, NIcon, useMessage
 } from 'naive-ui'
 import { FolderOutline, DocumentOutline, PlanetOutline, ArrowUpOutline, AddOutline } from '@vicons/ionicons5'
@@ -177,10 +184,21 @@ const triggerImportFolder = () => {
   padding: 16px;
 }
 
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
 .asset-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Stretch to the grid cell so the filename gets the full cell width
+     instead of shrink-wrapping to the icon (32px). VS Code / Visual Studio /
+     JetBrains all let the name occupy the column; we follow that. */
+  width: 100%;
+  box-sizing: border-box;
   padding: 12px 8px;
   border-radius: 6px;
   cursor: pointer;
@@ -203,6 +221,6 @@ const triggerImportFolder = () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  max-width: 100%;
+  width: 100%;
 }
 </style>
