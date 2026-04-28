@@ -63,7 +63,7 @@ function emit(staged) {
     '  • npx playwright test tests/scene-load.spec.js',
     '  • npx playwright test tests/editor.spec.js',
     '  • npx playwright test tests/window-menu.spec.js',
-    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N          (engine frame-run)',
+    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N          (engine frame-run; see disciplines/perf-measurement-frame-budget.md for choosing N)',
     '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
     '',
     `Escape hatch: include ${SKIP_SENTINEL} if this commit genuinely cannot`,

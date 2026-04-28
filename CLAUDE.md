@@ -33,6 +33,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/agent-dispatch.md`
 - `.claude/disciplines/persistence-venue.md`
 - `.claude/disciplines/regression-fix-flow.md`
+- `.claude/disciplines/perf-measurement-frame-budget.md`
 - `.claude/disciplines/peer-review-required.md`
 - `.claude/collaboration.md`
 
