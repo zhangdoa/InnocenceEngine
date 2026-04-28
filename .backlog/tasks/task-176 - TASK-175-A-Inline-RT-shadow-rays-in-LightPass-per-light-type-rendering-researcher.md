@@ -69,6 +69,19 @@ If the inline trace requires a new SRV/UAV/sampler binding that does NOT already
 - No changes to `SunShadowRTPass` or `EvaluateSunLighting`.
 - No FPS measurement beyond the closure smoke (TASK-175-C consumes the full perf cross-check vs PT reference).
 
+### Decisions confirmed by user 2026-04-28 (audit reply)
+
+Three architectural calls were surfaced by the implementer's audit and confirmed by the user:
+
+1. **Path X (true inline RayQuery in `lightPass.comp`)** — chosen over Path Y (separate `PointShadowRTPass`). Rationale: matches the user's stated architectural intent ("this is how PT does it, why are we doing anything else"). True unification — sun + point + spot all inline in one shader.
+   - **Requires SM 6.5 (DXR Tier 1.1)** for `RayQuery<>` / `TraceRayInline`. `lightPass.comp` is currently `cs_6_3`. The shader-profile bump in `Scripts/Lib/Compile-HLSL.psm1` is sequenced as a small **ci-build-expert pre-CL** that lands BEFORE this subtask's shader edit.
+2. **Cbuffer wire path (ii) — dedicated `bool m_CastShadow` field** on `PointLight_CB`. Cleaner than (i) (reusing `position.w == INVALID_ATLAS_SLOT`); avoids creating a TASK-177 dependency on the legacy slot-allocator signal.
+3. **Sphere-light shadow + extended light shapes deferred** to TASK-179. AC #2 sphere sub-bullet is **explicitly removed** from this subtask. Sphere/rect/area-light shadow integration (incl. tile-culling extension) is a separate work item.
+
+### Updated AC #2
+
+Per-light-type sampling: **point** binary, **spot** cone-gated; **sun unchanged** (still consumes `in_SunShadowRTVisibility` from SunShadowRTPass). Sphere + extended light shapes deferred to TASK-179.
+
 ### Validation
 
 - Engine builds clean (HLSL + C++).
@@ -86,8 +99,8 @@ If `graphics-api-expert` is unavailable, fall back to a peer `rendering-research
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `lightPass.comp` traces inline shadow rays in `EvaluateTiledPointLighting` per active light per pixel; tiled-culled light list still consumed
-- [ ] #2 Per-light-type sampling: point binary visibility, sphere cone-jittered (TAA-resolved), spot cone-gated; sun unchanged
+- [ ] #1 `lightPass.comp` traces inline `RayQuery<>` shadow rays in `EvaluateTiledPointLighting` per active light per pixel; tiled-culled light list still consumed
+- [ ] #2 Per-light-type sampling: point binary visibility, spot cone-gated; sun unchanged. (Sphere + extended light shapes deferred to TASK-179.)
 - [ ] #3 `LightComponent::m_CastShadow` honoured by the inline trace — non-shadow-casters skip the ray and get visibility=1.0
 - [ ] #4 No changes to `SunShadowRTPass`, `EvaluateSunLighting`, or `OpaquePass` cross-queue exit barrier
 - [ ] #5 Cube-shadow stack still exists and is bypassable (visual A/B-able) — TASK-175-B deletes it after A is validated
