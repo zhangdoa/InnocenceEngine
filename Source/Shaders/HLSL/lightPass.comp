@@ -101,6 +101,12 @@ Texture2DArray in_PointShadow : register(t12);
 // 1 = lit. Produced by SunShadowRTPass; consumed by EvaluateSunLighting.
 [[vk::binding(13, 1)]]
 Texture2D<float> in_SunShadowRTVisibility : register(t13);
+// TASK-176: Scene TLAS for inline RayQuery<> shadow rays in
+// EvaluateTiledPointLighting. cs_6_5 / DXR Tier 1.1 — see Compile-HLSL.psm1
+// per-file profile override. Same TLAS bound by SunShadowRTPass / PT —
+// GPUBufferResourceService owns one TLAS per frame.
+[[vk::binding(14, 1)]]
+RaytracingAccelerationStructure SceneAS : register(t14);
 [[vk::binding(0, 2)]]
 SamplerState in_samplerTypeLinear : register(s0);
 [[vk::binding(1, 2)]]
@@ -150,7 +156,7 @@ void main(ComputeInputType input)
 	EvaluateTiledPointLighting(
 		in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint,
 		in_LightGrid, in_LightIndexList,
-		in_PointShadow, in_samplerTypeLinear,
+		SceneAS,
 		l_Material, l_PositionWS, l_NormalWS, l_V, l_ScreenCoord,
 		l_DirectLuminance, l_IndirectSeedLuminance);
 

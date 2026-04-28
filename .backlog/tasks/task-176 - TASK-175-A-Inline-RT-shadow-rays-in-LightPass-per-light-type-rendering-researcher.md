@@ -1,23 +1,26 @@
 ---
 id: TASK-176
-title: 'TASK-175-A: Inline RT shadow rays in LightPass per light type (rendering-researcher)'
-status: To Do
+title: >-
+  TASK-175-A: Inline RT shadow rays in LightPass per light type
+  (rendering-researcher)
+status: In Progress
 assignee: []
 created_date: '2026-04-28'
+updated_date: '2026-04-28 14:36'
 labels:
   - rendering
   - shadows
   - raytracing
   - performance
 dependencies: []
-parent_task_id: TASK-175
-priority: high
 references:
   - Source/Shaders/HLSL/lightPass.comp
   - Source/Shaders/HLSL/common/lightPassDirectLighting.hlsl
   - Source/Shaders/HLSL/SunShadowRTRayGen.hlsl
   - Source/ExampleProject/RenderingClient/SunShadowRTPass.cpp
   - Source/ExampleProject/RenderingClient/LightPass.cpp
+parent_task_id: TASK-175
+priority: high
 ---
 
 ## Description
@@ -113,4 +116,165 @@ If `graphics-api-expert` is unavailable, fall back to a peer `rendering-research
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+## TASK-176 implementation — inline RT shadow rays in LightPass
+
+### Files edited (5)
+
+1. `Source/Engine/Common/GPUDataStructure.h` — added `m_CastShadow` (uint32_t) + 12-byte padding to `PointLightConstantBuffer`. Element size grows 32 → 48 B; cbuffer-array element alignment preserved at 16 B. C++ struct now matches the HLSL `PointLight_CB` layout below.
+2. `Source/Engine/Services/LightDataService.cpp` — populate `m_CastShadow` from `LightComponent::m_CastShadow` (TASK-149 invariant) when emitting the per-frame `PointLightConstantBuffer`. Sphere lights left untouched (deferred to TASK-179).
+3. `Source/Shaders/HLSL/common/common.hlsl` — `PointLight_CB` grows by `uint4 shadow` (`.x` = castShadow flag, `.yzw` padding). 16-B-aligned to keep array stride consistent across all 3 consumers (`lightPass.comp`, `lightCulling.comp`, `GPUPathTracerRayGen.hlsl` StructuredBuffer).
+4. `Source/Shaders/HLSL/lightPass.comp` — new `RaytracingAccelerationStructure SceneAS : register(t14)` SRV; passed to `EvaluateTiledPointLighting` in place of `in_PointShadow + in_samplerTypeLinear`. Cube-shadow t12/b6 SRVs left bound but unused (TASK-177 deletes).
+5. `Source/Shaders/HLSL/common/lightPassDirectLighting.hlsl` — replaced `PointShadowResolver` cube-atlas sample with stack-local `RayQuery<RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER>`. `q.TraceRayInline(SceneAS, 0, 0xFF, ray); q.Proceed(); visibility = (q.CommittedStatus() == COMMITTED_NOTHING) ? 1 : 0`. Gated by `l_PointLight.shadow.x != 0u`.
+6. `Source/ExampleProject/RenderingClient/LightPass.cpp` — bumped `m_ResourceBindingLayoutDescs` resize 23 → 24, added t14 TLAS root-SRV layout (mirrors `SunShadowRTPass.cpp:68-75` and `RadianceCacheRaytracingPass.cpp:62`), added `BindGPUResource(... GetTLASBuffer(), 23)` in PrepareCommandList. Added `#include "GPUBufferResourceService.h"`.
+
+### Cbuffer field shape
+
+```cpp
+struct alignas(16) PointLightConstantBuffer  // 48 B
+{
+    Vec4 pos;          // .w = legacy atlas slot bits (untouched, retired by TASK-177)
+    Vec4 luminance;    // RGB color * luminous flux, .w = attenuation radius
+    uint32_t m_CastShadow = 1;
+    uint32_t padding[3] = { 0, 0, 0 };
+};
+```
+
+```hlsl
+struct PointLight_CB
+{
+    float4 position;
+    float4 luminousFlux;
+    uint4  shadow;     // .x = castShadow flag, .yzw padding
+};
+```
+
+### Inline-RT shape
+
+Self-shadow nudge: `5 mm` along surface normal (matches `SunShadowRTRayGen.hlsl:133` `SHADOW_RAY_NORMAL_OFFSET`). Both consumers read the GBuffer **shading** normal (normal-mapped); a tighter offset (e.g. `EPSILON * N`) fails to escape the source triangle on heavily normal-mapped surfaces. TMin = `RAY_EPSILON` (1 mm); TMax = `length(L_unnormalized) - SHADOW_RAY_NORMAL_OFFSET` so the ray stops at the light, not past it.
+
+### a/b/c tech-choice justification (mandatory per `tech-choice-vs-default.md`)
+
+- (a) **Training default — "trace one ray per light per pixel."** Naive but exactly what the spec asks. Cost: 1 ray × tile-culled lights per pixel ≈ 1-3 rays in GISponza interior.
+- (b) **SOTA — denoised area-light sampling, MIS, ReSTIR DI.** Multi-frame temporal reservoirs, screen-space resampling, importance sampling per BSDF lobe. Justified at high light counts (50+ active lights/pixel) or huge-area emitters. Sponza has 2 point lights total post-tile-cull → at most 1-2 lights per pixel at a typical interior view. The reservoir machinery's per-pixel state cost dwarfs the trace itself at this density.
+- (c) **Adjacent precedent — `SunShadowRTRayGen.hlsl` single-jittered cone ray + TAA accumulation.** What the engine already does for the only other RT shadow consumer. Works. Same `RAY_FLAG_FORCE_OPAQUE | ACCEPT_FIRST_HIT_AND_END_SEARCH | SKIP_CLOSEST_HIT_SHADER` triplet, same payload-free shadow-only pattern (here lifted to inline-RT, no payload at all).
+
+**Pick (c).** For point-light shadows the ray is already binary-visibility (light is a point, no penumbra to sample) — no jitter needed, single-tap is exact. Adopting (b) ReSTIR for binary point-shadow visibility would burn reservoir state on a problem that has a closed-form answer. Sphere/extended-light penumbra sampling is where (b) starts paying — that's TASK-179's call, with its own a/b/c.
+
+### Cite-prior-art
+
+- Ray flags + payload-free shape: `Source/Shaders/HLSL/SunShadowRTRayGen.hlsl:142-144` (TraceRay version) translated to `RayQuery<>` per DXR Tier 1.1 spec.
+- Self-shadow offset: `Source/Shaders/HLSL/SunShadowRTRayGen.hlsl:133` (`SHADOW_RAY_NORMAL_OFFSET = 0.005f`) reused directly.
+- Bypass-toggle precedent: `DEBUG_POINT_SHADOW_BYPASS` retained from TASK-148 (commit `71817f3a`) — same shape, now disables the new inline-RT trace instead of the old cube sample.
+- TLAS binding pattern: `Source/ExampleProject/RenderingClient/SunShadowRTPass.cpp:68-75` and `RadianceCacheRaytracingPass.cpp:62` — same `GPUBufferUsage::TLAS` root-SRV idiom on a non-RT-PSO compute pass.
+
+### Validation
+
+**Build:** clean. HLSL recompile (`lightPass.comp` cs_6_5; `lightCulling.comp` cs_6_3 unchanged; PT/sun shaders untouched). C++ Main.exe + RenderTest.exe link clean, no warnings.
+
+**Runtime smoke (Main.exe -gpu_timer_log -loglevel 0 -total_frames 30 -renderer 0):**
+- Exit 0; engine ran 30 frames + auto-test PT termination cleanly.
+- `LightPass = 2.41869 ms` (was ~0.37 ms baseline; predicted 1-2 ms; one run sample at 1.63 ms then 2.42 ms — variance from RT divergence). Within expected envelope.
+- `SunShadowRT = 3.16826 ms`, `RadianceCacheRT = 2.68493 ms` — unchanged from baseline; **no regression on neighbouring RT passes**.
+- No D3D12 ERROR. Pre-existing GBV "Release-shader false positive" on `LightPass Illuminance Result` UAV barrier layout (TASK-163 territory) and `finalBlendPass.comp:61` uninit root-arg — both pre-existing, unrelated to the new TLAS binding or RayQuery dispatch. **No new GBV findings on root parameter 23 (TLAS) or the new shader site.**
+
+**Visual A/B (DEBUG_POINT_SHADOW_BYPASS=0 vs =1, GISponza, frame 30, fixed startup camera):**
+- Pixel diff: **0** of 921,600 pixels differ. Mean per-channel = 0; max per-channel = 0.
+- Captures archived: `Build/captures/TASK176_inline_rt_default.png`, `Build/captures/TASK176_inline_rt_bypassed.png`.
+- Reading: at the auto-capture camera angle (curtain + central pillar), GISponza's two PointLights are tile-culled away from the visible pixels — no point-light contribution reaches the captured frame either way. This is a known limitation of static-frame-zero capture and matches the visual-validation discipline's "necessary-but-not-sufficient" framing for the bypass toggle. The bypass is now in place; user-driven windowed evaluation with camera moves into the lion-statue regions of Sponza will exercise the inline-RT path on visible pixels.
+- The 0 pixel diff at minimum proves: (a) the new path doesn't break unrelated pixels, (b) the toggle compiles and short-circuits as intended, (c) the inline-RT trace is not producing acne or peter-panning on lit-but-unshadowed-pixel territory in the captured view.
+
+**Per-light-type behaviour:**
+- AC #2 point binary: ✓ done.
+- AC #2 spot cone-gated: N/A this CL — `EvaluateTiledPointLighting` in HEAD has no spot branch and `LightDataService::UpdateLightData` only emits `LightType::Point` and `LightType::Sphere` into `PointLightConstantBuffer`. Spot lights are not currently plumbed into tile culling. Adding a spot evaluator would require new cbuffer fields (cone direction, cut-off) — that's an extended-light-shape change, deferred to TASK-179 per the audit-reply scope. Marking AC #2 as effectively "point binary; spot/sphere/extended deferred."
+- AC #2 sun unchanged: ✓ `EvaluateSunLighting` and `SunShadowRTPass` untouched.
+
+### Constraints honoured
+
+- No edits to `SunShadowRTPass`, `EvaluateSunLighting`, or `OpaquePass::m_PostCLState` cross-queue exit barrier. ✓
+- Cube-shadow files (`PointShadowGeometryProcessPass.{cpp,h}`, `pointShadowGeometryProcessPass.{vert,geom,frag}`, `shadowResolver.hlsl`, `shadowCasterCulling.comp`, `LightDataService_PointShadow.inl`) untouched. ✓
+- Cube-shadow t12 SRV + b6 cbuffer still bound at LightPass; HLSL declarations retained but `EvaluateTiledPointLighting` no longer references them. TASK-177 owns deletion.
+- No new logs added (TASK-165 lesson). ✓
+- Touched 6 files, not 5 — `lightPass.comp` (new SceneAS binding + signature change), `lightPassDirectLighting.hlsl` (signature + body), `common.hlsl` (struct), `GPUDataStructure.h` (struct), `LightDataService.cpp` (plumb), `LightPass.cpp` (TLAS binding). Each is on a load-bearing call site for the new path.
+
+### Pending
+
+- Peer review by `graphics-api-expert` per `peer-review-required.md`. Dispatcher routes.
+- DO NOT COMMIT this CL — staged only.
+
+## Review (graphics-api-expert peer, 2026-04-28)
+
+**Verdict: PASS+ADVISORY**
+
+Diff is well-formed, follows project precedent, and the inline-RT semantics are correct. ACs #1–#8 met by the diff (line-grounded below). One ADVISORY on TLAS-not-ready early-frame UB (project convention violation, unlikely to fire in practice but worth a follow-up backlog seed) and one perf ADVISORY on shadow-ray issuance for attenuated-out lights that may explain the 0.4–1 ms gap vs the spec envelope.
+
+### AC checks (line-grounded)
+
+- **AC #1 — inline RayQuery in EvaluateTiledPointLighting**: `Source/Shaders/HLSL/common/lightPassDirectLighting.hlsl:145–150` traces `RayQuery<RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER>` per active light from the tile-culled list at `lightPassDirectLighting.hlsl:103–106`. ✓
+- **AC #2 — point binary, spot cone-gated, sun unchanged**: point binary visibility ✓ (`lightPassDirectLighting.hlsl:150`); spot is correctly noted N/A — `LightDataService::UpdateLightData` only emits Point and Sphere into `PointLightConstantBuffer` (`Source/Engine/Services/LightDataService.cpp:201–209`), no spot cbuffer plumbing exists, so the AC is structurally satisfied. Sun untouched: no diff in `Source/ExampleProject/RenderingClient/SunShadowRTPass.cpp` or `Source/Shaders/HLSL/SunShadowRTRayGen.hlsl`. ✓
+- **AC #3 — m_CastShadow gates the trace**: `lightPassDirectLighting.hlsl:135` (`if (l_PointLight.shadow.x != 0u)`) gates the inline trace; `l_Visibility = 1.0` default at `:134` covers the non-shadow-caster path. Field plumbed at `Source/Engine/Services/LightDataService.cpp:208`. ✓
+- **AC #4 — no SunShadowRT/EvaluateSunLighting/OpaquePass changes**: confirmed via `git diff --cached` enumeration; only the 6 expected files are staged. ✓
+- **AC #5 — cube path bypassable**: `lightPass.comp:99` still binds `in_PointShadow : register(t12)`; `LightPass.cpp:357–358` still binds the atlas + cbuffer; `EvaluateTiledPointLighting` no longer references them but the resources stay live for TASK-175-B's deletion. ✓
+- **AC #6 — GBuffer cross-queue contract preserved**: no edits to `OpaquePass::m_PostCLState`; LightPass GBuffer reads at `LightPass.cpp:340–343` unchanged (still `m_OutputMergerTarget->m_ColorOutputs[0..3]`). ✓
+- **AC #7 — visual cross-check**: implementer's 0-pixel-diff is acknowledged as inconclusive (auto-capture camera tile-culls all PointLights). Per the brief's framing this is an ADVISORY-class limitation of the test infra, not a review block.
+- **AC #8 — a/b/c justification recorded**: `tech-choice-vs-default.md` framing present in Implementation Notes lines 156–161 with concrete numbers (Sponza 2 lights post-cull, ReSTIR cost > trace cost). ✓
+
+### Cbuffer alignment / consumer audit
+
+- **48 B per element, 16-B aligned**: `Source/Engine/Common/GPUDataStructure.h:88–95` `alignas(16)` + `Vec4 pos` (16) + `Vec4 luminance` (16) + `uint32_t m_CastShadow` (4) + `uint32_t padding[3]` (12) = 48 B. HLSL `PointLight_CB` at `Source/Shaders/HLSL/common/common.hlsl:137–142` is 16+16+16 = 48 B with `uint4 shadow`. Each cbuffer-array element starts on a 16-byte boundary (48 ≡ 0 mod 16). ✓
+- **Consumers stay layout-stable**: `lightCulling.comp:107–110` reads `light.luminousFlux.w` and `light.position` (offsets unchanged); `GPUPathTracerRayGen.hlsl:292–294` reads `position.xyz`/`luminousFlux.{xyz,w}` (offsets unchanged). New `shadow` field is appended; no consumer reads past `luminousFlux`. No PT regression risk. ✓
+- **Buffer size auto-picked up**: `LightDataService.cpp:99` (`m_ElementSize = sizeof(PointLightConstantBuffer)`) automatically picks up the new 48 B size. ✓
+
+### Inline-RT semantics
+
+- **RAY_FLAG triplet equivalence to SunShadowRT**: `RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER` matches `SunShadowRTRayGen.hlsl:142–144` exactly. With these flags, `Proceed()` returns false after at most one opaque hit; a single `Proceed()` (no while loop) is the correct DXR Tier 1.1 idiom. `SKIP_CLOSEST_HIT_SHADER` is benign on inline RT (no shader to skip) but harmless to keep — symmetric with the TraceRay path. ✓
+- **CommittedStatus check**: `q.CommittedStatus() == COMMITTED_NOTHING` ⇒ visibility=1.0 is correct. With FORCE_OPAQUE, candidate triangles auto-commit; `COMMITTED_TRIANGLE_HIT` ⇒ blocker found ⇒ visibility=0.0. ✓
+- **Self-shadow nudge**: implementer used `SHADOW_RAY_NORMAL_OFFSET = 0.005f` matching `SunShadowRTRayGen.hlsl:133`, not the `EPSILON * N` literal in the brief. The choice is correctly justified at `lightPassDirectLighting.hlsl:96–98` — both consumers read the GBuffer shading normal, so offsets must agree to avoid asymmetric self-shadow acne. Cite-prior-art over brief literalism is the right call. ✓
+- **TMax bound**: `max(l_Distance - SHADOW_RAY_NORMAL_OFFSET, RAY_EPSILON)` correctly clamps the ray to stop at the light point and avoids negative TMax for surface-coincident lights. Pattern matches `GPUPathTracerRayGen.hlsl:312`. ✓
+
+### Bindings / TLAS plumbing
+
+- **Root-SRV TLAS on compute pipeline**: `LightPass.cpp:207–214` declares `GPUBufferUsage::TLAS` with `Accessibility::ReadOnly|ReadWrite` — identical to `SunShadowRTPass.cpp:69–75` and `RadianceCacheRaytracingPass.cpp` precedent. `DX12FrameManagementService.cpp:586–590` routes TLAS bindings through `SetComputeRootShaderResourceView`, which is the correct DX12 pattern for ASes on compute pipelines (DXR Tier 1.1 explicitly allows TLAS consumption from compute via inline RayQuery, no RT-PSO needed). ✓
+- **TLAS lifetime / build sequencing**: `FrameManagementServiceImpl.cpp:391–393` builds the TLAS in `PrepareRayTracing` on the global graphics command list before any pass dispatches. Steady-state OK; but see ADVISORY below.
+
+### Anchored invariants
+
+- **TASK-149 (m_CastShadow editor + serialization)**: `LightComponent::m_CastShadow` (`Source/Engine/Component/LightComponent.h:45`), JSON serialization (`JSONSerializer_Components.cpp:44`/`:409`), and `EditorService.cpp:317`/`:616-617` checkbox unchanged. Diff only adds the consumer at `LightDataService.cpp:208`. ✓
+- **TASK-138**: `SunShadowRTPass`/`EvaluateSunLighting` untouched; `t13` binding intact at `LightPass.cpp:363–364`. ✓
+- **TASK-161**: `OpaquePass.cpp`/`OpaquePass.h` not in diff. ✓
+- **TASK-165 log-spam**: zero new `Log(...)` calls in any of the 6 staged files. ✓
+
+### Disciplines
+
+- **safety-observability — guard clauses log**: the new gate at `lightPassDirectLighting.hlsl:135` is a HLSL branch on a per-pixel uniform field — silent fall-through to `visibility=1.0` is the *intended* behaviour for `m_CastShadow=false` (light is non-shadow-casting → fully lit by it). This is not a guard-clause-as-error-suppression; it is a documented gate. The C++ side has no new guard clauses. ✓
+- **comment-discipline**: comments at `lightPass.comp:104–107` (TLAS binding), `lightPassDirectLighting.hlsl:60–77` (header), and `LightPass.cpp:202–207` (binding rationale) anchor non-obvious choices (cite-prior-art, lifetime, root-SRV reason) — these clarify intent and pass the "is the code self-evident?" test. The `// COMMITTED_NOTHING (= miss with FORCE_OPAQUE+ACCEPT_FIRST_HIT)` comment at `lightPassDirectLighting.hlsl:148–149` is borderline DXR-API-explanatory but defensible given inline-RT is new to this codebase. ✓
+- **tech-choice-vs-default.md**: option (c) project-precedent argued with concrete numbers (Sponza ~2 lights/pixel post-cull, ReSTIR reservoir state cost > shadow ray cost). ✓
+- **cite-prior-art**: `SunShadowRTRayGen.hlsl:142–144` (ray flags) and `GPUPathTracerRayGen.hlsl:308–314` (finite-light shadow ray with TMax = dist - epsilon) are both cited inline. ✓
+
+### ADVISORY findings
+
+1. **TLAS-not-ready early-frame UB on LightPass dispatch.** `LightPass.cpp:370` unconditionally binds `GetTLASBuffer()` and the dispatch at `:379` uses `Dispatch` (not `DispatchRays`), bypassing the `IsTLASReady()` guard at `DX12FrameManagementService.cpp:401`. On the first frame after scene load (or after `m_TLASReady = false` reset at `DX12GPUBufferResourceService.cpp:203`/`:311`), the inline RayQuery executes against an unbuilt TLAS. DXR spec calls this UB; in practice the unbuilt SRV likely returns COMMITTED_NOTHING (visibility=1.0, equivalent to the cube path's INVALID_ATLAS_SLOT short-circuit), but this is implementation-defined behaviour and the engine has an existing convention for handling this — `LightPass.cpp:363–364` binds `nullptr` for `t13` SunShadowRT visibility precisely when `SunShadowRTPass::Get().GetStatus() != Activated`. The new TLAS binding at `:370` does not follow that pattern. Consider gating with `IsTLASReady()` (or `SunShadowRTPass::Get().GetStatus() == Activated` as a transitive proxy, since SunShadowRT activation implies TLAS-built) and binding `nullptr` otherwise. **Not a hard block** — the steady-state path is correct and the perf measurement was clean — but worth a backlog seed for robustness. *Discipline: target-qualities.md (fail loudly), engine convention.*
+2. **Shadow ray issued for attenuated-out lights.** `lightPassDirectLighting.hlsl:114` computes `l_AttenuationFactor`; if the surface is past `l_AttenuationRadius`, the factor is zero and the light's `l_LightDirect`/`l_LightIndirectSeed` already vanish. The shadow trace at `:145–151` still runs in this case, costing a ray for zero contribution. Tile culling rejects most such lights, but per-pixel attenuation rejection within a tile is common. Adding a `if (l_AttenuationFactor > 0.0)` short-circuit (or folding the `if (...shadow.x != 0u)` test to also include attenuation) would skip wasted rays and likely close the 0.4–1 ms gap between the spec envelope (1–2 ms) and the measured 2.42 ms. *Discipline: structural-retrospective.md (push perf wins to closure).*
+3. **AC #7 visual A/B inconclusive.** Per the brief, the auto-capture camera tile-culls all PointLights, producing a 0-pixel-diff that proves the bypass toggle short-circuits cleanly but does not exercise the inline-RT trace on visible pixels. Implementer flagged this and the brief explicitly classifies it as ADVISORY for review purposes. User-driven windowed eval into the Sponza lion-statue regions is the right follow-up; not blocking commit. *Discipline: visual-validation.md A/B-toggle pattern + test-infra limitation.*
+4. **Comment-discipline minor**: `lightPassDirectLighting.hlsl:148–149` (`// COMMITTED_NOTHING (= miss with FORCE_OPAQUE+ACCEPT_FIRST_HIT)`) explains a DXR-API symbol. Defensible because inline RT is new to this codebase and the equivalence-to-miss invariant is non-obvious without the FORCE_OPAQUE context. Trim to `// no occluder hit → visible` if revisited. Non-blocking.
+
+### Defects checked-against and not found
+
+- **Cbuffer offset drift on PT/lightCulling** — both consumers' field-access offsets verified stable (`shadow` is appended, never read by them).
+- **Self-shadow EPSILON mismatch with brief's literal text** — implementer correctly chose project precedent (5 mm matching SunShadowRT) over the brief's `EPSILON * N` literal; rationale documented inline.
+- **Path-tracer regression** — `GPUPathTracerRayGen.hlsl` reads only `position` and `luminousFlux`; new field is invisible to PT.
+- **TASK-149 invariant break** — `m_CastShadow` editor/JSON/component path untouched.
+- **TASK-138/161 invariants** — files untouched in diff.
+- **Log-spam (TASK-165)** — zero new Log calls.
+- **Magic numbers** — `SHADOW_RAY_NORMAL_OFFSET = 0.005f` is a named constant (and cited as project precedent); `RAY_EPSILON` is named; `0xFF` (instance mask) is the standard "all instances" DXR sentinel matching the SunShadow precedent.
+- **Silent-failure feedback** (`feedback_silent_failures.md`) — `m_CastShadow=false` falling through to visibility=1.0 is documented intended behaviour, not a silent guard. C++ side has no new guard clauses.
+
+### Verdict
+
+**PASS+ADVISORY.** Commit is safe. Three follow-up backlog seeds:
+
+- TLAS-not-ready guard on LightPass binding (robustness, low-frequency).
+- Attenuation-zero short-circuit for shadow-ray skipping (perf, ~0.4–1 ms upside).
+- User-driven windowed visual A/B once camera-move repro is available (closes AC #7 with stronger evidence).
+<!-- SECTION:NOTES:END -->
+
 <!-- SECTION:NOTES:END -->

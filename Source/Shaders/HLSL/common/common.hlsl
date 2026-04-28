@@ -130,10 +130,15 @@ struct Material_CB
 };
 
 // w component of luminousFlux is attenuationRadius
+// TASK-176: castShadow gates the inline-RT shadow trace in
+// lightPass.comp::EvaluateTiledPointLighting (1 = trace, 0 = visibility=1).
+// Mirrors PointLightConstantBuffer (Source/Engine/Common/GPUDataStructure.h).
+// Stored as uint4 so each cbuffer-array element keeps its 16-byte alignment.
 struct PointLight_CB
 {
 	float4 position;
 	float4 luminousFlux;
+	uint4  shadow; // .x = castShadow flag, .yzw padding
 	//float attenuationRadius;
 };
 

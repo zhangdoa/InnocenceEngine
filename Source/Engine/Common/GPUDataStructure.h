@@ -82,10 +82,16 @@ namespace Inno
 	};
 
 	// w component of luminance is attenuationRadius
+	// TASK-176: m_CastShadow gates the inline-RT shadow trace in
+	// lightPass.comp::EvaluateTiledPointLighting. Stored as a 16-byte slot
+	// for HLSL std140 array-element alignment (each cbuffer element of an
+	// array must be 16-byte-aligned regardless of struct content).
 	struct alignas(16) PointLightConstantBuffer
 	{
 		Vec4 pos;
 		Vec4 luminance;
+		uint32_t m_CastShadow = 1;
+		uint32_t padding[3] = { 0, 0, 0 };
 		//float attenuationRadius;
 	};
 

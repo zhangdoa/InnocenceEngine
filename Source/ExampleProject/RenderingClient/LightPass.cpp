@@ -22,6 +22,7 @@
 #include "../../Engine/Services/CommandListResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
+#include "../../Engine/Services/GPUBufferResourceService.h"
 
 using namespace Inno;
 
@@ -44,7 +45,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(23);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(24);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -200,6 +201,20 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorIndex = 13;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_TextureUsage = TextureUsage::ComputeOnly;
 
+	// t14 - Scene TLAS (TASK-176). Inline RayQuery<> in lightPass.comp's
+	// EvaluateTiledPointLighting traces shadow rays per active point light per
+	// pixel, replacing the cube-atlas PointShadowResolver path. Same TLAS the
+	// SunShadowRT pass already consumes — engine has one shared TLAS via
+	// GPUBufferResourceService::GetTLASBuffer(). Bound as a root SRV (DX12
+	// requires root-SRV for acceleration structures, see DX12RenderPassResourceService.cpp:166).
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorIndex = 14;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_GPUBufferUsage = GPUBufferUsage::TLAS;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_ShaderStage = ShaderStage::Compute;
+
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
 	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
@@ -347,6 +362,12 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// fully-shadowed sun until the RT pass activates.
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute,
 	    SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated ? SunShadowRTPass::Get().GetResult() : nullptr, 22);
+
+	// TASK-176: Scene TLAS (t14). Same pattern as SunShadowRTPass. The TLAS
+	// is built once per frame; binding it on every pass that traces against
+	// it is fine. SunShadowRTPass + RadianceCacheRaytracingPass already do
+	// this — this is the third consumer.
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 23);
 
 	// TASK-140 sample integration: wrap the dispatch in a paired GPU timer +
 	// PIX event so PIX shows "LightPass" on the timeline and GetGpuTimings()

@@ -54,23 +54,33 @@ void EvaluateSunLighting(
 
 // Tiled point lights. Looks the visible-light list for this tile out of
 // the LightCullingPass grid (LIGHT_CULLING_BLOCK_SIZE-pixel tiles), then
-// runs the BSDF accumulator for each. Per-light visibility comes from the
-// cube-shadow resolver (TASK-148): an INVALID_ATLAS_SLOT in
-// PointLight_CB::position.w means the light is non-shadow-casting (or was
-// rejected by the per-frame atlas budget) and the resolver returns 0.
+// runs the BSDF accumulator for each.
 //
-// PointShadowResolver returns shadow ∈ [0,1] where 1 = fully shadowed; the
-// consumer applies Visibility = 1 - shadow. (Sun visibility from
-// SunShadowRTPass is the inverse — 0=shadowed, 1=lit — since the RT path
-// returns visibility directly.)
+// TASK-176 — per-light visibility is an inline RayQuery<> shadow ray from
+// the surface point toward the light position. SM 6.5 / DXR Tier 1.1; the
+// shader profile is pinned to cs_6_5 in Scripts/Lib/Compile-HLSL.psm1.
+// Pattern reused from SunShadowRTRayGen.hlsl (cite-prior-art): same
+// `RAY_FLAG_FORCE_OPAQUE | ACCEPT_FIRST_HIT_AND_END_SEARCH |
+// SKIP_CLOSEST_HIT_SHADER` triplet — the cheapest opaque-only visibility
+// query the API supports. Inline RT replaces the TraceRay / payload dance
+// with a stack-local RayQuery<> that we Proceed() once and read back.
+//
+// l_PointLight.shadow.x gates the trace — set by LightDataService from
+// LightComponent::m_CastShadow (TASK-149). Off → skip the ray, visibility = 1.
+//
+// Self-shadow nudge: EPSILON * in_NormalWS is the project convention.
+// SunShadowRT uses a larger 5 mm offset because that pass passes the
+// *shading* normal (normal-mapped, can deviate ~tens of degrees from the
+// triangle plane). LightPass already runs with the GBuffer shading normal
+// here too — keep the same offset shape so acne behaviour is uniform with
+// the sun path. RAY_EPSILON is then enforced as TMin.
 void EvaluateTiledPointLighting(
 	in Texture2D in_BRDFLUT,
 	in Texture2D in_BRDFMSLUT,
 	in SamplerState in_PointSampler,
 	in Texture2D<uint2> in_LightGrid,
 	in StructuredBuffer<uint> in_LightIndexList,
-	in Texture2DArray in_PointShadow,
-	in SamplerState in_LinearSampler,
+	in RaytracingAccelerationStructure in_SceneAS,
 	in MaterialAttributes in_Material,
 	in float3 in_PositionWS,
 	in float3 in_NormalWS,
@@ -83,6 +93,12 @@ void EvaluateTiledPointLighting(
 	uint l_StartOffset = in_LightGrid[l_TileIndex].x;
 	uint l_LightCount = in_LightGrid[l_TileIndex].y;
 
+	// Same 5 mm normal offset as SunShadowRTRayGen to absorb shading-vs-
+	// geometric normal divergence; both consumers read the GBuffer shading
+	// normal, so the offset must agree to avoid asymmetric self-shadow acne.
+	const float SHADOW_RAY_NORMAL_OFFSET = 0.005f;
+	float3 l_RayOrigin = in_PositionWS + in_NormalWS * SHADOW_RAY_NORMAL_OFFSET;
+
 	[loop]
 	for (uint i = 0; i < l_LightCount; ++i)
 	{
@@ -90,8 +106,9 @@ void EvaluateTiledPointLighting(
 		PointLight_CB l_PointLight = g_PointLights[l_LightIndex];
 
 		float3 L_unnormalized = l_PointLight.position.xyz - in_PositionWS;
+		float l_Distance = length(L_unnormalized);
 		float l_AttenuationRadius = l_PointLight.luminousFlux.w;
-		float3 L = normalize(L_unnormalized);
+		float3 L = L_unnormalized * (1.0 / max(l_Distance, EPSILON));
 
 		float l_InvSquareRadius = 1.0 / max(l_AttenuationRadius * l_AttenuationRadius, EPSILON);
 		float l_AttenuationFactor = CalculateDistanceAttenuation(L_unnormalized, l_InvSquareRadius);
@@ -104,25 +121,35 @@ void EvaluateTiledPointLighting(
 			l_PointLight.luminousFlux.xyz, l_AttenuationFactor,
 			l_LightDirect, l_LightIndirectSeed);
 
-		// Shadow term — slot stamped on PointLight_CB::position.w by
-		// LightDataService_PointShadow.inl as a uint reinterpreted to float
-		// (asuint() recovers the uint). Sentinel == INVALID_ATLAS_SLOT short-
-		// circuits the resolver before any atlas sample.
-		// DEBUG_POINT_SHADOW_BYPASS forces visibility=1 for visual comparison;
-		// flip to 1 locally to confirm the shadow term is the ONLY difference.
+		// TASK-176 inline RT shadow.
+		// DEBUG_POINT_SHADOW_BYPASS forces visibility=1 for visual A/B —
+		// flip to 1 locally to confirm shadow contribution is the only
+		// rendered-output delta vs an unshadowed point light. Precedent:
+		// the same toggle on the cube path (TASK-148, commit 71817f3a) per
+		// .claude/disciplines/visual-validation.md A/B-toggle pattern.
 #define DEBUG_POINT_SHADOW_BYPASS 0
 #if DEBUG_POINT_SHADOW_BYPASS
-		float l_ShadowFactor = 0.0;
+		float l_Visibility = 1.0;
 #else
-		uint l_ShadowSlot = asuint(l_PointLight.position.w);
-		float l_ShadowFactor = 0.0;
-		if (l_ShadowSlot != INVALID_ATLAS_SLOT)
+		float l_Visibility = 1.0;
+		if (l_PointLight.shadow.x != 0u)
 		{
-			PointShadow_CB l_ShadowCB = g_PointShadows[l_ShadowSlot];
-			l_ShadowFactor = PointShadowResolver(in_PositionWS, in_NormalWS, in_PointShadow, in_LinearSampler, l_ShadowSlot, l_ShadowCB, in_ScreenCoord);
+			RayDesc l_ShadowRay;
+			l_ShadowRay.Origin    = l_RayOrigin;
+			l_ShadowRay.Direction = L;
+			l_ShadowRay.TMin      = RAY_EPSILON;
+			// TMax = surface→light distance, minus the normal offset so we
+			// don't overshoot past the light. Light itself is not in the BVH.
+			l_ShadowRay.TMax      = max(l_Distance - SHADOW_RAY_NORMAL_OFFSET, RAY_EPSILON);
+
+			RayQuery<RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER> l_Query;
+			l_Query.TraceRayInline(in_SceneAS, 0, 0xFF, l_ShadowRay);
+			l_Query.Proceed();
+			// COMMITTED_NOTHING (= miss with FORCE_OPAQUE+ACCEPT_FIRST_HIT)
+			// means no occluder between origin and light → visible.
+			l_Visibility = (l_Query.CommittedStatus() == COMMITTED_NOTHING) ? 1.0 : 0.0;
 		}
 #endif
-		float l_Visibility = 1.0 - l_ShadowFactor;
 		io_DirectLuminance += l_LightDirect * l_Visibility;
 		io_IndirectSeedLuminance += l_LightIndirectSeed * l_Visibility;
 	}

@@ -201,6 +201,11 @@ bool LightDataServiceImpl::UpdateLightData()
 			l_data.luminance = l_Light.m_RGBColor * l_Light.m_LuminousFlux;
 			l_data.luminance.w = l_Light.m_Shape.x;
 			l_data.pos.w = l_SentinelSlot;
+			// TASK-176: inline-RT shadow trace gate. The cube-atlas slot
+			// (pos.w) was the legacy gate; m_CastShadow is the dedicated
+			// successor — TASK-177 will retire pos.w once the cube path is
+			// deleted.
+			l_data.m_CastShadow = l_Light.m_CastShadow ? 1u : 0u;
 			m_PointLightCBVector.emplace_back(l_data);
 			m_PointLightAtlasSlot.emplace_back(INVALID_ATLAS_SLOT);
 		}
