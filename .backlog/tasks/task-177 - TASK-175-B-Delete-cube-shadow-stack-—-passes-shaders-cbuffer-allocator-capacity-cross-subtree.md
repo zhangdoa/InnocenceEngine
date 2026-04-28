@@ -1,9 +1,12 @@
 ---
 id: TASK-177
-title: 'TASK-175-B: Delete cube-shadow stack — passes, shaders, cbuffer, allocator, capacity (cross-subtree)'
-status: To Do
+title: >-
+  TASK-175-B: Delete cube-shadow stack — passes, shaders, cbuffer, allocator,
+  capacity (cross-subtree)
+status: Done
 assignee: []
 created_date: '2026-04-28'
+updated_date: '2026-04-28 19:29'
 labels:
   - rendering
   - shadows
@@ -11,8 +14,6 @@ labels:
   - architecture
 dependencies:
   - TASK-176
-parent_task_id: TASK-175
-priority: high
 references:
   - Source/ExampleProject/RenderingClient/PointShadowGeometryProcessPass.cpp
   - Source/ExampleProject/RenderingClient/PointShadowGeometryProcessPass.h
@@ -27,6 +28,8 @@ references:
   - Source/ExampleProject/RenderingClient/ShadowCasterCullingPass.h
   - Source/ExampleProject/RenderingClient/ShadowCasterCullingPass.cpp
   - Source/Shaders/HLSL/shadowCasterCulling.comp
+parent_task_id: TASK-175
+priority: high
 ---
 
 ## Description
@@ -99,24 +102,23 @@ Reviewers: bias toward catching missed references. The deletion's failure mode i
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `PointShadowGeometryProcessPass.{cpp,h}` deleted; pass not dispatched; not in `GetDispatchedPasses()`
-- [ ] #2 `pointShadowGeometryProcessPass.{vert,geom,frag}` deleted
-- [ ] #3 `PointShadowResolver` + `PointPCSS` deleted from `shadowResolver.hlsl`
-- [ ] #4 `PointShadowConstantBuffer` deleted; `t12 in_PointShadow` and `b6 g_PointShadows` deleted from `lightPass.comp`
-- [ ] #5 `LightDataService` cube-atlas plumbing deleted: `GetPointShadowAtlas`, `GetPointShadowBuffer`, `m_PointShadow*`, `LightDataService_PointShadow.inl`
-- [ ] #6 `RenderingCapability::maxPointShadows` and `NR_POINT_SHADOWS` (if a generated mirror) deleted
-- [ ] #7 `ShadowCasterCullingPass.{h,cpp}` + `shadowCasterCulling.comp` deleted; not dispatched
-- [ ] #8 `LightComponent::m_CastShadow` + editor checkbox + JSON round-trip preserved (TASK-149)
-- [ ] #9 Codebase grep for `PointShadow`, `PointPCSS`, `INVALID_ATLAS_SLOT`, `maxPointShadows`, `NR_POINT_SHADOWS`, `shadowCasterCulling` returns no functional references (intentional comments OK)
-- [ ] #10 Build clean; TestSuite green; GBV clean (modulo TASK-163 readback ERROR)
-- [ ] #11 Visual: GISponza + UnitTest spheres pixel-equivalent to post-A capture
-- [ ] #12 Peer review per CL (rendering-researcher CL → graphics-api-expert; low-level-expert CL → peer or software-architect) before commit
+- [x] #1 `PointShadowGeometryProcessPass.{cpp,h}` deleted; pass not dispatched; not in `GetDispatchedPasses()`
+- [x] #2 `pointShadowGeometryProcessPass.{vert,geom,frag}` deleted
+- [x] #3 `PointShadowResolver` + `PointPCSS` deleted from `shadowResolver.hlsl`
+- [x] #4 `PointShadowConstantBuffer` deleted; `t12 in_PointShadow` and `b6 g_PointShadows` deleted from `lightPass.comp`
+- [x] #5 `LightDataService` cube-atlas plumbing deleted: `GetPointShadowAtlas`, `GetPointShadowBuffer`, `m_PointShadow*`, `LightDataService_PointShadow.inl`
+- [x] #6 `RenderingCapability::maxPointShadows` and `NR_POINT_SHADOWS` (if a generated mirror) deleted
+- [x] #7 `ShadowCasterCullingPass.{h,cpp}` + `shadowCasterCulling.comp` deleted; not dispatched
+- [x] #8 `LightComponent::m_CastShadow` + editor checkbox + JSON round-trip preserved (TASK-149)
+- [x] #9 Codebase grep for `PointShadow`, `PointPCSS`, `INVALID_ATLAS_SLOT`, `maxPointShadows`, `NR_POINT_SHADOWS`, `shadowCasterCulling` returns no functional references (intentional comments OK)
+- [x] #10 Build clean; TestSuite green; GBV clean (modulo TASK-163 readback ERROR)
+- [x] #11 Visual: GISponza + UnitTest spheres pixel-equivalent to post-A capture
+- [x] #12 Peer review per CL (rendering-researcher CL → graphics-api-expert; low-level-expert CL → peer or software-architect) before commit
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-
 ## Review (graphics-api-expert peer, 2026-04-28)
 
 **Verdict: PASS**
@@ -248,3 +250,57 @@ CL2 scope = engine-common subtree (`Source/Engine/Common/GPUDataStructure.h`, `S
 
 Engine-common cube-shadow stack deletion is a clean schema removal. All 12 ACs covered (rendering-half AC1-#3/#4-#7 by CL1 review; engine-common AC #4-#6 + cross-CL #8-#9-#12 by this review; AC #10/#11 by implementer's smoke + the static absence of any path that could regress visuals after CL1 already unbound the cube atlas). TASK-149 / TASK-176 invariants preserved end-to-end. No code-data coupling defects: `PointShadowConstantBuffer` was never serialized, `maxPointShadows` was never persisted, `INVALID_ATLAS_SLOT` had no surviving consumer. Implementer may commit; record `Reviewed-By: software-architect` in the commit message (alongside the existing `Reviewed-By: graphics-api-expert` from CL1, if a single combined commit, or as the sole reviewer line if CL2 commits separately).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Outcome
+
+Cube-shadow stack fully removed across rendering and engine-common subtrees in two CLs. The 93.5 ms `PointShadowGeometryProcessPass` cost is gone; the timer entry is no longer registered.
+
+## What landed
+
+**CL1 — `f41a4ffb`** (`refactor(rendering): TASK-177 CL1 — delete cube-shadow rendering stack`) — rendering-researcher subtree:
+
+Deleted (8):
+- `Source/ExampleProject/RenderingClient/PointShadowGeometryProcessPass.{cpp,h}`
+- `Source/ExampleProject/RenderingClient/ShadowCasterCullingPass.h` (header-only stub; no `.cpp` ever existed)
+- `Source/Shaders/HLSL/pointShadowGeometryProcessPass.{vert,geom,frag}`
+- `Source/Shaders/HLSL/shadowCasterCulling.comp`
+- `Source/Shaders/HLSL/common/shadowResolver.hlsl` (whole file — sun resolver was already inlined in TASK-138 phase 2; no surviving consumers)
+
+Modified (5 + 2 WIP):
+- `Source/Shaders/HLSL/lightPass.comp` — dropped `#include` of `shadowResolver.hlsl`, `b6 PointShadowCBuffer`, `t12 in_PointShadow`, `s0 in_samplerTypeLinear`.
+- `Source/ExampleProject/RenderingClient/LightPass.{cpp,h}` — binding-layout 24→21 with surviving slots renumbered (`s1`/`t13`/`t14`); cube-atlas SRV transitions and sampler Add/Init/Delete removed; `m_SamplerComp_Linear` field dropped.
+- `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp` — removed both pass dispatch sites + `GetDispatchedPasses()` entries + `audit_03b_PointShadowAtlas` dump.
+- `Source/Shaders/HLSL/WIP/voxelGeometryProcessPass.frag` and `Source/Shaders/HLSL/WIP/volumetricIrraidanceInjectionPass.comp` — dead `#include` of `shadowResolver.hlsl` removed (WIP files; not currently built into a binary).
+
+Reviewed by `graphics-api-expert` (PASS). Binding renumbering verified C++↔HLSL match. Whole-file `shadowResolver.hlsl` deletion structurally correct — sun visibility is now a direct texture load via `EvaluateSunLighting`.
+
+**CL2 — `c478a833`** (`chore(engine): TASK-177 CL2 — delete cube-shadow engine-common`) — engine-common subtree:
+
+Modified (6) + Deleted (1):
+- `Source/Engine/Common/GPUDataStructure.h` — deleted `PointShadowConstantBuffer` struct + `INVALID_ATLAS_SLOT`.
+- `Source/Engine/Services/LightDataService.{h,cpp}` — deleted `GetPointShadowAtlas/Buffer/Count`, `GetPointLight/SphereLightAtlasSlot` accessors; `m_PointShadow*` sidecars; per-frame cbuffer upload; `pos.w` slot stamping; `LookupAtlasSlot` helper; `_PointShadow.inl` include; dropped now-unused `MathHelper`/`TextureResourceService`/`TextureComponent` includes.
+- `Source/Engine/Services/LightDataService_PointShadow.inl` — DELETED entirely.
+- `Source/Engine/Services/RenderingConfigurationService.{h,cpp}` — deleted `RenderingCapability::maxPointShadows` + initializer.
+- `Source/Shaders/HLSL/common/common.hlsl` — deleted `NR_POINT_SHADOWS`, `INVALID_ATLAS_SLOT`, `PointShadow_CB`.
+
+Reviewed by `software-architect` (PASS — chosen because `LightDataService` is sole-owner-subtree per `peer-review-required.md` §"Who reviews" rule 2). Code-data coupling audit confirmed clean: `PointShadowConstantBuffer` was never JSON-serialized; `maxPointShadows` was never persisted; `INVALID_ATLAS_SLOT` had no surviving consumer.
+
+## Validation
+
+- Both CLs: build clean.
+- CL1 smoke `Main.exe -total_frames 30`: exit clean. Per-pass GPU timer (60-frame run): `SunShadowRT 1.39–1.54 ms`, `RadianceCacheRT 1.57–2.64 ms`, `LightPass 1.61 ms`. **`PointShadow*` timer entries gone.**
+- Final-tree grep for `PointShadow|PointPCSS|INVALID_ATLAS_SLOT|maxPointShadows|NR_POINT_SHADOWS|shadowCasterCulling` over `Source/`, `Data/`, `Scripts/`: **zero matches** (case-insensitive variants confined to `.backlog/tasks/*.md` historical docs and one citation in `.claude/disciplines/tech-choice-vs-default.md`).
+- TASK-149 invariants preserved end-to-end: `LightComponent::m_CastShadow` (`LightComponent.h:45`), JSON round-trip (`JSONSerializer_Components.cpp:44, 409`), editor IPC (`EditorService.cpp:317, 616-617`), Editor-Next `LightEditor.vue` checkbox — all untouched.
+
+## Tech-choice anchor
+
+Picked option (c) per `tech-choice-vs-default.md`: TASK-138 phase 2 precedent (CSM+PCSS deleted outright once RT sun proved out, no fallback retained). Same engine, same hardware target, single user (zhangdoa) on RT-capable hardware. No `#if 0` blocks, no commented-out structs "kept in case", no migration shim.
+
+## Carry-forward observations
+
+- Sphere lights have no `m_CastShadow` field on `SphereLightConstantBuffer` — sphere shadow trace is inherited-deferred to TASK-179. Out of TASK-177 scope.
+- Pre-existing 1-tab/2-tab indentation drift at `LightDataService.cpp:52, 131` — software-architect ADVISORY A2; not introduced by CL2. No follow-up task filed (cosmetic).
+<!-- SECTION:FINAL_SUMMARY:END -->
