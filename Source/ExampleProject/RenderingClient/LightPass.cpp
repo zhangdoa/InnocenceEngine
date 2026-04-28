@@ -9,7 +9,6 @@
 #include "BRDFLUTMSPass.h"
 #include "SSAOPass.h"
 #include "SunShadowRTPass.h"
-#include "PointShadowGeometryProcessPass.h"
 #include "LightCullingPass.h"
 #include "GIFilterVerticalPass.h"
 #include "VolumetricPass.h"
@@ -45,7 +44,7 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(24);
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(21);
 
 	// b0 - PerFrameCBuffer
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
@@ -166,58 +165,36 @@ bool LightPass::Setup(IServiceConfig *systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[17].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[17].m_TextureUsage = TextureUsage::ColorAttachment;
 
-	// s0 - Sampler linear
+	// s1 - Sampler point (HLSL register s0 unused after the cube-atlas linear
+	// sampler was retired; keeping the register vacant avoids cascading
+	// renumbers across the surviving sampler set).
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[18].m_GPUResourceType = GPUResourceType::Sampler;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorIndex = 0;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[18].m_DescriptorIndex = 1;
 
-	// s1 - Sampler point
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_DescriptorSetIndex = 2;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_DescriptorIndex = 1;
+	// t13 - SunShadowRT visibility. Per-pixel R8 unorm produced by
+	// SunShadowRTPass; sole sun-shadow input.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_GPUResourceType = GPUResourceType::Image;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_DescriptorIndex = 13;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[19].m_TextureUsage = TextureUsage::ComputeOnly;
 
-	// t12 - Point shadow atlas (TASK-148). Texture2DArray of packed linear
-	// distance written by PointShadowGeometryProcessPass. The resolver
-	// (shadowResolver.hlsl::PointShadowResolver) samples per active light's
-	// atlasBaseSlot+face slice and applies the shadow term to tiled point
-	// lighting in lightPassDirectLighting.hlsl::EvaluateTiledPointLighting.
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorIndex = 12;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_TextureUsage = TextureUsage::ColorAttachment;
-
-	// b6 - PointShadowCBuffer (TASK-148). Per-light cube-shadow metadata:
-	// world-space light pos, range, atlas slot, isActive flag, view matrices.
-	// The resolver reads lightPosWS_range and atlasBaseSlot; matrices are
-	// caster-only.
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorSetIndex = 0;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[21].m_DescriptorIndex = 6;
-
-	// t13 - SunShadowRT visibility (TASK-138). Per-pixel R8 unorm produced by
-	// SunShadowRTPass; sole sun-shadow input after the phase-2 swap.
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_GPUResourceType = GPUResourceType::Image;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_DescriptorIndex = 13;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[22].m_TextureUsage = TextureUsage::ComputeOnly;
-
-	// t14 - Scene TLAS (TASK-176). Inline RayQuery<> in lightPass.comp's
+	// t14 - Scene TLAS. Inline RayQuery<> in lightPass.comp's
 	// EvaluateTiledPointLighting traces shadow rays per active point light per
-	// pixel, replacing the cube-atlas PointShadowResolver path. Same TLAS the
-	// SunShadowRT pass already consumes — engine has one shared TLAS via
-	// GPUBufferResourceService::GetTLASBuffer(). Bound as a root SRV (DX12
-	// requires root-SRV for acceleration structures, see DX12RenderPassResourceService.cpp:166).
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorSetIndex = 1;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_DescriptorIndex = 14;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_GPUBufferUsage = GPUBufferUsage::TLAS;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RenderPassComp->m_ResourceBindingLayoutDescs[23].m_ShaderStage = ShaderStage::Compute;
+	// pixel. Same TLAS the SunShadowRT pass already consumes — engine has one
+	// shared TLAS via GPUBufferResourceService::GetTLASBuffer(). Bound as a root
+	// SRV (DX12 requires root-SRV for acceleration structures, see
+	// DX12RenderPassResourceService.cpp:166).
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorSetIndex = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_DescriptorIndex = 14;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_GPUBufferUsage = GPUBufferUsage::TLAS;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[20].m_ShaderStage = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
-	m_SamplerComp_Linear = g_Engine->Get<SamplerResourceService>()->Add("LightPass/LinearSampler");
 	m_SamplerComp_Point = g_Engine->Get<SamplerResourceService>()->Add("LightPass/PointSampler");
 	m_SamplerComp_Point->m_SamplerDesc.m_MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SamplerComp_Point->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
@@ -241,7 +218,6 @@ bool LightPass::Initialize()
 	g_Engine->Get<RenderPassResourceService>()->Initialize(m_RenderPassComp);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Compute);
 	g_Engine->Get<CommandListResourceService>()->Initialize(m_CommandListComp_Graphics);
-	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp_Linear);
 	g_Engine->Get<SamplerResourceService>()->Initialize(m_SamplerComp_Point);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
@@ -257,7 +233,6 @@ bool LightPass::Terminate()
 	g_Engine->Get<TextureResourceService>()->Delete(m_IlluminanceResult);
 
 	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_Point);
-	g_Engine->Get<SamplerResourceService>()->Delete(m_SamplerComp_Linear);
 	g_Engine->Get<RenderPassResourceService>()->Delete(m_RenderPassComp);
 	g_Engine->Get<ShaderProgramResourceService>()->Delete(m_ShaderProgramComp);
 
@@ -322,9 +297,6 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// suspended (e.g. TLAS not yet built post scene load).
 	if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
 		l_fmService->TryToTransitState(SunShadowRTPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::ReadWrite, Accessibility::ReadOnly);
-	// TASK-148: cube-shadow atlas — written by PointShadowGeometryProcessPass
-	// as RTV (WriteOnly), consumed here as SRV (ReadOnly).
-	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(PointShadowGeometryProcessPass::Get().GetResult()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(reinterpret_cast<TextureComponent*>(LightCullingPass::Get().GetLightGrid()), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->TryToTransitState(GIFilterVerticalPass::Get().GetResult(), m_CommandListComp_Graphics, Accessibility::WriteOnly, Accessibility::ReadOnly);
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
@@ -351,23 +323,18 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, VolumetricPass::GetRayMarchingResult(), 15);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_LuminanceResult, 16);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_IlluminanceResult, 17);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Linear, 18);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Point, 19);
-	// TASK-148: cube-shadow atlas (t12) + per-light cbuffer (b6).
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, PointShadowGeometryProcessPass::Get().GetResult(), 20);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<LightDataService>()->GetPointShadowBuffer(), 21);
-	// TASK-138: SunShadowRT visibility (t13). Bound when available; nullptr
-	// when the pass hasn't activated yet (e.g. early frames before TLAS
-	// build) — engine binds a default zero descriptor on null, which causes
-	// fully-shadowed sun until the RT pass activates.
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_SamplerComp_Point, 18);
+	// SunShadowRT visibility (t13). Bound when available; nullptr when the
+	// pass hasn't activated yet (e.g. early frames before TLAS build) —
+	// engine binds a default zero descriptor on null, which causes fully-
+	// shadowed sun until the RT pass activates.
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute,
-	    SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated ? SunShadowRTPass::Get().GetResult() : nullptr, 22);
+	    SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated ? SunShadowRTPass::Get().GetResult() : nullptr, 19);
 
-	// TASK-176: Scene TLAS (t14). Same pattern as SunShadowRTPass. The TLAS
-	// is built once per frame; binding it on every pass that traces against
-	// it is fine. SunShadowRTPass + RadianceCacheRaytracingPass already do
-	// this — this is the third consumer.
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 23);
+	// Scene TLAS (t14). Same pattern as SunShadowRTPass. The TLAS is built
+	// once per frame; binding it on every pass that traces against it is
+	// fine. SunShadowRTPass + RadianceCacheRaytracingPass also consume it.
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 20);
 
 	// TASK-140 sample integration: wrap the dispatch in a paired GPU timer +
 	// PIX event so PIX shows "LightPass" on the timeline and GetGpuTimings()

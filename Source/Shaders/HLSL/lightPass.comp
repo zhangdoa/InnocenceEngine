@@ -56,16 +56,6 @@ cbuffer GICBuffer : register(b5)
 	GI_CB GICBuffer;
 };
 
-// TASK-148: per-shadow-casting-light metadata for the cube-shadow resolver.
-// Slot count is bounded by RenderingCapability::maxPointShadows (= NR_POINT_SHADOWS).
-// Inactive entries carry isActive=0 and atlasBaseSlot=INVALID_ATLAS_SLOT;
-// PointShadowResolver short-circuits on either before sampling.
-[[vk::binding(6, 0)]]
-cbuffer PointShadowCBuffer : register(b6)
-{
-	PointShadow_CB g_PointShadows[NR_POINT_SHADOWS];
-};
-
 [[vk::binding(0, 1)]]
 Texture2D in_opaquePassRT0 : register(t0);
 [[vk::binding(1, 1)]]
@@ -92,11 +82,6 @@ StructuredBuffer<uint> in_LightIndexList : register(t9);
 Texture2D<float4> in_GIIrradiance : register(t10);
 [[vk::binding(11, 1)]]
 Texture3D<float4> in_VolumetricFog : register(t11);
-// TASK-148: point/sphere cube-shadow atlas. Texture2DArray with
-// DepthOrArraySize = NR_POINT_SHADOWS * 6, R32G32_FLOAT (.r=linearDist,
-// .g=linearDist²). Sampled via PointShadowResolver in shadowResolver.hlsl.
-[[vk::binding(12, 1)]]
-Texture2DArray in_PointShadow : register(t12);
 // Per-pixel hardware-RT sun-shadow visibility. R8 unorm, 0 = fully shadowed,
 // 1 = lit. Produced by SunShadowRTPass; consumed by EvaluateSunLighting.
 [[vk::binding(13, 1)]]
@@ -107,8 +92,6 @@ Texture2D<float> in_SunShadowRTVisibility : register(t13);
 // GPUBufferResourceService owns one TLAS per frame.
 [[vk::binding(14, 1)]]
 RaytracingAccelerationStructure SceneAS : register(t14);
-[[vk::binding(0, 2)]]
-SamplerState in_samplerTypeLinear : register(s0);
 [[vk::binding(1, 2)]]
 SamplerState in_samplerTypePoint : register(s1);
 [[vk::binding(0, 3)]]
@@ -117,7 +100,6 @@ RWTexture2D<float4> out_lightPassRT0 : register(u0);
 RWTexture2D<float4> out_lightPassRT1 : register(u1);
 
 #include "common/BSDF.hlsl"
-#include "common/shadowResolver.hlsl"
 #include "common/lightPassCommon.hlsl"
 #include "common/lightPassDirectLighting.hlsl"
 #include "common/lightPassIndirectCompose.hlsl"

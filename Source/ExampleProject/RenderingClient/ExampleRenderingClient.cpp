@@ -2,9 +2,7 @@
 #include "ExampleRenderingClient.h"
 #include "BRDFLUTPass.h"
 #include "BRDFLUTMSPass.h"
-#include "ShadowCasterCullingPass.h"
 #include "SunShadowRTPass.h"
-#include "PointShadowGeometryProcessPass.h"
 #include "OpaqueCullingPass.h"
 #include "OpaquePass.h"
 #include "AnimationPass.h"
@@ -173,11 +171,7 @@ namespace Inno
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
-		// Produces the indirect-draw command buffer consumed by
-		// PointShadowGeometryProcessPass.
-		ShadowCasterCullingPass::Get().Setup();
 		SunShadowRTPass::Get().Setup();
-		PointShadowGeometryProcessPass::Get().Setup();
 
 		OpaqueCullingPass::Get().Setup();
 		OpaquePass::Get().Setup();
@@ -241,9 +235,7 @@ namespace Inno
 		BRDFLUTPass::Get().Initialize();
 		BRDFLUTMSPass::Get().Initialize();
 
-		ShadowCasterCullingPass::Get().Initialize();
 		SunShadowRTPass::Get().Initialize();
-		PointShadowGeometryProcessPass::Get().Initialize();
 
 		OpaqueCullingPass::Get().Initialize();
 		OpaquePass::Get().Initialize();
@@ -318,12 +310,10 @@ namespace Inno
 				DispatchOrBypass(BRDFLUTMSPass::Get());
 			}
 
-			DispatchOrBypass(ShadowCasterCullingPass::Get());
 			// TASK-138: dispatch RT sun-shadow rays after the GBuffer is
 			// available (PrepareCommandList only records — sequencing is
 			// enforced in ExecuteCommands via WaitOnGPU on OpaquePass).
 			DispatchOrBypass(SunShadowRTPass::Get());
-			DispatchOrBypass(PointShadowGeometryProcessPass::Get());
 
 			DispatchOrBypass(OpaqueCullingPass::Get());
 			DispatchOrBypass(OpaquePass::Get());
@@ -447,25 +437,6 @@ namespace Inno
 
 		if (!m_GPUPathTracerActive)
 		{
-
-		if (ShadowCasterCullingPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(ShadowCasterCullingPass::Get()))
-		{
-			auto l_commandList = ShadowCasterCullingPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_commandList, GPUEngineType::Compute);
-			auto l_renderPass = ShadowCasterCullingPass::Get().GetRenderPassComp();
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
-		}
-
-		if (PointShadowGeometryProcessPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(PointShadowGeometryProcessPass::Get()))
-		{
-			// Consumes ShadowCasterCullingPass's indirect draw command buffer; signal
-			// own renderpass so LightPass's WaitOnGPU consumes the correct fence.
-			WaitIfActive(ShadowCasterCullingPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			auto l_commandList = PointShadowGeometryProcessPass::Get().GetCommandListComp(GPUEngineType::Graphics);
-			l_hwService->Execute(l_commandList, GPUEngineType::Graphics);
-			auto l_renderPass = PointShadowGeometryProcessPass::Get().GetRenderPassComp();
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
-		}
 
 		if (OpaqueCullingPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(OpaqueCullingPass::Get()))
 		{
@@ -687,7 +658,6 @@ namespace Inno
 			// frames before TLAS build) means LightPass binds nullptr and the
 			// sun is treated as fully shadowed for that frame.
 			WaitIfActive(SunShadowRTPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
-			WaitIfActive(PointShadowGeometryProcessPass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			WaitIfActive(OpaquePass::Get(), GPUEngineType::Graphics, GPUEngineType::Graphics);
 			WaitIfActive(SSAOPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			WaitIfActive(LightCullingPass::Get(), GPUEngineType::Graphics, GPUEngineType::Compute);
@@ -1007,12 +977,7 @@ namespace Inno
 		Dump("audit_01_BRDFLUTPass.hdr",   BRDFLUTPass::Get().GetRenderPassComp(),   static_cast<TextureComponent*>(BRDFLUTPass::Get().GetResult()));
 		Dump("audit_02_BRDFLUTMSPass.hdr",  BRDFLUTMSPass::Get().GetRenderPassComp(), static_cast<TextureComponent*>(BRDFLUTMSPass::Get().GetResult()));
 
-		// 3: Shadow maps. Sun shadow is now an R8 visibility texture from
-		// SunShadowRTPass (TASK-138) — see audit_06_SunShadowRT below.
-		// Point-shadow atlas — owned by LightDataService; getter proxies to it.
-		Dump("audit_03b_PointShadowAtlas.hdr",
-			PointShadowGeometryProcessPass::Get().GetRenderPassComp(),
-			static_cast<TextureComponent*>(PointShadowGeometryProcessPass::Get().GetResult()));
+		// 3: Sun shadow R8 visibility texture from SunShadowRTPass.
 		if (SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated)
 			Dump("audit_03c_SunShadowRT.hdr",
 				SunShadowRTPass::Get().GetRenderPassComp(),
@@ -1098,9 +1063,7 @@ namespace Inno
 		OpaqueCullingPass::Get().Terminate();
 		OpaquePass::Get().Terminate();
 
-		PointShadowGeometryProcessPass::Get().Terminate();
 		SunShadowRTPass::Get().Terminate();
-		ShadowCasterCullingPass::Get().Terminate();
 
 		BRDFLUTMSPass::Get().Terminate();
 		BRDFLUTPass::Get().Terminate();
@@ -1173,9 +1136,7 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	l_passes.push_back(&BRDFLUTPass::Get());
 	l_passes.push_back(&BRDFLUTMSPass::Get());
 
-	l_passes.push_back(&ShadowCasterCullingPass::Get());
 	l_passes.push_back(&SunShadowRTPass::Get());
-	l_passes.push_back(&PointShadowGeometryProcessPass::Get());
 
 	l_passes.push_back(&OpaqueCullingPass::Get());
 	l_passes.push_back(&OpaquePass::Get());

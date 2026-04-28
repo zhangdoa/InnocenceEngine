@@ -23,7 +23,6 @@ StructuredBuffer<uint> in_LightIndexList : register(t2);
 SamplerState in_samplerTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"
-#include "common/shadowResolver.hlsl"
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)

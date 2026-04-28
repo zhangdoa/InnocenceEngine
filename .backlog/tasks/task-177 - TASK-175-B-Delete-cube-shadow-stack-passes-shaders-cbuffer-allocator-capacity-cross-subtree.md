@@ -116,4 +116,66 @@ Reviewers: bias toward catching missed references. The deletion's failure mode i
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+
+## Review (graphics-api-expert peer, 2026-04-28)
+
+**Verdict: PASS**
+
+CL1 scope = rendering-researcher subtree (`Source/ExampleProject/RenderingClient/*`, `Source/Shaders/HLSL/*`). Engine-common deletions (AC #5/#6 partial) are CL2 territory by brief design. Verified against the staged diff (`git diff --cached`), not implementer's assertions.
+
+### Acceptance criteria — line-grounded
+
+- AC #1 met. `PointShadowGeometryProcessPass.{cpp,h}` deleted; `ExampleRenderingClient.cpp` Setup/Initialize/PrepareCommands/ExecuteCommands/Terminate sites removed (5 dispatch sites + GetDispatchedPasses entry). `ExampleRenderingClient.cpp:170-178, 234-241, 312-318, 437-457, 657-664, 974-986, 1062-1067, 1135-1141`.
+- AC #2 met. `pointShadowGeometryProcessPass.{vert,geom,frag}` shown deleted by `git status`.
+- AC #3 met (effectively superseded). Implementer deleted the entire `shadowResolver.hlsl` rather than just `PointShadowResolver`/`PointPCSS` blocks. Verified no surviving consumers: `Grep "shadowResolver"` across `Source/Shaders` returns zero matches. The two WIP shaders (`voxelGeometryProcessPass.frag`, `volumetricIrraidanceInjectionPass.comp`) had their dead `#include "common/shadowResolver.hlsl"` removed in the same CL — `volumetricIrraidanceInjectionPass.comp:25` keeps a commented-out `SunShadowResolver` *call* but the include is gone, and that file is WIP-shelved per directory naming; no compile dependency.
+- AC #4 met. `lightPass.comp:59-69` removed `cbuffer PointShadowCBuffer : register(b6)` and `Texture2DArray in_PointShadow : register(t12)`. C++ side removed the corresponding `[20]`/`[21]` slots and `register(s0) in_samplerTypeLinear`.
+- AC #5 deferred to CL2 (engine-common). `Grep` confirms `LightDataService.{cpp,h}`, `LightDataService_PointShadow.inl`, `GPUDataStructure.h` still hold the cube-atlas plumbing — explicit CL2 territory per brief.
+- AC #6 deferred to CL2.
+- AC #7 met. `ShadowCasterCullingPass.h` deleted (no `.cpp` existed — header-only stub); `shadowCasterCulling.comp` deleted; dispatch + Setup/Initialize/Terminate/GetDispatchedPasses entries removed in `ExampleRenderingClient.cpp`.
+- AC #8 met. `LightComponent.h:45 bool m_CastShadow = true;` untouched. `JSONSerializer_Components.cpp:44, 409` round-trip untouched. `Editor-Next/src/components/inspector/LightEditor.vue:20-95` `castShadow` checkbox + IPC binding untouched.
+- AC #9 met within CL1 scope. `Grep "PointShadow|shadowCasterCulling|shadowResolver"` over implementation files (`*.cpp,h,hlsl,comp,vert,frag,geom,inl`) returns 7 files — all under `Source/Engine/*` or `Source/Shaders/HLSL/common/common.hlsl` (which mirrors `PointShadowConstantBuffer`). All 7 match the CL2 deletion list verbatim. CL1 subtree is clean.
+- AC #10 reported met by implementer (build clean, GBV clean modulo TASK-163, TestSuite). Not re-verified by reviewer (no code execution in single-pass review); no new build dependency or contract drift visible in the diff that would invalidate the smoke claim.
+- AC #11 visual parity — outside reviewer's static-read scope; the diff removes only the cube path and the inline RT path was validated under TASK-176, so no rendered-output delta is expected from CL1 alone.
+- AC #12 — this review.
+
+### Anchored invariants
+
+- **TASK-138 SunShadowRT** — untouched. `lightPass.comp:87-88` `register(t13) in_SunShadowRTVisibility` and `LightPass.cpp:175-180` slot `[19]` (set=1, idx=13) preserved. `EvaluateSunLighting` signature in `lightPassDirectLighting.hlsl:19-30` reads visibility via `Load(int3(in_ScreenCoord, 0))` directly — no resolver dependency, validates the whole-file shadowResolver.hlsl deletion.
+- **TASK-161 OpaquePass exit barrier** — `OpaquePass.{cpp,h}` not in staged diff.
+- **TASK-149 m_CastShadow flag** — preserved end-to-end (component, JSON, editor) per AC #8 above.
+- **TASK-176 inline RayQuery body** — `lightPassDirectLighting.hlsl:77-156` `EvaluateTiledPointLighting` signature and inline RT body unchanged. The `RAY_FLAG_FORCE_OPAQUE | ACCEPT_FIRST_HIT_AND_END_SEARCH | SKIP_CLOSEST_HIT_SHADER` triplet, `RAY_EPSILON` TMin, and `l_PointLight.shadow.x != 0u` gate all intact.
+
+### Binding-layout cross-check (descriptor-set discipline)
+
+The renumbering 24→21 with shifts `[19→18]`, `[22→19]`, `[23→20]` was the highest-risk surface — verified by reading the new C++ slot table side-by-side with `lightPass.comp` register declarations:
+
+| C++ slot | Set:Index | HLSL register | Symbol |
+|---|---|---|---|
+| `[18]` | 2:1 | `s1` | `in_samplerTypePoint` |
+| `[19]` | 1:13 | `t13` | `in_SunShadowRTVisibility` |
+| `[20]` | 1:14 | `t14` | `SceneAS` |
+
+All three agree. No descriptor-set-layout drift between C++ and HLSL.
+
+### Universal disciplines
+
+- **`coding-principles.md` — fix at the right layer.** Whole-file `shadowResolver.hlsl` deletion is correct: deleting only the `Point*` blocks would have left a stub file with one consumer (sun) that doesn't actually need a resolver indirection (sun visibility is now a direct texture load). Removing the whole file is the structurally honest deletion.
+- **`comment-discipline.md` — no history narration.** New comment at `LightPass.cpp:168-170` ("HLSL register s0 unused after the cube-atlas linear sampler was retired; keeping the register vacant avoids cascading renumbers across the surviving sampler set") follows the *existing* `b3` / `t7` keep-vacant pattern in the same file (`LightPass.cpp:64-66, 120-121`). It's a precedent-citing rationale comment, not a "what changed" narration — same shape as the comments it joins. PASS.
+- **`safety-observability.md` — guard clauses log loudly.** Existing `Log(Warning, ...)` guards at `LightPass.cpp:251-279` untouched; no new silent guards introduced.
+- **`tech-choice-vs-default.md`.** Brief mandates option (c) "TASK-138 precedent — delete outright, no fallback retained" — implementer followed it. `lightPass.comp` carries the precedent comment at `:43-45` and `:73-74` for the b3/t7 vacancies; the new s0 comment extends the same pattern.
+
+### Defects implementer is least primed to see
+
+- **`audit_03b_PointShadowAtlas.hdr` removal at `ExampleRenderingClient.cpp:980-986`.** Replaced with a one-line comment ("3: Sun shadow R8 visibility texture from SunShadowRTPass."). The audit dump was the only consumer of `PointShadowGeometryProcessPass::GetResult()` outside LightPass — no orphan helper code remains.
+- **No other consumers of cube atlas.** `Grep` over the full source tree: zero non-CL2-territory references to `PointShadow` outside the deleted files. No debug visualizer, no editor inspector panel reads atlas slot, no scene `.json` references it.
+- **WIP shader `volumetricIrraidanceInjectionPass.comp:45`** retains a `//Lo *= 1.0 - SunShadowResolver(...)` commented-out call with no enclosing function definition (the file is shelved). Not a compile dependency. Advisory only — see below.
+
+### Advisory (non-blocking)
+
+- **A1.** `Source/Shaders/HLSL/WIP/volumetricIrraidanceInjectionPass.comp:45` and `Source/Shaders/HLSL/WIP/GIResolveSurfelPass.comp:23, 127` reference `SunShadowResolver` (former resident of the just-deleted `shadowResolver.hlsl`). These WIP files are shelved (not built into a binary today), so it is not a compile defect. Worth a follow-up grep cleanup when the WIP shaders are revived; out of CL1 scope.
+- **A2.** Comment at `LightPass.cpp:168` says "s1 - Sampler point (HLSL register s0 unused…)". Reads as if the slot label has changed; in fact the binding *descriptor-index* is 1 (s1) and the *HLSL register* s0 is unused — same wording the existing `b3 unused`/`t7 unused` comments use, so it is consistent with prior art. No action.
+
+### Rolled-up verdict
+
+Diff is a clean structural deletion. CL1 scope completes; CL2 (engine-common) is correctly deferred. Binding-layout integrity verified C++ ↔ HLSL. No anchored-invariant drift. Implementer may commit; record `Reviewed-By: graphics-api-expert` in the commit message.
 <!-- SECTION:NOTES:END -->

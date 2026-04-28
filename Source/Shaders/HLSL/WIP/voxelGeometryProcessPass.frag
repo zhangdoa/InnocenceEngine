@@ -18,8 +18,6 @@ Texture2DArray in_SunShadow : register(t5);
 [[vk::binding(0, 3)]]
 SamplerState in_samplerTypePoint : register(s0);
 
-#include "common/shadowResolver.hlsl"
-
 #include "common/BSDF.hlsl"
 
 struct PixelInputType
