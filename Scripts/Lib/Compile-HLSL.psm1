@@ -23,8 +23,19 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Per-file profile overrides. Keyed by source filename; consulted before the
+# extension-based default. Use when a single shader needs a higher SM than its
+# siblings (e.g. inline RayQuery requires SM 6.5 / DXR Tier 1.1).
+$script:ShaderProfileOverrides = @{
+    'lightPass.comp' = 'cs_6_5'  # TASK-176: inline RayQuery for unified RT shadows.
+}
+
 function Get-ShaderTargetProfile {
     param([System.IO.FileInfo]$File)
+
+    if ($script:ShaderProfileOverrides.ContainsKey($File.Name)) {
+        return $script:ShaderProfileOverrides[$File.Name]
+    }
 
     switch ($File.Extension) {
         '.vert' { return 'vs_6_3' }
