@@ -82,6 +82,20 @@ Multi-agent — producer to decompose. Likely:
 ### TASK-66 closure note
 
 This task does NOT undo TASK-66's deliverables. TASK-66 shipped the *correctness* (m_CastShadow flag, atlas-slot allocator, caster pass). The atlas-slot mechanism stays in spirit — inline RT just removes the need for the explicit cube atlas. The flag, the editor checkbox, the serialization round-trip — all preserved.
+
+### Decomposition (producer, 2026-04-28)
+
+Filed as three subtasks with mandatory A → B → C sequencing. A delivers the replacement before B deletes the old path; visual regression hides cost wins so the order is hard.
+
+- **TASK-176** — TASK-175-A: inline RT shadow rays in `lightPass.comp` per light type. Owner: `rendering-researcher`. Reviewer: `graphics-api-expert`.
+- **TASK-177** — TASK-175-B: delete cube-shadow stack (cross-subtree: `rendering-researcher` for passes/shaders/client wiring; `low-level-expert` for engine-common cleanup). Two CLs, two reviews.
+- **TASK-178** — TASK-175-C: closure verification (Sponza ≥60 FPS, PT cross-check, GBV clean, 30s walkthrough). Owner: `rendering-researcher`. Reviewer: `software-architect`.
+
+Open questions surfaced during decomposition (resolved at A's discretion or via inline coordination):
+
+1. **Cbuffer wire path for `m_CastShadow`** — A picks: (i) reuse `position.w` slot stamping with new sentinel semantic, or (ii) add a dedicated bool field on `PointLight_CB`. Recommendation: (ii), cleaner. B deletes the slot-stamping plumbing regardless.
+2. **Sun light folding** — TASK-175 spec leaves "sun unchanged or folded" open. C's measurement informs the decision. If sun fold is pursued, file as TASK-179.
+3. **Spot/point/sphere light-type discrimination** — current `EvaluateTiledPointLighting` does not appear to branch by light type at the shader level (single `PointLight_CB` array, single resolver). A confirms during implementation; if branching is needed, may require a `lightType` field on the cbuffer (engine-side change) coordinated via `low-level-expert`.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
