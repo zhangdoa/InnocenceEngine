@@ -123,6 +123,25 @@ namespace Inno
 			[this]() { return m_GPUPathTracerDesired; },
 			[this](bool desired) { m_GPUPathTracerDesired = desired; });
 
+		// "GI on" reads/writes m_Bypassed across the rasterized-GI pass group.
+		// Bypass landing per-frame (TASK-171); no Desired/Active reconciliation
+		// needed because m_Bypassed is the source of truth read at dispatch.
+		DevToggleRegistry::RegisterToggle("RasterizedGI",
+			[]() {
+				return !RadianceCacheRaytracingPass::Get().m_Bypassed.load(std::memory_order_relaxed);
+			},
+			[](bool desired) {
+				const bool l_bypass = !desired;
+				RadianceCacheReprojectionPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				RadianceCacheRaytracingPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				RadianceCacheFilterHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				RadianceCacheFilterVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				RadianceCacheIntegrationPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				GIDenoisePass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				GIFilterHorizontalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+				GIFilterVerticalPass::Get().m_Bypassed.store(l_bypass, std::memory_order_relaxed);
+			});
+
 		DevToggleRegistry::RegisterAction("Screenshot", [this]() { m_saveScreenCapture = true; });
 
 		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
