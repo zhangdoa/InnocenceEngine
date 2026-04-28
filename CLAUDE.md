@@ -22,6 +22,7 @@ Every agent reads these universal files before acting:
 
 - `.claude/disciplines/coding-principles.md`
 - `.claude/disciplines/cite-prior-art.md`
+- `.claude/disciplines/tech-choice-vs-default.md`
 - `.claude/disciplines/owner-mode.md`
 - `.claude/disciplines/workspace-hygiene.md`
 - `.claude/disciplines/target-qualities.md`

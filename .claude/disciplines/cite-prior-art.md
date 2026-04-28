@@ -9,3 +9,7 @@ Before introducing any mechanism, abstraction, pattern, algorithm, or convention
 If you genuinely find no precedent, justify the new pattern in writing before implementing. Trustworthy precedent beats first-principles design; surface mimicry is not citation.
 
 Failure modes prevented: silo design (reinventing inside one subtree), shortcut design (speculation when a reference exists), pattern-matching at the wrong level (copying file layout but inventing the technique inside it).
+
+## Pairs with `tech-choice-vs-default.md`
+
+Citation finds precedent; it does not by itself evaluate precedent against alternatives. Citing the textbook approach (a) without surfacing the SOTA (b) and the recent project precedent (c) is half the work — see `tech-choice-vs-default.md` for the three-reference rule that completes it. The two disciplines are paired: cite first, then compare.
