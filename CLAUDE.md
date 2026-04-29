@@ -36,6 +36,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/regression-fix-flow.md`
 - `.claude/disciplines/perf-measurement-frame-budget.md`
 - `.claude/disciplines/peer-review-required.md`
+- `.claude/disciplines/test-etiquette.md`
 - `.claude/collaboration.md`
 
 Each agent manifest (`.claude/agents/*.md`) lists additional role-specific disciplines. Ownership paths are declared in each owned subtree's `CLAUDE.md`, not in the agent file. Full roster: `.claude/team.md`.
