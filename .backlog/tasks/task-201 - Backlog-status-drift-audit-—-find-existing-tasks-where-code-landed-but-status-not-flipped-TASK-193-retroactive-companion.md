@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-04-29 07:19'
-updated_date: '2026-04-29 07:56'
+updated_date: '2026-04-29 08:19'
 labels:
   - backlog-hygiene
   - post-mortem
@@ -101,3 +101,16 @@ All other open tasks either had no code-bearing commit referencing them, or matc
 
 The current audit's output — the retrofit-flip docs(backlog) commit on `ecs-overhaul` — is the deliverable for AC #1–#3. Closing TASK-201 fully waits on the harness side.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+**AC #4 and AC #5 BLOCKED** as of 2026-04-28 on TASK-203 — sub-agent ai-expert dispatches cannot Write/Edit `.claude/**` paths (two attempts: `adfe8c2fc7ff4c182` and `a7fc71385058829ad` both hit the same permission wall). Main-session writes work fine, and an earlier ai-expert dispatch in this same session successfully wrote `.claude/` files (`66327f34` closure-staleness gate). The wall is dispatch-scoped — likely a sub-agent permission-inheritance gap. Filed as TASK-203 (high priority, ai-expert).
+
+Workaround until TASK-203 lands: producer's manual audit recipe (this commit's methodology) provides operational coverage. The 24-candidate prototype output verified the design soundness; codification is mechanical once the perm wall is removed.
+
+Design reference for the next attempt:
+- Script: `.claude/hooks/lib/audit-backlog-drift.js` (~190-210 lines). Single `git log --all --grep=TASK- --format=%H%x09%s%x09%b`; per-task hash-set lookup; strong-signal (subject) vs weak-signal (body) distinction; modes `--quiet`, `--json`. Public `audit()` API.
+- Discipline: `.claude/disciplines/backlog-drift-audit.md`. Codifies classification recipe (code-closure / cross-reference / multi-CL / explicit-deferred). Cite TASK-201 + TASK-72 as canonical examples.
+- Wire: `.claude/disciplines/session-start.md` step 4 — drift check (perf budget 194ms measured << 5s ceiling, fits comfortably).
+<!-- SECTION:FINAL_SUMMARY:END -->
