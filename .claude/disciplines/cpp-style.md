@@ -1,8 +1,10 @@
 # Discipline: cpp-style
 
-Applies to agents writing or modifying C++ in this project (low-level, platform, graphics-api, rendering-researcher's pass-level C++, test, software-architect, editor's native layer).
+Applies to agents writing or modifying C++ in this project (low-level, platform, graphics-api, rendering-researcher's pass-level C++, test, software-architect, editor's native layer). Engine-specific naming, organisation, and abstraction conventions that differ from raw STL / Hungarian / generic-C++ style.
 
-## Naming
+## How
+
+### Naming
 
 | Category | Convention | Example |
 |----------|-----------|---------|
@@ -18,9 +20,9 @@ Applies to agents writing or modifying C++ in this project (low-level, platform,
 | Namespaces | Single word, PascalCase | `namespace Inno {}` |
 | Template params | `T` for types, descriptive for flags | `typename T`, `bool ThreadSafe` |
 
-## File organisation
+### File organisation
 
-### Include order
+#### Include order
 
 ```cpp
 #pragma once
@@ -37,7 +39,7 @@ Applies to agents writing or modifying C++ in this project (low-level, platform,
 #include "SpecificHeader.h"
 ```
 
-### Header vs. source separation
+#### Header vs. source separation
 
 Functions that call engine APIs (`Log`, `g_Engine`, memory system) must be implemented in `.cpp` files, never inlined in headers.
 
@@ -58,7 +60,7 @@ void TestRunner::StartTest(const char* in_TestName)
 
 Rationale: prevents circular include dependencies and keeps headers lightweight.
 
-## Formatting
+### Formatting
 
 Allman braces. Tab indentation (4-space width). Const-correctness throughout:
 
@@ -77,7 +79,7 @@ class Example
 };
 ```
 
-## Engine abstractions — no raw equivalents
+### Engine abstractions — no raw equivalents
 
 | Raw | Engine replacement |
 |-----|-------------------|
@@ -86,7 +88,7 @@ class Example
 | `std::cout` | `Log(Level, ...)` |
 | Hungarian notation (`nCount`, `szName`) | Engine prefix convention (see Naming) |
 
-## Templates — SFINAE patterns
+### Templates — SFINAE patterns
 
 ```cpp
 template <typename U = T&>
@@ -95,3 +97,9 @@ EnableType<U, ThreadSafe> operator[](size_t in_Position);
 template <typename U = T&>
 DisableType<U, ThreadSafe> operator[](size_t in_Position);
 ```
+
+## Cross-references
+
+- `safety-observability.md` — paired discipline for the runtime / observability rules (assertions, guard-clause logging, RAII, no magic numbers, no copy-paste).
+- `threading-contracts.md` — applies on top of this discipline when the API surface is multi-threaded; thread-safety contract goes on the declaration.
+- `coding-principles.md` — *be explicit in code* runs first; this discipline is the engine-specific operationalisation for C++.

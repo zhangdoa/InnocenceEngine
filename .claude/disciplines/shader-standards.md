@@ -1,8 +1,10 @@
 # Discipline: shader-standards
 
-Applies to agents authoring or modifying HLSL shaders.
+Applies to agents authoring or modifying HLSL shaders. Engine-specific conventions (row-major matrices, identity-fallback transforms, cross-queue UAV barriers, workgroup-uniform `*WithGroupSync`) that the GPU and DX12/Vulkan toolchains do not enforce at compile time.
 
-## Matrix multiplication convention
+## How
+
+### Matrix multiplication convention
 
 The engine uploads **row-major** matrices. HLSL's default storage is **column-major** (GPU sees the transpose). Always use row-vector × matrix order:
 
@@ -13,7 +15,7 @@ float4 viewPos = mul(myVector, g_Frame.p_inv);     // CORRECT
 
 Reference implementation: `common/skyResolver.hlsl`.
 
-## Default transform must be identity, not zero
+### Default transform must be identity, not zero
 
 When a transform is unavailable, fall back to **identity**, never `Mat4{}` (all zeros collapses geometry):
 
@@ -21,7 +23,7 @@ When a transform is unavailable, fall back to **identity**, never `Mat4{}` (all 
 Mat4 l_Transform = l_world ? l_world->m_WorldMatrix : Math::generateIdentityMatrix<float>();
 ```
 
-## Cross-queue UAV writes require DeviceMemoryBarrier
+### Cross-queue UAV writes require DeviceMemoryBarrier
 
 Any compute shader that writes a UAV buffer consumed by another queue must issue `DeviceMemoryBarrier()` after all writes. Fence signalling guarantees command-list retirement, not write visibility through the GPU memory hierarchy.
 
@@ -30,7 +32,7 @@ u_DrawCommandBuffer[objectIndex] = BuildIndirectDrawCommand(objectIndex, modelDa
 DeviceMemoryBarrier(); // writes visible to graphics queue after fence
 ```
 
-## No early return before `GroupMemoryBarrierWithGroupSync`
+### No early return before `GroupMemoryBarrierWithGroupSync`
 
 Every thread in a workgroup must reach every `GroupMemoryBarrierWithGroupSync` call (and every other `*WithGroupSync` variant). A thread that `return`s early while others block on the barrier deadlocks the group — manifesting as a GPU hang or silent corruption, never a compile error.
 
@@ -55,3 +57,9 @@ void main(ComputeInputType input)
 ```
 
 Reference implementation: `RadianceCacheReprojection.comp`. `DeviceMemoryBarrier` / `GroupMemoryBarrier` (no `WithGroupSync` suffix) are memory fences only and do *not* have this uniformity constraint.
+
+## Cross-references
+
+- `safety-observability.md` — the *no magic numbers* and *no copy-paste* rules apply equally to HLSL; shared helpers belong in `common/common.hlsl`.
+- `target-qualities.md` — *fail loudly* and *explicit contracts* are the underlying quality bar; cross-queue UAV barriers and workgroup-uniform `*WithGroupSync` are explicit-contract obligations the GPU does not enforce at compile time.
+- `cite-prior-art.md` — when introducing a new shader pattern, cite an existing shader (e.g. `RadianceCacheReprojection.comp` for the early-exit pattern) before inventing a new shape.

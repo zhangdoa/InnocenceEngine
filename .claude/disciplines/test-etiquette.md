@@ -1,10 +1,12 @@
 # Discipline: test-etiquette
 
-Tests cost the user. Each engine launch is ~500MB Main.exe + asset I/O; each editor launch is ~150MB Electron + Vite + IPC; each Playwright run spins up both. zhangdoa is on the same machine as the harness — concurrent test runs are visible to him as foreground process load on the box he's actively using. A repro-test-fix-test-test loop that leaks 5 editor instances slows his machine while he's trying to think.
+Tests cost the user. Each engine launch is ~500MB Main.exe + asset I/O; each editor launch is ~150MB Electron + Vite + IPC; each Playwright run spins up both. zhangdoa is on the same machine as the harness — concurrent test runs are visible to him as foreground process load on the box he's actively using.
 
-This discipline is not about correctness — every gate-driven test run is correct. It's about **resource etiquette**: don't spawn what you can avoid; clean up what you spawn; serialize what you must run.
+## Why
 
-## How to apply
+This discipline is not about correctness — every gate-driven test run is correct. It's about **resource etiquette**: don't spawn what you can avoid; clean up what you spawn; serialize what you must run. A repro-test-fix-test-test loop that leaks 5 editor instances slows zhangdoa's machine while he's trying to think.
+
+## How
 
 ### Plan launches before opening tools
 
@@ -58,9 +60,15 @@ When dispatching an agent that touches editor / engine / Playwright:
 
 If you can't write the launch count in advance, the brief is too open and will leak processes. Tighten before dispatching.
 
-## Pitfalls
+## Anti-patterns
 
-- *"It's just one more launch."* — the leak is cumulative. The 5th orphan Electron is invisible-to-the-agent but visible-to-the-user.
-- *"The agent will clean up its own processes."* — they don't, by default. Playwright timeouts, mid-test exceptions, and aborted runs all bypass teardown.
-- *"Parallel = faster."* — only if the user has spare cores. Co-dispatching launcher-agents on a single-developer machine (which this repo is) is net-negative for user attention, even when wall-clock is shorter.
-- *"Memory will catch this next time."* — won't. Memory files decay; this is in `disciplines/` because every agent reads it before acting.
+- **"It's just one more launch."** The leak is cumulative. The 5th orphan Electron is invisible-to-the-agent but visible-to-the-user.
+- **"The agent will clean up its own processes."** They don't, by default. Playwright timeouts, mid-test exceptions, and aborted runs all bypass teardown.
+- **"Parallel = faster."** Only if the user has spare cores. Co-dispatching launcher-agents on a single-developer machine (which this repo is) is net-negative for user attention, even when wall-clock is shorter.
+- **"Memory will catch this next time."** It won't. Memory files decay; this is in `disciplines/` because every agent reads it before acting.
+
+## Cross-references
+
+- `agent-dispatch.md` — both disciplines protect user attention; agent-dispatch governs dispatcher-surface occupancy, this one governs editor / engine launch budgets.
+- `perf-measurement-frame-budget.md` — paired discipline for engine launches that *do* happen: pick N from the perf bucket so each launch is cheap.
+- `regression-fix-flow.md` — bisect steps require many user-verified launches; this discipline's "make each step cheap" applies to bisect steps too.

@@ -2,11 +2,13 @@
 
 Produces a structured alignment document comparing a published algorithm specification, its canonical reference implementation, and a project's in-house implementation. Makes every divergence visible at a glance; the reader uses it as a review surface at paper-port task closure.
 
-## Core property
+## Why
 
-Biased to find divergences, not confirm fidelity. DIVERGENT is the default status of any row until there is line-by-line evidence of match. "Looks approximately similar" is not evidence.
+Biased to find divergences, not confirm fidelity. DIVERGENT is the default status of any row until there is line-by-line evidence of match. "Looks approximately similar" is not evidence — same property as `peer-review-required.md`'s reviewer bias, applied to paper-port specifically.
 
-## Input
+## How
+
+### Input
 
 The invoking prompt supplies:
 
@@ -17,7 +19,7 @@ The invoking prompt supplies:
 
 If any of the above is missing or ambiguous, ask the invoker before starting. Do not guess.
 
-## Output shape
+### Output shape
 
 A single markdown file at the supplied output path:
 
@@ -26,7 +28,7 @@ A single markdown file at the supplied output path:
 - Detail entry under the table for every DIVERGENT row — exact paper quote or figure reference, reference file:line, our file:line, nature of divergence, impact, resolution needed.
 - "Not audited" section listing anything out of scope with the reason.
 
-## Hard rules
+### Hard rules
 
 - Every DIVERGENT row has a detail entry. No bare statuses.
 - Every FAITHFUL row cites specific lines in both the reference and our code. Verified by reading, not by trusting comments or commit messages.
@@ -34,8 +36,13 @@ A single markdown file at the supplied output path:
 - Prefer under-claiming fidelity. If the reference does `lerp(4, 8*N, α)` and ours does `clamp(N, 4, 8*N)`, that's DIVERGENT even if mathematically close — note the difference.
 - Do not accept the invoker's summary of what the paper says. Read the paper yourself for each row.
 
-## Out of scope for the audit itself
+### Out of scope for the audit itself
 
 - Implementing fixes. Divergences are recorded, not patched.
 - Closing tasks. Task-state changes belong with the main-session author.
 - Opinions on which approach is "better." Record whether our implementation matches the paper's spec; adjudication is the invoker's job.
+
+## Cross-references
+
+- `paper-port.md` — paper-port tasks invoke this discipline at closure; the alignment artifact is the closure-evidence for a `paper-port`-labelled task.
+- `peer-review-required.md` — same property: biased to find issues, not confirm correctness; PASS / FAITHFUL is asserted only with line-grounded evidence.
