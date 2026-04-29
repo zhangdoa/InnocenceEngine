@@ -9,6 +9,13 @@ namespace
 	// atomic load per pass per frame is the only added cost when nothing is
 	// bypassed. Edge-triggered logging fires once on each ON↔OFF transition;
 	// the previous-state mirror is render-thread-only so it stays a plain bool.
+	//
+	// TASK-182: when m_Bypassed && m_ClearOnBypass the dispatch site routes
+	// to RecordClearCommandList instead of full skip — the pass records a
+	// CL that clears its UAV outputs to neutral values (typically zero), and
+	// the matching Execute / SignalOnGPU still fires so downstream WaitOnGPU
+	// drains as in the live path. Plain bypass (m_ClearOnBypass=false) keeps
+	// TASK-171 semantics: full skip, no Execute, no Signal.
 	template<typename PassT, typename... Args>
 	inline void DispatchOrBypass(PassT& pass, Args&&... args)
 	{
@@ -18,10 +25,15 @@ namespace
 			pass.m_BypassedPrev = l_bypass;
 			auto* l_comp = pass.GetRenderPassComp();
 			const char* l_name = l_comp ? l_comp->m_InstanceName.c_str() : "<unknown>";
-			Log(Verbose, "RenderPass: ", l_name, " bypass = ", l_bypass ? "ON" : "OFF");
+			Log(Verbose, "RenderPass: ", l_name, " bypass = ", l_bypass ? "ON" : "OFF",
+				(l_bypass && pass.m_ClearOnBypass) ? " (clear-on-bypass)" : "");
 		}
 		if (l_bypass)
+		{
+			if (pass.m_ClearOnBypass)
+				pass.RecordClearCommandList();
 			return;
+		}
 		pass.PrepareCommandList(std::forward<Args>(args)...);
 	}
 
@@ -32,9 +44,15 @@ namespace
 	// Logging stays in DispatchOrBypass — this side is silent (same atomic
 	// value, the value cannot have changed mid-frame in any case the user
 	// observes).
+	//
+	// TASK-182: a clear-on-bypass pass DOES record + Execute + Signal — its
+	// downstream consumers see a defined neutral value rather than stale
+	// content. So IsBypassed reports true only for the full-skip case
+	// (m_Bypassed && !m_ClearOnBypass); a clearing pass is treated as live
+	// for both Execute gating and WaitIfActive draining.
 	inline bool IsBypassed(IRenderPass& pass)
 	{
-		return pass.m_Bypassed.load(std::memory_order_relaxed);
+		return pass.m_Bypassed.load(std::memory_order_relaxed) && !pass.m_ClearOnBypass;
 	}
 
 	// Cross-pass fence wait, gated on the upstream pass being live. A wait on

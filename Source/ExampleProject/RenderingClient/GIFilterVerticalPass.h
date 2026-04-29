@@ -19,6 +19,11 @@ namespace Inno
 		ObjectStatus GetStatus() override;
 
 		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
+		// TASK-182: when RasterizedGI is toggled OFF the dispatch site routes
+		// here instead of PrepareCommandList. Clears m_Result (LightPass's GI
+		// input) to zero so LightPass reads no GI contribution, eliminating
+		// the "frozen GI" stale-output artifact reported on the toggle.
+		bool RecordClearCommandList(IRenderingContext* renderingContext = nullptr) override;
 		RenderPassComponent* GetRenderPassComp() override;
 
 		TextureComponent* GetResult();

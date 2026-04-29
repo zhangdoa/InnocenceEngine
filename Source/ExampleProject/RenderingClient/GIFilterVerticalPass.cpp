@@ -31,6 +31,12 @@ bool GIFilterVerticalPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
+	// TASK-182: opt in to clear-on-bypass. m_Result is what LightPass reads
+	// for the GI contribution; without clearing on bypass LightPass reads
+	// stale last-frame GI and the RasterizedGI=false toggle leaves visible
+	// frozen GI on screen. RecordClearCommandList below records the clear.
+	m_ClearOnBypass = true;
+
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(6);
 
 	// b0 - PerFrame CBuffer
@@ -141,6 +147,35 @@ bool GIFilterVerticalPass::PrepareCommandList(IRenderingContext* renderingContex
 	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
 
 	m_ObjectStatus = ObjectStatus::Activated;
+	return true;
+}
+
+// TASK-182 — clear-on-bypass path. Mirrors PrepareCommandList's CL
+// lifecycle so the dispatch site's two-CL Execute / Signal pattern still
+// drains as in the live path: graphics CL transitions m_Result to
+// WriteOnly (UAV), compute CL issues a UAV-clear of the texture's
+// declared ClearColor (zero by default), CLs are Closed and Executed by
+// the dispatch site. m_Result's state-tracker ends in WriteOnly, which
+// LightPass then transitions to ReadOnly per its existing flow — no
+// barrier-state divergence between live and clear paths.
+bool GIFilterVerticalPass::RecordClearCommandList(IRenderingContext* renderingContext)
+{
+	if (m_RenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+	if (!m_Result || m_Result->m_ObjectStatus != ObjectStatus::Activated)
+		return false;
+
+	auto l_fmService = g_Engine->Get<FrameManagementService>();
+	auto l_textureService = g_Engine->Get<TextureResourceService>();
+
+	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Graphics, 0);
+	l_fmService->TryToTransitState(m_Result, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::WriteOnly);
+	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Graphics);
+
+	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
+	l_textureService->Clear(m_CommandListComp_Compute, m_Result);
+	l_fmService->CommandListEnd(m_RenderPassComp, m_CommandListComp_Compute);
+
 	return true;
 }
 
