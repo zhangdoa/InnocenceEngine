@@ -68,6 +68,32 @@ struct VertexInputType
 
 #define LIGHT_CULLING_BLOCK_SIZE 16
 
+// TASK-183 runtime debug-view modes. Mirror Inno::DebugViewMode in
+// Source/Engine/Common/GPUDataStructure.h — the C++ enum is the source of
+// truth and the picked uint is carried via PerFrame_CB.debugViewMode. Names
+// are HLSL-flavoured (UPPER_SNAKE) on this side; the C++ side uses PascalCase
+// enumerators. Keep both lists in sync when adding modes.
+//
+// Sentinel ordering: lit-composite modes (DirectOnly / IndirectOnly) come
+// before the raw-channel modes so DebugViewModeReplacesRT0 in
+// common/lightPassCommon.hlsl can use a single >= comparison against
+// DEBUG_VIEW_GBUFFER_ALBEDO. Keep raw-channel modes contiguous and after
+// the lit ones.
+#define DEBUG_VIEW_NONE                       0u
+#define DEBUG_VIEW_DIRECT_LIGHTING_ONLY       1u
+#define DEBUG_VIEW_INDIRECT_LIGHTING_ONLY     2u
+#define DEBUG_VIEW_GBUFFER_ALBEDO             3u
+#define DEBUG_VIEW_GBUFFER_NORMAL             4u
+#define DEBUG_VIEW_GBUFFER_METALLIC           5u
+#define DEBUG_VIEW_GBUFFER_ROUGHNESS          6u
+#define DEBUG_VIEW_GBUFFER_MOTION_VECTOR      7u
+#define DEBUG_VIEW_SUN_SHADOW_VISIBILITY      8u
+#define DEBUG_VIEW_TILE_LIGHT_COUNT_HEATMAP   9u
+
+// Tile-light heatmap palette ceiling — matches the 16-entry debugColors
+// table above. Tiles with > 15 lights saturate at the brightest entry.
+#define DEBUG_VIEW_TILE_LIGHT_HEATMAP_MAX     16u
+
 struct PerFrame_CB
 {
 	float4x4 p_original; // 0 - 3
@@ -87,7 +113,7 @@ struct PerFrame_CB
 	float aperture; // Tight packing 26
 	float shutterTime; // Tight packing 26
 	float ISO; // Tight packing 26
-	uint padding_a; // Tight packing 26
+	uint debugViewMode; // Tight packing 26 (TASK-183: matches DEBUG_VIEW_* below; 0 = None / normal lighting)
 	float radianceCacheJitter_x; // Tight packing 27
 	float radianceCacheJitter_y; // Tight packing 27
 	uint frameIndex; // Tight packing 27

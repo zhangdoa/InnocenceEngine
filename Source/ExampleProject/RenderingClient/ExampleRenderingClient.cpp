@@ -48,6 +48,7 @@
 #include "../../Engine/Engine.h"
 #include "../../Engine/Services/TextureResourceService.h"
 #include "../../Engine/Services/FrameManagementService.h"
+#include "../../Engine/Services/PerFrameDataService.h"
 
 #include <cstdlib>
 
@@ -143,6 +144,78 @@ namespace Inno
 			});
 
 		DevToggleRegistry::RegisterAction("Screenshot", [this]() { m_saveScreenCapture = true; });
+
+		// TASK-183 runtime visualization-mode picker. One bool toggle per
+		// mode; setting a mode true clears all the others (mutual exclusion
+		// is the picker semantic — N booleans simulate a one-of-N enum).
+		// Setter writes the picked uint to PerFrameDataService's atomic;
+		// PerFrameDataService snapshots it into PerFrameConstantBuffer each
+		// frame, lightPass.comp branches on g_Frame.debugViewMode.
+		//
+		// TASK-192 will replace these N booleans with a single Selector
+		// primitive + dropdown in RenderTogglesPanel.vue. The engine-side
+		// state (atomic uint in PerFrameDataService) does not change between
+		// the two designs — only the registry-primitive shape and editor UX.
+		struct DebugViewToggleEntry
+		{
+			const char*    m_ToggleName;
+			DebugViewMode  m_Mode;
+		};
+		static const DebugViewToggleEntry s_DebugViewToggles[] = {
+			{ "DebugView_DirectLightingOnly",     DebugViewMode::DirectLightingOnly },
+			{ "DebugView_IndirectLightingOnly",   DebugViewMode::IndirectLightingOnly },
+			{ "DebugView_GBufferAlbedo",          DebugViewMode::GBufferAlbedo },
+			{ "DebugView_GBufferNormal",          DebugViewMode::GBufferNormal },
+			{ "DebugView_GBufferMetallic",        DebugViewMode::GBufferMetallic },
+			{ "DebugView_GBufferRoughness",       DebugViewMode::GBufferRoughness },
+			{ "DebugView_GBufferMotionVector",    DebugViewMode::GBufferMotionVector },
+			{ "DebugView_SunShadowVisibility",    DebugViewMode::SunShadowVisibility },
+			{ "DebugView_TileLightCountHeatmap",  DebugViewMode::TileLightCountHeatmap },
+		};
+		for (const auto& entry : s_DebugViewToggles)
+		{
+			const DebugViewMode l_Mode = entry.m_Mode;
+			DevToggleRegistry::RegisterToggle(entry.m_ToggleName,
+				[l_Mode]() {
+					return g_Engine->Get<PerFrameDataService>()->GetDebugViewMode() == l_Mode;
+				},
+				[l_Mode](bool desired) {
+					// Mutual exclusion: turning ON sets the mode; turning OFF
+					// clears the mode only when the active mode is this one
+					// (toggling another mode then this one off must not clobber
+					// the other mode).
+					auto* l_pfds = g_Engine->Get<PerFrameDataService>();
+					if (desired)
+					{
+						l_pfds->SetDebugViewMode(l_Mode);
+					}
+					else if (l_pfds->GetDebugViewMode() == l_Mode)
+					{
+						l_pfds->SetDebugViewMode(DebugViewMode::None);
+					}
+				});
+		}
+
+		// TASK-183 CLI / env injection. Lets a headless smoke run pre-select
+		// a debug-view mode without the editor in the loop:
+		//   INNO_DEBUG_VIEW_MODE=DebugView_GBufferAlbedo Main.exe -total_frames 80 ...
+		// Validates the runtime branch end-to-end (registry → PFDS atomic →
+		// PerFrame_CB → lightPass.comp), which the editor IPC path also
+		// exercises but is harder to drive from a smoke test.
+		if (const char* l_DebugViewEnv = std::getenv("INNO_DEBUG_VIEW_MODE"))
+		{
+			if (DevToggleRegistry::Set(l_DebugViewEnv, true))
+			{
+				Log(Success, "TASK-183 INNO_DEBUG_VIEW_MODE='", l_DebugViewEnv,
+					"' applied; PFDS mode = ",
+					static_cast<uint32_t>(g_Engine->Get<PerFrameDataService>()->GetDebugViewMode()), ".");
+			}
+			else
+			{
+				Log(Warning, "INNO_DEBUG_VIEW_MODE='", l_DebugViewEnv,
+					"' is not a registered DebugView toggle; ignoring.");
+			}
+		}
 
 		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)
 		{

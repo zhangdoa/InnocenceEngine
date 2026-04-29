@@ -104,9 +104,78 @@ RWTexture2D<float4> out_lightPassRT1 : register(u1);
 #include "common/lightPassDirectLighting.hlsl"
 #include "common/lightPassIndirectCompose.hlsl"
 
-// Debug toggle. False in shipping; flip locally to inspect isolated GI
-// compose without redispatching.
-#define DEBUG_INDIRECT_FROM_CACHE_ONLY 0
+// TASK-183: write raw GBuffer / shadow / heatmap data into RT0 for the
+// debug-view modes whose output is a single channel of upstream pass
+// state, not a recomputation of lighting. Returns immediately after
+// writing — no direct / indirect lighting is needed.
+//
+// out_lightPassRT1 carries the next-frame indirect seed (read by the
+// radiance cache). When debug-view replaces RT0 we still want valid
+// indirect accumulation downstream, so RT1 keeps whatever the lit path
+// would have written. To keep this helper self-contained and avoid
+// accumulating any direct light during pure-debug frames, we leave RT1
+// at zero: the radiance cache is fed an empty seed for these frames,
+// which is acceptable for a transient developer-time debug view (the
+// next frame the user clears the debug view, the cache reseeds). Same
+// rationale as why TAA is not bypassed for these modes — debug-view is
+// for visual inspection at rest, not motion-stable rendering.
+void WriteDebugViewRT0(
+	in uint in_DebugViewMode,
+	in uint2 in_ScreenCoord,
+	in MaterialAttributes in_Material,
+	in float3 in_NormalWS)
+{
+	float3 l_DebugRGB = float3(0.0, 0.0, 0.0);
+
+	if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_ALBEDO)
+	{
+		l_DebugRGB = in_Material.m_Albedo;
+	}
+	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_NORMAL)
+	{
+		// Map [-1, 1] world-space normal to [0, 1] for display.
+		l_DebugRGB = in_NormalWS * 0.5 + 0.5;
+	}
+	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_METALLIC)
+	{
+		l_DebugRGB = float3(in_Material.m_Metallic, in_Material.m_Metallic, in_Material.m_Metallic);
+	}
+	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_ROUGHNESS)
+	{
+		l_DebugRGB = float3(in_Material.m_Roughness, in_Material.m_Roughness, in_Material.m_Roughness);
+	}
+	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_MOTION_VECTOR)
+	{
+		// RG = motion vector in screen-pixel units (OpaquePass.frag:124).
+		// Map to [0, 1] colour by abs + clamp; magnitude saturates above
+		// 64 px/frame which is well past TAA's clamp ceiling.
+		float2 l_Motion = in_opaquePassRT3[in_ScreenCoord].xy;
+		const float MOTION_DISPLAY_SCALE_PX = 64.0;
+		float2 l_Display = saturate(abs(l_Motion) / MOTION_DISPLAY_SCALE_PX);
+		l_DebugRGB = float3(l_Display.x, l_Display.y, 0.0);
+	}
+	else if (in_DebugViewMode == DEBUG_VIEW_SUN_SHADOW_VISIBILITY)
+	{
+		float l_Vis = in_SunShadowRTVisibility.Load(int3(in_ScreenCoord, 0));
+		l_DebugRGB = float3(l_Vis, l_Vis, l_Vis);
+	}
+	else if (in_DebugViewMode == DEBUG_VIEW_TILE_LIGHT_COUNT_HEATMAP)
+	{
+		// Same palette as LightCullingPass.comp's debug heatmap (Filament's
+		// listing 45) so the two visualizations are colour-comparable.
+		uint2 l_TileIndex = uint2(floor((float2)in_ScreenCoord / LIGHT_CULLING_BLOCK_SIZE));
+		uint l_LightCount = in_LightGrid[l_TileIndex].y;
+		uint l_PaletteIndex = min(l_LightCount, DEBUG_VIEW_TILE_LIGHT_HEATMAP_MAX - 1u);
+		l_DebugRGB = debugColors[l_PaletteIndex].rgb;
+	}
+
+	// Tag alpha = 1 so downstream HUD overlays in finalBlendPass (which look
+	// for alpha == 1 to identify debug pixels) treat the whole frame as the
+	// debug channel. This also guarantees finalBlendPass's debug-overlay
+	// branch does not paint over the debug view.
+	out_lightPassRT0[in_ScreenCoord] = float4(l_DebugRGB, 1.0);
+	out_lightPassRT1[in_ScreenCoord] = float4(0.0, 0.0, 0.0, 0.0);
+}
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
@@ -120,6 +189,17 @@ void main(ComputeInputType input)
 	MaterialAttributes l_Material;
 	if (!DecodeGBuffer(in_opaquePassRT0, in_opaquePassRT1, in_opaquePassRT2, l_ScreenCoord, l_PositionWS, l_NormalWS, l_Material))
 	{
+		DeviceMemoryBarrier();
+		return;
+	}
+
+	// TASK-183 raw-channel debug views: write the requested upstream-pass
+	// channel directly to RT0 and skip the BSDF / GI evaluators. Tile-light
+	// heatmap, sun shadow, GBuffer channels — none of these depend on the
+	// current pixel's lighting, so paying for the BSDF math is wasteful.
+	if (DebugViewModeReplacesRT0(g_Frame.debugViewMode))
+	{
+		WriteDebugViewRT0(g_Frame.debugViewMode, l_ScreenCoord, l_Material, l_NormalWS);
 		DeviceMemoryBarrier();
 		return;
 	}
@@ -143,16 +223,28 @@ void main(ComputeInputType input)
 		l_DirectLuminance, l_IndirectSeedLuminance);
 
 	float3 l_IndirectLuminance = ComposeIndirectLighting(in_GIIrradiance, l_ScreenCoord, l_Material);
-	// GI composes into the visual RT only; the illuminance RT carries
-	// direct lighting only so next-frame ray hits do not re-accumulate
-	// already-accumulated indirect energy.
-	l_DirectLuminance += l_IndirectLuminance;
 
-#if DEBUG_INDIRECT_FROM_CACHE_ONLY
-	out_lightPassRT0[l_ScreenCoord] = float4(l_IndirectLuminance, 1.0);
-#else
-	out_lightPassRT0[l_ScreenCoord] = float4(l_DirectLuminance, 1.0);
-#endif
+	// TASK-183 lit-composite debug views: zero one term while keeping the
+	// other live. DirectOnly bypasses GI compose; IndirectOnly bypasses the
+	// direct accumulation. Replaces the former #define DEBUG_INDIRECT_FROM_CACHE_ONLY.
+	float3 l_FinalLuminance;
+	if (g_Frame.debugViewMode == DEBUG_VIEW_INDIRECT_LIGHTING_ONLY)
+	{
+		l_FinalLuminance = l_IndirectLuminance;
+	}
+	else if (g_Frame.debugViewMode == DEBUG_VIEW_DIRECT_LIGHTING_ONLY)
+	{
+		l_FinalLuminance = l_DirectLuminance;
+	}
+	else
+	{
+		// Normal path: GI composes into the visual RT only; the illuminance
+		// RT (RT1) carries direct lighting only so next-frame ray hits do
+		// not re-accumulate already-accumulated indirect energy.
+		l_FinalLuminance = l_DirectLuminance + l_IndirectLuminance;
+	}
+
+	out_lightPassRT0[l_ScreenCoord] = float4(l_FinalLuminance, 1.0);
 	out_lightPassRT1[l_ScreenCoord] = float4(l_IndirectSeedLuminance, 1.0);
 	DeviceMemoryBarrier();
 }

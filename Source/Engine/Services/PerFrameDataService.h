@@ -22,6 +22,13 @@ namespace Inno
 		GPUBufferComponent* GetCurrentFrameBuffer();
 		GPUBufferComponent* GetPreviousFrameBuffer();
 
+		// TASK-183 runtime debug-view mode. Set from any thread (DevToggleRegistry
+		// callbacks fire on the editor IPC thread); read on the render thread
+		// during UpdatePerFrameConstantBuffer. Atomic to keep the cross-thread
+		// write tear-free without taking the impl mutex.
+		void SetDebugViewMode(DebugViewMode in_Mode);
+		DebugViewMode GetDebugViewMode() const;
+
 	private:
 		PerFrameDataServiceImpl* m_Impl;
 	};

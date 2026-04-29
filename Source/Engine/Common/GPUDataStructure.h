@@ -17,6 +17,25 @@ namespace Inno
 
 	INNO_ENUM_OPERATORS(VisibilityMask)
 
+	// Runtime debug visualization mode (TASK-183). Mirrors the HLSL
+	// DEBUG_VIEW_* enum in common/common.hlsl; lightPass.comp branches on
+	// PerFrame_CB.debugViewMode to write a debug channel to RT0 instead of
+	// the lit composite. 0 = off (normal lighting). Same shape as the
+	// data-driven exposureMode field below (TASK-144 precedent).
+	enum class DebugViewMode : uint32_t
+	{
+		None                    = 0u,
+		DirectLightingOnly      = 1u,
+		IndirectLightingOnly    = 2u,
+		GBufferAlbedo           = 3u,
+		GBufferNormal           = 4u,
+		GBufferMetallic         = 5u,
+		GBufferRoughness        = 6u,
+		GBufferMotionVector     = 7u,
+		SunShadowVisibility     = 8u,
+		TileLightCountHeatmap   = 9u,
+	};
+
 	struct alignas(16) PerFrameConstantBuffer
 	{
 		Mat4 p_original;
@@ -36,7 +55,7 @@ namespace Inno
 		float aperture;
 		float shutterTime;
 		float ISO;
-		uint32_t padding_a;
+		uint32_t debugViewMode; // TASK-183: matches DebugViewMode enum; 0 = None (normal lighting). Reused from former padding_a slot (TASK-138/157).
 		Vec2 radianceCacheHaltonJitter;
 		uint32_t frameIndex;
 		uint32_t modelCount;

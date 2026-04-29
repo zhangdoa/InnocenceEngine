@@ -10,6 +10,8 @@
 #include "../Engine.h"
 #include "GPUBufferResourceService.h"
 #include "FrameManagementService.h"
+
+#include <atomic>
 using namespace Inno;
 
 namespace Inno
@@ -24,6 +26,10 @@ namespace Inno
 
 		GPUBufferComponent* m_PerFrameCBufferGPUBufferComp;
 		GPUBufferComponent* m_PerFrameCBufferPrevGPUBufferComp;
+
+		// TASK-183: runtime debug-view picker. Editor-thread write, render-
+		// thread read; atomic uint32_t avoids the impl mutex on the editor side.
+		std::atomic<uint32_t> m_DebugViewMode{ static_cast<uint32_t>(DebugViewMode::None) };
 
 		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
@@ -182,10 +188,11 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 		l_perFrameCB.sun_direction = Math::getDirection(Direction::Forward, l_SunTransform->m_LocalRot);
 	l_perFrameCB.sun_illuminance = l_sun.m_RGBColor * l_sun.m_LuminousFlux;
 
-	// padding_a mirrors the shader-side b0 cbuffer slot retained for HLSL CB
-	// alignment after TASK-138's CSM removal; zero-init avoids leaking stale
-	// bytes into RenderDoc captures.
-	l_perFrameCB.padding_a = 0;
+	// TASK-183: snapshot the editor-thread debug-view mode for this frame.
+	// The atomic is the single source of truth; the CB carries the picked
+	// value down to lightPass.comp via PerFrame_CB.debugViewMode. Slot was
+	// formerly padding_a after TASK-138's CSM removal; reused here.
+	l_perFrameCB.debugViewMode = m_DebugViewMode.load(std::memory_order_relaxed);
 
 	m_perFrameCBs[g_Engine->Get<FrameManagementService>()->GetCurrentFrame()] = l_perFrameCB;
 
@@ -269,4 +276,14 @@ GPUBufferComponent* PerFrameDataService::GetCurrentFrameBuffer()
 GPUBufferComponent* PerFrameDataService::GetPreviousFrameBuffer()
 {
 	return m_Impl->GetPreviousFramePerFrameBuffer();
+}
+
+void PerFrameDataService::SetDebugViewMode(DebugViewMode in_Mode)
+{
+	m_Impl->m_DebugViewMode.store(static_cast<uint32_t>(in_Mode), std::memory_order_relaxed);
+}
+
+DebugViewMode PerFrameDataService::GetDebugViewMode() const
+{
+	return static_cast<DebugViewMode>(m_Impl->m_DebugViewMode.load(std::memory_order_relaxed));
 }
