@@ -1,5 +1,7 @@
 # GPU Path Tracer Reference Pass Design
 
+> **Path note (TASK-200, 2026-04-29):** All `Res/Shaders/HLSL/*.hlsl` paths in this design are wrong. Current shader source lives in `Source/Shaders/HLSL/`; the `Res/Shaders/` tree is an obsolete shadow that has been deleted. Translate `Res/Shaders/HLSL/X.hlsl` → `Source/Shaders/HLSL/X.hlsl` when reading this spec.
+
 ## Goal
 
 Add `GPUPathTracerPass`: a GPU progressive path tracer that accumulates samples over time and drives the swap chain output when active (B key). Serves as a realtime ground-truth reference to validate the probe-based `RadianceCacheRaytracingPass`.

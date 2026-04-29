@@ -261,7 +261,6 @@ Requires [DirectXShaderCompiler](https://github.com/microsoft/DirectXShaderCompi
 
 ```powershell
 Scripts/HLSL2DXIL.ps1   # DXIL for DirectX 12
-Scripts/HLSL2SPIR-V.ps1  # SPIR-V for Vulkan
 ```
 
 ## License

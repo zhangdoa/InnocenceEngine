@@ -1,5 +1,7 @@
 # Rendering Client Audit Implementation Plan
 
+> **Path note (TASK-200, 2026-04-29):** Any `Res/Shaders/HLSL/` references in this plan are wrong. Current shader source lives in `Source/Shaders/HLSL/`; the `Res/Shaders/` tree is an obsolete shadow that has been deleted.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Audit all 17 active render passes in DefaultRenderingClient for D3D12 correctness and visual validity, fixing each before advancing.

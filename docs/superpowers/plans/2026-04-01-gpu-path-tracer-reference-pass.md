@@ -1,5 +1,7 @@
 # GPU Path Tracer Reference Pass Implementation Plan
 
+> **Path note (TASK-200, 2026-04-29):** All `Res/Shaders/HLSL/*.hlsl` paths in this plan are wrong. Current shader source lives in `Source/Shaders/HLSL/`; the `Res/Shaders/` tree is an obsolete shadow that has been deleted. Translate `Res/Shaders/HLSL/X.hlsl` → `Source/Shaders/HLSL/X.hlsl` when reading this plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add `GPUPathTracerPass`, a progressive GPU DXR path tracer toggled by B key, that accumulates a ground-truth reference image and validates the probe-based `RadianceCacheRaytracingPass`. Also removes the offline `GIResolvePass`.
