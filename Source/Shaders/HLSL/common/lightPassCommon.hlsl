@@ -10,19 +10,19 @@
 #ifndef LIGHTPASS_COMMON_HLSL
 #define LIGHTPASS_COMMON_HLSL
 
-// TASK-183 runtime debug-view sentinel values. Values greater than the max
-// signal the lit-composite path should still be the LightPass output even
-// when GI / direct contributions are individually inspected — DirectOnly
-// and IndirectOnly are *also* lit composites, just with one term zeroed.
-// DEBUG_VIEW_PIXEL_NEEDS_RAW_OUTPUT applies to the GBuffer / shadow / heatmap
-// modes that must override RT0 with display-referred raw data.
-//
 // Returns true when the picked debug mode replaces RT0 with raw channel data
 // (bypasses the BSDF accumulators) rather than modulating direct vs indirect
 // terms inside the lit composite.
+//
+// TASK-205: after the GBuffer-mode trim, raw-channel writers (sun shadow,
+// tile heatmap) no longer sit at the high end of the enum — they interleave
+// with the lit-composite modifiers (DirectOnly = 1, IndirectOnly = 2,
+// SunShadowVisibility = 3, TileLightCountHeatmap = 4). The former `>=`
+// sentinel pattern stops working; use explicit set membership instead.
 bool DebugViewModeReplacesRT0(uint in_DebugViewMode)
 {
-	return in_DebugViewMode >= DEBUG_VIEW_GBUFFER_ALBEDO;
+	return in_DebugViewMode == DEBUG_VIEW_SUN_SHADOW_VISIBILITY
+		|| in_DebugViewMode == DEBUG_VIEW_TILE_LIGHT_COUNT_HEATMAP;
 }
 
 struct MaterialAttributes

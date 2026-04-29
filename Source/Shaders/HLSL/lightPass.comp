@@ -104,57 +104,28 @@ RWTexture2D<float4> out_lightPassRT1 : register(u1);
 #include "common/lightPassDirectLighting.hlsl"
 #include "common/lightPassIndirectCompose.hlsl"
 
-// TASK-183: write raw GBuffer / shadow / heatmap data into RT0 for the
-// debug-view modes whose output is a single channel of upstream pass
-// state, not a recomputation of lighting. Returns immediately after
+// TASK-183: write synthesized debug data into RT0 for the modes whose
+// output is a recomputation that would not exist on any single GBuffer RT
+// (shadow visibility, tile-light heatmap). Returns immediately after
 // writing — no direct / indirect lighting is needed.
 //
+// TASK-205: trimmed to the two synthetic-output modes (SunShadowVisibility,
+// TileLightCountHeatmap). Raw-RT inspection (GBuffer albedo / normal /
+// metallic / roughness / motion vector) lives in the editor-side
+// RenderTargetDebuggerPanel which enumerates OpaquePass's m_ColorOutputs.
+//
 // out_lightPassRT1 carries the next-frame indirect seed (read by the
-// radiance cache). When debug-view replaces RT0 we still want valid
-// indirect accumulation downstream, so RT1 keeps whatever the lit path
-// would have written. To keep this helper self-contained and avoid
-// accumulating any direct light during pure-debug frames, we leave RT1
-// at zero: the radiance cache is fed an empty seed for these frames,
-// which is acceptable for a transient developer-time debug view (the
-// next frame the user clears the debug view, the cache reseeds). Same
-// rationale as why TAA is not bypassed for these modes — debug-view is
-// for visual inspection at rest, not motion-stable rendering.
+// radiance cache). When debug-view replaces RT0 we leave RT1 at zero:
+// the cache is fed an empty seed for these frames, which is acceptable
+// for a transient developer-time debug view (the next frame the user
+// clears the debug view, the cache reseeds).
 void WriteDebugViewRT0(
 	in uint in_DebugViewMode,
-	in uint2 in_ScreenCoord,
-	in MaterialAttributes in_Material,
-	in float3 in_NormalWS)
+	in uint2 in_ScreenCoord)
 {
 	float3 l_DebugRGB = float3(0.0, 0.0, 0.0);
 
-	if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_ALBEDO)
-	{
-		l_DebugRGB = in_Material.m_Albedo;
-	}
-	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_NORMAL)
-	{
-		// Map [-1, 1] world-space normal to [0, 1] for display.
-		l_DebugRGB = in_NormalWS * 0.5 + 0.5;
-	}
-	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_METALLIC)
-	{
-		l_DebugRGB = float3(in_Material.m_Metallic, in_Material.m_Metallic, in_Material.m_Metallic);
-	}
-	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_ROUGHNESS)
-	{
-		l_DebugRGB = float3(in_Material.m_Roughness, in_Material.m_Roughness, in_Material.m_Roughness);
-	}
-	else if (in_DebugViewMode == DEBUG_VIEW_GBUFFER_MOTION_VECTOR)
-	{
-		// RG = motion vector in screen-pixel units (OpaquePass.frag:124).
-		// Map to [0, 1] colour by abs + clamp; magnitude saturates above
-		// 64 px/frame which is well past TAA's clamp ceiling.
-		float2 l_Motion = in_opaquePassRT3[in_ScreenCoord].xy;
-		const float MOTION_DISPLAY_SCALE_PX = 64.0;
-		float2 l_Display = saturate(abs(l_Motion) / MOTION_DISPLAY_SCALE_PX);
-		l_DebugRGB = float3(l_Display.x, l_Display.y, 0.0);
-	}
-	else if (in_DebugViewMode == DEBUG_VIEW_SUN_SHADOW_VISIBILITY)
+	if (in_DebugViewMode == DEBUG_VIEW_SUN_SHADOW_VISIBILITY)
 	{
 		float l_Vis = in_SunShadowRTVisibility.Load(int3(in_ScreenCoord, 0));
 		l_DebugRGB = float3(l_Vis, l_Vis, l_Vis);
@@ -193,13 +164,14 @@ void main(ComputeInputType input)
 		return;
 	}
 
-	// TASK-183 raw-channel debug views: write the requested upstream-pass
-	// channel directly to RT0 and skip the BSDF / GI evaluators. Tile-light
-	// heatmap, sun shadow, GBuffer channels — none of these depend on the
-	// current pixel's lighting, so paying for the BSDF math is wasteful.
+	// TASK-183 raw-channel debug views: write the requested synthesized
+	// channel directly to RT0 and skip the BSDF / GI evaluators. After
+	// TASK-205 only sun-shadow visibility and the tile-light heatmap take
+	// this path — neither depends on the current pixel's lighting, so the
+	// BSDF math would be wasteful.
 	if (DebugViewModeReplacesRT0(g_Frame.debugViewMode))
 	{
-		WriteDebugViewRT0(g_Frame.debugViewMode, l_ScreenCoord, l_Material, l_NormalWS);
+		WriteDebugViewRT0(g_Frame.debugViewMode, l_ScreenCoord);
 		DeviceMemoryBarrier();
 		return;
 	}

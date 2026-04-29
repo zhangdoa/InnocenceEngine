@@ -74,21 +74,16 @@ struct VertexInputType
 // are HLSL-flavoured (UPPER_SNAKE) on this side; the C++ side uses PascalCase
 // enumerators. Keep both lists in sync when adding modes.
 //
-// Sentinel ordering: lit-composite modes (DirectOnly / IndirectOnly) come
-// before the raw-channel modes so DebugViewModeReplacesRT0 in
-// common/lightPassCommon.hlsl can use a single >= comparison against
-// DEBUG_VIEW_GBUFFER_ALBEDO. Keep raw-channel modes contiguous and after
-// the lit ones.
+// TASK-205: GBuffer raw-channel modes were trimmed (RenderTargetDebuggerPanel
+// covers raw RT inspection by enumerating OpaquePass's RTs). The five
+// survivors interleave lit-composite modifiers (1/2) with raw-channel writes
+// (3/4); DebugViewModeReplacesRT0 in common/lightPassCommon.hlsl is now an
+// explicit set check rather than a >= sentinel.
 #define DEBUG_VIEW_NONE                       0u
 #define DEBUG_VIEW_DIRECT_LIGHTING_ONLY       1u
 #define DEBUG_VIEW_INDIRECT_LIGHTING_ONLY     2u
-#define DEBUG_VIEW_GBUFFER_ALBEDO             3u
-#define DEBUG_VIEW_GBUFFER_NORMAL             4u
-#define DEBUG_VIEW_GBUFFER_METALLIC           5u
-#define DEBUG_VIEW_GBUFFER_ROUGHNESS          6u
-#define DEBUG_VIEW_GBUFFER_MOTION_VECTOR      7u
-#define DEBUG_VIEW_SUN_SHADOW_VISIBILITY      8u
-#define DEBUG_VIEW_TILE_LIGHT_COUNT_HEATMAP   9u
+#define DEBUG_VIEW_SUN_SHADOW_VISIBILITY      3u
+#define DEBUG_VIEW_TILE_LIGHT_COUNT_HEATMAP   4u
 
 // Tile-light heatmap palette ceiling — matches the 16-entry debugColors
 // table above. Tiles with > 15 lights saturate at the brightest entry.

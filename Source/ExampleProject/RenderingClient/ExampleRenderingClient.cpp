@@ -161,14 +161,12 @@ namespace Inno
 			const char*    m_ToggleName;
 			DebugViewMode  m_Mode;
 		};
+		// TASK-205 trimmed the GBuffer modes — RenderTargetDebuggerPanel
+		// covers raw-RT inspection by enumerating OpaquePass's m_ColorOutputs.
+		// Survivors are the modes that need shader-side math.
 		static const DebugViewToggleEntry s_DebugViewToggles[] = {
 			{ "DebugView_DirectLightingOnly",     DebugViewMode::DirectLightingOnly },
 			{ "DebugView_IndirectLightingOnly",   DebugViewMode::IndirectLightingOnly },
-			{ "DebugView_GBufferAlbedo",          DebugViewMode::GBufferAlbedo },
-			{ "DebugView_GBufferNormal",          DebugViewMode::GBufferNormal },
-			{ "DebugView_GBufferMetallic",        DebugViewMode::GBufferMetallic },
-			{ "DebugView_GBufferRoughness",       DebugViewMode::GBufferRoughness },
-			{ "DebugView_GBufferMotionVector",    DebugViewMode::GBufferMotionVector },
 			{ "DebugView_SunShadowVisibility",    DebugViewMode::SunShadowVisibility },
 			{ "DebugView_TileLightCountHeatmap",  DebugViewMode::TileLightCountHeatmap },
 		};
@@ -198,7 +196,7 @@ namespace Inno
 
 		// TASK-183 CLI / env injection. Lets a headless smoke run pre-select
 		// a debug-view mode without the editor in the loop:
-		//   INNO_DEBUG_VIEW_MODE=DebugView_GBufferAlbedo Main.exe -total_frames 80 ...
+		//   INNO_DEBUG_VIEW_MODE=DebugView_TileLightCountHeatmap Main.exe -total_frames 80 ...
 		// Validates the runtime branch end-to-end (registry → PFDS atomic →
 		// PerFrame_CB → lightPass.comp), which the editor IPC path also
 		// exercises but is harder to drive from a smoke test.
@@ -215,6 +213,21 @@ namespace Inno
 				Log(Warning, "INNO_DEBUG_VIEW_MODE='", l_DebugViewEnv,
 					"' is not a registered DebugView toggle; ignoring.");
 			}
+		}
+
+		// TASK-182 env-var hookup so the clear-on-bypass path can be smoke-
+		// tested without the editor in the loop. INNO_RASTERIZED_GI=0 / "off"
+		// / "false" disables the rasterized-GI group at startup, exercising
+		// the bypass dispatch + RecordClearCommandList path the user
+		// observed as "frozen GI on screen" before the fix.
+		if (const char* l_RasterizedGIEnv = std::getenv("INNO_RASTERIZED_GI"))
+		{
+			const bool l_OnRequested = !(strcmp(l_RasterizedGIEnv, "0") == 0
+				|| strcmp(l_RasterizedGIEnv, "off") == 0
+				|| strcmp(l_RasterizedGIEnv, "false") == 0);
+			DevToggleRegistry::Set("RasterizedGI", l_OnRequested);
+			Log(Success, "TASK-182 INNO_RASTERIZED_GI='", l_RasterizedGIEnv,
+				"' applied; RasterizedGI = ", l_OnRequested ? "ON" : "OFF (clear-on-bypass active).");
 		}
 
 		if (strcmp(g_Engine->getInitConfig().testCase, "gpu_path_tracer") == 0)

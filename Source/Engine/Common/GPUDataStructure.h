@@ -22,18 +22,18 @@ namespace Inno
 	// PerFrame_CB.debugViewMode to write a debug channel to RT0 instead of
 	// the lit composite. 0 = off (normal lighting). Same shape as the
 	// data-driven exposureMode field below (TASK-144 precedent).
+	//
+	// TASK-205 trimmed the GBuffer modes (raw-RT inspection moved to
+	// RenderTargetDebuggerPanel which already enumerates OpaquePass's RTs).
+	// Survivors are the modes that need shader-side math (lit-composite term
+	// zeroing, RT-shadow visualization, tile-light heatmap synthesis).
 	enum class DebugViewMode : uint32_t
 	{
 		None                    = 0u,
 		DirectLightingOnly      = 1u,
 		IndirectLightingOnly    = 2u,
-		GBufferAlbedo           = 3u,
-		GBufferNormal           = 4u,
-		GBufferMetallic         = 5u,
-		GBufferRoughness        = 6u,
-		GBufferMotionVector     = 7u,
-		SunShadowVisibility     = 8u,
-		TileLightCountHeatmap   = 9u,
+		SunShadowVisibility     = 3u,
+		TileLightCountHeatmap   = 4u,
 	};
 
 	struct alignas(16) PerFrameConstantBuffer
