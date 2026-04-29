@@ -1,0 +1,63 @@
+---
+id: TASK-197
+title: >-
+  Split light-editor-roundtrip.spec.js by feature (intensity / K-mode /
+  rasterized-GI)
+status: To Do
+assignee:
+  - editor-tooling-expert
+created_date: '2026-04-28 20:18'
+labels:
+  - editor
+  - test-hygiene
+  - split-before-grow
+  - follow-up
+dependencies: []
+references:
+  - Source/Editor-Next/tests/light-editor-roundtrip.spec.js
+  - .claude/hooks/gates/file-size.js
+  - .claude/disciplines/split-before-grow.md
+priority: low
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+## Motivation
+
+`Source/Editor-Next/tests/light-editor-roundtrip.spec.js` reached 422 lines after TASK-188 added two K-mode tests (+150 lines). Tripped `.claude/hooks/gates/file-size.js` ratchet. TASK-188 used `[skip-size-gate]` sentinel as a one-off; this is the structural follow-up.
+
+## Scope
+
+Split into per-feature spec files. Each test is independent (live-engine round-trip), so splitting by feature is clean:
+
+- `tests/light-editor-intensity.spec.js` — intensity roundtrip
+- `tests/light-editor-k-mode.spec.js` — K-mode toggle + Temperature input + RGB re-derive (TASK-188's two new tests)
+- `tests/light-editor-rasterized-gi.spec.js` — RasterizedGI dev-toggle (existing test)
+
+Common setup (engine launch, editor connect, GISponza load) probably belongs in a small `helpers/light-editor-fixture.js` helper if duplicated across files. Confirm during design.
+
+## Acceptance criteria
+
+- [ ] Each spec file under 400 lines
+- [ ] All three new specs pass in isolation against live engine + editor
+- [ ] No duplication: shared setup extracted to a helper if used in 2+ files
+- [ ] Original `light-editor-roundtrip.spec.js` deleted (or repurposed if a remaining test belongs there)
+- [ ] `entity-property-symmetry.spec.js` not split (different concern, separate file already)
+
+## Notes
+
+- This is a mechanical refactor. No behavior changes.
+- Owner: editor-tooling-expert.
+- Follow-up to TASK-188 (committed with `[skip-size-gate]`).
+<!-- SECTION:DESCRIPTION:END -->
+
+## Definition of Done
+<!-- DOD:BEGIN -->
+- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
+- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
+- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
+- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
+- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
+- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+<!-- DOD:END -->
