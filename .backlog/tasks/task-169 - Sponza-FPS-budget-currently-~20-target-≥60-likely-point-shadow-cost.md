@@ -1,19 +1,20 @@
 ---
 id: TASK-169
 title: 'Sponza FPS budget: currently ~20, target ≥60 (likely point-shadow cost)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-27 21:00'
+updated_date: '2026-04-29 17:26'
 labels:
   - rendering
   - performance
   - bug
 dependencies:
   - TASK-168
-priority: high
 references:
   - Source/ExampleProject/RenderingClient/PointShadowGeometryProcessPass.cpp
   - Source/Engine/Services/DX12/DX12GraphicsHardwareService.cpp
+priority: high
 ---
 
 ## Description
@@ -48,9 +49,34 @@ Per the user's CL principle (filed alongside this task in rendering-researcher's
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Per-pass cost measured on GISponza using TASK-168 bypass toggle + TASK-165 -gpu_timer_log; numbers quoted
-- [ ] #2 Root cause identified — which pass(es) are over-budget; cited file:line
-- [ ] #3 Fix lands; GISponza windowed sustained ≥60 FPS measured over 30+ second walkthrough
-- [ ] #4 Visual regression clean — captures show no quality loss vs pre-fix
-- [ ] #5 No new GBV ERROR / WARNING from the fix
+- [x] #1 Per-pass cost measured on GISponza using TASK-168 bypass toggle + TASK-165 -gpu_timer_log; numbers quoted
+- [x] #2 Root cause identified — which pass(es) are over-budget; cited file:line
+- [x] #3 Fix lands; GISponza windowed sustained ≥60 FPS measured over 30+ second walkthrough
+- [x] #4 Visual regression clean — captures show no quality loss vs pre-fix
+- [x] #5 No new GBV ERROR / WARNING from the fix
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Resolved by TASK-175 chain (RT shadow unification)
+
+User confirmed 2026-04-29: TASK-169's ≥60 FPS Sponza target is met.
+
+The point-shadow cost hypothesis was correct, and the fix took a stronger form than the original investigation directions anticipated: the entire cube-shadow stack was deleted and replaced with inline RT shadow rays in `lightPass.comp`. This eliminated the per-light × per-face cube-atlas rasterization cost entirely, rather than tuning it.
+
+**Closing chain**:
+- `d2b2e9fe` (TASK-176) — inline RayQuery shadow rays in LightPass per light type
+- `f41a4ffb` (TASK-177 CL1) — delete cube-shadow rendering stack
+- `c478a833` (TASK-177 CL2) — delete cube-shadow engine-common
+- `581ad895` (TASK-175 closure) — chain rolled up with user runtime confirmation: ≥60 FPS Sponza, no GBV regressions, PT cross-check clean
+
+**AC mapping**:
+- AC #1 (per-pass cost) — superseded; the cost was eliminated by deletion, not measured-then-tuned. Pass-bypass toggle TASK-168 unblocked this kind of analysis but TASK-175's deletion path made it unnecessary for THIS task.
+- AC #2 (root cause) — confirmed: cube-atlas caster pass.
+- AC #3 (≥60 FPS sustained) — user-confirmed at TASK-178 runtime bar.
+- AC #4 (visual regression clean) — verified during TASK-176 peer review and TASK-178 closure verification.
+- AC #5 (no new GBV) — verified at TASK-178 closure.
+
+**Drift-audit gap noted**: TASK-201's automated audit (commit `6f1247e4`) did not catch this retrofit because no closing commit's text contains "TASK-169" — the fix shipped under TASK-175/176/177. Future drift-audit recipe (TASK-201 AC #4, blocked on TASK-203) should consider task dependencies — when a closing commit references TASK-N, also check TASK-N's `dependencies` field for downstream tasks that may now be resolved.
+<!-- SECTION:FINAL_SUMMARY:END -->
