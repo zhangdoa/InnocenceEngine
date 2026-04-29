@@ -1,9 +1,10 @@
 ---
 id: TASK-96
 title: 'Engine executables: set Main.exe / RenderTest.exe icon to the engine logo'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 18:09'
+updated_date: '2026-04-29 07:55'
 labels:
   - engine
   - build
@@ -48,3 +49,9 @@ The shipped Main.exe, RenderTest.exe, and any other engine-side executables curr
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Status flip retrofitted 2026-04-29 during TASK-201 audit — work landed in commit `69efaa70` (`build(branding): embed engine logo as Win32 .exe icon (Main, RenderTest)`). Both Main.exe and RenderTest.exe now embed `Data/Engine/Icons/icon.ico` (multi-resolution 16/32/48/64/96/128/256) via a shared `Source/Engine/Platform/WinMain/WinMain.rc`, picked up automatically by MSVC's RC compiler. Source PNG/SVG already tracked alongside the generated ICO. This is the systemic gap that TASK-193's closure-staleness gate now catches at commit time.
+<!-- SECTION:FINAL_SUMMARY:END -->

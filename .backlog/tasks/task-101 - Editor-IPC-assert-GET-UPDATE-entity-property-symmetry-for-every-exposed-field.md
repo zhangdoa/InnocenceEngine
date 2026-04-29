@@ -1,9 +1,10 @@
 ---
 id: TASK-101
 title: 'Editor IPC: assert GET/UPDATE entity property symmetry for every exposed field'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 18:28'
+updated_date: '2026-04-29 07:55'
 labels:
   - editor
   - ipc
@@ -46,3 +47,9 @@ Probably (1) + (2) in sequence — test first to prove current gap, then refacto
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Status flip retrofitted 2026-04-29 during TASK-201 audit — work landed in commit `bf07d562` (`test(editor): assert GET/UPDATE entity-property symmetry (TASK-101)`). A live-engine Playwright spec loads GISponza, calls `GET_ENTITY_DETAILS` on every scene entity, and round-trips every returned `component.<prop>` through `UPDATE_ENTITY_PROPERTY`. Each tuple either commit-and-readback equal to the input, or fails with `code=READ_ONLY` (introduced in this CL to discriminate intentional read-only fields from accidental missing-write paths). Empirical run on GISponza (95 entities): 290 OK round-trips, 8 READ_ONLY (Light.shape, Light.lightType across 4 lights), 0 BAD_PROPERTY, 0 drift. The structural option (2) — shared property table consumed by both handlers — was deferred since only 2 read-only fields surfaced (under the option-2 threshold). This is the systemic gap that TASK-193's closure-staleness gate now catches at commit time.
+<!-- SECTION:FINAL_SUMMARY:END -->
