@@ -47,3 +47,11 @@ Use the sentinel only when the two-condition test above is genuinely met. Typing
 - Foreground dispatch as a substitute for thinking about ordering. If the dispatcher cannot articulate what it would do in parallel, that is a planning gap, not a justification — pause to plan, then dispatch in background and pick up the parallel work.
 - Treating Esc as the discipline. The user can always interrupt, but every interrupt costs them attention; the dispatcher's job is to not need rescuing.
 - This rule applies to any dispatcher, not just main-session Claude. An agent that delegates to `paper-auditor` or any other sub-agent is a dispatcher for the duration of that call and is governed by this discipline.
+
+## Producer-specific override
+
+The `producer` agent is granted `Agent`-tool chain-dispatch under one constraint: producer chain-dispatches are **background-only**. Producer must call `Agent` with `run_in_background: true`; the `[foreground-required]` sentinel does not apply to producer and producer must not emit it. See `.claude/agents/producer.md` § "Chain dispatch" for the role-side framing.
+
+The shape: producer orchestrates async work (drift audits, dependency walks, periodic reconciliations) whose result lands in the task graph as a backlog commit or status flip — not as a return-to-main-session value. Synchronous, result-blocking dispatches remain a dispatcher concern (main-session Claude) because the dispatcher is the user's interactive surface and is the right place for sub-agent results that change the next sentence. Peer-reviewer dispatches are NOT covered by this override — they originate from whoever originated the implementer dispatch (typically main-session); routing reviewer-dispatch through producer would obscure the review chain.
+
+Decision precedent: TASK-129 (option 3 picked 2026-04-29). The hand-back-to-main-session pattern surfaced concretely on TASK-201 the same session — producer drafted AC #4/#5 brief and had to bounce back to main-session for execution. Option 3 closes that round-trip for async work without weakening the dispatcher's grip on synchronous, blocking sub-agent calls.

@@ -1,9 +1,10 @@
 ---
 id: TASK-129
 title: 'Producer agent: gain Agent/Task tool for chain-dispatch to other agents'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-25 11:58'
+updated_date: '2026-04-29 17:34'
 labels:
   - harness
   - agent-config
@@ -36,11 +37,30 @@ This is a real workflow gap: the producer's job description in `CLAUDE.md` inclu
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Decision recorded for which of the three options (or a fourth) is adopted
-- [ ] #2 If option 1 or 3: `.claude/agents/producer.md` updated with explicit chain-dispatch rules
+- [x] #1 Decision recorded for which of the three options (or a fourth) is adopted
+- [x] #2 If option 1 or 3: `.claude/agents/producer.md` updated with explicit chain-dispatch rules
 - [ ] #3 If option 2: producer manifest documents the hand-back pattern as the standard
-- [ ] #4 Cross-referenced with the dispatch-discipline work currently in flight under ai-expert
+- [x] #4 Cross-referenced with the dispatch-discipline work currently in flight under ai-expert
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Option 3 landed (background-only producer chain-dispatch)
+
+User picked option 3 on 2026-04-29 — producer may chain-dispatch in background-only mode (fire-and-forget); synchronous result-blocking dispatches remain a main-session concern; peer-reviewer dispatches are explicitly excluded.
+
+**Files**:
+- `.claude/agents/producer.md` — new "Chain dispatch (background-only)" section, codifying the rule for the role's own manifest with use-case enumeration and the no-reviewer-dispatch carveout.
+- `.claude/disciplines/agent-dispatch.md` — new "Producer-specific override" subsection documenting the structural reasoning (orchestration vs interactive surface) and citing the TASK-201 round-trip as the originating evidence.
+
+**Implementation note** — sub-agent perm wall (TASK-203):
+ai-expert dispatch (`aae76f8854c34a1da`) hit `Permission to use Edit has been denied` on first try and surfaced clean per its fallback instruction. The agent's drafted edit content was correct; main-session applied it directly as the explicit fallback contemplated by the TASK-203 incident framing. This adds another data point to TASK-203: the perm wall is a real per-dispatch flake, not a transient one-off, and main-session-fallback is the operational pattern until TASK-203 lands.
+
+**AC #3 not applicable** — option 2 (toolless producer + formal hand-back) was not selected. AC #1 (decision recorded), #2 (manifest updated for option 3), #4 (cross-referenced with dispatch discipline) are all done.
+
+**Cross-reference with the dispatch-discipline work**: the new override section in `agent-dispatch.md` integrates cleanly with the existing rules — the foreground/background default + sentinel still apply to all dispatchers, with producer being the documented exception. No prior rule was contradicted.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
