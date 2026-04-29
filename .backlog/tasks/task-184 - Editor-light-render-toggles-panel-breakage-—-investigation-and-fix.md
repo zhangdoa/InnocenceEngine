@@ -1,20 +1,21 @@
 ---
 id: TASK-184
-title: 'Editor light + render-toggles panel breakage — investigation and fix'
-status: To Do
+title: Editor light + render-toggles panel breakage — investigation and fix
+status: Done
 assignee: []
 created_date: '2026-04-28 17:30'
+updated_date: '2026-04-29 06:21'
 labels:
   - editor
   - bug
   - diagnostic
 dependencies: []
-priority: high
 references:
   - Source/Editor-Next/src/components/inspector/LightEditor.vue
   - Source/Editor-Next/src/components/RenderTogglesPanel.vue
   - Source/Engine/Services/EditorService.cpp
   - Source/Engine/Services/DevToggleRegistry.cpp
+priority: high
 ---
 
 ## Description
@@ -59,6 +60,7 @@ Without working editor panels, every property tweak (light intensity / color / p
 
 ## Implementation Notes
 
+<!-- SECTION:NOTES:BEGIN -->
 ### Review (editor-tooling-expert peer, 2026-04-28)
 
 **Verdict: ADVISORY**
@@ -128,3 +130,10 @@ AC#4 (regression spec covering the failure shape) → green. AC#5 (live-engine s
 3. File follow-up backlog task: surface `useColorTemperature` + `colorTemperature` in `LightEditor.vue` and the GET/UPDATE handlers, so K-mode is reachable from the editor after this fix lands.
 
 Verdict: **ADVISORY** — implementer commits after dropping the `(TASK-184)` tail per item 1; items 2 and 3 ship as backlog seeds.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Status flip retrofitted 2026-04-28 during TASK-188 follow-up — work landed in commit `bfe66510` (`fix(editor): TASK-184 — color edit propagates instead of being overwritten by K-mode`) but the status field was not flipped at the time. This is exactly the systemic gap that TASK-193's closure-staleness gate now catches at commit time.
+<!-- SECTION:FINAL_SUMMARY:END -->

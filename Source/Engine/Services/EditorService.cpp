@@ -309,12 +309,14 @@ void EditorService::RegisterBuiltinHandlers()
 		if (l_light)
 		{
 			json l_comp;
-			l_comp["type"]       = "LightComponent";
-			l_comp["color"]      = SerializeVec(l_light->m_RGBColor);
-			l_comp["shape"]      = SerializeVec(l_light->m_Shape);
-			l_comp["lightType"]  = (int)l_light->m_LightType;
-			l_comp["intensity"]  = l_light->m_LuminousFlux;
-			l_comp["castShadow"] = l_light->m_CastShadow;
+			l_comp["type"]                = "LightComponent";
+			l_comp["color"]               = SerializeVec(l_light->m_RGBColor);
+			l_comp["shape"]               = SerializeVec(l_light->m_Shape);
+			l_comp["lightType"]           = (int)l_light->m_LightType;
+			l_comp["intensity"]           = l_light->m_LuminousFlux;
+			l_comp["castShadow"]          = l_light->m_CastShadow;
+			l_comp["useColorTemperature"] = l_light->m_UseColorTemperature;
+			l_comp["colorTemperature"]    = l_light->m_ColorTemperature;
 			l_components.push_back(l_comp);
 		}
 
@@ -608,11 +610,12 @@ void EditorService::RegisterBuiltinHandlers()
 			}
 			else if (l_prop == "color")
 			{
-				// An explicit color edit is a user signal to leave K-mode;
+				// An explicit color edit is the user signal to leave K-mode;
 				// otherwise LightSimulationService::Update() overwrites the
 				// commit with ColorTemperatureToRGB(m_ColorTemperature) on
 				// the next frame and the inspector readback drifts back to
-				// the K-derived value (TASK-184).
+				// the K-derived value. The reverse path — back into K-mode —
+				// is the explicit useColorTemperature setter below.
 				l_light->m_RGBColor = Vec4(l_val[0], l_val[1], l_val[2], 1.0f);
 				l_light->m_UseColorTemperature = false;
 				committed = SerializeVec(l_light->m_RGBColor);
@@ -621,6 +624,16 @@ void EditorService::RegisterBuiltinHandlers()
 			{
 				l_light->m_CastShadow = l_val.get<bool>();
 				committed = l_light->m_CastShadow;
+			}
+			else if (l_prop == "useColorTemperature")
+			{
+				l_light->m_UseColorTemperature = l_val.get<bool>();
+				committed = l_light->m_UseColorTemperature;
+			}
+			else if (l_prop == "colorTemperature")
+			{
+				l_light->m_ColorTemperature = l_val.get<float>();
+				committed = l_light->m_ColorTemperature;
 			}
 			else if (l_prop == "shape" || l_prop == "lightType")
 			{

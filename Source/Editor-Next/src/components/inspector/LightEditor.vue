@@ -1,11 +1,27 @@
 <template>
-  <n-form label-placement="left" label-width="75" size="small" :show-feedback="false">
+  <n-form label-placement="left" label-width="105" size="small" :show-feedback="false">
     <n-form-item label="Color">
       <n-color-picker
         :value="rgbArrayToHex(draft.color)"
         @update:value="onColor"
         :modes="['hex']"
         :show-alpha="false"
+      />
+    </n-form-item>
+    <n-form-item label="Use Temp." style="margin-top: 12px;">
+      <n-checkbox
+        :checked="draft.useColorTemperature"
+        @update:checked="onUseColorTemperature"
+      />
+    </n-form-item>
+    <n-form-item label="Temperature" style="margin-top: 12px;">
+      <n-input-number
+        :value="draft.colorTemperature"
+        @update:value="onColorTemperature"
+        :disabled="!draft.useColorTemperature"
+        :step="100"
+        :min="1000"
+        :max="12000"
       />
     </n-form-item>
     <n-form-item label="Luminous" style="margin-top: 12px;">
@@ -37,17 +53,21 @@ const props = defineProps({
 // binds here, never on props. Re-syncs from the store after the engine
 // commits so clamped/normalized values show up in the UI.
 const draft = reactive({
-  color:      [...(props.component.color ?? [1, 1, 1])],
-  intensity:  props.component.intensity ?? 0,
-  castShadow: props.component.castShadow ?? true,
+  color:               [...(props.component.color ?? [1, 1, 1])],
+  intensity:           props.component.intensity ?? 0,
+  castShadow:          props.component.castShadow ?? true,
+  useColorTemperature: props.component.useColorTemperature ?? false,
+  colorTemperature:    props.component.colorTemperature ?? 5780,
 })
 
 watch(
   () => props.component,
   (next) => {
-    draft.color      = [...(next.color ?? [1, 1, 1])]
-    draft.intensity  = next.intensity ?? 0
-    draft.castShadow = next.castShadow ?? true
+    draft.color               = [...(next.color ?? [1, 1, 1])]
+    draft.intensity           = next.intensity ?? 0
+    draft.castShadow          = next.castShadow ?? true
+    draft.useColorTemperature = next.useColorTemperature ?? false
+    draft.colorTemperature    = next.colorTemperature ?? 5780
   },
   { deep: true },
 )
@@ -82,6 +102,10 @@ const commit = (property, value) => {
 const onColor = (hex) => {
   const next = hexToRgbArray(hex)
   draft.color = next
+  // Engine flips m_UseColorTemperature off as a side-effect of the color
+  // setter; mirror that locally so the K-mode checkbox / K input update
+  // before the next GET arrives.
+  draft.useColorTemperature = false
   commit('color', next)
 }
 
@@ -93,5 +117,15 @@ const onIntensity = (value) => {
 const onCastShadow = (value) => {
   draft.castShadow = value
   commit('castShadow', value)
+}
+
+const onUseColorTemperature = (value) => {
+  draft.useColorTemperature = value
+  commit('useColorTemperature', value)
+}
+
+const onColorTemperature = (value) => {
+  draft.colorTemperature = value
+  commit('colorTemperature', value)
 }
 </script>

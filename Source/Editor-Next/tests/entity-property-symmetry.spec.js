@@ -220,7 +220,7 @@ test('GET/UPDATE symmetry across every exposed component property', async () => 
     // drift (LightComponent.castShadow added in TASK-149 AC #5; mirrors
     // intensity/color which are GISponza-resident on the four light
     // entities).
-    const writableLightFields = ['intensity', 'color', 'castShadow'];
+    const writableLightFields = ['intensity', 'color', 'castShadow', 'useColorTemperature', 'colorTemperature'];
     for (const field of writableLightFields) {
       const hits = oks.filter(r =>
         r.component === 'LightComponent' && r.property === field
