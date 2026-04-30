@@ -63,6 +63,12 @@
       "reference": "Any path-tracer reference; this file is our own implementation."
     },
     {
+      "glob": "Source/Shaders/HLSL/common/HashGridCache.hlsl",
+      "paper": "GI-1.0 §2.2 (World Cache) — hash-grid radiance caching for path-tracer secondary hits.",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl",
+      "notes": "TASK-77.1 phase 1 — cell-only port (no tile/cell mip chain, no separate indirect/multibounce buffers, no decay buffer). Flat hash table keyed on (quantize(posWS, AdaptiveCellSize), packOctahedral(N)); open-addressing with probe length 4; eviction by frameLastTouched on collision; running mean with sample-cap 256. Phase-1 also writes at the PT primary hit instead of Capsaicin's secondary-vertex usage; phase 2 closes that gap. Divergences acknowledged in TASK-77.1.1 closure record."
+    },
+    {
       "glob": "Source/Shaders/HLSL/common/AgX.hlsl",
       "paper": "Troy Sobotka — AgX (display rendering transform). Sigmoid contrast curve in log-encoded display-referred space; replaces ACES Filmic tonemapping.",
       "reference": "https://github.com/sobotka/AgX (canonical) + https://github.com/google/filament/blob/main/filament/src/ToneMapper.cpp (Filament's polynomial-fit port) + https://github.com/mrdoob/three.js/blob/dev/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js (Three.js port the engine implementation follows)",

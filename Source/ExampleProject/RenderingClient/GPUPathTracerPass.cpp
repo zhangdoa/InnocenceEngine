@@ -1,4 +1,5 @@
 #include "GPUPathTracerPass.h"
+#include "HashGridCacheConstants.h"
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
@@ -57,8 +58,9 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
 	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
 	//                 t7=bindless material textures,
-	//                 u0=AccumBuffer, s0=material sampler
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(13);
+	//                 u0=AccumBuffer, u1=HashGridKeys, u2=HashGridCells,
+	//                 s0=material sampler
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(15);
 
 	// b0 - PerFrameCB (set 0, binding 0)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -160,6 +162,25 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex        = 0;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_ShaderStage            = m_ShaderStage;
 
+	// u1 - HashGridKeys (set 2, binding 1, ReadWrite UAV — open-addressing
+	// hash table key buffer; 4 B per cell). Touched at primary hit only in
+	// phase 1 (TASK-77.1.1).
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorSetIndex      = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorIndex        = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_BindingAccessibility   = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ShaderStage            = m_ShaderStage;
+
+	// u2 - HashGridCells (set 2, binding 2, ReadWrite UAV — payload buffer;
+	// 20 B per cell: float3 radiance + uint sampleCount + uint frameLastTouched).
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorSetIndex      = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex        = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_BindingAccessibility   = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ShaderStage            = m_ShaderStage;
+
 	m_MaterialSampler = g_Engine->Get<SamplerResourceService>()->Add("GPUPathTracerMaterialSampler");
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -246,6 +267,25 @@ bool GPUPathTracerPass::Initialize()
 	m_LightCountCB->m_CPUAccessibility  = Accessibility::WriteOnly;
 	m_LightCountCB->m_GPUAccessibility  = Accessibility::ReadOnly;
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_LightCountCB);
+
+	// World-space hash-grid radiance cache (TASK-77.1 phase 1). Two
+	// RWStructuredBuffers — keys (uint, 4 B) and cells (HashGridCell,
+	// 20 B). Capacity is HashGridCache::CELL_COUNT (2^20 = ~1M cells)
+	// for ~25 MB total — design call's locked-in budget. Zero-init so
+	// every key reads as HASHGRID_KEY_EMPTY (= 0u) on the first frame.
+	m_HashGridKeys = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerHashGridKeys");
+	m_HashGridKeys->m_ElementCount     = HashGridCache::CELL_COUNT;
+	m_HashGridKeys->m_ElementSize      = HashGridCache::KEY_BYTES;
+	m_HashGridKeys->m_CPUAccessibility = Accessibility::Immutable;
+	m_HashGridKeys->m_GPUAccessibility = Accessibility::ReadWrite;
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_HashGridKeys);
+
+	m_HashGridCells = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerHashGridCells");
+	m_HashGridCells->m_ElementCount     = HashGridCache::CELL_COUNT;
+	m_HashGridCells->m_ElementSize      = HashGridCache::CELL_BYTES;
+	m_HashGridCells->m_CPUAccessibility = Accessibility::Immutable;
+	m_HashGridCells->m_GPUAccessibility = Accessibility::ReadWrite;
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_HashGridCells);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -342,6 +382,10 @@ bool GPUPathTracerPass::Terminate()
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_FrameCountCB);
 	if (m_LightCountCB)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_LightCountCB);
+	if (m_HashGridKeys)
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridKeys);
+	if (m_HashGridCells)
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridCells);
 	if (m_AccumulationBuffer)
 		g_Engine->Get<TextureResourceService>()->Delete(m_AccumulationBuffer);
 
@@ -409,6 +453,8 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// texture heap, same convention as OpaquePass::PrepareCommandList.
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                                                  11);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        12);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridKeys,                                           13);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCells,                                          14);
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);

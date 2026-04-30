@@ -25,6 +25,23 @@ StructuredBuffer<SphereLight_CB> g_SphereLights : register(t6);
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> AccumBuffer : register(u0);
 
+// World-space hash-grid radiance cache (TASK-77.1 phase 1 — written at
+// primary hit only; phase 2 closes the secondary-vertex gap with the
+// Capsaicin reference). HashGridCache.hlsl owns the hash + probe +
+// online-mean logic. First include exposes the HashGridCell struct;
+// after declaring the buffer bindings the second include compiles the
+// binding-using helpers.
+#include "common/HashGridCache.hlsl"
+
+[[vk::binding(1, 2)]]
+RWStructuredBuffer<uint> g_HashGridKeys : register(u1);
+
+[[vk::binding(2, 2)]]
+RWStructuredBuffer<HashGridCell> g_HashGridCells : register(u2);
+
+#define HASHGRIDCACHE_HAS_BINDINGS
+#include "common/HashGridCache.hlsl"
+
 uint PCG(inout uint state)
 {
     uint oldState = state;
@@ -202,6 +219,16 @@ void RayGenShader()
     float3 throughput = float3(1.0f, 1.0f, 1.0f);
     float3 radiance   = float3(0.0f, 0.0f, 0.0f);
 
+    // World-space hash-grid cache write site (TASK-77.1 phase 1).
+    // Captured at primary hit only — once the bounce loop completes we
+    // insert the full path-traced outgoing radiance keyed on the primary
+    // surface's (pos, normal). Phase 1 is intentionally primary-only;
+    // the convergence-acceleration win from secondary-write / secondary-
+    // read is phase 2.
+    float3 primaryHitPos    = float3(0.0f, 0.0f, 0.0f);
+    float3 primaryHitNormal = float3(0.0f, 0.0f, 0.0f);
+    bool   primaryHitValid  = false;
+
     const uint MAX_BOUNCES = 4;
 
     for (uint bounce = 0; bounce < MAX_BOUNCES; bounce++)
@@ -231,6 +258,16 @@ void RayGenShader()
         // Floor roughness at F0_DIELECTRIC to avoid near-zero roughness numerical instability
         // in GGX microfacet distribution (NDF blows up as alpha → 0).
         float  roughness = max(payload.roughness, F0_DIELECTRIC);
+
+        // Capture primary-hit position + normal on the first bounce so we
+        // can write the cache once the full path-traced radiance estimator
+        // has been accumulated for this primary surface point.
+        if (bounce == 0)
+        {
+            primaryHitPos = payload.hitPos;
+            primaryHitNormal = N;
+            primaryHitValid = true;
+        }
 
         // Direct sun lighting with soft shadow (jittered sun disk)
         float3 lightDir = SampleSunDirection(normalize(g_Frame.sun_direction.xyz), Rand2(rng));
@@ -447,8 +484,20 @@ void RayGenShader()
         ray.Direction = L;
     }
 
-    float4 prev = AccumBuffer[pixel];
-    float  t    = 1.0f / float(g_FrameCount);
+    // Per-frame noisy radiance (TASK-77.1 phase 1 — TASK-77.1.2 owns the
+    // accumulation / denoise composition; this raygen no longer averages
+    // in-shader so the downstream pass sees a fresh per-frame estimator
+    // rather than a screen-space running mean).
     float3 clampedRadiance = min(radiance, 100000.0f);
-    AccumBuffer[pixel] = lerp(prev, float4(clampedRadiance, 1.0f), t);
+    AccumBuffer[pixel] = float4(clampedRadiance, 1.0f);
+
+    // World-space hash-grid write at primary hit. The cache integrates the
+    // full path-traced outgoing radiance at the primary surface, accumulated
+    // across frames via the running mean inside HashGridCache.hlsl.
+    if (primaryHitValid)
+    {
+        float depth = length(primaryHitPos - g_Frame.camera_posWS.xyz);
+        float cellSize = HashGridCache_CellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original);
+        HashGridCache_Insert(primaryHitPos, primaryHitNormal, clampedRadiance, cellSize, g_FrameCount);
+    }
 }

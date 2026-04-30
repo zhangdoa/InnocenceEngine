@@ -64,6 +64,13 @@ namespace Inno
 		GPUBufferComponent* m_LightCountCB       = nullptr;
 		SamplerComponent*   m_MaterialSampler    = nullptr;
 
+		// World-space hash-grid radiance cache (TASK-77.1 phase 1).
+		// Owned by this pass — the only writer is the PT raygen at primary
+		// hit, and downstream consumers (TASK-77.1.2 denoise pass) read the
+		// same buffers via the engine's resource registry.
+		GPUBufferComponent* m_HashGridKeys  = nullptr;
+		GPUBufferComponent* m_HashGridCells = nullptr;
+
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;
 		GPUBufferComponent* m_MegaIndexBuffer  = nullptr;
