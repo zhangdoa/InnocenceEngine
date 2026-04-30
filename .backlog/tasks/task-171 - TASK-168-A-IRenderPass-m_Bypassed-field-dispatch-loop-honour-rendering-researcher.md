@@ -1,7 +1,7 @@
 ---
 id: TASK-171
 title: 'TASK-168-A: IRenderPass m_Bypassed field + dispatch-loop honour (rendering-researcher)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-26'
 labels:
@@ -61,13 +61,13 @@ Per `peer-review-required.md`: after rendering-researcher implements, dispatch a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `IRenderPass::m_Bypassed` atomic bool field; default false; zero-cost read when false
-- [ ] #2 `ExampleRenderingClient::ExecuteCommandList` honours the flag — bypassed passes skip `PrepareCommandList`
-- [ ] #3 Edge-triggered log line on toggle change ("RenderPass: <Name> bypass = ON|OFF")
-- [ ] #4 Pass-listing entry point exposed for editor consumption (e.g. `GetDispatchedPasses()`)
-- [ ] #5 No regression: GISponza baseline render visually unchanged with all m_Bypassed=false
-- [ ] #6 No FPS regression on Sponza (≥60 FPS bar from rendering-researcher manifest)
-- [ ] #7 Peer review by graphics-api-expert before commit
+- [x] #1 `IRenderPass::m_Bypassed` atomic bool field; default false; zero-cost read when false
+- [x] #2 `ExampleRenderingClient::ExecuteCommandList` honours the flag — bypassed passes skip `PrepareCommandList`
+- [x] #3 Edge-triggered log line on toggle change ("RenderPass: <Name> bypass = ON|OFF")
+- [x] #4 Pass-listing entry point exposed for editor consumption (e.g. `GetDispatchedPasses()`)
+- [x] #5 No regression: GISponza baseline render visually unchanged with all m_Bypassed=false
+- [x] #6 No FPS regression on Sponza (≥60 FPS bar from rendering-researcher manifest)
+- [x] #7 Peer review by graphics-api-expert before commit
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -222,4 +222,10 @@ This is below the BLOCKED bar because: (1) the GPU is safe in the realistic star
 - If the dispatcher wants to ship now and defer documentation: accept the advisory, commit iteration 2 as-is, file a follow-up task to document the caveat in IRenderPass.h *and* in the TASK-172 inspector UX brief (so the editor surface knows which passes are "structural" and warns on bypass). Lower friction; same effective safety given the single-user surface.
 
 No code edits performed in this review.
+
+## Final Summary (retroactive flip — 2026-04-30, TASK-201 audit)
+
+Closed by `d8f9dcb93c96` (`feat(rendering): TASK-171 IRenderPass m_Bypassed + dispatch-loop honour (TASK-168 phase A)`, 2026-04-28). Subject is a verbatim title match; the iteration-2 graphics-api-expert review verdict was ADVISORY (not BLOCKED) — both BLOCKED findings from review #1 resolved, only the cross-queue exit-barrier documentation caveat remained. That advisory is itself closed by TASK-173 (`28405673`, `docs(rendering): TASK-173 cross-queue exit-barrier caveat on IRenderPass::m_Bypassed`). All seven ACs verified met by the implementation notes + linked review.
+
+Surfaced by the TASK-201 audit lib (`62bdc802`) as a high-confidence retrofit-flip: the closing CL landed but the implementer never returned to flip `status:` or tick the ACs.
 <!-- SECTION:NOTES:END -->
