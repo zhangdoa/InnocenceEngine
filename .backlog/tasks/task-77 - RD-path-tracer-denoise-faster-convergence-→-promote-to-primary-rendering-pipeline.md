@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-18 19:34'
+updated_date: '2026-04-30 19:12'
 labels:
   - R&D
   - path-tracer
@@ -52,3 +53,27 @@ This task is **R&D direction**, not a concrete implementation step. Each axis ab
 - GISponza at 1080p renders visually clean (subjective) at ≤ 30 ms / frame on the Laptop GPU target, with the denoiser producing temporally stable output that the user can't distinguish from offline convergence after one second of camera stability.
 - Rasterizer is marked "debug / comparison mode" in the config — only the path tracer is the default render path.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Direction approval (2026-04-30)
+
+User approved the PT-primary direction this task framed. Strategic spine for downstream tasks:
+
+> Under PT-primary direction (TASK-77 approval, 2026-04-30), rasterization-trick subsystems — shadowmap pipeline (cube atlas, point/sphere shadow techniques), SSGI / RadianceCache-as-rasterizer-feature, screen-space reflection tricks, light-volume rasterization, etc. — become fallback / debug-comparison only. Investment in their quality, structure, or extension stops paying for itself.
+
+Umbrella moves from R&D-direction-only to actively-decomposed. Phase tasks get filed against the two axes the description identifies (denoiser first, faster-convergence second), each as its own implementation task.
+
+**Phase 1 filed**: TASK-77.1 — Path-tracer temporal reprojection denoiser (phase 1, reuse TAA motion vectors). The cheapest first axis with the highest typical impact, per this task's own framing ("Start simple: temporal + small spatial → evaluate"). Design call by `rendering-researcher`; implementation lanes by `graphics-api-expert` (HLSL/compute) and `rendering-researcher` (per-pass C++).
+
+**Other axes still scope-able, not yet filed**: spatial à-trous/SVGF, ReSTIR DI, light BVH, balance-heuristic MIS, blue-noise stratified sampling, OIDN/OptiX integration. File each when TASK-77.1's outcome makes the next axis the natural pick — don't pile on now.
+
+**Closure condition for this umbrella**: closes only when the rasterizer demotion lands as the user-facing default (config marks rasterizer "debug / comparison mode" per the task's own exit criteria). Phase tasks closing individually don't close the umbrella; the demotion CL does.
+
+**Cross-ref triggered by this approval**:
+- TASK-153 (point-shadow validation) — closed obsolete in the same batch (no longer load-bearing).
+- TASK-137 (oversize GI/RadianceCache .cpp split-before-grow) — archived in the same batch (growth signal evaporates).
+- TASK-108 (unified radiance cache) — paused pending TASK-77.1 outcome (rescope-or-archive call after denoiser direction settles).
+- TASK-128 (ping-pong helper extraction) — demoted, re-linked to TASK-77.1 as the natural trigger (third concrete ping-pong site).
+<!-- SECTION:NOTES:END -->

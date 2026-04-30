@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-19 19:27'
+updated_date: '2026-04-30 19:11'
 labels:
   - rendering
   - radiance-cache
@@ -64,3 +65,22 @@ Both tiers write into and read from the same radiance representation (e.g. SH-co
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Status note (2026-04-30) — paused pending TASK-77
+
+Under PT-primary direction (TASK-77 approval, 2026-04-30), rasterization-trick subsystems — shadowmap pipeline (cube atlas, point/sphere shadow techniques), SSGI / RadianceCache-as-rasterizer-feature, screen-space reflection tricks, light-volume rasterization, etc. — become fallback / debug-comparison only. Investment in their quality, structure, or extension stops paying for itself.
+
+This task's premise is a **shared cache between two consumers** (screen-space GI + path tracer). Under PT-primary, the screen-space-GI consumer is on the demotion path — the second consumer that justified the "shared" framing isn't load-bearing for the project's direction anymore. Only the PT-side world-space cache survives as a candidate consumer.
+
+**Paused, not closed.** Waiting on TASK-77's denoiser-axis outcome (see TASK-77.1 — temporal-reprojection denoiser as the cheapest first axis). Once TASK-77's denoiser direction settles and the user decides whether radiance caching wins over pure spatial+temporal denoising for the PT, this task either:
+
+- **Rescopes** to "PT-only world-space radiance cache as denoiser" — which would substantially overlap with TASK-77's ReSTIR / light-BVH / faster-convergence sub-tasks. The architecture writeup, prototype, and perf-numbers deliverables would shift to PT-only validation.
+- **Archives** — if the user picks pure denoising over caching, or if TASK-77.1's temporal-reprojection result is good enough to render the cache-as-denoiser axis unnecessary.
+
+Status stays `To Do` per project precedent (no `Paused` / `Deferred` enum value); the deferred-pending state lives in this note. Re-evaluate after TASK-77.1's design call closes.
+
+**Cross-ref**: TASK-77 (PT-primary direction approval), TASK-77.1 (temporal-reprojection denoiser — phase 1, the trigger for this re-evaluation), TASK-6 family (originally cited as the screen-space-tier trigger; now in maintenance mode).
+<!-- SECTION:NOTES:END -->

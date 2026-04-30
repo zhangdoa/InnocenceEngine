@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-04-25 22:39'
+updated_date: '2026-04-30 19:11'
 labels:
   - rendering
   - refactor
@@ -46,6 +47,20 @@ Behavior-preserving. This is a structural cleanup, not a refactor. Don't fold in
 - [ ] #2 RadianceCacheReprojectionPass.cpp under 400 lines or with a clear pre-and-post line count justifying any remaining excess
 - [ ] #3 No behavior change — same offscreen capture before vs after
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Archived under PT-primary direction (2026-04-30)
+
+Under PT-primary direction (TASK-77 approval, 2026-04-30), rasterization-trick subsystems — shadowmap pipeline (cube atlas, point/sphere shadow techniques), SSGI / RadianceCache-as-rasterizer-feature, screen-space reflection tricks, light-volume rasterization, etc. — become fallback / debug-comparison only. Investment in their quality, structure, or extension stops paying for itself.
+
+This task was pure split-before-grow hygiene on `GIDenoisePass.cpp` (460 lines) and `RadianceCacheReprojectionPass.cpp` (450 lines) — both screen-space-GI-as-rasterizer-feature passes. The soft-ratchet pressure that motivated the task was the assumption these files would continue to grow as the screen-space GI pipeline matured. Under PT-primary that assumption no longer holds: the SSGI / RadianceCache passes are now in maintenance / debug-comparison mode. With no expected new lines, the files are not the growing-and-oversize pair the discipline is targeting.
+
+If a future SSGI feature does add lines (unlikely under the new direction — the quality work is being routed into PT denoising and convergence instead, see TASK-77.1 and other TASK-77 phase tasks), file fresh at that moment with current-state line counts. The discipline's correct trigger is "oversize AND growing"; without the growth signal, this is dead-letter cleanup.
+
+**Cross-ref**: TASK-127 (the CL that originally tripped the soft-ratchet), TASK-77 (PT-primary direction approval), TASK-128 (ping-pong helper extraction — also demoted under PT-primary in the same batch).
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
