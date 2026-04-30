@@ -29,6 +29,14 @@ namespace Inno
 		void SetDebugViewMode(DebugViewMode in_Mode);
 		DebugViewMode GetDebugViewMode() const;
 
+		// TASK-195 runtime point-shadow bypass (A/B toggle for inline-RT shadow
+		// trace in lightPassDirectLighting.hlsl::EvaluateTiledPointLighting).
+		// Same threading shape as the debug-view mode above — atomic bool set
+		// on the editor IPC thread, snapshotted into PerFrame_CB on the render
+		// thread. Replaces the former compile-time #define DEBUG_POINT_SHADOW_BYPASS.
+		void SetPointShadowBypass(bool in_Bypass);
+		bool GetPointShadowBypass() const;
+
 	private:
 		PerFrameDataServiceImpl* m_Impl;
 	};

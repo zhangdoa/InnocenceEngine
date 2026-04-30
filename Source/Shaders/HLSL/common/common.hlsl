@@ -117,7 +117,9 @@ struct PerFrame_CB
 	float autoExposureKey; // Tight packing 28
 	float autoExposureCompensation; // Tight packing 28 (EV stops bias on auto)
 	float exposurePadding; // Tight packing 28
-	float4 padding_c[3]; // 29 - 31 (to maintain 16-byte alignment)
+	uint pointShadowBypass; // Tight packing 29 (TASK-195: 1 forces inline-RT visibility=1 in EvaluateTiledPointLighting; binary feature-bypass orthogonal to debugViewMode)
+	uint padding_b[3]; // Tight packing 29 fillers (carved from former padding_c[0])
+	float4 padding_c[2]; // 30 - 31 (to maintain 16-byte alignment)
 };
 
 struct Transform_CB

@@ -63,7 +63,8 @@ namespace Inno
 		float autoExposureKey;
 		float autoExposureCompensation; // EV stops applied on top of auto-exposure result
 		float exposurePadding;
-		float padding[12]; // Reduced padding after adding exposure mode/key/compensation
+		uint32_t pointShadowBypass; // TASK-195: 1 forces inline-RT visibility=1 in EvaluateTiledPointLighting (A/B toggle, formerly #define DEBUG_POINT_SHADOW_BYPASS). Reused from padding[0]; binary feature-bypass orthogonal to debugViewMode.
+		uint32_t padding[11]; // Remaining tail padding to keep PerFrameConstantBuffer at the same total size after carving pointShadowBypass out of padding[0].
 	};
 
 	// w component of luminance is attenuationRadius

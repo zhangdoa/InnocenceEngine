@@ -1,7 +1,7 @@
 ---
 id: TASK-195
 title: Migrate DEBUG_POINT_SHADOW_BYPASS to runtime DevToggle (TASK-183 follow-up)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-28 19:41'
 labels:

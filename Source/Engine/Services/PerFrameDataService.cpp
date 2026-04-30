@@ -31,6 +31,11 @@ namespace Inno
 		// thread read; atomic uint32_t avoids the impl mutex on the editor side.
 		std::atomic<uint32_t> m_DebugViewMode{ static_cast<uint32_t>(DebugViewMode::None) };
 
+		// TASK-195: runtime point-shadow bypass (A/B toggle). Same threading
+		// shape as m_DebugViewMode; atomic bool stored as uint32_t to match
+		// the CB field's 4-byte slot.
+		std::atomic<uint32_t> m_PointShadowBypass{ 0u };
+
 		bool Setup(IServiceConfig* systemConfig);
 		bool Initialize();
 		bool Update();
@@ -194,6 +199,11 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	// formerly padding_a after TASK-138's CSM removal; reused here.
 	l_perFrameCB.debugViewMode = m_DebugViewMode.load(std::memory_order_relaxed);
 
+	// TASK-195: snapshot the editor-thread point-shadow bypass for this frame.
+	// Same shape as the debug-view snapshot above; carried in the CB to
+	// EvaluateTiledPointLighting in lightPassDirectLighting.hlsl.
+	l_perFrameCB.pointShadowBypass = m_PointShadowBypass.load(std::memory_order_relaxed);
+
 	m_perFrameCBs[g_Engine->Get<FrameManagementService>()->GetCurrentFrame()] = l_perFrameCB;
 
 	return true;
@@ -286,4 +296,14 @@ void PerFrameDataService::SetDebugViewMode(DebugViewMode in_Mode)
 DebugViewMode PerFrameDataService::GetDebugViewMode() const
 {
 	return static_cast<DebugViewMode>(m_Impl->m_DebugViewMode.load(std::memory_order_relaxed));
+}
+
+void PerFrameDataService::SetPointShadowBypass(bool in_Bypass)
+{
+	m_Impl->m_PointShadowBypass.store(in_Bypass ? 1u : 0u, std::memory_order_relaxed);
+}
+
+bool PerFrameDataService::GetPointShadowBypass() const
+{
+	return m_Impl->m_PointShadowBypass.load(std::memory_order_relaxed) != 0u;
 }

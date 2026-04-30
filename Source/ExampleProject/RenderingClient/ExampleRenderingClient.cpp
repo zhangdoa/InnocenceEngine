@@ -194,6 +194,31 @@ namespace Inno
 				});
 		}
 
+		// TASK-195 runtime point-shadow bypass toggle. Binary feature-bypass
+		// orthogonal to the DebugView picker above — flip on to force
+		// EvaluateTiledPointLighting's inline-RT visibility=1 (unshadowed
+		// reference) for the same-camera A/B per
+		// .claude/disciplines/visual-validation.md. Replaces the former
+		// compile-time #define DEBUG_POINT_SHADOW_BYPASS in
+		// Source/Shaders/HLSL/common/lightPassDirectLighting.hlsl.
+		DevToggleRegistry::RegisterToggle("PointShadowBypass",
+			[]() { return g_Engine->Get<PerFrameDataService>()->GetPointShadowBypass(); },
+			[](bool desired) { g_Engine->Get<PerFrameDataService>()->SetPointShadowBypass(desired); });
+
+		// TASK-195 env-var hookup mirroring INNO_RASTERIZED_GI's shape
+		// (TASK-182). Lets a headless smoke run flip the bypass without
+		// the editor in the loop:
+		//   INNO_POINT_SHADOW_BYPASS=1 Main.exe -total_frames 80 ...
+		if (const char* l_PointShadowBypassEnv = std::getenv("INNO_POINT_SHADOW_BYPASS"))
+		{
+			const bool l_BypassRequested = !(strcmp(l_PointShadowBypassEnv, "0") == 0
+				|| strcmp(l_PointShadowBypassEnv, "off") == 0
+				|| strcmp(l_PointShadowBypassEnv, "false") == 0);
+			DevToggleRegistry::Set("PointShadowBypass", l_BypassRequested);
+			Log(Success, "TASK-195 INNO_POINT_SHADOW_BYPASS='", l_PointShadowBypassEnv,
+				"' applied; PointShadowBypass = ", l_BypassRequested ? "ON (visibility=1, A/B reference)" : "OFF (trace as normal).");
+		}
+
 		// TASK-183 CLI / env injection. Lets a headless smoke run pre-select
 		// a debug-view mode without the editor in the loop:
 		//   INNO_DEBUG_VIEW_MODE=DebugView_TileLightCountHeatmap Main.exe -total_frames 80 ...

@@ -122,17 +122,15 @@ void EvaluateTiledPointLighting(
 			l_LightDirect, l_LightIndirectSeed);
 
 		// TASK-176 inline RT shadow.
-		// DEBUG_POINT_SHADOW_BYPASS forces visibility=1 for visual A/B —
-		// flip to 1 locally to confirm shadow contribution is the only
-		// rendered-output delta vs an unshadowed point light. Precedent:
-		// the same toggle on the cube path (TASK-148, commit 71817f3a) per
+		// PerFrame_CB.pointShadowBypass forces visibility=1 for visual A/B —
+		// flip the runtime DevToggle (PointShadowBypass) on the editor side
+		// to confirm shadow contribution is the only rendered-output delta
+		// vs an unshadowed point light. TASK-195 migrated this from the
+		// former #define DEBUG_POINT_SHADOW_BYPASS; precedent on the cube
+		// path (TASK-148, commit 71817f3a) per
 		// .claude/disciplines/visual-validation.md A/B-toggle pattern.
-#define DEBUG_POINT_SHADOW_BYPASS 0
-#if DEBUG_POINT_SHADOW_BYPASS
 		float l_Visibility = 1.0;
-#else
-		float l_Visibility = 1.0;
-		if (l_PointLight.shadow.x != 0u)
+		if (g_Frame.pointShadowBypass == 0u && l_PointLight.shadow.x != 0u)
 		{
 			RayDesc l_ShadowRay;
 			l_ShadowRay.Origin    = l_RayOrigin;
@@ -149,7 +147,6 @@ void EvaluateTiledPointLighting(
 			// means no occluder between origin and light → visible.
 			l_Visibility = (l_Query.CommittedStatus() == COMMITTED_NOTHING) ? 1.0 : 0.0;
 		}
-#endif
 		io_DirectLuminance += l_LightDirect * l_Visibility;
 		io_IndirectSeedLuminance += l_LightIndirectSeed * l_Visibility;
 	}
