@@ -3,10 +3,10 @@ id: TASK-108
 title: >-
   Architecture: unified radiance cache shared by screen-space GI and path tracer
   (two cascaded tiers)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-19 19:27'
-updated_date: '2026-04-30 19:11'
+updated_date: '2026-04-30 21:30'
 labels:
   - rendering
   - radiance-cache
@@ -84,3 +84,41 @@ Status stays `To Do` per project precedent (no `Paused` / `Deferred` enum value)
 
 **Cross-ref**: TASK-77 (PT-primary direction approval), TASK-77.1 (temporal-reprojection denoiser — phase 1, the trigger for this re-evaluation), TASK-6 family (originally cited as the screen-space-tier trigger; now in maintenance mode).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Superseded by TASK-77.1 (2026-04-30)
+
+Closed Done as **superseded by TASK-77.1**. The PT-side world-space radiance cache scope — the only surviving subset of this task under PT-primary direction — folded into TASK-77.1's rewritten phase-1 brief on the same day this task was paused.
+
+### What triggered the closure earlier than expected
+
+The 2026-04-30 status note (above) framed re-evaluation as "after TASK-77.1's design call closes." The trigger arrived earlier — at TASK-77.1's filing, not its design call:
+
+User direction (2026-04-30, same session): *"motion vectors come from a g-pass which is still rasterized; world-space cache makes more sense here."* Under PT-primary direction (TASK-77 approval, 2026-04-30), rasterization-trick subsystems — shadowmap pipeline (cube atlas, point/sphere shadow techniques), SSGI / RadianceCache-as-rasterizer-feature, screen-space reflection tricks, light-volume rasterization, etc. — become fallback / debug-comparison only. Investment in their quality, structure, or extension stops paying for itself.
+
+The PT denoiser must not depend on rasterizer-derived inputs (G-buffer motion vectors, depth, normals) — that would couple the surviving primary pipeline to a demoted subsystem. World-space radiance cache is the rasterizer-independent alternative, and it was already this task's surviving subset (the PT-side world-space tier). TASK-77.1 pivoted to that approach in the same backlog batch.
+
+### What folded where
+
+- **Architecture writeup** deliverable → TASK-77.1's design-call output (cache structure picked + rationale + reference-impl alignment).
+- **Prototype** deliverable → TASK-77.1's implementation lanes.
+- **Perf numbers** deliverable → TASK-77.1's AC #4 (memory footprint) + AC #6 (visual A/B + noise-floor delta).
+- **Decision point** ("does the shared cache win on both axes") → no longer load-bearing; the "shared" framing is gone (SSGI-side consumer demoted), so only the PT-side cost/quality question matters and that question moves to TASK-77.1.
+
+### ACs left unticked
+
+ACs #1-#6 (DoD section) all remain unticked — they were not done; they are now irrelevant under the supersede:
+
+- DoD #1-#4 (build, integration tests, mock-test gap, validation) — no implementation landed under this task ID.
+- DoD #5-#6 (user-observable outcome, what-was-not-verified) — moves to TASK-77.1's Final Summary when that phase closes.
+
+This matches the closure shape of TASK-153 in commit `3dcead84` (obsolete-framing closure under PT-primary, ACs left unticked, scope folded into successor task / no follow-up filed).
+
+### No follow-up task filed
+
+The "shared cache between two consumers" framing is itself obsolete. The right successor is TASK-77.1's PT-only world-space cache, not a re-incarnation of this task. SSGI-side cache work is on the demotion path — if it ever comes back, it does so as a debug-comparison harness, not as a peer of the PT cache.
+
+**Cross-ref**: TASK-77 (PT-primary direction approval), TASK-77.1 (PT-only world-space radiance cache as denoiser — phase 1; supersedes this task's PT-side scope), TASK-153 (precedent for obsolete-framing closure shape under PT-primary), TASK-6 family (originally cited as the screen-space-tier trigger; now in maintenance mode under PT-primary).
+<!-- SECTION:FINAL_SUMMARY:END -->

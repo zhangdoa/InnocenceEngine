@@ -4,7 +4,7 @@ title: Extract reusable ping-pong texture helper to shrink GI pass classes
 status: To Do
 assignee: []
 created_date: '2026-04-25 00:00'
-updated_date: '2026-04-30 19:12'
+updated_date: '2026-04-30 21:30'
 labels:
   - rendering
   - refactor
@@ -67,15 +67,27 @@ This is foundation / shared-utility work. No parent task; the dependency on TASK
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-## Status note (2026-04-30) — demoted + re-linked to TASK-77.1 trigger
+## Status note (2026-04-30) — demoted; trigger open
 
 Under PT-primary direction (TASK-77 approval, 2026-04-30), rasterization-trick subsystems — shadowmap pipeline (cube atlas, point/sphere shadow techniques), SSGI / RadianceCache-as-rasterizer-feature, screen-space reflection tricks, light-volume rasterization, etc. — become fallback / debug-comparison only. Investment in their quality, structure, or extension stops paying for itself.
 
 This task was originally scoped against ping-pong sites in the screen-space-GI passes (`GIDenoisePass` + radiance-cache passes) plus speculative TAA / motion-blur pass sites. Under PT-primary, the GI passes are in maintenance mode — they will not gain new ping-pong pairs that motivate extracting the shared helper. Two stable callers (the surviving GI pair + TAA's motion-vector ping-pong) is below the three-caller bar that justifies extracting a shared utility per `tech-choice-vs-default.md` / `coding-principles.md` ("fix at the right layer" — don't extract until you have three concrete uses).
 
-**Re-linked trigger**: TASK-77.1 (path-tracer temporal-reprojection denoiser — phase 1) is the natural third site. Temporal accumulation needs a per-pixel ping-pong of (irradiance estimate, sample count) buffers. Once TASK-77.1 lands a third concrete ping-pong site with TDD-shaped coverage, the helper extraction pays for itself with three callers and a fresh-context implementer who can survey all three uses before designing the API.
+### Earlier TASK-77.1 trigger dropped (2026-04-30 pivot)
 
-**Demoted to `low` priority** (was `low` already in this project's priority enum; the demotion is conceptual — "file when triggered, do not actively pull"). Status stays `To Do` per project precedent. The TASK-6.2 dependency that originally constrained scheduling is no longer load-bearing under PT-primary — if TASK-6.2 itself defers further or archives, that doesn't block this task; the trigger is now TASK-77.1 landing.
+Earlier in this batch this task was re-linked to TASK-77.1 (then scoped as a screen-space temporal-reprojection denoiser reusing TAA motion vectors) as the natural third ping-pong site — temporal accumulation of (irradiance estimate, sample count) buffers fits the even/odd ping-pong texture pattern.
 
-**Cross-ref**: TASK-77 (PT-primary direction approval), TASK-77.1 (temporal-reprojection denoiser — the new natural trigger for extraction), TASK-6.2 (original sequencing constraint, now stale).
+User direction (2026-04-30, same session) pivoted TASK-77.1 to a **world-space radiance cache** approach. World-space caches are 3D-world constructs — probe grids, hash grids, voxel cascades, surfel pools — keyed on world position + normal. They do **not** follow the even/odd ping-pong texture pattern this helper would extract (the cache is updated in place, or via append-buffers / hash-table writes, not via two-buffer alternation). The TASK-77.1 trigger no longer holds.
+
+### Trigger is now open
+
+The third concrete ping-pong site that would justify extraction is back to "unknown." Plausible future sources (file when one of these actually lands, not speculatively):
+
+- A TASK-77 sibling axis (spatial à-trous / SVGF, ReSTIR DI temporal reservoirs) lands a screen-space pass with a ping-pong pattern. ReSTIR temporal reservoirs in particular are a natural fit — but only file the link when that task is actually scoped, not pre-emptively (per `feedback_dont_pile_on_backlog_tasks`).
+- A future TAA / motion-blur pass extends the existing ping-pong site in a way that motivates the extraction.
+- Any unrelated rendering feature adds a fourth ping-pong pair to the existing `GIDenoisePass` boilerplate, tripping the file-size gate again.
+
+**Demoted to `low` priority** (was `low` already in this project's priority enum; the demotion is conceptual — "file when triggered, do not actively pull"). Status stays `To Do` per project precedent. **Don't archive** — the helper is still potentially useful if a third site appears; the previous trigger link is the only thing being dropped here. The TASK-6.2 dependency that originally constrained scheduling is no longer load-bearing under PT-primary.
+
+**Cross-ref**: TASK-77 (PT-primary direction approval), TASK-77.1 (pivoted to world-space radiance cache — no longer a ping-pong-texture-shaped trigger), TASK-6.2 (original sequencing constraint, now stale).
 <!-- SECTION:NOTES:END -->
