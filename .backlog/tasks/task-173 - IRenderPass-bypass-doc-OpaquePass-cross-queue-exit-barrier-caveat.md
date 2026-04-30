@@ -1,7 +1,7 @@
 ---
 id: TASK-173
 title: 'IRenderPass bypass doc: OpaquePass cross-queue exit-barrier caveat (TASK-171 ADVISORY)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-28 07:30'
 labels:
@@ -42,7 +42,17 @@ Documentation only. No correctness change. The current shipped behaviour is GPU-
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 IRenderPass.h bypass-contract block extended with the cross-queue exit-barrier caveat
-- [ ] #2 No code change; comment-only CL
-- [ ] #3 Reviewed-By: any peer (small CL — could even be Review-Skipped: docs-only since the change is non-closing pure documentation)
+- [x] #1 IRenderPass.h bypass-contract block extended with the cross-queue exit-barrier caveat
+- [x] #2 No code change; comment-only CL
+- [x] #3 Reviewed-By: any peer (small CL — could even be Review-Skipped: docs-only since the change is non-closing pure documentation)
 <!-- AC:END -->
+
+## Implementation Notes
+
+Added a `Cross-queue exit-barrier caveat (TASK-161 / TASK-173)` paragraph inside the `m_Bypassed` comment block in `Source/Engine/Interface/IRenderPass.h` (lines 46-57). The paragraph states:
+
+- Bypass elides every barrier the pass would have emitted, including `m_PostCLState = CrossQueueExit::ToCommon`.
+- Safe today via DX12 implicit-promotion-from-COMMON (steady-state and first-frame both land on COMMON).
+- Forward contract: a future CrossQueueExit pass that adopts a non-COMMON exit state must re-evaluate or gate the bypass before introducing the pass.
+
+Build (RelWithDebInfo) succeeded — header-comment-only edit, no translation-unit churn observed beyond the standard rebuild.
