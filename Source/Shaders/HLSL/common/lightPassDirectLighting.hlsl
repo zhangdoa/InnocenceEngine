@@ -129,8 +129,14 @@ void EvaluateTiledPointLighting(
 		// former #define DEBUG_POINT_SHADOW_BYPASS; precedent on the cube
 		// path (TASK-148, commit 71817f3a) per
 		// .claude/disciplines/visual-validation.md A/B-toggle pattern.
+		//
+		// Attenuation gate: SmoothDistanceAttenuation returns exactly 0 for
+		// distance >= attenuation radius (saturate(1 - factor*factor)). At
+		// that point l_LightDirect == 0, so visibility scales 0 either way —
+		// the shadow ray is wasted work. Tile-cull lists by sphere bound, so
+		// edge-tile pixels routinely hit this path.
 		float l_Visibility = 1.0;
-		if (g_Frame.pointShadowBypass == 0u && l_PointLight.shadow.x != 0u)
+		if (l_AttenuationFactor > 0.0 && g_Frame.pointShadowBypass == 0u && l_PointLight.shadow.x != 0u)
 		{
 			RayDesc l_ShadowRay;
 			l_ShadowRay.Origin    = l_RayOrigin;
