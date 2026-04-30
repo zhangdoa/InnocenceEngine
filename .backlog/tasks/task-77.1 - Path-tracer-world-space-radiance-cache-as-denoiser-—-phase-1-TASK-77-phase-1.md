@@ -1,11 +1,10 @@
 ---
 id: TASK-77.1
-title: >-
-  Path-tracer world-space radiance cache as denoiser — phase 1 (TASK-77 phase 1)
+title: Path-tracer world-space radiance cache as denoiser — phase 1 (TASK-77 phase 1)
 status: To Do
 assignee: []
 created_date: '2026-04-30 19:14'
-updated_date: '2026-04-30 21:30'
+updated_date: '2026-04-30 19:44'
 labels:
   - R&D
   - path-tracer
@@ -132,8 +131,6 @@ Other axes get their own tasks once phase 1's outcome makes the next pick natura
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
 
-
-
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Cache structure picked + rationale documented in Implementation Notes (probe grid / voxel cascade / hash grid / surfels — design call's call), with reference-impl-alignment evidence
@@ -144,3 +141,36 @@ Other axes get their own tasks once phase 1's outcome makes the next pick natura
 - [ ] #6 On-screen visual A/B: denoiser off (raw PT) vs denoiser on (cache-assisted), same camera path on Sponza interior, stills + short video — documented in Final Summary with a clear noise-floor delta
 - [ ] #7 Peer review per peer-review-required.md — fresh-context reviewer of opposite role family
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Design call resolution (2026-04-30)
+
+Design call ran by `rendering-researcher` (agent ID `a21bb6ff5eccc166a` — output in this session's transcript). User answered the three open architectural questions surfaced by the design call:
+
+1. **Secondary write/read scope**: defer to phase 2 (phase 1 stays primary-hit only).
+2. **Cache capacity**: 25 MB / 2^20 cells; configurable later on demand.
+3. **Lighting-change responsiveness**: sample-cap 256 only; colour-delta invalidation deferred.
+
+Resolved tech picks (locked in for the sub-task lanes — TASK-77.1.{1,2,3}):
+
+- Capsaicin GI-1.0 `hash_grid_cache` structure (option c — recent precedent per `tech-choice-vs-default.md`).
+- Open-addressing hash grid keyed by `(quantize(posWS), packOcta(N))`, 20 B per cell + 4 B key.
+- Adaptive cell size via existing `RadianceCacheCommon.hlsl::AdaptiveCellSize`.
+- Read at primary hit (divergence from Capsaicin which reads at secondary — phase-1-specific; flagged for paper-port audit at closure per `paper-port.md`).
+- Composition site: new `GPUPathTracerDenoisePass` between `GPUPathTracerPass` and the `l_hdrSource` consumer at `ExampleRenderingClient.cpp:483-490`.
+- Composition rule: `lerp(noisy, cached, saturate(sampleCount/32))`.
+- Online running-mean update with sample-count cap = 256.
+- Zero rasterizer-derived inputs (audited).
+
+Sub-tasks filed: TASK-77.1.1 (hash-grid + PT write path), TASK-77.1.2 (denoise pass), TASK-77.1.3 (visual A/B + paper-port audit + closure).
+
+### Deferred work (file at the moment we need it, not pre-emptively)
+
+Per `feedback_dont_pile_on_backlog_tasks` — these are recorded here, NOT filed as separate sub-tasks until the trigger conditions hit:
+
+- **Phase 2: secondary-vertex writes + reads** to accelerate convergence (Capsaicin alignment). File when phase 1 ships and the next convergence-acceleration pick becomes natural.
+- **Cache capacity tuning beyond 25 MB** if Sponza-scale scenes prove insufficient. File only if measured cell-occupancy / collision data shows the 2^20 budget saturated.
+- **Colour-delta invalidation** (cache invalidation when scene radiance shifts faster than the sample-cap allows). File when sample-cap-only ghost-lag becomes user-visible — e.g. moving point lights leave 256-frame trails.
+<!-- SECTION:NOTES:END -->
