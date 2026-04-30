@@ -6,8 +6,9 @@ The producer agent runs at the start of every new session, before any substantiv
 
 1. List tasks at `.backlog/tasks/` with `status: In Progress`. For each, read Implementation Notes — that is the hand-off from the previous session.
 2. Read the last 3-5 commits on the active branch for recent activity not yet captured in tasks.
-3. Note any task whose Implementation Notes end with a "priority order for remaining work" block — those are explicit continuation instructions.
-4. Surface to the user: current state, likely next priorities, blockers, any gap between what's in-progress and what they might have been expecting.
+3. Run `node .claude/hooks/lib/audit-backlog-drift.js --quiet` and review the surfaced candidates. Each entry is an open task with TASK-N references in landed commits — treat as a drift signal, not a verdict. Classify per-task (code-closure / cross-reference / multi-CL / explicit-deferred) using the recipe in TASK-201 before recommending any retrofit-flip; the script never mutates the backlog. Companion to the closure-staleness commit-gate, which catches drift forward — this catches what slipped through before the gate landed.
+4. Note any task whose Implementation Notes end with a "priority order for remaining work" block — those are explicit continuation instructions.
+5. Surface to the user: current state, likely next priorities, blockers, any gap between what's in-progress and what they might have been expecting. Include drift candidates worth retrofit-flipping when present.
 
 ## Cross-references
 

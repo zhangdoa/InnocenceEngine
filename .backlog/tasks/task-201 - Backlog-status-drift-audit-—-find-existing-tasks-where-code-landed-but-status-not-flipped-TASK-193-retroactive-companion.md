@@ -3,7 +3,7 @@ id: TASK-201
 title: >-
   Backlog-status drift audit — find existing tasks where code landed but status
   not flipped (TASK-193 retroactive companion)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-29 07:19'
 updated_date: '2026-04-29 08:19'
@@ -46,8 +46,8 @@ Output: a docs(backlog) commit (or a sequence) flipping all retroactive-Done tas
 - [x] #1 Audit run against all `To Do` / `In Progress` tasks
 - [x] #2 Each found drift annotated with the closure commit SHA in the task's Final Summary
 - [x] #3 Status flipped where appropriate
-- [ ] #4 Audit script (or recipe) saved somewhere repeatable so the audit can be re-run periodically
-- [ ] #5 Producer-brief incorporates the same check on session start (if affordable) — companion to TASK-193's commit-time enforcement, catching anything that slipped through before the gate landed
+- [x] #4 Audit script (or recipe) saved somewhere repeatable so the audit can be re-run periodically
+- [x] #5 Producer-brief incorporates the same check on session start (if affordable) — companion to TASK-193's commit-time enforcement, catching anything that slipped through before the gate landed
 
 ## Owner
 
@@ -105,12 +105,14 @@ The current audit's output — the retrofit-flip docs(backlog) commit on `ecs-ov
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-**AC #4 and AC #5 BLOCKED** as of 2026-04-28 on TASK-203 — sub-agent ai-expert dispatches cannot Write/Edit `.claude/**` paths (two attempts: `adfe8c2fc7ff4c182` and `a7fc71385058829ad` both hit the same permission wall). Main-session writes work fine, and an earlier ai-expert dispatch in this same session successfully wrote `.claude/` files (`66327f34` closure-staleness gate). The wall is dispatch-scoped — likely a sub-agent permission-inheritance gap. Filed as TASK-203 (high priority, ai-expert).
+Closed across two CLs.
 
-Workaround until TASK-203 lands: producer's manual audit recipe (this commit's methodology) provides operational coverage. The 24-candidate prototype output verified the design soundness; codification is mechanical once the perm wall is removed.
+Phase 1 — `6f1247e4` (`docs(backlog): TASK-201 retroactive drift audit — flip 3 tasks closed by prior commits`). Producer-driven manual sweep over 62 open tasks classified each TASK-N reference and retrofit-flipped TASK-21 / TASK-96 / TASK-101. AC #1–#3 ticked there. AC #4 / AC #5 deferred behind the sub-agent perm-wall (TASK-203).
 
-Design reference for the next attempt:
-- Script: `.claude/hooks/lib/audit-backlog-drift.js` (~190-210 lines). Single `git log --all --grep=TASK- --format=%H%x09%s%x09%b`; per-task hash-set lookup; strong-signal (subject) vs weak-signal (body) distinction; modes `--quiet`, `--json`. Public `audit()` API.
-- Discipline: `.claude/disciplines/backlog-drift-audit.md`. Codifies classification recipe (code-closure / cross-reference / multi-CL / explicit-deferred). Cite TASK-201 + TASK-72 as canonical examples.
-- Wire: `.claude/disciplines/session-start.md` step 4 — drift check (perf budget 194ms measured << 5s ceiling, fits comfortably).
+Phase 2 — this CL, after TASK-203 closed (`92c841ad`). Codifies the manual recipe as a pure-Node lib and wires it into the producer's session-start checklist:
+
+- `.claude/hooks/lib/audit-backlog-drift.js` (211 lines, no deps). Public `audit({ cwd })` returns open tasks with TASK-N references in landed commits, distinguishing strong-signal (subject) from weak-signal (body-only). CLI shim supports default human-readable, `--quiet`, and `--json` modes. Diagnostic-only — never mutates the backlog. Sample run: 47 candidate tasks surfaced from the current ecs-overhaul branch, output plausible (mix of file-only mentions, retrofit-needed code-closures, multi-CL partials).
+- `.claude/disciplines/session-start.md` step 3 — producer runs the lib `--quiet` after listing in-progress tasks; classifies candidates per the TASK-201 recipe (code-closure / cross-reference / multi-CL / explicit-deferred) before recommending any retrofit-flip. Companion to the closure-staleness commit-gate, which catches drift going forward; this catches what slipped through before the gate landed.
+
+Verified: Node v25.9.0, audit run from project root completes successfully and surfaces well-known candidates (TASK-23 with `fef48be5` FixedSizeString rewrite, TASK-71 with `ff28c0be` runtime-tweaks panel, TASK-109 with multi-CL scene-load history) — recipe still requires per-task human classification; the lib is the data step, not the verdict.
 <!-- SECTION:FINAL_SUMMARY:END -->
