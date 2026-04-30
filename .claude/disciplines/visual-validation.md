@@ -12,6 +12,12 @@ Visual evidence supporting a CL must include:
 
 Archive captures under `Build/captures/` with labels tied to the work. The archive is how the project proves quality goes up over time, not just sideways.
 
+### PT-as-ground-truth — enumerate rast omissions
+
+When path-tracer output is the reference for rasterizer validation, the comparison is only fair on dimensions both pipelines compute. Before drawing conclusions from per-pixel deltas, enumerate what the rasterizer does NOT compute that PT does — unshadowed light types (e.g. point/sphere lights without shadow maps leak through walls in rast, get correctly occluded in PT), missing transmission/refraction, multi-bounce, missing post-effects, missing AA modes — and either disable those PT features for the comparison, or annotate the comparison artifact with the omitted-feature caveats.
+
+Without this, a single rast-vs-PT delta conflates multiple bidirectional biases. Recorded incident: TASK-6.6 / TASK-6.10 (2026-04-26) — GISponza brightness gap closed from PT mean luma 145.80 vs rast 120.86 → 144.79 by adding sky NEE; but point/sphere lights had no shadow maps in rast, so the closure was likely partially the GI fix and partially two errors cancelling.
+
 ### A/B toggle pattern for shader-feature validation
 
 When a shader feature's contribution is subtle in the only test scene currently available (e.g. point-shadow occlusion delta on GISponza is ~3% mean luminance because GI + sun dominate the budget), a `#define`-gated bypass in the consuming HLSL is the bridge between "implementation correct" and "dedicated test scene authored":

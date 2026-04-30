@@ -33,6 +33,18 @@ When Playwright is needed, default to `npx playwright test --workers=1`. Default
 
 Override only when the spec is genuinely independent and serial is too slow to matter — and document that override in the brief.
 
+### Time one iteration before scaling to N
+
+Never kick off an N-iteration stress loop (Main.exe / RenderTest.exe / any long-running test) without first timing a single iteration and confirming clean exit. The 2026-04-18 TASK-39 repro hung 20+ minutes on an untimed 20×20-frame loop; killing the outer bash didn't kill the spawned children, zombie Main.exe processes accumulated, and corrupted the test environment for the rest of the session — every subsequent single-run hung before any log output, even after reverting the code under test.
+
+Operational rules:
+
+- One iteration first. Observe wall-clock + exit code. If it hangs or runs slower than expected, STOP and investigate.
+- Wrap long-running tests in `timeout N` so a single hang can't eat the session.
+- Track the outer PID explicitly so `taskkill //F //PID <parent> //T` cleans up the whole tree.
+- After killing a stress loop: sweep for zombies with `tasklist //FI "IMAGENAME eq Main.exe"` and kill before the next test.
+- If multiple test invocations all hang at the same early point regardless of code state, suspect environment corruption (zombies, driver, AV) and ask the user to restart rather than burning more cycles.
+
 ### Trap orphan cleanup between iterations
 
 Playwright + Electron in particular leak when a spec aborts mid-run, when the engine takes longer than the test timeout, or when an assertion throws and the teardown hook doesn't fire. Between launches:
