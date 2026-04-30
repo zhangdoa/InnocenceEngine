@@ -69,6 +69,12 @@
       "notes": "TASK-77.1 phase 1 — cell-only port (no tile/cell mip chain, no separate indirect/multibounce buffers, no decay buffer). Flat hash table keyed on (quantize(posWS, AdaptiveCellSize), packOctahedral(N)); open-addressing with probe length 4; eviction by frameLastTouched on collision; running mean with sample-cap 256. Phase-1 also writes at the PT primary hit instead of Capsaicin's secondary-vertex usage; phase 2 closes that gap. Divergences acknowledged in TASK-77.1.1 closure record."
     },
     {
+      "glob": "Source/Shaders/HLSL/GPUPathTracerDenoise.comp",
+      "paper": "GI-1.0 §2.2 (World Cache) — read-side composition of cached vs. fresh radiance. Phase-1 simplification of Capsaicin's multi-tap reuse: a single sampleCount-driven lerp.",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl",
+      "notes": "TASK-77.1.2 — denoise composition rule lerp(noisy, cached, saturate(sampleCount/32)). Lookup site is screen-space primary hit (Capsaicin reads at secondary vertices inside the bounce loop); flat hash, no tile/mip cone-filter. Divergences flagged for paper-port audit at TASK-77.1.3 closure."
+    },
+    {
       "glob": "Source/Shaders/HLSL/common/AgX.hlsl",
       "paper": "Troy Sobotka — AgX (display rendering transform). Sigmoid contrast curve in log-encoded display-referred space; replaces ACES Filmic tonemapping.",
       "reference": "https://github.com/sobotka/AgX (canonical) + https://github.com/google/filament/blob/main/filament/src/ToneMapper.cpp (Filament's polynomial-fit port) + https://github.com/mrdoob/three.js/blob/dev/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js (Three.js port the engine implementation follows)",

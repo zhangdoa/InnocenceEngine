@@ -1,0 +1,121 @@
+// shadertype=hlsl
+// TASK-77.1.2 — GPUPathTracerDenoisePass kernel.
+//
+// Composition rule (locked at TASK-77.1's design call, 2026-04-30):
+//   denoised = lerp(noisy, cached, saturate(sampleCount / 32.0))
+//
+// Reads the per-frame noisy radiance from GPUPathTracerPass::AccumBuffer
+// and the world-space hash-grid radiance cache populated at primary hit.
+// The hash key is derived from the writer-side (posWS, N) per pixel,
+// supplied here via two persistent UAVs the PT raygen also writes
+// (TASK-77.1.2's writer-side extension — see GPUPathTracerRayGen.hlsl
+// epilogue). cellSize matches the writer's adaptive formula
+// (HashGridCache_CellSize) so quantisation is identical and the lookup
+// key is bit-equal to what HashGridCache_Insert built.
+//
+// Paper-port divergences from Capsaicin gi1.comp (acknowledged for
+// TASK-77.1.3 audit, see .claude/references.json):
+//   - Composition is a single sampleCount-driven lerp (Capsaicin uses a
+//     multi-tap reuse with separate variance estimates). Phase-1 scope.
+//   - Lookup site is screen-space primary hit (Capsaicin's read site is
+//     secondary-vertex inside the bounce loop). Same direction as the
+//     write-side divergence flagged in TASK-77.1.1.
+//   - No tile/mip cone-filter — flat hash with the writer's cell size.
+//
+// Cite-prior-art: hash key + cellSize formula are imported as-is from
+// common/HashGridCache.hlsl (TASK-77.1.1, commit 9c876761). The writer-
+// reads-the-same-binding pattern matches LightCullingPass /
+// LuminanceHistogramPass — persistent UAVs touched by two passes back-
+// to-back without a per-frame state transition on the buffer side.
+
+#include "common/common.hlsl"
+#include "common/HashGridCache.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID         : SV_GroupID;
+    uint3 groupThreadID   : SV_GroupThreadID;
+    uint3 dispatchThreadID: SV_DispatchThreadID;
+    uint  groupIndex      : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
+
+[[vk::binding(0, 1)]]
+Texture2D<float4>                g_NoisyRadiance    : register(t0);
+[[vk::binding(1, 1)]]
+Texture2D<float4>                g_PrimaryHitPos    : register(t1);
+[[vk::binding(2, 1)]]
+Texture2D<float4>                g_PrimaryHitNormal : register(t2);
+
+// Hash grid bound as RWStructuredBuffer (UAV) to match the writer's binding
+// type — TASK-77.1.1 keeps both buffers persistently Accessibility::ReadWrite
+// so cross-pass consumption uses the same view rather than a dedicated SRV
+// transition. HashGridCache_Read does no atomics, just structured reads;
+// the second include below resolves against these bindings.
+[[vk::binding(0, 2)]]
+RWStructuredBuffer<uint>         g_HashGridKeys     : register(u0);
+[[vk::binding(1, 2)]]
+RWStructuredBuffer<HashGridCell> g_HashGridCells    : register(u1);
+
+#define HASHGRIDCACHE_HAS_BINDINGS
+#include "common/HashGridCache.hlsl"
+
+[[vk::binding(2, 2)]]
+RWTexture2D<float4> g_Denoised : register(u2);
+
+// Sample-count cap for the lerp: at sampleCount >= 32 the denoised pixel
+// is fully cached. Dropping below trades cache reliance for the noisy
+// input proportionally. 32 was the design-call's locked-in number;
+// changing it without an A/B against TASK-77.1.3's surface would be a
+// silent quality regression — keep as a named magic number.
+static const float HashGridCache_DenoiseSampleCap = 32.0f;
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+    uint2 pixel = input.dispatchThreadID.xy;
+    uint2 viewport = uint2(g_Frame.viewportSize.xy);
+    if (any(pixel >= viewport))
+        return;
+
+    float4 noisy = g_NoisyRadiance.Load(int3(pixel, 0));
+    float4 hitPos4 = g_PrimaryHitPos.Load(int3(pixel, 0));
+    float4 hitN4   = g_PrimaryHitNormal.Load(int3(pixel, 0));
+
+    // Miss / sky pixels: writer set .w = 0. No cache key to look up;
+    // pass the noisy radiance through unchanged. Same fallback the
+    // composition rule degenerates to when sampleCount is zero.
+    if (hitPos4.w < 0.5f)
+    {
+        g_Denoised[pixel] = noisy;
+        return;
+    }
+
+    float3 posWS = hitPos4.xyz;
+    float3 normal = hitN4.xyz;
+
+    float depth = length(posWS - g_Frame.camera_posWS.xyz);
+    float cellSize = HashGridCache_CellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original);
+
+    float3 cached = float3(0.0f, 0.0f, 0.0f);
+    uint   sampleCount = 0u;
+    bool hit = HashGridCache_Read(posWS, normal, cellSize, cached, sampleCount);
+
+    float3 result;
+    if (hit && sampleCount > 0u)
+    {
+        float w = saturate(float(sampleCount) / HashGridCache_DenoiseSampleCap);
+        result = lerp(noisy.rgb, cached, w);
+    }
+    else
+    {
+        // Cache miss. The hash entry hasn't been written yet (first frame
+        // on this pixel, or a probe-chain overflow evicted it). Fall back
+        // to the raw noisy frame — identical to lerp at sampleCount = 0.
+        result = noisy.rgb;
+    }
+
+    g_Denoised[pixel] = float4(result, 1.0f);
+}

@@ -58,9 +58,10 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
 	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
 	//                 t7=bindless material textures,
-	//                 u0=AccumBuffer, u1=HashGridKeys, u2=HashGridCells,
+	//                 u0=AccumBuffer (noisy), u1=HashGridKeys, u2=HashGridCells,
+	//                 u3=PrimaryHitPos, u4=PrimaryHitNormal,
 	//                 s0=material sampler
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(15);
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(17);
 
 	// b0 - PerFrameCB (set 0, binding 0)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -181,6 +182,29 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ShaderStage            = m_ShaderStage;
 
+	// u3 - PrimaryHitPos (set 2, binding 3, ReadWrite UAV — per-pixel
+	// primary-hit world position; .w marks valid/invalid). Written each
+	// frame by the raygen, read by GPUPathTracerDenoisePass to derive the
+	// hash-grid lookup key without re-tracing primary rays.
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_GPUResourceType        = GPUResourceType::Image;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorSetIndex      = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorIndex        = 3;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_TextureUsage           = TextureUsage::ComputeOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_BindingAccessibility   = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_ShaderStage            = m_ShaderStage;
+
+	// u4 - PrimaryHitNormal (set 2, binding 4, ReadWrite UAV — paired
+	// with PrimaryHitPos so the denoise pass has both inputs to
+	// HashGridCache_BuildKey).
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_GPUResourceType        = GPUResourceType::Image;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorSetIndex      = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorIndex        = 4;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_TextureUsage           = TextureUsage::ComputeOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility   = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ShaderStage            = m_ShaderStage;
+
 	m_MaterialSampler = g_Engine->Get<SamplerResourceService>()->Add("GPUPathTracerMaterialSampler");
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -251,6 +275,7 @@ bool GPUPathTracerPass::Initialize()
 
 
 	CreateAccumulationBuffer();
+	CreatePrimaryHitBuffers();
 
 	// FrameCountCB: single uint32
 	m_FrameCountCB = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerFrameCountCB");
@@ -386,6 +411,10 @@ bool GPUPathTracerPass::Terminate()
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridKeys);
 	if (m_HashGridCells)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridCells);
+	if (m_PrimaryHitNormalBuffer)
+		g_Engine->Get<TextureResourceService>()->Delete(m_PrimaryHitNormalBuffer);
+	if (m_PrimaryHitPosBuffer)
+		g_Engine->Get<TextureResourceService>()->Delete(m_PrimaryHitPosBuffer);
 	if (m_AccumulationBuffer)
 		g_Engine->Get<TextureResourceService>()->Delete(m_AccumulationBuffer);
 
@@ -431,7 +460,9 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// Must happen on Graphics because tracked state may include PIXEL_SHADER_RESOURCE
 	// (set by swap chain presentation), which is invalid on compute command lists.
 	l_fmService->CommandListBegin(m_RayTracingRenderPassComp, m_CommandListComp_Graphics, 0);
-	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	l_fmService->TryToTransitState(m_AccumulationBuffer,     m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	l_fmService->TryToTransitState(m_PrimaryHitPosBuffer,    m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
+	l_fmService->TryToTransitState(m_PrimaryHitNormalBuffer, m_CommandListComp_Graphics, Accessibility::ReadOnly, Accessibility::ReadWrite);
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Graphics);
 
 	// Compute CL: bind and dispatch rays
@@ -455,9 +486,13 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        12);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridKeys,                                           13);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCells,                                          14);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PrimaryHitPosBuffer,                                    15);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PrimaryHitNormalBuffer,                                 16);
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
-	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(m_AccumulationBuffer,        m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(m_PrimaryHitPosBuffer,       m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
+	l_fmService->TryToTransitState(m_PrimaryHitNormalBuffer,    m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
 	l_fmService->CommandListEnd(m_RayTracingRenderPassComp, m_CommandListComp_Compute);
 
 	return true;
@@ -471,6 +506,26 @@ RenderPassComponent* GPUPathTracerPass::GetRenderPassComp()
 GPUResourceComponent* GPUPathTracerPass::GetResult()
 {
 	return m_AccumulationBuffer;
+}
+
+GPUBufferComponent* GPUPathTracerPass::GetHashGridKeys()
+{
+	return m_HashGridKeys;
+}
+
+GPUBufferComponent* GPUPathTracerPass::GetHashGridCells()
+{
+	return m_HashGridCells;
+}
+
+TextureComponent* GPUPathTracerPass::GetPrimaryHitPosBuffer()
+{
+	return m_PrimaryHitPosBuffer;
+}
+
+TextureComponent* GPUPathTracerPass::GetPrimaryHitNormalBuffer()
+{
+	return m_PrimaryHitNormalBuffer;
 }
 
 void GPUPathTracerPass::ResetAccumulation()
@@ -496,6 +551,42 @@ void GPUPathTracerPass::CreateAccumulationBuffer()
 	l_texService->Initialize(m_AccumulationBuffer);
 }
 
+void GPUPathTracerPass::CreatePrimaryHitBuffers()
+{
+	auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+	auto l_texService = g_Engine->Get<TextureResourceService>();
+
+	m_PrimaryHitPosBuffer = l_texService->Add("GPUPathTracerPrimaryHitPos");
+	m_PrimaryHitPosBuffer->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
+	m_PrimaryHitPosBuffer->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
+	m_PrimaryHitPosBuffer->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
+	// Float32 for world position — single-precision keeps the cell-quantise
+	// arithmetic in HashGridCache_BuildKey aligned with the writer; Float16
+	// would lose enough magnitude on far hits that lookup keys drift cells.
+	m_PrimaryHitPosBuffer->m_TextureDesc.PixelDataType    = TexturePixelDataType::Float32;
+	m_PrimaryHitPosBuffer->m_TextureDesc.Width            = l_resolution.x;
+	m_PrimaryHitPosBuffer->m_TextureDesc.Height           = l_resolution.y;
+	m_PrimaryHitPosBuffer->m_TextureDesc.DepthOrArraySize = 1;
+	m_PrimaryHitPosBuffer->m_CPUAccessibility             = Accessibility::Immutable;
+	m_PrimaryHitPosBuffer->m_GPUAccessibility             = Accessibility::ReadWrite;
+	l_texService->Initialize(m_PrimaryHitPosBuffer);
+
+	m_PrimaryHitNormalBuffer = l_texService->Add("GPUPathTracerPrimaryHitNormal");
+	m_PrimaryHitNormalBuffer->m_TextureDesc.Sampler          = TextureSampler::Sampler2D;
+	m_PrimaryHitNormalBuffer->m_TextureDesc.Usage            = TextureUsage::ComputeOnly;
+	m_PrimaryHitNormalBuffer->m_TextureDesc.PixelDataFormat  = TexturePixelDataFormat::RGBA;
+	// Float32 — keeps parity with the position buffer and avoids the precision
+	// hit on octahedral pack/unpack that Float16 would inject around the cell-
+	// key build site. Memory cost is bounded (one screen-res RGBA-F32 each).
+	m_PrimaryHitNormalBuffer->m_TextureDesc.PixelDataType    = TexturePixelDataType::Float32;
+	m_PrimaryHitNormalBuffer->m_TextureDesc.Width            = l_resolution.x;
+	m_PrimaryHitNormalBuffer->m_TextureDesc.Height           = l_resolution.y;
+	m_PrimaryHitNormalBuffer->m_TextureDesc.DepthOrArraySize = 1;
+	m_PrimaryHitNormalBuffer->m_CPUAccessibility             = Accessibility::Immutable;
+	m_PrimaryHitNormalBuffer->m_GPUAccessibility             = Accessibility::ReadWrite;
+	l_texService->Initialize(m_PrimaryHitNormalBuffer);
+}
+
 // Called by FrameManagementService::PostResize after the GPU has been fully
 // drained and RenderingConfigurationService holds the new resolution. The
 // accumulation buffer must be re-sized (its dimensions drive DispatchRays,
@@ -510,7 +601,18 @@ void GPUPathTracerPass::OnResize()
 		l_texService->Delete(m_AccumulationBuffer);
 		m_AccumulationBuffer = nullptr;
 	}
+	if (m_PrimaryHitPosBuffer)
+	{
+		l_texService->Delete(m_PrimaryHitPosBuffer);
+		m_PrimaryHitPosBuffer = nullptr;
+	}
+	if (m_PrimaryHitNormalBuffer)
+	{
+		l_texService->Delete(m_PrimaryHitNormalBuffer);
+		m_PrimaryHitNormalBuffer = nullptr;
+	}
 	CreateAccumulationBuffer();
+	CreatePrimaryHitBuffers();
 	ResetAccumulation();
 }
 

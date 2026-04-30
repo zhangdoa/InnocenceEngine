@@ -39,6 +39,17 @@ RWStructuredBuffer<uint> g_HashGridKeys : register(u1);
 [[vk::binding(2, 2)]]
 RWStructuredBuffer<HashGridCell> g_HashGridCells : register(u2);
 
+// Per-pixel primary-hit data (TASK-77.1.2). Written once per pixel after
+// the bounce loop so the denoise pass can rebuild the hash-grid lookup
+// key from the same (posWS, N) the writer used. .w = 1.0 marks a valid
+// primary hit; .w = 0.0 marks miss / sky so the consumer can short-
+// circuit lookups without trashing the cache with sentinel positions.
+[[vk::binding(3, 2)]]
+RWTexture2D<float4> g_PrimaryHitPos : register(u3);
+
+[[vk::binding(4, 2)]]
+RWTexture2D<float4> g_PrimaryHitNormal : register(u4);
+
 #define HASHGRIDCACHE_HAS_BINDINGS
 #include "common/HashGridCache.hlsl"
 
@@ -499,5 +510,15 @@ void RayGenShader()
         float depth = length(primaryHitPos - g_Frame.camera_posWS.xyz);
         float cellSize = HashGridCache_CellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original);
         HashGridCache_Insert(primaryHitPos, primaryHitNormal, clampedRadiance, cellSize, g_FrameCount);
+
+        g_PrimaryHitPos[pixel]    = float4(primaryHitPos, 1.0f);
+        g_PrimaryHitNormal[pixel] = float4(primaryHitNormal, 1.0f);
+    }
+    else
+    {
+        // Miss / sky — encode .w = 0 so the denoise pass treats this pixel
+        // as cache-miss and falls back to the noisy radiance unchanged.
+        g_PrimaryHitPos[pixel]    = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        g_PrimaryHitNormal[pixel] = float4(0.0f, 0.0f, 0.0f, 0.0f);
     }
 }
