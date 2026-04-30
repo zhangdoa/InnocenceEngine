@@ -3,10 +3,11 @@ id: TASK-196
 title: >-
   Cross-agent stash protection — prevent agents from sweeping other agents'
   uncommitted work
-status: To Do
+status: Done
 assignee:
   - ai-expert
 created_date: '2026-04-28 19:49'
+updated_date: '2026-04-30 18:59'
 labels:
   - harness
   - agent-dispatch
@@ -58,13 +59,14 @@ Make `git stash` (and any other worktree-disruptive operation) safe under parall
 
 A is the leverage-equivalent of TASK-193's closure-staleness gate: deterministic, fail-stop at the moment of failure. Combine with a small B-style discipline note. Defer C unless cross-agent collision becomes a recurring issue.
 
-## Acceptance criteria
-
-- [ ] A hook (gate) blocks `git stash` when dirty files cross subtree ownership
-- [ ] Block message tells the caller exactly which paths they own and which they don't
-- [ ] `[stash-cross-subtree-OK]` sentinel allows opt-out (rare; document in discipline)
-- [ ] `.claude/disciplines/owner-mode.md` references the gate
-- [ ] Tests: cross-agent dirty → block; same-agent dirty → allow; sentinel → allow
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 A hook (gate) blocks `git stash` when dirty files cross subtree ownership
+- [x] #2 Block message tells the caller exactly which paths they own and which they don't
+- [x] #3 `[stash-cross-subtree-OK]` sentinel allows opt-out (rare; document in discipline)
+- [x] #4 `.claude/disciplines/owner-mode.md` references the gate
+- [x] #5 Tests: cross-agent dirty → block; same-agent dirty → allow; sentinel → allow
+<!-- AC:END -->
 
 ## Notes
 
@@ -81,3 +83,38 @@ A is the leverage-equivalent of TASK-193's closure-staleness gate: deterministic
 - [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
 - [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Implementation (ai-expert, 2026-04-30)
+
+**Layer chosen.** PreToolUse session-gate sub-gate (`.claude/hooks/gates/cross-subtree-stash.js`), wired through `.claude/hooks/session-gate.js`. The collision happens at the Bash-tool boundary mid-work, not at commit time and not at agent-dispatch time — session-gate is the right layer. Approach (A) from the brief; (B) added as the discipline note in `owner-mode.md`; (C) deferred per brief's recommendation.
+
+**Detection rule.** Collision shape, not caller identity. Enumerate dirty files via `git status --porcelain -z`, resolve each to its owning agent, block if the owner-set has cardinality > 1. Knowing *which* sub-agent issued the Bash call would require parent-transcript correlation; knowing whether a worktree-wide stash *would cause* a collision is sufficient and simpler. The block message names the owners and paths so the calling agent immediately sees what they would sweep.
+
+**Files.**
+- `.claude/hooks/lib/ownership.js` (new, 134 LOC) — `OWNERSHIP_RULES` (mirror of subtree CLAUDE.md `Owned by` markers), `resolveOwner`, `getDirtyFiles`, `parseGitStashCommand`. Split out instead of extending `lib/common.js` (which would have crossed the 400-line file-size gate — ai-expert manifest says split-before-grow on hook files).
+- `.claude/hooks/gates/cross-subtree-stash.js` (new, 111 LOC) — the gate itself.
+- `.claude/hooks/session-gate.js` — third entry in `GATES`, comment header updated.
+- `.claude/disciplines/owner-mode.md` — "Cross-subtree stash protection" section + sentinel docs (AC #4).
+- `.claude/hooks/tests/cross-subtree-stash.test.js` (new, 258 LOC) — 52 tests, all PASS.
+
+**Subcommand discrimination.** Gates `git stash` / `git stash push` / `git stash save` (worktree-wide unless `-- <pathspec>` is present). Does NOT gate `git stash pop / list / show / drop / clear / branch / apply / create / store` — these don't sweep dirty work. Path-scoped `git stash push -- <paths>` is also allowed (caller already scoped).
+
+**Out of scope (deliberate).** `git checkout -- <path>`, `git reset --hard`, `git restore .` were named in the brief's "Goal" section but the AC explicitly scopes to `git stash`. Different command shapes have different semantics (checkout-with-pathspec is fine when path is owned; reset --hard is always worktree-wide and destructive). Documented in the gate's docstring as intentional deferral so a follow-up agent knows where to extend.
+
+**Sentinel.** `[stash-cross-subtree-OK]` anywhere in the bash command (typically as a trailing `# [stash-cross-subtree-OK]` comment). Discipline note documents the "rare; not a convenience" framing.
+
+**Validation.** 
+- Unit: `node .claude/hooks/tests/cross-subtree-stash.test.js` — 52/52 PASS (parseGitStashCommand discrimination, resolveOwner per-subtree, gate.run end-to-end with real temp git repos for cross-agent block, same-agent allow, sentinel allow, pop allow, path-scoped push allow, clean-tree allow, non-Bash ignore).
+- Existing tests still green: `node .claude/hooks/tests/commit-gate.test.js` — 46/46 PASS.
+- Dispatcher smoke: `echo '{...}' | node .claude/hooks/session-gate.js` exits 0 on a benign tool call.
+- Incident replay: synthesised the 2026-04-28 shape (7 dirty files across rendering / engine-common / editor / unowned subtrees, command `git stash push -m "TASK-188 build-blocker stash"`) — gate trips, block message lists all four buckets and the offending paths.
+
+**Peer review.** `Review-Skipped: hook-internal` per `peer-review-required.md` § "When" — pure harness self-edit; the diff IS the gate logic a reviewer would consult. Documented exception in the discipline.
+
+## Drift NOTED (not filed per don't-pile-on)
+
+- `Source/Engine/Services/PerFrameDataService.{cpp,h}` (and likely siblings) live in `Source/Engine/Services/` but aren't covered by the OWNERSHIP_RULES — they fall through to `null` (treated as `<unowned>` by the gate, conservative). The CLAUDE.md tree doesn't currently declare an owner for `Source/Engine/Services/` itself; only the DX12/VK/Asset/Scene sub-clusters are claimed. A follow-up should clarify ownership of the rest of `Services/` (likely `software-architect` for the architecture-level services, `low-level-expert` for plumbing-level) and the table extended to match. NOT filed as a separate task; surface here for the next sequential session.
+<!-- SECTION:NOTES:END -->
