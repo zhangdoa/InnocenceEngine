@@ -1,0 +1,62 @@
+// shadertype=hlsl
+// Hash-grid radiance cache filter pass — drains per-frame scratch
+// contributions into the persistent EMA-blended value buffer. Mirrors
+// Capsaicin's UpdateTilesMain (gi1.comp:2160-2217), reduced to the flat
+// hash + single-mip shape we use.
+//
+// One thread per slot. Slots that are empty (key == 0) or saw no
+// contributions this frame (scratch.sampleCount == 0) are skipped. Active
+// slots EMA-blend scratch into value, then zero scratch so the next
+// frame's contributions accumulate from a clean state.
+//
+// Dispatched between GPUPathTracerPass (writes scratch) and
+// GPUPathTracerDenoisePass (reads value). The PT pass's cross-queue exit
+// barrier on the hash-grid buffers leaves them in ReadWrite; this pass
+// keeps that state.
+
+#include "common/common.hlsl"
+#include "common/HashGridCache.hlsl"
+
+struct ComputeInputType
+{
+    uint3 groupID         : SV_GroupID;
+    uint3 groupThreadID   : SV_GroupThreadID;
+    uint3 dispatchThreadID: SV_DispatchThreadID;
+    uint  groupIndex      : SV_GroupIndex;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer FrameCountCB : register(b0) { uint g_FrameCount; }
+
+[[vk::binding(0, 1)]]
+RWStructuredBuffer<uint>         g_HashGridKeys    : register(u0);
+[[vk::binding(1, 1)]]
+RWStructuredBuffer<HashGridCell> g_HashGridScratch : register(u1);
+[[vk::binding(2, 1)]]
+RWStructuredBuffer<HashGridCell> g_HashGridValue   : register(u2);
+
+#define HASHGRIDCACHE_HAS_BINDINGS
+#define HASHGRIDCACHE_HAS_SCRATCH
+#define HASHGRIDCACHE_HAS_VALUE
+#include "common/HashGridCache.hlsl"
+
+// 64 threads/group keeps occupancy reasonable across the 1M-cell sweep.
+// HASHGRID_CELL_COUNT (2^20) divides evenly by 64 so no out-of-range guard
+// is required, but keep the bounds check for safety.
+[numthreads(64, 1, 1)]
+void main(ComputeInputType input)
+{
+    uint slot = input.dispatchThreadID.x;
+    if (slot >= HASHGRID_CELL_COUNT)
+        return;
+
+    bool wasActive = HashGridCache_FilterCell(slot, g_FrameCount);
+    if (!wasActive)
+        return;
+
+    // Drain scratch — next frame's HashGridCache_Insert calls accumulate
+    // from zero. Leaving frameLastTouched intact preserves the eviction
+    // tiebreaker; the value buffer holds the persistent record.
+    g_HashGridScratch[slot].quantizedRadianceSum = uint3(0u, 0u, 0u);
+    g_HashGridScratch[slot].sampleCount          = 0u;
+}

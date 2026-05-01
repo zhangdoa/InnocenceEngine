@@ -3,7 +3,6 @@
 
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
-#include "../../Engine/Services/DrawCallService.h"
 #include "../../Engine/Services/SceneService.h"
 #include "../../Engine/Services/EntityRegistry.h"
 #include "../../Engine/Services/AssetService.h"
@@ -58,10 +57,10 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
 	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
 	//                 t7=bindless material textures,
-	//                 u0=AccumBuffer (noisy), u1=HashGridKeys, u2=HashGridCells,
-	//                 u3=PrimaryHitPos, u4=PrimaryHitNormal,
+	//                 u0=AccumBuffer (noisy), u1=HashGridKeys, u2=HashGridScratch,
+	//                 u3=PrimaryHitPos, u4=PrimaryHitNormal, u5=HashGridValue,
 	//                 s0=material sampler
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(17);
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(18);
 
 	// b0 - PerFrameCB (set 0, binding 0)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -173,8 +172,9 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ShaderStage            = m_ShaderStage;
 
-	// u2 - HashGridCells (set 2, binding 2, ReadWrite UAV — payload buffer;
-	// 20 B per cell: float3 radiance + uint sampleCount + uint frameLastTouched).
+	// u2 - HashGridScratch (set 2, binding 2, ReadWrite UAV — per-frame
+	// scratch payload; 20 B per cell: uint3 quantizedRadianceSum + uint
+	// sampleCount + uint frameLastTouched). Drained by the filter pass.
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_GPUResourceType        = GPUResourceType::Buffer;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorSetIndex      = 2;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex        = 2;
@@ -204,6 +204,16 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility   = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ShaderStage            = m_ShaderStage;
+
+	// u5 - HashGridValue (set 2, binding 5, ReadWrite UAV — bound here
+	// only so eviction in HashGridCache_InsertOrFind can zero the persistent
+	// slot alongside the scratch slot).
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorSetIndex      = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorIndex        = 5;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_BindingAccessibility   = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ShaderStage            = m_ShaderStage;
 
 	m_MaterialSampler = g_Engine->Get<SamplerResourceService>()->Add("GPUPathTracerMaterialSampler");
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
@@ -293,11 +303,12 @@ bool GPUPathTracerPass::Initialize()
 	m_LightCountCB->m_GPUAccessibility  = Accessibility::ReadOnly;
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_LightCountCB);
 
-	// World-space hash-grid radiance cache (TASK-77.1 phase 1). Two
-	// RWStructuredBuffers — keys (uint, 4 B) and cells (HashGridCell,
-	// 20 B). Capacity is HashGridCache::CELL_COUNT (2^20 = ~1M cells)
-	// for ~25 MB total — design call's locked-in budget. Zero-init so
-	// every key reads as HASHGRID_KEY_EMPTY (= 0u) on the first frame.
+	// World-space hash-grid radiance cache. Three RWStructuredBuffers —
+	// keys (uint, 4 B), scratch + value (both HashGridCell, 20 B). Capacity
+	// is HashGridCache::CELL_COUNT (2^20 cells); ~45 MB total at 24 B/slot
+	// across all three buffers. Zero-init so every key reads as
+	// HASHGRID_KEY_EMPTY (= 0u) and every payload starts at sum/count = 0
+	// on the first frame.
 	m_HashGridKeys = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerHashGridKeys");
 	m_HashGridKeys->m_ElementCount     = HashGridCache::CELL_COUNT;
 	m_HashGridKeys->m_ElementSize      = HashGridCache::KEY_BYTES;
@@ -305,12 +316,19 @@ bool GPUPathTracerPass::Initialize()
 	m_HashGridKeys->m_GPUAccessibility = Accessibility::ReadWrite;
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_HashGridKeys);
 
-	m_HashGridCells = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerHashGridCells");
-	m_HashGridCells->m_ElementCount     = HashGridCache::CELL_COUNT;
-	m_HashGridCells->m_ElementSize      = HashGridCache::CELL_BYTES;
-	m_HashGridCells->m_CPUAccessibility = Accessibility::Immutable;
-	m_HashGridCells->m_GPUAccessibility = Accessibility::ReadWrite;
-	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_HashGridCells);
+	m_HashGridScratch = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerHashGridScratch");
+	m_HashGridScratch->m_ElementCount     = HashGridCache::CELL_COUNT;
+	m_HashGridScratch->m_ElementSize      = HashGridCache::CELL_BYTES;
+	m_HashGridScratch->m_CPUAccessibility = Accessibility::Immutable;
+	m_HashGridScratch->m_GPUAccessibility = Accessibility::ReadWrite;
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_HashGridScratch);
+
+	m_HashGridValue = g_Engine->Get<GPUBufferResourceService>()->Add("GPUPathTracerHashGridValue");
+	m_HashGridValue->m_ElementCount     = HashGridCache::CELL_COUNT;
+	m_HashGridValue->m_ElementSize      = HashGridCache::CELL_BYTES;
+	m_HashGridValue->m_CPUAccessibility = Accessibility::Immutable;
+	m_HashGridValue->m_GPUAccessibility = Accessibility::ReadWrite;
+	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_HashGridValue);
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -409,8 +427,10 @@ bool GPUPathTracerPass::Terminate()
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_LightCountCB);
 	if (m_HashGridKeys)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridKeys);
-	if (m_HashGridCells)
-		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridCells);
+	if (m_HashGridScratch)
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridScratch);
+	if (m_HashGridValue)
+		g_Engine->Get<GPUBufferResourceService>()->Delete(m_HashGridValue);
 	if (m_PrimaryHitNormalBuffer)
 		g_Engine->Get<TextureResourceService>()->Delete(m_PrimaryHitNormalBuffer);
 	if (m_PrimaryHitPosBuffer)
@@ -485,9 +505,10 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                                                  11);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        12);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridKeys,                                           13);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCells,                                          14);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridScratch,                                        14);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PrimaryHitPosBuffer,                                    15);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_PrimaryHitNormalBuffer,                                 16);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridValue,                                          17);
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->TryToTransitState(m_AccumulationBuffer,        m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
@@ -513,9 +534,19 @@ GPUBufferComponent* GPUPathTracerPass::GetHashGridKeys()
 	return m_HashGridKeys;
 }
 
-GPUBufferComponent* GPUPathTracerPass::GetHashGridCells()
+GPUBufferComponent* GPUPathTracerPass::GetHashGridScratch()
 {
-	return m_HashGridCells;
+	return m_HashGridScratch;
+}
+
+GPUBufferComponent* GPUPathTracerPass::GetHashGridValue()
+{
+	return m_HashGridValue;
+}
+
+GPUBufferComponent* GPUPathTracerPass::GetFrameCountCB()
+{
+	return m_FrameCountCB;
 }
 
 TextureComponent* GPUPathTracerPass::GetPrimaryHitPosBuffer()
