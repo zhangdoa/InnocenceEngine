@@ -27,6 +27,10 @@ When recording a correction, ask in order:
 
 A useful sanity check: if a subagent could plausibly violate the rule while writing an Implementation Note or commit message, the rule belongs in the repo, not in memory.
 
+### Authoring register when promoting into the harness
+
+When a correction moves from auto-memory or user prose into a repo venue (root `CLAUDE.md`, subtree `CLAUDE.md`, `.claude/disciplines/*.md`, agent manifest, hook), **paraphrase into discipline-file register** — do not transcribe casual prose verbatim. The audience changes: memory entries are written for one Claude reading itself; harness content is read by every spawned subagent across roles. Match the tone of the existing universal disciplines (`coding-principles.md`, `cite-prior-art.md`, `tech-choice-vs-default.md`): operative rule first, structured sections, no first-person or session-specific narrative. Translate the substance; drop the framing.
+
 ### When auto-memory is the right venue
 
 - Truly personal preferences with no audience consequence (e.g., "user prefers concise answers" — though even that is better captured in the user-scope `~/.claude/CLAUDE.md`).

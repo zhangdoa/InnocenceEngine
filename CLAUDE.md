@@ -29,6 +29,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/structural-retrospective.md`
 - `.claude/disciplines/comment-discipline.md`
 - `.claude/disciplines/split-before-grow.md`
+- `.claude/disciplines/surface-dont-chase.md`
 - `.claude/disciplines/commit-message-policy.md`
 - `.claude/disciplines/backlog-workflow.md`
 - `.claude/disciplines/agent-dispatch.md`
