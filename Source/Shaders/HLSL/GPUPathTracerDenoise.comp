@@ -13,11 +13,15 @@
 //
 // Paper-port divergences from Capsaicin gi1.comp (see
 // .alignments/TASK-77.1.3-hash-grid-cache-paper-port.md):
-//   - Composition is a single sampleCount-driven lerp (Capsaicin uses a
-//     multi-tap reuse with separate variance estimates). Phase-1 scope.
+//   - Composition is a sampleCount-driven lerp with a hard kMaxCacheWeight
+//     ceiling (Capsaicin uses a multi-tap reuse with separate variance
+//     estimates). Phase-1 scope.
 //   - Lookup site is screen-space primary hit; Capsaicin reads at
 //     secondary vertices inside the bounce loop. Phase-2 closes the gap.
-//   - No tile/mip cone-filter — flat hash with the writer's cell size.
+//   - Tangent-plane multi-tap read — partial closure of D1 (no cone-filter
+//     mip walk yet, but adjacent-cell averaging at the read site smooths
+//     the cell-boundary checkerboard the per-cell EMA mean produces when
+//     projected onto neighbouring pixels). See D15 in the alignment artifact.
 
 #include "common/common.hlsl"
 #include "common/HashGridCache.hlsl"
@@ -60,11 +64,23 @@ RWStructuredBuffer<HashGridCell> g_HashGridValue : register(u1);
 RWTexture2D<float4> g_Denoised : register(u2);
 
 // Sample-count cap for the lerp: at sampleCount >= cap the denoised pixel
-// is fully cached. Dropping below trades cache reliance for the noisy
-// input proportionally. Matches HASHGRID_MAX_SAMPLE_COUNT — the persistent
-// value buffer's sample count saturates there, so the lerp weight tracks
-// the cell's accumulated history monotonically up to full reliance.
+// reaches kMaxCacheWeight cache reliance. Dropping below trades cache
+// reliance for the noisy input proportionally. Matches HASHGRID_MAX_SAMPLE_COUNT
+// — the persistent value buffer's sample count saturates there, so the
+// lerp weight tracks the cell's accumulated history monotonically up to
+// the kMaxCacheWeight ceiling.
 static const float HashGridCache_DenoiseSampleCap = float(HASHGRID_MAX_SAMPLE_COUNT);
+
+// Hard ceiling on the lerp weight. Without this, sampleCount saturation
+// drives the noisy contribution to zero and any per-cell mean error (cell
+// boundaries between neighbouring pixels under the flat-hash key shape)
+// becomes a fully-baked tile pattern — the TASK-208 fix-up checkerboard.
+// Holding 1 - kMaxCacheWeight of the noisy estimator at saturation keeps
+// the per-frame high-frequency dither contribution alive, breaking up the
+// boundary; the cache still does the bulk of variance reduction. 0.7 is
+// the empirical landing point: 0.5 leaves visible noise above the cell
+// floor, 0.85 starts to bake the checkerboard back in.
+static const float HashGridCache_MaxCacheWeight = 0.7f;
 
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
@@ -88,26 +104,73 @@ void main(ComputeInputType input)
     }
 
     float3 posWS = hitPos4.xyz;
-    float3 normal = hitN4.xyz;
+    float3 normal = normalize(hitN4.xyz);
 
     float depth = length(posWS - g_Frame.camera_posWS.xyz);
     float cellSize = HashGridCache_CellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original);
 
-    float3 cached = float3(0.0f, 0.0f, 0.0f);
-    uint   sampleCount = 0u;
-    bool hit = HashGridCache_Read(posWS, normal, cellSize, cached, sampleCount);
+    // Tangent-plane basis for multi-tap read. Same construction shape as
+    // GPUPathTracerRayGen.hlsl:159-161 (cosine-hemisphere sampling) — pick
+    // a non-collinear "up" reference, build orthogonal tangent and
+    // bitangent via cross products. The basis is screen-resolution-stable
+    // (deterministic from normal alone) so neighbouring pixels on the same
+    // surface read from the same neighbour cells.
+    float3 up        = abs(normal.z) < 0.999f ? float3(0, 0, 1) : float3(1, 0, 0);
+    float3 tangent   = normalize(cross(up, normal));
+    float3 bitangent = cross(normal, tangent);
+
+    // Multi-tap read — center cell + 4 tangent-plane neighbours offset by
+    // ±0.5 cell size. Closes part of D1 (mip-cone filter): adjacent-cell
+    // averaging at the read site smooths the cell-boundary checkerboard
+    // the per-cell EMA mean produces when the hash key step-function
+    // projects different cell means onto neighbouring screen pixels.
+    // Capsaicin's gi1.comp:2306-2329 does an explicit 2D box filter inside
+    // each tile; our flat-hash equivalent is this 5-tap neighbour read.
+    // See D15 in .alignments/TASK-77.1.3-hash-grid-cache-paper-port.md.
+    const float kNeighbourOffset = 0.5f; // half a cell — overlaps adjacent cells
+    float3 offsets[5];
+    offsets[0] = float3(0, 0, 0);
+    offsets[1] = +kNeighbourOffset * cellSize * tangent;
+    offsets[2] = -kNeighbourOffset * cellSize * tangent;
+    offsets[3] = +kNeighbourOffset * cellSize * bitangent;
+    offsets[4] = -kNeighbourOffset * cellSize * bitangent;
+
+    float3 cachedSum   = float3(0.0f, 0.0f, 0.0f);
+    float  weightSum   = 0.0f;
+    uint   maxSampleCount = 0u;
+    [unroll]
+    for (int i = 0; i < 5; ++i)
+    {
+        float3 sampleRadiance = float3(0.0f, 0.0f, 0.0f);
+        uint   sampleCount    = 0u;
+        bool tapHit = HashGridCache_Read(posWS + offsets[i], normal, cellSize,
+                                         sampleRadiance, sampleCount);
+        if (tapHit && sampleCount > 0u)
+        {
+            cachedSum     += sampleRadiance;
+            weightSum     += 1.0f;
+            // sampleCount feeds the lerp weight downstream; track the
+            // best-populated tap so the cache reliance reflects the cell
+            // with the most accumulated history rather than the average
+            // (a sparse neighbour shouldn't drag the cache weight down).
+            maxSampleCount = max(maxSampleCount, sampleCount);
+        }
+    }
 
     float3 result;
-    if (hit && sampleCount > 0u)
+    if (weightSum > 0.0f)
     {
-        float w = saturate(float(sampleCount) / HashGridCache_DenoiseSampleCap);
+        float3 cached = cachedSum / weightSum;
+        float  w      = saturate(float(maxSampleCount) / HashGridCache_DenoiseSampleCap)
+                      * HashGridCache_MaxCacheWeight;
         result = lerp(noisy.rgb, cached, w);
     }
     else
     {
-        // Cache miss. The hash entry hasn't been written yet (first frame
-        // on this pixel, or a probe-chain overflow evicted it). Fall back
-        // to the raw noisy frame — identical to lerp at sampleCount = 0.
+        // All taps missed. The hash entries haven't been written yet
+        // (first frames on this pixel, or probe-chain overflow evicted
+        // them). Fall back to the raw noisy frame — identical to lerp at
+        // sampleCount = 0.
         result = noisy.rgb;
     }
 

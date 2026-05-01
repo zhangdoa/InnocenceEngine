@@ -118,12 +118,18 @@ float HashGridCache_CellSize(float depth, float2 viewportSize, float4x4 proj)
     // Cell footprint at the hit point, expressed in source-pixel units.
     // Larger values aggregate more rays per cell (denser sampling per
     // bucket) at the cost of spatial resolution; smaller values reduce
-    // light-leak across surface boundaries. 64 px lands at a ~16x16 pixel
-    // block per cell at the closest LOD — dense enough to drop stddev
-    // sharply versus single-pixel cells, while staying small enough that
-    // the resulting blocky artifacts on near surfaces are below the
-    // dominant noise scale.
-    float cellSizePx  = 64.0;
+    // light-leak across surface boundaries and visible cell-boundary
+    // tiling on near surfaces. TASK-208 fix-up (2026-05-01): dropped from
+    // 64 to 16 because at fixed camera the cache reaches saturation and
+    // the per-cell mean projected onto adjacent pixels surfaced as a
+    // visible checkerboard — 16 px cells make each tile small enough that
+    // the boundary is below the per-pixel noise scale once the noisy
+    // lerp residual (HashGridCache_DenoiseSampleCap cap < 1) is composed
+    // back in. ~0.5x Capsaicin's default 32 (gi1.h:58
+    // gi1_hash_grid_cache_cell_size = 32.0F combined with the per-pixel-
+    // density factor at gi1.cpp:1856-1859); see D11 in
+    // .alignments/TASK-77.1.3-hash-grid-cache-paper-port.md.
+    float cellSizePx  = 16.0;
     float maxDim      = max(viewportSize.x, viewportSize.y);
     float fovScale    = tan(fovY * cellSizePx / maxDim) / SQRT2;
 
