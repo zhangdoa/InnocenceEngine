@@ -40,6 +40,7 @@
 #include "../../Engine/Services/ViewportSourceOverride.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/AssetService.h"
+#include "../../Engine/Services/EditorService.h"
 #include "../../Engine/Common/IOService.h"
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Common/Task.h"
@@ -51,6 +52,10 @@
 #include "../../Engine/Services/PerFrameDataService.h"
 
 #include <cstdlib>
+#include <chrono>
+#include <filesystem>
+#include <iomanip>
+#include <sstream>
 
 using namespace Inno;
 
@@ -902,10 +907,89 @@ namespace Inno
 
 		if (m_saveScreenCapture)
 		{
+			// TASK-211: editor Screenshot action consumer. Writes a uniquely-
+			// named capture under Bin/Captures/Screenshots/ (engine CWD-relative)
+			// and broadcasts SCREENSHOT_SAVED via EditorService so the editor
+			// can surface a toast naming the absolute path. Best-effort
+			// broadcast — the engine-side log line is the durable record.
 			auto l_srcTextureComp = static_cast<TextureComponent*>(FinalBlendPass::Get().GetResult());
-			auto l_textureData = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
-			g_Engine->Get<AssetService>()->Save("ScreenCapture", l_srcTextureComp->m_TextureDesc, l_textureData.data());
-			m_saveScreenCapture = false;
+			auto* l_editorService = g_Engine->Get<EditorService>();
+
+			// Step 1: ensure output directory exists.
+			const std::filesystem::path l_outputDir = std::filesystem::path("Captures") / "Screenshots";
+			std::error_code l_dirEc;
+			std::filesystem::create_directories(l_outputDir, l_dirEc);
+			if (l_dirEc)
+			{
+				const std::string l_errorReason =
+					std::string("Screenshot: failed to create directory '") + l_outputDir.string()
+					+ "': " + l_dirEc.message();
+				Log(Warning, "Screenshot failed: ", l_errorReason.c_str());
+				(void)l_editorService->BroadcastScreenshotSaved(false, std::string(), l_errorReason);
+				m_saveScreenCapture = false;
+			}
+			else
+			{
+				// Step 2: timestamped filename. Millisecond precision avoids
+				// collisions when the user clicks twice within the same second.
+				const auto l_now = std::chrono::system_clock::now();
+				const auto l_nowTimeT = std::chrono::system_clock::to_time_t(l_now);
+				const auto l_nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+					l_now.time_since_epoch()) % std::chrono::milliseconds(1000);
+				std::tm l_tm{};
+#if defined(_WIN32)
+				localtime_s(&l_tm, &l_nowTimeT);
+#else
+				localtime_r(&l_nowTimeT, &l_tm);
+#endif
+				std::ostringstream l_nameStream;
+				l_nameStream << "screenshot_"
+					<< std::put_time(&l_tm, "%Y-%m-%d_%H-%M-%S")
+					<< "-" << std::setw(3) << std::setfill('0') << l_nowMs.count();
+
+				// Step 3: extension by pixel-format branch — matches
+				// STBWrapper::Save (UByte -> stbi_write_png; Float16/Float32
+				// -> stbi_write_hdr).
+				const TexturePixelDataType l_pixelType = l_srcTextureComp->m_TextureDesc.PixelDataType;
+				const char* l_extension = (l_pixelType == TexturePixelDataType::Float16
+					|| l_pixelType == TexturePixelDataType::Float32) ? ".hdr" : ".png";
+				l_nameStream << l_extension;
+
+				const std::filesystem::path l_relativePath = l_outputDir / l_nameStream.str();
+				std::error_code l_absEc;
+				const std::filesystem::path l_absolutePath =
+					std::filesystem::absolute(l_relativePath, l_absEc).make_preferred();
+				const std::string l_absolutePathStr = l_absEc
+					? std::filesystem::path(l_relativePath).make_preferred().string()
+					: l_absolutePath.string();
+
+				// Step 4: GPU readback.
+				auto l_textureData = g_Engine->Get<TextureResourceService>()->ReadTextureBackToCPU(
+					FinalBlendPass::Get().GetRenderPassComp(), l_srcTextureComp);
+				if (l_textureData.empty())
+				{
+					const std::string l_errorReason =
+						std::string("Screenshot: ReadTextureBackToCPU returned empty for '")
+						+ l_absolutePathStr + "'.";
+					Log(Warning, "Screenshot failed: ", l_errorReason.c_str());
+					(void)l_editorService->BroadcastScreenshotSaved(false, l_absolutePathStr, l_errorReason);
+				}
+				else if (g_Engine->Get<AssetService>()->Save(l_absolutePathStr.c_str(),
+					l_srcTextureComp->m_TextureDesc, l_textureData.data()))
+				{
+					Log(Success, "Screenshot: ", l_absolutePathStr.c_str());
+					(void)l_editorService->BroadcastScreenshotSaved(true, l_absolutePathStr, std::string());
+				}
+				else
+				{
+					const std::string l_errorReason =
+						std::string("Screenshot: AssetService::Save failed for '")
+						+ l_absolutePathStr + "'.";
+					Log(Warning, "Screenshot failed: ", l_errorReason.c_str());
+					(void)l_editorService->BroadcastScreenshotSaved(false, l_absolutePathStr, l_errorReason);
+				}
+				m_saveScreenCapture = false;
+			}
 		}
 
 		auto l_totalFrames = g_Engine->getInitConfig().totalFrames;
