@@ -32,6 +32,42 @@ When a closure is found to be premature (numeric green over a visible regression
 
 Application: the same response that lands the revert also surfaces the rework brief sketch (AC ordering, discipline contract, capture protocol) for user confirmation. Stop only if the user signals end-of-session, or if the brief itself depends on a long-running capture or measurement that should run in background and resume cold.
 
+## Answer questions; act only on explicit confirmation
+
+When the user poses a question — especially a Socratic-shaped one ("what about X?", "why Y?", "is Z reasonable?") — the dispatcher's default is to answer with reasoning and a recommendation, not to act on the recommendation. A question is not a directive. Even a question shaped as a critique ("why are you doing X?") is asking for the answer, not asserting that X must stop. Action requires explicit "do it" / "yes" / "go ahead".
+
+Failure mode this prevents: the dispatcher over-interprets a question as a directive, dispatches a refactor, and the user has to TaskStop the inflight work because the question was status-checking, not direction-giving.
+
+Recorded incident: this session, the user asked "then what about '/wrap-up command'???". The dispatcher read that as "fold /wrap-up into a discipline file" and started two refactors before the user clarified: "i was only asking because i didn't see your follow-up on that command, as either is ready to use or what's next." Inflight dispatches were stopped; the question only needed a status answer.
+
+## Search existing mechanism docs before authorizing new files
+
+Before a brief tells an implementer to author a new file under `.claude/disciplines/` or a new `.claude/` subtree, the dispatcher first searches existing disciplines and subtrees for the same mechanism. If the mechanism is already documented (even partially), the brief directs the implementer to **extend the existing home**, not fork it. Two homes for the same mechanism drift independently — that is the "do not diverge" failure shape.
+
+The dispatcher's pre-dispatch question: "is this mechanism already named anywhere in `.claude/disciplines/`?" Grep first; brief second.
+
+Failure mode this prevents: implementer authors `.claude/disciplines/X.md` for a mechanism already covered by `.claude/disciplines/Y.md §N`. The user has to catch the divergence and direct a fold; the original brief should have caught it.
+
+Recorded incident: this session, ai-expert was briefed to author `.claude/disciplines/feature-layer-toggles.md` for the `#define + if constexpr` mechanism that `visual-validation.md §3b` already documented under "Reference-via-bypass toggle pattern". The user invoked the principle ("do not diverge") and the new file was folded into §3b in commit `0f0cdc3b`. The dispatcher brief should have grepped `visual-validation.md` first.
+
+## Don't bundle unrelated tasks into one dispatch / CL
+
+Two topics surfacing in the same user message are not necessarily one task. Before issuing a brief, the dispatcher evaluates **scope coupling**: do the topics share a reviewer context, a revert axis, a lifecycle, an owning agent? If any of those diverge, dispatch separately. This is `split-before-grow.md` applied to *CL bundling*, not file growth.
+
+Failure mode this prevents: one CL containing two unrelated changes. When one half needs revision, the other is held; the reviewer carries context burden across two topics; the commit message conflates two narratives.
+
+Recorded incident: this session, the original `/wrap-up` + `feature-layer-toggles` dispatch bundled an end-of-session-capture command with a feature-layer-toggle discipline. The user caught it: "these two are two irrelevant tasks, why you have been attempting to bundle them anyway?" The work was split into separate CLs `f3114e5e` (`/wrap-up`) and `0f0cdc3b` (visual-validation §3b extension).
+
+## Reviewer-brief role-instructions must distinguish reviewer vs implementer
+
+When a reviewer brief contains role-specific lines about what does or does not apply to the reviewer (e.g. "Code-AI-Generated-By does not apply"), the brief must phrase them so they cannot be misread as applying to the diff under review. The reviewer reads only their own brief — they do not see the implementer's brief — so role-instructions written ambiguously can be misapplied as findings against the implementer.
+
+Concrete shape: prefer "you (the reviewer) do not author code; do not add `Code-AI-Generated-By:` to your review notes" over "Code-AI-Generated-By does not apply." The first is unambiguous about audience; the second is ambient and can attach to whichever artifact the reviewer is currently looking at.
+
+Failure mode this prevents: reviewer reads "Code-AI-Generated-By does not apply" (meant: to the reviewer's own output), interprets as "to this CL's commit message", flags the implementer's correctly-signed attribution line as a finding to remove.
+
+Recorded incident: this session, the software-architect review of CL `0f0cdc3b` flagged "strip the `Code-AI-Generated-By:` line from `Build/commit-message.txt`" because the reviewer's brief said "Code-AI-Generated-By does not apply". The reviewer mistook the role-specific note as applying to the diff under review. The line stayed in the commit; the misread was an honest read of an ambiguously-worded brief.
+
 ## Cross-references
 
 - `../agent-dispatch.md` — background-by-default and the `[foreground-required]` sentinel; this file does not duplicate that contract.
