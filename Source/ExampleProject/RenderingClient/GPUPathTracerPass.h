@@ -24,18 +24,7 @@ namespace Inno
 		RenderPassComponent* GetRenderPassComp() override;
 
 		GPUResourceComponent* GetResult();
-
-		// Hash-grid + per-pixel hit data exposed for downstream consumers
-		// (TASK-77.1.2 GPUPathTracerDenoisePass). The hash-grid pair is the
-		// world-space radiance cache; the per-pixel hit pair lets a screen-
-		// space consumer turn a pixel back into the (posWS, N) lookup key
-		// the writer used at primary hit. Both pairs are persistently
-		// Accessibility::ReadWrite UAVs in this pass — downstream passes
-		// rebind them as ReadOnly inside their own command lists.
-		GPUBufferComponent* GetHashGridKeys();
-		GPUBufferComponent* GetHashGridCells();
-		TextureComponent*   GetPrimaryHitPosBuffer();
-		TextureComponent*   GetPrimaryHitNormalBuffer();
+	
 
 		void ResetAccumulation();
 
@@ -75,23 +64,6 @@ namespace Inno
 		GPUBufferComponent* m_LightCountCB       = nullptr;
 		SamplerComponent*   m_MaterialSampler    = nullptr;
 
-		// World-space hash-grid radiance cache (TASK-77.1 phase 1).
-		// Owned by this pass — the only writer is the PT raygen at primary
-		// hit, and downstream consumers (TASK-77.1.2 denoise pass) read the
-		// same buffers via the engine's resource registry.
-		GPUBufferComponent* m_HashGridKeys  = nullptr;
-		GPUBufferComponent* m_HashGridCells = nullptr;
-
-		// Per-pixel primary-hit position + normal (TASK-77.1.2). Written by
-		// the PT raygen alongside the noisy buffer so the denoise pass can
-		// reconstruct the writer's hash-grid key at the same screen pixel
-		// without re-tracing primary rays or borrowing the rasterizer's
-		// G-buffer (PT-primary's load-bearing invariant). Both screen-res
-		// RGBA Float32; .w = 1.0 marks a valid hit, .w = 0.0 marks miss /
-		// sky so the consumer can short-circuit lookups.
-		TextureComponent*   m_PrimaryHitPosBuffer    = nullptr;
-		TextureComponent*   m_PrimaryHitNormalBuffer = nullptr;
-
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;
 		GPUBufferComponent* m_MegaIndexBuffer  = nullptr;
@@ -124,7 +96,6 @@ namespace Inno
 		void RefreshMaterialTextureIndices();
 		bool AreMeshesGPUReady();
 		void CreateAccumulationBuffer();
-		void CreatePrimaryHitBuffers();
 		void OnResize();
 	};
 }
