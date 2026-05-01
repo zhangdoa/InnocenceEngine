@@ -4,6 +4,26 @@
 #include "common/pathTracerPayload.hlsli"
 #include "common/sunSampling.hlsl"
 
+// Master toggle for the secondary-vertex hash-grid radiance cache. When 0,
+// the cache code below strips at compile time and this shader produces the
+// same DXIL/SPIR-V as the cache-off baseline at HEAD 10d7b158 (the bypass
+// invariant — visual-validation.md §3b). The C++ side mirrors this in
+// Source/ExampleProject/RenderingClient/HashGridCacheConstants.h::ENABLED;
+// both must agree.
+//
+// First CL is tracking-only: writes happen at secondary+ vertices (insert
+// into the cache and atomic-add the per-vertex direct lighting), but no
+// reads feed back into the integrator. AccumBuffer output is unchanged from
+// baseline regardless of the toggle in this CL.
+//
+// Reference: Capsaicin GI-1.0 hash_grid_cache.hlsl + gi1.comp secondary-
+// vertex sites. Full audit at .alignments/TASK-77.1-rework-paper-port-audit.md.
+#define PT_HASH_GRID_CACHE_ENABLED 0
+
+#if PT_HASH_GRID_CACHE_ENABLED
+#include "common/PTHashGridCache.hlsl"
+#endif
+
 [[vk::binding(0, 0)]]
 cbuffer PerFrameConstantBuffer : register(b0) { PerFrame_CB g_Frame; }
 
@@ -12,6 +32,11 @@ cbuffer FrameCountCB : register(b1) { uint g_FrameCount; }
 
 [[vk::binding(2, 0)]]
 cbuffer LightCountCB : register(b2) { uint g_PointLightCount; uint g_SphereLightCount; uint g_LightCountPad0; uint g_LightCountPad1; }
+
+#if PT_HASH_GRID_CACHE_ENABLED
+[[vk::binding(3, 0)]]
+cbuffer HashGridCacheCB : register(b3) { PTHashGridCacheCB_t g_HashGridCacheConstants; }
+#endif
 
 [[vk::binding(0, 1)]]
 RaytracingAccelerationStructure SceneAS : register(t0);
@@ -24,6 +49,20 @@ StructuredBuffer<SphereLight_CB> g_SphereLights : register(t6);
 
 [[vk::binding(0, 2)]]
 RWTexture2D<float4> AccumBuffer : register(u0);
+
+#if PT_HASH_GRID_CACHE_ENABLED
+[[vk::binding(1, 2)]]
+RWStructuredBuffer<uint>  g_HashGridCache_HashBuffer            : register(u1);
+
+[[vk::binding(2, 2)]]
+RWStructuredBuffer<uint>  g_HashGridCache_DecayTileBuffer       : register(u2);
+
+[[vk::binding(3, 2)]]
+RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueBuffer : register(u3);
+
+[[vk::binding(4, 2)]]
+RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer           : register(u4);
+#endif
 
 uint PCG(inout uint state)
 {
@@ -226,6 +265,15 @@ void RayGenShader()
         float3 N = normalize(payload.normal);
         float3 V = -ray.Direction;
 
+#if PT_HASH_GRID_CACHE_ENABLED
+        // Per-vertex direct-lighting accumulator. Mirrors each NEE lobe's
+        // contribution before the throughput multiplication so the value
+        // matches what Capsaicin's PopulateCells writes (gi1.comp:2087-2095).
+        // Touched only at bounce >= 1 (secondary+ vertices); the primary hit
+        // is always re-traced fresh — never cached — per the D1 audit note.
+        float3 vertexDirectLighting = float3(0.0f, 0.0f, 0.0f);
+#endif
+
         float3 albedo    = payload.albedo;
         float  metalness = payload.metalness;
         // Floor roughness at F0_DIELECTRIC to avoid near-zero roughness numerical instability
@@ -249,6 +297,9 @@ void RayGenShader()
         if (!shadow.isShadowed)
         {
             radiance += throughput * CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
+#if PT_HASH_GRID_CACHE_ENABLED
+            vertexDirectLighting += CookTorranceGGX(N, V, lightDir, albedo, metalness, roughness) * lightIlluminance;
+#endif
         }
 
         // Sky NEE. Visibility-gated environment sampling: cosine-weighted
@@ -282,6 +333,9 @@ void RayGenShader()
                     // no cos-division hazard at grazing angles.
                     float3 skyRadiance = SkyColor(skyL);
                     radiance += throughput * CookTorranceGGX(N, V, skyL, albedo, metalness, roughness) * skyRadiance * TWO_PI;
+#if PT_HASH_GRID_CACHE_ENABLED
+                    vertexDirectLighting += CookTorranceGGX(N, V, skyL, albedo, metalness, roughness) * skyRadiance * TWO_PI;
+#endif
                 }
             }
         }
@@ -318,6 +372,9 @@ void RayGenShader()
                 float  attenuation = 1.0f / max(dist * dist, 0.0001f);
                 float3 irradiance  = ptFlux * attenuation;
                 radiance += throughput * CookTorranceGGX(N, V, L, albedo, metalness, roughness) * irradiance;
+#if PT_HASH_GRID_CACHE_ENABLED
+                vertexDirectLighting += CookTorranceGGX(N, V, L, albedo, metalness, roughness) * irradiance;
+#endif
             }
         }
 
@@ -371,8 +428,50 @@ void RayGenShader()
                 float  geomTerm = cosLight / max(dist * dist, 0.0001f);
                 float3 incoming = spFlux * geomTerm / PI;
                 radiance += throughput * CookTorranceGGX(N, V, L, albedo, metalness, roughness) * incoming;
+#if PT_HASH_GRID_CACHE_ENABLED
+                vertexDirectLighting += CookTorranceGGX(N, V, L, albedo, metalness, roughness) * incoming;
+#endif
             }
         }
+
+#if PT_HASH_GRID_CACHE_ENABLED
+        // Cache write — first-CL tracking-only. Inserts the cell at the
+        // current secondary+ vertex and atomic-adds the per-vertex direct
+        // lighting (sun + sky NEE + point + sphere) into the scratch
+        // accumulator. No reads back into the integrator yet, so AccumBuffer
+        // is unaffected — this CL validates the plumbing only. Bounce 0 is
+        // never cached: primary visibility is always re-traced fresh per the
+        // D1 audit note (Capsaicin Site 3 / glossy-reflections-style read).
+        if (bounce >= 1u)
+        {
+            PTHashGridCache_Data data;
+            data.eye_position = g_Frame.camera_posWS.xyz;
+            data.hit_position = payload.hitPos;
+            data.direction    = ray.Direction;
+            data.hit_distance = length(payload.hitPos - ray.Origin);
+
+            uint  tile_index;
+            bool  is_new_tile;
+            uint  cell_index = PTHashGridCache_InsertCell(g_HashGridCacheConstants, data,
+                                                         g_HashGridCache_HashBuffer,
+                                                         tile_index, is_new_tile);
+
+            if (cell_index != kPTHashGridCache_InvalidId)
+            {
+                // Bump tile-decay timestamp so PurgeTiles (deferred to a later
+                // CL) keeps the tile alive while it is being touched.
+                uint prev_decay;
+                InterlockedExchange(g_HashGridCache_DecayTileBuffer[tile_index], g_FrameCount, prev_decay);
+
+                uint4 quantized = PTHashGridCache_QuantizeRadiance(vertexDirectLighting);
+                uint  prev;
+                InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 0u], quantized.x, prev);
+                InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u], quantized.y, prev);
+                InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u], quantized.z, prev);
+                InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u], quantized.w, prev);
+            }
+        }
+#endif
 
         // Multi-lobe importance sampling: choose diffuse or specular path
         float3 F0 = lerp(float3(F0_DIELECTRIC, F0_DIELECTRIC, F0_DIELECTRIC), albedo, metalness);

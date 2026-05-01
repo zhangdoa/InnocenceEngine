@@ -59,8 +59,14 @@
     },
     {
       "glob": "Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl",
-      "paper": "Reference path tracer — ground-truth comparator; no specific paper cited, but serves as the A/B target for radiance-cache quality assessments.",
-      "reference": "Any path-tracer reference; this file is our own implementation."
+      "paper": "Reference path tracer — ground-truth comparator; no specific paper cited, but serves as the A/B target for radiance-cache quality assessments. The PT_HASH_GRID_CACHE_ENABLED-gated cache writes at secondary+ vertices port Capsaicin GI-1.0 hash_grid_cache.hlsl secondary-vertex pattern; full audit at .alignments/TASK-77.1-rework-paper-port-audit.md.",
+      "reference": "Any path-tracer reference; this file is our own implementation. Cache integration references https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/common/PTHashGridCache.hlsl",
+      "paper": "GI-1.0 §2.2 (World Cache) — open-addressing spatial hash with secondary-vertex outgoing-radiance storage. Direction-keyed (Capsaicin uses incoming-ray direction quantized to 5×5×5 buckets, NOT surface normal — D3 in the audit).",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl",
+      "notes": "Per-axis pcgHash / xxHash32 chain by addition (Capsaicin sources from math/pack.hlsl, not fetched in audit; bodies inlined here are standard PCG and xxHash32). D1: kernel-per-bounce vs. loop-per-bounce — only the Site-3 read pattern fits, no UpdateMultibounceCells port. D2: capacity halved (NUM_BUCKETS_LOG2=13 vs. Capsaicin default 14). Full divergence list at .alignments/TASK-77.1-rework-paper-port-audit.md."
     },
     {
       "glob": "Source/Shaders/HLSL/common/AgX.hlsl",

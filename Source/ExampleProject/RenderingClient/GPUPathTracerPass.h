@@ -6,6 +6,7 @@
 #include "../../Engine/Component/SamplerComponent.h"
 #include "../../Engine/Common/EntityID.h"
 #include "../../Engine/Common/GPUDataStructure.h"
+#include "HashGridCacheConstants.h"
 
 namespace Inno
 {
@@ -64,6 +65,17 @@ namespace Inno
 		GPUBufferComponent* m_LightCountCB       = nullptr;
 		SamplerComponent*   m_MaterialSampler    = nullptr;
 
+		// PT hash-grid radiance cache resources (Capsaicin GI-1.0
+		// hash_grid_cache.hlsl port). All nullptr unless
+		// PTHashGridCache::ENABLED is true and Setup/Initialize ran. When
+		// disabled, no allocation, no binding, no dispatch-side cost — the
+		// cache-off bypass invariant.
+		GPUBufferComponent* m_HashGridCacheCB                  = nullptr;
+		GPUBufferComponent* m_HashGridCache_HashBuffer         = nullptr;
+		GPUBufferComponent* m_HashGridCache_DecayTileBuffer    = nullptr;
+		GPUBufferComponent* m_HashGridCache_UpdateCellValueBuffer = nullptr;
+		GPUBufferComponent* m_HashGridCache_ValueBuffer        = nullptr;
+
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;
 		GPUBufferComponent* m_MegaIndexBuffer  = nullptr;
@@ -80,6 +92,7 @@ namespace Inno
 
 		ShaderStage m_ShaderStage = ShaderStage::Invalid;
 		bool m_PendingGeometryRebuild = false;
+		bool m_HashGridCachePendingClear = false;
 		size_t m_BuiltMeshCount = 0;
 
 		// Persistent storage for deferred GPU upload (m_InitialData points here)

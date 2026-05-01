@@ -1,5 +1,9 @@
 #include "GPUPathTracerPass.h"
 
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/PerFrameDataService.h"
 #include "../../Engine/Services/DrawCallService.h"
@@ -58,7 +62,14 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
 	//                 t7=bindless material textures,
 	//                 u0=AccumBuffer, s0=material sampler
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(13);
+	// Cache-on extension (gated by PTHashGridCache::ENABLED, mirroring the
+	// HLSL #define PT_HASH_GRID_CACHE_ENABLED in GPUPathTracerRayGen.hlsl):
+	//                 b3=HashGridCacheCB,
+	//                 u1=HashBuffer, u2=DecayTileBuffer,
+	//                 u3=UpdateCellValueBuffer, u4=ValueBuffer
+	constexpr size_t l_baseBindingCount  = 13;
+	constexpr size_t l_cacheBindingCount = Inno::PTHashGridCache::ENABLED ? 5 : 0;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(l_baseBindingCount + l_cacheBindingCount);
 
 	// b0 - PerFrameCB (set 0, binding 0)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -160,6 +171,48 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex        = 0;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_ShaderStage            = m_ShaderStage;
 
+	if constexpr (Inno::PTHashGridCache::ENABLED)
+	{
+		// b3 - HashGridCacheCB (set 0, binding 3)
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_GPUResourceType   = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorSetIndex = 0;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_DescriptorIndex   = 3;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[13].m_ShaderStage       = m_ShaderStage;
+
+		// u1 - HashBuffer (set 2, binding 1, ReadWrite UAV)
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_DescriptorIndex        = 1;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[14].m_ShaderStage            = m_ShaderStage;
+
+		// u2 - DecayTileBuffer (set 2, binding 2, ReadWrite UAV)
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_DescriptorIndex        = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[15].m_ShaderStage            = m_ShaderStage;
+
+		// u3 - UpdateCellValueBuffer (set 2, binding 3, ReadWrite UAV)
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_DescriptorIndex        = 3;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[16].m_ShaderStage            = m_ShaderStage;
+
+		// u4 - ValueBuffer (set 2, binding 4, ReadWrite UAV) — reserved for the
+		// upcoming UpdateTiles pass and read-site CL; first CL leaves it zero.
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_GPUResourceType        = GPUResourceType::Buffer;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorSetIndex      = 2;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_DescriptorIndex        = 4;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_BindingAccessibility   = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ResourceAccessibility  = Accessibility::ReadWrite;
+		m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[17].m_ShaderStage            = m_ShaderStage;
+	}
+
 	m_MaterialSampler = g_Engine->Get<SamplerResourceService>()->Add("GPUPathTracerMaterialSampler");
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_MaterialSampler->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -177,6 +230,12 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	{
 		m_PendingGeometryRebuild = true;
 		m_FrameCount = 1;
+		// Drop accumulated cache contents on scene swap. More aggressive than
+		// Capsaicin's 50-frame decay (gi1_shared.h kHashGridCache_TileDecay)
+		// but consistent with the engine's existing AccumBuffer reset on
+		// view-matrix change — and stale cells from the prior scene have no
+		// physical correspondence in the new one.
+		m_HashGridCachePendingClear = true;
 	};
 
 	f_sceneUnloadingCallback = [this]()
@@ -246,6 +305,54 @@ bool GPUPathTracerPass::Initialize()
 	m_LightCountCB->m_CPUAccessibility  = Accessibility::WriteOnly;
 	m_LightCountCB->m_GPUAccessibility  = Accessibility::ReadOnly;
 	g_Engine->Get<GPUBufferResourceService>()->Initialize(m_LightCountCB);
+
+	if constexpr (Inno::PTHashGridCache::ENABLED)
+	{
+		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
+		using namespace Inno::PTHashGridCache;
+
+		m_HashGridCacheCB = l_bufService->Add("PTHashGridCacheCB");
+		m_HashGridCacheCB->m_ElementCount     = 1;
+		m_HashGridCacheCB->m_ElementSize      = sizeof(HashGridCacheConstants);
+		m_HashGridCacheCB->m_CPUAccessibility = Accessibility::WriteOnly;
+		m_HashGridCacheCB->m_GPUAccessibility = Accessibility::ReadOnly;
+		l_bufService->Initialize(m_HashGridCacheCB);
+
+		m_HashGridCache_HashBuffer = l_bufService->Add("PTHashGridCache_HashBuffer");
+		m_HashGridCache_HashBuffer->m_ElementCount     = NUM_TILES;
+		m_HashGridCache_HashBuffer->m_ElementSize      = sizeof(uint32_t);
+		m_HashGridCache_HashBuffer->m_CPUAccessibility = Accessibility::Immutable;
+		m_HashGridCache_HashBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
+		l_bufService->Initialize(m_HashGridCache_HashBuffer);
+
+		m_HashGridCache_DecayTileBuffer = l_bufService->Add("PTHashGridCache_DecayTileBuffer");
+		m_HashGridCache_DecayTileBuffer->m_ElementCount     = NUM_TILES;
+		m_HashGridCache_DecayTileBuffer->m_ElementSize      = sizeof(uint32_t);
+		m_HashGridCache_DecayTileBuffer->m_CPUAccessibility = Accessibility::Immutable;
+		m_HashGridCache_DecayTileBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
+		l_bufService->Initialize(m_HashGridCache_DecayTileBuffer);
+
+		// 4 × uint per cell: rgb sums + sample count, atomic-add scratch.
+		m_HashGridCache_UpdateCellValueBuffer = l_bufService->Add("PTHashGridCache_UpdateCellValueBuffer");
+		m_HashGridCache_UpdateCellValueBuffer->m_ElementCount     = NUM_CELLS * 4u;
+		m_HashGridCache_UpdateCellValueBuffer->m_ElementSize      = sizeof(uint32_t);
+		m_HashGridCache_UpdateCellValueBuffer->m_CPUAccessibility = Accessibility::Immutable;
+		m_HashGridCache_UpdateCellValueBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
+		l_bufService->Initialize(m_HashGridCache_UpdateCellValueBuffer);
+
+		// uint2 per cell: packHalf4 of (radiance_total.rgb, sample_count).
+		// Reserved for the read-site CL; first CL leaves zero.
+		m_HashGridCache_ValueBuffer = l_bufService->Add("PTHashGridCache_ValueBuffer");
+		m_HashGridCache_ValueBuffer->m_ElementCount     = NUM_CELLS;
+		m_HashGridCache_ValueBuffer->m_ElementSize      = sizeof(uint32_t) * 2u;
+		m_HashGridCache_ValueBuffer->m_CPUAccessibility = Accessibility::Immutable;
+		m_HashGridCache_ValueBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
+		l_bufService->Initialize(m_HashGridCache_ValueBuffer);
+
+		// Scene-load is the natural reset boundary; queue a clear for the
+		// first PrepareCommandList that runs.
+		m_HashGridCachePendingClear = true;
+	}
 
 	m_ObjectStatus = ObjectStatus::Suspended;
 
@@ -322,6 +429,47 @@ bool GPUPathTracerPass::Update()
 		g_Engine->Get<GPUBufferResourceService>()->Upload(m_LightCountCB, &l_lightCounts);
 	}
 
+	if constexpr (Inno::PTHashGridCache::ENABLED)
+	{
+		if (m_HashGridCacheCB && m_HashGridCacheCB->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			using namespace Inno::PTHashGridCache;
+
+			// Angular-pixel footprint per unit distance, recomputed each frame so
+			// the cell-size formula tracks the current FOV and viewport. Mirrors
+			// Capsaicin gi1.cpp:1856-1859: tan(fovY * knob * max(1/h, h/(w*w))).
+			// fovY recovered from the projection matrix: p_original[1][1] =
+			// 1/tan(fovY/2) (engine's row-major Vulkan-style perspective).
+			const auto& l_perFrameCB = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
+			auto l_resolution = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
+			const float l_pyy = l_perFrameCB.p_original.m11;
+			const float l_fovY = l_pyy > 0.0f ? 2.0f * std::atan(1.0f / l_pyy) : 1.047f; // ~60° fallback
+			const float l_w = static_cast<float>(l_resolution.x > 0u ? l_resolution.x : 1u);
+			const float l_h = static_cast<float>(l_resolution.y > 0u ? l_resolution.y : 1u);
+			const float l_pixelFactor = std::max(1.0f / l_h, l_h / (l_w * l_w));
+			const float l_angular = std::tan(l_fovY * CELL_SIZE_KNOB * l_pixelFactor);
+
+			HashGridCacheConstants l_cacheConsts = {};
+			l_cacheConsts.num_buckets                  = NUM_BUCKETS;
+			l_cacheConsts.num_tiles_per_bucket         = NUM_TILES_PER_BUCKET;
+			l_cacheConsts.tile_cell_ratio              = TILE_CELL_RATIO;
+			l_cacheConsts.num_cells_per_tile           = NUM_CELLS_PER_TILE;
+			l_cacheConsts.size_tile_mip0               = SIZE_TILE_MIP0;
+			l_cacheConsts.size_tile_mip1               = SIZE_TILE_MIP1;
+			l_cacheConsts.size_tile_mip2               = SIZE_TILE_MIP2;
+			l_cacheConsts.size_tile_mip3               = SIZE_TILE_MIP3;
+			l_cacheConsts.first_cell_offset_tile_mip0  = FIRST_CELL_OFFSET_TILE_MIP0;
+			l_cacheConsts.first_cell_offset_tile_mip1  = FIRST_CELL_OFFSET_TILE_MIP1;
+			l_cacheConsts.first_cell_offset_tile_mip2  = FIRST_CELL_OFFSET_TILE_MIP2;
+			l_cacheConsts.first_cell_offset_tile_mip3  = FIRST_CELL_OFFSET_TILE_MIP3;
+			l_cacheConsts.cell_size                    = l_angular;
+			l_cacheConsts.min_cell_size                = MIN_CELL_SIZE;
+			l_cacheConsts.max_sample_count             = MAX_SAMPLE_COUNT;
+			l_cacheConsts.pad0                         = 0.0f;
+			g_Engine->Get<GPUBufferResourceService>()->Upload(m_HashGridCacheCB, &l_cacheConsts);
+		}
+	}
+
 	return true;
 }
 
@@ -344,6 +492,16 @@ bool GPUPathTracerPass::Terminate()
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_LightCountCB);
 	if (m_AccumulationBuffer)
 		g_Engine->Get<TextureResourceService>()->Delete(m_AccumulationBuffer);
+
+	if constexpr (Inno::PTHashGridCache::ENABLED)
+	{
+		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
+		if (m_HashGridCache_ValueBuffer)            l_bufService->Delete(m_HashGridCache_ValueBuffer);
+		if (m_HashGridCache_UpdateCellValueBuffer)  l_bufService->Delete(m_HashGridCache_UpdateCellValueBuffer);
+		if (m_HashGridCache_DecayTileBuffer)        l_bufService->Delete(m_HashGridCache_DecayTileBuffer);
+		if (m_HashGridCache_HashBuffer)             l_bufService->Delete(m_HashGridCache_HashBuffer);
+		if (m_HashGridCacheCB)                      l_bufService->Delete(m_HashGridCacheCB);
+	}
 
 	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Compute);
 	g_Engine->Get<CommandListResourceService>()->Delete(m_CommandListComp_Graphics);
@@ -409,6 +567,29 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	// texture heap, same convention as OpaquePass::PrepareCommandList.
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                                                  11);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        12);
+
+	if constexpr (Inno::PTHashGridCache::ENABLED)
+	{
+		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
+
+		// Scene-load triggered clear runs before binding so the dispatched
+		// rays see zero state. Cheap on D3D12 — ClearUnorderedAccessViewUint
+		// hits the descriptor directly, no per-element write.
+		if (m_HashGridCachePendingClear)
+		{
+			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_HashBuffer);
+			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_DecayTileBuffer);
+			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_UpdateCellValueBuffer);
+			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_ValueBuffer);
+			m_HashGridCachePendingClear = false;
+		}
+
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCacheCB,                     13);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_HashBuffer,            14);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_DecayTileBuffer,       15);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_UpdateCellValueBuffer, 16);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_ValueBuffer,           17);
+	}
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
 	l_fmService->TryToTransitState(m_AccumulationBuffer, m_CommandListComp_Compute, Accessibility::ReadWrite, Accessibility::ReadOnly);
