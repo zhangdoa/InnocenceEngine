@@ -60,6 +60,17 @@ When a feature's contribution is subtle in the only test scene available, a `#de
 - Compare numerically (mean luminance per channel) and visually via layer 1. Numeric direction must match the physical expectation (added shadow → darker, added GI bounce → brighter, denoise / cache → lower variance with preserved spatial structure, etc.).
 - An A/B toggle is necessary-but-not-sufficient. It rules out "the feature did nothing"; it does not validate "the feature is correct in all configurations." A dedicated test scene + RenderDoc capture remains the closure target — the toggle is the deferred-quality bridge, not the substitute.
 
+A toggle introduced for this purpose has two possible lifecycles, decided at the point of introduction and recorded in the constants header next to the toggle's definition:
+
+- **Transient** — the framing above. Delete the toggle once correctness is validated and the dedicated test scene exists; the toggle is scaffolding for a deferred quality check, not part of the engine's surface.
+- **Durable** — the toggle is retained as a permanent architectural seam. Use this when the axis has ongoing A/B value (denoiser variants, integrator strategies, visualization modes), when reference paths future work might re-enable would otherwise bit-rot, or when the swappable layer is a designed seam in the engine's structure rather than a one-off experiment.
+
+Every toggle must have either a documented retire criterion (transient) or a documented permanence rationale (durable) in the constants header. No toggles by inertia. The retire criterion is a measurable condition (e.g. "remove when on-path beats off-path on `<metric>` by `<margin>` across `<scenes>`"); the permanence rationale names the recurring need the toggle serves.
+
+Compile-time vs runtime is a separate axis from transient vs durable. `#define` + `if constexpr` gives DXIL stripping and bit-identical output when off — the right surface for build-time-stable, audit-anchored seams. `DevToggleRegistry` gives live runtime flipping — the right surface for debug HUD / dev-menu / profile-driven flags. Two surfaces, two needs; do not conflate them.
+
+Precedent for the durable variant: `PT_HASH_GRID_CACHE_ENABLED` in `Source/ExampleProject/RenderingClient/HashGridCacheConstants.h` (commit `84d14b92`) — the first deliberate use of the pattern as a permanent feature layer in this engine, retained for denoiser-comparison and reference-path preservation.
+
 #### 3c — PT-as-ground-truth rasterizer comparison (separate use case)
 
 When path-tracer output is the reference for **rasterizer** validation (not denoiser-vs-its-own-converged-output), the comparison is only fair on dimensions both pipelines compute. Before drawing conclusions from per-pixel deltas, enumerate what the rasterizer does NOT compute that PT does — unshadowed light types (e.g. point/sphere lights without shadow maps leak through walls in rast, get correctly occluded in PT), missing transmission/refraction, multi-bounce, missing post-effects, missing AA modes — and either disable those PT features for the comparison, or annotate the comparison artifact with the omitted-feature caveats.
