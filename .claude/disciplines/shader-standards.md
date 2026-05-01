@@ -61,5 +61,4 @@ Reference implementation: `RadianceCacheReprojection.comp`. `DeviceMemoryBarrier
 ## Cross-references
 
 - `safety-observability.md` — the *no magic numbers* and *no copy-paste* rules apply equally to HLSL; shared helpers belong in `common/common.hlsl`.
-- `target-qualities.md` — *fail loudly* and *explicit contracts* are the underlying quality bar; cross-queue UAV barriers and workgroup-uniform `*WithGroupSync` are explicit-contract obligations the GPU does not enforce at compile time.
-- `cite-prior-art.md` — when introducing a new shader pattern, cite an existing shader (e.g. `RadianceCacheReprojection.comp` for the early-exit pattern) before inventing a new shape.
+- `fundamentals.md` — *fail loudly* and *explicit contracts* are the underlying quality bar; cite-before-invent applies to shader patterns (e.g. cite `RadianceCacheReprojection.comp` for the early-exit pattern).

@@ -2,9 +2,7 @@
 
 Produces a structured alignment document comparing a published algorithm specification, its canonical reference implementation, and a project's in-house implementation. Makes every divergence visible at a glance; the reader uses it as a review surface at paper-port task closure.
 
-## Why
-
-Biased to find divergences, not confirm fidelity. DIVERGENT is the default status of any row until there is line-by-line evidence of match. "Looks approximately similar" is not evidence — same property as `peer-review-required.md`'s reviewer bias, applied to paper-port specifically.
+Biased to find divergences, not confirm fidelity. DIVERGENT is the default status of any row until there is line-by-line evidence of match. "Looks approximately similar" is not evidence.
 
 ## How
 

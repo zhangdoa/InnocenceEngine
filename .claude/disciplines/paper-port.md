@@ -16,4 +16,4 @@ For any algorithm implemented from a published source, the reference implementat
 
 - `paper-audit.md` — the audit format and hard rules the paper-auditor subagent follows when producing the alignment artifact.
 - `tech-choice-vs-default.md` — runs first when the choice is *which technique to use at all*; this discipline runs when the technique is fixed and the question is *how faithfully to port the published version*.
-- `cite-prior-art.md` — paper-port is the special case of citation when the source is a published paper with a reference implementation.
+- `fundamentals.md` — paper-port is the cite-before-invent rule's special case for published papers with reference implementations.

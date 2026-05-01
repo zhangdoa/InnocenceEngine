@@ -102,7 +102,7 @@ function emit(buckets) {
     `Escape hatch: include ${SENTINEL} in the command (typically as a`,
     'trailing `# [stash-cross-subtree-OK]` comment) ONLY if a tree-wide',
     'stash is genuinely the right move — e.g. a user-approved cleanup',
-    'that legitimately spans subtrees. See .claude/disciplines/owner-mode.md.',
+    'that legitimately spans subtrees.',
     '',
   ].join('\n'))
   process.exit(2)

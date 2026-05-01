@@ -24,4 +24,4 @@ When adding a new container or API that may be called from multiple threads, sta
 
 - `cpp-style.md` — naming conventions and engine-abstraction rules used in the example.
 - `safety-observability.md` — *fail loudly* applies to thread-contract violations: a function that quietly corrupts under racy use is the failure mode this discipline prevents.
-- `target-qualities.md` — *explicit contracts* is the underlying quality bar; threading is one of the contract surfaces this discipline makes explicit.
+- `fundamentals.md` — *explicit contracts* is the underlying quality bar; threading is one of the contract surfaces this discipline makes explicit.

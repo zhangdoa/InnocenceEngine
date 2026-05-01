@@ -1,6 +1,6 @@
 # Discipline: safety-observability
 
-Applies to agents authoring C++ or HLSL. Runtime safety and observability rules: assertions on the hot path, guard clauses that log, RAII for resources, no magic numbers, no copy-paste. The operational form of `target-qualities.md` *fail loudly* for the languages where the compiler will not catch silent corruption.
+Applies to agents authoring C++ or HLSL. Runtime safety and observability rules: assertions on the hot path, guard clauses that log, RAII for resources, no magic numbers, no copy-paste. The operational form of `fundamentals.md` *fail loudly* for the languages where the compiler will not catch silent corruption.
 
 ## How
 
@@ -91,7 +91,6 @@ When the same logic appears in two or more places, extract it into a shared func
 
 ## Cross-references
 
-- `target-qualities.md` — *fail loudly* is the underlying quality bar; this discipline is its operational form for C++/HLSL where the compiler does not catch silent corruption.
+- `fundamentals.md` — *fail loudly* is the underlying quality bar; this discipline is its operational form for C++/HLSL where the compiler does not catch silent corruption. The same-line comment exception for non-feasible named constants follows the fundamentals' present-state comment rule.
 - `cpp-style.md` — paired discipline; that one governs naming / organisation / engine abstractions, this one governs runtime behaviour.
 - `shader-standards.md` — the *no magic numbers* and *no copy-paste* rules apply to HLSL too; shared helpers belong in `common/common.hlsl`.
-- `comment-discipline.md` — *no magic numbers* allows a same-line comment when a named constant is not feasible; that comment still follows the present-state rule.

@@ -10,5 +10,5 @@ Existing files already over the limit are grandfathered but still subject to the
 
 ## Cross-references
 
-- `target-qualities.md` — *orthogonality* is the underlying principle; oversized files signal a responsibility that should be split.
+- `fundamentals.md` — *orthogonality* is the underlying principle; oversized files signal a responsibility that should be split.
 - `commit-message-policy.md` — skip sentinels for the file-size gate live in the commit message; that discipline owns the artifact.

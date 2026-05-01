@@ -1,6 +1,6 @@
 # Discipline: peer-review-required
 
-Every non-trivial implementation dispatch is followed by a peer-review dispatch before commit. The implementer has motivated reasoning; only a fresh agent breaks the frame. Long-form rationale + recorded incidents in `peer-review-extras.md`.
+Every non-trivial implementation dispatch is followed by a peer-review dispatch before commit. The implementer has motivated reasoning; only a fresh agent breaks the frame.
 
 ## When required
 
@@ -27,7 +27,7 @@ The reviewer brief contains: the diff, the original implementation brief, releva
 - **PASS** — diff meets brief and disciplines, with line-grounded evidence cited for every checked item. Not "no findings"; "checked all and they hold."
 - **BLOCKED** — at least one finding the implementer must address. Each finding cites file:line and the discipline / invariant violated.
 - **ADVISORY** — AC met, with non-blocking observations (style nudge, perf cleanup, follow-up seed). Ships with notes.
-- **UNVERIFIED** — AC technically met but **not visually / runtime confirmed** because test infra cannot reach the code path. Does NOT ship until either (a) test infra is extended, OR (b) user explicitly acknowledges shipping unverified. See `peer-review-extras.md` § UNVERIFIED tier for ADVISORY-vs-UNVERIFIED distinction and dispatcher obligation.
+- **UNVERIFIED** — AC technically met but **not visually / runtime confirmed** because test infra cannot reach the code path. Does NOT ship until either (a) test infra is extended, OR (b) user explicitly acknowledges shipping unverified. UNVERIFIED is the only tier the dispatcher MUST surface to the user before commit; commit message records the path with a `Review-Unverified: <AC ref> — <gap> — <a|b>` line.
 
 After review:
 - **PASS / PASS+ADVISORY** — implementer commits.
@@ -57,10 +57,6 @@ Review-Skipped: <reason — backlog-only / hook-internal / mechanical-rename / e
 ```
 
 The `peer-review` gate inside `commit-gate.js` (TASK-167) enforces presence with the same loud-failure shape as the attribution gate.
-
-## Long-form
-
-`peer-review-extras.md` — full rationale, anti-pattern catalogue, recorded incidents (TASK-140/165, TASK-166/167, TASK-176/177).
 
 ## Cross-references
 

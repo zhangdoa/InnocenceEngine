@@ -56,13 +56,11 @@ When a feature's contribution is subtle in the only test scene available, a `#de
 - Compare numerically (mean luminance per channel) and visually via layer 1. Numeric direction must match the physical expectation (added shadow → darker, added GI bounce → brighter, denoise / cache → lower variance with preserved spatial structure, etc.).
 - An A/B toggle is necessary-but-not-sufficient. It rules out "the feature did nothing"; it does not validate "the feature is correct in all configurations." A dedicated test scene + RenderDoc capture remains the closure target — the toggle is the deferred-quality bridge, not the substitute.
 
-Recorded incident: `DEBUG_POINT_SHADOW_BYPASS` in `Source/Shaders/HLSL/common/lightPassDirectLighting.hlsl` (TASK-148, commit `71817f3a`, 2026-04-26). The point-shadow contribution on GISponza was ~3% mean-luminance delta — small enough that "before/after look the same" was a real risk. The toggle made the contribution measurable on existing content while a dedicated test scene was deferred.
-
 #### 3c — PT-as-ground-truth rasterizer comparison (separate use case)
 
 When path-tracer output is the reference for **rasterizer** validation (not denoiser-vs-its-own-converged-output), the comparison is only fair on dimensions both pipelines compute. Before drawing conclusions from per-pixel deltas, enumerate what the rasterizer does NOT compute that PT does — unshadowed light types (e.g. point/sphere lights without shadow maps leak through walls in rast, get correctly occluded in PT), missing transmission/refraction, multi-bounce, missing post-effects, missing AA modes — and either disable those PT features for the comparison, or annotate the comparison artifact with the omitted-feature caveats.
 
-Without this, a single rast-vs-PT delta conflates multiple bidirectional biases. Recorded incident: TASK-6.6 / TASK-6.10 (2026-04-26) — GISponza brightness gap closed from PT mean luma 145.80 vs rast 120.86 → 144.79 by adding sky NEE; but point/sphere lights had no shadow maps in rast, so the closure was likely partially the GI fix and partially two errors cancelling.
+Without this, a single rast-vs-PT delta conflates multiple bidirectional biases.
 
 #### 3d — MAE-vs-CPU-PT is not the reference for PT denoising work
 
@@ -85,10 +83,6 @@ The user is the final visual arbiter. Their sign-off enters the closure record. 
 On layer-4 trigger: pause closure, surface the layer-1 block + the relevant frames + the disagreement (if any) to the user, and wait for sign-off before claiming the AC. The sign-off — and any user-described differences — enters the closure record alongside the layer-1 block.
 
 Layer 4 is the ratchet that catches the failure mode this discipline exists to prevent: numeric green shipping over visible regressions. It is not the default validation step — the goal is for layer 1 to catch the issue first. Layer 4 fires only when the agent itself flags doubt, the change category is high-risk, or the agent and the metrics disagree.
-
-## Retroactive trigger
-
-This upgrade applies retroactively to the in-flight TASK-208 fix-up CL (the one re-opening AC #4 after the cell-pattern regression was reported). That CL is the first to ship the layer-1 block in its closure record.
 
 ## Cross-references
 

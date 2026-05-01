@@ -90,7 +90,7 @@ group('parseGitStashCommand — non-stash commands', () => {
 group('resolveOwner — representative paths per subtree', () => {
   const cases = [
     ['.claude/hooks/session-gate.js',                          'ai-expert'],
-    ['.claude/disciplines/owner-mode.md',                       'ai-expert'],
+    ['.claude/disciplines/fundamentals.md',                     'ai-expert'],
     ['.backlog/tasks/task-196.md',                              'producer'],
     ['.alignments/TASK-66-cube-shadow.md',                      'ai-expert'],
     ['CMake/Modules/InnoCommon.cmake',                          'ci-build-expert'],

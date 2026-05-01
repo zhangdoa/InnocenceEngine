@@ -23,6 +23,5 @@ TASK-77.1.3 closure shape (this session): implementer surfaced a D9 root cause; 
 ## Cross-references
 
 - `backlog-workflow.md` — file-task-first applies to the discovered work too; the new task is filed before the next dispatch.
-- `task-decomposition.md` — when a discovery is large enough to be its own multi-slice work.
 - `peer-review-required.md` — reviewer's BLOCKED findings are *in-scope feedback on the current diff*, not surfaced new scope; the two are different signals.
 - `persistence-venue.md` — governs harness-authoring register (paraphrase, do not transcribe).

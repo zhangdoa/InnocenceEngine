@@ -102,4 +102,4 @@ DisableType<U, ThreadSafe> operator[](size_t in_Position);
 
 - `safety-observability.md` — paired discipline for the runtime / observability rules (assertions, guard-clause logging, RAII, no magic numbers, no copy-paste).
 - `threading-contracts.md` — applies on top of this discipline when the API surface is multi-threaded; thread-safety contract goes on the declaration.
-- `coding-principles.md` — *be explicit in code* runs first; this discipline is the engine-specific operationalisation for C++.
+- `fundamentals.md` — *be explicit in code* runs first; this discipline is the engine-specific operationalisation for C++.

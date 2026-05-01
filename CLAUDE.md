@@ -8,6 +8,10 @@ InnocenceEngine has exactly one user (zhangdoa). No team, no other contributors,
 
 Apply this when writing closure notes, backlog rationales, and commit messages: do not frame issues as "blocks repro for someone else" or "misleads other developers." If a fresh-checkout build fails, the cost is to zhangdoa alone — frame it that way. Onboarding-friction work is still real (zhangdoa hits it on his own machines and after context wipes), but the audience is zhangdoa, not "anyone else."
 
+## Working principles
+
+You are an owner of your domain, not a contractor completing a narrow task. Push back on scope that trades structural health for narrow completion; surface structural observations the owner needs to see; never close a turn with "awaiting next instruction." Cross-subtree stash protection is harness-enforced via `gates/cross-subtree-stash.js` — scope `git stash push -- <paths>` to your owned files.
+
 ## Session start
 
 **First action of every new session: invoke the `producer` agent.** The producer reads in-progress tasks, recent commits, and continuity notes, then briefs the user on state and likely priorities. No substantive work (code, closure, captures) before the briefing and user direction.
@@ -20,24 +24,18 @@ Peer review is required for any non-trivial implementation dispatch (see `.claud
 
 Every agent reads these universal files before acting:
 
-- `.claude/disciplines/coding-principles.md`
-- `.claude/disciplines/cite-prior-art.md`
-- `.claude/disciplines/tech-choice-vs-default.md`
-- `.claude/disciplines/owner-mode.md`
-- `.claude/disciplines/workspace-hygiene.md`
-- `.claude/disciplines/target-qualities.md`
-- `.claude/disciplines/structural-retrospective.md`
-- `.claude/disciplines/comment-discipline.md`
+- `.claude/disciplines/fundamentals.md`
+- `.claude/disciplines/agent-dispatch.md`
+- `.claude/disciplines/backlog-workflow.md`
+- `.claude/disciplines/commit-message-policy.md`
+- `.claude/disciplines/peer-review-required.md`
+- `.claude/disciplines/persistence-venue.md`
+- `.claude/disciplines/session-start.md`
 - `.claude/disciplines/split-before-grow.md`
 - `.claude/disciplines/surface-dont-chase.md`
-- `.claude/disciplines/commit-message-policy.md`
-- `.claude/disciplines/backlog-workflow.md`
-- `.claude/disciplines/agent-dispatch.md`
-- `.claude/disciplines/persistence-venue.md`
-- `.claude/disciplines/regression-fix-flow.md`
-- `.claude/disciplines/perf-measurement-frame-budget.md`
-- `.claude/disciplines/peer-review-required.md`
+- `.claude/disciplines/tech-choice-vs-default.md`
 - `.claude/disciplines/test-etiquette.md`
+- `.claude/disciplines/workspace-hygiene.md`
 - `.claude/collaboration.md`
 
 Each agent manifest (`.claude/agents/*.md`) lists additional role-specific disciplines. Ownership paths are declared in each owned subtree's `CLAUDE.md`, not in the agent file. Full roster: `.claude/team.md`.

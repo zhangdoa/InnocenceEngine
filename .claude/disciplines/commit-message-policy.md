@@ -95,12 +95,8 @@ Historical commits that landed without attribution are **not** to be fixed by `g
 - **`git commit --amend` on a commit that landed without attribution.** Standing rule: no rewriting public history. Log the gap in backlog; don't rewrite.
 - **Skip reasons that don't match `peer-review-required.md` § When.** The gate enforces *presence*, but a `Review-Skipped: didn't-feel-like-it` line is a discipline violation even if the gate accepts it.
 
-## Recorded incident
-
-`55cf6a72` (historical) — attribution gate was previously coupled to the transcript-fetch envelope; a missing transcript caused the gate to fail-open and the commit landed without attribution. Fix made attribution and peer-review run in the transcript-independent phase; the synthetic-commit reproduction in `commit-gate.js` is the regression anchor.
-
 ## Cross-references
 
 - `peer-review-required.md` — owns the `Reviewed-By:` / `Review-Skipped:` semantics; this discipline owns the artifact format and the gate.
 - `backlog-workflow.md` — `TASK-NN` references in commit messages are what the closure-staleness gate parses; commit messages are part of the audit trail this discipline produces.
-- `comment-discipline.md` — historical context (what changed, why) belongs in the commit message, not in source comments. The footer lines are the audit form.
+- `fundamentals.md` — historical context (what changed, why) belongs in the commit message, not in source comments. The footer lines are the audit form.
