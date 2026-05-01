@@ -37,7 +37,7 @@ RWTexture2D<float4> AccumBuffer : register(u0);
 RWStructuredBuffer<uint> g_HashGridKeys : register(u1);
 
 [[vk::binding(2, 2)]]
-RWStructuredBuffer<HashGridCell> g_HashGridScratch : register(u2);
+RWStructuredBuffer<HashGridCell> g_HashGridCells : register(u2);
 
 // Per-pixel primary-hit data (TASK-77.1.2). Written once per pixel after
 // the bounce loop so the denoise pass can rebuild the hash-grid lookup
@@ -50,16 +50,7 @@ RWTexture2D<float4> g_PrimaryHitPos : register(u3);
 [[vk::binding(4, 2)]]
 RWTexture2D<float4> g_PrimaryHitNormal : register(u4);
 
-// Bound here only so HashGridCache_InsertOrFind can zero the persistent
-// value slot when eviction stomps a probe-chain entry — without it, a new
-// key would inherit the evicted occupant's EMA-blended history on its
-// first read.
-[[vk::binding(5, 2)]]
-RWStructuredBuffer<HashGridCell> g_HashGridValue : register(u5);
-
 #define HASHGRIDCACHE_HAS_BINDINGS
-#define HASHGRIDCACHE_HAS_SCRATCH
-#define HASHGRIDCACHE_HAS_VALUE
 #include "common/HashGridCache.hlsl"
 
 uint PCG(inout uint state)
@@ -504,40 +495,21 @@ void RayGenShader()
         ray.Direction = L;
     }
 
-    // Per-frame noisy radiance — fresh per-pixel estimator the downstream
-    // denoise composition consumes. Wider 1e5 clamp keeps the estimator
-    // unbiased; the cache lane uses a tighter clamp below.
+    // Per-frame noisy radiance (TASK-77.1 phase 1 — TASK-77.1.2 owns the
+    // accumulation / denoise composition; this raygen no longer averages
+    // in-shader so the downstream pass sees a fresh per-frame estimator
+    // rather than a screen-space running mean).
     float3 clampedRadiance = min(radiance, 100000.0f);
     AccumBuffer[pixel] = float4(clampedRadiance, 1.0f);
 
     // World-space hash-grid write at primary hit. The cache integrates the
     // full path-traced outgoing radiance at the primary surface, accumulated
-    // across frames via the EMA filter pass.
-    //
-    // Firefly clamp on the cache-bound radiance: a bright single-sample
-    // outlier (e.g. a rare visibility-through-architecture sun-NEE hit)
-    // would shift a saturated cell's running mean by 1/MAX × (outlier −
-    // mean), which at 1e5 outlier vs ~1 mean is ~3000 luma per frame —
-    // visibly fluctuating "speckle" noise on the cached read. The
-    // narrower clamp bounds that to ~3 luma per frame at the cell level,
-    // matching the noise floor the spatial filter can absorb. The wider
-    // 1e5 clamp on the per-frame noisy path is unchanged so the
-    // path-tracer estimator remains unbiased — the cache is the
-    // bias-trading variance-reduction lane.
-    //
-    // Luma-preserving form: scale the whole RGB triple uniformly so the
-    // bound applies to BT.709 luma rather than each channel independently.
-    // A per-channel min(rgb, 100) on a saturated red firefly (500, 50, 50)
-    // would shift hue toward white at (100, 50, 50); scaling by
-    // 100/luma keeps the chroma direction intact.
-    float cacheLuma   = max(GetLuma(radiance), EPSILON);
-    float lumaClamp   = min(100.0f / cacheLuma, 1.0f);
-    float3 cacheRadiance = max(radiance, 0.0f) * lumaClamp;
+    // across frames via the running mean inside HashGridCache.hlsl.
     if (primaryHitValid)
     {
         float depth = length(primaryHitPos - g_Frame.camera_posWS.xyz);
         float cellSize = HashGridCache_CellSize(depth, g_Frame.viewportSize.xy, g_Frame.p_original);
-        HashGridCache_Insert(primaryHitPos, primaryHitNormal, cacheRadiance, cellSize, g_FrameCount);
+        HashGridCache_Insert(primaryHitPos, primaryHitNormal, clampedRadiance, cellSize, g_FrameCount);
 
         g_PrimaryHitPos[pixel]    = float4(primaryHitPos, 1.0f);
         g_PrimaryHitNormal[pixel] = float4(primaryHitNormal, 1.0f);

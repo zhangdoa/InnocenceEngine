@@ -48,7 +48,7 @@ bool GPUPathTracerDenoisePass::Setup(IServiceConfig* systemConfig)
 
 	// Binding layout: b0=PerFrameCB, t0=NoisyRadiance, t1=PrimaryHitPos,
 	//                 t2=PrimaryHitNormal, u0=HashGridKeys (RW UAV view),
-	//                 u1=HashGridValue (RW UAV view), u2=DenoisedResult.
+	//                 u1=HashGridCells (RW UAV view), u2=DenoisedResult.
 	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(7);
 
 	// b0 - PerFrame CB (set 0, binding 0)
@@ -97,7 +97,7 @@ bool GPUPathTracerDenoisePass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage = ShaderStage::Compute;
 
-	// u1 - HashGridValue (persistent EMA buffer drained by the filter pass).
+	// u1 - HashGridCells
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 1;
@@ -178,12 +178,12 @@ bool GPUPathTracerDenoisePass::PrepareCommandList(IRenderingContext* renderingCo
 	auto* l_hitPos  = l_pt.GetPrimaryHitPosBuffer();
 	auto* l_hitN    = l_pt.GetPrimaryHitNormalBuffer();
 	auto* l_keys    = l_pt.GetHashGridKeys();
-	auto* l_value   = l_pt.GetHashGridValue();
+	auto* l_cells   = l_pt.GetHashGridCells();
 	if (!l_noisy  || l_noisy->m_ObjectStatus  != ObjectStatus::Activated) return false;
 	if (!l_hitPos || l_hitPos->m_ObjectStatus != ObjectStatus::Activated) return false;
 	if (!l_hitN   || l_hitN->m_ObjectStatus   != ObjectStatus::Activated) return false;
 	if (!l_keys   || l_keys->m_ObjectStatus   != ObjectStatus::Activated) return false;
-	if (!l_value  || l_value->m_ObjectStatus  != ObjectStatus::Activated) return false;
+	if (!l_cells  || l_cells->m_ObjectStatus  != ObjectStatus::Activated) return false;
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
 	auto l_viewport  = g_Engine->Get<RenderingConfigurationService>()->GetScreenResolution();
@@ -207,7 +207,7 @@ bool GPUPathTracerDenoisePass::PrepareCommandList(IRenderingContext* renderingCo
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_hitPos,     2);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_hitN,       3);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_keys,       4);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_value,      5);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_cells,      5);
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, m_Result,     6);
 
 	// One thread per pixel, [numthreads(8,8,1)] — ceiling-divide so the

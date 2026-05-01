@@ -1,7 +1,7 @@
 ---
 id: TASK-77.1
 title: Path-tracer world-space radiance cache as denoiser — phase 1 (TASK-77 phase 1)
-status: Done
+status: To Do
 assignee: []
 created_date: '2026-04-30 19:14'
 updated_date: '2026-04-30 19:44'

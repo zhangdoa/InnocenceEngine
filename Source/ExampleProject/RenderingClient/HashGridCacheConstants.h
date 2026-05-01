@@ -19,11 +19,10 @@ namespace Inno
 namespace HashGridCache
 {
     // Capacity in cells. 2^20 = 1,048,576 cells. Per-cell payload is
-    // 20 B (uint3 quantizedRadianceSum + uint sampleCount + uint
-    // frameLastTouched); per-cell key is 4 B (uint hash). Total = 24 MB
-    // at full capacity, matching the design call's ~25 MB budget.
-    // Configurable here at code-level (not yet runtime-toggled per
-    // design call).
+    // 20 B (float3 radiance + uint sampleCount + uint frameLastTouched);
+    // per-cell key is 4 B (uint hash). Total = 24 MB at full capacity,
+    // matching the design call's ~25 MB budget. Configurable here at
+    // code-level (not yet runtime-toggled per design call).
     static constexpr uint32_t CELL_COUNT = 1u << 20;
 
     // Open-addressing linear-probe length. Capsaicin's reference impl
@@ -32,17 +31,16 @@ namespace HashGridCache
     // oldest cell in the probe chain (frameLastTouched-based).
     static constexpr uint32_t PROBE_LENGTH = 4u;
 
-    // Per-cell sample cap (write-side). Past the cap, contributions are
-    // dropped — see HASHGRID_SAMPLE_CAP in HashGridCache.hlsl for the
-    // overflow + denoiser-saturation rationale.
-    static constexpr uint32_t SAMPLE_CAP = 32u;
+    // Online running-mean cap. Sample contribution is weighted by
+    // 1 / min(sampleCount + 1, SAMPLE_CAP); past the cap, the cache
+    // becomes a sliding mean rather than a pure mean so a relit
+    // surface eventually adopts the new colour without invalidation.
+    // Phase 1 leaves colour-delta invalidation deferred (see
+    // TASK-77.1 Implementation Notes "Deferred work").
+    static constexpr uint32_t SAMPLE_CAP = 256u;
 
     // Per-cell payload size (must match HashGridCell in the shader).
-    // 20 B = uint3 quantizedRadianceSum (12 B) + uint sampleCount (4 B)
-    // + uint frameLastTouched (4 B). Zero-initialised buffer is the
-    // valid empty state — atomic-add accumulation seeds correctly from
-    // sum=0, sampleCount=0. See HashGridCache.hlsl for the per-channel
-    // InterlockedAdd shape (TASK-77.1.3 D9 fix).
+    // 20 B = float3 radiance + uint sampleCount + uint frameLastTouched.
     static constexpr uint32_t CELL_BYTES = 20u;
 
     // Per-cell key size (uint hash; 0 = empty slot, MSB-set values

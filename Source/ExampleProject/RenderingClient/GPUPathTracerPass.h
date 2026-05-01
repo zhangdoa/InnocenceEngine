@@ -33,9 +33,7 @@ namespace Inno
 		// Accessibility::ReadWrite UAVs in this pass — downstream passes
 		// rebind them as ReadOnly inside their own command lists.
 		GPUBufferComponent* GetHashGridKeys();
-		GPUBufferComponent* GetHashGridScratch();
-		GPUBufferComponent* GetHashGridValue();
-		GPUBufferComponent* GetFrameCountCB();
+		GPUBufferComponent* GetHashGridCells();
 		TextureComponent*   GetPrimaryHitPosBuffer();
 		TextureComponent*   GetPrimaryHitNormalBuffer();
 
@@ -77,15 +75,12 @@ namespace Inno
 		GPUBufferComponent* m_LightCountCB       = nullptr;
 		SamplerComponent*   m_MaterialSampler    = nullptr;
 
-		// World-space hash-grid radiance cache. Owned here — the PT raygen
-		// is the only writer of m_HashGridScratch (per-frame contributions
-		// via HashGridCache_Insert); GPUPathTracerHashGridFilterPass
-		// drains scratch into m_HashGridValue (persistent EMA buffer);
-		// GPUPathTracerDenoisePass reads m_HashGridValue. m_HashGridKeys
-		// is the shared slot-identity buffer.
-		GPUBufferComponent* m_HashGridKeys    = nullptr;
-		GPUBufferComponent* m_HashGridScratch = nullptr;
-		GPUBufferComponent* m_HashGridValue   = nullptr;
+		// World-space hash-grid radiance cache (TASK-77.1 phase 1).
+		// Owned by this pass — the only writer is the PT raygen at primary
+		// hit, and downstream consumers (TASK-77.1.2 denoise pass) read the
+		// same buffers via the engine's resource registry.
+		GPUBufferComponent* m_HashGridKeys  = nullptr;
+		GPUBufferComponent* m_HashGridCells = nullptr;
 
 		// Per-pixel primary-hit position + normal (TASK-77.1.2). Written by
 		// the PT raygen alongside the noisy buffer so the denoise pass can

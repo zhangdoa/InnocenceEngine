@@ -31,7 +31,6 @@
 #include "DebugPass.h"
 #include "FinalBlendPass.h"
 #include "GPUPathTracerPass.h"
-#include "GPUPathTracerHashGridFilterPass.h"
 #include "GPUPathTracerDenoisePass.h"
 
 #include "BSDFTestPass.h"
@@ -334,7 +333,6 @@ namespace Inno
 
 		FinalBlendPass::Get().Setup();
 		GPUPathTracerPass::Get().Setup();
-		GPUPathTracerHashGridFilterPass::Get().Setup();
 		GPUPathTracerDenoisePass::Get().Setup();
 
 		// AnimationPass::Get().Setup();
@@ -400,7 +398,6 @@ namespace Inno
 
 		FinalBlendPass::Get().Initialize();
 		GPUPathTracerPass::Get().Initialize();
-		GPUPathTracerHashGridFilterPass::Get().Initialize();
 		GPUPathTracerDenoisePass::Get().Initialize();
 
 		m_ObjectStatus = ObjectStatus::Activated;
@@ -444,12 +441,10 @@ namespace Inno
 		// downstream code at line 483-490 already routes around this case.
 		const bool l_runDenoise = m_GPUPathTracerActive
 		    && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated;
-		GPUPathTracerHashGridFilterPass::Get().m_Bypassed.store(!l_runDenoise, std::memory_order_relaxed);
 		GPUPathTracerDenoisePass::Get().m_Bypassed.store(!l_runDenoise, std::memory_order_relaxed);
 		if (l_runDenoise)
 		{
 			DispatchOrBypass(GPUPathTracerPass::Get());
-			DispatchOrBypass(GPUPathTracerHashGridFilterPass::Get());
 			DispatchOrBypass(GPUPathTracerDenoisePass::Get());
 		}
 
@@ -594,35 +589,22 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 		}
 
-		// Hash-grid EMA filter — drains per-frame scratch contributions into
-		// the persistent value buffer the denoise pass reads. Runs after PT
-		// (waits on PT compute) and before denoise. Compute-only — the three
-		// hash-grid buffers stay in persistent ReadWrite, so no graphics-side
-		// transition is needed (mirrors OpaqueCullingPass dispatch shape).
-		if (GPUPathTracerHashGridFilterPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GPUPathTracerHashGridFilterPass::Get()))
-		{
-			auto l_renderPass = GPUPathTracerHashGridFilterPass::Get().GetRenderPassComp();
-
-			WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
-
-			auto l_computeCL = GPUPathTracerHashGridFilterPass::Get().GetCommandListComp(GPUEngineType::Compute);
-			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
-			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
-		}
-
-		// Denoise dispatch — graphics CL transitions m_Result to UAV, compute
-		// CL reads the post-PT noisy + hash-grid value state. Clear-on-bypass
-		// is true so IsBypassed() returns false on the bypass path too —
-		// both live and clear-on-bypass paths run through this same shape.
+		// TASK-77.1.2 — denoise dispatch. Same two-CL pattern as PT
+		// (graphics CL transitions m_Result to UAV, compute CL reads the
+		// post-PT noisy + hash-grid state). The pass is m_ClearOnBypass=true,
+		// so IsBypassed() returns false on the bypass path too — both live
+		// and clear-on-bypass paths run through this same Execute / Signal
+		// shape, with the CL contents differing per DispatchOrBypass's
+		// dispatch decision.
 		if (GPUPathTracerDenoisePass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GPUPathTracerDenoisePass::Get()))
 		{
 			auto l_renderPass = GPUPathTracerDenoisePass::Get().GetRenderPassComp();
 
-			// Wait on the filter pass's compute Signal so the value buffer
-			// reads see this frame's blended state. WaitIfActive is a no-op
-			// when the filter pass is bypassed (rasterizer fork); denoise
-			// then runs its clear-on-bypass CL and surfaces zeros.
-			WaitIfActive(GPUPathTracerHashGridFilterPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+			// Wait for PT's compute Signal so the noisy + hit + hash-grid
+			// reads see the post-PT state. WaitIfActive is a no-op when PT
+			// is bypassed (rasterizer fork) — denoise then runs the
+			// clear-on-bypass CL it recorded above and surfaces zeros.
+			WaitIfActive(GPUPathTracerPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
 
 			auto l_graphicsCL = GPUPathTracerDenoisePass::Get().GetCommandListComp(GPUEngineType::Graphics);
 			l_hwService->Execute(l_graphicsCL, GPUEngineType::Graphics);
@@ -1331,7 +1313,6 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	l_passes.reserve(32);
 
 	l_passes.push_back(&GPUPathTracerPass::Get());
-	l_passes.push_back(&GPUPathTracerHashGridFilterPass::Get());
 	l_passes.push_back(&GPUPathTracerDenoisePass::Get());
 
 	l_passes.push_back(&BRDFLUTPass::Get());
