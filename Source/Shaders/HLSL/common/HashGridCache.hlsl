@@ -13,11 +13,18 @@
 //   - Open-addressing linear-probe with probe length 4 (Capsaicin convention).
 //   - Eviction on collision: replace the oldest cell in the probe chain by
 //     frameLastTouched.
-//   - 20 B per-cell payload (radiance + sampleCount + frameLastTouched) + 4 B
-//     key. No mip-level filtering, no separate indirect/multibounce buffers,
-//     no decay buffer — those pay off at secondary-vertex usage which is
-//     phase-2 work.
+//   - 20 B per-cell payload (uint3 quantizedRadianceSum + uint sampleCount +
+//     uint frameLastTouched) + 4 B key. No mip-level filtering, no separate
+//     indirect/multibounce buffers, no decay buffer — those pay off at
+//     secondary-vertex usage which is phase-2 work.
 //   - Write site: PT primary hit only (Capsaicin writes at secondary).
+//   - TASK-77.1.3 fix (D9 in .alignments/TASK-77.1.3-hash-grid-cache-paper-port.md):
+//     payload migrated from non-atomic float3 running-mean to integer
+//     quantized-sum + sample-count, accumulated via InterlockedAdd. Matches
+//     Capsaicin's gi1.comp:1971-1975 / hash_grid_cache.hlsl:300-315 shape so
+//     contributions from concurrent threads compose correctly under cell
+//     contention. Read recovers the running mean as
+//     (quantizedSum / (FloatQuantize * sampleCount)).
 //
 // The consumer compiles this header after declaring the buffer bindings
 // (g_HashGridKeys, g_HashGridCells) and the per-frame view of g_FrameCount.
@@ -25,17 +32,44 @@
 // set so atomics and stores resolve to the same physical resource.
 
 // Per-cell payload. Layout matches HashGridCacheConstants::CELL_BYTES (20 B).
+//
+// quantizedRadianceSum holds the per-channel sum of contributions multiplied
+// by HASHGRID_FLOAT_QUANTIZE (1e3, mirroring Capsaicin's
+// kHashGridCache_FloatQuantize at hash_grid_cache.hlsl:32). Each channel is
+// accumulated independently via InterlockedAdd so concurrent inserts at the
+// same cell compose correctly.
 struct HashGridCell
 {
-    float3 radiance;
-    uint   sampleCount;
-    uint   frameLastTouched;
+    uint3 quantizedRadianceSum;
+    uint  sampleCount;
+    uint  frameLastTouched;
 };
 
 // Mirror of HashGridCacheConstants.h on the C++ side. Keep in sync.
-static const uint HASHGRID_CELL_COUNT   = (1u << 20);
-static const uint HASHGRID_PROBE_LENGTH = 4u;
-static const uint HASHGRID_SAMPLE_CAP   = 256u;
+static const uint  HASHGRID_CELL_COUNT       = (1u << 20);
+static const uint  HASHGRID_PROBE_LENGTH     = 4u;
+
+// Per-cell sample cap (write-side). Past the cap, new contributions are
+// dropped — the denoiser's lerp weight (saturate(sampleCount/32) at
+// GPUPathTracerDenoise.comp:73) is already saturated at 1.0, so further
+// writes would only stress the uint32 sum without changing the displayed
+// value. Bounded growth is also necessary to avoid uint32 wraparound in
+// quantizedRadianceSum: with HASHGRID_FLOAT_QUANTIZE=1e3 and the upstream
+// radiance clamp at 1e5 (GPUPathTracerRayGen.hlsl:502), worst-case
+// per-sample quantized value is 1e8 — wraps after ~42 unbounded samples.
+// Capsaicin's reference impl avoids this by using a per-frame scratch
+// buffer + an EMA filter pass that drains and bounds the historical mean
+// (gi1.comp:2160-2217); phase 1 takes the simpler shape with a hard cap.
+static const uint  HASHGRID_SAMPLE_CAP       = 32u;
+
+// Quantization scale for the integer sum. Matches Capsaicin's
+// kHashGridCache_FloatQuantize (gi1/hash_grid_cache.hlsl:32). With
+// HASHGRID_SAMPLE_CAP=32 and the upstream radiance clamp at 1e5, worst
+// case sum per channel is 32 × 1e5 × 1e3 = 3.2e9 — under uint32 max
+// (4.29e9), with single-frame thread contention pushing it close to
+// the limit only for very-bright sun-NEE sample bursts. Precision
+// floor on the recovered mean is 1/1e3 = 0.001 luma.
+static const float HASHGRID_FLOAT_QUANTIZE   = 1e3f;
 
 // Empty-slot sentinel for the key buffer. Zero-initialised memory reads as
 // "empty"; we OR a high bit into every valid hash so a legitimate hash of
@@ -115,14 +149,24 @@ uint HashGridCache_BucketIndex(uint key)
     return (key & ~HASHGRID_KEY_VALID_BIT) % HASHGRID_CELL_COUNT;
 }
 
-// Online running-mean update with sample-cap. Past the cap the update
-// becomes a sliding mean — fresh samples carry weight 1/SAMPLE_CAP
-// indefinitely, so a relit surface drifts toward the new value without
-// explicit invalidation.
-float3 HashGridCache_OnlineMeanUpdate(float3 oldRadiance, uint oldSampleCount, float3 newSample)
+// Quantize a float3 radiance to the integer sum representation. Matches
+// Capsaicin's HashGridCache_QuantizeRadiance (hash_grid_cache.hlsl:300-306).
+uint3 HashGridCache_QuantizeRadiance(float3 radiance)
 {
-    float weight = 1.0 / float(min(oldSampleCount + 1u, HASHGRID_SAMPLE_CAP));
-    return lerp(oldRadiance, newSample, weight);
+    // Negative radiance is not expected at a primary-hit accumulator but
+    // a clamp here prevents underflow into wrap-around uint values.
+    float3 q = max(radiance, 0.0f) * HASHGRID_FLOAT_QUANTIZE;
+    return uint3(uint(round(q.x)), uint(round(q.y)), uint(round(q.z)));
+}
+
+// Recover the running mean from the integer sum. Matches Capsaicin's
+// HashGridCache_RecoverRadiance (hash_grid_cache.hlsl:308-315), but with
+// the per-cell sample count stored separately rather than in the .w
+// component of the radiance vector. Returns 0 for an unwritten cell.
+float3 HashGridCache_DequantizeRadiance(uint3 quantizedSum, uint sampleCount)
+{
+    float invDivisor = 1.0f / max(HASHGRID_FLOAT_QUANTIZE * float(sampleCount), HASHGRID_FLOAT_QUANTIZE);
+    return float3(float(quantizedSum.x), float(quantizedSum.y), float(quantizedSum.z)) * invDivisor;
 }
 
 #endif // HASH_GRID_CACHE_HLSL_TYPES
@@ -178,38 +222,71 @@ uint HashGridCache_InsertOrFind(uint key, uint frameIndex, out bool isNewInsert)
     }
 
     // Probe overflow: evict the oldest cell in the chain. Stomp the key
-    // unconditionally — at this point the slot is a different cell with
-    // staler radiance than ours, and serving its old radiance to the
-    // caller's key would be wrong. The new sample becomes the seed.
-    g_HashGridKeys[oldestSlot] = key;
+    // and zero the stale payload — without the zero, the new key would
+    // inherit the previous occupant's quantizedSum/sampleCount and the
+    // first read after eviction would return the old cell's mean. The
+    // four uint stores below are not atomic with respect to a concurrent
+    // InterlockedAdd at this slot from another thread that observed the
+    // OLD key one instruction earlier, but that race is a frame-bounded
+    // single-sample drop — invisible against the running mean.
+    g_HashGridCells[oldestSlot].quantizedRadianceSum = uint3(0u, 0u, 0u);
+    g_HashGridCells[oldestSlot].sampleCount          = 0u;
+    g_HashGridCells[oldestSlot].frameLastTouched     = frameIndex;
+    g_HashGridKeys[oldestSlot]                       = key;
     isNewInsert = true;
     return oldestSlot;
 }
 
+// Atomic radiance accumulator. Matches Capsaicin's gi1.comp:1971-1975
+// (UpdateMultibounceCells) — InterlockedAdd on each quantized channel +
+// the sample-counter. Concurrent inserts at the same cell compose
+// correctly because each contribution is summed independently.
+//
+// Divergence vs Capsaicin (gi1.comp:2087-2095, hash_grid_cache.hlsl:300-315):
+//   - They store the .w sample count inline in a 4-uint per-cell record;
+//     we keep sampleCount as a named field at byte offset 12 in
+//     HashGridCell. Same atomic semantics.
+//   - They use a per-frame "scratch" buffer (UpdateCellValueBuffer)
+//     cleared every frame and EMA-blended into a persistent ValueBuffer
+//     in a separate kernel (gi1.comp:2160-2217). We fold both into a
+//     single buffer with a write-side sample cap. The deferred filter
+//     pass — paper §2.2.3's "exponential moving average" — is a phase 2
+//     follow-up; without it, the cell's recovered mean is an unweighted
+//     average of the first HASHGRID_SAMPLE_CAP contributions and does
+//     not adapt to relighting.
 void HashGridCache_Insert(float3 posWS, float3 normal, float3 radiance, float cellSize, uint frameIndex)
 {
     uint key = HashGridCache_BuildKey(posWS, normal, cellSize);
     bool isNewInsert;
     uint slot = HashGridCache_InsertOrFind(key, frameIndex, isNewInsert);
 
-    if (isNewInsert)
+    // Drop the contribution once the cell is full. The denoiser is
+    // already saturated at sampleCount/32, so further writes would not
+    // change the displayed value — and would risk wrap-around on the
+    // sum. Race window: two threads can both observe sampleCount = CAP-1
+    // and both proceed; the InterlockedAdd below still composes their
+    // contributions correctly, just allowing sampleCount to exceed CAP
+    // by the per-frame thread count touching this cell. With the upstream
+    // 1e5 radiance clamp and HASHGRID_FLOAT_QUANTIZE=1e3, the resulting
+    // quantizedSum stays under uint32 max for typical contention.
+    if (g_HashGridCells[slot].sampleCount >= HASHGRID_SAMPLE_CAP)
     {
-        g_HashGridCells[slot].radiance         = radiance;
-        g_HashGridCells[slot].sampleCount      = 1u;
         g_HashGridCells[slot].frameLastTouched = frameIndex;
+        return;
     }
-    else
-    {
-        // Race-tolerant update: a concurrent inserter may also be reading
-        // and writing this cell. Without atomics on the float3 we accept
-        // a benign last-writer-wins race; a single dropped update is
-        // invisible against the running mean.
-        HashGridCell cell = g_HashGridCells[slot];
-        float3 updated = HashGridCache_OnlineMeanUpdate(cell.radiance, cell.sampleCount, radiance);
-        g_HashGridCells[slot].radiance         = updated;
-        g_HashGridCells[slot].sampleCount      = min(cell.sampleCount + 1u, HASHGRID_SAMPLE_CAP);
-        g_HashGridCells[slot].frameLastTouched = frameIndex;
-    }
+
+    uint3 q = HashGridCache_QuantizeRadiance(radiance);
+
+    uint dummy;
+    InterlockedAdd(g_HashGridCells[slot].quantizedRadianceSum.x, q.x, dummy);
+    InterlockedAdd(g_HashGridCells[slot].quantizedRadianceSum.y, q.y, dummy);
+    InterlockedAdd(g_HashGridCells[slot].quantizedRadianceSum.z, q.z, dummy);
+    InterlockedAdd(g_HashGridCells[slot].sampleCount,            1u,  dummy);
+
+    // frameLastTouched feeds the eviction tiebreaker; an exact non-atomic
+    // last-writer-wins on a uint is acceptable — concurrent writers in
+    // the same frame all write the same value.
+    g_HashGridCells[slot].frameLastTouched = frameIndex;
 }
 
 bool HashGridCache_Read(float3 posWS, float3 normal, float cellSize, out float3 radiance, out uint sampleCount)
@@ -229,8 +306,8 @@ bool HashGridCache_Read(float3 posWS, float3 normal, float cellSize, out float3 
         if (stored == key)
         {
             HashGridCell cell = g_HashGridCells[slot];
-            radiance    = cell.radiance;
             sampleCount = cell.sampleCount;
+            radiance = HashGridCache_DequantizeRadiance(cell.quantizedRadianceSum, sampleCount);
             return true;
         }
     }
