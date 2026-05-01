@@ -11,11 +11,27 @@ import {
 } from 'naive-ui'
 import { devToggleStore } from '../store/devToggleStore'
 import { connectionStore } from '../store/connectionStore'
+import { useIpc } from '../composables/useIpc'
 
 const message = useMessage()
+const ipc = useIpc()
 
 // devToggleStore self-refreshes on connect and clears on disconnect via its
 // own on('engine-connected') subscription.
+
+// Screenshot is the first dev-action with a deferred result event
+// (SCREENSHOT_SAVED, broadcast by EditorService after the rendering client
+// finishes the save). The toast names the absolute saved path on success,
+// or the failure reason on error — replacing the optimistic
+// "Screenshot triggered" feedback that gave no actionable information.
+ipc.on('SCREENSHOT_SAVED', (payload) => {
+  if (payload && payload.ok) {
+    message.success(`Screenshot saved: ${payload.path}`)
+  } else {
+    const reason = (payload && payload.error) || 'unknown error'
+    message.error(`Screenshot failed: ${reason}`)
+  }
+})
 
 const onToggleChange = (toggle, value) => {
   devToggleStore.setToggle(toggle.name, value)
@@ -23,7 +39,12 @@ const onToggleChange = (toggle, value) => {
 
 const onActionTrigger = (action) => {
   devToggleStore.triggerAction(action.name)
-  message.success(`${action.name} triggered`)
+  // Screenshot's result toast is driven by the SCREENSHOT_SAVED event
+  // above; other actions keep the optimistic-toast path until they grow
+  // their own per-action result events.
+  if (action.name !== 'Screenshot') {
+    message.success(`${action.name} triggered`)
+  }
 }
 </script>
 

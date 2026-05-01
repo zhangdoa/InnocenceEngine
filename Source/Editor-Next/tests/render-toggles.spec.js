@@ -1,6 +1,7 @@
 const { _electron: electron } = require('@playwright/test');
 const { test, expect } = require('@playwright/test');
 const path = require('path');
+const fs = require('fs');
 
 // The engine publishes DevToggleRegistry over IPC and the panel renders
 // a row per toggle / action. GPUPathTracer + Screenshot are the two
@@ -56,11 +57,24 @@ test('render toggles pane lists engine-registered toggles + actions', async () =
     });
     expect(reported, 'engine-reported GPUPathTracer state after set').toBe(true);
 
-    // Action button should produce a toast confirming dispatch.
+    // Screenshot action: the optimistic "Screenshot triggered" toast is
+    // gone — the panel now waits for the engine's SCREENSHOT_SAVED event
+    // (broadcast by EditorService after the rendering client finishes
+    // the save) and shows a result toast naming the absolute saved path.
+    // Engine launches in -dump_frames-style timing so the per-frame save
+    // happens within a couple of frames of the click; allow a generous
+    // window for slow-scene cases.
     await window.click('[data-test="action-btn-Screenshot"]');
-    await window.waitForSelector('.n-message:has-text("Screenshot triggered")', {
-      timeout: 5000,
-    });
+    const successToast = window.locator('.n-message:has-text("Screenshot saved:")');
+    await successToast.waitFor({ timeout: 30000 });
+    const toastText = (await successToast.innerText()).trim();
+    const match = toastText.match(/Screenshot saved:\s+(.+\.(?:png|hdr))\s*$/);
+    expect(match, `toast should name an absolute .png/.hdr path; got: ${toastText}`).not.toBeNull();
+    const savedPath = match[1].trim();
+    expect(
+      fs.existsSync(savedPath),
+      `saved screenshot should exist on disk at ${savedPath}`,
+    ).toBe(true);
   } finally {
     await electronApp.close().catch(() => {});
   }

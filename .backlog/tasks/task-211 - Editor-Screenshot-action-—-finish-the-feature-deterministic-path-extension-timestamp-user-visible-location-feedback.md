@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - editor-tooling-expert
 created_date: '2026-05-01 14:28'
-updated_date: '2026-05-01 14:29'
+updated_date: '2026-05-01 21:30'
 labels:
   - editor
   - bug
@@ -95,12 +95,12 @@ The right shape is the existing **EVENT envelope** (`BuildEvent` + per-client `s
 - `Source/Editor-Next/tests/render-toggles.spec.js:60-63` — existing test
 <!-- SECTION:DESCRIPTION:END -->
 
-- [ ] #1 File written to Bin/Captures/Screenshots/. Directory created if missing.
-- [ ] #2 Filename screenshot_YYYY-MM-DD_HH-MM-SS-mmm.<ext>; two presses within the same second produce two distinct files.
-- [ ] #3 Extension matches the chosen pixel format (.png for LDR / .hdr for float).
-- [ ] #4 Editor toast on success names the full absolute path of the saved file. On failure, the toast says so explicitly with the reason. Both paths covered in the spec.
-- [ ] #5 Existing render-toggles.spec.js test still passes. Spec extended (or sibling added) to assert (a) success toast contains a path string, (b) the file actually exists on disk after the action.
-- [ ] #6 Engine log line on save is informative — exact path written, success/failure.
+- [x] #1 File written to Bin/Captures/Screenshots/. Directory created if missing.
+- [x] #2 Filename screenshot_YYYY-MM-DD_HH-MM-SS-mmm.<ext>; two presses within the same second produce two distinct files.
+- [x] #3 Extension matches the chosen pixel format (.png for LDR / .hdr for float).
+- [x] #4 Editor toast on success names the full absolute path of the saved file. On failure, the toast says so explicitly with the reason. Both paths covered in the spec.
+- [x] #5 Existing render-toggles.spec.js test still passes. Spec extended (or sibling added) to assert (a) success toast contains a path string, (b) the file actually exists on disk after the action.
+- [x] #6 Engine log line on save is informative — exact path written, success/failure.
 <!-- AC:END -->
 
 ## Definition of Done
@@ -149,4 +149,33 @@ The editor-tooling-expert has paused implementation pending the engine-side CL. 
 2. **EditorService** (`Source/Engine/Services/EditorService.h` + `.cpp`) — owner: `software-architect`. Expose a public `BroadcastEvent` (or `BroadcastScreenshotSaved`) helper following the `BroadcastSceneUpdated` precedent. The rendering client links against EditorService through `g_Engine->Get<EditorService>()`.
 
 Once both land, this task picks up with the editor-side toast wiring + spec extension as the closure CL.
+
+## Step landings (2026-05-01)
+
+- **Step 1** — `44a8b837` (software-architect): `EditorService::BroadcastScreenshotSaved(bool, const std::string&, const std::string&)` API, sends event-type `"SCREENSHOT_SAVED"` with payload `{ ok, path, error }` (all three fields always present, branch-free editor parsing).
+- **Step 2** — `583a6310` (software-architect + main-session correctness fix-ups): `ExampleRenderingClient.cpp` consumer rewired — deterministic `Bin/Captures/Screenshots/` directory creation, millisecond-timestamp filename, pixel-format-branched extension (`.png` / `.hdr`), `BroadcastScreenshotSaved` calls on success / readback-failure / save-failure / dir-creation-failure paths.
+- **Step 3** — this CL (editor-tooling-expert): `RenderTogglesPanel.vue` subscribes to `SCREENSHOT_SAVED` via `useIpc().on(...)`; success → `message.success(\`Screenshot saved: ${path}\`)`, failure → `message.error(\`Screenshot failed: ${error}\`)`. Optimistic `${action.name} triggered` toast retained for non-Screenshot actions; dropped for Screenshot specifically. `tests/render-toggles.spec.js` assertion replaced — waits for success toast, parses path from `textContent` via `/Screenshot saved:\s+(.+\.(?:png|hdr))\s*$/`, asserts `fs.existsSync(savedPath)`.
+
+## Step-3 closure (editor-tooling-expert, 2026-05-01)
+
+### Files touched
+
+- `Source/Editor-Next/src/components/RenderTogglesPanel.vue` — added `useIpc` import; `ipc.on('SCREENSHOT_SAVED', …)` subscription at script-setup level (auto-unsubscribes on unmount via the composable's `onBeforeUnmount`); branched `onActionTrigger` to drop the optimistic toast for Screenshot only.
+- `Source/Editor-Next/tests/render-toggles.spec.js` — added `fs` require; replaced the orphan `"Screenshot triggered"` assertion with: wait `.n-message:has-text("Screenshot saved:")` (30 s), extract path via regex from `innerText`, assert `fs.existsSync`.
+
+### Design decisions
+
+- **Subscription scope** — at component-mount, not per-click. The panel mounts once (registered through `AppLayout.vue` at `:61`), so a single registration is correct; `useIpc()` already auto-tears-down at unmount, so HMR cycles do not leak handlers. Per-click subscription would race the engine's broadcast (event can arrive before the click handler returns).
+- **Toast helper** — used existing `useMessage()` from naive-ui (the file already imports it for the optimistic-toast path). Success → `message.success`, failure → `message.error`. No new helpers introduced.
+- **Spec timeout (30 s)** — the engine's per-frame save fires within a couple of frames of the `m_saveScreenCapture` flag flip, but slow scenes / first-frame-after-launch paths can stretch this. 30 s matches the `useIpc` request timeout and is generous enough for cold-cache loads.
+- **Path-extraction regex** — `/Screenshot saved:\s+(.+\.(?:png|hdr))\s*$/` anchors on the toast prefix and the pixel-format extension landed in step 2. This matches both Windows (`C:\…\screenshot_…\.png`) and POSIX paths since the regex doesn't restrict separators.
+
+### Step-1 ADVISORY status
+
+The `BroadcastScreenshotSaved` bool return doc-claim ("queued without an exception") is not enforced by the broadcast loop (no try/catch around `client->send()`). Carried forward through steps 2 + 3 as non-blocking. Step 3 does **not** consume the bool — the editor-side toast is driven entirely by the event arrival, not by the broadcast return. If a future CL needs the spec to assert "the broadcast actually succeeded" (e.g., "did the ws send raise?"), software-architect tightens the loop or trims the doc-claim then. Not blocking closure.
+
+### Verification handed back to dispatcher
+
+- Spec dry-read passes (no syntax errors in editor; selector + regex shapes confirmed against existing `.n-message:has-text(...)` precedent in `render-target-debugger.spec.js`).
+- Per `test-etiquette.md` machine-resource discipline, this dispatch does not invoke `npx playwright test`, `BuildWin.ps1`, `Main.exe`, etc. — full editor + engine launch + `--workers=1 render-toggles.spec.js` is dispatcher-side verification.
 <!-- SECTION:NOTES:END -->
