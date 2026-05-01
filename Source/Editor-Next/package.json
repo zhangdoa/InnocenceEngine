@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "pretest": "vite build",
     "test": "npx playwright test"
   },
   "devDependencies": {
