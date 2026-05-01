@@ -59,6 +59,12 @@ namespace Inno
 		// trip preserved the on-disk state; a clean diff means the
 		// serializer is idempotent for the tested scene.
 		char serializeTest[512] = {};
+		// Auto-test scene override. When non-empty, the example logic
+		// client loads this scene as the initial scene and skips the
+		// default "switch to GISponza at frame 5" auto-test transition.
+		// Lets the headless capture harness drive each scene independently
+		// for the three-scene visual gate (UnitTest, GITestBox, GISponza).
+		char initialScene[512] = {};
 		// Serialize-test exit code, populated by RunSerializeTest at the
 		// end of the save-compare round-trip (0 = pass, 1 = diff detected).
 		// Read from WinMain after Engine::Terminate() returns.

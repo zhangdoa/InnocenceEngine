@@ -378,6 +378,38 @@ InitConfig Engine::ParseInitConfig(const std::string& arg)
 		}
 	}
 
+	// Scene override for the auto-test path. `-scene <relative-path>` makes
+	// the example logic client load this scene as the initial scene and
+	// suppresses the default "switch to GISponza at frame 5" transition,
+	// so each of UnitTest / GITestBox / GISponza can be driven headlessly
+	// for the three-scene visual gate. Whitespace-terminated single token,
+	// matching the other flag-arg conventions in this parser.
+	auto l_sceneArgPos = arg.find("-scene ");
+	if (l_sceneArgPos != std::string::npos)
+	{
+		std::string l_remainder = arg.substr(l_sceneArgPos + 7);
+		auto l_start = l_remainder.find_first_not_of(' ');
+		if (l_start != std::string::npos)
+		{
+			auto l_end = l_remainder.find(' ', l_start);
+			std::string l_path = l_remainder.substr(l_start,
+				l_end == std::string::npos ? std::string::npos : l_end - l_start);
+			if (l_path.size() < sizeof(l_result.initialScene))
+			{
+				std::memcpy(l_result.initialScene, l_path.c_str(), l_path.size() + 1);
+				Log(Success, "Initial scene override: ", l_result.initialScene);
+			}
+			else
+			{
+				Log(Warning, "'-scene' path too long (max ", sizeof(l_result.initialScene) - 1, " chars); ignoring.");
+			}
+		}
+		else
+		{
+			Log(Warning, "'-scene' flag found but no scene path provided. Ignoring.");
+		}
+	}
+
 	auto l_dumpFramesArgPos = arg.find("-dump_frames");
 	if (l_dumpFramesArgPos != std::string::npos)
 	{

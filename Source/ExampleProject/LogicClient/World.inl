@@ -237,13 +237,18 @@ namespace
 	{
 		bool l_result = true;
 
-		// In serialize-test mode, load the target scene directly so the
-		// scene-loaded callback fires once on the right scene.  Otherwise
-		// default to UnitTest for normal engine operation.
+		// Initial-scene selection priority:
+		//   1. -serialize_test target  (test runs save+compare on this scene then exits)
+		//   2. -scene override         (three-scene capture harness picks the scene)
+		//   3. UnitTest default        (normal engine operation)
+		// When (2) is set, Update() also suppresses the default frame-5
+		// auto-switch to GISponza so the chosen scene renders end-to-end.
 		const auto& l_config = g_Engine->getInitConfig();
-		const char* l_initialScene = (l_config.serializeTest[0] != '\0')
-		                           ? l_config.serializeTest
-		                           : "ExampleProject/Scenes/UnitTest.InnoScene";
+		const char* l_initialScene = "ExampleProject/Scenes/UnitTest.InnoScene";
+		if (l_config.serializeTest[0] != '\0')
+			l_initialScene = l_config.serializeTest;
+		else if (l_config.initialScene[0] != '\0')
+			l_initialScene = l_config.initialScene;
 		g_Engine->Get<SceneService>()->Load(l_initialScene);
 
 		  RayTracerConfig l_cfg;
@@ -265,7 +270,13 @@ namespace
 		{
 			m_AutoFrameCount++;
 
-			if (!m_AutoGISceneTriggered && m_AutoFrameCount >= 5)
+			// Default auto-test transition: render the UnitTest startup
+			// scene for a few frames, then swap to GISponza for the rest of
+			// the run. Suppressed when -scene <path> picks a target scene
+			// explicitly — the three-scene capture harness drives each
+			// scene end-to-end via that override.
+			const bool l_sceneOverridden = g_Engine->getInitConfig().initialScene[0] != '\0';
+			if (!l_sceneOverridden && !m_AutoGISceneTriggered && m_AutoFrameCount >= 5)
 			{
 				m_AutoGISceneTriggered = true;
 				g_Engine->Get<SceneService>()->Load("ExampleProject/Scenes/GISponza.InnoScene", true);
