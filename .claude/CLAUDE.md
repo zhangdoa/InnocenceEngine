@@ -3,6 +3,7 @@ Owned by the `ai-expert` agent (hooks, agent manifests, shared disciplines, disp
 ## Subtree map
 
 - `agents/` — agent manifests (one file per role).
+- `commands/` — project-local slash-command prompts (e.g. `/wrap-up`). One markdown file per command; body is the prompt injected when the user invokes it.
 - `disciplines/` — universal disciplines every agent reads before acting.
 - `disciplines/dispatcher/` — main-session-only rules; sub-agents do not need to read these.
 - `state/` — project-state snapshots (direction, remote-sync, engine invariants). Read by the producer at session start. Update in the same CL that lands a directional change.
