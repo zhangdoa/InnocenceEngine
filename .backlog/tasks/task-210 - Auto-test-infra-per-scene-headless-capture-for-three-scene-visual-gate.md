@@ -1,11 +1,11 @@
 ---
 id: TASK-210
 title: 'Auto-test infra: per-scene headless capture for three-scene visual gate'
-status: In Progress
+status: Done
 assignee:
   - test-expert
 created_date: '2026-05-01 14:27'
-updated_date: '2026-05-01 14:41'
+updated_date: '2026-05-01 22:00'
 labels:
   - test-infra
   - rendering
@@ -51,12 +51,12 @@ Option 2 (`-scene <path>` override) over option 1 (per-scene `-test` cases): one
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
+- [x] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
+- [x] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
+- [x] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
+- [x] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
+- [x] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
 
 ## Implementation Notes
@@ -106,4 +106,8 @@ ACs 1-5 (new TestPathTracerThreeScenes.ps1):
 ### Caveat (not verified)
 
 - The script's success-grep for `Auto-test:.*terminating` is the same shape `TestGPUPathTracer.ps1` uses — but neither script verifies that `gpu_output_NNNN.png` is non-zero pixel-content. A scene with a fundamentally broken renderer would produce solid-black PNGs and still grep-PASS. Acceptable for a smoke harness; the layer-1 visual `Read` of a candidate is the consumer's responsibility per visual-validation discipline.
+
+## Closure (producer, 2026-05-01)
+
+Landed at `bf07e7c9` (`feat(test-infra): TASK-210 -scene CLI override + three-scene capture driver`). All six ACs satisfied per the validation transcript above: AC-1..3 (per-scene headless renders), AC-4 (camera_orbit works in all three modes), AC-5 (`Scripts/TestPathTracerThreeScenes.ps1` drives back-to-back), AC-6 (existing `TestGPUPathTracer.ps1` regression PASS). Reviewed by `ci-build-expert` (PASS+ADVISORY, advisories accepted as-is). Out-of-scope deferrals (reload-at-frame hardcoded UnitTest, PNG content validation) documented in commit body, not filed as separate tasks per "don't pile on backlog tasks" guidance.
 <!-- SECTION:NOTES:END -->

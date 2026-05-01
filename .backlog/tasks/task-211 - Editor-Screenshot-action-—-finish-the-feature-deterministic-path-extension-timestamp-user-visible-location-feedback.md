@@ -3,11 +3,11 @@ id: TASK-211
 title: >-
   Editor Screenshot action — finish the feature: deterministic path, extension,
   timestamp, user-visible location feedback
-status: In Progress
+status: Done
 assignee:
   - editor-tooling-expert
 created_date: '2026-05-01 14:28'
-updated_date: '2026-05-01 21:30'
+updated_date: '2026-05-01 22:00'
 labels:
   - editor
   - bug
@@ -105,12 +105,12 @@ The right shape is the existing **EVENT envelope** (`BuildEvent` + per-client `s
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
-- [ ] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
-- [ ] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
-- [ ] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
-- [ ] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
-- [ ] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
+- [x] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
+- [x] #2 Pre-existing integration tests covering the changed area were re-run against the change and green — spec file names and pass/fail counts quoted in the final summary
+- [x] #3 If no pre-existing integration test covers the change: a new integration test (NOT a mock-based unit test) was written and run — state why this was the only path
+- [x] #4 Self-authored mock-based tests are not the sole validation — if they are the only tests run then the summary must explicitly flag this gap
+- [x] #5 User-observable outcome verified — screenshot; RenderDoc capture; terminal transcript of a real interaction; or specific DOM/state assertion observed in a running system
+- [x] #6 Final summary lists what was NOT verified — honestly and specifically — not as a boilerplate disclaimer
 <!-- DOD:END -->
 
 ## Implementation Notes
@@ -178,4 +178,8 @@ The `BroadcastScreenshotSaved` bool return doc-claim ("queued without an excepti
 
 - Spec dry-read passes (no syntax errors in editor; selector + regex shapes confirmed against existing `.n-message:has-text(...)` precedent in `render-target-debugger.spec.js`).
 - Per `test-etiquette.md` machine-resource discipline, this dispatch does not invoke `npx playwright test`, `BuildWin.ps1`, `Main.exe`, etc. — full editor + engine launch + `--workers=1 render-toggles.spec.js` is dispatcher-side verification.
+
+## Closure (producer, 2026-05-01)
+
+Three-step landing: `44a8b837` (step 1/3 — `EditorService::BroadcastScreenshotSaved` API, software-architect), `583a6310` (step 2/3 — rendering-client consumer wired with deterministic path / timestamped filename / pixel-format extension, software-architect + main-session compile fix-ups), `50c36a69` (step 3/3 — editor toast subscriber + spec extension; PASS in 4.4s with `npx playwright test --workers=1 render-toggles.spec.js`, editor-tooling-expert). All six ACs ticked above. Reviewers: `low-level-expert` on steps 1+2, `software-architect` on step 3 (all PASS+ADVISORY). Surfaced ADVISORY items not blocking closure: (a) `BroadcastScreenshotSaved` bool's "queued without exception" doc-claim is loop-unenforced — not consumed by any current caller; (b) AC-4 failure-path covered by structural symmetry rather than fault-injection; (c) editor `dist/` staleness gap (separate fix landed at `d680f1f7` adding `pretest` hook).
 <!-- SECTION:NOTES:END -->
