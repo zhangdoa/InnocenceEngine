@@ -230,6 +230,33 @@ void EditorService::BroadcastSceneUpdated()
 	Log(Verbose, "EditorService: Broadcast SCENE_UPDATED event.");
 }
 
+// SCREENSHOT_SAVED payload schema (consumed by Source/Editor-Next/src/composables/useIpc.js):
+//   { "ok": <bool>, "path": <string>, "error": <string> }
+// Both "path" and "error" are always present so the editor doesn't need to
+// branch on key existence; one of them is empty depending on "ok". On
+// success: "path" is the absolute path AssetService::Save resolved to,
+// "error" is "". On failure: "path" is "" if the save aborted before
+// resolving a destination (or carries the intended path if the failure
+// happened during write), "error" carries the failure reason.
+bool EditorService::BroadcastScreenshotSaved(bool in_Ok, const std::string& in_AbsolutePath, const std::string& in_ErrorReason)
+{
+	if (!m_Server)
+	{
+		Log(Warning, "EditorService: BroadcastScreenshotSaved skipped — WS server is not running (ok=", in_Ok, ", path=\"", in_AbsolutePath.c_str(), "\", error=\"", in_ErrorReason.c_str(), "\").");
+		return false;
+	}
+	auto l_server = GetServer(m_Server);
+	json l_payload;
+	l_payload["ok"]    = in_Ok;
+	l_payload["path"]  = in_AbsolutePath;
+	l_payload["error"] = in_ErrorReason;
+	const auto l_msg = BuildEvent("SCREENSHOT_SAVED", std::move(l_payload)).dump();
+	for (auto&& client : l_server->getClients())
+		client->send(l_msg);
+	Log(Verbose, "EditorService: Broadcast SCREENSHOT_SAVED event (ok=", in_Ok, ").");
+	return true;
+}
+
 static void RequireFields(const json& payload, std::initializer_list<const char*> fields)
 {
 	for (auto* f : fields)

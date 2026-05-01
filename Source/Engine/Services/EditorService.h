@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace Inno
 {
@@ -25,6 +26,16 @@ namespace Inno
 		bool Terminate() override;
 
 		ObjectStatus GetStatus() override;
+
+		// Broadcasts a SCREENSHOT_SAVED event to every connected editor client.
+		// Called by the rendering client after AssetService::Save returns, so
+		// the editor toast can name the absolute path on success or the
+		// failure reason on error (TASK-211 AC-4). Thread-safety: caller-side;
+		// matches BroadcastSceneUpdated's contract (the underlying ixwebsocket
+		// send is invoked from arbitrary threads in the existing handler path).
+		// Returns true iff the WS server is up and the event was queued to all
+		// currently-connected clients without an exception.
+		bool BroadcastScreenshotSaved(bool in_Ok, const std::string& in_AbsolutePath, const std::string& in_ErrorReason);
 
 	private:
 		void RegisterBuiltinHandlers();
