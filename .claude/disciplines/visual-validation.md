@@ -45,6 +45,10 @@ For path-tracer denoising, radiance-cache filtering, accumulation, or any pass w
 - Candidate: cache ON (or denoiser ON, or feature live), low SPP, **same** camera, **same** scene, **same** accumulation count, **same** dump frame.
 - Capture flags currently shipping (see `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp`): `-total_frames N` for the run length, `-dump_frames START-END` for the per-frame PNG sequence used to feed layer 1 and layer 2.
 
+**Three-scene minimum.** Every rendering-output CL captures in all three: unit-test scene, GI test box, GI Sponza. Not "pick one"; not "Sponza is enough"; not "the implementer chooses based on what the change touches." Different scenes expose different failure modes — sharp geometry edges, thin occluders, large flat surfaces, complex BRDFs — and one-scene closure protocols are how visible regressions ship past numeric-green ACs. The dispatch brief names the three scenes explicitly, never "appropriate scenes." Layer-2 visual evidence in the closure record (Implementation Note + commit body) must include captures from all three scenes; missing any scene is a layer-2-incompleteness BLOCKED-tier finding for the reviewer. Layer-1 *Visual Read assessment* applies per scene per angle per sampled frame, not collapsed across scenes.
+
+Recorded incident: the TASK-77.1 phase-1 / phase-1.5 chain shipped a ring-artifact regression that was invisible in the GISponza fixed-camera capture used for closure.
+
 The "no new infra" constraint is load-bearing: the discipline cannot be added on top of work that is itself blocked on a tooling rebuild. Use the toggle / bypass pattern below (3b) to produce the reference from the same binary that produced the candidate.
 
 #### 3b — Reference-via-bypass toggle pattern

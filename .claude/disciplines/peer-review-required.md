@@ -17,10 +17,22 @@ If unsure, default to required. Skips are opted into in writing.
 The reviewer is always a fresh agent dispatch — never main-session Claude, never the implementer. Choose in this order:
 
 1. **Peer in the same role family** (default) — another `graphics-api-expert` reviewing `graphics-api-expert` work, etc. Catches domain-specific issues a generalist misses.
-2. **`software-architect`** — when the implementer's role has no peer (sole subtree owner) or the CL crosses two role-family boundaries.
+2. **`software-architect`** — when the implementer's role has no peer (sole subtree owner), the CL crosses two role-family boundaries, or the same-family reviewer has recently let substantive issues slip past (see "Substance over trivials" below).
 3. **`superpowers:code-reviewer`** — fallback for CLs that map to no role family (rare).
 
 The reviewer brief contains: the diff, the original implementation brief, relevant disciplines, anchored invariants. It does NOT contain the implementer's reasoning trace.
+
+## Substance over trivials
+
+Peer review only justifies its cost when it catches the issues that would actually have blocked closure had a senior owner looked at the diff. A review that surfaces only trivials (naming, comment density, formatting) while letting through obvious functional regressions — visible artifacts, wrong-axis metrics, structurally-blind closure evidence — is performative.
+
+Brief contract for the reviewer:
+
+1. The brief must include the *terminal-goal* check, not just diff hygiene. For a rendering CL: "did you `Read` the candidate frame; did the closure metric measure the actual quality axis or a proxy?" For a serialization CL: "did the round-trip test exercise the new code path?" — the reviewer's check matches the CL's terminal goal, not its diff shape.
+2. If the change-class implies a layer-1 *Visual Read assessment* (per `visual-validation.md` §1), the reviewer must confirm the block exists in the closure record AND independently `Read` the candidate frame to corroborate or dispute the implementer's verdict.
+3. A trivial-only review report is itself a finding. The dispatcher surfaces it to the user as a process miss, does not nod through, and escalates the next review on similar work to a cross-domain reviewer (`software-architect`) until the same-family reviewer demonstrates substance-catching on the class.
+
+Recorded incident: phase-1 of TASK-77.1 closed past peer review with ring-like artifacts and a stddev-only AC; the reviewer either did not run the candidate visually or did not push back on the proxy metric. The user's framing: "the review does not make sense if it can't catch anything obvious but just trivials."
 
 ## Verdict tiers
 

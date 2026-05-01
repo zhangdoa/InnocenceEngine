@@ -15,6 +15,10 @@
  *                              sweep dirty files spanning multiple agent-
  *                              owned subtrees (TASK-196 / 2026-04-28
  *                              cross-agent collision incident).
+ *   4. no-auto-memory        — blocks Write/Edit/MultiEdit/NotebookEdit
+ *                              targeting the Claude default auto-memory
+ *                              directory. The block message routes to the
+ *                              new venues so a future Claude does not stall.
  *
  * Each gate exports `run(input)` returning `{ ok: true }` or
  * `{ ok: false, block: () => never-returns }`. The `block` callback
@@ -27,6 +31,7 @@ const GATES = [
   require('./gates/producer-brief'),
   require('./gates/agent-dispatch'),
   require('./gates/cross-subtree-stash'),
+  require('./gates/no-auto-memory'),
 ]
 
 let raw = ''

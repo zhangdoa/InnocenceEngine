@@ -48,6 +48,41 @@ Compliance is structurally enforced by `.claude/hooks/gates/closure-staleness.js
 
 Symmetric to the `closure-evidence` rule inside `test-run.js`: closure-evidence catches "claimed Done with no test"; closure-staleness catches the upstream half — "wrote code citing TASK-N without closing it."
 
+#### Closure-evidence is main-session-only
+
+The closure-evidence half of `test-run.js` parses the *main-session* bash transcript for qualifying integration-test invocations. Sub-agent transcripts are isolated; a test that ran inside an implementer or peer-reviewer dispatch is invisible to the gate. Before attempting a closing commit on any task whose scope is integration-test-relevant (engine, editor, rendering, shaders), the dispatcher pre-runs the relevant test command in main-session bash:
+
+- `cmake --build Build --config RelWithDebInfo --target Main` then `Bin/RelWithDebInfo/Main.exe -total_frames N` — engine work.
+- `cd Source/Editor-Next && npx playwright test tests/<spec>.spec.js` — editor work.
+- `Bin/RelWithDebInfo/RenderTest.exe -test <name>` — rendering pipeline work.
+
+If the work was already validated by the sub-agent and re-running is genuinely redundant (hook-internal change validated by unit tests; backlog-only docs commit), use `[skip-test-gate]` with explicit rationale. Under parallel dispatch a pre-run validates the *combined* worktree state, which is useful (catches drift across agents) but means the test exercises something the implementer did not see directly.
+
+The intent: zero-trust evidence. Sub-agent claims of "tests passed" are not auditable in `git log`; main-session transcript invocations are.
+
+### Don't pile on backlog tasks
+
+The backlog is the cross-session AC and closure ledger, not a dump for every observed rough edge. Every entry has a cost — read, prioritise, dispatch, sometimes re-read across sessions. A 200-task backlog where 50 are hygiene noise is worse than a 150-task backlog of real work.
+
+When tempted to file a task for an observed issue, ask:
+
+- Is this blocking the user's stated terminal goal?
+- Would I do this work today if dispatched?
+
+If "no" to both, do not file. Note it inline (closure note, commit message, or just keep working) and move on. For the same noise hitting multiple sessions: only escalate to a task once it actually *cost* the user something — a build failure, a real bisect, a wrong diagnosis. Surface-level annoyance is not escalation-grade.
+
+The bar for filing: would the user, looking at this task name in a backlog list six weeks from now, want it there or want it culled? If the answer is "cull," do not file.
+
+What to do instead with reflexive task ideas:
+
+1. Commit-message footer: "Noted during this work: clangd shows N unused-includes; not addressed."
+2. Closure note in the task being closed: "Adjacent rough edge: X. Skipping unless it bites."
+3. Verbal mention to the user; let them decide whether it is task-worthy.
+
+Sequential beats parallel for the next session: pick one task, finish it, then pick the next. Three-agents-in-parallel on independent tasks creates orthogonality risk (cross-subtree stash collisions, divergent worktree state) and exceeds the user's preferred working cadence.
+
+This is the complement of `surface-dont-chase.md`: that one says "do not fold discoveries into the current CL"; this one says "do not file every discovery as a separate task either." Worthy discoveries get filed; reflexive ones get noted inline.
+
 ### MCP reference (when available)
 
 The Backlog.md MCP server, when connected, exposes detailed workflow guides at `backlog://workflow/overview` (or `backlog.get_backlog_instructions()`) covering the decision framework for task creation, search-first-to-avoid-duplicates, and finalisation checklists. If the MCP is disconnected, the rules above still hold; task files are plain markdown and editable directly.

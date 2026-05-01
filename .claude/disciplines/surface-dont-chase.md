@@ -13,7 +13,7 @@ The rule is about **bounded execution per CL** and **clean phase boundaries**, n
 ## What this is not
 
 - **Not a ban on follow-up work.** Worthy discoveries get filed. The discipline governs *when* — after the current CL closes, not folded into it.
-- **Not a ban on filing tasks.** Filing is the correct outcome for worthy discoveries. The complementary rule is `feedback_dont_pile_on_backlog_tasks` (auto-memory): don't pile noise. The two compose: only worthy discoveries get filed; worthy discoveries get filed *separately*, not chased.
+- **Not a ban on filing tasks.** Filing is the correct outcome for worthy discoveries. The complementary rule lives in `backlog-workflow.md` § "Don't pile on backlog tasks": do not pile noise. The two compose — only worthy discoveries get filed; worthy discoveries get filed *separately*, not chased.
 - **Not the same as scope creep within an in-flight task's ACs.** Genuine in-scope ACs append to the current task per `backlog-workflow.md` § anti-patterns. The judgement is whether the discovery serves the *original* ACs or is its own work.
 
 ## Recorded incident
