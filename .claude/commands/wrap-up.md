@@ -51,9 +51,9 @@ Reusable rules that govern *main-session itself*, not the sub-agents it dispatch
 For each:
 
 - Is this a new dispatcher rule, or an extension of an existing one in `disciplines/dispatcher/`?
-- Cite the session incident (commit SHA or transcript moment) so the recorded incident in the discipline file is anchored to evidence, not paraphrase.
+- Phrase the rule in abstract terms — readable cold by a future agent with no memory of the incident that prompted it. Disciplines have no human-memory continuity; SHA / transcript citations are noise to the next reader. State the rule, the failure mode it prevents, and how to apply.
 
-Output per finding: target file under `disciplines/dispatcher/`, one-sentence rule, incident anchor.
+Output per finding: target file under `disciplines/dispatcher/`, one-sentence rule.
 
 ## CL plan output shape
 
