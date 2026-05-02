@@ -41,10 +41,23 @@ namespace Inno
 		// for K=3 consecutive frames (no UpdateRaytracingInstances rebuild),
 		// and (c) SceneService is not loading. Pure read of state — no work
 		// done, no timer/sleep, signal-driven.
-		// Read-only this CL: nothing consumes the result yet; the first frame
-		// the predicate goes true, IsSteadyState logs a one-shot Verbose
-		// marker. CL B/C/D consume the marker / predicate.
+		// Mutates internal rolling state (K-window counter, latch flags) — call
+		// from exactly one place per frame; the dispatch site is FMS::Update().
 		bool IsSteadyState();
+
+		// TASK-213 CL B: latch + steady-state-relative frame counter consumed
+		// by capture-mode determinism.
+		// HasReachedSteadyState(): true iff IsSteadyState() has gone true at
+		//   least once this session. Latches once-true-stays-true (does not
+		//   clear on TLAS-instance flap-back). Pure read, safe to call from
+		//   anywhere.
+		// GetSteadyStateRelativeFrameCount(): 0 until the first-true latch,
+		//   then advances 1-per-frame from that point. Used as the dump-frame
+		//   index (`gpu_output_NNNN.png`) and as the PT-RNG seed source in
+		//   capture mode so both are deterministic per scene across launches
+		//   regardless of variable load-frame counts.
+		bool HasReachedSteadyState() const { return m_SteadyStateMarkerLogged; }
+		uint32_t GetSteadyStateRelativeFrameCount() const;
 
 		// Callbacks from Engine
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
@@ -143,6 +156,12 @@ namespace Inno
 		// missing the steady-state marker is loud, not silent. The script-
 		// level -total_frames cap remains the hard-stop.
 		bool m_SteadyStateTimeoutLogged = false;
+		// TASK-213 CL B: m_FrameCountSinceLaunch value at the frame the marker
+		// first latched. GetSteadyStateRelativeFrameCount() reads
+		// m_FrameCountSinceLaunch - m_FirstSteadyStateFrame; SIZE_MAX-equivalent
+		// sentinel (UINT32_MAX) means "not yet latched", which the accessor maps
+		// to 0.
+		uint32_t m_FirstSteadyStateFrame = UINT32_MAX;
 
 	private:
 		bool InitializeSwapChainRenderPassComponent();

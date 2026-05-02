@@ -67,6 +67,7 @@ Each CL surfaces with three-scene captures and follows the visual-inspection reg
 - AC-4: Zero `TLAS rebuild:` log lines in [DumpStart, DumpEnd] window for any scene.
 - AC-5: `Auto-test: steady state reached at frame=N` logged once per scene; script fails if absent.
 - AC-6: Existing `TestGPUPathTracer.ps1` (default async-switch path) continues to PASS — steady-state gate handles late-binding load too.
+- AC-7 (CL D): GISponza toggle 0 frames in the [25,26]-black-window must render real content (not deterministic-black). Root cause: K=3 plateau latches on transient instance-count walk `85→86→87→94`. Fix path: either (a) script-side flap-back-aware dump shifting (consume `Auto-test: steady state lost at frame=N` log markers and shift dump start past max-flap-back), or (b) per-scene K override. CL D author chooses; document in CL D's Implementation Note. Evidence from CL B: `Build/captures/TASK-213-CL-B/{run1,run2}/toggle0/gisponza/gpu_output_002{5,6}.png` are 36970-byte uniform-black PNGs across both runs.
 
 ## Out of scope
 
@@ -138,6 +139,77 @@ All three log lines have `deferredQueueEmpty=1 tlasStableFrames=3 isLoading=0`. 
 **Three-scene script run:** `Scripts/TestPathTracerThreeScenes.ps1 -Frames 60 -DumpStart 30 -DumpEnd 30 -RunTag TASK-213-CL-A-steady-state-marker` → `OVERALL: PASS`. Per-scene `PASS [unittest]`, `PASS [gitestbox]`, `PASS [gisponza]`. AC-6 (`TestGPUPathTracer.ps1`-style three-scene capture continues to PASS) preliminarily evidenced, though task scope says full closure on AC-1..AC-6 is CL B/C/D's job.
 
 **Reviewer:** test-expert peer (per `peer-review-required.md`'s reviewer-selection rule). Surface-back only; no commit this CL.
+
+### CL B — Gate dump counting on steady state + reroute PT-RNG seed in capture mode — surfaced 2026-05-02
+
+**Files touched:**
+- `Source/Engine/Services/FrameManagementService.h` — added `HasReachedSteadyState()` + `GetSteadyStateRelativeFrameCount()` accessors and the `m_FirstSteadyStateFrame` member.
+- `Source/Engine/Services/Common/FrameManagementServiceImpl.cpp` — snapshot `m_FirstSteadyStateFrame = m_FrameCountSinceLaunch.load()` at the latch instant; implement `GetSteadyStateRelativeFrameCount()` (returns 0 until latch, then `FCSL - m_FirstSteadyStateFrame`).
+- `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp:1130` — gated `m_autoCaptureFrameCount++` on `HasReachedSteadyState()`. No flap-back reset (per CL A reviewer carry-forward).
+- `Source/Engine/Services/PerFrameDataService.cpp:133` — in capture mode (`getInitConfig().totalFrames > 0`) the `frameIndex` field of the per-frame CB is sourced from `GetSteadyStateRelativeFrameCount()`; interactive mode keeps `GetFrameCountSinceLaunch()`. The downstream TAA jitter and `radianceCacheHaltonJitter` both pull from the same `frameIndex`, so they automatically inherit the steady-state-relative seed in capture mode.
+
+**Build:** RelWithDebInfo clean (Main.exe + RenderTest.exe). Pre-existing `MathHelper.h` C4003 noise unchanged; no new warnings.
+
+**Same-binary repeat MAE matrix** (`-Frames 60 -DumpStart 25 -DumpEnd 29`, 5 dump frames per scene per toggle per run, 30 frame pairs total):
+
+| scene     | toggle 0 (cache OFF) MAE per frame [25,26,27,28,29] | toggle 1 (cache ON) MAE per frame [25,26,27,28,29] |
+|-----------|-----------------------------------------------------|----------------------------------------------------|
+| unittest  | 0, 0, 0, 0, 0                                        | 0, 0, 0, 0, 0                                       |
+| gitestbox | 0, 0, 0, 0, 0                                        | 0, 0, 0, 0, 0                                       |
+| gisponza  | 0, 0, 3.28e-6, 5.68e-6, **7.62e-4**                  | 0, 0, 0, 0, 0                                       |
+
+All 30 same-binary repeat-MAE values are below the 0.003 acceptance threshold. **AC-1 PASS** for the 12-pair / 30-frame-pair interpretation. Toggle 1 is bit-identical across the entire dump window; toggle 0 has small (<8e-4) residual divergence on GISponza frames 27-29 attributable to TLAS-rebuild flap-back during the dump window (see surprise 1 below).
+
+**Toggle 0 vs toggle 1 same-camera A/B MAE** (run1, frame 25 / frame 29):
+- unittest: 3.16e-3 / 3.15e-3
+- gitestbox: 6.85e-2 / 6.27e-2
+- gisponza:  3.61e-1 / 3.28e-1
+
+Toggle 1 is materially different from toggle 0 (cache contribution clearly visible), as expected.
+
+**GISponza toggle 0 black-frame status: PERSISTENT, partially.** Toggle 0 GISponza dump frames 25 and 26 are uniform-black PNGs (36970 bytes each, `Read`-confirmed visually). Frames 27-29 render correctly. **The steady-state-gating reduces but does not fully eliminate the GISponza black-frame issue on the toggle-off side** — see surprise 1.
+
+Toggle 1 GISponza dump frames 25-29 all render correctly (atrium curtains, columns, floor visible across the entire window).
+
+**Visual Read assessment** (per `visual-validation.md` layer 1):
+- *unittest, toggle 0/1 frame 0029*: row of PBR material spheres on a flat ground plane, blue-grey sky gradient. Clean, no rings, no NaN, no obvious regression vs. CL A baseline. Toggle 0 and toggle 1 both correct and visually similar (small albedo / shading deltas consistent with cache contribution).
+- *gitestbox, toggle 0/1 frame 0029*: Cornell-box-style red/green/grey walls with coloured spots, light-bleed visible. Clean, no artifacts. Toggle 1 has slightly different colour mixing (cache contribution).
+- *gisponza, toggle 1 frames 0025/0029*: full Sponza atrium with red/orange curtains, fluted columns, marble floor, heavy PT noise (correct for low-SPP). Clean, no rings, no NaN clipping. Improvement vs. toggle 0 frames 25-26 (which are black).
+- *gisponza, toggle 0 frames 0025-0026*: BLACK. Toggle 0 frame 0029: dark Sponza atrium, curtains visible, much noisier than toggle 1 (expected — no cache convergence).
+
+**Verdict: improvement** (CL B fixes the determinism it was scoped to fix; the residual GISponza toggle-0 black-frame surface is a separate root cause flagged below).
+
+**Surprises / advisories surfaced:**
+
+1. **TLAS rebuild flap-back during the dump window — toggle 0 only.** The CL A flap-back log (`Auto-test: steady state lost at frame=N`) fires multiple times in toggle-0 GISponza runs:
+   - run1: lost at FCSL=10, FCSL=29, FCSL=32 (instance-count walk 85→86→87→94)
+   - run2: lost at FCSL=23, FCSL=32 (different timing, same end-state)
+
+   The K=3 latch is ONCE-TRUE-STAYS-TRUE so the dump-frame counter is stable, BUT the engine itself is still under TLAS reconstruction during dump frames 25-26 (FCSL 31-32). This produces uniform-black readbacks. Same-binary repeats produce the SAME black PNGs (MAE=0 on frames 25-26), so AC-1 is met — the determinism fix is correct; the captures are just visually unusable in the [25,26] window for GISponza-toggle-0.
+
+   **Toggle 1 latches with `instanceCount=94` immediately at FCSL=5 with NO flap-back logs**, suggesting the cache-on path forces a different deferred-init schedule (possibly more eager mesh activation triggered by the cache-bind fence). Toggle 1 captures are clean across the entire window.
+
+   This is the design pass's residual concern about K=3 vs the "frame=0/1/2/16/30" historical rebuild pattern. K=3 is correct for the latch trigger; the issue is that subsequent (post-latch) rebuilds fire INSIDE the dump window. **Recommend CL D widen K, or have CL D's script consume the flap-back log and shift the dump start to "first-true-frame + max(observed-flap-back-frame) + N" rather than literal frame=25.**
+
+2. **GISponza toggle 0 instanceCount at latch differs from CL A.** CL A reported gisponza first-true at FCSL=7 with instanceCount=94. CL B's toggle 0 binary observes first-true at FCSL=6 with instanceCount=85 (then walks 85→86→87→94). Toggle 1 observes first-true at FCSL=5 with instanceCount=94. Three different runs, three different latch values. The K=3 stability check is firing on ANY 3-frame plateau — including transient plateaus mid-walk. **Recommend CL D add a "instance-count not below historical max" check on the latch condition, or consume the flap-back log and re-arm the latch.**
+
+3. **PT-RNG seed change rippled correctly.** Toggle 1 same-binary repeats produce bit-identical output across the entire dump window (15 frames, all MAE=0), confirming the seed-source change to `GetSteadyStateRelativeFrameCount()` is working as designed and producing deterministic noise patterns. R3 (PT-seed-change ripples) is mitigated — candidate-vs-candidate comparison is internal to this CL and matches.
+
+4. **Toggle file reversion noted.** To produce the toggle-1 captures, this CL temporarily flipped `PT_HASH_GRID_CACHE_ENABLED` 0→1 in both `HashGridCacheConstants.h:30` and `GPUPathTracerRayGen.hlsl:34`, then reverted them before surfacing back. The four CL B files modified for this surface-back are exactly:
+   - `Source/Engine/Services/FrameManagementService.h`
+   - `Source/Engine/Services/Common/FrameManagementServiceImpl.cpp`
+   - `Source/Engine/Services/PerFrameDataService.cpp`
+   - `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp`
+
+   `git diff Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` and `git diff Source/ExampleProject/RenderingClient/HashGridCacheConstants.h` are clean.
+
+**R5 mitigation (unknown within-binary nondeterminism):** All same-binary repeats produced MAE < 0.003 (most are exactly 0). No additional within-binary nondeterminism source surfaced. **R5 is not triggered**; the captures-not-matching scenario the design pass flagged as a surface-back-without-fix did not occur.
+
+**R3 mitigation (PT-seed change ripples):** Confirmed via candidate-vs-candidate same-binary repeats (toggle 1: bit-identical, toggle 0: <8e-4 residual on GISponza late frames driven by TLAS flap-back, not by RNG drift).
+
+**Capture archive:** `Build/captures/TASK-213-CL-B/{run1,run2}/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_{0025..0029}.png` (60 PNGs total) plus per-scene `engine.log` files.
+
+**Reviewer:** test-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should independently `Read` at minimum: GISponza toggle 0 frames 25 and 29 from both runs (verify the black-frame timing and the late-frame MAE), and GISponza toggle 1 frames 25 and 29 (verify visual correctness). Then verify the per-pair MAE numbers above with their own `magick compare` runs. Surface-back; no commit this CL.
 
 ## Definition of Done
 <!-- DOD:BEGIN -->

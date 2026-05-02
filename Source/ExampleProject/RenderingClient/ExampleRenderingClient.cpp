@@ -1127,7 +1127,17 @@ namespace Inno
 		// trigger's conditional; moved out so the `-dump_frames` path can
 		// share it. Runs that don't use either feature increment the
 		// counter harmlessly — nothing else reads it.
-		m_autoCaptureFrameCount++;
+		// TASK-213 CL B: gated on FrameManagementService's steady-state latch
+		// so the counter is steady-state-relative, not absolute. Frozen at 0
+		// until IsSteadyState() first goes true; from that frame on, advances
+		// 1-per-rendered-frame. Cross-launch the load-frame count varies
+		// (deferred-init drain timing) so the absolute counter at the dump
+		// frame would differ; the latch gates that variability out. Flap-back
+		// (TLAS rebuild after first-true, e.g. GISponza frame=16 / 30) does
+		// NOT reset the counter — once accumulation has begun, resetting would
+		// corrupt the running mean. See CL A's reviewer carry-forward.
+		if (g_Engine->Get<FrameManagementService>()->HasReachedSteadyState())
+			m_autoCaptureFrameCount++;
 
 		// Frame-sequence dump for temporal validation. When
 		// `-dump_frames START-END` is set, write `gpu_output_NNNN.png` for

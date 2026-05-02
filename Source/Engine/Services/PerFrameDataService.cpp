@@ -130,7 +130,20 @@ bool PerFrameDataServiceImpl::UpdatePerFrameConstantBuffer()
 	auto l_p = l_camera->m_ProjectionMatrix;
 
 	PerFrameConstantBuffer l_perFrameCB = {};
-	l_perFrameCB.frameIndex = g_Engine->Get<FrameManagementService>()->GetFrameCountSinceLaunch();
+	// TASK-213 CL B: in capture mode (-total_frames > 0), seed the PT RNG
+	// from the steady-state-relative frame count rather than the absolute
+	// frame-count-since-launch. Cross-launch the absolute counter varies with
+	// deferred-init drain timing (load frames bleed into FCSL); the steady-
+	// state-relative counter is signal-driven (frozen at 0 until scene fully
+	// ready, then 1-per-rendered-frame), so the seed at the dump frame is
+	// reproducible per scene. Interactive runtime keeps the original absolute
+	// counter — the change is scoped to capture mode to avoid rippling RNG
+	// patterns into editor / play sessions.
+	auto l_frameMgmt = g_Engine->Get<FrameManagementService>();
+	const bool l_isCaptureMode = g_Engine->getInitConfig().totalFrames > 0;
+	l_perFrameCB.frameIndex = l_isCaptureMode
+		? l_frameMgmt->GetSteadyStateRelativeFrameCount()
+		: l_frameMgmt->GetFrameCountSinceLaunch();
 	l_perFrameCB.modelCount = static_cast<uint32_t>(g_Engine->Get<DrawCallService>()->GetGPUModelData().size());
 	l_perFrameCB.p_original = l_p;
 	l_perFrameCB.p_jittered = l_p;

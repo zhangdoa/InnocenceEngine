@@ -332,6 +332,12 @@ bool FrameManagementService::IsSteadyState()
 	if (l_steadyState && !m_SteadyStateMarkerLogged)
 	{
 		m_SteadyStateMarkerLogged = true;
+		// TASK-213 CL B: snapshot the absolute frame count at the latch instant
+		// so GetSteadyStateRelativeFrameCount() can compute the steady-state-
+		// relative offset. Set once, never reset (flap-back leaves this stable
+		// per CL A's reviewer carry-forward — the running mean must not be
+		// invalidated by a late TLAS rebuild).
+		m_FirstSteadyStateFrame = m_FrameCountSinceLaunch.load();
 		Log(Verbose, "Auto-test: steady state reached at frame=", m_FrameCountSinceLaunch.load(),
 			" deferredQueueEmpty=", l_deferredQueueEmpty,
 			" tlasStableFrames=", m_TLASStableFrameCount,
@@ -355,6 +361,20 @@ bool FrameManagementService::IsSteadyState()
 	}
 
 	return l_steadyState;
+}
+
+// TASK-213 CL B: steady-state-relative frame count for capture-mode
+// determinism. Returns 0 until the steady-state marker first latches, then
+// returns m_FrameCountSinceLaunch - m_FirstSteadyStateFrame. Both the dump-
+// frame filename (`gpu_output_NNNN.png`) and the PT-RNG seed in capture mode
+// read from this so the value at the dump frame is signal-driven (not
+// load-frame-count driven) and reproducible across same-binary launches.
+uint32_t FrameManagementService::GetSteadyStateRelativeFrameCount() const
+{
+	if (m_FirstSteadyStateFrame == UINT32_MAX)
+		return 0u;
+	const uint32_t l_now = m_FrameCountSinceLaunch.load();
+	return l_now >= m_FirstSteadyStateFrame ? (l_now - m_FirstSteadyStateFrame) : 0u;
 }
 
 void FrameManagementService::SetUploadHeapPreparationCallback(std::function<bool()>&& callback)
