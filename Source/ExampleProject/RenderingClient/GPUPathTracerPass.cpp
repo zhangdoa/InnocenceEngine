@@ -68,32 +68,48 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	//                 u1=HashBuffer, u2=DecayTileBuffer,
 	//                 u3=UpdateCellValueBuffer, u4=ValueBuffer
 	//
-	// D1-reversal chain — binding-count invariant.
-	//   This CL (A): plumbing only. UpdateCellValueIndirectBuffer and
-	//                ValueIndirectBuffer are allocated and cleared but
-	//                NOT bound to the raygen — l_cacheBindingCount stays
-	//                at 5 (the existing direct pair: b3 + u1..u4).
-	//   CL B: integrator secondary-bounce write switches from the
-	//         single-buffer collapse to the indirect scratch UAV →
-	//         l_cacheBindingCount becomes 6 (adds u5).
-	//   CL C: UpdateTiles reads UpdateCellValueIndirectBuffer and writes
-	//         ValueIndirectBuffer (separate pass, not raygen).
+	// D1-reversal chain — raygen binding-count invariant. The path-tracer
+	// raygen here is one of three CL-local binding-count surfaces; the
+	// other two are the UpdateTiles and MipCascadeBuild compute passes.
+	// This comment block tracks raygen's count only — those passes own
+	// their own progression.
+	//
+	//   CL A (landed `b6058cdc`): plumbing only. UpdateCellValueIndirectBuffer
+	//                and ValueIndirectBuffer allocated and cleared but
+	//                NOT bound anywhere — raygen count = 5, UpdateTiles
+	//                count = 4 (1 CB + 3 UAVs), MipCascadeBuild count = 3
+	//                (1 CB + 2 UAVs).
+	//   CL B (this CL): UpdateTiles + MipCascadeBuild dual resolve. Both
+	//                kernels grow by the indirect-pair UAVs (UpdateTiles
+	//                adds u3+u4 → count = 6 = 1 CB + 5 UAVs; MipCascadeBuild
+	//                adds u2 → count = 4 = 1 CB + 3 UAVs). The indirect
+	//                scratch is still zero (no integrator writer yet) so
+	//                both kernels run their indirect arms on zero data —
+	//                runtime no-op. **Raygen count UNCHANGED at 5** —
+	//                raygen does not bind the new pair this CL.
+	//   CL C: integrator secondary-bounce write splits — direct contribution
+	//         stays in UpdateCellValueBuffer, multi-bounce contribution
+	//         moves to UpdateCellValueIndirectBuffer → raygen count
+	//         becomes 6 (adds u5).
 	//   CL D: Site-3 read in raygen pulls ValueIndirectBuffer for the
-	//         indirect-lobe carry-back → l_cacheBindingCount becomes 7
-	//         (adds u6).
-	//   CL E: cleanup of the D1 single-buffer collapse helpers.
-	// The static_assert below is the loud-fail surface for the
-	// HLSL/C++ flag-pair invariant: if l_cacheBindingCount drifts
-	// off this CL's expected value, the surface review must update
-	// both the value and this comment block in lockstep.
+	//         indirect-lobe discriminator carry-back → raygen count
+	//         becomes 7 (adds u6).
+	//   CL E: mip-aware read redo (deferred — the b9a103cc cell-blockiness
+	//         repro must not return; gated on a fresh visual A/B).
+	//
+	// The static_assert below is the loud-fail surface for the HLSL/C++
+	// flag-pair invariant: if l_cacheBindingCount drifts off this CL's
+	// expected value, the surface review must update both the value and
+	// this comment block in lockstep.
 	constexpr size_t l_baseBindingCount  = 13;
 	constexpr size_t l_cacheBindingCount = Inno::PTHashGridCache::ENABLED ? 5 : 0;
 	static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 5,
-		"D1-reversal CL A invariant: cache-binding count is 5 (b3 + u1..u4) — the "
-		"new UpdateCellValueIndirectBuffer / ValueIndirectBuffer pair allocated "
-		"this CL is dead data, NOT bound to the raygen yet. CL B raises this to "
-		"6 when the integrator writes the indirect scratch; CL D raises it to 7 "
-		"when the Site-3 read consumes the indirect persistent buffer.");
+		"D1-reversal CL B invariant: raygen cache-binding count stays at 5 "
+		"(b3 + u1..u4). CL B grew the UpdateTiles + MipCascadeBuild kernel-local "
+		"binding counts (UpdateTiles 4→6, MipCascadeBuild 3→4) but did NOT change "
+		"the raygen surface — the integrator's secondary-bounce write splits in "
+		"CL C (raises raygen count to 6) and the Site-3 indirect-lobe carry-back "
+		"lands in CL D (raises raygen count to 7).");
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(l_baseBindingCount + l_cacheBindingCount);
 
 	// b0 - PerFrameCB (set 0, binding 0)

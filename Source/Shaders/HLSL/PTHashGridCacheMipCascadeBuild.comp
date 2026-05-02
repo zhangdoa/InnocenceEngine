@@ -1,20 +1,32 @@
 // shadertype=hlsl
 // PT hash-grid radiance cache — mip-cascade build. Each frame, after
 // PTHashGridCacheUpdateTiles resolves the per-cell scratch sums into the
-// persistent ValueBuffer at mip 0, this pass walks every claimed tile and
-// aggregates 2x2 children at each level into one mip-(L+1) parent: mip 0 ->
-// mip 1, mip 1 -> mip 2, mip 2 -> mip 3. Mip-aware lookup (the consumer of
-// these coarser cells) lands in the next CL — until then the cascade
-// contents are dead data and the Site-3 read still reads mip 0 directly,
-// per the dispatch brief.
+// persistent ValueBuffer / ValueIndirectBuffer at mip 0, this pass walks
+// every claimed tile and aggregates 2x2 children at each level into one
+// mip-(L+1) parent: mip 0 -> mip 1, mip 1 -> mip 2, mip 2 -> mip 3.
+// Mip-aware lookup (the consumer of these coarser cells) lands later in
+// the chain — until then the cascade contents are dead data and the
+// Site-3 read still reads mip 0 directly.
 //
 // Reference: Capsaicin GI-1.0 gi1.comp UpdateTiles (gi1.comp:2227-2347 —
-// the mip-1, mip-2, mip-3 blocks with groupshared LDS and stride-doubling
-// box filter). Capsaicin fuses the cascade into UpdateTiles in a single
-// dispatch with a 2D 8x8 thread group; we run a separate pass so the
-// previous CL's UpdateTiles can stay a focused mip-0 resolve. The
-// aggregation rule, the hash-by-mip cell-index helper, and the storage
-// convention (radiance * sample_count packed in fp16) are paper-faithful.
+// the mip-1, mip-2, mip-3 blocks for the direct lobe;
+// gi1.comp:2252-2345 — the `if (USE_MULTI_BOUNCE)` indirect-lobe twin
+// running side-by-side with the direct cascade in the same pass).
+// Capsaicin fuses the cascade into UpdateTiles in a single dispatch with
+// a 2D 8x8 thread group; we run a separate pass so the previous CL's
+// UpdateTiles can stay a focused mip-0 resolve. The aggregation rule,
+// the hash-by-mip cell-index helper, and the storage convention
+// (radiance * sample_count packed in fp16) are paper-faithful.
+//
+// D1-reversal CL B: this kernel now builds the mip cascade for both the
+// direct lobe (ValueBuffer) and the indirect lobe (ValueIndirectBuffer)
+// in lockstep — each mip stage runs the 4-way LDS box filter twice (once
+// per lobe), reading and writing the matching LDS array and UAV. The
+// indirect cascade is dead data this CL because the indirect mip-0 is
+// itself zero (UpdateTiles' indirect scratch has no integrator writer
+// until CL C), so summing four zero children gives zero parents — the
+// runtime delta is zero, the structural delta is the second LDS array
+// + the second UAV bound + the kernel emitting writes to it.
 //
 // Aggregation rule. ValueBuffer cells store `radiance * sample_count` in
 // fp16 (Capsaicin gi1.comp:2165 — the same convention UpdateTiles
@@ -25,8 +37,9 @@
 // at read time is `(sum_of_radiance_x_count) / (sum_of_count) = weighted
 // average of the children's per-sample means`, weighted by their sample
 // counts, which is exactly what a fatter footprint should average over.
-// Mirrors Capsaicin gi1.comp:2240-2244 (mip 1), 2282-2286 (mip 2),
-// 2324-2328 (mip 3).
+// Mirrors Capsaicin gi1.comp:2240-2244 (mip 1, direct), 2282-2286 (mip 2),
+// 2324-2328 (mip 3); the indirect twin sits at gi1.comp:2252-2275 /
+// 2293-2316 / 2335-2345.
 //
 // Schedule. Compute queue. Ordered after PurgeTiles + UpdateTiles, before
 // the path tracer. Same Signal/Wait pattern as the sibling cache passes.
@@ -46,10 +59,17 @@
 cbuffer HashGridCacheCB : register(b0) { PTHashGridCacheCB_t g_HashGridCacheConstants; }
 
 [[vk::binding(0, 1)]]
-RWStructuredBuffer<uint>  g_HashGridCache_HashBuffer  : register(u0);
+RWStructuredBuffer<uint>  g_HashGridCache_HashBuffer          : register(u0);
 
 [[vk::binding(1, 1)]]
-RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer : register(u1);
+RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer         : register(u1);
+
+// D1-reversal CL B: indirect-lobe persistent buffer. Read at mip 0 and
+// written at mips 1-3 of every claimed tile, in lockstep with the
+// direct ValueBuffer above. Capsaicin gi1.comp:2252-2345 — the
+// `if (USE_MULTI_BOUNCE)` cascade twin.
+[[vk::binding(2, 1)]]
+RWStructuredBuffer<uint2> g_HashGridCache_ValueIndirectBuffer : register(u2);
 
 // 8x8 cells per tile at TILE_CELL_RATIO == 8; one mip-0 cell per thread.
 // Capsaicin's UpdateTiles uses an 8x8 numthreads layout indexed directly by
@@ -58,8 +78,16 @@ RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer : register(u1);
 // Capsaicin's lds_UpdateTiles_ValueBuffer[8][8], and each mip stage reads
 // the strided neighbour pattern at exactly the same coordinates Capsaicin
 // uses (offsets 1,1 / 2,2 / 4,4 from the cell-owning thread).
+//
+// CL B doubles the LDS footprint: one array per lobe. Capsaicin runs
+// the indirect cascade through the same fused thread group with its own
+// `lds_UpdateTiles_ValueIndirectBuffer` (gi1.comp:2252-2345 reads it at
+// the same offsets the direct cascade reads `lds_UpdateTiles_ValueBuffer`).
+// 8 KB per group at uint2[8][8] × 2 lobes — well under the 32 KB / 48 KB
+// LDS budgets on every shader model the engine targets.
 #define PT_HASHGRIDCACHE_MIPBUILD_TILE_W 8u
-groupshared uint2 lds_UpdateTiles_ValueBuffer[PT_HASHGRIDCACHE_MIPBUILD_TILE_W][PT_HASHGRIDCACHE_MIPBUILD_TILE_W];
+groupshared uint2 lds_UpdateTiles_ValueBuffer        [PT_HASHGRIDCACHE_MIPBUILD_TILE_W][PT_HASHGRIDCACHE_MIPBUILD_TILE_W];
+groupshared uint2 lds_UpdateTiles_ValueIndirectBuffer[PT_HASHGRIDCACHE_MIPBUILD_TILE_W][PT_HASHGRIDCACHE_MIPBUILD_TILE_W];
 
 [numthreads(64, 1, 1)]
 void main(uint3 group_id : SV_GroupID, uint group_thread_index : SV_GroupIndex)
@@ -81,67 +109,91 @@ void main(uint3 group_id : SV_GroupID, uint group_thread_index : SV_GroupIndex)
     uint2 cell_offset_mip0 = uint2(cell_local_x, cell_local_y);
 
     // Stage 0: every thread loads its mip-0 cell's already-resolved value
-    // (UpdateTiles ran before this pass on the same Compute queue) into LDS.
-    // The packed convention (radiance * sample_count in fp16) carries
-    // through every mip; we never unpack until we need to sum or store.
+    // (UpdateTiles ran before this pass on the same Compute queue) into LDS,
+    // for both lobes. The packed convention (radiance * sample_count in
+    // fp16) carries through every mip; we never unpack until we need to
+    // sum or store.
     uint  cell_index_mip0 = PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index, 0u);
-    uint2 packed_mip0     = g_HashGridCache_ValueBuffer[cell_index_mip0];
-    lds_UpdateTiles_ValueBuffer[cell_local_x][cell_local_y] = packed_mip0;
+    lds_UpdateTiles_ValueBuffer        [cell_local_x][cell_local_y] = g_HashGridCache_ValueBuffer        [cell_index_mip0];
+    lds_UpdateTiles_ValueIndirectBuffer[cell_local_x][cell_local_y] = g_HashGridCache_ValueIndirectBuffer[cell_index_mip0];
 
     // Mip 1 — only the (2*ix, 2*iy) threads write the parent. Capsaicin
-    // gi1.comp:2227-2249 — same predicate (`all((group_thread_id % 2) == 0)`),
-    // same 4-tap stride-1 box filter at offsets (0,0) / (1,0) / (0,1) /
-    // (1,1), same overwrite-into-LDS pattern so the mip-2 stage can read
-    // these mip-1 values at stride 2.
+    // gi1.comp:2227-2249 (direct) + 2252-2275 (indirect) — same predicate
+    // (`all((group_thread_id % 2) == 0)`), same 4-tap stride-1 box filter
+    // at offsets (0,0) / (1,0) / (0,1) / (1,1), same overwrite-into-LDS
+    // pattern so the mip-2 stage can read these mip-1 values at stride 2.
     GroupMemoryBarrierWithGroupSync();
     if (g_HashGridCacheConstants.size_tile_mip1 > 0u && all((cell_offset_mip0 % 2u) == 0u))
     {
         uint cell_index_mip1 = PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index, 1u);
 
-        float4 sum = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 0u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 1u][cell_local_y + 0u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 1u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 1u][cell_local_y + 1u]);
+        float4 sum_direct = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 0u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 1u][cell_local_y + 0u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 1u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 1u][cell_local_y + 1u]);
+        uint2 packed_direct = PTHashGridCache_PackRadiance(sum_direct);
+        lds_UpdateTiles_ValueBuffer[cell_local_x][cell_local_y] = packed_direct;
+        g_HashGridCache_ValueBuffer[cell_index_mip1] = packed_direct;
 
-        uint2 packed_mip1 = PTHashGridCache_PackRadiance(sum);
-        lds_UpdateTiles_ValueBuffer[cell_local_x][cell_local_y] = packed_mip1;
-        g_HashGridCache_ValueBuffer[cell_index_mip1] = packed_mip1;
+        float4 sum_indirect = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 0u][cell_local_y + 0u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 1u][cell_local_y + 0u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 0u][cell_local_y + 1u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 1u][cell_local_y + 1u]);
+        uint2 packed_indirect = PTHashGridCache_PackRadiance(sum_indirect);
+        lds_UpdateTiles_ValueIndirectBuffer[cell_local_x][cell_local_y] = packed_indirect;
+        g_HashGridCache_ValueIndirectBuffer[cell_index_mip1] = packed_indirect;
     }
 
     // Mip 2 — only the (4*ix, 4*iy) threads write the parent; stride 2 over
     // the mip-1 values now sitting at the (2*ix, 2*iy) LDS slots. Capsaicin
-    // gi1.comp:2269-2291.
+    // gi1.comp:2269-2291 (direct) + 2293-2316 (indirect).
     GroupMemoryBarrierWithGroupSync();
     if (g_HashGridCacheConstants.size_tile_mip2 > 0u && all((cell_offset_mip0 % 4u) == 0u))
     {
         uint cell_index_mip2 = PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index, 2u);
 
-        float4 sum = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 0u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 2u][cell_local_y + 0u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 2u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 2u][cell_local_y + 2u]);
+        float4 sum_direct = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 0u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 2u][cell_local_y + 0u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 2u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 2u][cell_local_y + 2u]);
+        uint2 packed_direct = PTHashGridCache_PackRadiance(sum_direct);
+        lds_UpdateTiles_ValueBuffer[cell_local_x][cell_local_y] = packed_direct;
+        g_HashGridCache_ValueBuffer[cell_index_mip2] = packed_direct;
 
-        uint2 packed_mip2 = PTHashGridCache_PackRadiance(sum);
-        lds_UpdateTiles_ValueBuffer[cell_local_x][cell_local_y] = packed_mip2;
-        g_HashGridCache_ValueBuffer[cell_index_mip2] = packed_mip2;
+        float4 sum_indirect = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 0u][cell_local_y + 0u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 2u][cell_local_y + 0u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 0u][cell_local_y + 2u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 2u][cell_local_y + 2u]);
+        uint2 packed_indirect = PTHashGridCache_PackRadiance(sum_indirect);
+        lds_UpdateTiles_ValueIndirectBuffer[cell_local_x][cell_local_y] = packed_indirect;
+        g_HashGridCache_ValueIndirectBuffer[cell_index_mip2] = packed_indirect;
     }
 
     // Mip 3 — only thread (0, 0) survives; stride 4 over the mip-2 values
-    // at the (4*ix, 4*iy) LDS slots. Capsaicin gi1.comp:2311-2331. There is
-    // no need to write back to LDS at this terminal level.
+    // at the (4*ix, 4*iy) LDS slots. Capsaicin gi1.comp:2311-2331 (direct)
+    // + 2335-2345 (indirect). There is no need to write back to LDS at
+    // this terminal level.
     GroupMemoryBarrierWithGroupSync();
     if (g_HashGridCacheConstants.size_tile_mip3 > 0u && all((cell_offset_mip0 % 8u) == 0u))
     {
         uint cell_index_mip3 = PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index, 3u);
 
-        float4 sum = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 0u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 4u][cell_local_y + 0u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 4u]);
-        sum += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 4u][cell_local_y + 4u]);
+        float4 sum_direct = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 0u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 4u][cell_local_y + 0u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 0u][cell_local_y + 4u]);
+        sum_direct += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueBuffer[cell_local_x + 4u][cell_local_y + 4u]);
+        g_HashGridCache_ValueBuffer[cell_index_mip3] = PTHashGridCache_PackRadiance(sum_direct);
 
-        g_HashGridCache_ValueBuffer[cell_index_mip3] = PTHashGridCache_PackRadiance(sum);
+        float4 sum_indirect = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 0u][cell_local_y + 0u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 4u][cell_local_y + 0u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 0u][cell_local_y + 4u]);
+        sum_indirect += PTHashGridCache_UnpackRadiance(lds_UpdateTiles_ValueIndirectBuffer[cell_local_x + 4u][cell_local_y + 4u]);
+        g_HashGridCache_ValueIndirectBuffer[cell_index_mip3] = PTHashGridCache_PackRadiance(sum_indirect);
     }
 }

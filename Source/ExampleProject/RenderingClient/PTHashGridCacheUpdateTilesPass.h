@@ -8,8 +8,17 @@ namespace Inno
 	// frame's bounce loop, blends them into the persistent ValueBuffer with
 	// a 16-sample-cap running-mean update rule, and zeroes the scratch so
 	// the next frame's writes accumulate fresh. Mirrors the MIP-0 block of
-	// Capsaicin GI-1.0 UpdateTiles (gi1.comp:2160-2225); the mip-cascade and
-	// PurgeTiles passes are deferred to follow-up CLs.
+	// Capsaicin GI-1.0 UpdateTiles (gi1.comp:2160-2225 — direct lobe;
+	// gi1.comp:2183-2223 — indirect-lobe twin under USE_MULTI_BOUNCE);
+	// the mip-cascade lives in PTHashGridCacheMipCascadeBuildPass.
+	//
+	// D1-reversal CL B: this pass now resolves both pairs in lockstep —
+	// direct (UpdateCellValueBuffer → ValueBuffer, capped at MAX_SAMPLE_COUNT)
+	// and indirect (UpdateCellValueIndirectBuffer → ValueIndirectBuffer,
+	// capped at MAX_MULTIBOUNCE_SAMPLE_COUNT). Until CL C wires the
+	// integrator's secondary-bounce write into the indirect scratch, the
+	// indirect resolve runs against zero data and is a runtime no-op;
+	// binding count is 1 CB + 5 UAVs (was 1 CB + 3 UAVs).
 	//
 	// Only meaningful when PTHashGridCache::ENABLED is true. With the
 	// toggle off, Setup / Initialize / PrepareCommandList all return true

@@ -6,13 +6,22 @@
 // scratch entries it consumed so next frame's writes accumulate fresh.
 //
 // Reference: Capsaicin GI-1.0 gi1.comp UpdateTiles, the MIP-0 block
-// (gi1.comp:2160-2225). The mip-1/mip-2/mip-3 box-filter cascade is
-// deliberately NOT ported in this CL — the Site-3 read in
-// GPUPathTracerRayGen still uses cellRadiance.rgb / .w directly off mip0,
-// so the cascade has no consumer yet. PurgeTiles (50-frame decay) is also
-// out of scope here; until it lands, dirty-tile tracking is replaced with
-// a wide dispatch over every tile slot, with an early-out on
-// HashBuffer[tile] == 0 keeping unclaimed slots untouched.
+// (gi1.comp:2160-2225 — direct lobe; gi1.comp:2183-2223 — the indirect
+// lobe twin under `if (USE_MULTI_BOUNCE)`). The mip-1/mip-2/mip-3
+// box-filter cascade lives in PTHashGridCacheMipCascadeBuild.comp.
+// PurgeTiles (50-frame decay) runs before this pass on the same Compute
+// queue.
+//
+// D1-reversal CL B: this kernel now resolves both the direct pair
+// (UpdateCellValueBuffer → ValueBuffer, capped at MAX_SAMPLE_COUNT) and
+// the indirect pair (UpdateCellValueIndirectBuffer → ValueIndirectBuffer,
+// capped at MAX_MULTIBOUNCE_SAMPLE_COUNT). The two pairs are independent
+// running means — Capsaicin keeps separate caps for the two lobes
+// (gi1.h:63 / gi1.h:65) because direct and indirect contributions arrive
+// at different cadences. Indirect scratch is still zeroed each frame
+// (no integrator writer until CL C) so the indirect resolve is a no-op
+// at runtime — the binding/LDS/write paths exist this CL, the data
+// flowing through them lights up in CL C.
 //
 // The write site in GPUPathTracerRayGen multiplies radiance by 1e3 and
 // rounds to uint before InterlockedAdd; this kernel divides by the same
@@ -20,7 +29,7 @@
 // radiance × sample_count in fp16 (PackRadiance / UnpackRadiance) — the
 // running-mean lerp recovers per-sample mean by dividing by .w, blends,
 // then re-multiplies by sample_count to keep the storage convention
-// stable for the not-yet-ported mip cascade.
+// stable for the mip cascade.
 
 #include "common/PTHashGridCache.hlsl"
 
@@ -28,13 +37,34 @@
 cbuffer HashGridCacheCB : register(b0) { PTHashGridCacheCB_t g_HashGridCacheConstants; }
 
 [[vk::binding(0, 1)]]
-RWStructuredBuffer<uint>  g_HashGridCache_HashBuffer            : register(u0);
+RWStructuredBuffer<uint>  g_HashGridCache_HashBuffer                  : register(u0);
 
 [[vk::binding(1, 1)]]
-RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueBuffer : register(u1);
+RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueBuffer       : register(u1);
 
 [[vk::binding(2, 1)]]
-RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer           : register(u2);
+RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer                 : register(u2);
+
+// D1-reversal CL B: indirect-lobe scratch + persistent buffers. Same
+// shape as the direct pair — the running-mean block below mirrors the
+// direct-pair block one-for-one against `g_HashGridCache_ValueIndirectBuffer`.
+[[vk::binding(3, 1)]]
+RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueIndirectBuffer : register(u3);
+
+[[vk::binding(4, 1)]]
+RWStructuredBuffer<uint2> g_HashGridCache_ValueIndirectBuffer         : register(u4);
+
+// Indirect-lobe sample-count cap mirroring HashGridCacheConstants.h::
+// MAX_MULTIBOUNCE_SAMPLE_COUNT (CL A added this constant; Capsaicin
+// gi1.h:65 default 16). Inlined as a local constant rather than added
+// to the CB struct to keep this CL's blast radius to the two compute
+// kernels and their two pass C++ files; the CB layout, the upload
+// code, and the C++ constants header are not touched. The direct pair
+// uses `g_HashGridCacheConstants.max_sample_count` (Capsaicin gi1.h:63
+// default 16) — the two caps happen to match at the engine defaults
+// but Capsaicin holds them as independent knobs and we honour that
+// separation here.
+static const float PT_HASHGRIDCACHE_MAX_MULTIBOUNCE_SAMPLE_COUNT = 16.0f;
 
 // 64 threads per group → one mip-0 cell per thread, one tile per group at
 // the engine's default sizing (TILE_CELL_RATIO == 8). A wide non-indirect
@@ -46,9 +76,9 @@ void main(uint3 group_id : SV_GroupID, uint group_thread_index : SV_GroupIndex)
     uint tile_index = group_id.x;
 
     // Unclaimed tiles have HashBuffer == 0 (cleared on scene load and
-    // PurgeTiles' eviction once that pass lands). Skipping here leaves
-    // ValueBuffer / scratch entries for those tiles untouched, so an
-    // unused tile costs one uint load per thread and nothing else.
+    // PurgeTiles' eviction). Skipping here leaves both the direct and
+    // indirect ValueBuffer / scratch entries for those tiles untouched,
+    // so an unused tile costs one uint load per thread and nothing else.
     if (g_HashGridCache_HashBuffer[tile_index] == 0u)
         return;
 
@@ -61,51 +91,100 @@ void main(uint3 group_id : SV_GroupID, uint group_thread_index : SV_GroupIndex)
     uint2 cell_offset_mip0 = uint2(cell_local_x, cell_local_y);
     uint cell_index = PTHashGridCache_CellIndexMip0(g_HashGridCacheConstants, cell_offset_mip0, tile_index);
 
-    // Persistent estimator. Capsaicin stores radiance × sample_count plus
-    // sample_count in .w (gi1.comp:2165) so the (deferred) mip cascade
-    // can sum 4 children without renormalising. We honour that convention
-    // even though the cascade is not yet ported — the Site-3 read divides
-    // .rgb by .w, which is correct for either form.
-    float4 prev_radiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
-
-    uint4 quantized_new = uint4(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 0u],
-                                g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u],
-                                g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u],
-                                g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u]);
-    float4 new_radiance = PTHashGridCache_RecoverRadiance(quantized_new);
-
-    // Cap the running-mean window at max_sample_count (16 by default,
-    // Capsaicin gi1.h:63). Once saturated, each new frame contributes at
-    // weight 1/16 — effective half-life ~11 frames, the trade-off
-    // Capsaicin accepts for stability against lighting drift.
-    float sample_count = min(prev_radiance.w + new_radiance.w,
-                             g_HashGridCacheConstants.max_sample_count);
-
-    // Recover per-sample means from the count-multiplied storage. Each
-    // "sample" here is one InsertCell-and-write call from the integrator.
-    prev_radiance /= max(prev_radiance.w, 1.0f);
-    new_radiance  /= max(new_radiance.w,  1.0f);
-
-    float4 merged;
-    if (prev_radiance.w <= 0.0f)
+    // -----------------------------------------------------------------
+    // Direct lobe — Capsaicin gi1.comp:2160-2180 (the unconditional MIP-0
+    // running-mean block). Persistent estimator stores radiance ×
+    // sample_count plus sample_count in .w (gi1.comp:2165) so the mip
+    // cascade can sum 4 children without renormalising. The Site-3 read
+    // divides .rgb by .w, which is correct for either form.
+    // -----------------------------------------------------------------
     {
-        merged = new_radiance;
+        float4 prev_radiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
+
+        uint4 quantized_new = uint4(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 0u],
+                                    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u],
+                                    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u],
+                                    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u]);
+        float4 new_radiance = PTHashGridCache_RecoverRadiance(quantized_new);
+
+        // Cap the running-mean window at max_sample_count (16 by default,
+        // Capsaicin gi1.h:63). Once saturated, each new frame contributes
+        // at weight 1/16 — effective half-life ~11 frames, the trade-off
+        // Capsaicin accepts for stability against lighting drift.
+        float sample_count = min(prev_radiance.w + new_radiance.w,
+                                 g_HashGridCacheConstants.max_sample_count);
+
+        // Recover per-sample means from the count-multiplied storage.
+        prev_radiance /= max(prev_radiance.w, 1.0f);
+        new_radiance  /= max(new_radiance.w,  1.0f);
+
+        float4 merged;
+        if (prev_radiance.w <= 0.0f)
+        {
+            merged = new_radiance;
+        }
+        else
+        {
+            merged = lerp(prev_radiance, new_radiance, 1.0f / sample_count);
+        }
+        // Re-multiply so storage stays radiance × sample_count.
+        merged *= sample_count;
+
+        g_HashGridCache_ValueBuffer[cell_index] = PTHashGridCache_PackRadiance(merged);
+
+        // Clear the scratch entries we just consumed. Without this the
+        // running mean would re-merge the same deltas every frame and
+        // drift monotonically.
+        g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 0u] = 0u;
+        g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u] = 0u;
+        g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u] = 0u;
+        g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u] = 0u;
     }
-    else
+
+    // -----------------------------------------------------------------
+    // Indirect lobe — Capsaicin gi1.comp:2183-2223 (the
+    // `if (USE_MULTI_BOUNCE)` MIP-0 running-mean block). Same arithmetic
+    // as the direct lobe but reads/writes the indirect-pair UAVs and
+    // caps at MAX_MULTIBOUNCE_SAMPLE_COUNT. Capsaicin keeps the two
+    // caps as separate knobs (gi1.h:63 vs gi1.h:65) because direct and
+    // indirect contributions arrive at different cadences; we follow
+    // that separation. CL B note: integrator writers for the indirect
+    // scratch don't land until CL C, so this block reads zero scratch
+    // and writes zero into ValueIndirectBuffer every frame — runtime
+    // no-op, structural delta only (binding count grows, LDS layout
+    // unchanged, kernel emits writes to the new UAV).
+    // -----------------------------------------------------------------
     {
-        merged = lerp(prev_radiance, new_radiance, 1.0f / sample_count);
+        float4 prev_radiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueIndirectBuffer[cell_index]);
+
+        uint4 quantized_new = uint4(g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 0u],
+                                    g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 1u],
+                                    g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 2u],
+                                    g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 3u]);
+        float4 new_radiance = PTHashGridCache_RecoverRadiance(quantized_new);
+
+        float sample_count = min(prev_radiance.w + new_radiance.w,
+                                 PT_HASHGRIDCACHE_MAX_MULTIBOUNCE_SAMPLE_COUNT);
+
+        prev_radiance /= max(prev_radiance.w, 1.0f);
+        new_radiance  /= max(new_radiance.w,  1.0f);
+
+        float4 merged;
+        if (prev_radiance.w <= 0.0f)
+        {
+            merged = new_radiance;
+        }
+        else
+        {
+            merged = lerp(prev_radiance, new_radiance, 1.0f / sample_count);
+        }
+        merged *= sample_count;
+
+        g_HashGridCache_ValueIndirectBuffer[cell_index] = PTHashGridCache_PackRadiance(merged);
+
+        g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 0u] = 0u;
+        g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 1u] = 0u;
+        g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 2u] = 0u;
+        g_HashGridCache_UpdateCellValueIndirectBuffer[4u * cell_index + 3u] = 0u;
     }
-    // Re-multiply so storage stays radiance × sample_count.
-    merged *= sample_count;
-
-    g_HashGridCache_ValueBuffer[cell_index] = PTHashGridCache_PackRadiance(merged);
-
-    // Clear the scratch entries we just consumed. Without this the
-    // running mean would re-merge the same deltas every frame and drift
-    // monotonically (the bug the previous CL's toggle-on capture
-    // exhibited, with the read-source still pointing at the scratch).
-    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 0u] = 0u;
-    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u] = 0u;
-    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u] = 0u;
-    g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u] = 0u;
 }

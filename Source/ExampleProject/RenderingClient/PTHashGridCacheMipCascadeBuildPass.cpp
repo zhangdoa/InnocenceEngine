@@ -39,12 +39,18 @@ bool PTHashGridCacheMipCascadeBuildPass::Setup(IServiceConfig* systemConfig)
 
 	m_RenderPassComp->m_RenderPassDesc = l_RenderPassDesc;
 
-	// 1 CB + 2 UAVs. HashBuffer is read-only here (the early-out predicate);
-	// ValueBuffer is read at mip 0 and written at mips 1-3. Bound writable
-	// to match the layout declaration shared with UpdateTiles / the path
-	// tracer raygen — every shader sharing the buffer must agree on the
-	// binding access, even if a given pass only reads one direction.
-	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(3);
+	// 1 CB + 3 UAVs (D1-reversal CL B: was 1 CB + 2 UAVs; the indirect-lobe
+	// ValueIndirectBuffer added at u2, mirroring the direct ValueBuffer
+	// at u1 one-for-one). HashBuffer is read-only here (the early-out
+	// predicate); both ValueBuffers are read at mip 0 and written at mips
+	// 1-3. Bound writable to match the layout declaration shared with
+	// UpdateTiles / the path tracer raygen — every shader sharing the
+	// buffer must agree on the binding access, even if a given pass only
+	// reads one direction. UpdateCellValue scratch is NOT used by the
+	// cascade build (its consumer is UpdateTiles' running-mean merge,
+	// which has already run by the time MipCascadeBuild starts), so only
+	// the persistent Value buffer pair grows the binding list.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs.resize(4);
 
 	// b0 - HashGridCacheCB
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[0].m_GPUResourceType   = GPUResourceType::Buffer;
@@ -60,13 +66,25 @@ bool PTHashGridCacheMipCascadeBuildPass::Setup(IServiceConfig* systemConfig)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[1].m_ShaderStage            = ShaderStage::Compute;
 
-	// u1 - ValueBuffer (read at mip 0, write at mips 1-3 of every claimed tile)
+	// u1 - ValueBuffer (direct lobe — read at mip 0, write at mips 1-3 of every claimed tile)
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_GPUResourceType        = GPUResourceType::Buffer;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex      = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex        = 1;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility   = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RenderPassComp->m_ResourceBindingLayoutDescs[2].m_ShaderStage            = ShaderStage::Compute;
+
+	// u2 - ValueIndirectBuffer (indirect lobe — same access shape as u1)
+	// D1-reversal CL B: cascade twin for the indirect lobe. Until CL C
+	// lights up the indirect scratch writers, mip-0 reads come back as
+	// zero so the cascade aggregation produces zero parents — runtime
+	// no-op, structural delta only.
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex      = 1;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex        = 2;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility   = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage            = ShaderStage::Compute;
 
 	m_RenderPassComp->m_ShaderProgram = m_ShaderProgramComp;
 
@@ -104,14 +122,16 @@ bool PTHashGridCacheMipCascadeBuildPass::Update()
 	// so once the path tracer goes Activated, this pass does too on the
 	// next Update.
 	auto* l_owner = &GPUPathTracerPass::Get();
-	auto* l_cb    = l_owner->GetHashGridCacheCB();
-	auto* l_hash  = l_owner->GetHashGridCacheHashBuffer();
-	auto* l_value = l_owner->GetHashGridCacheValueBuffer();
+	auto* l_cb            = l_owner->GetHashGridCacheCB();
+	auto* l_hash          = l_owner->GetHashGridCacheHashBuffer();
+	auto* l_value         = l_owner->GetHashGridCacheValueBuffer();
+	auto* l_valueIndirect = l_owner->GetHashGridCacheValueIndirectBuffer();
 
 	const bool l_buffersReady =
-		l_cb    && l_cb->m_ObjectStatus    == ObjectStatus::Activated &&
-		l_hash  && l_hash->m_ObjectStatus  == ObjectStatus::Activated &&
-		l_value && l_value->m_ObjectStatus == ObjectStatus::Activated;
+		l_cb            && l_cb->m_ObjectStatus            == ObjectStatus::Activated &&
+		l_hash          && l_hash->m_ObjectStatus          == ObjectStatus::Activated &&
+		l_value         && l_value->m_ObjectStatus         == ObjectStatus::Activated &&
+		l_valueIndirect && l_valueIndirect->m_ObjectStatus == ObjectStatus::Activated;
 
 	m_ObjectStatus = l_buffersReady ? ObjectStatus::Activated : ObjectStatus::Suspended;
 	return true;
@@ -148,11 +168,12 @@ bool PTHashGridCacheMipCascadeBuildPass::PrepareCommandList(IRenderingContext* r
 		return false;
 
 	auto* l_owner = &GPUPathTracerPass::Get();
-	auto* l_cb    = l_owner->GetHashGridCacheCB();
-	auto* l_hash  = l_owner->GetHashGridCacheHashBuffer();
-	auto* l_value = l_owner->GetHashGridCacheValueBuffer();
+	auto* l_cb            = l_owner->GetHashGridCacheCB();
+	auto* l_hash          = l_owner->GetHashGridCacheHashBuffer();
+	auto* l_value         = l_owner->GetHashGridCacheValueBuffer();
+	auto* l_valueIndirect = l_owner->GetHashGridCacheValueIndirectBuffer();
 
-	if (!l_cb || !l_hash || !l_value)
+	if (!l_cb || !l_hash || !l_value || !l_valueIndirect)
 		return false;
 
 	auto l_fmService = g_Engine->Get<FrameManagementService>();
@@ -160,9 +181,10 @@ bool PTHashGridCacheMipCascadeBuildPass::PrepareCommandList(IRenderingContext* r
 	l_fmService->CommandListBegin(m_RenderPassComp, m_CommandListComp_Compute, 0);
 	l_fmService->BindRenderPassComponent(m_RenderPassComp, m_CommandListComp_Compute);
 
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_cb,    0);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_hash,  1);
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_value, 2);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_cb,            0);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_hash,          1);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_value,         2);
+	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, l_valueIndirect, 3);
 
 	// One thread group per tile slot: NUM_BUCKETS * NUM_TILES_PER_BUCKET
 	// groups, each running 64 threads of which the mip-1 stage uses 16, the
