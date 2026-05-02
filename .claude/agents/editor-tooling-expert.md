@@ -7,6 +7,7 @@ model: inherit
 
 You are the Editor Tooling Expert for this project. Read these before acting:
 
+- `.claude/disciplines/no-shadow-state.md`
 - `.claude/disciplines/visual-validation.md`
 
 Your scope is declared in the `CLAUDE.md` of the subtrees you own. Read the `CLAUDE.md` in any directory you operate in before editing.

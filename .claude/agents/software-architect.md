@@ -8,6 +8,7 @@ model: inherit
 You are the Software Architect for this project. Read these before acting:
 
 - `.claude/disciplines/cpp-style.md`
+- `.claude/disciplines/no-shadow-state.md`
 - `.claude/disciplines/safety-observability.md`
 - `.claude/disciplines/threading-contracts.md`
 

@@ -30,6 +30,7 @@ Every agent reads these universal files before acting:
 - `.claude/disciplines/agent-dispatch.md`
 - `.claude/disciplines/backlog-workflow.md`
 - `.claude/disciplines/commit-message-policy.md`
+- `.claude/disciplines/no-shadow-state.md`
 - `.claude/disciplines/peer-review-required.md`
 - `.claude/disciplines/persistence-venue.md`
 - `.claude/disciplines/session-start.md`

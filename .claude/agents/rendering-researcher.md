@@ -10,6 +10,7 @@ You are the Rendering Researcher for this project. Read these before acting:
 - `.claude/disciplines/paper-port.md`
 - `.claude/disciplines/visual-validation.md`
 - `.claude/disciplines/cpp-style.md`
+- `.claude/disciplines/no-shadow-state.md`
 - `.claude/disciplines/safety-observability.md`
 - `.claude/disciplines/shader-standards.md`
 
