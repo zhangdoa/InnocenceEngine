@@ -51,6 +51,11 @@ static const uint kPTHashGridCache_InvalidId = 0xFFFFFFFFu;
 // the reverse converts back to float on read.
 #define PT_HASHGRIDCACHE_FLOAT_QUANTIZE 1e3f
 
+// Tile-decay timeout in frames. Capsaicin hash_grid_cache.hlsl:29 —
+// kHashGridCache_TileDecay defaults to 50. Mirrored in
+// Source/ExampleProject/RenderingClient/HashGridCacheConstants.h::TILE_DECAY_FRAMES.
+#define PT_HASHGRIDCACHE_TILE_DECAY 50u
+
 // Per-frame constant buffer mirroring Source/ExampleProject/RenderingClient/
 // HashGridCacheConstants.h::HashGridCacheConstants. Values are uploaded by
 // GPUPathTracerPass; the size knobs here are kept as compile-time defines so

@@ -31,6 +31,7 @@
 #include "DebugPass.h"
 #include "FinalBlendPass.h"
 #include "GPUPathTracerPass.h"
+#include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
 #include "HashGridCacheConstants.h"
 
@@ -339,13 +340,18 @@ namespace Inno
 
 		FinalBlendPass::Get().Setup();
 		GPUPathTracerPass::Get().Setup();
-		// UpdateTiles resolves the path tracer's per-cell scratch sums into
-		// the persistent ValueBuffer with a 16-sample-cap running mean.
-		// `if constexpr` inside the pass elides everything when the cache
-		// toggle is off, but the call still runs so the singleton state
-		// flips to a benign Terminated.
+		// PurgeTiles runs first each frame to free 50-frame-stale slots, so
+		// the path tracer's InsertCell can claim them and UpdateTiles' early-
+		// out skips them; UpdateTiles then resolves the path tracer's per-cell
+		// scratch sums into the persistent ValueBuffer with a 16-sample-cap
+		// running mean. `if constexpr` inside each pass elides everything when
+		// the cache toggle is off, but the call still runs so the singleton
+		// state flips to a benign Terminated.
 		if constexpr (Inno::PTHashGridCache::ENABLED)
+		{
+			PTHashGridCachePurgeTilesPass::Get().Setup();
 			PTHashGridCacheUpdateTilesPass::Get().Setup();
+		}
 
 		// AnimationPass::Get().Setup();
 
@@ -411,7 +417,10 @@ namespace Inno
 		FinalBlendPass::Get().Initialize();
 		GPUPathTracerPass::Get().Initialize();
 		if constexpr (Inno::PTHashGridCache::ENABLED)
+		{
+			PTHashGridCachePurgeTilesPass::Get().Initialize();
 			PTHashGridCacheUpdateTilesPass::Get().Initialize();
+		}
 
 		m_ObjectStatus = ObjectStatus::Activated;
 
@@ -429,7 +438,10 @@ namespace Inno
 		{
 			GPUPathTracerPass::Get().Update();
 			if constexpr (Inno::PTHashGridCache::ENABLED)
+			{
+				PTHashGridCachePurgeTilesPass::Get().Update();
 				PTHashGridCacheUpdateTilesPass::Get().Update();
+			}
 		}
 
 		return true;
@@ -446,12 +458,19 @@ namespace Inno
 
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			// Resolve last frame's scratch deltas into ValueBuffer first so
-			// the path tracer reads the freshest running mean. The pass is a
-			// no-op when the cache toggle is off (Terminated → never
-			// Activated → DispatchOrBypass does nothing once executed below).
+			// PurgeTiles → UpdateTiles → PathTracer mirrors Capsaicin gi1.cpp's
+			// PurgeTiles → PopulateScreenProbes → ... → UpdateTiles ordering
+			// collapsed for our reduced pipeline: PurgeTiles frees 50-frame-
+			// stale slots so UpdateTiles' HashBuffer == 0 early-out skips
+			// them and the path tracer's InsertCell can re-claim them this
+			// frame. UpdateTiles then resolves last frame's scratch deltas
+			// into ValueBuffer so the path tracer reads the freshest running
+			// mean. Each pass is a no-op when the cache toggle is off.
 			if constexpr (Inno::PTHashGridCache::ENABLED)
+			{
+				DispatchOrBypass(PTHashGridCachePurgeTilesPass::Get());
 				DispatchOrBypass(PTHashGridCacheUpdateTilesPass::Get());
+			}
 			DispatchOrBypass(GPUPathTracerPass::Get());
 		}
 
@@ -575,17 +594,36 @@ namespace Inno
 			}
 		}
 
-		// UpdateTiles must complete before the path tracer reads ValueBuffer.
-		// Both run on the Compute queue, so a same-queue Signal/Wait pair is
-		// sufficient — no graphics-side fence. Toggle-off keeps this block
-		// elided at compile time (the pass stays Terminated, the gate below
-		// short-circuits regardless), preserving the bit-identical bypass.
+		// PurgeTiles → UpdateTiles → PathTracer chain. PurgeTiles must
+		// complete before UpdateTiles (the latter's HashBuffer == 0 early-out
+		// must see freed slots, otherwise stale-tile scratch contributes to
+		// running-mean) and before the path tracer (so InsertCell can claim
+		// freed slots). UpdateTiles must complete before the path tracer
+		// reads ValueBuffer. All three run on the Compute queue, so same-queue
+		// Signal/Wait pairs are sufficient — no graphics-side fence. Toggle-
+		// off keeps the entire block elided at compile time (each pass stays
+		// Terminated, the inner gates short-circuit regardless), preserving
+		// the bit-identical bypass.
 		if constexpr (Inno::PTHashGridCache::ENABLED)
 		{
+			if (m_GPUPathTracerActive
+				&& PTHashGridCachePurgeTilesPass::Get().GetStatus() == ObjectStatus::Activated
+				&& !IsBypassed(PTHashGridCachePurgeTilesPass::Get()))
+			{
+				auto l_renderPass = PTHashGridCachePurgeTilesPass::Get().GetRenderPassComp();
+				auto l_computeCL  = PTHashGridCachePurgeTilesPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
+				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			}
+
 			if (m_GPUPathTracerActive
 				&& PTHashGridCacheUpdateTilesPass::Get().GetStatus() == ObjectStatus::Activated
 				&& !IsBypassed(PTHashGridCacheUpdateTilesPass::Get()))
 			{
+				// Wait on PurgeTiles before merging running mean — the
+				// HashBuffer == 0 early-out must observe freed slots.
+				WaitIfActive(PTHashGridCachePurgeTilesPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+
 				auto l_renderPass = PTHashGridCacheUpdateTilesPass::Get().GetRenderPassComp();
 				auto l_computeCL  = PTHashGridCacheUpdateTilesPass::Get().GetCommandListComp(GPUEngineType::Compute);
 				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
@@ -1389,7 +1427,10 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 
 	l_passes.push_back(&GPUPathTracerPass::Get());
 	if constexpr (Inno::PTHashGridCache::ENABLED)
+	{
+		l_passes.push_back(&PTHashGridCachePurgeTilesPass::Get());
 		l_passes.push_back(&PTHashGridCacheUpdateTilesPass::Get());
+	}
 
 	l_passes.push_back(&BRDFLUTPass::Get());
 	l_passes.push_back(&BRDFLUTMSPass::Get());

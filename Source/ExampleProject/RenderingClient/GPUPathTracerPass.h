@@ -34,8 +34,12 @@ namespace Inno
 		// When PTHashGridCache::ENABLED is false these always return nullptr.
 		GPUBufferComponent* GetHashGridCacheCB()                  { return m_HashGridCacheCB; }
 		GPUBufferComponent* GetHashGridCacheHashBuffer()          { return m_HashGridCache_HashBuffer; }
+		GPUBufferComponent* GetHashGridCacheDecayTileBuffer()     { return m_HashGridCache_DecayTileBuffer; }
 		GPUBufferComponent* GetHashGridCacheUpdateCellValueBuffer() { return m_HashGridCache_UpdateCellValueBuffer; }
 		GPUBufferComponent* GetHashGridCacheValueBuffer()         { return m_HashGridCache_ValueBuffer; }
+		// FrameCount CB exposed so PTHashGridCachePurgeTilesPass can compute
+		// frame_count - decay marker without owning a parallel CB upload.
+		GPUBufferComponent* GetFrameCountCB()                     { return m_FrameCountCB; }
 
 	private:
 		struct GPUPathTracerVertex

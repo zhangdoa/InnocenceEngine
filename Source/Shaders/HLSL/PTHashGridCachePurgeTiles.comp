@@ -1,0 +1,94 @@
+// shadertype=hlsl
+// PT hash-grid radiance cache — tile decay / LRU eviction. Iterates every
+// tile slot once per frame and frees slots whose decay marker has fallen
+// more than TILE_DECAY frames behind the current frame counter. Frees by
+// zeroing HashBuffer[tile_index]; the slot then becomes claimable by the
+// next InsertCell that hashes into the same bucket.
+//
+// Reference: Capsaicin GI-1.0 gi1.comp PurgeTiles (gi1.comp:1715-1752).
+// Decay timeout is kHashGridCache_TileDecay (50 frames, hash_grid_cache.hlsl:29
+// — mirrored as TILE_DECAY_FRAMES in HashGridCacheConstants.h).
+//
+// Schedule: dispatched on the Compute queue every frame, ordered BEFORE
+// PTHashGridCacheUpdateTilesPass and the path tracer. PurgeTiles → freed
+// slots are visible to UpdateTiles' HashBuffer == 0 early-out (so a purged
+// tile is not running-mean-merged with stale scratch) and to InsertCell
+// (so InterlockedCompareExchange can claim the freed slot this frame).
+// Matches Capsaicin's pipeline ordering — PurgeTiles is step 1, the
+// integrator runs after, and UpdateTiles closes the frame.
+//
+// What we DO NOT clear: the per-cell ValueBuffer / UpdateCellValueBuffer
+// slots that belong to a freed tile. Capsaicin leaves them as-is and
+// accepts a single-frame leak on slot re-claim (the next tenant's first
+// running-mean lerp weights the previous tenant's mean by (16-1)/16 the
+// first frame, then decays the contamination away in ~16 frames). Paper-
+// faithful; flagged as a known minor divergence in the running-mean shape
+// only when a tile is reclaimed within the same scene. A scene-load clear
+// (GPUPathTracerPass::m_HashGridCachePendingClear) zeros every cell, so
+// the leak is bounded to mid-scene reclaims.
+
+#include "common/PTHashGridCache.hlsl"
+
+[[vk::binding(0, 0)]]
+cbuffer FrameCountCB : register(b0) { uint g_FrameCount; }
+
+[[vk::binding(0, 1)]]
+RWStructuredBuffer<uint> g_HashGridCache_HashBuffer       : register(u0);
+
+[[vk::binding(1, 1)]]
+RWStructuredBuffer<uint> g_HashGridCache_DecayTileBuffer  : register(u1);
+
+// 64 threads per group matches UpdateTiles' group shape so the two passes
+// share dispatch arithmetic (one group per tile, NUM_TILES groups total).
+// Only thread 0 acts — the decision is per-tile and atomic. The remaining
+// 63 threads idle in-wave; over-subscription is acceptable because dispatch
+// granularity is dominated by the group count, not per-group thread count.
+[numthreads(64, 1, 1)]
+void main(uint3 group_id : SV_GroupID, uint group_thread_index : SV_GroupIndex)
+{
+    if (group_thread_index != 0u)
+        return;
+
+    uint tile_index = group_id.x;
+
+    // Unclaimed tiles have HashBuffer == 0 — already free, nothing to do.
+    // Skipping here keeps an empty cache at one uint load per group.
+    uint tile_hash = g_HashGridCache_HashBuffer[tile_index];
+    if (tile_hash == 0u)
+        return;
+
+    // Capsaicin gi1.comp:1738 — unsigned subtraction. With u32 wraparound
+    // an InterlockedExchange'd marker that overshoots the frame counter
+    // gives a near-2^32 result that trivially exceeds TILE_DECAY_FRAMES,
+    // and the slot is freed (correct: such a slot is stale by definition).
+    // Cleared decay markers (DecayTileBuffer == 0) on a freshly-cleared
+    // cache produce tile_decay == g_FrameCount; a slot that was never
+    // claimed (HashBuffer == 0) was already filtered by the guard above,
+    // so we only reach here for slots that *were* claimed but have not
+    // had their decay marker bumped recently — which is exactly the
+    // eviction condition.
+    //
+    // Capsaicin uses an explicit two-branch overflow form (gi1.comp:1733-1737):
+    //     if (g_FrameIndex < tile_decay)
+    //         tile_decay = ((0xFFFFFFFFu - tile_decay) + g_FrameIndex + 1);
+    //     else
+    //         tile_decay = (g_FrameIndex - tile_decay);
+    // which is structurally equivalent to our direct unsigned subtraction
+    // under uint32 modular arithmetic — we collapse to the direct form for
+    // clarity. No math change.
+    uint tile_decay = g_FrameCount - g_HashGridCache_DecayTileBuffer[tile_index];
+
+    if (tile_decay < PT_HASHGRIDCACHE_TILE_DECAY)
+        return;
+
+    // Free the slot. Subsequent InsertCells that hash into this bucket can
+    // claim it via InterlockedCompareExchange(HashBuffer[tile], 0, new_hash).
+    // DecayTileBuffer[tile] is reset to 0 so a stale residual cannot make
+    // a freshly-reclaimed tile look "already old" on the next purge — the
+    // first InsertCell that lands re-bumps the marker to g_FrameCount on
+    // the same frame, but a defensive zero here matches the symmetry of
+    // the scene-load clear and removes a class of edge-cases on the
+    // overflow path.
+    g_HashGridCache_HashBuffer[tile_index]      = 0u;
+    g_HashGridCache_DecayTileBuffer[tile_index] = 0u;
+}

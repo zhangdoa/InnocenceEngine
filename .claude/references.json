@@ -72,7 +72,13 @@
       "glob": "Source/Shaders/HLSL/PTHashGridCacheUpdateTiles.comp",
       "paper": "GI-1.0 §2.2 (World Cache) — running-mean update of the persistent ValueBuffer from the per-frame atomic-sum scratch (UpdateCellValueBuffer).",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L2160",
-      "notes": "Ports the MIP-0 block of Capsaicin UpdateTiles (gi1.comp:2160-2225) only. The mip 1-3 box-filter cascade and the indirect-lobe (USE_MULTI_BOUNCE) duplicates are deliberately out of scope for this CL; PurgeTiles' 50-frame decay (gi1.comp:1715-1752) is also deferred. Wide non-indirect dispatch over every tile slot replaces Capsaicin's UpdateTileBuffer / IndirectDispatch dirty-tile tracking — until PurgeTiles + dirty-list bookkeeping land, the early-out on HashBuffer == 0 keeps unclaimed tiles cheap."
+      "notes": "Ports the MIP-0 block of Capsaicin UpdateTiles (gi1.comp:2160-2225) only. The mip 1-3 box-filter cascade and the indirect-lobe (USE_MULTI_BOUNCE) duplicates are deliberately out of scope for this CL. Wide non-indirect dispatch over every tile slot replaces Capsaicin's UpdateTileBuffer / IndirectDispatch dirty-tile tracking — the early-out on HashBuffer == 0 keeps unclaimed tiles cheap. PurgeTiles (PTHashGridCachePurgeTiles.comp) ordered before this pass each frame so freed slots produce HashBuffer == 0 and skip the running-mean merge."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/PTHashGridCachePurgeTiles.comp",
+      "paper": "GI-1.0 §2.2 (World Cache) — tile decay / LRU eviction. Slots whose DecayTileBuffer marker has fallen more than 50 frames behind the current frame counter are freed by zeroing HashBuffer[tile_index].",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L1715",
+      "notes": "Ports Capsaicin PurgeTiles (gi1.comp:1715-1752) and the kHashGridCache_TileDecay constant (hash_grid_cache.hlsl:29 == 50). Wide non-indirect dispatch over every tile slot, one group per tile (64 threads, only thread 0 acts) — Capsaicin's PackedTileIndexBuffer re-pack is deliberately not ported because the engine does not run an indirect-dispatch UpdateTiles. Per-cell ValueBuffer / UpdateCellValueBuffer slots of a freed tile are intentionally NOT zeroed (paper-faithful — Capsaicin lets the running-mean smooth out slot-reclaim leaks within ~16 frames). Schedule: ordered before UpdateTiles and the path tracer on the Compute queue each frame. Minor divergence: our PurgeTiles also zeros DecayTileBuffer[tile_index] for defensive symmetry with the scene-load clear, while Capsaicin zeros only HashBuffer[tile_index] — the extra zero is harmless because the next InsertCell re-bumps the marker the same frame."
     },
     {
       "glob": "Source/Shaders/HLSL/common/AgX.hlsl",
