@@ -2,6 +2,7 @@
 #include "../../Engine/Services/CameraService.h"
 #include "../../Engine/Services/RenderingConfigurationService.h"
 #include "../../Engine/Services/SceneService.h"
+#include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/RayTracer/RayTracer.h"
 #include "../../Engine/Component/TransformComponent.h"
 #include "../../Engine/Component/CameraComponent.h"
@@ -298,18 +299,30 @@ namespace
 				g_Engine->Get<IWindowService>()->Terminate();
 			}
 
-			// Camera orbit override — TASK-124 [B]. Each frame in
-			// [0, cameraOrbitDuration] stomps the Main Camera transform with
-			// a yaw that sweeps 0→360° over the duration, at the configured
-			// pitch and radius around the world origin. Runs after the
-			// scene-load trigger so the Main Camera is guaranteed to exist
-			// by the time we try to find it. Player's Update() further
-			// below will stomp this on windowed runs where the player is
-			// driving — accepted for v1 (orbit is intended for -offscreen
-			// capture sessions).
+			// Camera orbit override — TASK-124 [B], TASK-213 CL C.
+			// Each frame in [0, cameraOrbitDuration] stomps the Main Camera
+			// transform with a yaw that sweeps 0→360° over the duration, at
+			// the configured pitch and radius around the world origin. Runs
+			// after the scene-load trigger so the Main Camera is guaranteed
+			// to exist by the time we try to find it. Player's Update()
+			// further below will stomp this on windowed runs where the
+			// player is driving — accepted for v1 (orbit is intended for
+			// -offscreen capture sessions).
+			//
+			// TASK-213 CL C: yaw is now driven by FMS::GetSteadyStateRelative
+			// FrameCount(), not m_AutoFrameCount. Reason — m_AutoFrameCount
+			// advances unconditionally post-Activated, so its value at any
+			// given dump frame depends on the deferred-init drain timing
+			// (RC-6 in the task design pass). The steady-state-relative
+			// counter is gated on the same latch as m_autoCaptureFrameCount,
+			// so yaw at dump frame N is independent of the variable load-
+			// frame count → identical viewpoint at the same dump frame
+			// across binaries.
 			const auto& l_initCfg = g_Engine->getInitConfig();
+			const uint32_t l_orbitFrame =
+				g_Engine->Get<FrameManagementService>()->GetSteadyStateRelativeFrameCount();
 			if (l_initCfg.cameraOrbitActive
-				&& m_AutoFrameCount <= static_cast<uint32_t>(l_initCfg.cameraOrbitDuration))
+				&& l_orbitFrame <= static_cast<uint32_t>(l_initCfg.cameraOrbitDuration))
 			{
 				auto l_Registry = g_Engine->Get<EntityRegistry>();
 				auto l_CameraEntity = l_Registry->FindByName("Main Camera");
@@ -319,7 +332,7 @@ namespace
 					if (l_CameraTransform)
 					{
 						const float l_yawDeg = 360.0f
-							* static_cast<float>(m_AutoFrameCount)
+							* static_cast<float>(l_orbitFrame)
 							/ static_cast<float>(l_initCfg.cameraOrbitDuration);
 						const float l_pitchRad = l_initCfg.cameraOrbitPitchDeg * PI<float> / 180.0f;
 						const float l_yawRad   = l_yawDeg                       * PI<float> / 180.0f;

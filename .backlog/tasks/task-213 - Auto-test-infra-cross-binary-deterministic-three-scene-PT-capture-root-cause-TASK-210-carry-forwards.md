@@ -211,6 +211,69 @@ Toggle 1 GISponza dump frames 25-29 all render correctly (atrium curtains, colum
 
 **Reviewer:** test-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should independently `Read` at minimum: GISponza toggle 0 frames 25 and 29 from both runs (verify the black-frame timing and the late-frame MAE), and GISponza toggle 1 frames 25 and 29 (verify visual correctness). Then verify the per-pair MAE numbers above with their own `magick compare` runs. Surface-back; no commit this CL.
 
+### CL C — Pin GISponza camera deterministically across binary launches — surfaced 2026-05-02
+
+**Files touched:**
+- `Source/ExampleProject/LogicClient/World.inl` — orbit override now reads its frame index from `FrameManagementService::GetSteadyStateRelativeFrameCount()` instead of `m_AutoFrameCount`. Reason: `m_AutoFrameCount` advances unconditionally post-Activated, so its value at any given dump frame depends on the deferred-init drain timing (RC-6 in the design pass). The steady-state-relative counter is gated on the same latch as `m_autoCaptureFrameCount` (CL B), so yaw at dump frame N is independent of variable load-frame count. Added `#include "../../Engine/Services/FrameManagementService.h"`.
+- `Scripts/TestPathTracerThreeScenes.ps1` — added `$DefaultCameraOrbit = "20,8,120"` (PITCH=20°, RADIUS=8, DURATION=120 frames; matches the long-standing precedent across TASK-124 / TASK-138 / TASK-6.x captures). The `-CameraOrbit` parameter now resolves to the default when empty, to no-orbit when explicitly `"none"`, otherwise verbatim. (Cross-subtree edit; Scripts/ is owned by `ci-build-expert` — touched here under dispatcher brief authority because the script-default is the load-bearing piece of the camera pin.)
+
+**`-camera_orbit` flag signature** (pre-existing, NOT changed): `-camera_orbit PITCH_DEG,RADIUS,DURATION_FRAMES`, parsed in `Source/Engine/Engine.cpp:457` (rejects RADIUS<=0 or DURATION<=0). The dispatch brief's "0,8,0" was a transcription artefact — that triple is invalid (DURATION=0). Used the established precedent `20,8,120` as the per-scene default for all three scenes; per-scene overrides can be added later if a scene needs different framing.
+
+**R4 mitigation (default orbit masks scene-file-camera regressions):** confirmed by inspection. The orbit override is a SCRIPT default (`$DefaultCameraOrbit`), not an engine default. When `-camera_orbit` is not on the command line, `Engine.cpp` leaves `cameraOrbitActive = false` and World.inl's orbit block is skipped — the scene-file Main Camera transform applies. Interactive launches via `StartEngineWin.ps1` (no `-camera_orbit` arg) are unaffected. Confirmed engine-side defaults unchanged; no `Engine.cpp` / `Engine.h` edits in this CL.
+
+**R6 mitigation (no wall-clock / random inputs):** the steady-state-relative frame counter is a pure integer subtraction (`m_FrameCountSinceLaunch - m_FirstSteadyStateFrame`), and the orbit transform is a deterministic function of `(yaw, pitch, radius)`. Pure deterministic transform throughout.
+
+**Same-binary repeat MAE matrix** (`-Frames 60 -DumpStart 25 -DumpEnd 29`, run1 vs run2, both built from the CL C source state):
+
+| scene     | MAE per frame [25, 26, 27, 28, 29] |
+|-----------|------------------------------------|
+| unittest  | 0, 0, 0, 0, 0                      |
+| gitestbox | 0, 0, 0, 0, 0                      |
+| gisponza  | 0, 0, 0, 0, 0                      |
+
+All 15 frames bit-identical. **AC-1 PASS** under CL C as it did under CL B; the CL C camera-pin did not break the determinism CL B established.
+
+**Cross-binary informal MAE matrix** (run1 vs fresh-binary, two separate clean rebuilds of the CL C source):
+
+| scene     | MAE per frame [25, 26, 27, 28, 29]                        |
+|-----------|-----------------------------------------------------------|
+| unittest  | 0, 0, 0, 0, 0                                             |
+| gitestbox | 0, 0, 0, 0, 0                                             |
+| gisponza  | 0, 0, **0.0434**, 4.30e-5, **6.57e-3**                    |
+
+**unittest and gitestbox: full cross-binary determinism achieved** — bit-identical PNGs across two separate builds. This is the headline AC-3 result: the camera pin pulls the deterministic-camera bar for these two scenes from "drifts ~0.05 MAE under the scene-file camera (CL B Ext.3)" to bit-identical.
+
+GISponza is partially achieved: the [25,26]-black-window matches across binaries (both runs hit the same black PNGs); frame 28 matches to 4.3e-5 (bit-equivalent in practice); frames 27 and 29 differ. **The cause is the K=3 plateau / TLAS-rebuild flap-back issue documented in CL B's surprise 1**, NOT the camera pin: in fresh-binary's GISponza, frame 27 latched on a transient instance-count plateau and rendered as uniform-black (36970 bytes), while run1's frame 27 latched after the plateau and rendered real content (795KB). This is the same root cause AC-7 is scoped to fix in CL D (script-side flap-back-aware dump shifting OR per-scene K override). CL C's camera pin is correct independent of this — when both runs render real content (e.g. frame 28), the camera viewpoint matches.
+
+**Visual Read assessment** (per `visual-validation.md` layer 1):
+- *unittest, frame 25 / frame 29, run1 vs fresh-binary*: ShaderBall reflective sphere on grey floor at right of frame; jagged geometry array (PBR materials) on left; hard sun-shadow cast onto floor. The viewpoint is from yaw≈75° (frame 25) to yaw≈87° (frame 29), pitch 20° elevation, radius 8 — looking down at the scene from above and to the right. Bit-identical between run1 and fresh-binary on every frame.
+- *gitestbox, frame 25 / frame 29*: Cornell-box-style coloured walls (pink wall edge upper-left); camera is inside the box at radius 8 looking outward, so most of the frame is dark wall interior with PT noise. Slight yaw progression visible across frames. Bit-identical between run1 and fresh-binary.
+- *gisponza, frame 28 / frame 29 (run1)*: ShaderBall reflective sphere centre-frame, Sponza atrium archway visible behind, columns and curtains at edges. Heavy PT noise (correct for low-SPP cache-OFF). The orbit camera puts the viewer inside the atrium looking down at the floor objects.
+- *gisponza, frame 27 (fresh-binary)*: uniform-black 36970-byte PNG — same flap-back artefact CL B documented. Frame 27 in run1 is real content (795KB). The flap-back is non-deterministic across builds because the K=3 latch can fire on a transient plateau, and which transient plateau it lands on depends on deferred-init drain timing (the CL B / CL A advisory).
+- *gisponza, frame 28-29 (run1 vs fresh-binary)*: viewpoints match — both show the ShaderBall + atrium framing from the same orbit position. MAE 4.3e-5 (frame 28) and 6.57e-3 (frame 29). The 6.57e-3 is dominated by PT noise differences from RNG-state-at-frame divergence (tiny because RNG seed is now steady-state-relative per CL B), NOT camera viewpoint mismatch.
+
+**Verdict: improvement** for AC-3 on unittest and gitestbox (bit-identical cross-binary), partial improvement for AC-3 on gisponza (camera pin is correct; residual cross-binary MAE on gisponza is the AC-7 K=3 plateau issue scoped to CL D, not a camera-pin failure).
+
+**AC-7 status (CL D's job, not CL C's):** GISponza toggle 0 frames 25-26 are still uniform-black PNGs (36970 bytes) on both runs and the fresh binary, matching the [25,26]-black-window CL B documented. Fresh-binary's frame 27 is also black (it landed in the flap-back window). CL C neither fixes nor regresses this surface — confirmed unchanged per the brief's "CL C does NOT fix the [25,26]-black-window" directive.
+
+**Surprises / advisories surfaced:**
+
+1. **Pre-existing PT PSO build hazard, not CL C-caused.** The first capture attempt failed with `DX12 create failed: Raytracing PSO context=GPUPathTracerPass HRESULT=-2147024809`. Investigation: `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` had been edited (mtime 20:08) AFTER the last DXIL compile (`Bin/Shaders/DXIL/GPUPathTracerRayGen.hlsl.dxil` mtime 20:03), and `Scripts/BuildWin.ps1`'s post-build step does not re-run `Scripts/HLSL2DXIL_NoPause.ps1` — it only mirror-copies the existing DXIL into `Bin/RelWithDebInfo/`. So a stale DXIL with a root-signature shape that no longer matches the runtime PSO descriptor was being loaded. Fix path: re-running `Scripts/HLSL2DXIL_NoPause.ps1` produced fresh DXIL; the same PT capture then ran clean. **The hazard is the build script not invoking shader compile** — a future CL (likely owned by `ci-build-expert`) should either chain HLSL2DXIL into BuildWin.ps1 or add a freshness check that fails loudly when an HLSL is newer than its DXIL. Out of scope for CL C; flagged here for the dispatcher and `ci-build-expert`.
+
+2. **Cross-subtree edit acknowledged.** `Scripts/TestPathTracerThreeScenes.ps1` is owned by `ci-build-expert` per `Scripts/CLAUDE.md`. The dispatch brief explicitly listed this script in "Files likely to touch" and routed CL C to test-expert; the edit was made under that authority. The change is self-contained (default-value resolution + new `$DefaultCameraOrbit` constant; no harness-level rewiring) and the existing `-CameraOrbit` parameter contract is preserved (empty → default, "none" → off, value → verbatim).
+
+3. **gisponza interior is too small for radius=8 orbit.** With Sponza's Main Camera scene-file pose at (0,2,0) and the atrium being roughly 30 units wide, an orbit at radius 8 puts the camera inside the atrium walls / against geometry. The captures are visually claustrophobic (lots of curtain / column / ShaderBall close-up). For closure of AC-3 this does not matter — bit-equivalent captures are bit-equivalent regardless of framing — but a future iteration of the script may want a per-scene orbit triple (e.g. radius 30 for gisponza). Decision deferred: per the brief, "all three the same starting point" was the explicit instruction, and AC-3 closure is on cross-binary equality, not aesthetic framing.
+
+4. **R5 not triggered.** Same-binary repeats produced 15/15 MAE=0. No additional within-binary nondeterminism surfaced beyond the CL B / CL A flap-back advisory.
+
+5. **Cross-subtree note for TASK-212 cleanup:** `Scripts/TestPathTracerThreeScenes.ps1` gained a `$DefaultCameraOrbit = "20,8,120"` block + `-CameraOrbit` resolution. Per-scene radii are deferred (Sponza atrium ~30 units wide; orbit radius 8 is tight per advisory 3). `ci-build-expert` may want to fold per-scene radii into the cleanup.
+
+**Capture archive:** `Build/captures/TASK-213-CL-C/{run1,run2,fresh-binary}/{unittest,gitestbox,gisponza}/gpu_output_{0025..0029}.png` (45 PNGs total) plus per-scene `engine.log` files. The fresh-binary archive was produced by touching `World.inl` and re-running `BuildWin.ps1` to force a full source recompile + link before re-running the capture script.
+
+**Build:** RelWithDebInfo clean (Main.exe + RenderTest.exe) — both source-rebuilt for the fresh-binary run. No new compiler warnings; pre-existing `MathHelper.h` C4003 unchanged.
+
+**Reviewer:** test-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should independently `Read` at minimum: unittest frame 25 from run1 + fresh-binary (verify bit-identical viewpoint), gitestbox frame 25 from run1 + fresh-binary (verify bit-identical), gisponza frame 28 from run1 + fresh-binary (verify viewpoint match within MAE 4.3e-5), and gisponza frame 27 fresh-binary (verify the uniform-black flap-back artefact AC-7 will fix). Then verify the same-binary and cross-binary MAE matrices with their own `magick compare` runs. Reviewer should also confirm advisory 1 (stale-DXIL hazard) is filed as a follow-up rather than being CL C's blocker. Surface-back; no commit this CL.
+
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)

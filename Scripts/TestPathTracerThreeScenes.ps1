@@ -31,10 +31,27 @@ param(
     [int]$Frames = 60,
     [int]$DumpStart = -1,
     [int]$DumpEnd = -1,
+    # TASK-213 CL C: default per-scene -camera_orbit pin. Empty string here
+    # means "use the per-scene default below"; "none" disables the override
+    # entirely (interactive / scene-file-camera path); any other value is
+    # forwarded to Main.exe verbatim and overrides every scene.
+    # Default triple "20,8,120" (PITCH=20deg, RADIUS=8, DURATION=120 frames)
+    # matches the long-standing precedent across TASK-124/TASK-138/TASK-6.x
+    # capture runs. Combined with CL B's steady-state-relative frame counter
+    # in World.inl, this produces a deterministic camera viewpoint at the
+    # same dump frame across binary launches (RC-6 in the TASK-213 design
+    # pass). When NOT provided, Engine.cpp leaves cameraOrbitActive=false
+    # and World.inl's orbit override is skipped, falling back to the scene-
+    # file Main Camera transform (R4 in the design pass).
     [string]$CameraOrbit = "",
     [string]$BinDir = "C:\GitRepo\InnocenceEngine\Bin\RelWithDebInfo",
     [string]$RunTag = ""
 )
+
+# TASK-213 CL C: the per-scene default. All three scenes share the same
+# triple for now; per-scene overrides can be added if a scene needs a
+# different framing once cross-binary determinism is closed.
+$DefaultCameraOrbit = "20,8,120"
 
 $ErrorActionPreference = "Stop"
 
@@ -105,8 +122,19 @@ foreach ($s in $scenes) {
                "-scene $($s.Scene) " +
                "-total_frames $Frames " +
                "-dump_frames $DumpStart-$DumpEnd"
-    if ($CameraOrbit) {
-        $argList += " -camera_orbit $CameraOrbit"
+    # TASK-213 CL C: resolve the effective orbit triple.
+    #   user passed -CameraOrbit ""    -> per-scene default ($DefaultCameraOrbit)
+    #   user passed -CameraOrbit "none" -> no -camera_orbit flag (scene-file camera)
+    #   user passed -CameraOrbit "P,R,D" -> verbatim override
+    if ($CameraOrbit -eq "") {
+        $effectiveOrbit = $DefaultCameraOrbit
+    } elseif ($CameraOrbit -eq "none") {
+        $effectiveOrbit = ""
+    } else {
+        $effectiveOrbit = $CameraOrbit
+    }
+    if ($effectiveOrbit) {
+        $argList += " -camera_orbit $effectiveOrbit"
     }
 
     Write-Host "Running: $mainExe $argList"
