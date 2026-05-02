@@ -202,6 +202,29 @@ uint PTHashGridCache_CellIndexMip0(in PTHashGridCacheCB_t cb, in uint2 cell_offs
          + cell_offset_mip0.x + cell_offset_mip0.y * cb.size_tile_mip0;
 }
 
+// Resolve a mip-0 cell offset to the linear cell index at an arbitrary mip
+// level inside the owning tile. Capsaicin hash_grid_cache.hlsl:207-221.
+// `cell_offset_mip0 >> mip_level` collapses 2^mip neighbouring mip-0 cells
+// onto the single coarser cell that aggregates them; `mip_size` shrinks
+// correspondingly so the row stride stays right at every level. The
+// per-mip first-cell offset moves us past the previous mips' linear
+// payload inside the tile's NUM_CELLS_PER_TILE slots.
+uint PTHashGridCache_CellIndexMipN(in PTHashGridCacheCB_t cb, in uint2 cell_offset_mip0, in uint tile_index, in uint mip_level)
+{
+    const uint first_cell_offset_tile_mip_level[4] = {
+        cb.first_cell_offset_tile_mip0,
+        cb.first_cell_offset_tile_mip1,
+        cb.first_cell_offset_tile_mip2,
+        cb.first_cell_offset_tile_mip3
+    };
+
+    uint  mip_size    = cb.size_tile_mip0 >> mip_level;
+    uint2 cell_offset = cell_offset_mip0 >> mip_level;
+    return tile_index * cb.num_cells_per_tile +
+           first_cell_offset_tile_mip_level[mip_level] +
+           cell_offset.x + cell_offset.y * mip_size;
+}
+
 // Insert (or claim) a cell for the given hit. Capsaicin
 // hash_grid_cache.hlsl:249-278. Open-addressing probe over num_tiles_per_bucket
 // slots; on probe-budget exhaustion returns kPTHashGridCache_InvalidId and

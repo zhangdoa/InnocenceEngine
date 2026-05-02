@@ -33,6 +33,7 @@
 #include "GPUPathTracerPass.h"
 #include "PTHashGridCachePurgeTilesPass.h"
 #include "PTHashGridCacheUpdateTilesPass.h"
+#include "PTHashGridCacheMipCascadeBuildPass.h"
 #include "HashGridCacheConstants.h"
 
 #include "BSDFTestPass.h"
@@ -351,6 +352,7 @@ namespace Inno
 		{
 			PTHashGridCachePurgeTilesPass::Get().Setup();
 			PTHashGridCacheUpdateTilesPass::Get().Setup();
+			PTHashGridCacheMipCascadeBuildPass::Get().Setup();
 		}
 
 		// AnimationPass::Get().Setup();
@@ -420,6 +422,7 @@ namespace Inno
 		{
 			PTHashGridCachePurgeTilesPass::Get().Initialize();
 			PTHashGridCacheUpdateTilesPass::Get().Initialize();
+			PTHashGridCacheMipCascadeBuildPass::Get().Initialize();
 		}
 
 		m_ObjectStatus = ObjectStatus::Activated;
@@ -441,6 +444,7 @@ namespace Inno
 			{
 				PTHashGridCachePurgeTilesPass::Get().Update();
 				PTHashGridCacheUpdateTilesPass::Get().Update();
+				PTHashGridCacheMipCascadeBuildPass::Get().Update();
 			}
 		}
 
@@ -458,18 +462,22 @@ namespace Inno
 
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
-			// PurgeTiles → UpdateTiles → PathTracer mirrors Capsaicin gi1.cpp's
-			// PurgeTiles → PopulateScreenProbes → ... → UpdateTiles ordering
-			// collapsed for our reduced pipeline: PurgeTiles frees 50-frame-
-			// stale slots so UpdateTiles' HashBuffer == 0 early-out skips
-			// them and the path tracer's InsertCell can re-claim them this
-			// frame. UpdateTiles then resolves last frame's scratch deltas
-			// into ValueBuffer so the path tracer reads the freshest running
-			// mean. Each pass is a no-op when the cache toggle is off.
+			// PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer mirrors
+			// Capsaicin gi1.cpp's PurgeTiles → ... → UpdateTiles (which fuses
+			// the mip cascade in Capsaicin) collapsed for our reduced pipeline:
+			// PurgeTiles frees 50-frame-stale slots so UpdateTiles' HashBuffer
+			// == 0 early-out skips them and the path tracer's InsertCell can
+			// re-claim them this frame. UpdateTiles resolves last frame's
+			// scratch deltas into ValueBuffer at mip 0 so the path tracer
+			// reads the freshest running mean; MipCascadeBuild then aggregates
+			// 2x2 children at each level into mips 1-3 so wide-footprint
+			// reads (next CL) can pick a level matching their footprint. Each
+			// pass is a no-op when the cache toggle is off.
 			if constexpr (Inno::PTHashGridCache::ENABLED)
 			{
 				DispatchOrBypass(PTHashGridCachePurgeTilesPass::Get());
 				DispatchOrBypass(PTHashGridCacheUpdateTilesPass::Get());
+				DispatchOrBypass(PTHashGridCacheMipCascadeBuildPass::Get());
 			}
 			DispatchOrBypass(GPUPathTracerPass::Get());
 		}
@@ -594,16 +602,24 @@ namespace Inno
 			}
 		}
 
-		// PurgeTiles → UpdateTiles → PathTracer chain. PurgeTiles must
-		// complete before UpdateTiles (the latter's HashBuffer == 0 early-out
-		// must see freed slots, otherwise stale-tile scratch contributes to
-		// running-mean) and before the path tracer (so InsertCell can claim
-		// freed slots). UpdateTiles must complete before the path tracer
-		// reads ValueBuffer. All three run on the Compute queue, so same-queue
-		// Signal/Wait pairs are sufficient — no graphics-side fence. Toggle-
-		// off keeps the entire block elided at compile time (each pass stays
-		// Terminated, the inner gates short-circuit regardless), preserving
-		// the bit-identical bypass.
+		// PurgeTiles → UpdateTiles → MipCascadeBuild → PathTracer chain.
+		// PurgeTiles must complete before UpdateTiles (the latter's
+		// HashBuffer == 0 early-out must see freed slots, otherwise stale-
+		// tile scratch contributes to running-mean) and before the path
+		// tracer (so InsertCell can claim freed slots). UpdateTiles must
+		// complete before MipCascadeBuild (the cascade reads the mip-0
+		// values UpdateTiles just resolved). MipCascadeBuild is a UAV
+		// writer of ValueBuffer at mips 1-3; the path tracer does not
+		// read those mip-N cells this CL (Site-3 read still uses mip 0)
+		// so the Wait on UpdateTiles before the path tracer is sufficient
+		// for correctness — but we still serialise MipCascadeBuild against
+		// the path tracer to keep the chain order intact for the next CL,
+		// which adds a mip-aware read at the same site. All four run on
+		// the Compute queue, so same-queue Signal/Wait pairs are
+		// sufficient — no graphics-side fence. Toggle-off keeps the entire
+		// block elided at compile time (each pass stays Terminated, the
+		// inner gates short-circuit regardless), preserving the bit-
+		// identical bypass.
 		if constexpr (Inno::PTHashGridCache::ENABLED)
 		{
 			if (m_GPUPathTracerActive
@@ -629,6 +645,21 @@ namespace Inno
 				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
 			}
+
+			if (m_GPUPathTracerActive
+				&& PTHashGridCacheMipCascadeBuildPass::Get().GetStatus() == ObjectStatus::Activated
+				&& !IsBypassed(PTHashGridCacheMipCascadeBuildPass::Get()))
+			{
+				// Wait on UpdateTiles before aggregating — the mip-0
+				// values must be the freshly-resolved running mean, not
+				// the previous frame's stale ValueBuffer entries.
+				WaitIfActive(PTHashGridCacheUpdateTilesPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+
+				auto l_renderPass = PTHashGridCacheMipCascadeBuildPass::Get().GetRenderPassComp();
+				auto l_computeCL  = PTHashGridCacheMipCascadeBuildPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
+				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			}
 		}
 
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GPUPathTracerPass::Get()))
@@ -642,9 +673,14 @@ namespace Inno
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
 			// Compute CL: ray tracing dispatch (also transitions AccumBuffer to ReadOnly at end).
-			// Wait on UpdateTiles so this-frame reads see the resolved running mean.
+			// Wait on MipCascadeBuild — last link in the cache chain — so this
+			// frame's reads see both the resolved running mean (mip 0) and
+			// the freshly-aggregated coarser cells (mips 1-3, written but
+			// unread this CL; the next CL adds mip-aware Site-3 lookup).
+			// The same-queue Signal/Wait chain transitively covers the
+			// upstream PurgeTiles + UpdateTiles waits.
 			if constexpr (Inno::PTHashGridCache::ENABLED)
-				WaitIfActive(PTHashGridCacheUpdateTilesPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
+				WaitIfActive(PTHashGridCacheMipCascadeBuildPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
 			auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
@@ -1430,6 +1466,7 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	{
 		l_passes.push_back(&PTHashGridCachePurgeTilesPass::Get());
 		l_passes.push_back(&PTHashGridCacheUpdateTilesPass::Get());
+		l_passes.push_back(&PTHashGridCacheMipCascadeBuildPass::Get());
 	}
 
 	l_passes.push_back(&BRDFLUTPass::Get());
