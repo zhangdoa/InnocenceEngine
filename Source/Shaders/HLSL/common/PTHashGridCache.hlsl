@@ -280,4 +280,27 @@ float4 PTHashGridCache_RecoverRadiance(in uint4 quantized_radiance)
                   float(quantized_radiance.w));
 }
 
+// fp16-pack a float4 into uint2 for ValueBuffer storage. Capsaicin
+// hash_grid_cache.hlsl:355-365 calls packHalf4 / unpackHalf4 from
+// math/pack.hlsl (not fetched in the audit); the 4 × f32tof16 / f16tof32
+// shape is the standard implementation and the only round-trip-exact way to
+// fit (rgb mean × sample_count, sample_count) into an 8-byte cell. The
+// upcast to float widens to f32 for arithmetic; the down-cast on store
+// truncates back to f16 — the same loss of precision Capsaicin accepts.
+uint2 PTHashGridCache_PackRadiance(in float4 radiance)
+{
+    uint2 packed;
+    packed.x = (f32tof16(radiance.x) & 0xFFFFu) | (f32tof16(radiance.y) << 16u);
+    packed.y = (f32tof16(radiance.z) & 0xFFFFu) | (f32tof16(radiance.w) << 16u);
+    return packed;
+}
+
+float4 PTHashGridCache_UnpackRadiance(in uint2 packed_radiance)
+{
+    return float4(f16tof32(packed_radiance.x & 0xFFFFu),
+                  f16tof32(packed_radiance.x >> 16u),
+                  f16tof32(packed_radiance.y & 0xFFFFu),
+                  f16tof32(packed_radiance.y >> 16u));
+}
+
 #endif // PT_HASH_GRID_CACHE_HLSL

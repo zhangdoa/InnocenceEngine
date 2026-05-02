@@ -1,4 +1,5 @@
 #include "GPUPathTracerPass.h"
+#include "HashGridCacheConstants.h"
 
 #include <algorithm>
 #include <cmath>

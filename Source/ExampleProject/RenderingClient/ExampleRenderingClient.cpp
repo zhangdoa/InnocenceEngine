@@ -31,6 +31,8 @@
 #include "DebugPass.h"
 #include "FinalBlendPass.h"
 #include "GPUPathTracerPass.h"
+#include "PTHashGridCacheUpdateTilesPass.h"
+#include "HashGridCacheConstants.h"
 
 #include "BSDFTestPass.h"
 
@@ -337,6 +339,13 @@ namespace Inno
 
 		FinalBlendPass::Get().Setup();
 		GPUPathTracerPass::Get().Setup();
+		// UpdateTiles resolves the path tracer's per-cell scratch sums into
+		// the persistent ValueBuffer with a 16-sample-cap running mean.
+		// `if constexpr` inside the pass elides everything when the cache
+		// toggle is off, but the call still runs so the singleton state
+		// flips to a benign Terminated.
+		if constexpr (Inno::PTHashGridCache::ENABLED)
+			PTHashGridCacheUpdateTilesPass::Get().Setup();
 
 		// AnimationPass::Get().Setup();
 
@@ -401,6 +410,8 @@ namespace Inno
 
 		FinalBlendPass::Get().Initialize();
 		GPUPathTracerPass::Get().Initialize();
+		if constexpr (Inno::PTHashGridCache::ENABLED)
+			PTHashGridCacheUpdateTilesPass::Get().Initialize();
 
 		m_ObjectStatus = ObjectStatus::Activated;
 
@@ -415,7 +426,11 @@ namespace Inno
 		LuminanceAveragePass::Get().Update();
 
 		if (m_GPUPathTracerActive)
+		{
 			GPUPathTracerPass::Get().Update();
+			if constexpr (Inno::PTHashGridCache::ENABLED)
+				PTHashGridCacheUpdateTilesPass::Get().Update();
+		}
 
 		return true;
 	}
@@ -431,6 +446,12 @@ namespace Inno
 
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated)
 		{
+			// Resolve last frame's scratch deltas into ValueBuffer first so
+			// the path tracer reads the freshest running mean. The pass is a
+			// no-op when the cache toggle is off (Terminated → never
+			// Activated → DispatchOrBypass does nothing once executed below).
+			if constexpr (Inno::PTHashGridCache::ENABLED)
+				DispatchOrBypass(PTHashGridCacheUpdateTilesPass::Get());
 			DispatchOrBypass(GPUPathTracerPass::Get());
 		}
 
@@ -554,6 +575,24 @@ namespace Inno
 			}
 		}
 
+		// UpdateTiles must complete before the path tracer reads ValueBuffer.
+		// Both run on the Compute queue, so a same-queue Signal/Wait pair is
+		// sufficient — no graphics-side fence. Toggle-off keeps this block
+		// elided at compile time (the pass stays Terminated, the gate below
+		// short-circuits regardless), preserving the bit-identical bypass.
+		if constexpr (Inno::PTHashGridCache::ENABLED)
+		{
+			if (m_GPUPathTracerActive
+				&& PTHashGridCacheUpdateTilesPass::Get().GetStatus() == ObjectStatus::Activated
+				&& !IsBypassed(PTHashGridCacheUpdateTilesPass::Get()))
+			{
+				auto l_renderPass = PTHashGridCacheUpdateTilesPass::Get().GetRenderPassComp();
+				auto l_computeCL  = PTHashGridCacheUpdateTilesPass::Get().GetCommandListComp(GPUEngineType::Compute);
+				l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
+				l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
+			}
+		}
+
 		if (m_GPUPathTracerActive && GPUPathTracerPass::Get().GetStatus() == ObjectStatus::Activated && !IsBypassed(GPUPathTracerPass::Get()))
 		{
 			auto l_renderPass = GPUPathTracerPass::Get().GetRenderPassComp();
@@ -564,7 +603,10 @@ namespace Inno
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Graphics);
 			l_hwService->WaitOnGPU(l_renderPass, GPUEngineType::Compute, GPUEngineType::Graphics);
 
-			// Compute CL: ray tracing dispatch (also transitions AccumBuffer to ReadOnly at end)
+			// Compute CL: ray tracing dispatch (also transitions AccumBuffer to ReadOnly at end).
+			// Wait on UpdateTiles so this-frame reads see the resolved running mean.
+			if constexpr (Inno::PTHashGridCache::ENABLED)
+				WaitIfActive(PTHashGridCacheUpdateTilesPass::Get(), GPUEngineType::Compute, GPUEngineType::Compute);
 			auto l_computeCL = GPUPathTracerPass::Get().GetCommandListComp(GPUEngineType::Compute);
 			l_hwService->Execute(l_computeCL, GPUEngineType::Compute);
 			l_hwService->SignalOnGPU(l_renderPass, GPUEngineType::Compute);
@@ -1346,6 +1388,8 @@ std::vector<IRenderPass*> ExampleRenderingClient::GetDispatchedPasses() const
 	l_passes.reserve(32);
 
 	l_passes.push_back(&GPUPathTracerPass::Get());
+	if constexpr (Inno::PTHashGridCache::ENABLED)
+		l_passes.push_back(&PTHashGridCacheUpdateTilesPass::Get());
 
 	l_passes.push_back(&BRDFLUTPass::Get());
 	l_passes.push_back(&BRDFLUTMSPass::Get());

@@ -66,7 +66,13 @@
       "glob": "Source/Shaders/HLSL/common/PTHashGridCache.hlsl",
       "paper": "GI-1.0 §2.2 (World Cache) — open-addressing spatial hash with secondary-vertex outgoing-radiance storage. Direction-keyed (Capsaicin uses incoming-ray direction quantized to 5×5×5 buckets, NOT surface normal — D3 in the audit).",
       "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/hash_grid_cache.hlsl",
-      "notes": "Per-axis pcgHash / xxHash32 chain by addition (Capsaicin sources from math/pack.hlsl, not fetched in audit; bodies inlined here are standard PCG and xxHash32). D1: kernel-per-bounce vs. loop-per-bounce — only the Site-3 read pattern fits, no UpdateMultibounceCells port. D2: capacity halved (NUM_BUCKETS_LOG2=13 vs. Capsaicin default 14). Full divergence list at .alignments/TASK-77.1-rework-paper-port-audit.md."
+      "notes": "Per-axis pcgHash / xxHash32 chain by addition (Capsaicin sources from math/pack.hlsl, not fetched in audit; bodies inlined here are standard PCG and xxHash32). D1: kernel-per-bounce vs. loop-per-bounce — only the Site-3 read pattern fits, no UpdateMultibounceCells port. D2: capacity halved (NUM_BUCKETS_LOG2=13 vs. Capsaicin default 14). PackRadiance / UnpackRadiance use 4× f32tof16 / f16tof32 to mirror Capsaicin's packHalf4 / unpackHalf4 (math/pack.hlsl, not fetched). Full divergence list at .alignments/TASK-77.1-rework-paper-port-audit.md."
+    },
+    {
+      "glob": "Source/Shaders/HLSL/PTHashGridCacheUpdateTiles.comp",
+      "paper": "GI-1.0 §2.2 (World Cache) — running-mean update of the persistent ValueBuffer from the per-frame atomic-sum scratch (UpdateCellValueBuffer).",
+      "reference": "https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/main/src/core/src/render_techniques/gi1/gi1.comp#L2160",
+      "notes": "Ports the MIP-0 block of Capsaicin UpdateTiles (gi1.comp:2160-2225) only. The mip 1-3 box-filter cascade and the indirect-lobe (USE_MULTI_BOUNCE) duplicates are deliberately out of scope for this CL; PurgeTiles' 50-frame decay (gi1.comp:1715-1752) is also deferred. Wide non-indirect dispatch over every tile slot replaces Capsaicin's UpdateTileBuffer / IndirectDispatch dirty-tile tracking — until PurgeTiles + dirty-list bookkeeping land, the early-out on HashBuffer == 0 keeps unclaimed tiles cheap."
     },
     {
       "glob": "Source/Shaders/HLSL/common/AgX.hlsl",

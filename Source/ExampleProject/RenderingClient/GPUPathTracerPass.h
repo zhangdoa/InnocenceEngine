@@ -6,7 +6,6 @@
 #include "../../Engine/Component/SamplerComponent.h"
 #include "../../Engine/Common/EntityID.h"
 #include "../../Engine/Common/GPUDataStructure.h"
-#include "HashGridCacheConstants.h"
 
 namespace Inno
 {
@@ -25,9 +24,18 @@ namespace Inno
 		RenderPassComponent* GetRenderPassComp() override;
 
 		GPUResourceComponent* GetResult();
-	
+
 
 		void ResetAccumulation();
+
+		// Hash-grid radiance cache buffer accessors. Returned pointers are
+		// owned by GPUPathTracerPass; PTHashGridCacheUpdateTilesPass borrows
+		// them on the same Compute queue per frame and never deletes them.
+		// When PTHashGridCache::ENABLED is false these always return nullptr.
+		GPUBufferComponent* GetHashGridCacheCB()                  { return m_HashGridCacheCB; }
+		GPUBufferComponent* GetHashGridCacheHashBuffer()          { return m_HashGridCache_HashBuffer; }
+		GPUBufferComponent* GetHashGridCacheUpdateCellValueBuffer() { return m_HashGridCache_UpdateCellValueBuffer; }
+		GPUBufferComponent* GetHashGridCacheValueBuffer()         { return m_HashGridCache_ValueBuffer; }
 
 	private:
 		struct GPUPathTracerVertex

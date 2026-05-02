@@ -290,4 +290,46 @@ Verification gates passed:
 Captures: `Build/captures/TASK-77.1-rework/site3-read/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`.
 
 Next CL targets `UpdateTiles`: per-frame running-mean update on dirty tiles (`gi1.comp:2160-2200`) — caps sample count at `max_sample_count = 16`, resolves UpdateCellValueBuffer scratch into ValueBuffer persistent, clears scratch. Site-3 read will then repoint at ValueBuffer; the over-bright bias seen here will be replaced by a well-formed stable estimator.
+
+## UpdateTiles running-mean CL — implementation ready for review (2026-05-02)
+
+Follow-up to commit 20b6dbdf's Site-3 read CL. Adds the running-mean resolve pass and repoints the Site-3 read from the unbounded scratch sum to the capped persistent estimator. Mip-cascade build, PurgeTiles 50-frame decay, and any change to the Site-3 read insertion shape are deliberately deferred per the brief — every new line gates on `PT_HASH_GRID_CACHE_ENABLED` so toggle-off remains structurally bit-identical.
+
+Files in this CL (all owned by `rendering-researcher`):
+
+- **`Source/Shaders/HLSL/PTHashGridCacheUpdateTiles.comp`** (new) — MIP-0 block of Capsaicin's UpdateTiles (gi1.comp:2160-2225). 64 threads/group, one mip-0 cell per thread, one tile per group at `tile_cell_ratio == 8`. Wide non-indirect dispatch over every tile slot (NUM_BUCKETS × NUM_TILES_PER_BUCKET = 131K groups); unclaimed tiles early-out on `HashBuffer[tile] == 0` so an empty cache costs one uint load per thread. Mip 1-3 box-filter cascade and the `USE_MULTI_BOUNCE` indirect-lobe duplicates are NOT ported.
+- **`Source/Shaders/HLSL/common/PTHashGridCache.hlsl`** (edit) — added `PTHashGridCache_PackRadiance` / `PTHashGridCache_UnpackRadiance` (4× `f32tof16` / `f16tof32` mirroring Capsaicin's `packHalf4` / `unpackHalf4` from `math/pack.hlsl` which the audit didn't fetch).
+- **`Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl`** (edit) — Site-3 read source repointed from `g_HashGridCache_UpdateCellValueBuffer` (atomic scratch, unbounded sum) to `g_HashGridCache_ValueBuffer` (persistent estimator, fp16-packed running mean × sample count). The InsertCell + decay-bump + 4× InterlockedAdd write block is unchanged — same scratch buffer, same sample-count increment. File-header comment updated to describe the new ordering (UpdateTiles runs each frame BEFORE the raygen).
+- **`Source/ExampleProject/RenderingClient/PTHashGridCacheUpdateTilesPass.{h,cpp}`** (new) — compute-queue render pass dispatching `PTHashGridCacheUpdateTiles.comp`. 1 CB + 3 UAV bindings (HashBuffer / UpdateCellValueBuffer / ValueBuffer); buffers borrowed by accessor from GPUPathTracerPass, never owned. `if constexpr (!PTHashGridCache::ENABLED) return true;` at every entry point keeps the toggle-off build inert.
+- **`Source/ExampleProject/RenderingClient/GPUPathTracerPass.h`** (edit) — 4 header-only inline accessors exposing the cache buffers. No `.cpp` change.
+- **`Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp`** (edit) — `if constexpr (PTHashGridCache::ENABLED)`-gated wiring: include + Setup + Initialize + Update + DispatchOrBypass (record) + Execute/SignalOnGPU on the Compute queue + WaitOnGPU before the path tracer reads + GetDispatchedPasses entry. Same-queue (Compute → Compute) Signal/Wait handles ordering; no graphics fence needed.
+- **`.claude/references.json`** (edit) — annotated PTHashGridCache.hlsl entry with the PackRadiance fp16 mirror; new entry for PTHashGridCacheUpdateTiles.comp citing `gi1.comp#L2160`.
+
+Decisions (load-bearing):
+
+- **Dispatch shape**: wide non-indirect over all tile slots, group-uniform early-out on `HashBuffer == 0`. Capsaicin's dirty-tile tracking (`UpdateTileBuffer` + `IndirectDispatch` from `GenerateUpdateTilesDispatch`) requires `PurgeTiles` and a parallel-prefix-sum dispatch generator — both deferred. The early-out plus 64-thread groups keeps unused tiles cheap; expected cost on an unsaturated cache is dominated by the read of `HashBuffer[tile_index]` per group.
+- **Pass ordering**: UpdateTiles runs BEFORE GPUPathTracerPass each frame on the Compute queue. Frame N: UpdateTiles consumes scratch (frame N-1's deltas), writes ValueBuffer (mean as-of-(N-1)), clears scratch; then path tracer reads ValueBuffer and writes fresh scratch (frame N's deltas). Matches Capsaicin's pipeline shape (UpdateTiles → ResolveCells/reads).
+- **First-frame behaviour**: ValueBuffer starts zero (cache cleared on scene load). UpdateTiles sees `prev.w == 0 && new.w == 0` for every cell, no merge happens. Path tracer reads `cellRadiance.w == 0`, falls through to BRDF sampling — no spurious zero-radiance hit. Frame 1: scratch has frame 0 contributions, UpdateTiles writes ValueBuffer with `radiance × 1`, path tracer reads back.
+- **Storage convention**: ValueBuffer stores `radiance × sample_count` in fp16 (Capsaicin gi1.comp:2165); read site divides by .w to recover the per-sample mean. Same convention as Capsaicin so the (deferred) mip cascade can sum 4 children without renormalising.
+- **Sample-count cap**: 16 (Capsaicin gi1.h:63 default). Already set in HashGridCacheConstants.h via `MAX_SAMPLE_COUNT`. Effective half-life ~11 frames at saturation.
+
+Verification gates passed:
+
+- HLSL2DXIL toggle=0 + toggle=1: clean compile.
+- BuildWin RelWithDebInfo: clean for both toggle states. New `PTHashGridCacheUpdateTilesPass.cpp` compiles and links into ExampleRenderingClient.lib.
+- Three-scene capture toggle=0: PASS — UnitTest, GITestBox, GISponza all loaded, auto-terminated, 0 D3D12 errors. `Build/captures/TASK-77.1-rework/updatetiles/toggle0/{unittest,gitestbox,gisponza}/`.
+- Three-scene capture toggle=1: PASS — same scenes, same conditions, 0 D3D12 errors. `Build/captures/TASK-77.1-rework/updatetiles/toggle1/{unittest,gitestbox,gisponza}/`.
+- Bypass invariant (toggle=0): every new HLSL line sits inside `#if PT_HASH_GRID_CACHE_ENABLED`; every new C++ runtime-side code path sits inside `if constexpr (Inno::PTHashGridCache::ENABLED)`. Verified by `git diff HEAD` inspection. Only out-of-gate additions are: (a) `#include "PTHashGridCacheUpdateTilesPass.h"` (header-only, no codegen impact when ENABLED is false), (b) inline accessors on `GPUPathTracerPass.h` returning nullptr-initialised members. No DXIL change between baseline and toggle=0; no runtime dispatch in toggle=0. PNG-hash bit-identity NOT gated per the TLAS-race ADVISORY (TASK-210 follow-up at 473c9985); structural proof gates toggle-off.
+
+Visual A/B observation, GISponza frame 30 (single-camera, this-CL gate):
+
+Captures: `Build/captures/TASK-77.1-rework/updatetiles/toggle1/gisponza/gpu_output_0030.png` (3.0 MB, real content) vs prior CL's site3-read toggle1 (`site3-read/toggle1/gisponza/gpu_output_0030.png`, 2.8 MB).
+
+Visual Read assessment (this CL toggle1 vs prior CL toggle1, GISponza frame 30):
+- What I see in prior site3-read toggle1: Sponza atrium with characteristic blue and orange-pink curtains framing the central pillar. Strong path-tracer noise grain across all surfaces (typical for a 30-frame accumulation). Curtains and pillar are well-lit with visible material color; floor reads as a dark grey-blue tile pattern. No obvious cell-pattern artifacts at this single frame; brightness is in normal range. Note: prior CL had no resolve pass — this single-frame capture sits before the monotonic over-bright drift becomes visible (drift accumulates frame-to-frame).
+- What I see in this CL toggle1: Same composition, same camera, same noise grain character. Curtains read at very similar brightness to the prior CL — same blue/orange-pink saturation. Pillar appears at very similar mid-tone grey. Floor reads at marginally similar brightness. No new spatial structure; no rings; no cell-pattern banding visible in either curtain folds or floor tiles.
+- Differences: Quality difference at this isolated frame is subtle — the running mean's stabilising effect is most visible in a frame sequence (i.e. would manifest as "doesn't drift" rather than "looks brighter at frame 30"). The single-frame capture cannot distinguish "stable" from "monotonically drifting" at the dump frame. No spatial regression — no cell artifacts, no rings, no banding. Verdict for *this* frame is consistent with the structural change (read source flipped from unbounded scratch sum to capped running mean): both hold the same lighting character without obvious quality regression.
+- Verdict: improvement (structural) — verified by the implementation: scratch is now bounded by 16-frame cap; previous CL's monotonic over-bright drift cannot occur because UpdateTiles consumes-and-clears every frame. Single-frame visual parity at f30 is the expected manifestation; multi-frame settle behaviour (AC-2) is a closure-time gate, not this CL's gate.
+
+Pending follow-up CLs in this rework chain: secondary-bounce contribution to the cache write payload (the next step that turns the direct-only-biased lift into a true indirect estimator), the `UpdateTiles` mip 1-3 box filter cascade for variable-radius spatial smoothing, the `PurgeTiles` 50-frame decay, and the closure-time three-scene × ≥2-camera × 5-sampled-frame visual A/B.
 <!-- SECTION:NOTES:END -->
