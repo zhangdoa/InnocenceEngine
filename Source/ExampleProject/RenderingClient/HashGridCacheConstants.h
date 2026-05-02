@@ -23,10 +23,12 @@ namespace PTHashGridCache
     // bit-identical to the cache-off baseline at HEAD 10d7b158.
     //
     // The HLSL side owns the #define PT_HASH_GRID_CACHE_ENABLED in
-    // GPUPathTracerRayGen.hlsl; both must hold the same value. With the
-    // toggle on but reads not yet wired, the cache is written-only — visual
-    // output remains parity with toggle-off, validating the plumbing before
-    // read sites land in subsequent CLs.
+    // GPUPathTracerRayGen.hlsl; both must hold the same value.
+    // Mismatch causes `CreateStateObject` failure: the HLSL root-signature
+    // slots `b3 + u1..u4` must align with the C++ pass's binding count.
+    // With the toggle on but reads not yet wired, the cache is written-only
+    // — visual output remains parity with toggle-off, validating the
+    // plumbing before read sites land in subsequent CLs.
     static constexpr bool ENABLED = false;
 
     // 2^13 buckets × 2^4 tiles/bucket × 8×8 cells/tile (mip0) ≈ 8.4M cells at

@@ -225,6 +225,23 @@ uint PTHashGridCache_CellIndexMipN(in PTHashGridCacheCB_t cb, in uint2 cell_offs
            cell_offset.x + cell_offset.y * mip_size;
 }
 
+// Recover the tile-local 2D mip-0 cell offset from the linear mip-0 cell
+// index. Capsaicin hash_grid_cache.hlsl:194-205. The inverse of the trailing
+// `cell_offset.x + cell_offset.y * size_tile_mip0` term in CellIndexMip0:
+// since the mip-0 block sits at offset 0 inside each tile (FIRST_CELL_OFFSET
+// _TILE_MIP0 == 0), the per-tile linear cell index reduces to a 2D unfold.
+// Used at read sites that already hold the linear mip-0 cell index returned
+// by InsertCell / FindCell and need the 2D offset to walk the cascade.
+uint PTHashGridCache_CellOffsetMip0(in PTHashGridCacheCB_t cb, in uint cell_index_mip0, out uint2 cell_offset_mip0)
+{
+    uint tile_index         = cell_index_mip0 / cb.num_cells_per_tile;
+    uint cell_linear_offset = cell_index_mip0 % cb.num_cells_per_tile;
+    uint mip_size           = cb.size_tile_mip0;
+    cell_offset_mip0.y      = cell_linear_offset / mip_size;
+    cell_offset_mip0.x      = cell_linear_offset - cell_offset_mip0.y * mip_size;
+    return tile_index;
+}
+
 // Insert (or claim) a cell for the given hit. Capsaicin
 // hash_grid_cache.hlsl:249-278. Open-addressing probe over num_tiles_per_bucket
 // slots; on probe-budget exhaustion returns kPTHashGridCache_InvalidId and
