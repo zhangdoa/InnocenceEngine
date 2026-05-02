@@ -4,7 +4,7 @@ title: Path-tracer world-space hash-grid radiance cache as denoiser (rework)
 status: To Do
 assignee: []
 created_date: '2026-04-30 19:14'
-updated_date: '2026-05-01 18:00'
+updated_date: '2026-05-01 21:38'
 labels:
   - R&D
   - path-tracer
@@ -262,4 +262,32 @@ Per `feedback_dont_pile_on_backlog_tasks` — these are recorded here, NOT filed
 - **Phase 2: secondary-vertex writes + reads** to accelerate convergence (Capsaicin alignment). File when phase 1 ships and the next convergence-acceleration pick becomes natural.
 - **Cache capacity tuning beyond 25 MB** if Sponza-scale scenes prove insufficient. File only if measured cell-occupancy / collision data shows the 2^20 budget saturated.
 - **Colour-delta invalidation** (cache invalidation when scene radiance shifts faster than the sample-cap allows). File when sample-cap-only ghost-lag becomes user-visible — e.g. moving point lights leave 256-frame trails.
+
+## Site-3 read CL — implementation ready for review (2026-05-01)
+
+Follow-up to commit 84d14b92's tracking-only plumbing CL. Adds the Capsaicin Site-3 read pattern (gi1.comp:2865-2900) at every secondary+ vertex, gated by the existing `PT_HASH_GRID_CACHE_ENABLED` toggle. Toggle stays at 0 (default) on commit; toggle=1 used for visual-A/B capture only.
+
+Diff:
+
+- `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` — extends the existing `#if PT_HASH_GRID_CACHE_ENABLED` block at bounce >= 1: after the InsertCell + decay-bump + 4× InterlockedAdd write, reads the same 4 uints back from `UpdateCellValueBuffer`, recovers radiance, and on `cellRadiance.w > 0` adds `throughput * (sum/count)` to `radiance` and breaks. The `cell_index` returned by `InsertCell` is reused for the read — no second hash-chain calculation. Toggle-off strips the entire block.
+- `.claude/references.json` — annotates GPUPathTracerRayGen.hlsl entry with the Site-3 read citation (gi1.comp:2865-2900).
+
+Decisions (no architectural deviation; carry-forward from 84d14b92):
+
+- Read at `bounce >= 1` only — matches D1 audit note (Site-3 read pattern fits loop-per-bounce architecture; primary vertex is always re-traced fresh).
+- Reuse `cell_index` from InsertCell rather than calling FindCell — avoids recomputing the hash chain; structurally identical lookup result.
+- Read AFTER write so this-frame's contribution participates in the cell mean — Capsaicin Site-3 is read-only, but our consolidated read+write block makes the bias acceptable (single-sample-mean degenerate case on first hit at a fresh cell).
+- Read source is `UpdateCellValueBuffer` (the running scratch sum), NOT `ValueBuffer`: until UpdateTiles ships in the next CL, ValueBuffer is unpopulated. UpdateCellValueBuffer monotonically accumulates — the per-cell mean = sum/count is a valid running average, just without sample-count cap or decay.
+
+Verification gates passed:
+
+- HLSL2DXIL toggle=0 + toggle=1: clean compile.
+- BuildWin RelWithDebInfo: clean for both toggle states.
+- Three-scene capture toggle=0: PASS — UnitTest, GITestBox, GISponza all loaded, auto-terminated, 0 D3D12 errors.
+- Three-scene capture toggle=1: PASS — same scenes, no D3D12 errors, captures produced.
+- Bypass invariant (toggle=0 → DXIL preprocessor-stripped): all changes sit inside `#if PT_HASH_GRID_CACHE_ENABLED` (verified by grep on the diff). PNG-hash A/B inconclusive due to pre-existing run-to-run nondeterminism in path-tracer test infra (asset-load race shifts TLAS rebuild timing into the dump frame in some runs). Test-infra-blocked, pre-existing condition; bypass invariant is structurally proved.
+
+Captures: `Build/captures/TASK-77.1-rework/site3-read/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`.
+
+Next CL targets `UpdateTiles`: per-frame running-mean update on dirty tiles (`gi1.comp:2160-2200`) — caps sample count at `max_sample_count = 16`, resolves UpdateCellValueBuffer scratch into ValueBuffer persistent, clears scratch. Site-3 read will then repoint at ValueBuffer; the over-bright bias seen here will be replaced by a well-formed stable estimator.
 <!-- SECTION:NOTES:END -->

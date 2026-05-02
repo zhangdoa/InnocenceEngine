@@ -11,10 +11,14 @@
 // Source/ExampleProject/RenderingClient/HashGridCacheConstants.h::ENABLED;
 // both must agree.
 //
-// First CL is tracking-only: writes happen at secondary+ vertices (insert
-// into the cache and atomic-add the per-vertex direct lighting), but no
-// reads feed back into the integrator. AccumBuffer output is unchanged from
-// baseline regardless of the toggle in this CL.
+// Toggle-on now adds the Site-3 read pattern (Capsaicin's glossy-reflections
+// shape — gi1.comp:2865-2900): at every secondary+ vertex, after this-frame
+// direct lighting and the tracking write, look up the running radiance sum in
+// UpdateCellValueBuffer; if the cell carries samples, replace the remaining
+// integration tail with throughput * (radianceSum / sampleCount) and break.
+// UpdateTiles (next CL) will migrate the running mean into ValueBuffer and
+// add the mip cascade; until then the cache reads from scratch directly,
+// which is where the only non-zero data lives.
 //
 // Reference: Capsaicin GI-1.0 hash_grid_cache.hlsl + gi1.comp secondary-
 // vertex sites. Full audit at .alignments/TASK-77.1-rework-paper-port-audit.md.
@@ -435,13 +439,21 @@ void RayGenShader()
         }
 
 #if PT_HASH_GRID_CACHE_ENABLED
-        // Cache write — first-CL tracking-only. Inserts the cell at the
-        // current secondary+ vertex and atomic-adds the per-vertex direct
-        // lighting (sun + sky NEE + point + sphere) into the scratch
-        // accumulator. No reads back into the integrator yet, so AccumBuffer
-        // is unaffected — this CL validates the plumbing only. Bounce 0 is
-        // never cached: primary visibility is always re-traced fresh per the
-        // D1 audit note (Capsaicin Site 3 / glossy-reflections-style read).
+        // Site-3 read + tracking write at every secondary+ vertex. Bounce 0
+        // is never cached: primary visibility is always re-traced fresh per
+        // the D1 audit note. The write keeps populating UpdateCellValueBuffer
+        // (running sum across frames), and the read replaces the remaining
+        // integration tail with the cell's mean radiance scaled by the
+        // current path throughput — Capsaicin's glossy-reflections pattern
+        // adapted to a loop-per-bounce raygen (gi1.comp:2865-2900).
+        //
+        // Until UpdateTiles lands (next CL), the cache stores only direct
+        // lighting (no multi-bounce feedback), so an early-out replaces a
+        // would-be indirect tail with a direct-only estimate. Expected bias:
+        // brighter walls / under-occluded contact regions in toggle-on
+        // captures; the cache will catch up to a true running mean once
+        // ValueBuffer + UpdateTiles ship.
+        bool cacheTerminated = false;
         if (bounce >= 1u)
         {
             PTHashGridCache_Data data;
@@ -469,8 +481,28 @@ void RayGenShader()
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u], quantized.y, prev);
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u], quantized.z, prev);
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u], quantized.w, prev);
+
+                // Read after write so this-frame's contribution participates in
+                // the mean; the +1 sample-count bias on the first hit at a fresh
+                // cell is acceptable (degenerate case — single-sample average).
+                uint4 cellQuantized;
+                cellQuantized.x = g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 0u];
+                cellQuantized.y = g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 1u];
+                cellQuantized.z = g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u];
+                cellQuantized.w = g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u];
+
+                float4 cellRadiance = PTHashGridCache_RecoverRadiance(cellQuantized);
+                if (cellRadiance.w > 0.0f)
+                {
+                    float3 mean = cellRadiance.rgb / cellRadiance.w;
+                    radiance += throughput * mean;
+                    cacheTerminated = true;
+                }
             }
         }
+
+        if (cacheTerminated)
+            break;
 #endif
 
         // Multi-lobe importance sampling: choose diffuse or specular path
