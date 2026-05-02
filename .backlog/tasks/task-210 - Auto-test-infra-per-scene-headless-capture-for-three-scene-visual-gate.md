@@ -110,4 +110,14 @@ ACs 1-5 (new TestPathTracerThreeScenes.ps1):
 ## Closure (producer, 2026-05-01)
 
 Landed at `bf07e7c9` (`feat(test-infra): TASK-210 -scene CLI override + three-scene capture driver`). All six ACs satisfied per the validation transcript above: AC-1..3 (per-scene headless renders), AC-4 (camera_orbit works in all three modes), AC-5 (`Scripts/TestPathTracerThreeScenes.ps1` drives back-to-back), AC-6 (existing `TestGPUPathTracer.ps1` regression PASS). Reviewed by `ci-build-expert` (PASS+ADVISORY, advisories accepted as-is). Out-of-scope deferrals (reload-at-frame hardcoded UnitTest, PNG content validation) documented in commit body, not filed as separate tasks per "don't pile on backlog tasks" guidance.
+
+## Post-closure follow-up
+
+ADVISORY (surfaced 2026-05-01 during TASK-77.1 Site-3 cache-read peer review by `graphics-api-expert`; status remains Done — this is a documented carry-forward, not a reopening):
+
+The PT test infra delivered by this task has a pre-existing run-to-run nondeterminism at frame 30. Three captures of the same binary at toggle=0 produced three different PNG hashes; one was completely black due to a TLAS-rebuild race against asset-loading at the dump frame. Telemetry verbatim: `instances=94 prevCount=86 dirtyTransforms=8`. This is NOT a regression introduced by TASK-77.1 — it pre-dates it — but it is a structural blocker for future PT visual-A/B work that wants pixel-hash bit-identity as a gate.
+
+Until resolved, PT A/B CLs must rely on **structural proof** (preprocessor-strip + grep) for toggle-off invariants instead of hash equality. The next PT A/B owner should read this note before designing their gate strategy; if pixel-hash equality is required, a precursor task to land deterministic TLAS-build / asset-load ordering at the dump frame must be filed first.
+
+Originating peer review: TASK-77.1 site3-read.
 <!-- SECTION:NOTES:END -->
