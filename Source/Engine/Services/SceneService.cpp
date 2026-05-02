@@ -38,12 +38,21 @@ bool SceneService::LoadSync(const char* fileName)
 	// 0. Flush all GPU work before destroying resources that may still be in flight
 	g_Engine->Get<FrameManagementService>()->WaitForGPUIdle();
 
-	// 1. Free GPU resources first (while component pointers still valid)
+	// 1. Client unloading callbacks fire FIRST so clients release their references
+	// (RenderPassComponent*, GPUBufferComponent*, etc.) before the engine destroys
+	// the underlying resources. Running them later (the previous order) meant client
+	// callbacks dereferenced freed pointers — a latent crash whenever a client did
+	// any non-trivial cleanup beyond clearing its own member to nullptr.
+	for (auto* cb : m_sceneUnloadingCallbacks)
+		(*cb)();
+
+	// 2. Free GPU resources (component pointers still valid for the OnSceneUnloading
+	// pass which iterates the resource pools)
 	g_Engine->Get<MeshResourceService>()->OnSceneUnloading();
 	g_Engine->Get<TextureResourceService>()->OnSceneUnloading();
 	g_Engine->Get<MaterialResourceService>()->OnSceneUnloading();
 
-	// 1b. Release scene-lifespan assets from the AssetService asset tables (TASK-52).
+	// 2b. Release scene-lifespan assets from the AssetService asset tables (TASK-52).
 	// Without this, AllocateMeshAsset/Material/Texture continues to return the prior
 	// scene's asset handle on name collision (residency still reads as Resident) while
 	// its underlying GPU resources have just been freed — the new scene's MeshComponent
@@ -52,20 +61,16 @@ bool SceneService::LoadSync(const char* fileName)
 	// AllocateMeshAsset to hand the new scene a fresh slot.
 	AssetService::ReleaseAssetsByLifespan(ObjectLifespan::Scene);
 
-	// 2. Destroy scene-scoped components
+	// 3. Destroy scene-scoped components
 	g_Engine->Get<EntityRegistry>()->CleanUp(ObjectLifespan::Scene);
 	JSONWrapper::ClearLoadedCompFilenames();
 	Log(Success, "Scene entities cleaned up.");
 
-	// 3. Clear transform hierarchy (nodes index into now-empty storage, safe to reset)
+	// 4. Clear transform hierarchy (nodes index into now-empty storage, safe to reset)
 	g_Engine->Get<TransformService>()->OnSceneUnloading();
 
-	// 4. Clear physics simulation state and PhysX actors
+	// 5. Clear physics simulation state and PhysX actors
 	g_Engine->Get<PhysicsSimulationService>()->OnSceneUnloading();
-
-	// 5. Client unloading callbacks
-	for (auto* cb : m_sceneUnloadingCallbacks)
-		(*cb)();
 
 	// Load the new scene
 	AssetService::LoadScene(fileName);
