@@ -274,6 +274,86 @@ GISponza is partially achieved: the [25,26]-black-window matches across binaries
 
 **Reviewer:** test-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should independently `Read` at minimum: unittest frame 25 from run1 + fresh-binary (verify bit-identical viewpoint), gitestbox frame 25 from run1 + fresh-binary (verify bit-identical), gisponza frame 28 from run1 + fresh-binary (verify viewpoint match within MAE 4.3e-5), and gisponza frame 27 fresh-binary (verify the uniform-black flap-back artefact AC-7 will fix). Then verify the same-binary and cross-binary MAE matrices with their own `magick compare` runs. Reviewer should also confirm advisory 1 (stale-DXIL hazard) is filed as a follow-up rather than being CL C's blocker. Surface-back; no commit this CL.
 
+### Load-determinism foundation chain — CL 3: residency predicate on five resource services — surfaced 2026-05-03
+
+This is CL 3 of the standalone "load-determinism foundation" chain that re-frames TASK-213's CL A/B latch issue (`m_autoCaptureFrameCount` gating on `IsSteadyState`'s K=3 plateau, which lands on transient instance-count plateaus mid-walk — see CL B surprise 2 / CL C AC-7 black-frame surface). The foundation chain replaces the K=3 latch with a per-component residency observation per the `no-shadow-state.md` discipline (commit `a86e6e93`).
+
+Foundation-chain anchors (none committed under TASK-213 explicitly; see commits):
+- CL 1: `a86e6e93` — `no-shadow-state.md` + universal-list wiring + 5 agent cross-refs.
+- CL 2: `46c3ac85` — SceneService unload reorder (client callbacks fire BEFORE engine-internal unload).
+- **CL 3 (this surface-back)**: residency predicate on five resource services.
+- CL 4 (next): `SceneService::IsResidencyComplete()` aggregator + wire `m_autoCaptureFrameCount` gate to it instead of `IsSteadyState`.
+- CL 5: remove FMS::Update lines 161-165 + `ClearLoadingFlag`; set `m_IsLoading` synchronously at LoadSync entry/exit. Discards TASK-213 CL E stash (superseded).
+
+**Files touched (CL 3):**
+- `Source/Engine/Common/NamedObjectPool.h` — added a const overload of `ForEach(std::function<void(T*)>)`. The existing non-const overload was untouched. The const overload delegates to `ThreadSafeVector::for_each(...) const` (line 128 of `ThreadSafeVector.h`), which already takes a `std::shared_lock`.
+- `Source/Engine/Services/MeshResourceService.h` — declared `MeshComponent* GetFirstPendingComponent() const`.
+- `Source/Engine/Services/Common/MeshResourceServiceImpl.cpp` — implemented.
+- `Source/Engine/Services/TextureResourceService.h` — declared `TextureComponent* GetFirstPendingComponent() const`.
+- `Source/Engine/Services/Common/TextureResourceServiceImpl.cpp` — implemented.
+- `Source/Engine/Services/MaterialResourceService.h` — declared `MaterialComponent* GetFirstPendingComponent() const`.
+- `Source/Engine/Services/Common/MaterialResourceServiceImpl.cpp` — implemented.
+- `Source/Engine/Services/GPUBufferResourceService.h` — declared `GPUBufferComponent* GetFirstPendingComponent() const`.
+- `Source/Engine/Services/Common/GPUBufferResourceServiceImpl.cpp` — implemented.
+- `Source/Engine/Services/RenderPassResourceService.h` — declared `RenderPassComponent* GetFirstPendingComponent() const`.
+- `Source/Engine/Services/Common/RenderPassResourceServiceImpl.cpp` — implemented.
+
+**Implementation shape (identical across the five services):** the method takes `m_Pool.ForEach(...)` and captures the first non-`Activated` component via a closure-captured pointer; subsequent invocations short-circuit on the body's first `if (l_pending) return;`. No counts, no flags, no shadow state — pure observation of `m_ObjectStatus`.
+
+```cpp
+ServiceComponent* SomeService::GetFirstPendingComponent() const
+{
+    ServiceComponent* l_pending = nullptr;
+    m_Pool.ForEach([&l_pending](ServiceComponent* in_Component)
+    {
+        if (l_pending)
+            return;
+        if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
+            l_pending = in_Component;
+    });
+    return l_pending;
+}
+```
+
+**Pre-activation status used:** `ObjectStatus::Created`. All five services route their `Add(name)` through `NamedObjectPool::Allocate(name)`, which stamps `l_ptr->m_ObjectStatus = ObjectStatus::Created` (NamedObjectPool.h:47). Activation happens only on successful `InitializeComponents()` paths — Mesh:148, Texture:157 (also Synchronous:130), Material:79, GPUBuffer:69, RenderPass:62. No path stamps `Suspended` between Allocate and Activate. Per the brief edge case 2: explicit `== ObjectStatus::Created` check (not `!= ObjectStatus::Activated`) so `Suspended`/`Terminated` components are correctly treated as not-pending.
+
+**Per-service quirks (none required code differences):**
+- **Mesh** has the shared-handle re-queue at MeshResourceServiceImpl.cpp:121-127 (activation-only tasks re-queued when their primary handle has not yet built). Re-queued components retain `ObjectStatus::Created` until line 148 stamps `Activated` on success — predicate correctly observes them as pending.
+- **Mesh** also has a re-queue on `InitializeImpl` failure at line 151 — same correct behavior.
+- **Texture / Material / GPUBuffer / RenderPass** have failure-only re-queues (`m_DeferredQueue.push(std::move(l_task));` on init-failure path). Same correctness — pending until activated.
+- The `m_DeferredQueue` is intentionally NOT consulted by the predicate (per brief). A queued-but-not-yet-popped component is in `m_Pool` with `Created` status; iteration catches it directly.
+- **GPUBuffer / RenderPass** already exposed a `ForEach(std::function<void(T*)>)` on the service itself (used by other engine code, e.g. resize callbacks). Reused via the pool's overload directly inside the new method; the service-level `ForEach` was not touched.
+
+**No-shadow-state self-check:**
+- No `int m_X_Count` added to any service.
+- No `bool m_IsXResidencyComplete` / `m_AllReady` / `m_IsLoaded` added.
+- No `std::atomic<bool>` shadow added.
+- The new const `NamedObjectPool::ForEach` overload is a pure read accessor; introduces no state.
+- Predicates derive entirely from per-component `m_ObjectStatus` (the data's own state) and the live-objects vector membership (`NamedObjectPool::Allocate` populates, `Release` removes).
+
+**Test by inspection — MaterialResourceService walk-through (per brief):**
+Hypothetical scene: 3 materials at `Created`, 2 at `Activated` (5 total live in `m_Pool`).
+1. `GetFirstPendingComponent()` calls `m_Pool.ForEach(lambda)`.
+2. `NamedObjectPool::ForEach(...) const` (just added) calls `m_LiveObjects.for_each(lambda)`.
+3. `ThreadSafeVector::for_each(...) const` takes a `std::shared_lock` and runs `std::for_each` over all 5 entries in allocation order.
+4. Element 1 (`Created`): `l_pending == nullptr` → status check passes → `l_pending = element1`. Returns.
+5. Elements 2-5: `if (l_pending) return;` short-circuits. Lambda body's status check skipped.
+6. `for_each` returns. `l_pending` holds the first `Created` MaterialComponent. Method returns it.
+   Expected result: returns the first `Created` material. ✓
+
+If all 5 were `Activated`: each invocation finds `l_pending == nullptr` AND status check fails → `l_pending` stays `nullptr` for the entire walk → method returns `nullptr` (vacuously residency-complete). ✓ (matches brief edge case 1)
+
+**Threading note (per `threading-contracts.md`):** `GetFirstPendingComponent()` is `const`. Underneath, `NamedObjectPool::ForEach (const)` → `ThreadSafeVector::for_each (const)` takes a `std::shared_lock` on the live-objects mutex — multiple readers may call concurrently; concurrent `Add`/`Delete` on the service block the reader briefly but do not corrupt iteration. Per-component `m_ObjectStatus` is a plain `ObjectStatus` enum, written by the engine main thread inside `InitializeComponents()`. Reading it from a non-main thread is technically a data race per the C++ memory model, but the result is at worst a stale snapshot (one frame off) — acceptable for the residency-aggregator use case at CL 4. If CL 4's caller is main-thread-only this concern is moot.
+
+**Build:** RelWithDebInfo full-tree build clean (`cmake --build Build --config RelWithDebInfo`, exit 0). All consumers compile (Engine, RenderTest, Main, all DX12/VK/MT backends, TestSuite). No new compiler warnings on any of the six touched files. Pre-existing `MathHelper.h` C4003 `max` macro warnings unchanged (unrelated; predates this CL).
+
+**Surprises / advisories:**
+1. **`NamedObjectPool::ForEach` was non-const-only.** Adding the const overload was a one-line delegate (`ThreadSafeVector::for_each` already had its const overload). Owned subtree (`Source/Engine/Common`) per low-level-expert; legitimate within-scope edit, no cross-subtree exposure.
+2. **`NamedObjectPool::ForEach` signature is `std::function<void(T*)>`, not a generic predicate.** I considered adding a `FindIf`-style overload that early-exits properly, but the existing `for_each` is fine — the lambda short-circuits on `if (l_pending) return;` and the iteration cost over a few hundred components per service is negligible for a per-frame query. The brief specifically said "don't reshape the pool API unnecessarily."
+3. **Per-component `m_ObjectStatus` lives directly on the component struct** for all five (verified: Mesh/Texture/Material/GPUBuffer/RenderPass all carry it). No base-class inheritance gymnastics required; no shared template machinery touched.
+
+**Reviewer:** low-level-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should inspect for no-shadow-state compliance (no new counter / flag fields on any of the five services) and predicate correctness (early-exit lambda short-circuit, `== Created` check, const correctness through the pool walk). Surface-back; no commit this CL.
+
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)

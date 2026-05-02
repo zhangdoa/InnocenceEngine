@@ -84,6 +84,19 @@ bool MaterialResourceService::InitializeComponents()
 	return true;
 }
 
+MaterialComponent* MaterialResourceService::GetFirstPendingComponent() const
+{
+	MaterialComponent* l_pending = nullptr;
+	m_Pool.ForEach([&l_pending](MaterialComponent* in_Component)
+	{
+		if (l_pending)
+			return;
+		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
+			l_pending = in_Component;
+	});
+	return l_pending;
+}
+
 bool MaterialResourceService::OnSceneUnloading()
 {
 	auto l_registry = g_Engine->Get<EntityRegistry>();

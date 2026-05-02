@@ -26,6 +26,13 @@ namespace Inno
 		bool InitializeComponents();
 		bool OnSceneUnloading();
 
+		// Residency predicate (no-shadow-state discipline): returns the first
+		// component in m_Pool whose status is still ObjectStatus::Created
+		// (pre-activation), or nullptr if every live component is Activated.
+		// Source of truth is the per-component m_ObjectStatus stamped by
+		// InitializeComponents(); no shadow counters.
+		MaterialComponent* GetFirstPendingComponent() const;
+
 	protected:
 		virtual bool InitializeImpl(MaterialComponent* material);
 

@@ -263,6 +263,19 @@ const GPUMeshResource* MeshResourceService::GetMeshResource(GPUMeshResourceHandl
 	return &l_resource;
 }
 
+MeshComponent* MeshResourceService::GetFirstPendingComponent() const
+{
+	MeshComponent* l_pending = nullptr;
+	m_Pool.ForEach([&l_pending](MeshComponent* in_Component)
+	{
+		if (l_pending)
+			return;
+		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
+			l_pending = in_Component;
+	});
+	return l_pending;
+}
+
 GPUMeshResourceHandle MeshResourceService::FindMeshResourceByName(const char* name)
 {
 	auto l_result = m_MeshResourceLUT.find(name);

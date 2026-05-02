@@ -71,6 +71,11 @@ namespace Inno
 			m_LiveObjects.for_each(func);
 		}
 
+		void ForEach(std::function<void(T*)> func) const
+		{
+			m_LiveObjects.for_each(func);
+		}
+
 	private:
 		TObjectPool<T>* m_Pool = nullptr;
 		ThreadSafeUnorderedMap<std::string, T*> m_NameIndex;

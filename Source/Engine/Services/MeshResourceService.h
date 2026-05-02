@@ -34,6 +34,15 @@ namespace Inno
 		// subsequent frames; "queue empty" means no pending mesh activations.
 		bool IsDeferredQueueEmpty() const { return m_DeferredQueue.empty(); }
 
+		// Residency predicate (no-shadow-state discipline): returns the first
+		// component in m_Pool whose status is still ObjectStatus::Created
+		// (pre-activation), or nullptr if every live component is Activated.
+		// Source of truth is the per-component m_ObjectStatus stamped by
+		// InitializeComponents(); no shadow counters or "is-ready" flags.
+		// Caller can log the returned component's m_InstanceName to surface
+		// which mesh is still pending, not just how many.
+		MeshComponent* GetFirstPendingComponent() const;
+
 		GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle);
 		const GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle) const;
 		GPUMeshResourceHandle FindMeshResourceByName(const char* name);

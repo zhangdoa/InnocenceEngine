@@ -74,6 +74,19 @@ bool GPUBufferResourceService::InitializeComponents()
 	return true;
 }
 
+GPUBufferComponent* GPUBufferResourceService::GetFirstPendingComponent() const
+{
+	GPUBufferComponent* l_pending = nullptr;
+	m_Pool.ForEach([&l_pending](GPUBufferComponent* in_Component)
+	{
+		if (l_pending)
+			return;
+		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
+			l_pending = in_Component;
+	});
+	return l_pending;
+}
+
 bool GPUBufferResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
 {
 	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)
