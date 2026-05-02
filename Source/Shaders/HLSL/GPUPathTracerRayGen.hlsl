@@ -9,9 +9,7 @@
 // same DXIL/SPIR-V as the cache-off baseline at HEAD 10d7b158 (the bypass
 // invariant — visual-validation.md §3b). The C++ side mirrors this in
 // Source/ExampleProject/RenderingClient/HashGridCacheConstants.h::ENABLED;
-// both must agree. Mismatch causes `CreateStateObject` failure: the HLSL
-// root-signature slots `b3 + u1..u4` must align with the C++ pass's
-// binding count.
+// both must agree.
 //
 // Toggle-on adds the Site-3 read pattern (Capsaicin's glossy-reflections
 // shape — gi1.comp:2865-2900) plus a Site-2 / UpdateMultibounceCells-style
@@ -526,50 +524,14 @@ void RayGenShader()
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 2u], quantizedDirect.z, prev_atomic);
                 InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + 3u], quantizedDirect.w, prev_atomic);
 
-                // Read the running mean through the confidence-driven mip
-                // cascade (Capsaicin hash_grid_cache.hlsl:465-494,
-                // HashGridCache_FilteredRadianceDirect). Start at mip 0; if
-                // the accumulated sample count is below max_sample_count and
-                // the next mip exists, fall back to that mip. Higher mips
-                // aggregate four children per step in MipCascadeBuild, so
-                // their sample counts grow geometrically — a low-confidence
-                // mip-0 cell typically lands on a mip-1 or mip-2 cell that
-                // has already saturated. Selection is footprint-agnostic at
-                // read time: Capsaicin quantizes the footprint into the
-                // cell-size hashing key (the `l` term of GetDesc) at write
-                // time, so reads at the matched cell already see a
-                // footprint-appropriate mip-0 estimate. The cascade only
-                // widens the spatial filter when sample density is too thin
-                // to trust the mip-0 mean. The buffer convention follows
+                // Read the resolved running mean from ValueBuffer, populated
+                // by PTHashGridCacheUpdateTilesPass earlier this frame from
+                // last frame's scratch deltas. The buffer convention follows
                 // Capsaicin (gi1.comp:2165) — .rgb stores radiance × .w, so
                 // the per-sample mean is .rgb / .w. The first frame after a
-                // cache clear sees .w == 0 across all four mips and falls
+                // cache clear sees .w == 0 across the board and falls
                 // through to BRDF sampling, no spurious zero-radiance hit.
-                // Site-2 secondary-bounce write below stays at mip 0
-                // (Capsaicin pattern: writes are finest-mip-only; the
-                // MipCascadeBuild pass aggregates upward each frame). The
-                // prev_cell_index carry-forward is therefore consistent
-                // regardless of which mip this read picked: writes always
-                // land at mip-0 cell indices, and the next frame's cascade
-                // build re-aggregates them.
-                uint2 cell_offset_mip0;
-                uint  tile_index_for_read = PTHashGridCache_CellOffsetMip0(g_HashGridCacheConstants, cell_index, cell_offset_mip0);
                 float4 cellRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index]);
-                uint cell_index_mip1 = g_HashGridCacheConstants.size_tile_mip1 > 0u
-                    ? PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index_for_read, 1u)
-                    : kPTHashGridCache_InvalidId;
-                if (cellRadiance.w < g_HashGridCacheConstants.max_sample_count && cell_index_mip1 != kPTHashGridCache_InvalidId)
-                    cellRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index_mip1]);
-                uint cell_index_mip2 = g_HashGridCacheConstants.size_tile_mip2 > 0u
-                    ? PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index_for_read, 2u)
-                    : kPTHashGridCache_InvalidId;
-                if (cellRadiance.w < g_HashGridCacheConstants.max_sample_count && cell_index_mip2 != kPTHashGridCache_InvalidId)
-                    cellRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index_mip2]);
-                uint cell_index_mip3 = g_HashGridCacheConstants.size_tile_mip3 > 0u
-                    ? PTHashGridCache_CellIndexMipN(g_HashGridCacheConstants, cell_offset_mip0, tile_index_for_read, 3u)
-                    : kPTHashGridCache_InvalidId;
-                if (cellRadiance.w < g_HashGridCacheConstants.max_sample_count && cell_index_mip3 != kPTHashGridCache_InvalidId)
-                    cellRadiance = PTHashGridCache_UnpackRadiance(g_HashGridCache_ValueBuffer[cell_index_mip3]);
                 if (cellRadiance.w > 0.0f)
                 {
                     float3 mean = cellRadiance.rgb / cellRadiance.w;
