@@ -60,8 +60,29 @@ Concrete shape: prefer "you (the reviewer) do not author code; do not add `Code-
 
 Failure mode this prevents: reviewer reads "Code-AI-Generated-By does not apply" (meant: to the reviewer's own output), interprets as "to this CL's commit message", flags the implementer's correctly-signed attribution line as a finding to remove.
 
+## Stop-the-line on accumulating carry-forward advisories
+
+Carry-forward advisories under the same backlog cross-reference are a degradation signal, not a continuation signal. When a CL closes with an "ADVISORY (carry-forward)" or "Post-closure follow-up" note pointing at the same TASK-N, and a *prior* CL on the same chain already logged an advisory under that ID, the dispatcher does not roll forward into the next implementation CL. The chain pauses; the dispatcher hands back to the user with the accumulated advisory chain laid out, and waits for direction.
+
+The trigger is **N > 1 carry-forward advisories under the same backlog cross-reference**, not the absolute count of advisories. One advisory is information; two is a degradation pattern; three is a rework signal that the chain has been operating in a degraded validation regime for multiple CLs.
+
+Operational check: before dispatching the next implementation CL on a chain, the dispatcher runs `git log --grep=<TASK-N>` against the recent branch history; if two or more carry-forward advisory commits already mention the same TASK-N, hand back to the user. Dispatcher recall has been demonstrated unreliable across long chains (the TASK-77.1 incident below is the proof); commit history is observable, deterministic, and survives session boundaries — memory across the conversation is not.
+
+The smell shape that triggers this:
+
+- The same TASK-N appears in advisory carry-forwards across consecutive implementation CLs.
+- Each advisory *expands* the scope of the previous one (one scene → one camera → all scenes; one symptom → one mechanism → an entire validation axis).
+- The validation signal that the per-CL closure protocol relies on degrades scene by scene as the chain proceeds.
+
+When this fires, hand back. Do not attempt to fold the rework decision into the next dispatch brief — the user sets direction; auto-rollover is the dispatcher acting as direction-setter on a chain whose validation foundation is no longer trusted.
+
+Recorded incident: TASK-77.1 rework chain (commits `20b6dbdf` → `b9a103cc`, May 2026). Three TASK-210 carry-forward CLs accumulated across the chain (`473c9985` PT TLAS-race in one scene → `150dcaab` GISponza camera viewpoint nondeterminism → `391af203` cross-binary nondeterminism generalises to all 3 scenes). After CL 3 the closure record explicitly stated "fresh-rebuild visual A/B against a baseline binary is structurally unreliable for ANY of the three test scenes" — at that moment the chain's per-CL visual signal had collapsed to "within-binary toggle A/B on a single scene that is itself camera-nondeterministic across runs." The dispatcher rolled forward into one more implementation CL anyway; the user opened the resulting capture and rejected it for visible artifacts. Stopping-the-line at the third carry-forward would have surfaced the chain to user-direction before that CL was authored.
+
+The complementary check on the artifact side — that reviewer visual inspection lands in the commit record — is enforced by the `visual-review` gate (`commit-gate.js`) and `peer-review-required.md` § "Reviewer visual inspection". This rule is the upstream pause; that rule is the downstream catch.
+
 ## Cross-references
 
 - `../agent-dispatch.md` — background-by-default and the `[foreground-required]` sentinel; this file does not duplicate that contract.
-- `../peer-review-required.md` — reviewer-selection and BLOCKED loop bound; this file shapes the implementer brief, not the reviewer brief.
-- `../surface-dont-chase.md` — when a closure surfaces new scope, the dispatcher does not auto-expand into the next dispatch.
+- `../peer-review-required.md` — reviewer-selection and BLOCKED loop bound; this file shapes the implementer brief, not the reviewer brief. The reviewer-visual-inspection mandate lives there.
+- `../surface-dont-chase.md` — when a closure surfaces new scope, the dispatcher does not auto-expand into the next dispatch. The carry-forward stop-the-line rule above is a special case applied to advisory accumulation across CLs, not within one CL.
+- `../visual-validation.md` — owns the layered visual-validation protocol the carry-forward chain was operating against; degraded layer-3 references are the smell.

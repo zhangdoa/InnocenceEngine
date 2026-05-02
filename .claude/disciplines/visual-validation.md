@@ -101,6 +101,7 @@ Layer 4 is the ratchet that catches the failure mode this discipline exists to p
 
 ## Cross-references
 
-- `peer-review-required.md` — the UNVERIFIED review tier exists for visual ACs that pass numerically but cannot actually be exercised by the test infra (auto-capture culling, headless harness limits). Reviewer must promote test-infra-blocked visual ACs to UNVERIFIED, not ADVISORY. Layer-1 absence on a rendering-output CL is itself a BLOCKED-tier finding.
+- `peer-review-required.md` — the UNVERIFIED review tier exists for visual ACs that pass numerically but cannot actually be exercised by the test infra (auto-capture culling, headless harness limits). Reviewer must promote test-infra-blocked visual ACs to UNVERIFIED, not ADVISORY. Layer-1 absence on a rendering-output CL is itself a BLOCKED-tier finding. The reviewer-visual-inspection mandate (independent `Read` + structured block + `Reviewed-Visually:` commit footer) lives there; the `visual-review` commit-gate enforces the footer when the body references `Build/captures/`.
 - `perf-measurement-frame-budget.md` — *visual-correctness verification* is explicitly out of scope for the perf-measurement N-picking rule; this discipline owns frame counts for visual claims.
 - `regression-fix-flow.md` — when layer 1 or layer 4 catches a regression, the fix-up CL follows the regression-fix-flow.
+- `dispatcher/dispatch-briefs.md` — when carry-forward advisories accumulate under the same backlog cross-reference (N > 1), the layered validation foundation has degraded; the dispatcher pauses and hands back rather than rolling into the next CL.

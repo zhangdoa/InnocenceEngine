@@ -31,7 +31,14 @@
  *                         attribution because it is the richer claim:
  *                         if both are missing the user gets the more
  *                         informative error first.
- *   6. attribution      — commit message needs the AI-authorship header.
+ *   6. visual-review    — when the body references Build/captures/, the
+ *                         reviewer's visual-inspection footer
+ *                         (Reviewed-Visually: / Review-Skipped-Visual:)
+ *                         must be present. Placed after peer-review
+ *                         because it is the narrower trigger; if both
+ *                         are missing on a rendering CL the user sees
+ *                         the broader peer-review error first.
+ *   7. attribution      — commit message needs the AI-authorship header.
  *                         MUST live in this phase so transcript-fail-open
  *                         cannot bypass it (see CL fixing 55cf6a72 gap).
  *
@@ -61,6 +68,7 @@ const GATES = [
   require('./gates/paper-port'),      // needsTranscript: false
   require('./gates/closure-staleness'),// needsTranscript: false (symmetric to closure-evidence)
   require('./gates/peer-review'),     // needsTranscript: false (before attribution — richer claim first)
+  require('./gates/visual-review'),   // needsTranscript: false (after peer-review — narrower trigger)
   require('./gates/test-run'),        // needsTranscript: true
   require('./gates/live-engine'),     // needsTranscript: true
   require('./gates/serialize-test'),  // needsTranscript: true
