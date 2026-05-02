@@ -37,6 +37,13 @@ namespace Inno
 		GPUBufferComponent* GetHashGridCacheDecayTileBuffer()     { return m_HashGridCache_DecayTileBuffer; }
 		GPUBufferComponent* GetHashGridCacheUpdateCellValueBuffer() { return m_HashGridCache_UpdateCellValueBuffer; }
 		GPUBufferComponent* GetHashGridCacheValueBuffer()         { return m_HashGridCache_ValueBuffer; }
+		// Indirect-mirror pair for the D1-reversal chain (CL A plumbs the
+		// buffers; CL B/C/D/E wire them into UpdateTiles, the integrator
+		// secondary-bounce write, and the Site-3 read). Capsaicin
+		// gi1.cpp:497-553 — separate ValueBuffer / UpdateCellValueBuffer
+		// pair when options.gi1_use_multibounce is true.
+		GPUBufferComponent* GetHashGridCacheUpdateCellValueIndirectBuffer() { return m_HashGridCache_UpdateCellValueIndirectBuffer; }
+		GPUBufferComponent* GetHashGridCacheValueIndirectBuffer() { return m_HashGridCache_ValueIndirectBuffer; }
 		// FrameCount CB exposed so PTHashGridCachePurgeTilesPass can compute
 		// frame_count - decay marker without owning a parallel CB upload.
 		GPUBufferComponent* GetFrameCountCB()                     { return m_FrameCountCB; }
@@ -87,6 +94,16 @@ namespace Inno
 		GPUBufferComponent* m_HashGridCache_DecayTileBuffer    = nullptr;
 		GPUBufferComponent* m_HashGridCache_UpdateCellValueBuffer = nullptr;
 		GPUBufferComponent* m_HashGridCache_ValueBuffer        = nullptr;
+		// D1-reversal chain CL A — indirect-mirror pair allocated alongside
+		// the direct pair, cleared on scene load, and unbound from every
+		// shader this CL. CL B wires UpdateTiles to the indirect mirror, CL
+		// C wires the integrator's secondary-bounce write, CL D wires the
+		// Site-3 read into ValueIndirectBuffer for the indirect lobe, and
+		// CL E removes the single-buffer collapse. See Capsaicin gi1.cpp
+		// :497-553 for the canonical allocation shape (uint2 per cell for
+		// the persistent estimator, uint[4] per cell for the atomic scratch).
+		GPUBufferComponent* m_HashGridCache_UpdateCellValueIndirectBuffer = nullptr;
+		GPUBufferComponent* m_HashGridCache_ValueIndirectBuffer = nullptr;
 
 		// Geometry mega-buffers (rebuilt on scene load)
 		GPUBufferComponent* m_MegaVertexBuffer = nullptr;

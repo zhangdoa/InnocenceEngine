@@ -38,10 +38,14 @@ namespace PTHashGridCache
     // hash modulo cheap.
     //
     // Buffer footprint at this sizing (mip0 cells = num_buckets * num_tiles_per_bucket * size_tile_mip0^2):
-    //   ValueBuffer            (uint2 = 8B/cell)  ≈  88 MB
-    //   UpdateCellValueBuffer  (4*uint = 16B/cell)≈ 176 MB
-    //   HashBuffer / DecayBuf  (uint per tile, 131072 tiles each) ≈ 1 MB total
-    // Total ≈ 265 MB without USE_MULTI_BOUNCE mirrors.
+    //   ValueBuffer                  (uint2  =  8B/cell) ≈  88 MB
+    //   ValueIndirectBuffer          (uint2  =  8B/cell) ≈  88 MB  (D1-reversal CL A — multibounce indirect mirror)
+    //   UpdateCellValueBuffer        (4*uint = 16B/cell) ≈ 176 MB
+    //   UpdateCellValueIndirectBuffer(4*uint = 16B/cell) ≈ 176 MB  (D1-reversal CL A — multibounce indirect scratch)
+    //   HashBuffer / DecayBuf        (uint per tile, 131072 tiles each) ≈ 1 MB total
+    // Total ≈ 529 MB with the indirect mirrors (D1-reversal chain restoring Capsaicin's
+    // separate direct/indirect ValueBuffer scheme; Capsaicin gi1.cpp:497-553 conditional
+    // on options.gi1_use_multibounce).
     static constexpr uint32_t NUM_BUCKETS_LOG2          = 13u;
     static constexpr uint32_t NUM_BUCKETS               = 1u << NUM_BUCKETS_LOG2;
     static constexpr uint32_t NUM_TILES_PER_BUCKET_LOG2 = 4u;
@@ -71,6 +75,16 @@ namespace PTHashGridCache
     // cell saturates, new contributions blend at weight 1/16. The previous
     // attempt used 32; Capsaicin's reference value is 16.
     static constexpr float MAX_SAMPLE_COUNT = 16.0f;
+
+    // Cap on per-cell sample count for the multibounce indirect running-mean
+    // (Capsaicin gi1.h:65 — gi1_hash_grid_cache_max_multibounce_sample_count
+    // default 16). Indirect-lobe contributions arrive at a different cadence
+    // from the direct-lobe writes that feed the primary ValueBuffer, so the
+    // cap is held as its own knob even though Capsaicin's default value
+    // happens to match MAX_SAMPLE_COUNT. Consumed by the upcoming UpdateTiles
+    // resolve of UpdateCellValueIndirectBuffer → ValueIndirectBuffer; this
+    // CL plumbs the buffers only.
+    static constexpr float MAX_MULTIBOUNCE_SAMPLE_COUNT = 16.0f;
 
     // Min cell size floor in metres (Capsaicin gi1.h:59 — default 0.1m).
     // Keeps the log2 input strictly positive for sub-millimetre eye-to-hit

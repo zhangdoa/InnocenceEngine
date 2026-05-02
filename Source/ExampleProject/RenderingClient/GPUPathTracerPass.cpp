@@ -67,8 +67,33 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	//                 b3=HashGridCacheCB,
 	//                 u1=HashBuffer, u2=DecayTileBuffer,
 	//                 u3=UpdateCellValueBuffer, u4=ValueBuffer
+	//
+	// D1-reversal chain — binding-count invariant.
+	//   This CL (A): plumbing only. UpdateCellValueIndirectBuffer and
+	//                ValueIndirectBuffer are allocated and cleared but
+	//                NOT bound to the raygen — l_cacheBindingCount stays
+	//                at 5 (the existing direct pair: b3 + u1..u4).
+	//   CL B: integrator secondary-bounce write switches from the
+	//         single-buffer collapse to the indirect scratch UAV →
+	//         l_cacheBindingCount becomes 6 (adds u5).
+	//   CL C: UpdateTiles reads UpdateCellValueIndirectBuffer and writes
+	//         ValueIndirectBuffer (separate pass, not raygen).
+	//   CL D: Site-3 read in raygen pulls ValueIndirectBuffer for the
+	//         indirect-lobe carry-back → l_cacheBindingCount becomes 7
+	//         (adds u6).
+	//   CL E: cleanup of the D1 single-buffer collapse helpers.
+	// The static_assert below is the loud-fail surface for the
+	// HLSL/C++ flag-pair invariant: if l_cacheBindingCount drifts
+	// off this CL's expected value, the surface review must update
+	// both the value and this comment block in lockstep.
 	constexpr size_t l_baseBindingCount  = 13;
 	constexpr size_t l_cacheBindingCount = Inno::PTHashGridCache::ENABLED ? 5 : 0;
+	static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 5,
+		"D1-reversal CL A invariant: cache-binding count is 5 (b3 + u1..u4) — the "
+		"new UpdateCellValueIndirectBuffer / ValueIndirectBuffer pair allocated "
+		"this CL is dead data, NOT bound to the raygen yet. CL B raises this to "
+		"6 when the integrator writes the indirect scratch; CL D raises it to 7 "
+		"when the Site-3 read consumes the indirect persistent buffer.");
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(l_baseBindingCount + l_cacheBindingCount);
 
 	// b0 - PerFrameCB (set 0, binding 0)
@@ -349,6 +374,28 @@ bool GPUPathTracerPass::Initialize()
 		m_HashGridCache_ValueBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
 		l_bufService->Initialize(m_HashGridCache_ValueBuffer);
 
+		// D1-reversal chain CL A — indirect-mirror pair. Allocation shape
+		// mirrors the direct pair above (Capsaicin gi1.cpp:497-553 — the
+		// `gi1_use_multibounce` branch creates ValueIndirectBuffer as
+		// uint2[num_cells] and UpdateCellValueIndirectBuffer as uint[num_cells*4]
+		// alongside the unconditional direct pair). This CL allocates and
+		// clears the buffers; they are dead data — no shader binding, no
+		// dispatch reads or writes. The integrator + UpdateTiles wiring
+		// lands in subsequent CLs of the chain.
+		m_HashGridCache_UpdateCellValueIndirectBuffer = l_bufService->Add("PTHashGridCache_UpdateCellValueIndirectBuffer");
+		m_HashGridCache_UpdateCellValueIndirectBuffer->m_ElementCount     = NUM_CELLS * 4u;
+		m_HashGridCache_UpdateCellValueIndirectBuffer->m_ElementSize      = sizeof(uint32_t);
+		m_HashGridCache_UpdateCellValueIndirectBuffer->m_CPUAccessibility = Accessibility::Immutable;
+		m_HashGridCache_UpdateCellValueIndirectBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
+		l_bufService->Initialize(m_HashGridCache_UpdateCellValueIndirectBuffer);
+
+		m_HashGridCache_ValueIndirectBuffer = l_bufService->Add("PTHashGridCache_ValueIndirectBuffer");
+		m_HashGridCache_ValueIndirectBuffer->m_ElementCount     = NUM_CELLS;
+		m_HashGridCache_ValueIndirectBuffer->m_ElementSize      = sizeof(uint32_t) * 2u;
+		m_HashGridCache_ValueIndirectBuffer->m_CPUAccessibility = Accessibility::Immutable;
+		m_HashGridCache_ValueIndirectBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
+		l_bufService->Initialize(m_HashGridCache_ValueIndirectBuffer);
+
 		// Scene-load is the natural reset boundary; queue a clear for the
 		// first PrepareCommandList that runs.
 		m_HashGridCachePendingClear = true;
@@ -496,6 +543,8 @@ bool GPUPathTracerPass::Terminate()
 	if constexpr (Inno::PTHashGridCache::ENABLED)
 	{
 		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
+		if (m_HashGridCache_ValueIndirectBuffer)        l_bufService->Delete(m_HashGridCache_ValueIndirectBuffer);
+		if (m_HashGridCache_UpdateCellValueIndirectBuffer) l_bufService->Delete(m_HashGridCache_UpdateCellValueIndirectBuffer);
 		if (m_HashGridCache_ValueBuffer)            l_bufService->Delete(m_HashGridCache_ValueBuffer);
 		if (m_HashGridCache_UpdateCellValueBuffer)  l_bufService->Delete(m_HashGridCache_UpdateCellValueBuffer);
 		if (m_HashGridCache_DecayTileBuffer)        l_bufService->Delete(m_HashGridCache_DecayTileBuffer);
@@ -581,6 +630,12 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_DecayTileBuffer);
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_UpdateCellValueBuffer);
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_ValueBuffer);
+			// D1-reversal CL A — clear the indirect-mirror pair on every
+			// reset boundary so the future read sites (CL B+) start from
+			// the same zero state as the direct pair. No shader binding
+			// this CL; the buffers are dead data until CL B.
+			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_UpdateCellValueIndirectBuffer);
+			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_ValueIndirectBuffer);
 			m_HashGridCachePendingClear = false;
 		}
 

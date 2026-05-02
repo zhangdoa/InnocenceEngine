@@ -542,4 +542,91 @@ Either path requires a fresh dispatch with the new `visual-review` peer-review r
 
 The pre-revert cross-binary camera nondeterminism (TASK-210 carry-forward) re-asserted: pre-revert and post-revert toggle0 captures landed on different GISponza camera framings despite both being cache-OFF builds. Documented; not gated on. Both runs auto-terminated cleanly at frame 60, no D3D12 errors.
 
+## D1 reversal — CL A: plumb second buffer pair (dead data)
+
+CL A of a 5-CL chain that restores Capsaicin's separate direct/indirect ValueBuffer scheme (`gi1.cpp:497-553` — the `options.gi1_use_multibounce` branch creates `radiance_cache_value_indirect_buffer_` as `uint2[num_cells]` and `radiance_cache_update_cell_value_indirect_buffer_` as `uint[num_cells*4]` alongside the unconditional direct pair). The post-revert recommendation above flagged "**Single-buffer collapse (D1)**" as one of two failure shapes worth re-examining; this chain undoes the collapse without re-introducing the cell-blockiness regression that took down `b9a103cc`.
+
+### Chain shape — 5 CLs
+
+| CL | Scope | Binding count when ENABLED |
+|----|-------|---------------------------|
+| **A (this CL)** | Allocate `UpdateCellValueIndirectBuffer` (`uint[num_cells*4]`) + `ValueIndirectBuffer` (`uint2[num_cells]`); add to `pendingClear`; expose accessors. **No shader binding, no reads, no writes — dead data.** | 5 (b3 + u1..u4, unchanged) |
+| B | Integrator (`GPUPathTracerRayGen.hlsl`) splits the secondary-bounce write: direct contribution stays in `UpdateCellValueBuffer`; the multi-bounce contribution moves to the new `UpdateCellValueIndirectBuffer`. Adds u5. | 6 |
+| C | `PTHashGridCacheUpdateTilesPass` resolves `UpdateCellValueIndirectBuffer` → `ValueIndirectBuffer` (running mean with `MAX_MULTIBOUNCE_SAMPLE_COUNT` cap). Separate dispatch from the existing direct UpdateTiles, both invoked in the same Compute-queue chain. No raygen binding change. | 6 |
+| D | Site-3 read in `GPUPathTracerRayGen.hlsl` adds an indirect-lobe carry-back from `ValueIndirectBuffer`. Adds u6. | 7 |
+| E | Cleanup of the D1 single-buffer collapse helpers (the throughput-ratio fold from `4ff0ccae` collapses cleanly once the indirect lobe has its own running mean). | 7 |
+
+Per-CL rationale: **CL A** plumbs resources only — the loud-fail surface is the binding-count `static_assert`; if either CL B or D drifts the count without updating the comment, the assert fires. **CL B** is where the integrator becomes incompatible with the single-buffer collapse — until B lands, the indirect contribution is still being folded into `UpdateCellValueBuffer` via the `4ff0ccae` shape; A on its own does not change that. **CL C** resolves the new scratch into the new persistent buffer; until D lands, `ValueIndirectBuffer` is a tracking-only mirror with no integrator effect. **CL D** is where the direct/indirect split becomes visible to PT output — the riskiest CL of the chain, gated on its own visual A/B against the post-D-baseline. **CL E** is the cleanup step that removes the dead helpers from B's predecessors.
+
+### Files touched this CL
+
+- `Source/ExampleProject/RenderingClient/HashGridCacheConstants.h` — added `MAX_MULTIBOUNCE_SAMPLE_COUNT` (16.0f, mirrors Capsaicin `gi1.h:65`); updated the buffer-footprint allocation note to call out the indirect mirrors and the new ~529 MB total.
+- `Source/ExampleProject/RenderingClient/GPUPathTracerPass.h` — added `m_HashGridCache_UpdateCellValueIndirectBuffer` and `m_HashGridCache_ValueIndirectBuffer` member fields, plus inline accessors mirroring the existing direct-pair shape.
+- `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp` — allocated both new buffers (mirroring the direct-pair allocation shape exactly), wired into the `pendingClear` block, added Terminate-side delete, and added a `static_assert` documenting the 5/6/7 binding-count progression as the loud-fail surface for the HLSL/C++ flag-pair invariant.
+
+Files explicitly NOT touched per the brief: `GPUPathTracerRayGen.hlsl`, `PTHashGridCacheUpdateTiles.{comp,cpp}`, `PTHashGridCacheMipCascadeBuild.{comp,cpp}`, `common/PTHashGridCache.hlsl`, `ExampleRenderingClient.cpp`. Bindings unchanged this CL.
+
+### Build-time assertion stub
+
+`Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp:91-96`:
+
+```cpp
+static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 5,
+    "D1-reversal CL A invariant: cache-binding count is 5 (b3 + u1..u4) — the "
+    "new UpdateCellValueIndirectBuffer / ValueIndirectBuffer pair allocated "
+    "this CL is dead data, NOT bound to the raygen yet. CL B raises this to "
+    "6 when the integrator writes the indirect scratch; CL D raises it to 7 "
+    "when the Site-3 read consumes the indirect persistent buffer.");
+```
+
+The assert short-circuits when `ENABLED == false` so toggle-off builds compile without forcing `l_cacheBindingCount == 5`. When the toggle is on, any future edit that adjusts `l_cacheBindingCount` without updating both the value AND the comment block above it (lines 60-87) will fail the build with a message that points at the chain plan.
+
+### Visual Read assessment
+
+Captured at `Build/captures/TASK-77.1-D1-reversal/A/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`. Frame 30 only, single camera. Compared against the post-revert HEAD baseline at `Build/captures/TASK-77.1-rework/revert-b9a103cc/{toggle0,toggle1}/.../gpu_output_0030.png`.
+
+#### UnitTest, frame 30
+
+- What I see in toggle0 (this CL, baseline): row of material spheres on a flat floor, dark-blue-to-orange horizon-graded sky. Smooth shading on the matte/grey/yellow/orange-coral spheres; correct shiny highlights on the rear glossy/metal pair; clean shadow falloff under each sphere; PT shot noise visible across the floor and sphere surfaces (typical for the 30-frame integration).
+- What I see in toggle1 (this CL, candidate): visually identical — same sphere materials at the same screen positions, same horizon gradient, same shadow placement, same shot-noise texture. No new spatial structure.
+- Differences: none visible. Pixel-comparable to the eye at f30.
+- Verdict: improvement (structural — toggle-off and toggle-on both produce the expected baseline output; the new buffers being allocated/cleared but unbound has no visual effect, exactly as the brief requires).
+
+#### GITestBox, frame 30
+
+- What I see in toggle0 (this CL, baseline): teal/grey skewed left wall, deep-red back wall, olive-green/yellow side panels, pale-pink panel and sheet on the floor. Sharp light shafts on the teal wall; faded-pink prism casting forward. PT shot noise across the woven-texture surfaces. The skewed-wall geometry is the documented pre-existing GITestBox break (per the rework chain notes), not introduced here.
+- What I see in toggle1 (this CL, candidate): visually identical — same skewed walls, same red-back-wall hue, same olive/yellow side-panel colours, same pink prism, same light-shaft positions, same shot-noise texture.
+- Differences: none visible at f30.
+- Verdict: improvement (structural — same as UnitTest).
+
+#### GISponza, frame 30
+
+- What I see in toggle0 (this CL, baseline): the capture is **fully black** (entire 1280×720 frame is uniform near-zero). Re-run produced the same fully-black frame. The script's success markers (`GISponza.InnoScene loaded: True`, `Auto-terminated: True`, `D3D12 errors: 0`) all PASS, so the engine ran to frame 60 without crashing — but the dump-frame-30 image landed during the asset-load / TLAS-rebuild window where no geometry has been integrated yet. This is the TASK-210 GISponza cross-binary nondeterminism re-asserting; the rework-chain notes flag this scene as having unstable startup framing including occasional blank frames.
+- What I see in toggle1 (this CL, candidate): a normal Sponza atrium frame — pillar centred, four pink-orange-toned curtains framing it (the `revert-b9a103cc/toggle1` baseline showed a blue+pink curtain pair, while the latest `mipcascade-build/toggle1` capture also showed pink curtains; the colour/framing depends on the run's startup race, not on the CL). PT shot noise dense across surfaces. No cell blockiness, no rings, no concentric banding, no runaway brightness, no geometry holes; lighting transitions smoothly along the column shaft.
+- Differences: the toggle0 baseline cannot be visually compared because it landed black. Toggle1 alone shows a structurally clean Sponza render; comparing to the `revert-b9a103cc/toggle1` baseline (curtain colour differs, framing matches) and the `mipcascade-build/toggle1` baseline (curtain colour matches, framing matches) — both pre-D1-reversal binaries — toggle1 here shows no new spatial regression. No cell artifacts have been introduced relative to either prior toggle1 snapshot.
+- Verdict: uncertain on the toggle-off arm (capture failed for reasons unrelated to this CL — TASK-210 reproduction); improvement (structural) on the toggle-on arm. The toggle-on arm is the load-bearing one for this CL because it exercises the new allocation + clear path; toggle-off only verifies that the `if constexpr (ENABLED)` short-circuit elides everything, which is also confirmed by the static_assert short-circuit and the build-clean status. Layer-4 (user sign-off) likely fires on the GISponza arm given the Verdict-uncertain shape — flagged for the surface-back review.
+
+### Resource-list confirmation (no RenderDoc; structural argument)
+
+A RenderDoc capture was not produced because the brief's resource-list confirmation can be evidenced structurally from the diff:
+
+- The two new buffers are allocated only inside `if constexpr (Inno::PTHashGridCache::ENABLED)` (`GPUPathTracerPass.cpp:343-359`).
+- They are added to the existing `m_HashGridCachePendingClear` block (`GPUPathTracerPass.cpp:592-597`) so a clear is issued on every reset boundary.
+- They are NOT referenced by any `BindGPUResource` call, NOT added to `m_ResourceBindingLayoutDescs`, and NOT included in `l_cacheBindingCount` (which stays at 5 per the comment block + static_assert at `GPUPathTracerPass.cpp:60-97`). `grep` for `m_HashGridCache_UpdateCellValueIndirectBuffer` and `m_HashGridCache_ValueIndirectBuffer` outside the allocation/clear/Terminate sites returns zero hits.
+
+Reviewer should validate this with their own grep + RenderDoc capture if they want a binding-list snapshot; for this CL, structural elision is the load-bearing argument because the integrator and UpdateTiles passes do not see the new buffers at all.
+
+### Build status
+
+- HLSL2DXIL toggle=0 + toggle=1: clean compile.
+- BuildWin RelWithDebInfo toggle=0: clean.
+- BuildWin RelWithDebInfo toggle=1: clean (the new fields and accessors are picked up; the `static_assert` does not fire).
+- BuildWin RelWithDebInfo toggle restored to 0 after capture: clean.
+- Toggle is committed at `ENABLED = false` per the rework discipline (`HashGridCacheConstants.h:30`); HLSL `PT_HASH_GRID_CACHE_ENABLED 0` per `GPUPathTracerRayGen.hlsl:34`.
+
+### Surprises
+
+- **GISponza toggle0 black-frame**: the toggle-off baseline GISponza capture landed fully black on both runs. Toggle-on came back with a normal frame. This is consistent with TASK-210 cross-binary nondeterminism (the ADVISORY explicitly notes startup-race unpredictability for GISponza), not introduced by this CL — the toggle-off code paths under `if constexpr (ENABLED)` are all elided, so this CL has zero behavioural delta vs HEAD `d457dba3` for the toggle-off binary. The GITestBox and UnitTest toggle-off captures landed normally, supporting the "GISponza-specific startup race" framing. Layer-4 user sign-off is recommended.
+- **Footprint accounting**: the Capsaicin reference allocates the indirect mirrors only when `gi1_use_multibounce` is true; this CL allocates them unconditionally on `ENABLED` because the engine's toggle is the master switch, and CL B-E will exercise them. If a future toggle-driven multibounce-off path is added, the allocation should be gated on a sub-toggle. Not a CL-A issue — flagged for the dispatcher's awareness.
+
 <!-- SECTION:NOTES:END -->
