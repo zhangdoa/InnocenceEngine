@@ -19,6 +19,7 @@ namespace Inno
 		bool CreateRaytracingResources();
 		bool ReleaseRaytracingResources();
 		bool UpdateRaytracingInstances() override;
+		size_t GetRaytracingInstanceCount() const override { return m_PrevInstanceCount; }
 
 	protected:
 		bool InitializeImpl(GPUBufferComponent* gpuBuffer) override;

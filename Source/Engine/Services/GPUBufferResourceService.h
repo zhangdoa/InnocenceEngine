@@ -50,6 +50,13 @@ namespace Inno
 
 		virtual bool UpdateRaytracingInstances() { return false; }
 
+		// TASK-213 CL A: current TLAS instance count. Read-only signal consumed
+		// by FrameManagementService::IsSteadyState() to detect TLAS rebuild
+		// stability across frames (count unchanged for K=3 frames => stable).
+		// Default 0 is safe for backends without raytracing — no rebuilds means
+		// always-stable from the predicate's standpoint.
+		virtual size_t GetRaytracingInstanceCount() const { return 0; }
+
 	protected:
 		virtual bool InitializeImpl(GPUBufferComponent* gpuBuffer) { return false; }
 		virtual bool OnSceneLoadingStart() { return false; }

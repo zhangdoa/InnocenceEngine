@@ -35,6 +35,17 @@ namespace Inno
 		uint32_t GetSwapChainImageCount();
 		uint32_t GetFrameCountSinceLaunch();
 
+		// TASK-213 CL A: scene-readiness predicate for auto-test capture
+		// determinism. Returns true iff (a) MeshResourceService deferred-
+		// activation queue is empty, (b) TLAS instance count has been stable
+		// for K=3 consecutive frames (no UpdateRaytracingInstances rebuild),
+		// and (c) SceneService is not loading. Pure read of state — no work
+		// done, no timer/sleep, signal-driven.
+		// Read-only this CL: nothing consumes the result yet; the first frame
+		// the predicate goes true, IsSteadyState logs a one-shot Verbose
+		// marker. CL B/C/D consume the marker / predicate.
+		bool IsSteadyState();
+
 		// Callbacks from Engine
 		void SetUploadHeapPreparationCallback(std::function<bool()>&& callback);
 		void SetCommandPreparationCallback(std::function<bool()>&& callback);
@@ -115,6 +126,23 @@ namespace Inno
 
 		// Callbacks
 		std::function<GPUResourceComponent* ()> m_GetUserPipelineOutputFunc;
+
+		// TASK-213 CL A: IsSteadyState() rolling state.
+		// Last observed TLAS instance count and consecutive-frames-stable
+		// counter — incremented when GetRaytracingInstanceCount() matches the
+		// previous observation, reset to 0 on change. K=3 chosen because
+		// GISponza's TLAS log shows count flips at frame=0/1/2/16/30; a single
+		// stable frame is insufficient to ride out the late-binding rebuilds
+		// driven by deferred-mesh activation (RC-1 in the task design pass).
+		size_t m_LastObservedInstanceCount = SIZE_MAX;
+		uint32_t m_TLASStableFrameCount = 0;
+		// Latches once the predicate first goes true so the marker logs once.
+		bool m_SteadyStateMarkerLogged = false;
+		// 120-frame timeout watchdog (R2 in the design pass risk register):
+		// if the predicate never goes true, log a Warning so a future capture
+		// missing the steady-state marker is loud, not silent. The script-
+		// level -total_frames cap remains the hard-stop.
+		bool m_SteadyStateTimeoutLogged = false;
 
 	private:
 		bool InitializeSwapChainRenderPassComponent();
