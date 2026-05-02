@@ -75,6 +75,19 @@ RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueBuffer : register(u3);
 
 [[vk::binding(4, 2)]]
 RWStructuredBuffer<uint2> g_HashGridCache_ValueBuffer           : register(u4);
+
+// D1-reversal CL C — indirect-mirror UAVs. The (b) secondary-bounce write
+// below now targets UpdateCellValueIndirectBuffer (mirroring Capsaicin
+// gi1.comp:1948-1989 UpdateMultibounceCells, which writes the BRDF/pdf-
+// modulated tertiary-cell mean into the secondary cell's *indirect* scratch,
+// not the direct one). ValueIndirectBuffer is bound this CL so its UAV slot
+// is reserved at the root signature; the read site that actually consumes it
+// lands in CL D — no read references in this file yet.
+[[vk::binding(5, 2)]]
+RWStructuredBuffer<uint>  g_HashGridCache_UpdateCellValueIndirectBuffer : register(u5);
+
+[[vk::binding(6, 2)]]
+RWStructuredBuffer<uint2> g_HashGridCache_ValueIndirectBuffer           : register(u6);
 #endif
 
 uint PCG(inout uint state)
@@ -480,20 +493,22 @@ void RayGenShader()
         //   (b) PREVIOUS-vertex secondary-bounce contribution: when the
         //       cell at this vertex carries a usable mean, write
         //       `bsdf_over_pdf_at_(N-1) * mean` into the cell at the
-        //       previous vertex. This mirrors Capsaicin's UpdateMultibounceCells
-        //       (gi1.comp:1962-1975) which folds the tertiary cell's
-        //       filtered direct radiance into the secondary cell's indirect
-        //       slot weighted by the bounce-1→2 BRDF/pdf. Capsaicin keeps a
-        //       separate UpdateCellValueIndirectBuffer for that contribution;
-        //       the D1 collapse to a single buffer accepts the running-mean
-        //       blend across direct + indirect lobes.
+        //       previous vertex's *indirect* scratch
+        //       (UpdateCellValueIndirectBuffer). This mirrors Capsaicin's
+        //       UpdateMultibounceCells (gi1.comp:1948-1989) which folds the
+        //       tertiary cell's filtered direct radiance into the secondary
+        //       cell's *indirect* slot weighted by the bounce-1→2 BRDF/pdf.
+        //       D1-reversal CL C restores the lobe split: the (a) direct
+        //       write and (b) indirect write target separate scratch buffers
+        //       so that UpdateTiles' direct/indirect running-mean blocks
+        //       consume independent lobes (the Site-3 read in CL D sums them).
         //
-        // The previous CL wrote (a) only, so cells stored direct-only content
-        // and the read replaced the indirect-lobe tail with direct lighting
-        // alone — biased high. Adding (b) lets the cache mean converge to a
-        // faithful outgoing-radiance estimator: each frame the next bounce's
-        // cache lookup feeds back into the previous cell, and the running
-        // mean stabilises around the integrated-indirect contribution.
+        // The Site-3 read still pulls from ValueBuffer only this CL — the
+        // ValueIndirectBuffer read lands in CL D. Mid-chain darkening is
+        // expected: the indirect contribution previously folded into the
+        // combined ValueBuffer mean now accumulates into ValueIndirectBuffer,
+        // which the read does not consume yet, so the cache substitutes only
+        // the direct lobe at the secondary hit. CL D restores correctness.
         bool cacheTerminated = false;
         if (bounce >= 1u)
         {
@@ -538,9 +553,17 @@ void RayGenShader()
 
                     // (b) PREVIOUS-vertex secondary-bounce contribution.
                     // Mirrors Capsaicin UpdateMultibounceCells (gi1.comp:
-                    // 1962-1975). Skipped at bounce==1 (no prior secondary
-                    // vertex) and when the prior iteration could not claim
-                    // a cell. brdf_over_pdf reduces to throughput/prev_throughput
+                    // 1948-1989) — the indirect write target is the indirect
+                    // scratch (UpdateCellValueIndirectBuffer), NOT the direct
+                    // scratch. D1-reversal CL C splits this off from
+                    // UpdateCellValueBuffer so that UpdateTiles' direct and
+                    // indirect running-mean blocks consume their own lobe's
+                    // scratch independently — the Site-3 read in CL D will
+                    // sum the two estimators back together.
+                    //
+                    // Skipped at bounce==1 (no prior secondary vertex) and
+                    // when the prior iteration could not claim a cell.
+                    // brdf_over_pdf reduces to throughput/prev_throughput
                     // because both factors share the path-prefix chain.
                     if (prev_cell_index != kPTHashGridCache_InvalidId)
                     {
@@ -554,10 +577,10 @@ void RayGenShader()
                             prev_throughput.z > 0.0f ? throughput.z / prev_throughput.z : 0.0f);
                         float3 secondaryContribution = brdf_over_pdf * mean;
                         uint4  quantizedSecondary    = PTHashGridCache_QuantizeRadiance(secondaryContribution);
-                        InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * prev_cell_index + 0u], quantizedSecondary.x, prev_atomic);
-                        InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * prev_cell_index + 1u], quantizedSecondary.y, prev_atomic);
-                        InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * prev_cell_index + 2u], quantizedSecondary.z, prev_atomic);
-                        InterlockedAdd(g_HashGridCache_UpdateCellValueBuffer[4u * prev_cell_index + 3u], quantizedSecondary.w, prev_atomic);
+                        InterlockedAdd(g_HashGridCache_UpdateCellValueIndirectBuffer[4u * prev_cell_index + 0u], quantizedSecondary.x, prev_atomic);
+                        InterlockedAdd(g_HashGridCache_UpdateCellValueIndirectBuffer[4u * prev_cell_index + 1u], quantizedSecondary.y, prev_atomic);
+                        InterlockedAdd(g_HashGridCache_UpdateCellValueIndirectBuffer[4u * prev_cell_index + 2u], quantizedSecondary.z, prev_atomic);
+                        InterlockedAdd(g_HashGridCache_UpdateCellValueIndirectBuffer[4u * prev_cell_index + 3u], quantizedSecondary.w, prev_atomic);
                     }
 
                     radiance += throughput * mean;

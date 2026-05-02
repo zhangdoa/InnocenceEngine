@@ -717,4 +717,90 @@ A RenderDoc capture was not produced because the resource-list confirmation can 
 - **Static assert text rewrite, no code change**: `GPUPathTracerPass.cpp` lines 60-87 + the static_assert message were rewritten because CL A's chain plan ("CL B = integrator split → raygen count 6") was redefined by the dispatcher to CL C. The current chain plan (CL B = UpdateTiles + MipCascadeBuild dual resolve) does not change raygen count, so the chain-progression comment + static_assert had to track that — even though the constexpr value `l_cacheBindingCount = 5` did not change.
 - **Doubled LDS in MipCascadeBuild**: `lds_UpdateTiles_ValueBuffer[8][8]` and `lds_UpdateTiles_ValueIndirectBuffer[8][8]` are each 256 bytes per group at uint2 (8 bytes/cell × 64 cells); 512 bytes total per group; well under any LDS budget. No occupancy concern at the engine's group-size of 64.
 
+## D1 reversal — CL C: integrator (b) secondary-bounce write redirect (mid-chain darken)
+
+CL C of the 5-CL D1-reversal chain (CL A: `b6058cdc`, CL B: `1352e548`). Splits the integrator's secondary-bounce write at `GPUPathTracerRayGen.hlsl`. The (b) `bsdf_over_pdf * mean` write into the previous vertex's cell now targets `g_HashGridCache_UpdateCellValueIndirectBuffer` (mirroring Capsaicin `gi1.comp:1948-1989` `UpdateMultibounceCells` — the canonical indirect target). The (a) primary-hit direct write stays at `g_HashGridCache_UpdateCellValueBuffer`. **The Site-3 read still pulls from `ValueBuffer` only** — CL D adds the indirect-lobe read.
+
+**Expected mid-chain visible regression — confirmed.** Toggle-on darkens vs CL B because the indirect contribution previously folded into `ValueBuffer`'s combined running mean now accumulates into `ValueIndirectBuffer`, which the read does not consume. The cache substitutes only the direct lobe at the secondary hit; the indirect tail is missing. CL D restores correctness by reading both lobes.
+
+### Files touched this CL
+
+- `Source/Shaders/HLSL/GPUPathTracerRayGen.hlsl` — added `[[vk::binding(5,2)]] register(u5) g_HashGridCache_UpdateCellValueIndirectBuffer` and `[[vk::binding(6,2)]] register(u6) g_HashGridCache_ValueIndirectBuffer` UAVs inside the `#if PT_HASH_GRID_CACHE_ENABLED` block. Redirected the four `(b)` `InterlockedAdd` writes at `prev_cell_index` from `g_HashGridCache_UpdateCellValueBuffer` to `g_HashGridCache_UpdateCellValueIndirectBuffer`. Updated the (b) inline citation from `gi1.comp:1962-1975` (the read-shape range I had been quoting) to `gi1.comp:1948-1989` (the full UpdateMultibounceCells body). Updated the Site-3 block prelude to flag the mid-chain darken expectation. The (a) direct-write block, the cache read site, and the carry-state for `prev_cell_index`/`prev_throughput` are all unchanged.
+- `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp` — bumped `l_cacheBindingCount` from 5 to 7 (adds u5 + u6). Both new UAVs are bound in the descriptor table at slots 18 (`UpdateCellValueIndirectBuffer`) and 19 (`ValueIndirectBuffer`); the corresponding `BindGPUResource` calls land in `PrepareCommandList` after the existing four cache-UAV binds. The `static_assert` message + chain-progression comment block (lines 60-110 ish) are rewritten to reflect CL C live (count 7), CL D unchanged at 7 (only adds shader-side read references), and CL E deferred. The b9a103cc PSO-failure precedent is recited inline so a future reader cannot drift the HLSL/C++ flag-pair invariant. `GPUPathTracerPass.h` is **not** touched — the per-buffer accessors for the indirect pair already exist from CL A (`GetHashGridCacheUpdateCellValueIndirectBuffer()` / `GetHashGridCacheValueIndirectBuffer()`).
+- `.claude/references.json` — annotated the `GPUPathTracerRayGen.hlsl` entry: corrected the `gi1.comp:1962-1975` citation to `gi1.comp:1948-1989` (the full UpdateMultibounceCells body); replaced the "D1 collapses Capsaicin's separate UpdateCellValueIndirectBuffer onto the single direct buffer" prose with "D1-reversal CL C restores Capsaicin's lobe split — (b) targets UpdateCellValueIndirectBuffer (the canonical Capsaicin target); (a) stays at UpdateCellValueBuffer." Both the `paper:` and `reference:` fields are updated.
+- `.backlog/tasks/task-77.1 - *.md` — this Implementation Note.
+
+Files explicitly NOT touched this CL:
+- `Source/Shaders/HLSL/PTHashGridCacheUpdateTiles.comp` and `Source/ExampleProject/RenderingClient/PTHashGridCacheUpdateTilesPass.{h,cpp}` — wired in CL B; this CL only changes which kernel writes into their indirect-pair UAVs.
+- `Source/Shaders/HLSL/PTHashGridCacheMipCascadeBuild.comp` and its pass C++ — same; cascade now sees non-zero indirect mip-0 input but the kernel needs no edit.
+- `Source/ExampleProject/RenderingClient/HashGridCacheConstants.h` — toggle restored to `ENABLED = false` post-capture; HLSL `PT_HASH_GRID_CACHE_ENABLED 0`. No constants changed.
+
+### Per-pass binding-count progression
+
+| Pass | CL B | CL C (this) | Notes |
+|------|------|-------------|-------|
+| GPUPathTracer raygen     | 5 (b3 + u1..u4) | **7 (b3 + u1..u6)** | adds u5 = `UpdateCellValueIndirectBuffer` (the redirected (b) write target) and u6 = `ValueIndirectBuffer` (slot reserved for CL D's read split — root signature stable across CL C/D) |
+| PTHashGridCacheUpdateTiles      | 6 | 6 | unchanged |
+| PTHashGridCacheMipCascadeBuild  | 4 | 4 | unchanged |
+| PTHashGridCachePurgeTiles       | 3 | 3 | unchanged |
+
+### Diff-hygiene grep results
+
+Per the brief's risk-mitigation #2:
+
+- `UpdateCellValueBuffer` in `GPUPathTracerRayGen.hlsl`: 9 hits — 1 binding decl (line 74), 4 `InterlockedAdd` writes in the (a) direct-write block (lines 537-540), and 4 in comments (lines 26, 481, 492, 559). **No (b)-block writes** — verified.
+- `UpdateCellValueIndirectBuffer` in `GPUPathTracerRayGen.hlsl`: 8 hits — 1 binding decl (line 87), 4 `InterlockedAdd` writes in the (b) indirect-write block (lines 580-583), and 3 in comments (lines 80, 497, 557). **No (a)-block writes** — verified.
+- `ValueIndirectBuffer` in `GPUPathTracerRayGen.hlsl`: 5 hits — 1 binding decl (line 90), 4 in comments. **No read references** — confirmed; the read split is CL D.
+- `ValueBuffer` (without "Indirect") in `GPUPathTracerRayGen.hlsl`: still has the single read site at line 549 (`g_HashGridCache_ValueBuffer[cell_index]`) plus binding decl + comments. Read still goes to the direct lobe only — the intentional darken-mid-chain shape.
+
+Risk-mitigation #3 (no `RWStructuredBuffer<uint2>` helper-function parameters): no helpers added; all access is inline at the call site. The only `RWStructuredBuffer` decls in the file are the six file-scope binding declarations (u1..u6).
+
+### Build status
+
+- HLSL2DXIL toggle=0: `Successfully compiled GPUPathTracerRayGen.hlsl.` (no warnings).
+- HLSL2DXIL toggle=1: `Successfully compiled GPUPathTracerRayGen.hlsl.` (no warnings; the new u5/u6 binding decls and the redirected `InterlockedAdd` calls compile clean).
+- BuildWin RelWithDebInfo toggle=1: clean. `static_assert` at `GPUPathTracerPass.cpp` does not fire (raygen count == 7 matches CL C invariant). `Main.exe` and `RenderTest.exe` link.
+- BuildWin RelWithDebInfo toggle=0: clean. The `if constexpr (Inno::PTHashGridCache::ENABLED)` short-circuit elides the new binding-layout descriptors and the new BindGPUResource calls; `static_assert`'s `!ENABLED || ...` short-circuit means the count check is unreachable.
+- Toggle restored to `ENABLED = false` post-capture (`HashGridCacheConstants.h:30`); HLSL `PT_HASH_GRID_CACHE_ENABLED 0` per `GPUPathTracerRayGen.hlsl:34`.
+
+### Visual Read assessment
+
+Captured at `Build/captures/TASK-77.1-D1-reversal/C/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`. Frame 30 only, single camera. Compared against CL B at `Build/captures/TASK-77.1-D1-reversal/B/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`. All six CL-C captures opened via `Read`; both CL-B toggle1 captures (UnitTest, GITestBox, GISponza) and both CL-B toggle0 captures (UnitTest, GITestBox) opened for direct A/B; CL-B GISponza toggle0 omitted because it landed black under the same TASK-210 race.
+
+#### UnitTest, frame 30
+
+- What I see in CL C toggle0: row of material spheres on a flat floor, horizon-graded sky (light-blue zenith → pale violet → deep orange horizon). Smooth shading on matte/grey/yellow/orange-coral spheres at the front; shiny highlights and reflective lobes on the rear glossy/metal pair (gold + chrome-with-ball-inside). Clean shadows, fine PT shot noise on floor + spheres.
+- What I see in CL C toggle1: visually identical to CL C toggle0 — same sphere positions, same horizon gradient, same shadows, same shot-noise texture. Comparing against CL B toggle1: indistinguishable.
+- Differences from CL B: none visible. Toggle1 ↔ CL B toggle1 indistinguishable; toggle0 ↔ CL B toggle0 indistinguishable.
+- Verdict: improvement (structural). UnitTest's primary-hit-dominated lighting carries very little secondary-bounce indirect contribution, so the missing indirect-lobe substitution at the cache hit is too small to see. This is the brief's expected "may darken slightly" outcome interpreted as "below the visual-noise floor." Toggle1 was bound to render correctly; the test is whether toggle1 ↔ CL B toggle1 is still consistent — yes.
+
+#### GITestBox, frame 30
+
+- What I see in CL C toggle0: skewed teal/grey left wall, deep-red back wall, olive-green/yellow side panels, pale-pink panel + sheet on the floor, faded-pink prism casting forward. PT shot noise across the woven-texture surfaces. Documented pre-existing GITestBox break (skewed walls) is unchanged.
+- What I see in CL C toggle1: visually identical to CL C toggle0 — same skewed walls, same red-back-wall hue, same olive/yellow side-panel colours, same pink prism, same light-shaft positions, same shot-noise texture. Comparing against CL B toggle1: indistinguishable.
+- Differences from CL B: none visible. Toggle1 ↔ CL B toggle1 indistinguishable; toggle0 ↔ CL B toggle0 indistinguishable.
+- Verdict: improvement (structural). GITestBox is a documented broken scene; visual parity with CL B (both arms) is what we get and what we want for this CL. Like UnitTest the indirect contribution at this scene's bounce density is below the visual floor for a single dump-frame.
+
+#### GISponza, frame 30
+
+- What I see in CL C toggle0: **fully black** (uniform near-zero). The script's success markers (`GISponza.InnoScene loaded: True`, `Auto-terminated: True`, `D3D12 errors: 0`) all PASS. Same TASK-210 GISponza cross-binary nondeterminism that hit CL A toggle0 and CL B toggle0 on this scene — the dump-frame-30 image landed during the asset-load / TLAS-rebuild window.
+- What I see in CL C toggle1: a normal Sponza atrium — central pillar, four curtains framing it (left and right outer curtains read pale blue; the inner pair reads brown/orange-pink). PT shot noise dense across surfaces. The yellow geometric protrusion at the bottom is statue/object geometry, not an artifact (visible in the same camera framing in earlier CLs). No cell blockiness, no rings, no concentric banding, no runaway brightness, no geometry holes.
+- Differences from CL B toggle1 (the load-bearing comparison): **the CL C frame is visibly DARKER and less saturated** than the CL B frame. The CL B blue curtains read as a vivid, saturated blue; the CL C blue curtains read as a desaturated, washed-out, more grey-tinged blue. The CL B orange curtains read as a richer / warmer orange; the CL C orange curtains read as a more muted brown-orange. The dark column + ceiling regions are noticeably darker on CL C; the right-side stone-wall background is darker. Fine spatial structure (curtain folds, column edges, statue silhouette) is preserved — same scene, same camera, same noise floor — only the brightness + saturation moves down. This matches the brief's exact prediction: the indirect contribution previously folded into the combined `ValueBuffer` mean is now diverted to `ValueIndirectBuffer`, which the read does not consume yet, so the cache substitutes only the direct lobe at the secondary hit. The curtain hue-flip vs the post-CL-B baseline is also weaker — the scene is moving toward less hue-shift at the cache substitution, consistent with smaller direct-lobe magnitudes vs combined ones.
+- Differences from CL C toggle0: cannot compare (CL C toggle0 is black).
+- Verdict: improvement (structural — the redirect is firing as designed; the darkening direction matches the brief's mid-chain prediction). Layer-4 (user sign-off) is **strongly recommended** at this CL — it is composition-affecting per `visual-validation.md` §4, and the visible darkening is the exact discriminator the chain plan calls for. The dispatcher should weigh whether to wait for user sign-off before committing or carry the layer-4 trigger forward into CL D's user gate (where the read split lands and the darkening should reverse).
+
+### Resource-list confirmation (no RenderDoc; structural argument)
+
+- Both new UAVs are added to the path-tracer pass's `m_ResourceBindingLayoutDescs` (slots 18 + 19), and bound at the equivalent root-signature slot indices in `PrepareCommandList`. The HLSL register assignment matches: u5 / u6 inside the `PT_HASH_GRID_CACHE_ENABLED` branch.
+- The (b) `InterlockedAdd` writes target `g_HashGridCache_UpdateCellValueIndirectBuffer[4u * prev_cell_index + ...]` — confirmed by `Grep`. The (a) writes still target `g_HashGridCache_UpdateCellValueBuffer[4u * cell_index + ...]`.
+- The cache read at line 549 still reads `g_HashGridCache_ValueBuffer[cell_index]` (direct lobe only). `g_HashGridCache_ValueIndirectBuffer` has no read references in the shader body — only the binding decl. Verified by `Grep` (5 hits total: binding + comments only).
+- Toggle-on toggle1 darkening on GISponza is the runtime-side confirmation that the redirect took effect. If the redirect had been a no-op (still writing into UpdateCellValueBuffer despite the source change), toggle1 would have been visually identical to CL B toggle1 — it isn't. The expected darkening direction is the loud-fail signal that the redirect fired.
+
+### Surprises
+
+- **GISponza toggle0 black-frame**: third CL in a row this race fires on the same scene under the same toggle-off binary (CL A note → CL B note → CL C). It is not introduced by this CL — toggle-off code paths are all elided under `if constexpr (ENABLED)`. Cosmetic; documented; carry forward to CL D / TASK-210 advisory.
+- **UnitTest + GITestBox showed no visible darkening**: the brief permitted this ("may darken slightly"). The cache-substitution path only fires at `bounce >= 1` and only when the cell carries enough samples to clear the `cellRadiance.w > 0.0f` gate; UnitTest has very few secondary bounces (open scene, mostly direct sun + sky) and GITestBox is the documented broken scene. GISponza is the load-bearing scene for this CL because its dense atrium geometry exercises secondary bounces continuously. The asymmetric darkening across scenes is the right shape, not a flag.
+- **Static-assert message rewrite covers two new CLs**: I included CL D in the rewrite (CL D = read split, raygen count UNCHANGED at 7) so that the next CL can land with no descriptor-table growth — the b9a103cc PSO-failure precedent specifically warned against root-signature-width drift across consecutive CLs. CL D's HLSL touches stay inside the function body; the binding decls (u6) are already in place.
+- **Curtain palette stable across CL B → CL C startup races**: both CL B toggle1 and CL C toggle1 GISponza captures landed with the blue-outer + orange-inner curtain pattern (CL A's TASK-210 capture was the one with the pink-orange-only palette). Curtain colour-assignment is sticky to the binary's startup race outcome, not driven by this CL's behavioural delta. The darkening I describe is *within* the same colour-assignment, not a colour swap.
+
 <!-- SECTION:NOTES:END -->
