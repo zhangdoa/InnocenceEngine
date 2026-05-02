@@ -510,4 +510,36 @@ Surprises:
 - **No CMake-reconfigure surprise this time.** The previous CL flagged `file(GLOB)` requiring reconfigure before BuildWin would pick up new pass files. The reconfigure ran cleanly here without unresolved-external errors blocking a first build attempt; possibly the file was scanned in the same `cmake ..` pass that this CL ran upfront. Workspace-hygiene note carries forward but did not bite this CL.
 
 Pending follow-up CLs in this rework chain: the mip-aware Site-3 read at GPUPathTracerRayGen (the FINAL CL of the rework — repoints the read at the cascade so wide-footprint reads pick a level matching their footprint), and the closure-time three-scene × ≥2-camera × 5-sampled-frame visual A/B with multi-frame settle plots.
+
+## Mip-aware Site-3 read REVERTED (2026-05-02)
+
+User opened the `b9a103cc` GISponza toggle1 capture (`Build/captures/TASK-77.1-rework/mipaware-read/toggle1/gisponza/gpu_output_0030.png`) and rejected: visible hash-grid **cell blockiness** in the brick walls — large rectangular blocks of varying brightness across surfaces that should read as smoothly lit. The implementer-prose-as-visual-evidence reviews on the six-CL rework chain (`20b6dbdf`, `5aae0103`, `4ff0ccae`, `3d84a7d3`, `d1f8feb5`, `b9a103cc`) failed to catch this — none of those reviewers actually opened the candidate PNGs. Harness fixed in commit `ae1f8e31` (visual-review commit-gate + reviewer visual-inspection mandate); this revert is the user-direction unblock for the chain (also in stop-the-line state per the new TASK-210 N>=2 carry-forward rule).
+
+Action: `git revert b9a103cc --no-edit` → commit `d457dba3` on `ecs-overhaul`. Reverts the mip-aware cascade walk + `PTHashGridCache_CellOffsetMip0` inverse helper, leaves intact: cascade BUILD (`d1f8feb5`), PurgeTiles (`3d84a7d3`), secondary-bounce write (`4ff0ccae`), UpdateTiles running mean (`5aae0103`), and Site-3 read at mip-0 only (`20b6dbdf`). Cascade buffers continue to be allocated and written by the build kernel; nothing reads them post-revert (cascade is dead data, same state as `d1f8feb5` + `391af203`).
+
+Build clean RelWithDebInfo at HEAD `d457dba3` for both toggle states (cache OFF and cache ON). Three-scene captures archived under `Build/captures/TASK-77.1-rework/revert-b9a103cc/{toggle0,toggle1}/{unittest,gitestbox,gisponza}/gpu_output_0030.png`.
+
+### Visual Read assessment — post-revert vs pre-revert GISponza toggle1
+
+- **What I see in pre-revert (`mipaware-read/toggle1/gisponza/gpu_output_0030.png`)**: dark Atrium-with-statues camera; the brick masonry walls show *large rectangular discontinuity blocks* in lit regions — pinkish-tan rectangular patches of varying brightness tiled across the brick texture, especially visible on the right and upper wall portions. Block boundaries do not align with the brick texture seams; the block sizes vary in a way consistent with hash-grid cell-mip-step transitions.
+- **What I see in post-revert (`revert-b9a103cc/toggle1/gisponza/gpu_output_0030.png`)**: curtains-and-column camera (different framing from pre-revert — known TASK-210 cross-binary camera nondeterminism, not a revert side-effect); pink curtains, white column, very high PT shot noise (expected at low SPP). I do *not* see large rectangular discontinuity blocks on the column or in the curtain folds where smooth gradient is expected.
+- **Differences**: the cell-blockiness pattern visible in pre-revert is **absent** post-revert. Same camera comparison post-revert (toggle0 vs toggle1) shows a different anomaly: the left/right curtain pairs that read blue+pink at toggle0 read all-pink at toggle1, suggesting cache reads are leaking secondary-bounce radiance with wrong color attribution into the integrator. That is a separate failure mode from the cell-blockiness, smaller in magnitude, and probably tied to the running-mean write/read shape rather than the cascade walk.
+- **Verdict**: improvement. The cell-blockiness regression introduced by `b9a103cc` is removed.
+
+UnitTest pre-existing parity holds (toggle0 ≈ toggle1, smooth sphere shading). GITestBox structural break (skewed/off-center walls, pre-existing, not gated on per task brief) holds; no cell-blockiness on top.
+
+This confirms the **cascade walk** in `b9a103cc` (confidence-driven mip step-up at hits where `radiance.w < max_sample_count`) was the source of the cell pattern. Cascade BUILD itself (`d1f8feb5`) is not visibly producing the artifact when read sites stay at mip-0.
+
+### Next-CL recommendation
+
+The cascade walk landed wrong; the cascade BUILD is fine. Two options for the next CL, in order of preference:
+
+1. **Footprint-driven read, not confidence-driven** (preferred). The Capsaicin reference at `hash_grid_cache.hlsl:465-494` is correct *for Capsaicin's compute-graph architecture* but in the loop-per-bounce raygen we already encode the footprint in the cell *key* via `floor(log2(distance * cell_size))`. The walk-while-thin loop double-counts: mip-0 is already the footprint-correct cell at write time, so widening to mip-N at read time only widens the *spatial filter* — exactly the cell-pattern signature the user saw. Replace the walk with a *single* mip-N read where N is chosen from the read-site's footprint (eye-to-hit distance × cell_size), not from cell sample count. This is a structurally smaller divergence from Capsaicin (still uses the cascade) but matches the engine's loop-per-bounce raygen invariants.
+
+2. **Drop the cascade walk entirely; keep mip-0 reads only** (fallback). Mip-0-only is what `20b6dbdf`+`5aae0103` shipped and what HEAD now is. The cascade BUILD becomes tunable for *future* reads (denoise-time spatial filter, debug visualisation) but does not feed PT integration. This loses the noise-reduction-on-thin-cells benefit but is a safe shipping shape and unblocks the chain on AC verification.
+
+Either path requires a fresh dispatch with the new `visual-review` peer-review regime in force. The implementer must produce the toggle1 visuals; the peer reviewer must `Read` them and write the structured layer-1 block before the CL lands.
+
+The pre-revert cross-binary camera nondeterminism (TASK-210 carry-forward) re-asserted: pre-revert and post-revert toggle0 captures landed on different GISponza camera framings despite both being cache-OFF builds. Documented; not gated on. Both runs auto-terminated cleanly at frame 60, no D3D12 errors.
+
 <!-- SECTION:NOTES:END -->
