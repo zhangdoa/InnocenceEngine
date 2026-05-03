@@ -250,7 +250,7 @@ namespace
 			l_initialScene = l_config.serializeTest;
 		else if (l_config.initialScene[0] != '\0')
 			l_initialScene = l_config.initialScene;
-		g_Engine->Get<SceneService>()->Load(l_initialScene);
+		g_Engine->Get<SceneService>()->Load(l_initialScene, true);
 
 		  RayTracerConfig l_cfg;
 		l_cfg.downsampleDenominator = 2;
