@@ -31,12 +31,25 @@ namespace Inno
 		bool InitializeComponents();
 		bool OnSceneUnloading();
 
-		// Residency predicate (no-shadow-state discipline): returns the first
-		// component in m_Pool whose status is still ObjectStatus::Created
-		// (pre-activation), or nullptr if every live component is Activated.
-		// Source of truth is the per-component m_ObjectStatus stamped by
-		// InitializeComponents() / InitializeSynchronous(); no shadow flags.
+		// Returns the component at the head of the deferred-init queue (the
+		// queue is THE source of truth for "pending init work"), or nullptr if
+		// the queue is empty. Per no-shadow-state discipline (a86e6e93): the
+		// queue's contents ARE the pending-work data, not a shadow of it.
+		// Replaces CL 3's pool-iteration shape, which conflated pending-init
+		// with scaffolding components (e.g. RayTracingResult texture) whose
+		// ObjectStatus is intentionally frozen at Created.
+		// Caveat: TextureResourceService also enqueues async binary-load
+		// requests via EnqueueBinaryLoad / s_BinaryLoadQueue (file-side, not
+		// m_DeferredQueue). A texture pending a binary decode that has not
+		// yet landed in m_DeferredQueue will not be observed here. The
+		// CL 4 residency aggregator must consult both queues for textures.
 		TextureComponent* GetFirstPendingComponent() const;
+
+		// TASK-213 CL 3.5: deferred-init queue empty signal. Read-only;
+		// mirror of GetFirstPendingComponent() == nullptr but cheaper for the
+		// CL 4 aggregator's bool-check fast path. Does NOT account for the
+		// async s_BinaryLoadQueue (see GetFirstPendingComponent caveat).
+		bool IsDeferredQueueEmpty() const { return m_DeferredQueue.empty(); }
 
 		// Enqueue a texture binary decode + GPU-init on the dedicated background loader thread.
 		// Safe to call from any thread; returns immediately without blocking.

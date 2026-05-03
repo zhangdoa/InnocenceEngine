@@ -170,12 +170,9 @@ void TextureResourceService::EnqueueBinaryLoad(const std::string& binaryPath, Te
 TextureComponent* TextureResourceService::GetFirstPendingComponent() const
 {
 	TextureComponent* l_pending = nullptr;
-	m_Pool.ForEach([&l_pending](TextureComponent* in_Component)
+	m_DeferredQueue.peekFront([&l_pending](const TextureInitTask& in_Task)
 	{
-		if (l_pending)
-			return;
-		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
-			l_pending = in_Component;
+		l_pending = in_Task.m_Component;
 	});
 	return l_pending;
 }

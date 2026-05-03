@@ -266,12 +266,9 @@ const GPUMeshResource* MeshResourceService::GetMeshResource(GPUMeshResourceHandl
 MeshComponent* MeshResourceService::GetFirstPendingComponent() const
 {
 	MeshComponent* l_pending = nullptr;
-	m_Pool.ForEach([&l_pending](MeshComponent* in_Component)
+	m_DeferredQueue.peekFront([&l_pending](const MeshInitTask& in_Task)
 	{
-		if (l_pending)
-			return;
-		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
-			l_pending = in_Component;
+		l_pending = in_Task.m_Component;
 	});
 	return l_pending;
 }

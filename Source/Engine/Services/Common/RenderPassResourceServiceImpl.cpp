@@ -70,12 +70,9 @@ bool RenderPassResourceService::InitializeComponents()
 RenderPassComponent* RenderPassResourceService::GetFirstPendingComponent() const
 {
 	RenderPassComponent* l_pending = nullptr;
-	m_Pool.ForEach([&l_pending](RenderPassComponent* in_Component)
+	m_DeferredQueue.peekFront([&l_pending](RenderPassComponent* const& in_Component)
 	{
-		if (l_pending)
-			return;
-		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
-			l_pending = in_Component;
+		l_pending = in_Component;
 	});
 	return l_pending;
 }

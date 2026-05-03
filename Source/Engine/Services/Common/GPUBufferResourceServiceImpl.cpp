@@ -77,12 +77,9 @@ bool GPUBufferResourceService::InitializeComponents()
 GPUBufferComponent* GPUBufferResourceService::GetFirstPendingComponent() const
 {
 	GPUBufferComponent* l_pending = nullptr;
-	m_Pool.ForEach([&l_pending](GPUBufferComponent* in_Component)
+	m_DeferredQueue.peekFront([&l_pending](GPUBufferComponent* const& in_Component)
 	{
-		if (l_pending)
-			return;
-		if (in_Component && in_Component->m_ObjectStatus == ObjectStatus::Created)
-			l_pending = in_Component;
+		l_pending = in_Component;
 	});
 	return l_pending;
 }

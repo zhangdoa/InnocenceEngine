@@ -354,6 +354,46 @@ If all 5 were `Activated`: each invocation finds `l_pending == nullptr` AND stat
 
 **Reviewer:** low-level-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should inspect for no-shadow-state compliance (no new counter / flag fields on any of the five services) and predicate correctness (early-exit lambda short-circuit, `== Created` check, const correctness through the pool walk). Surface-back; no commit this CL.
 
+### Load-determinism foundation chain — CL 3.5: refit residency predicate to deferred-init queue — surfaced 2026-05-03
+
+CL 3 (`2596dc41`) used pool iteration over `m_ObjectStatus == Created`, which conflates "pending init work" with scaffolding components whose status is intentionally frozen at `Created` (`RayTracingResult` texture in `RayTracer.cpp:561`; offscreen-mode `SwapChain` renderpass in `FrameManagementServiceImpl.cpp:45,85-89`). The deferred-init queue is THE source of truth for pending init work per the no-shadow-state discipline (`a86e6e93`); CL 3.5 refits all five services to peek the queue head instead.
+
+**Files touched (CL 3.5):**
+- `Source/Engine/Common/ThreadSafeQueue.h` — added a single templated `peekFront(Inspector)` method. Takes the queue's existing `std::shared_lock<std::shared_mutex>` (matches `empty()`/`size()`/`isValid()`); invokes inspector with a const reference to the front element when non-empty and valid; returns bool. Templated-functor shape so init-task structs holding `std::vector` (Mesh) are not copied — caller extracts only the pointer it needs.
+- `Source/Engine/Services/MeshResourceService.h` + `Common/MeshResourceServiceImpl.cpp` — `GetFirstPendingComponent()` now `m_DeferredQueue.peekFront([&](const MeshInitTask& t){ l_pending = t.m_Component; })`. Doc-comment updated to point at queue-as-source-of-truth + scaffolding caveat. Existing `IsDeferredQueueEmpty()` from CL A unchanged.
+- `Source/Engine/Services/TextureResourceService.h` + `Common/TextureResourceServiceImpl.cpp` — same shape; added `IsDeferredQueueEmpty() const { return m_DeferredQueue.empty(); }` inline. **CL 4 acceptance criterion (carry-forward):** TextureResourceService also enqueues async binary-load requests via `EnqueueBinaryLoad` → `s_BinaryLoadQueue` (`TextureResourceServiceImpl.cpp:167`); a texture with a binary-load request still pending in `s_BinaryLoadQueue` will not appear in `m_DeferredQueue` until the binary lands. The CL 4 aggregator MUST consult both queues for textures, or it will report "complete" while binary-load worker is still decoding. Not fixed here; flagged for CL 4. Doc-comment on `GetFirstPendingComponent` records the caveat.
+- `Source/Engine/Services/MaterialResourceService.h` + `Common/MaterialResourceServiceImpl.cpp` — same shape; added `IsDeferredQueueEmpty()`.
+- `Source/Engine/Services/GPUBufferResourceService.h` + `Common/GPUBufferResourceServiceImpl.cpp` — same shape (queue holds raw `GPUBufferComponent*`); added `IsDeferredQueueEmpty()`.
+- `Source/Engine/Services/RenderPassResourceService.h` + `Common/RenderPassResourceServiceImpl.cpp` — same shape (queue holds raw `RenderPassComponent*`); added `IsDeferredQueueEmpty()`.
+
+**Queue-peek operation: ADDED.** `ThreadSafeQueue<T>::peekFront(Inspector)` is one new method. It takes the queue's existing shared lock under the same `std::shared_mutex` as `empty()`. Templated-functor over copy-by-value because the queue's element type for Mesh / Texture / Material init tasks holds `std::vector` payloads — copying the head would defeat the cheapness of a per-frame poll. The inspector receives a `const T&` and must not retain it past the call (documented in the header comment).
+
+**RayTracingResult orphan trace (confirms the fix):**
+1. `RayTracer::Setup()` calls `TextureResourceService::Add("RayTracingResult")` → pool entry, `m_ObjectStatus = ObjectStatus::Created`. `Initialize()` is NEVER called on this component (it is a CPU-side path-tracer-output texture, not a GPU-init texture).
+2. CL 4 aggregator calls `TextureResourceService::GetFirstPendingComponent()`.
+3. New impl: `m_DeferredQueue.peekFront(...)` → queue is empty (only `Initialize()` paths push) → inspector NOT invoked → `l_pending` stays `nullptr` → returns `nullptr`. ✓
+4. Under CL 3 (pool-iteration), the same trace would have observed `RayTracingResult` at `ObjectStatus::Created` and returned it forever, wedging `IsResidencyComplete()` to never fire. CL 3.5 fixes it.
+
+**Same trace applies to offscreen-mode `SwapChain` RenderPass:** added to pool (`FrameManagementServiceImpl.cpp:45`), `Initialize()` short-circuits before reaching `RenderPassResourceService::Initialize()` when `g_Engine->getInitConfig().isOffscreen` is true. Pool entry stays at `Created`; queue stays empty; new predicate returns nullptr. ✓
+
+**No-shadow-state self-check:**
+- Zero new counter/flag fields on any of the five services.
+- `peekFront` introduces no state — pure read accessor under existing lock.
+- Predicate derives entirely from `m_DeferredQueue` contents (the queue IS the pending-work data, not a shadow of it).
+
+**Threading (per `threading-contracts.md`):** `peekFront` is `const`, takes `std::shared_lock<std::shared_mutex>`. Multiple readers may call concurrently; concurrent `tryPop`/`push` (exclusive `lock_guard`) block briefly. Inspector receives a const reference to the queue's front element while the shared lock is held — caller-side aliasing risk is bounded by the lambda body's lifetime. The doc-comment forbids retaining the reference.
+
+**Re-queue case (Mesh):** `MeshResourceServiceImpl.cpp:121-127` re-queues activation-only tasks when their primary handle has not yet built. Predicate may briefly return that task's component, then `tryPop` removes it, then `push` re-adds it. The window where the queue is empty between pop and re-push is microseconds; predicate flickers but converges. Acceptable per the brief.
+
+**Build:** RelWithDebInfo full-tree clean (`cmake --build Build --config RelWithDebInfo`). Main.exe + RenderTest.exe + TestSuite.exe all link clean. No new warnings on any of the 11 touched files. Pre-existing `MathHelper.h` C4003 unchanged.
+
+**Surprises / advisories:**
+1. **`ThreadSafeQueue` had no peek method.** Added one (templated functor). Considered the simpler `bool peekFront(T& out)` shape but rejected because Mesh/Texture/Material init-task structs hold `std::vector` payloads — a copy per per-frame predicate evaluation would be O(vertex_count) wasted work during loading. The functor shape extracts only the pointer needed, in line with the brief's "stay minimal — don't reshape the queue API." One new method, no other changes.
+2. **Texture binary-load queue is a separate path that this predicate does not cover.** Documented above; CL 4 acceptance criterion. Flagged in `TextureResourceService::GetFirstPendingComponent`'s doc-comment.
+3. **The CL 3 const overload of `NamedObjectPool::ForEach` is now unused by the predicate** but kept (additive, harmless, may have other future readers).
+
+**Reviewer:** low-level-expert peer (per `peer-review-required.md`'s reviewer-selection rule — same role family, fresh dispatch). Reviewer should inspect: (a) queue-as-source-of-truth correctness (no leftover pool-iteration shape in any of the five impls — verified by grep), (b) `peekFront` thread-safety contract under shared_lock, (c) RayTracingResult / offscreen-SwapChain orphan trace under the new predicate, and (d) the texture-binary-load CL 4 acceptance criterion is captured in the comment. Surface-back; no commit this CL.
+
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [ ] #1 Code compiles — build output quoted in the final summary (tier of build depends on domain — engine/editor/shader)
