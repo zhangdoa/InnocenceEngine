@@ -74,16 +74,6 @@ bool GPUBufferResourceService::InitializeComponents()
 	return true;
 }
 
-GPUBufferComponent* GPUBufferResourceService::GetFirstPendingComponent() const
-{
-	GPUBufferComponent* l_pending = nullptr;
-	m_DeferredQueue.peekFront([&l_pending](GPUBufferComponent* const& in_Component)
-	{
-		l_pending = in_Component;
-	});
-	return l_pending;
-}
-
 bool GPUBufferResourceService::WriteMappedMemory(GPUBufferComponent* gpuBuffer, IMappedMemory* mappedMemory, const void* sourceMemory, size_t startOffset, size_t range)
 {
 	if (gpuBuffer->m_ObjectStatus != ObjectStatus::Activated)

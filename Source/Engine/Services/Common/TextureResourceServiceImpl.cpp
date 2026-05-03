@@ -167,16 +167,6 @@ void TextureResourceService::EnqueueBinaryLoad(const std::string& binaryPath, Te
 	TextureResourceServiceNS::s_BinaryLoadQueue.push({binaryPath, component, owner});
 }
 
-TextureComponent* TextureResourceService::GetFirstPendingComponent() const
-{
-	TextureComponent* l_pending = nullptr;
-	m_DeferredQueue.peekFront([&l_pending](const TextureInitTask& in_Task)
-	{
-		l_pending = in_Task.m_Component;
-	});
-	return l_pending;
-}
-
 bool TextureResourceService::OnSceneUnloading()
 {
 	auto l_registry = g_Engine->Get<EntityRegistry>();

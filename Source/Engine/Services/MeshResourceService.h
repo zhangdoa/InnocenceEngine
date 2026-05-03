@@ -34,17 +34,6 @@ namespace Inno
 		// subsequent frames; "queue empty" means no pending mesh activations.
 		bool IsDeferredQueueEmpty() const { return m_DeferredQueue.empty(); }
 
-		// Returns the component at the head of the deferred-init queue (the
-		// queue is THE source of truth for "pending init work"), or nullptr if
-		// the queue is empty. Per no-shadow-state discipline (a86e6e93): the
-		// queue's contents ARE the pending-work data, not a shadow of it.
-		// Replaces CL 3's pool-iteration shape, which conflated pending-init
-		// with scaffolding components (e.g. RayTracingResult texture, offscreen
-		// SwapChain renderpass) whose ObjectStatus is intentionally frozen at
-		// Created. Caller may log the returned component's m_InstanceName to
-		// surface which mesh is still pending, not just how many.
-		MeshComponent* GetFirstPendingComponent() const;
-
 		GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle);
 		const GPUMeshResource* GetMeshResource(GPUMeshResourceHandle handle) const;
 		GPUMeshResourceHandle FindMeshResourceByName(const char* name);

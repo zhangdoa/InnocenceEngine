@@ -263,16 +263,6 @@ const GPUMeshResource* MeshResourceService::GetMeshResource(GPUMeshResourceHandl
 	return &l_resource;
 }
 
-MeshComponent* MeshResourceService::GetFirstPendingComponent() const
-{
-	MeshComponent* l_pending = nullptr;
-	m_DeferredQueue.peekFront([&l_pending](const MeshInitTask& in_Task)
-	{
-		l_pending = in_Task.m_Component;
-	});
-	return l_pending;
-}
-
 GPUMeshResourceHandle MeshResourceService::FindMeshResourceByName(const char* name)
 {
 	auto l_result = m_MeshResourceLUT.find(name);

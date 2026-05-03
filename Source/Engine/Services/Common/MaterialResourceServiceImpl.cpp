@@ -84,16 +84,6 @@ bool MaterialResourceService::InitializeComponents()
 	return true;
 }
 
-MaterialComponent* MaterialResourceService::GetFirstPendingComponent() const
-{
-	MaterialComponent* l_pending = nullptr;
-	m_DeferredQueue.peekFront([&l_pending](const MaterialInitTask& in_Task)
-	{
-		l_pending = in_Task.m_Component;
-	});
-	return l_pending;
-}
-
 bool MaterialResourceService::OnSceneUnloading()
 {
 	auto l_registry = g_Engine->Get<EntityRegistry>();

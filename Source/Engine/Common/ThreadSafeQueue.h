@@ -90,25 +90,6 @@ namespace Inno
 			return m_queue.size();
 		}
 
-		// Run an inspector under the queue's shared lock against the head element
-		// without popping. Returns true and invokes inspector(front()) when the
-		// queue is non-empty and valid; returns false otherwise (inspector not
-		// invoked). Inspector takes a const reference and must not retain it past
-		// the call — the lock is released on return. Designed for cheap pointer
-		// extraction (e.g. peekFront([&](const Task& t){ out = t.m_Component; }))
-		// to avoid copying queue elements that hold std::vector or other heavy
-		// payload, while keeping the existing tryPop / push / size API surface
-		// unchanged.
-		template <typename Inspector>
-		bool peekFront(Inspector inspector) const
-		{
-			std::shared_lock<std::shared_mutex> lock{m_mutex};
-			if (m_queue.empty() || !m_valid)
-				return false;
-			inspector(m_queue.front());
-			return true;
-		}
-
 		std::queue<T> &getRawData(void)
 		{
 			std::shared_lock<std::shared_mutex> lock{m_mutex};

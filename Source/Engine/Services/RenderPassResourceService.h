@@ -29,20 +29,6 @@ namespace Inno
 		void Initialize(RenderPassComponent* renderPass);
 		bool InitializeComponents();
 
-		// Returns the component at the head of the deferred-init queue (the
-		// queue is THE source of truth for "pending init work"), or nullptr if
-		// the queue is empty. Per no-shadow-state discipline (a86e6e93): the
-		// queue's contents ARE the pending-work data, not a shadow of it.
-		// Replaces CL 3's pool-iteration shape, which conflated pending-init
-		// with scaffolding components (e.g. offscreen-mode SwapChain) whose
-		// ObjectStatus is intentionally frozen at Created.
-		RenderPassComponent* GetFirstPendingComponent() const;
-
-		// TASK-213 CL 3.5: deferred-init queue empty signal. Read-only;
-		// mirror of GetFirstPendingComponent() == nullptr but cheaper for the
-		// CL 4 aggregator's bool-check fast path.
-		bool IsDeferredQueueEmpty() const { return m_DeferredQueue.empty(); }
-
 		bool InitializeRenderPass(RenderPassComponent* renderPass);
 		bool CreateOutputMergerTargets(RenderPassComponent* renderPass);
 		bool InitializeOutputMergerTargets(RenderPassComponent* renderPass);

@@ -67,16 +67,6 @@ bool RenderPassResourceService::InitializeComponents()
 	return true;
 }
 
-RenderPassComponent* RenderPassResourceService::GetFirstPendingComponent() const
-{
-	RenderPassComponent* l_pending = nullptr;
-	m_DeferredQueue.peekFront([&l_pending](RenderPassComponent* const& in_Component)
-	{
-		l_pending = in_Component;
-	});
-	return l_pending;
-}
-
 bool RenderPassResourceService::InitializeRenderPass(RenderPassComponent* renderPass)
 {
 	bool l_result = true;
