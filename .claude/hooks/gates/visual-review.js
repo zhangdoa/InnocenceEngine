@@ -18,7 +18,7 @@
 // phase, same single block emission with the discipline link, same
 // fail-open-on-internal-error posture.
 //
-// Discipline: .claude/disciplines/peer-review-required.md §
+// Discipline: .claude/disciplines/on-commit/peer-review-required.md §
 // "Reviewer visual inspection" + § "Commit-message line".
 
 const CAPTURE_PATH_RE = /Build\/captures\//
@@ -37,7 +37,7 @@ function emit() {
     '',
     'The commit body references `Build/captures/` paths, signalling a',
     'rendering CL that makes or relies on visual claims. Per',
-    '.claude/disciplines/peer-review-required.md § "Reviewer visual',
+    '.claude/disciplines/on-commit/peer-review-required.md § "Reviewer visual',
     'inspection", the reviewer must independently `Read` the candidate',
     'captures and the audit must land in the commit message via:',
     '',

@@ -16,11 +16,11 @@ Review session commits and dispatch transcripts. For each, ask:
 - Did an agent (or main-session itself) repeat a mistake that an existing discipline already covers? If yes, the discipline either failed to surface in the brief or its wording is too weak — file the fix.
 - Did a new pattern emerge (e.g. a new architectural seam, a new dispatch shape, a new gate) that deserves a discipline of its own?
 
-Output per finding: target file (existing discipline edit, or new `disciplines/<name>.md`), one-sentence rule, owning agent (almost always `ai-expert`).
+Output per finding: target file (existing discipline edit, or new `disciplines/<stage>/<name>.md`), one-sentence rule, owning stage (almost always `harness-impl`).
 
 ### Pass 2 — ADVISORY items not filed
 
-Read the session's commit bodies *and the corresponding tasks' Implementation Notes `## Review` blocks* for `ADVISORY` lines from peer reviewers (verdict tier per `peer-review-required.md`). The implementer's commit body sometimes summarizes a verdict as "PASS+ADVISORY" without enumerating the advisories — those live in the task's Implementation Notes. For each ADVISORY:
+Read the session's commit bodies *and the corresponding tasks' Implementation Notes `## Review` blocks* for `ADVISORY` lines from peer reviewers (verdict tier per `on-commit/peer-review-required.md`). The implementer's commit body sometimes summarizes a verdict as "PASS+ADVISORY" without enumerating the advisories — those live in the task's Implementation Notes. For each ADVISORY:
 
 - Did it become a backlog task? If yes, skip.
 - Is it small enough to land inline as a follow-up CL in this session? If yes, queue it in the plan.
@@ -68,7 +68,7 @@ After the four passes, emit a single block with this shape, then stop:
 Total: N follow-up CLs / M new backlog tasks / K inline edits.
 ```
 
-If a plan entry is small enough to land inline as a single CL with no peer-review surface (per `peer-review-required.md` § "When required" — backlog/docs-only or harness self-edit), main-session may commit it directly in this session. Larger entries get dispatched to the owning agent.
+If a plan entry is small enough to land inline as a single CL with no peer-review surface (per `on-commit/peer-review-required.md` § "Skip categories" — backlog/docs-only or harness self-edit), main-session may commit it directly in this session. Larger entries get dispatched to the owning stage.
 
 ## What this command is not
 

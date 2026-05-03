@@ -58,7 +58,7 @@ function emit(staged, closing) {
     '',
     ...rationale,
     'Run one of the following in this turn before committing:',
-    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N    (see disciplines/perf-measurement-frame-budget.md for choosing N)',
+    '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N    (see disciplines/on-bug/perf-measurement-frame-budget.md for choosing N)',
     '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N -reload_at_frame M',
     '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
     '  • Bin\\RelWithDebInfo\\Main.exe -capture_frame N',

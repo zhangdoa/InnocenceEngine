@@ -2,7 +2,7 @@
 // dispatcher's surface (foreground) without an explicit per-call
 // justification.
 //
-// Rule (from .claude/disciplines/agent-dispatch.md): the default for
+// Rule (from .claude/disciplines/on-dispatch/agent-dispatch.md): the default for
 // every `Agent` (and the older `Task`) dispatch is `run_in_background:
 // true`. Foreground is the documented exception, justified per call.
 // Prose alone has not held — this gate makes the rule load-bearing.
@@ -72,7 +72,7 @@ function emit(ti) {
     `  description:   ${desc}`,
     `  run_in_background: ${ti.run_in_background === undefined ? '<unset>' : String(ti.run_in_background)}`,
     '',
-    'Per .claude/disciplines/agent-dispatch.md, every `Agent` dispatch defaults',
+    'Per .claude/disciplines/on-dispatch/agent-dispatch.md, every `Agent` dispatch defaults',
     'to `run_in_background: true`. Foreground dispatch is the exception, justified',
     'per call by the two-condition test:',
     '',

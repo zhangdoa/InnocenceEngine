@@ -1,10 +1,7 @@
 // Paper-port alignment gate — when a staged backlog task flips to
 // `status: Done` AND its frontmatter labels include `paper-port`, a
 // fresh `.alignments/<TASK-ID>...md` artifact must also be staged.
-// The artifact is produced by the paper-auditor subagent running with
-// fresh context — the structural intervention against main-session
-// drift. Path-derived: only fires when a staged backlog task closes
-// AND carries the `paper-port` label.
+// Path-derived: fires only on staged paper-port-labelled task closure.
 
 const { readStagedTaskFrontmatter } = require('../lib/common')
 
@@ -49,21 +46,19 @@ function emit(missing) {
     '',
     'Closing a paper-port task requires a fresh alignment audit. The audit',
     'compares the paper spec, the canonical reference implementation, and our',
-    'code row-by-row so divergences are visible at review time. Running it as',
-    'a fresh-context subagent prevents the main session from confirm-biasing',
-    'its way through the comparison (see .claude/agents/paper-auditor.md).',
+    'code row-by-row so divergences are visible at review time.',
     '',
     'To satisfy this gate:',
-    '  1. Invoke the paper-auditor subagent with the paper section, reference',
-    "     impl location, and our implementation files (from .claude/references.json).",
-    '  2. The auditor writes `.alignments/<task-id>-<short-name>.md`.',
-    '  3. Stage that artifact alongside the task-close diff, then commit.',
+    '  1. Produce `.alignments/<task-id>-<short-name>.md` per',
+    '     `.claude/disciplines/on-implement/paper-audit.md` (audit format and',
+    '     hard rules). The impl stage that did the port runs the audit at',
+    "     closure (see `.claude/disciplines/on-implement/paper-port.md` step 5).",
+    '  2. Stage that artifact alongside the task-close diff, then commit.',
     '',
-    'No string-based escape. The bypass is path-derived: this gate only fires',
-    'when a staged task closes AND carries the `paper-port` label. An',
-    'abandoned / superseded paper-port task should drop the `paper-port` label',
-    'in the same commit; retro housekeeping that does not need audit should',
-    'remove the label, not bypass the gate.',
+    'No string-based escape. Bypass is path-derived: this gate only fires when',
+    'a staged task closes AND carries the `paper-port` label. An abandoned /',
+    'superseded paper-port task should drop the `paper-port` label in the same',
+    'commit; retro housekeeping that needs no audit should remove the label.',
     '',
   ].join('\n'))
   process.exit(2)

@@ -5,12 +5,12 @@
  * Dispatcher only — each gate lives in `.claude/hooks/gates/<name>.js`.
  *
  * Gate order (first failure wins):
- *   1. producer-brief        — blocks substantive tool use until the producer
+ *   1. task-mgmt-brief    — blocks substantive tool use until task-mgmt
  *                              subagent has been invoked at least once this
  *                              session. CLAUDE.md "Session start" rule.
  *   2. agent-dispatch        — blocks `Agent` calls dispatched foreground
  *                              without `[foreground-required]` in the prompt.
- *                              Enforces .claude/disciplines/agent-dispatch.md.
+ *                              Enforces .claude/disciplines/on-dispatch/agent-dispatch.md.
  *   3. cross-subtree-stash   — blocks `git stash` Bash calls that would
  *                              sweep dirty files spanning multiple agent-
  *                              owned subtrees (TASK-196 / 2026-04-28
@@ -28,7 +28,7 @@
  */
 
 const GATES = [
-  require('./gates/producer-brief'),
+  require('./gates/task-mgmt-brief'),
   require('./gates/agent-dispatch'),
   require('./gates/cross-subtree-stash'),
   require('./gates/no-auto-memory'),

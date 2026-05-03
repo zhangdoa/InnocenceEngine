@@ -62,7 +62,7 @@ group('collectCommitMessageText — happy paths', () => {
 })
 
 group('collectCommitMessageText — MSYS-style absolute path (the TASK-154 repro)', () => {
-  // The exact failing form from the producer's TASK-66 closure repro:
+  // The exact failing form from the original TASK-66 closure repro:
   // `git commit -F /c/GitRepo/InnocenceEngine/Build/commit-message.txt`.
   // We stand in for it with our temp file rendered in MSYS style.
   if (process.platform !== 'win32') {

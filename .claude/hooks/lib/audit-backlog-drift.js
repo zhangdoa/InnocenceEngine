@@ -4,7 +4,7 @@
 // effects. Companion to closure-staleness.js, which catches the same
 // drift going forward at commit time; this lib catches accumulated drift
 // before that gate's enforcement window opened, and at session start so
-// the producer surfaces it in the briefing.
+// task-mgmt surfaces it in the briefing.
 //
 // Public API:
 //
@@ -25,7 +25,7 @@
 //   node audit-backlog-drift.js --quiet      # suppress chrome; data only
 //
 // Diagnostic-only contract: this script never mutates the backlog. The
-// producer reads the output and decides per-candidate whether to retrofit-
+// task-mgmt reads the output and decides per-candidate whether to retrofit-
 // flip (the recipe in TASK-201's Implementation Notes still classifies
 // each hit as code-closure / cross-reference / multi-CL / explicit-deferred).
 

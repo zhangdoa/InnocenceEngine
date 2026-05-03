@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
  * SessionStart hook: inject a directive instructing main-session Claude
- * that the first action this session must be the producer briefing,
+ * that the first action this session must be the task-mgmt briefing,
  * regardless of what the user typed.
  *
  * Why SessionStart and not PreToolUse: PreToolUse fires *after* the model
  * has already chosen what to do this turn. A purely-textual reply or a
  * Read-only investigation never reaches PreToolUse, so the
- * `producer-brief` PreToolUse gate (commit d39a2a0c) only catches drift
+ * `task-mgmt-brief` PreToolUse gate (commit d39a2a0c) only catches drift
  * once Claude reaches for Bash/Edit/Write. SessionStart fires before any
  * model turn and lets us seed `additionalContext` that the model sees on
  * its very first response — the earliest event surface that can still

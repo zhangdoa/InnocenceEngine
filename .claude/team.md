@@ -1,31 +1,31 @@
-# Team
+# Stages
 
-| Agent | Domain (summary) | File |
+An agent is a stage of actions, guided by disciplines. Each stage is invoked by the dispatcher when work matches its description.
+
+| Stage | What it does | File |
 |---|---|---|
 | (project-owner) | Product direction, priorities, merge approval | — (the human user) |
-| producer | Backlog, task tracking, cross-scope coordination | `.claude/agents/producer.md` |
-| rendering-researcher | Rendering R&D, shader implementation | `.claude/agents/rendering-researcher.md` |
-| graphics-api-expert | DX12 / Vulkan glue, GPU resource plumbing | `.claude/agents/graphics-api-expert.md` |
-| software-architect | Service architecture, code organization, serialization (code-data coupling) | `.claude/agents/software-architect.md` |
-| low-level-expert | Threading, memory, IO, math | `.claude/agents/low-level-expert.md` |
-| platform-expert | OS / windowing / HID | `.claude/agents/platform-expert.md` |
-| ci-build-expert | Git clone → build → scripts | `.claude/agents/ci-build-expert.md` |
-| ai-expert | Harness: hooks, agents, skills, commit-gates | `.claude/agents/ai-expert.md` |
-| test-expert | Test strategy, tiers, example project, game-logic | `.claude/agents/test-expert.md` |
-| editor-tooling-expert | Source/Editor-Next (Vue / Electron / TypeScript / IPC) | `.claude/agents/editor-tooling-expert.md` |
-| paper-auditor (subagent) | Fresh-context audit of paper-port implementations | `.claude/agents/paper-auditor.md` |
+| `task-mgmt` | Session-start briefing, backlog ops, cross-stage coordination, dispatch | `.claude/agents/task-mgmt.md` |
+| `design` | Decide structure / naming / tech / split. Plan, no diff. | `.claude/agents/design.md` |
+| `harness-impl` | `.claude/` infrastructure (hooks, agents, disciplines, settings) | `.claude/agents/harness-impl.md` |
+| `ci-build-impl` | CMake + scripts + build-chain plumbing | `.claude/agents/ci-build-impl.md` |
+| `code-impl` | C++ / TypeScript source diffs (engine, editor, foundation, services, platform, tests) | `.claude/agents/code-impl.md` |
+| `shader-impl` | HLSL diffs | `.claude/agents/shader-impl.md` |
+| `bug-fix` | Reproduce → bisect → identify breaking commit → understand → hand off to impl | `.claude/agents/bug-fix.md` |
+
+Paper-porting is not a separate stage — it folds into `code-impl` or `shader-impl` (or both) when the task carries the `paper-port` label. The alignment audit is a fresh-context dispatch of the same impl stage at closure.
 
 ## Dispatch
 
-Main-session Claude is a dispatcher. The pattern per turn:
+Main-session = dispatcher. Per turn:
 
-1. Read the scope declared in the owned subtrees' `CLAUDE.md` and the staged-file paths.
-2. Identify the responsible agent(s).
-3. Invoke them via the `Agent` tool.
-4. Relay results; enforce universal gates on any commit.
+1. Read scope from owned subtrees' `CLAUDE.md` and staged-file paths.
+2. Identify which stage the work matches.
+3. Invoke via `Agent` tool.
+4. Relay results; enforce universal gates on commit.
 
-Work that genuinely crosses agent domains is coordinated through the `producer` agent, not by individual agents stepping outside their scope.
+Cross-stage work → coordinate via `task-mgmt`.
 
 ## Universal gates
 
-Fundamentals that apply to every CL regardless of which agent produced it live in `.claude/hooks/commit-gate.js`: file size, attribution, closure evidence with test-run backing. Agent-specific disciplines (paper-port alignment, serialize-determinism round-trip, live-engine Playwright) live in the agent's own working agreement and are enforced through the artifacts the agent produces.
+`.claude/hooks/commit-gate.js`: file size, attribution, peer review, closure evidence with test-run backing. Stage-specific disciplines (paper-port alignment, serialize-determinism round-trip, live-engine Playwright) live in the matching `disciplines/<stage>/` directory; agents load them when they enter that stage.

@@ -3,7 +3,7 @@
 //
 // Rationale:
 //   Auto-memory entries do not reach spawned subagents (per
-//   `.claude/disciplines/persistence-venue.md`) and bypass the review
+//   `.claude/disciplines/always/persistence-venue.md`) and bypass the review
 //   pressure that every other persistence venue carries. They also
 //   accumulate stale advice — entries get written once, never re-read,
 //   and decay against the live codebase. The project no longer uses
@@ -96,7 +96,7 @@ function emit(target) {
     '  Cost-of-one-slip-is-high enforcement                →  a new gate under .claude/hooks/gates/<name>.js',
     '  Ephemeral conversation context                      →  do not persist; let it scroll',
     '',
-    'Full routing rules: .claude/disciplines/persistence-venue.md',
+    'Full routing rules: .claude/disciplines/always/persistence-venue.md',
     '',
     'If none of the above fits, the content is probably not worth persisting — let',
     'it scroll. Re-deriving from source on the next session is cheaper than carrying',

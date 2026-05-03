@@ -89,41 +89,32 @@ group('parseGitStashCommand — non-stash commands', () => {
 // ---------------------------------------------------------------------
 group('resolveOwner — representative paths per subtree', () => {
   const cases = [
-    ['.claude/hooks/session-gate.js',                          'ai-expert'],
-    ['.claude/disciplines/fundamentals.md',                     'ai-expert'],
-    ['.backlog/tasks/task-196.md',                              'producer'],
-    ['.alignments/TASK-66-cube-shadow.md',                      'ai-expert'],
-    ['CMake/Modules/InnoCommon.cmake',                          'ci-build-expert'],
-    ['Scripts/build.ps1',                                       'ci-build-expert'],
-    ['Source/Editor-Next/src/main.ts',                          'editor-tooling-expert'],
-    ['Source/Engine/Common/EntityRegistry.h',                   'low-level-expert'],
-    ['Source/Engine/Platform/WinWindow.cpp',                    'platform-expert'],
-    ['Source/Engine/Services/DX12/DX12RenderingServer.cpp',     'graphics-api-expert'],
-    ['Source/Engine/Services/VK/VKRenderingServer.cpp',         'graphics-api-expert'],
-    ['Source/Engine/Services/AssetService.cpp',                 'software-architect'],
-    ['Source/Engine/Services/SceneService.h',                   'software-architect'],
-    ['Source/Engine/ThirdParty/JSONWrapper/JSONWrapper.cpp',    'software-architect'],
-    ['Source/ExampleProject/LogicClient/Logic.cpp',             'test-expert'],
-    ['Source/ExampleProject/RenderingClient/LightPass.cpp',     'rendering-researcher'],
-    ['Source/ExampleProject/RenderingClient/SkyPass.h',         'rendering-researcher'],
-    ['Source/Shaders/HLSL/lightPass.comp',                      'rendering-researcher'],
+    ['.claude/hooks/session-gate.js',                          'harness-impl'],
+    ['.claude/disciplines/always/fundamentals.md',             'harness-impl'],
+    ['.backlog/tasks/task-196.md',                             'task-mgmt'],
+    ['.alignments/TASK-66-cube-shadow.md',                     'harness-impl'],
+    ['CMake/Modules/InnoCommon.cmake',                         'ci-build-impl'],
+    ['Scripts/build.ps1',                                      'ci-build-impl'],
+    ['Source/Editor-Next/src/main.ts',                         'code-impl'],
+    ['Source/Engine/Common/EntityRegistry.h',                  'code-impl'],
+    ['Source/Engine/Platform/WinWindow.cpp',                   'code-impl'],
+    ['Source/Engine/Services/DX12/DX12RenderingServer.cpp',    'code-impl'],
+    ['Source/Engine/Services/VK/VKRenderingServer.cpp',        'code-impl'],
+    ['Source/Engine/Services/AssetService.cpp',                'code-impl'],
+    ['Source/Engine/Services/SceneService.h',                  'code-impl'],
+    ['Source/Engine/ThirdParty/JSONWrapper/JSONWrapper.cpp',   'code-impl'],
+    ['Source/ExampleProject/LogicClient/Logic.cpp',            'code-impl'],
+    ['Source/ExampleProject/RenderingClient/LightPass.cpp',    'code-impl'],
+    ['Source/ExampleProject/RenderingClient/SkyPass.h',        'code-impl'],
+    ['Source/Shaders/HLSL/lightPass.comp',                     'shader-impl'],
   ]
   for (const [p, expected] of cases) {
     assert(resolveOwner(p) === expected, `${p} -> ${expected}`)
   }
 })
 
-group('resolveOwner — non-pass file in RenderingClient is NOT rendering-researcher', () => {
-  // RenderingClient is a hybrid subtree. Pass files are rendering-researcher's;
-  // non-pass files (e.g. ExampleRenderingClient.cpp itself) belong elsewhere.
-  // The gate stays conservative by treating those as `<unowned>` — a separate
-  // domain — so a stash mixing pass + non-pass in the same dir still trips.
-  assert(resolveOwner('Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp') === null,
-    'non-Pass file in RenderingClient -> null (conservative)')
-})
-
 group('resolveOwner — windows backslash paths normalised', () => {
-  assert(resolveOwner('Source\\Shaders\\HLSL\\foo.hlsl') === 'rendering-researcher',
+  assert(resolveOwner('Source\\Shaders\\HLSL\\foo.hlsl') === 'shader-impl',
     'backslashes normalised')
 })
 
@@ -181,10 +172,10 @@ group('gate.run — cross-subtree dirty -> BLOCK', () => {
   })
   assert(r.blocked, 'cross-subtree stash blocked')
   assert(r.exitCode === 2, 'exit code 2')
-  assert(r.stderr.includes('rendering-researcher'), 'block message names rendering-researcher')
-  assert(r.stderr.includes('ai-expert'), 'block message names ai-expert')
-  assert(r.stderr.includes('Source/Shaders/HLSL/x.hlsl'), 'block message lists rendering path')
-  assert(r.stderr.includes('.claude/hooks/x.js'), 'block message lists ai path')
+  assert(r.stderr.includes('shader-impl'), 'block message names shader-impl')
+  assert(r.stderr.includes('harness-impl'), 'block message names harness-impl')
+  assert(r.stderr.includes('Source/Shaders/HLSL/x.hlsl'), 'block message lists shader path')
+  assert(r.stderr.includes('.claude/hooks/x.js'), 'block message lists harness path')
 })
 
 group('gate.run — same-agent dirty -> ALLOW', () => {

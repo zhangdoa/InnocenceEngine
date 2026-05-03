@@ -5,7 +5,7 @@
 const fs = require('fs')
 const { execSync } = require('child_process')
 
-// .claude/disciplines/commit-message-policy.md requires one of these
+// .claude/disciplines/on-commit/commit-message-policy.md requires one of these
 // headers on every AI-authored commit.
 const ATTRIBUTION_RE = /^(Code-AI-Generated-By|Message-AI-Generated-By):\s*\S/m
 
@@ -68,22 +68,24 @@ function isRealUserPrompt(content) {
 
 // `Agent` is the current Claude Code serialization for the subagent dispatch
 // tool; older / future variants may use `Task`. Accept either.
-function isProducerAgentCall(toolName, toolInput) {
+function isTaskMgmtAgentCall(toolName, toolInput) {
   if (toolName !== 'Agent' && toolName !== 'Task') return false
-  return (toolInput?.subagent_type || '') === 'producer'
+  const t = toolInput?.subagent_type || ''
+  // Accept legacy `producer` during the rename transition. Drop after one stable session cycle.
+  return t === 'task-mgmt' || t === 'producer'
 }
 
-// Scan a transcript JSONL for (1) any prior Agent(subagent_type=producer)
+// Scan a transcript JSONL for (1) any prior Agent(subagent_type=task-mgmt)
 // tool_use, and (2) at least one real (non-pseudo) user prompt. Used by the
-// producer-briefing gates on PreToolUse and SessionStart.
+// task-mgmt-briefing gates on PreToolUse and SessionStart.
 //
-// Returns { producerSeen, hasRealUserPrompt } or null on I/O error.
+// Returns { taskMgmtSeen, hasRealUserPrompt } or null on I/O error.
 //
 // The `hasRealUserPrompt` distinction matters because subagent transcripts
 // only contain the synthetic prompt the parent passed; gates that govern
 // "the main session" must fail open on subagent transcripts.
-function scanTranscriptForProducerBrief(xpPath) {
-  const out = { producerSeen: false, hasRealUserPrompt: false }
+function scanTranscriptForTaskMgmtBrief(xpPath) {
+  const out = { taskMgmtSeen: false, hasRealUserPrompt: false }
   let raw
   try { raw = fs.readFileSync(xpPath, 'utf8') } catch { return null }
   for (const line of raw.split('\n')) {
@@ -98,11 +100,11 @@ function scanTranscriptForProducerBrief(xpPath) {
     if (!Array.isArray(content)) continue
     for (const block of content) {
       if (block?.type !== 'tool_use') continue
-      if (isProducerAgentCall(block.name, block.input)) {
-        out.producerSeen = true
+      if (isTaskMgmtAgentCall(block.name, block.input)) {
+        out.taskMgmtSeen = true
       }
     }
-    if (out.producerSeen && out.hasRealUserPrompt) break
+    if (out.taskMgmtSeen && out.hasRealUserPrompt) break
   }
   return out
 }
@@ -280,7 +282,7 @@ module.exports = {
   EDITOR_CODE_PATH, SERIALIZER_CODE_PATH,
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
   isRealUserPrompt, firstArray,
-  isProducerAgentCall, scanTranscriptForProducerBrief,
+  isTaskMgmtAgentCall, scanTranscriptForTaskMgmtBrief,
   blobLineCount, readStagedTaskFrontmatter, detectClosingTasks,
   collectCommitMessageText, resolveActiveTranscriptPath,
 }

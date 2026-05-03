@@ -21,30 +21,21 @@
 
 const { execSync } = require('child_process')
 
-// Path → owning agent. Update in lockstep with the `Owned by` markers
-// in the per-subtree CLAUDE.md files. Most-specific rules first.
+// Path → owning impl stage. Used by the cross-subtree-stash gate to
+// detect when a stash sweeps paths outside the dispatch's stage. Most-
+// specific rules first.
 //
-// The rendering-researcher hybrid in `Source/ExampleProject/
-// RenderingClient/` is encoded as a regex-arm (`*Pass.{cpp,h}`).
-// Non-pass files in the same directory return `null` — the gate
-// treats `null` as its own domain so a stash mixing pass + non-pass
-// files still trips, which is the conservative-correct behaviour.
+// Most C++ / TypeScript source maps to `code-impl`. Shaders to
+// `shader-impl`. Build/CMake/Scripts to `ci-build-impl`. Harness and
+// alignments to `harness-impl`. Backlog to `task-mgmt`.
 const OWNERSHIP_RULES = [
-  { match: p => /^Source\/ExampleProject\/RenderingClient\/.*Pass\.(cpp|h)$/.test(p), owner: 'rendering-researcher' },
-  { match: p => /^Source\/Engine\/Services\/(AssetService|SceneService)\./.test(p),    owner: 'software-architect' },
-  { match: p => p.startsWith('Source/Engine/ThirdParty/JSONWrapper/'),                  owner: 'software-architect' },
-  { match: p => p.startsWith('Source/Engine/Services/DX12/'),                           owner: 'graphics-api-expert' },
-  { match: p => p.startsWith('Source/Engine/Services/VK/'),                             owner: 'graphics-api-expert' },
-  { match: p => p.startsWith('Source/Engine/Common/'),                                  owner: 'low-level-expert' },
-  { match: p => p.startsWith('Source/Engine/Platform/'),                                owner: 'platform-expert' },
-  { match: p => p.startsWith('Source/Editor-Next/'),                                    owner: 'editor-tooling-expert' },
-  { match: p => p.startsWith('Source/ExampleProject/LogicClient/'),                    owner: 'test-expert' },
-  { match: p => p.startsWith('Source/Shaders/'),                                        owner: 'rendering-researcher' },
-  { match: p => p.startsWith('CMake/'),                                                 owner: 'ci-build-expert' },
-  { match: p => p.startsWith('Scripts/'),                                               owner: 'ci-build-expert' },
-  { match: p => p.startsWith('.backlog/'),                                              owner: 'producer' },
-  { match: p => p.startsWith('.claude/'),                                               owner: 'ai-expert' },
-  { match: p => p.startsWith('.alignments/'),                                           owner: 'ai-expert' },
+  { match: p => p.startsWith('Source/Shaders/'),    owner: 'shader-impl' },
+  { match: p => p.startsWith('Source/'),            owner: 'code-impl' },
+  { match: p => p.startsWith('CMake/'),             owner: 'ci-build-impl' },
+  { match: p => p.startsWith('Scripts/'),           owner: 'ci-build-impl' },
+  { match: p => p.startsWith('.backlog/'),          owner: 'task-mgmt' },
+  { match: p => p.startsWith('.claude/'),           owner: 'harness-impl' },
+  { match: p => p.startsWith('.alignments/'),       owner: 'harness-impl' },
 ]
 
 function resolveOwner(filePath) {
