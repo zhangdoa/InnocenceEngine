@@ -14,6 +14,7 @@
 #include "DX12Helper_Common.h"
 #include "DX12Helper_Pipeline.h"
 #include "DX12Helper_Texture.h"
+#include "DX12Helper_BindlessMesh.h"
 
 #include "../../../External/GitSubmodules/renderdoc/renderdoc/api/app/renderdoc_app.h"
 
@@ -1491,7 +1492,7 @@ bool DX12GraphicsHardwareService::CreateGlobalDescriptorHeaps()
     uint32_t l_maxRenderTargetTextures = 2048;
 
     {
-        auto l_MaxDescriptorCount = l_maxGPUBuffers * 3 + l_maxMaterialTextures * 2 + l_maxRenderTargetTextures * 2;
+        auto l_MaxDescriptorCount = l_maxGPUBuffers * 3 + l_maxMaterialTextures * 2 + l_maxRenderTargetTextures * 2 + l_renderingCapacity.maxMeshes * 2;
         auto l_Desc = GetDescriptorHeapDesc(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, l_MaxDescriptorCount, true);
         m_DX12Context.m_CSUDescHeap = m_DX12Context.CreateDescriptorHeap(l_Desc, L"GlobalCSUDescHeap_ShaderVisible");
         auto l_incrementSize = m_DX12Context.m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1641,6 +1642,8 @@ bool DX12GraphicsHardwareService::CreateGlobalDescriptorHeaps()
                 l_currentHandle.m_GPUHandle += l_incrementSize;
             }
         }
+
+        DX12Helper_BindlessMesh::InitSRVHeapSections(m_DX12Context, l_Desc, l_renderingCapacity.maxMeshes, l_incrementSize, DescriptorHandle{ l_firstRenderTargetTextureUAVHandle.m_CPUHandle + l_RenderTargetTextureDescriptorSectionSize, l_firstRenderTargetTextureUAVHandle.m_GPUHandle + l_RenderTargetTextureDescriptorSectionSize });
     }
 
     {
@@ -1806,13 +1809,8 @@ bool DX12GraphicsHardwareService::ReleaseHardwareResources()
     m_DX12Context.m_GPUBuffer_UAV_DescHeapAccessor_ShaderNonVisible.Reset();
     m_DX12Context.m_CSUDescHeap_ShaderNonVisible = nullptr;
 
-    m_DX12Context.m_RenderTarget_UAV_DescHeapAccessor.Reset();
-    m_DX12Context.m_MaterialTexture_UAV_DescHeapAccessor.Reset();
-    m_DX12Context.m_GPUBuffer_UAV_DescHeapAccessor.Reset();
-    m_DX12Context.m_RenderTarget_SRV_DescHeapAccessor.Reset();
-    m_DX12Context.m_MaterialTexture_SRV_DescHeapAccessor.Reset();
-    m_DX12Context.m_GPUBuffer_SRV_DescHeapAccessor.Reset();
-    m_DX12Context.m_GPUBuffer_CBV_DescHeapAccessor.Reset();
+    m_DX12Context.m_BindlessMeshIndex_SRV_DescHeapAccessor.Reset(); m_DX12Context.m_BindlessMeshVertex_SRV_DescHeapAccessor.Reset(); m_DX12Context.m_RenderTarget_UAV_DescHeapAccessor.Reset(); m_DX12Context.m_MaterialTexture_UAV_DescHeapAccessor.Reset();
+    m_DX12Context.m_GPUBuffer_UAV_DescHeapAccessor.Reset(); m_DX12Context.m_RenderTarget_SRV_DescHeapAccessor.Reset(); m_DX12Context.m_MaterialTexture_SRV_DescHeapAccessor.Reset(); m_DX12Context.m_GPUBuffer_SRV_DescHeapAccessor.Reset(); m_DX12Context.m_GPUBuffer_CBV_DescHeapAccessor.Reset();
     m_DX12Context.m_CSUDescHeap = nullptr;
 
     m_DX12Context.m_directCommandQueueFence = nullptr;

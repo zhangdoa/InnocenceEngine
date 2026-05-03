@@ -274,8 +274,8 @@ bool DX12GPUBufferResourceService::UpdateRaytracingInstances()
 				continue;
 
 			uint64_t l_blasAddress = l_meshService->GetBLASAddress(l_mesh->m_Asset);
-			if (l_blasAddress == 0)
-				continue;
+			uint32_t l_vertexSRVSlot = l_meshService->GetVertexSRVSlot(l_mesh->m_Asset);
+			if (l_blasAddress == 0 || l_vertexSRVSlot == UINT32_MAX) continue;
 
 			auto* l_world = l_registry->Get<WorldTransformComponent>(l_entity);
 			Mat4 l_transform = l_world ? l_world->m_WorldMatrix : Math::generateIdentityMatrix<float>();
@@ -297,7 +297,7 @@ bool DX12GPUBufferResourceService::UpdateRaytracingInstances()
 			l_instanceDesc.Transform[2][2] = l_transform.m22;
 			l_instanceDesc.Transform[2][3] = l_transform.m23;
 
-			l_instanceDesc.InstanceID = static_cast<UINT>(l_descList->m_Descs.size());
+			l_instanceDesc.InstanceID = l_vertexSRVSlot;
 			l_instanceDesc.InstanceMask = 0xFF;
 			l_instanceDesc.InstanceContributionToHitGroupIndex = 0;
 			l_instanceDesc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;

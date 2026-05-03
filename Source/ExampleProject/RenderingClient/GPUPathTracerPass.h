@@ -49,21 +49,6 @@ namespace Inno
 		GPUBufferComponent* GetFrameCountCB()                     { return m_FrameCountCB; }
 
 	private:
-		struct GPUPathTracerVertex
-		{
-			float posX, posY, posZ;
-			float normX, normY, normZ;
-			float texU, texV;
-		};
-
-		struct MeshOffsetData
-		{
-			uint32_t m_VertexOffset;
-			uint32_t m_IndexOffset;
-			uint32_t m_VertexCount;
-			uint32_t m_IndexCount;
-		};
-
 		struct PathTracerLightCountData
 		{
 			uint32_t pointLightCount;
@@ -105,38 +90,25 @@ namespace Inno
 		GPUBufferComponent* m_HashGridCache_UpdateCellValueIndirectBuffer = nullptr;
 		GPUBufferComponent* m_HashGridCache_ValueIndirectBuffer = nullptr;
 
-		// Geometry mega-buffers (rebuilt on scene load)
-		GPUBufferComponent* m_MegaVertexBuffer = nullptr;
-		GPUBufferComponent* m_MegaIndexBuffer  = nullptr;
-		GPUBufferComponent* m_MeshOffsetBuffer = nullptr;
-		GPUBufferComponent* m_MaterialBuffer   = nullptr;
+		GPUBufferComponent* m_MaterialBuffer = nullptr;
 
-		// Camera movement detection
 		Math::Mat4 m_PrevViewMatrix = {};
 		uint32_t m_FrameCount     = 1;
 
-		// Scene callbacks
 		std::function<void()> f_sceneLoadedCallback;
 		std::function<void()> f_sceneUnloadingCallback;
 
 		ShaderStage m_ShaderStage = ShaderStage::Invalid;
-		bool m_PendingGeometryRebuild = false;
+		bool m_PendingMaterialRebuild = false;
 		bool m_HashGridCachePendingClear = false;
 		size_t m_BuiltMeshCount = 0;
 
-		// Persistent storage for deferred GPU upload (m_InitialData points here)
-		std::vector<GPUPathTracerVertex>    m_PendingVertices;
-		std::vector<uint32_t>               m_PendingIndices;
-		std::vector<MeshOffsetData>         m_PendingOffsets;
 		std::vector<MaterialConstantBuffer> m_PendingMaterials;
 
-		// Entities already warned about missing/unresolvable materials, so
-		// RebuildGeometryBuffers doesn't spam the log once per rebuild.
 		std::unordered_set<EntityID> m_WarnedMissingMaterial;
 
-		void RebuildGeometryBuffers();
+		void RebuildMaterialBuffer();
 		void RefreshMaterialTextureIndices();
-		bool AreMeshesGPUReady();
 		void CreateAccumulationBuffer();
 		void OnResize();
 	};

@@ -17,6 +17,9 @@ namespace Inno
 
 		uint64_t GetBLASAddress(MeshAssetHandle handle) const;
 
+		uint32_t GetVertexSRVSlot(MeshAssetHandle handle) const;
+		uint32_t GetIndexSRVSlot(MeshAssetHandle handle) const;
+
 	protected:
 		bool InitializeImpl(MeshAssetHandle handle, std::vector<Vertex>& vertices, std::vector<Index>& indices) override;
 		void ReleaseMeshGPUResourceImpl(MeshAssetHandle handle) override;
@@ -30,6 +33,8 @@ namespace Inno
 			ComPtr<ID3D12Resource> m_IndexBuffer_Default;
 			ComPtr<ID3D12Resource> m_BLAS;
 			ComPtr<ID3D12Resource> m_ScratchBuffer;
+			uint32_t m_VertexSRVSlot = UINT32_MAX;
+			uint32_t m_IndexSRVSlot  = UINT32_MAX;
 		};
 		std::unordered_map<uint32_t, DX12MeshGPUResources> m_DX12MeshResources;
 

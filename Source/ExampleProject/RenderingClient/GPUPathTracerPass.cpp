@@ -23,6 +23,14 @@
 #include "../../Engine/Services/GraphicsHardwareService.h"
 #include "../../Engine/Services/FrameManagementService.h"
 #include "../../Engine/Services/LightDataService.h"
+#include "../../Engine/Services/MeshResourceService.h"
+#include "../../Engine/Services/DX12/DX12MeshResourceService.h"
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
 
 using namespace Inno;
 
@@ -57,77 +65,8 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	// is scrapped.
 	m_RayTracingRenderPassComp->m_OnResize = [this]() { OnResize(); };
 
-	// Binding layout: b0=PerFrameCB, b1=FrameCountCB, b2=LightCountCB,
-	//                 t0=TLAS, t1=MaterialBuffer, t2=MegaVB, t3=MegaIB,
-	//                 t4=MeshOffsets, t5=PointLightBuffer, t6=SphereLightBuffer,
-	//                 t7=bindless material textures,
-	//                 u0=AccumBuffer, s0=material sampler
-	// Cache-on extension (gated by PTHashGridCache::ENABLED, mirroring the
-	// HLSL #define PT_HASH_GRID_CACHE_ENABLED in GPUPathTracerRayGen.hlsl):
-	//                 b3=HashGridCacheCB,
-	//                 u1=HashBuffer, u2=DecayTileBuffer,
-	//                 u3=UpdateCellValueBuffer, u4=ValueBuffer,
-	//                 u5=UpdateCellValueIndirectBuffer, u6=ValueIndirectBuffer
-	//
-	// D1-reversal chain — raygen binding-count invariant. The path-tracer
-	// raygen here is one of three CL-local binding-count surfaces; the
-	// other two are the UpdateTiles and MipCascadeBuild compute passes.
-	// This comment block tracks raygen's count only — those passes own
-	// their own progression.
-	//
-	//   CL A (landed `b6058cdc`): plumbing only. UpdateCellValueIndirectBuffer
-	//                and ValueIndirectBuffer allocated and cleared but
-	//                NOT bound anywhere — raygen count = 5, UpdateTiles
-	//                count = 4 (1 CB + 3 UAVs), MipCascadeBuild count = 3
-	//                (1 CB + 2 UAVs).
-	//   CL B (landed `1352e548`): UpdateTiles + MipCascadeBuild dual resolve.
-	//                Both kernels grew by the indirect-pair UAVs (UpdateTiles
-	//                adds u3+u4 → count = 6 = 1 CB + 5 UAVs; MipCascadeBuild
-	//                adds u2 → count = 4 = 1 CB + 3 UAVs). Raygen count
-	//                unchanged at 5.
-	//   CL C (this CL): integrator secondary-bounce write splits. The (a)
-	//                primary-hit direct write stays in UpdateCellValueBuffer;
-	//                the (b) multi-bounce contribution redirects from
-	//                UpdateCellValueBuffer to UpdateCellValueIndirectBuffer
-	//                (Capsaicin gi1.comp:1948-1989 UpdateMultibounceCells —
-	//                indirect target is the indirect scratch). Both new UAVs
-	//                are bound this CL: u5 = UpdateCellValueIndirectBuffer
-	//                (the (b) write target) and u6 = ValueIndirectBuffer
-	//                (slot reserved at the root signature so CL D's read
-	//                site lands without re-growing the descriptor table).
-	//                **Raygen count grows from 5 to 7 (adds u5 and u6).**
-	//                The Site-3 read still pulls from ValueBuffer only this
-	//                CL — the indirect-lobe read lands in CL D. Expected
-	//                visible regression: toggle-on darkens because the
-	//                indirect contribution previously folded into
-	//                ValueBuffer's running mean now accumulates into
-	//                ValueIndirectBuffer, which the read does not consume
-	//                yet. CL D restores correctness.
-	//   CL D: Site-3 read in raygen pulls ValueIndirectBuffer for the
-	//         indirect-lobe discriminator. Raygen count UNCHANGED at 7
-	//         because u6's slot was reserved this CL (CL C); CL D only
-	//         adds the read references inside the shader body.
-	//   CL E: mip-aware read redo (deferred — the b9a103cc cell-blockiness
-	//         repro must not return; gated on a fresh visual A/B).
-	//
-	// The static_assert below is the loud-fail surface for the HLSL/C++
-	// flag-pair invariant: if l_cacheBindingCount drifts off this CL's
-	// expected value, the surface review must update both the value and
-	// this comment block in lockstep. b9a103cc PSO-failure precedent — the
-	// raygen HLSL bindings and this C++ root signature must move together.
-	constexpr size_t l_baseBindingCount  = 13;
+	constexpr size_t l_baseBindingCount  = 12;
 	constexpr size_t l_cacheBindingCount = Inno::PTHashGridCache::ENABLED ? 7 : 0;
-	static_assert(!Inno::PTHashGridCache::ENABLED || l_cacheBindingCount == 7,
-		"D1-reversal CL C invariant: raygen cache-binding count is 7 "
-		"(b3 + u1..u6). CL C grew the count by 2 over CL B's 5: u5 = "
-		"UpdateCellValueIndirectBuffer (the redirected (b) secondary-bounce "
-		"write target, mirroring Capsaicin gi1.comp:1948-1989 "
-		"UpdateMultibounceCells) and u6 = ValueIndirectBuffer (slot reserved "
-		"so CL D's read-split adds no further descriptor-table growth). The "
-		"HLSL side declares register(u5) and register(u6) inside the "
-		"PT_HASH_GRID_CACHE_ENABLED branch of GPUPathTracerRayGen.hlsl; "
-		"the two surfaces must move in lockstep (b9a103cc PSO-failure "
-		"precedent).");
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs.resize(l_baseBindingCount + l_cacheBindingCount);
 
 	// b0 - PerFrameCB (set 0, binding 0)
@@ -159,76 +98,70 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[3].m_ShaderStage            = m_ShaderStage;
 
-	// t2 - MegaVertexBuffer (set 1, binding 2, SRV)
+	// t8 - bindless per-mesh vertex SRV array
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_GPUBufferUsage         = GPUBufferUsage::BindlessMeshVertex;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex      = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex        = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex        = 8;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility   = Accessibility::ReadOnly;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[4].m_ShaderStage            = m_ShaderStage;
 
-	// t3 - MegaIndexBuffer (set 1, binding 3, SRV)
+	// t9 - bindless per-mesh index SRV array
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_GPUBufferUsage         = GPUBufferUsage::BindlessMeshIndex;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex      = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex        = 3;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex        = 9;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility   = Accessibility::ReadOnly;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[5].m_ShaderStage            = m_ShaderStage;
 
-	// t4 - MeshOffsets (set 1, binding 4, SRV)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType        = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex      = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex        = 4;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility   = Accessibility::ReadOnly;
+	// u0 - AccumulationBuffer (set 2, binding 0, ReadWrite UAV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_GPUResourceType        = GPUResourceType::Image;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex      = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex        = 0;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_TextureUsage           = TextureUsage::ComputeOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility   = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[6].m_ShaderStage            = m_ShaderStage;
 
-	// u0 - AccumulationBuffer (set 2, binding 0, ReadWrite UAV)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType        = GPUResourceType::Image;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex      = 2;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex        = 0;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_TextureUsage           = TextureUsage::ComputeOnly;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility   = Accessibility::ReadWrite;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility  = Accessibility::ReadWrite;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_ShaderStage            = m_ShaderStage;
-
 	// b2 - LightCountCB (set 0, binding 2)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType   = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 0;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex   = 2;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage       = m_ShaderStage;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_GPUResourceType   = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 0;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex   = 2;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[7].m_ShaderStage       = m_ShaderStage;
 
 	// t5 - PointLightBuffer (set 1, binding 5, SRV)
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_GPUResourceType        = GPUResourceType::Buffer;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex        = 5;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_BindingAccessibility   = Accessibility::ReadOnly;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_ResourceAccessibility  = Accessibility::ReadWrite;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[8].m_ShaderStage            = m_ShaderStage;
+
+	// t6 - SphereLightBuffer (set 1, binding 6, SRV)
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_GPUResourceType        = GPUResourceType::Buffer;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex      = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex        = 5;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex        = 6;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_BindingAccessibility   = Accessibility::ReadOnly;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_ResourceAccessibility  = Accessibility::ReadWrite;
 	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[9].m_ShaderStage            = m_ShaderStage;
-
-	// t6 - SphereLightBuffer (set 1, binding 6, SRV)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType        = GPUResourceType::Buffer;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex      = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex        = 6;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_BindingAccessibility   = Accessibility::ReadOnly;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ResourceAccessibility  = Accessibility::ReadWrite;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage            = m_ShaderStage;
 
 	// t7 - bindless material textures (set 1, binding 7, unbounded Texture2D array).
 	// Engine auto-populates this descriptor table from the read-only texture heap;
 	// the closest-hit shader indexes it with MaterialCB::TextureIndices (same index
 	// space as the rasterizer's OpaquePass at register t3).
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType        = GPUResourceType::Image;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_TextureUsage           = TextureUsage::Sample;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex      = 1;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex        = 7;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage            = m_ShaderStage;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_GPUResourceType        = GPUResourceType::Image;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_TextureUsage           = TextureUsage::Sample;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorSetIndex      = 1;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_DescriptorIndex        = 7;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[10].m_ShaderStage            = m_ShaderStage;
 
 	// s0 - material sampler (set 3, binding 0)
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_GPUResourceType        = GPUResourceType::Sampler;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorSetIndex      = 3;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_DescriptorIndex        = 0;
-	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[12].m_ShaderStage            = m_ShaderStage;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_GPUResourceType        = GPUResourceType::Sampler;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorSetIndex      = 3;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_DescriptorIndex        = 0;
+	m_RayTracingRenderPassComp->m_ResourceBindingLayoutDescs[11].m_ShaderStage            = m_ShaderStage;
 
 	if constexpr (Inno::PTHashGridCache::ENABLED)
 	{
@@ -314,43 +247,19 @@ bool GPUPathTracerPass::Setup(IServiceConfig* systemConfig)
 	// --- Scene callbacks ---
 	f_sceneLoadedCallback = [this]()
 	{
-		m_PendingGeometryRebuild = true;
+		m_PendingMaterialRebuild = true;
 		m_FrameCount = 1;
-		// Drop accumulated cache contents on scene swap. More aggressive than
-		// Capsaicin's 50-frame decay (gi1_shared.h kHashGridCache_TileDecay)
-		// but consistent with the engine's existing AccumBuffer reset on
-		// view-matrix change — and stale cells from the prior scene have no
-		// physical correspondence in the new one.
 		m_HashGridCachePendingClear = true;
 	};
 
 	f_sceneUnloadingCallback = [this]()
 	{
-		// GPU is guaranteed idle here (WaitForGPUIdle called before unloading callbacks).
-		// Release geometry buffers now so they aren't deleted mid-frame in RebuildGeometryBuffers.
 		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
-
-		if (m_MegaVertexBuffer)
-		{
-			l_bufService->Delete(m_MegaVertexBuffer);
-			m_MegaVertexBuffer = nullptr;
-		}
-		if (m_MegaIndexBuffer)
-		{
-			l_bufService->Delete(m_MegaIndexBuffer);
-			m_MegaIndexBuffer = nullptr;
-		}
-		if (m_MeshOffsetBuffer)
-		{
-			l_bufService->Delete(m_MeshOffsetBuffer);
-			m_MeshOffsetBuffer = nullptr;
-		}
 		if (m_MaterialBuffer)
 		{
 			l_bufService->Delete(m_MaterialBuffer);
 			m_MaterialBuffer = nullptr;
 		}
-
 		m_BuiltMeshCount = 0;
 		m_FrameCount = 1;
 		m_ObjectStatus = ObjectStatus::Suspended;
@@ -476,37 +385,25 @@ bool GPUPathTracerPass::Update()
 	size_t l_currentMeshOwnerCount = l_meshStorage.AllOwners().size();
 
 	if (l_currentMeshOwnerCount != m_BuiltMeshCount)
-		m_PendingGeometryRebuild = true;
+		m_PendingMaterialRebuild = true;
 
-	if (m_PendingGeometryRebuild && AreMeshesGPUReady())
+	if (m_PendingMaterialRebuild)
 	{
-		RebuildGeometryBuffers();
-		m_PendingGeometryRebuild = false;
+		RebuildMaterialBuffer();
+		m_PendingMaterialRebuild = false;
 	}
 
-	// Texture-index refresh: deferred texture init can lag the initial
-	// RebuildGeometryBuffers by a frame or more (scene load enqueues
-	// textures; InitializeComponents promotes them to Activated next
-	// frame). Gating the one-shot rebuild on all-textures-ready doesn't
-	// work because at least one Sponza texture stays stuck in Created
-	// forever. So: re-resolve material texture indices every frame and
-	// re-upload the material buffer. Cheap (< 5 KB/frame for Sponza) and
-	// incremental — each frame any newly-Activated texture gets its
-	// bindless index written in. Was the root cause of TASK-74 (curtains
-	// rendering white: their BaseColor textures weren't Activated when
-	// the one-shot rebuild ran, so TextureIndices stayed INVALID and the
-	// shader fell back to the glTF (1,1,1) default).
+	// Per-frame re-resolve of material texture indices. Texture activation
+	// can lag the scene-load callback by multiple frames (TASK-74 — Sponza
+	// curtain BaseColor textures arrived after the initial material rebuild),
+	// so each frame any newly-Activated texture gets its bindless index
+	// folded back into the material buffer.
 	RefreshMaterialTextureIndices();
 
-	const bool l_geometryReady =
-		m_MegaVertexBuffer && m_MegaVertexBuffer->m_ObjectStatus == ObjectStatus::Activated &&
-		m_MegaIndexBuffer  && m_MegaIndexBuffer->m_ObjectStatus  == ObjectStatus::Activated &&
-		m_MeshOffsetBuffer && m_MeshOffsetBuffer->m_ObjectStatus == ObjectStatus::Activated &&
-		m_MaterialBuffer   && m_MaterialBuffer->m_ObjectStatus   == ObjectStatus::Activated;
+	const bool l_ready = m_MaterialBuffer && m_MaterialBuffer->m_ObjectStatus == ObjectStatus::Activated;
+	m_ObjectStatus = l_ready ? ObjectStatus::Activated : ObjectStatus::Suspended;
 
-	m_ObjectStatus = l_geometryReady ? ObjectStatus::Activated : ObjectStatus::Suspended;
-
-	if (!l_geometryReady)
+	if (!l_ready)
 		return true;
 
 	const auto& l_perFrameCB = g_Engine->Get<PerFrameDataService>()->GetPerFrameConstantBuffer();
@@ -587,12 +484,6 @@ bool GPUPathTracerPass::Terminate()
 
 	if (m_MaterialBuffer)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MaterialBuffer);
-	if (m_MeshOffsetBuffer)
-		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MeshOffsetBuffer);
-	if (m_MegaIndexBuffer)
-		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MegaIndexBuffer);
-	if (m_MegaVertexBuffer)
-		g_Engine->Get<GPUBufferResourceService>()->Delete(m_MegaVertexBuffer);
 
 	if (m_FrameCountCB)
 		g_Engine->Get<GPUBufferResourceService>()->Delete(m_FrameCountCB);
@@ -635,15 +526,6 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	if (m_RayTracingRenderPassComp->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
-	if (!m_MegaVertexBuffer || m_MegaVertexBuffer->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	if (!m_MegaIndexBuffer || m_MegaIndexBuffer->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
-	if (!m_MeshOffsetBuffer || m_MeshOffsetBuffer->m_ObjectStatus != ObjectStatus::Activated)
-		return false;
-
 	if (!m_MaterialBuffer || m_MaterialBuffer->m_ObjectStatus != ObjectStatus::Activated)
 		return false;
 
@@ -666,50 +548,37 @@ bool GPUPathTracerPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_FrameCountCB,                   1);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 2);
 	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialBuffer,                   3);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaVertexBuffer,                4);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MegaIndexBuffer,                 5);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MeshOffsetBuffer,                6);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_AccumulationBuffer,              7);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_LightCountCB,                    8);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetPointLightBuffer(),  9);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetSphereLightBuffer(), 10);
-	// nullptr for the bindless Texture2D array: engine auto-binds the read-only
-	// texture heap, same convention as OpaquePass::PrepareCommandList.
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                                                  11);
-	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        12);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                           4);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                           5);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_AccumulationBuffer,              6);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_LightCountCB,                    7);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetPointLightBuffer(),  8);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, g_Engine->Get<LightDataService>()->GetSphereLightBuffer(), 9);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, nullptr,                                                  10);
+	l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_MaterialSampler,                                        11);
 
 	if constexpr (Inno::PTHashGridCache::ENABLED)
 	{
 		auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
 
-		// Scene-load triggered clear runs before binding so the dispatched
-		// rays see zero state. Cheap on D3D12 — ClearUnorderedAccessViewUint
-		// hits the descriptor directly, no per-element write.
 		if (m_HashGridCachePendingClear)
 		{
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_HashBuffer);
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_DecayTileBuffer);
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_UpdateCellValueBuffer);
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_ValueBuffer);
-			// D1-reversal CL A — clear the indirect-mirror pair on every
-			// reset boundary so the future read sites (CL B+) start from
-			// the same zero state as the direct pair. No shader binding
-			// this CL; the buffers are dead data until CL B.
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_UpdateCellValueIndirectBuffer);
 			l_bufService->Clear(m_CommandListComp_Compute, m_HashGridCache_ValueIndirectBuffer);
 			m_HashGridCachePendingClear = false;
 		}
 
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCacheCB,                             13);
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_HashBuffer,                    14);
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_DecayTileBuffer,               15);
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_UpdateCellValueBuffer,         16);
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_ValueBuffer,                   17);
-		// D1-reversal CL C — bind the indirect-mirror pair. u5 receives the
-		// (b) secondary-bounce write redirect; u6's slot is reserved for
-		// CL D's indirect-lobe Site-3 read (no shader read this CL).
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_UpdateCellValueIndirectBuffer, 18);
-		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_ValueIndirectBuffer,           19);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCacheCB,                             12);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_HashBuffer,                    13);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_DecayTileBuffer,               14);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_UpdateCellValueBuffer,         15);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_ValueBuffer,                   16);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_UpdateCellValueIndirectBuffer, 17);
+		l_fmService->BindGPUResource(m_RayTracingRenderPassComp, m_CommandListComp_Compute, m_ShaderStage, m_HashGridCache_ValueIndirectBuffer,           18);
 	}
 
 	l_fmService->DispatchRays(m_RayTracingRenderPassComp, m_CommandListComp_Compute, l_resolution.x, l_resolution.y, 1);
@@ -770,67 +639,34 @@ void GPUPathTracerPass::OnResize()
 	ResetAccumulation();
 }
 
-void GPUPathTracerPass::RebuildGeometryBuffers()
+void GPUPathTracerPass::RebuildMaterialBuffer()
 {
 	auto l_registry = g_Engine->Get<EntityRegistry>();
-
 	auto& l_meshStorage = l_registry->Storage<MeshComponent>();
 	const auto& l_meshOwners = l_meshStorage.AllOwners();
 
 	if (l_meshOwners.empty())
 		return;
 
-	m_PendingVertices.clear();
-	m_PendingIndices.clear();
-	m_PendingOffsets.clear();
 	m_PendingMaterials.clear();
-
-	auto& l_vertices = m_PendingVertices;
-	auto& l_indices  = m_PendingIndices;
-	auto& l_offsets  = m_PendingOffsets;
 	auto& l_materials = m_PendingMaterials;
 
-	// Iterate by entity in the same order as UpdateRaytracingInstances (TLAS build)
+	// Iteration order + skip predicate must match UpdateRaytracingInstances
+	// (DX12GPUBufferResourceService) exactly — l_materials[i] is the material
+	// for TLAS instance i, and ClosestHit reads in_MaterialBuffer[InstanceIndex()].
+	auto* l_meshService = static_cast<DX12MeshResourceService*>(g_Engine->Get<MeshResourceService>());
 	for (EntityID l_entity : l_meshOwners)
 	{
 		auto* l_mesh = l_registry->Get<MeshComponent>(l_entity);
 		if (!l_mesh || !l_mesh->m_Asset.IsValid())
 			continue;
-
 		if (l_mesh->m_ObjectStatus != ObjectStatus::Activated)
 			continue;
-
-		const auto* l_resource = AssetService::GetMeshAsset(l_mesh->m_Asset);
-		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
+		if (l_meshService->GetBLASAddress(l_mesh->m_Asset) == 0)
+			continue;
+		if (l_meshService->GetVertexSRVSlot(l_mesh->m_Asset) == UINT32_MAX)
 			continue;
 
-		if (!l_resource->m_MappedMemory_VB || !l_resource->m_MappedMemory_IB)
-			continue;
-
-		const uint32_t l_vertexStride = l_resource->m_VertexBufferView.m_StrideInBytes;
-		const uint32_t l_indexStride  = l_resource->m_IndexBufferView.m_StrideInBytes;
-
-		if (l_vertexStride == 0 || l_indexStride == 0)
-			continue;
-
-		const uint32_t l_vertexCount = l_resource->m_VertexBufferView.m_SizeInBytes / l_vertexStride;
-		const uint32_t l_indexCount  = l_resource->GetIndexCount();
-
-		if (l_vertexCount == 0 || l_indexCount == 0)
-			continue;
-
-		MeshOffsetData l_offset = {};
-		l_offset.m_VertexOffset = static_cast<uint32_t>(l_vertices.size());
-		l_offset.m_IndexOffset  = static_cast<uint32_t>(l_indices.size());
-		l_offset.m_VertexCount  = l_vertexCount;
-		l_offset.m_IndexCount   = l_indexCount;
-		l_offsets.push_back(l_offset);
-
-		// Collect material for this entity (matching TLAS instance index).
-		// Zero-init gives a matte-white Lambert default, which is a visible-but-not-obvious
-		// sentinel. Entities reaching this point without a MaterialComponent or without a
-		// resolvable MaterialAsset are logged once each so the silent default doesn't hide
-		// scene-import gaps or teardown-order bugs.
 		MaterialConstantBuffer l_materialCB = {};
 		auto* l_matComp = l_registry->Get<MaterialComponent>(l_entity);
 		if (l_matComp == nullptr)
@@ -858,9 +694,6 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		for (size_t j = 0; j < MaxTextureSlotCount; j++)
 			l_materialCB.m_TextureIndices[j] = INVALID_TEXTURE_INDEX;
 
-		// Resolve texture names → bindless SRV heap indices, mirroring
-		// DrawCallService so the path tracer and the rasterizer share the
-		// same index space on g_MaterialTextures.
 		if (l_matComp)
 		{
 			auto* l_matAsset = AssetService::GetMaterialAsset(l_matComp->m_Asset);
@@ -882,93 +715,19 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 		}
 
 		l_materials.push_back(l_materialCB);
-
-		const uint8_t* l_vbPtr = static_cast<const uint8_t*>(l_resource->m_MappedMemory_VB);
-		for (uint32_t v = 0; v < l_vertexCount; v++)
-		{
-			const Vertex* l_vert = reinterpret_cast<const Vertex*>(l_vbPtr + static_cast<size_t>(v) * l_vertexStride);
-			GPUPathTracerVertex l_ptVertex = {};
-			l_ptVertex.posX  = l_vert->m_pos.x;
-			l_ptVertex.posY  = l_vert->m_pos.y;
-			l_ptVertex.posZ  = l_vert->m_pos.z;
-			l_ptVertex.normX = l_vert->m_normal.x;
-			l_ptVertex.normY = l_vert->m_normal.y;
-			l_ptVertex.normZ = l_vert->m_normal.z;
-			l_ptVertex.texU  = l_vert->m_texCoord.x;
-			l_ptVertex.texV  = l_vert->m_texCoord.y;
-			l_vertices.push_back(l_ptVertex);
-		}
-
-		const uint8_t* l_ibPtr = static_cast<const uint8_t*>(l_resource->m_MappedMemory_IB);
-		for (uint32_t idx = 0; idx < l_indexCount; idx++)
-		{
-			uint32_t l_index = 0;
-			if (l_indexStride == 2)
-				l_index = static_cast<uint32_t>(*reinterpret_cast<const uint16_t*>(l_ibPtr + static_cast<size_t>(idx) * l_indexStride));
-			else
-				l_index = *reinterpret_cast<const uint32_t*>(l_ibPtr + static_cast<size_t>(idx) * l_indexStride);
-			l_indices.push_back(l_index);
-		}
 	}
 
-	if (l_vertices.empty() || l_indices.empty())
-	{
-		Log(Warning, "GPUPathTracerPass: No mesh data available for geometry buffers.");
+	if (l_materials.empty())
 		return;
-	}
 
 	auto l_bufService = g_Engine->Get<GPUBufferResourceService>();
 
-	// Delete old buffers
-	if (m_MegaVertexBuffer)
-	{
-		l_bufService->Delete(m_MegaVertexBuffer);
-		m_MegaVertexBuffer = nullptr;
-	}
-	if (m_MegaIndexBuffer)
-	{
-		l_bufService->Delete(m_MegaIndexBuffer);
-		m_MegaIndexBuffer = nullptr;
-	}
-	if (m_MeshOffsetBuffer)
-	{
-		l_bufService->Delete(m_MeshOffsetBuffer);
-		m_MeshOffsetBuffer = nullptr;
-	}
 	if (m_MaterialBuffer)
 	{
 		l_bufService->Delete(m_MaterialBuffer);
 		m_MaterialBuffer = nullptr;
 	}
 
-	// Create and upload mega vertex buffer (ReadWrite for SRV descriptor table binding)
-	m_MegaVertexBuffer = l_bufService->Add("GPUPathTracerMegaVB");
-	m_MegaVertexBuffer->m_ElementCount     = l_vertices.size();
-	m_MegaVertexBuffer->m_ElementSize      = sizeof(GPUPathTracerVertex);
-	m_MegaVertexBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
-	m_MegaVertexBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_MegaVertexBuffer->m_InitialData      = l_vertices.data();
-	l_bufService->Initialize(m_MegaVertexBuffer);
-
-	// Create and upload mega index buffer
-	m_MegaIndexBuffer = l_bufService->Add("GPUPathTracerMegaIB");
-	m_MegaIndexBuffer->m_ElementCount     = l_indices.size();
-	m_MegaIndexBuffer->m_ElementSize      = sizeof(uint32_t);
-	m_MegaIndexBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
-	m_MegaIndexBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_MegaIndexBuffer->m_InitialData      = l_indices.data();
-	l_bufService->Initialize(m_MegaIndexBuffer);
-
-	// Create and upload mesh offset buffer
-	m_MeshOffsetBuffer = l_bufService->Add("GPUPathTracerMeshOffsets");
-	m_MeshOffsetBuffer->m_ElementCount     = l_offsets.size();
-	m_MeshOffsetBuffer->m_ElementSize      = sizeof(MeshOffsetData);
-	m_MeshOffsetBuffer->m_CPUAccessibility = Accessibility::WriteOnly;
-	m_MeshOffsetBuffer->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_MeshOffsetBuffer->m_InitialData      = l_offsets.data();
-	l_bufService->Initialize(m_MeshOffsetBuffer);
-
-	// Create and upload material buffer (indexed by TLAS instance)
 	m_MaterialBuffer = l_bufService->Add("GPUPathTracerMaterialBuffer");
 	m_MaterialBuffer->m_ElementCount     = l_materials.size();
 	m_MaterialBuffer->m_ElementSize      = sizeof(MaterialConstantBuffer);
@@ -978,31 +737,6 @@ void GPUPathTracerPass::RebuildGeometryBuffers()
 	l_bufService->Initialize(m_MaterialBuffer);
 
 	m_BuiltMeshCount = l_meshOwners.size();
-
-	Log(Success, "GPUPathTracerPass: Geometry buffers rebuilt. Meshes: ", l_offsets.size(),
-		" Vertices: ", l_vertices.size(), " Indices: ", l_indices.size());
-}
-
-bool GPUPathTracerPass::AreMeshesGPUReady()
-{
-	auto l_registry = g_Engine->Get<EntityRegistry>();
-	auto& l_meshStorage = l_registry->Storage<MeshComponent>();
-	const auto& l_meshes = l_meshStorage.All();
-
-	if (l_meshes.empty())
-		return false;
-
-	for (const auto& l_mesh : l_meshes)
-	{
-		if (l_mesh.m_ObjectStatus != ObjectStatus::Activated)
-			return false;
-
-		const auto* l_resource = AssetService::GetMeshAsset(l_mesh.m_Asset);
-		if (!l_resource || l_resource->m_Residency != AssetResidency::Resident)
-			return false;
-	}
-
-	return true;
 }
 
 void GPUPathTracerPass::RefreshMaterialTextureIndices()

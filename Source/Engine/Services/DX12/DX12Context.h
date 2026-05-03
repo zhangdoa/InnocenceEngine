@@ -44,6 +44,8 @@ namespace Inno
 		DX12DescriptorHeapAccessor m_GPUBuffer_UAV_DescHeapAccessor;
 		DX12DescriptorHeapAccessor m_MaterialTexture_UAV_DescHeapAccessor;
 		DX12DescriptorHeapAccessor m_RenderTarget_UAV_DescHeapAccessor;
+		DX12DescriptorHeapAccessor m_BindlessMeshVertex_SRV_DescHeapAccessor;
+		DX12DescriptorHeapAccessor m_BindlessMeshIndex_SRV_DescHeapAccessor;
 
 		// Descriptor heaps: CBV/SRV/UAV (shader-non-visible)
 		ComPtr<ID3D12DescriptorHeap> m_CSUDescHeap_ShaderNonVisible = nullptr;

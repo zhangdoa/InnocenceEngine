@@ -222,6 +222,28 @@ bool DX12MeshResourceService::InitializeImpl(MeshAssetHandle handle, std::vector
 	l_dx12Resources.m_IndexBuffer_Default = l_defaultHeapBuffer_IB;
 	l_dx12Resources.m_BLAS = l_BLAS;
 	l_dx12Resources.m_ScratchBuffer = l_scratchBuffer;
+
+	{
+		auto l_vertexHandle = m_ctx->m_BindlessMeshVertex_SRV_DescHeapAccessor.GetNewHandle();
+		D3D12_SHADER_RESOURCE_VIEW_DESC l_vertexSRVDesc = {};
+		l_vertexSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		l_vertexSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		l_vertexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		l_vertexSRVDesc.Buffer.NumElements = static_cast<UINT>(vertices.size());
+		l_vertexSRVDesc.Buffer.StructureByteStride = sizeof(Vertex);
+		m_ctx->m_device->CreateShaderResourceView(l_defaultHeapBuffer_VB.Get(), &l_vertexSRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_vertexHandle.m_CPUHandle });
+		l_dx12Resources.m_VertexSRVSlot = l_vertexHandle.m_Index;
+
+		auto l_indexHandle = m_ctx->m_BindlessMeshIndex_SRV_DescHeapAccessor.GetNewHandle();
+		D3D12_SHADER_RESOURCE_VIEW_DESC l_indexSRVDesc = {};
+		l_indexSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		l_indexSRVDesc.Format = DXGI_FORMAT_R32_UINT;
+		l_indexSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		l_indexSRVDesc.Buffer.NumElements = static_cast<UINT>(indices.size());
+		m_ctx->m_device->CreateShaderResourceView(l_defaultHeapBuffer_IB.Get(), &l_indexSRVDesc, D3D12_CPU_DESCRIPTOR_HANDLE{ l_indexHandle.m_CPUHandle });
+		l_dx12Resources.m_IndexSRVSlot = l_indexHandle.m_Index;
+	}
+
 	m_DX12MeshResources[handle.m_Index] = std::move(l_dx12Resources);
 
 	Log(Verbose, l_name, " BLAS is initialized.");
@@ -235,4 +257,20 @@ uint64_t DX12MeshResourceService::GetBLASAddress(MeshAssetHandle handle) const
 	if (it == m_DX12MeshResources.end() || !it->second.m_BLAS)
 		return 0;
 	return it->second.m_BLAS->GetGPUVirtualAddress();
+}
+
+uint32_t DX12MeshResourceService::GetVertexSRVSlot(MeshAssetHandle handle) const
+{
+	auto it = m_DX12MeshResources.find(handle.m_Index);
+	if (it == m_DX12MeshResources.end())
+		return UINT32_MAX;
+	return it->second.m_VertexSRVSlot;
+}
+
+uint32_t DX12MeshResourceService::GetIndexSRVSlot(MeshAssetHandle handle) const
+{
+	auto it = m_DX12MeshResources.find(handle.m_Index);
+	if (it == m_DX12MeshResources.end())
+		return UINT32_MAX;
+	return it->second.m_IndexSRVSlot;
 }

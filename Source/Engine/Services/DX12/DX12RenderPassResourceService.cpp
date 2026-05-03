@@ -3,6 +3,7 @@
 #include "DX12Helper_Common.h"
 #include "DX12Helper_Pipeline.h"
 #include "DX12Helper_Texture.h"
+#include "DX12Helper_BindlessMesh.h"
 #include "../../Engine.h"
 #include "../../Common/LogService.h"
 #include "../../Common/LogServiceSpecialization.h"
@@ -326,8 +327,7 @@ D3D12_DESCRIPTOR_RANGE1 DX12RenderPassResourceService::GetDescriptorRange(Render
 
 	l_range.BaseShaderRegister = resourceBinderLayoutDesc.m_DescriptorIndex;
 
-	if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer)
-		l_range.NumDescriptors = 1;
+	if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer && !DX12Helper_BindlessMesh::TryFillDescriptorRange(resourceBinderLayoutDesc.m_GPUBufferUsage, *m_ctx, l_range)) l_range.NumDescriptors = 1;
 	else if (resourceBinderLayoutDesc.m_GPUResourceType == GPUResourceType::Image)
 	{
 		if (resourceBinderLayoutDesc.m_TextureUsage == TextureUsage::Sample)

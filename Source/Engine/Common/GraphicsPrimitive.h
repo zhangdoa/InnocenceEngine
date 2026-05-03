@@ -18,12 +18,7 @@ INNO_ENUM
 INNO_ENUM
 (
 	GPUBufferUsage,
-	Generic,
-	IndirectDraw,
-	IndirectDispatch,
-	AtomicCounter,
-	TLAS,
-	ScratchBuffer
+	Generic, IndirectDraw, IndirectDispatch, AtomicCounter, TLAS, ScratchBuffer, BindlessMeshVertex, BindlessMeshIndex
 );
 
 namespace Inno

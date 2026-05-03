@@ -12,6 +12,7 @@
 #include "DX12Helper_Common.h"
 #include "DX12Helper_Pipeline.h"
 #include "DX12Helper_Texture.h"
+#include "DX12Helper_BindlessMesh.h"
 
 using namespace Inno;
 using namespace DX12Helper;
@@ -553,9 +554,8 @@ bool DX12FrameManagementService::BindComputeResource(CommandListComponent* comma
 
 	if (resourceBindingLayoutDesc.m_GPUResourceType == GPUResourceType::Buffer)
 	{
-		if (resourceBindingLayoutDesc.m_IsRootConstant)
-			return true;
-
+		if (resourceBindingLayoutDesc.m_IsRootConstant) return true;
+		if (DX12Helper_BindlessMesh::TryAutoBindCompute(commandList, resourceBindingLayoutDesc.m_GPUBufferUsage, *m_ctx, rootParameterIndex)) return true;
 		auto l_buffer = reinterpret_cast<GPUBufferComponent*>(resource);
 		if (!l_buffer)
 		{

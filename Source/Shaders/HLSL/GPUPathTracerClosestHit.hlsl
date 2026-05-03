@@ -2,21 +2,15 @@
 #include "common/common.hlsl"
 #include "common/pathTracerPayload.hlsli"
 
-// Matches GPUPathTracerVertex in GPUPathTracerPass.h
-struct PTVertex
+// Mirrors Inno::TVertex<float> in Math.h — pragma pack(1), 64 bytes.
+// pad fields exist on the C++ side; the shader reads only pos/normal/texCoord.
+struct MeshVertex
 {
-    float posX, posY, posZ;
-    float normX, normY, normZ;
-    float texU, texV;
-};
-
-// Matches MeshOffsetData in GPUPathTracerPass.h
-struct MeshOffsetData
-{
-    uint vertexOffset;
-    uint indexOffset;
-    uint vertexCount;
-    uint indexCount;
+    float3 pos;
+    float3 normal;
+    float3 tangent;
+    float2 texCoord;
+    float  pad[5];
 };
 
 // Matches MaterialConstantBuffer in GPUDataStructure.h
@@ -28,55 +22,30 @@ struct MaterialCB
     uint  MaterialType;
 };
 
-// TextureIndices slot conventions (match the rasterized opaque pass).
 #define PT_TEX_SLOT_NORMAL    0
 #define PT_TEX_SLOT_ALBEDO    1
 #define PT_TEX_SLOT_METALLIC  2
 #define PT_TEX_SLOT_ROUGHNESS 3
 #define PT_INVALID_TEXTURE_INDEX 0xFFFFFFFF
 
-[[vk::binding(2, 1)]]
-StructuredBuffer<PTVertex> in_MegaVertexBuffer : register(t2);
-
-[[vk::binding(3, 1)]]
-StructuredBuffer<uint> in_MegaIndexBuffer : register(t3);
-
-[[vk::binding(4, 1)]]
-StructuredBuffer<MeshOffsetData> in_MeshOffsets : register(t4);
-
 [[vk::binding(1, 1)]]
 StructuredBuffer<MaterialCB> in_MaterialBuffer : register(t1);
 
-// Bindless material-texture heap. Index with mat.TextureIndices[slot];
-// PT_INVALID_TEXTURE_INDEX means "fall back to the CB scalar". Mirrors
-// g_2DTextures in opaqueGeometryProcessPass.frag so a texture index is
-// interchangeable between the rasterizer and the path tracer.
 [[vk::binding(7, 1)]]
 Texture2D g_MaterialTextures[] : register(t7);
 
+// Bindless per-mesh attribute arrays — engine auto-binds the dedicated
+// mesh-attribute SRV heaps. Each lives in its own register space so the
+// unbounded ranges don't collide with each other or with t7 g_MaterialTextures.
+// Indexed by InstanceID() = mesh-asset SRV slot.
+[[vk::binding(8, 1)]]
+StructuredBuffer<MeshVertex> g_MeshVertexBuffers[] : register(t0, space1);
+
+[[vk::binding(9, 1)]]
+Buffer<uint> g_MeshIndexBuffers[] : register(t0, space2);
+
 [[vk::binding(0, 3)]]
 SamplerState g_MaterialSampler : register(s0);
-
-uint3 LoadTriangleIndices(uint baseIndex, uint primitiveIndex)
-{
-    uint i0 = baseIndex + primitiveIndex * 3;
-    return uint3(
-        in_MegaIndexBuffer[i0 + 0],
-        in_MegaIndexBuffer[i0 + 1],
-        in_MegaIndexBuffer[i0 + 2]);
-}
-
-float3 LoadVertexNormal(uint baseVertex, uint vertexIndex)
-{
-    PTVertex v = in_MegaVertexBuffer[baseVertex + vertexIndex];
-    return float3(v.normX, v.normY, v.normZ);
-}
-
-float2 LoadVertexUV(uint baseVertex, uint vertexIndex)
-{
-    PTVertex v = in_MegaVertexBuffer[baseVertex + vertexIndex];
-    return float2(v.texU, v.texV);
-}
 
 [shader("closesthit")]
 void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleIntersectionAttributes attr)
@@ -84,17 +53,21 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
     payload.hitPos = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
     payload.missed = false;
 
-    uint instanceID = InstanceID();
-    MeshOffsetData offsets = in_MeshOffsets[instanceID];
+    uint meshSlot = InstanceID();
+    uint primIdx = PrimitiveIndex();
+
+    uint i0 = g_MeshIndexBuffers[NonUniformResourceIndex(meshSlot)][primIdx * 3 + 0];
+    uint i1 = g_MeshIndexBuffers[NonUniformResourceIndex(meshSlot)][primIdx * 3 + 1];
+    uint i2 = g_MeshIndexBuffers[NonUniformResourceIndex(meshSlot)][primIdx * 3 + 2];
+
+    MeshVertex v0 = g_MeshVertexBuffers[NonUniformResourceIndex(meshSlot)][i0];
+    MeshVertex v1 = g_MeshVertexBuffers[NonUniformResourceIndex(meshSlot)][i1];
+    MeshVertex v2 = g_MeshVertexBuffers[NonUniformResourceIndex(meshSlot)][i2];
 
     float2 barycentrics = attr.barycentrics;
     float baryW = 1.0f - barycentrics.x - barycentrics.y;
-    uint3 indices = LoadTriangleIndices(offsets.indexOffset, PrimitiveIndex());
 
-    float3 n0 = LoadVertexNormal(offsets.vertexOffset, indices.x);
-    float3 n1 = LoadVertexNormal(offsets.vertexOffset, indices.y);
-    float3 n2 = LoadVertexNormal(offsets.vertexOffset, indices.z);
-    float3 normal = n0 * baryW + n1 * barycentrics.x + n2 * barycentrics.y;
+    float3 normal = v0.normal * baryW + v1.normal * barycentrics.x + v2.normal * barycentrics.y;
     payload.normal = normalize(mul((float3x3)ObjectToWorld3x4(), normal));
 
     // Two-sided shading for thin / single-faced geometry (Sponza curtains,
@@ -108,12 +81,9 @@ void ClosestHitShader(inout PathTracerPayload payload, in BuiltInTriangleInterse
     if (dot(payload.normal, WorldRayDirection()) > 0.0f)
         payload.normal = -payload.normal;
 
-    float2 uv0 = LoadVertexUV(offsets.vertexOffset, indices.x);
-    float2 uv1 = LoadVertexUV(offsets.vertexOffset, indices.y);
-    float2 uv2 = LoadVertexUV(offsets.vertexOffset, indices.z);
-    payload.texCoord = uv0 * baryW + uv1 * barycentrics.x + uv2 * barycentrics.y;
+    payload.texCoord = v0.texCoord * baryW + v1.texCoord * barycentrics.x + v2.texCoord * barycentrics.y;
 
-    MaterialCB mat = in_MaterialBuffer[instanceID];
+    MaterialCB mat = in_MaterialBuffer[InstanceIndex()];
 
     // Scalar CB values are the fallback; bound-texture sample overrides per-slot.
     float3 albedo    = float3(mat.AlbedoR, mat.AlbedoG, mat.AlbedoB);
