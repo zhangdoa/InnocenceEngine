@@ -5,14 +5,6 @@
 const fs = require('fs')
 const { execSync } = require('child_process')
 
-// Skip sentinels — escape hatches included in the commit message.
-const SKIP_SENTINEL = '[skip-test-gate]'                       // test-run / live-engine / serialize-test / paper-port
-const SKIP_SIZE_SENTINEL = '[skip-size-gate]'                  // file-size gate only
-// data-generated gate. Intentionally verbose — should only appear for a
-// planned, user-approved restructure. Defined here for cross-file
-// discoverability; the gate itself imports its own copy.
-const SKIP_DATA_GENERATED_SENTINEL = '[skip-data-generated-gate]'
-
 // .claude/disciplines/commit-message-policy.md requires one of these
 // headers on every AI-authored commit.
 const ATTRIBUTION_RE = /^(Code-AI-Generated-By|Message-AI-Generated-By):\s*\S/m
@@ -50,7 +42,7 @@ const EDITOR_CODE_PATH = /^Source\/(Editor-Next\/src\/|Engine\/Services\/EditorS
 const SERIALIZER_CODE_PATH = /^Source\/Engine\/(ThirdParty\/JSONWrapper\/|Services\/(AssetService|SceneService)\.)/
 
 // File-size-gate configuration.
-const FILE_SIZE_LIMIT = 400
+const FILE_SIZE_LIMIT = 300
 const FILE_SIZE_EXT_RE = /\.(cpp|hpp|h|c|cc|cxx|inl|hlsl|hlsli|comp|py|js|mjs|ts|ps1|sh|bash|zsh)$/i
 const FILE_SIZE_EXCLUDE_RE = /(^|\/)(ThirdParty|External|node_modules|Generated|dist)\//
 
@@ -183,8 +175,7 @@ function detectClosingTasks(cwd, staged) {
 // task-closing intent, and qualifying tool_use blocks all live in
 // `<parent-dir>/<sessionId>/subagents/agent-<agentId>.jsonl`, invisible
 // to a parent-only scan. Result: every test-validated sub-agent commit
-// gets blocked despite legitimate evidence, training the agent toward
-// `[skip-test-gate]` (defeats the gate's purpose).
+// gets blocked despite legitimate evidence.
 //
 // Resolution: detect the active sidechain by matching the in-flight
 // command. Sub-agent JSONLs sit in a predictable location; the in-flight
@@ -284,7 +275,6 @@ function collectCommitMessageText(cmd, cwd) {
 }
 
 module.exports = {
-  SKIP_SENTINEL, SKIP_SIZE_SENTINEL, SKIP_DATA_GENERATED_SENTINEL,
   ATTRIBUTION_RE, QUALIFYING_TEST, NON_PLAYWRIGHT_LIVE, PLAYWRIGHT_RE,
   STATUS_DONE_ADDED_RE, DOCS_ONLY_PATH,
   EDITOR_CODE_PATH, SERIALIZER_CODE_PATH,

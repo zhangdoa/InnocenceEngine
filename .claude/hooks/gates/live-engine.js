@@ -1,13 +1,14 @@
 // Live-engine gate — when editor-facing code is staged, require a
 // Playwright spec that spawns the real engine, or a Main.exe /
 // RenderTest / InteractiveTest run. Mock-only Playwright specs hide
-// optimistic-vs-server-truth races. SKIP_SENTINEL escapes.
+// optimistic-vs-server-truth races. Path-derived: only fires when
+// EDITOR_CODE_PATH matches a staged file.
 
 const path = require('path')
 const fs = require('fs')
 const {
   EDITOR_CODE_PATH, NON_PLAYWRIGHT_LIVE, PLAYWRIGHT_RE,
-  SKIP_SENTINEL, firstArray,
+  firstArray,
 } = require('../lib/common')
 
 function didLiveEngineTestRun(transcript, lastUserIdx, cwd) {
@@ -37,7 +38,6 @@ function didLiveEngineTestRun(transcript, lastUserIdx, cwd) {
 }
 
 function run(ctx) {
-  if (ctx.messageText.includes(SKIP_SENTINEL)) return { ok: true }
   const editorCodeStaged = ctx.staged.some(f => EDITOR_CODE_PATH.test(f))
   if (!editorCodeStaged) return { ok: true }
   if (didLiveEngineTestRun(ctx.transcript, ctx.lastUserIdx, ctx.cwd)) return { ok: true }
@@ -66,8 +66,9 @@ function emit(staged) {
     '  • Bin\\RelWithDebInfo\\Main.exe -total_frames N          (engine frame-run; see disciplines/perf-measurement-frame-budget.md for choosing N)',
     '  • Bin\\RelWithDebInfo\\RenderTest.exe -test <name>',
     '',
-    `Escape hatch: include ${SKIP_SENTINEL} if this commit genuinely cannot`,
-    'be validated end-to-end (e.g. a typo fix in a comment).',
+    'No string-based escape. The bypass is path-derived: this gate only fires',
+    'when EDITOR_CODE_PATH matches a staged file. If a single typo fix in a',
+    'non-editor file got pulled in, unstage it.',
     '',
   ].join('\n'))
   process.exit(2)

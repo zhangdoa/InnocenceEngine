@@ -3,9 +3,10 @@
 // fresh `.alignments/<TASK-ID>...md` artifact must also be staged.
 // The artifact is produced by the paper-auditor subagent running with
 // fresh context — the structural intervention against main-session
-// drift. SKIP_SENTINEL escapes for legitimate closure-without-audit.
+// drift. Path-derived: only fires when a staged backlog task closes
+// AND carries the `paper-port` label.
 
-const { readStagedTaskFrontmatter, SKIP_SENTINEL } = require('../lib/common')
+const { readStagedTaskFrontmatter } = require('../lib/common')
 
 function detectPaperPortClosures(cwd, closingFiles) {
   const paperPort = []
@@ -29,7 +30,6 @@ function findMissingAlignments(staged, paperPortClosures) {
 }
 
 function run(ctx) {
-  if (ctx.messageText.includes(SKIP_SENTINEL)) return { ok: true }
   if (ctx.closingTasks.length === 0) return { ok: true }
   const paperPortClosures = detectPaperPortClosures(ctx.cwd, ctx.closingTasks)
   if (paperPortClosures.length === 0) return { ok: true }
@@ -59,8 +59,11 @@ function emit(missing) {
     '  2. The auditor writes `.alignments/<task-id>-<short-name>.md`.',
     '  3. Stage that artifact alongside the task-close diff, then commit.',
     '',
-    `Escape hatch: include ${SKIP_SENTINEL} if this closure legitimately`,
-    'cannot be audited (abandoned / superseded task, retro housekeeping).',
+    'No string-based escape. The bypass is path-derived: this gate only fires',
+    'when a staged task closes AND carries the `paper-port` label. An',
+    'abandoned / superseded paper-port task should drop the `paper-port` label',
+    'in the same commit; retro housekeeping that does not need audit should',
+    'remove the label, not bypass the gate.',
     '',
   ].join('\n'))
   process.exit(2)

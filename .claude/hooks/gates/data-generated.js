@@ -17,8 +17,6 @@
 
 const { execSync } = require('child_process')
 
-const SKIP_DATA_GENERATED_SENTINEL = '[skip-data-generated-gate]'
-
 const DATA_GENERATED_PATH_RE = /^Data\/Generated\//
 
 // Lines we accept as "the canonical ignore mask" for `Data/Generated/`.
@@ -77,7 +75,6 @@ function findGitignoreViolations(diff) {
 }
 
 function run(ctx) {
-  if (ctx.messageText.includes(SKIP_DATA_GENERATED_SENTINEL)) return { ok: true }
   const stagedFiles = findStagedDataGeneratedFiles(ctx.staged)
   const ignoreDiff = readGitignoreDiff(ctx.cwd)
   const ignoreViolations = findGitignoreViolations(ignoreDiff)
@@ -132,10 +129,9 @@ function emit(stagedFiles, ignoreViolations) {
     '  Data trees ...` tracked `Data/Generated/Fonts/FreeSans.otf` and carved',
     '  `Generated/Fonts/` out of the `/Data/Generated/*` ignore mask.',
     '',
-    `Escape hatch: include ${SKIP_DATA_GENERATED_SENTINEL} in the commit`,
-    'message ONLY for a planned, user-approved restructure that legitimately',
-    'needs a one-off file under that path. The sentinel is intentionally',
-    "verbose — don't reach for it casually.",
+    'No string-based escape. If a one-off file legitimately needs to ship,',
+    'move it out of `Data/Generated/` to a tracked source location like',
+    '`Data/Engine/` or `Source/External/` — that is the right fix.',
     '',
   )
 

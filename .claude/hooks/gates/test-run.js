@@ -4,7 +4,7 @@
 // (which is the closure-evidence rule — the test must back the claim).
 
 const {
-  QUALIFYING_TEST, DOCS_ONLY_PATH, SKIP_SENTINEL, firstArray,
+  QUALIFYING_TEST, DOCS_ONLY_PATH, firstArray,
 } = require('../lib/common')
 
 function didQualifyingTestRun(transcript, lastUserIdx) {
@@ -22,8 +22,6 @@ function didQualifyingTestRun(transcript, lastUserIdx) {
 }
 
 function run(ctx) {
-  if (ctx.messageText.includes(SKIP_SENTINEL)) return { ok: true }
-
   // Docs-only bypass. Doesn't apply if a task is flipping to Done (see
   // closure-evidence gate — closure claim must be test-backed).
   const allDocs = ctx.staged.length > 0 && ctx.staged.every(f => DOCS_ONLY_PATH.test(f))
@@ -67,8 +65,9 @@ function emit(staged, closing) {
     '  • InteractiveTest.ps1',
     '  • npx playwright test tests/<spec>.spec.js',
     '',
-    `Escape hatch: include ${SKIP_SENTINEL} if this commit legitimately`,
-    'cannot be validated by a test (commit-message-only edit, hook fix, etc).',
+    'No string-based escape. The bypass is path-derived: if every staged file',
+    'matches DOCS_ONLY_PATH (.backlog/, .claude/, *.md, etc.) and no closing',
+    'task is staged, the gate auto-skips. If your change touches code, run a test.',
     '',
   ].join('\n'))
   process.exit(2)

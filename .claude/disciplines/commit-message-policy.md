@@ -81,7 +81,7 @@ Code-AI-Generated-By: Claude Sonnet 4.6
 
 These are load-bearing — do not change without re-validating against the synthetic-commit reproduction in `commit-gate.js` + the historical `55cf6a72` artefact:
 
-- The attribution and peer-review gates have **no** escape sentinel. `[skip-test-gate]` and `[skip-size-gate]` are scoped to their respective gates only; neither bypasses attribution or peer-review.
+- The attribution and peer-review gates have **no** escape sentinel. No commit-gate has one anymore — every gate's bypass is path-derived (e.g. test-run auto-skips on docs-only paths via DOCS_ONLY_PATH). If you need an exemption, the right fix is to extend the path regex in `.claude/hooks/lib/common.js`, not to reach for a string token.
 - Both gates run in the **transcript-independent phase** of the dispatcher. A missing or unreadable transcript fails the dispatcher open for transcript-dependent gates only — attribution and peer-review still run. Any refactor that re-couples either to the transcript-fetch envelope reintroduces the `55cf6a72` bypass.
 - Attribution is the **last** gate in the transcript-independent phase (after `file-size`, `paper-port`, and `peer-review`). Other failures in that phase surface first because they require more work to fix than appending an attribution line. Peer-review runs before attribution because it is the richer claim — if both lines are missing the user gets the more informative error first.
 
@@ -91,7 +91,7 @@ Historical commits that landed without attribution are **not** to be fixed by `g
 
 ## Anti-patterns
 
-- **Adding `[skip-test-gate]` or `[skip-size-gate]` to bypass attribution or peer-review.** They don't — those sentinels are scoped to their respective gates. Missing footer lines are recovered by appending them, not by sentinel.
+- **Reaching for a string sentinel.** None exist. Every gate's bypass is path-derived. If a gate fires on a path it shouldn't, fix the regex.
 - **`git commit --amend` on a commit that landed without attribution.** Standing rule: no rewriting public history. Log the gap in backlog; don't rewrite.
 - **Skip reasons that don't match `peer-review-required.md` § When.** The gate enforces *presence*, but a `Review-Skipped: didn't-feel-like-it` line is a discipline violation even if the gate accepts it.
 

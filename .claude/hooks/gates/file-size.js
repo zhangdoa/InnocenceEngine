@@ -2,11 +2,11 @@
 // For each staged file matching FILE_SIZE_EXT_RE (and not excluded by
 // FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT` AND
 // `new_lines > old_lines`. Files already over the limit keep working;
-// they just can't grow. [skip-size-gate] in the commit message escapes.
+// they just can't grow. No commit-message escape — split or shrink.
 
 const {
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
-  SKIP_SIZE_SENTINEL, blobLineCount,
+  blobLineCount,
 } = require('../lib/common')
 
 function findViolations(cwd, staged) {
@@ -23,7 +23,6 @@ function findViolations(cwd, staged) {
 }
 
 function run(ctx) {
-  if (ctx.messageText.includes(SKIP_SIZE_SENTINEL)) return { ok: true }
   const violations = findViolations(ctx.cwd, ctx.staged)
   if (violations.length === 0) return { ok: true }
   return { ok: false, block: () => emit(violations) }
@@ -53,8 +52,10 @@ function emit(violations) {
     'the commit passes. The threshold only pressures files that are both',
     'over and getting larger.',
     '',
-    `Escape hatch: include ${SKIP_SIZE_SENTINEL} in the commit message if`,
-    'this is a legitimate one-off (e.g. auto-generated file, necessary migration).',
+    'No string-based escape exists. If a path legitimately requires exemption',
+    '(third-party drop, generated output), add it to FILE_SIZE_EXCLUDE_RE in',
+    `.claude/hooks/lib/common.js. Otherwise: split (Foo_FeatureBar.cpp), shrink`,
+    '(delete dead code, inline one-shot utilities), or refactor responsibilities.',
     '',
   ].join('\n'))
   process.exit(2)

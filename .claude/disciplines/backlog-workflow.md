@@ -56,7 +56,7 @@ The closure-evidence half of `test-run.js` parses the *main-session* bash transc
 - `cd Source/Editor-Next && npx playwright test tests/<spec>.spec.js` — editor work.
 - `Bin/RelWithDebInfo/RenderTest.exe -test <name>` — rendering pipeline work.
 
-If the work was already validated by the sub-agent and re-running is genuinely redundant (hook-internal change validated by unit tests; backlog-only docs commit), use `[skip-test-gate]` with explicit rationale. Under parallel dispatch a pre-run validates the *combined* worktree state, which is useful (catches drift across agents) but means the test exercises something the implementer did not see directly.
+If the work was already validated by the sub-agent and re-running is genuinely redundant, the docs-only path bypass (DOCS_ONLY_PATH in `.claude/hooks/lib/common.js`) handles backlog-only and harness-only commits automatically — no commit-message escape needed. If the bypass isn't firing for a legitimately exempt path, extend the regex; don't reach for a string sentinel that doesn't exist anymore. Under parallel dispatch a pre-run validates the *combined* worktree state, which is useful (catches drift across agents) but means the test exercises something the implementer did not see directly.
 
 The intent: zero-trust evidence. Sub-agent claims of "tests passed" are not auditable in `git log`; main-session transcript invocations are.
 

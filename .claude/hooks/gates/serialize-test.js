@@ -1,10 +1,11 @@
 // Serialize-test gate — when JSONWrapper / AssetService / SceneService
 // is staged, a `Main.exe -serialize_test ...` run must have happened
 // this turn. Catches round-trip regressions that only surface on a
-// real scene save-then-compare. SKIP_SENTINEL escapes.
+// real scene save-then-compare. Path-derived: only fires when
+// SERIALIZER_CODE_PATH matches a staged file.
 
 const {
-  SERIALIZER_CODE_PATH, SKIP_SENTINEL, firstArray,
+  SERIALIZER_CODE_PATH, firstArray,
 } = require('../lib/common')
 
 const SERIALIZE_TEST_RE = /Main\.exe\b[^|&;]*-serialize_test\b/
@@ -23,7 +24,6 @@ function didSerializeTestRun(transcript, lastUserIdx) {
 }
 
 function run(ctx) {
-  if (ctx.messageText.includes(SKIP_SENTINEL)) return { ok: true }
   const serializerStaged = ctx.staged.some(f => SERIALIZER_CODE_PATH.test(f))
   if (!serializerStaged) return { ok: true }
   if (didSerializeTestRun(ctx.transcript, ctx.lastUserIdx)) return { ok: true }
@@ -44,8 +44,9 @@ function emit(staged) {
     'Run the serialize-determinism test in this turn before committing:',
     '  Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProject/Scenes/UnitTest.InnoScene',
     '',
-    `Escape hatch: include ${SKIP_SENTINEL} if this change genuinely cannot`,
-    'be validated by a serialize-test (e.g. a rename with no logic change).',
+    'No string-based escape. The bypass is path-derived: this gate only fires',
+    'when SERIALIZER_CODE_PATH matches a staged file. A pure rename with no',
+    'logic change should not stage SerializerService logic — unstage it.',
     '',
   ].join('\n'))
   process.exit(2)
