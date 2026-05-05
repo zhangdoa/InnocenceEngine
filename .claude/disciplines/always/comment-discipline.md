@@ -34,16 +34,19 @@ If a comment restates what the code says, delete it. If the code is unclear, ref
 - TODO with a concrete next step: `// TODO: handle wraparound — see <spec>`.
 - File-level header where the file has a non-obvious organizing principle.
 
-## Self-application — discipline files and agent manifests
+## Self-application — discipline files, agent manifests, subtree CLAUDE.md
 
-Files under `.claude/disciplines/`, `.claude/agents/`, and other harness instruction files are operational rules for agents to act on. Same imperative register as code:
+Files under `.claude/disciplines/`, `.claude/agents/`, every subtree `CLAUDE.md`, and other harness instruction files are operational rules for agents to act on. Same imperative register as code:
 
 - Rules and conditions ("when X → do Y").
 - Structured tables and bullets over prose paragraphs.
 - No roleplay ("you are X", "the Producer's value is Y").
 - No rationale paragraphs explaining why a rule exists, beyond what's needed to apply it.
-- No incident narratives recoverable from `git log` / backlog.
+- No incident narratives recoverable from `git log` / backlog. No specific dates, timestamps, or session anecdotes.
+- No `TASK-N` references, commit SHAs, or "Related work" footnotes. Tasks close, get re-numbered, or get deleted; the rule has to stand without them.
 - No meta-commentary ("this discipline exists because...", "this rule closes that gap").
+
+Subtree CLAUDE.md is the venue for all subtree conventions (per `workspace-hygiene.md`). Same register as the disciplines: rules, escape hatches, inventory tables. Not narrative, not rationale, not history.
 
 Source code under `Source/`, `Scripts/`, `.claude/hooks/` follows the no-comment rule above.
 
