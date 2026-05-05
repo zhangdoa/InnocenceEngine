@@ -1,9 +1,10 @@
 ---
 id: TASK-189
 title: 'Non-reproducible yellow-green Sponza tint — observation + likely GI convergence'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-28 18:40'
+updated_date: '2026-05-05'
 labels:
   - rendering
   - gi
@@ -76,3 +77,28 @@ Self-resolved; not blocking user workflow today. Recurrence may surface it again
 - [ ] #2 OR: sample-reuse / faster-convergence task lands, this task is closed as superseded
 - [ ] #3 OR: other path identifies the cause (e.g. a Generated/ cache audit, RenderDoc capture comparison)
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Obsolete by user directive (2026-05-05)
+
+User directive (2026-05-05): "189 is obsolete, resolve it." Closing without waiting on the diagnostic-tooling dependencies.
+
+Closure rationale:
+
+- **Symptom never recurred.** Filed 2026-04-28 as a self-resolved one-off observation; no second sighting in the seven days since.
+- **Originally low priority.** Description's own framing — "self-resolved; not blocking user workflow today" — was the priority floor. Without recurrence, the floor never lifted.
+- **Diagnostic tooling never became necessary.** TASK-183 (visualization modes) and TASK-185 (output-texture viewer) were prerequisites *only* for isolating a recurrence. No recurrence → no isolation work → no dependency to satisfy.
+- **No code or design surface was ever load-bearing on this task.** It was an open observation, not a pending change.
+
+ACs left unticked — they were observation-recurrence triggers, not deliverables; they are now irrelevant rather than done:
+
+- AC #1 (recurrence + TASK-183/185 isolation) — no recurrence; trigger never fired.
+- AC #2 (superseded by sample-reuse / faster-convergence task) — would have been a valid closure path; current closure is the simpler "no recurrence" path instead.
+- AC #3 (other path identifies cause) — not pursued; no business need.
+
+**No follow-up task filed.** Should the symptom recur, file fresh against current diagnostic tooling state — this task's hypothesis trail (material binding ruled out, inline-RT shadow ruled out, spectral-signature analysis) remains in this file as reference material for that future investigation.
+
+**Cross-ref**: TASK-183 (visualization modes — diagnostic dependency, no longer blocked on by anything), TASK-185 (output-texture viewer — same), TASK-184 (panel fix landed `bfe66510`).
+<!-- SECTION:FINAL_SUMMARY:END -->
