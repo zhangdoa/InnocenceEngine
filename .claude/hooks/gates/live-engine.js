@@ -7,7 +7,7 @@
 const path = require('path')
 const fs = require('fs')
 const {
-  EDITOR_CODE_PATH, NON_PLAYWRIGHT_LIVE, PLAYWRIGHT_RE,
+  EDITOR_CODE_PATH, DOCS_ONLY_PATH, NON_PLAYWRIGHT_LIVE, PLAYWRIGHT_RE,
   firstArray,
 } = require('../lib/common')
 
@@ -38,7 +38,8 @@ function didLiveEngineTestRun(transcript, lastUserIdx, cwd) {
 }
 
 function run(ctx) {
-  const editorCodeStaged = ctx.staged.some(f => EDITOR_CODE_PATH.test(f))
+  const editorCodeStaged = ctx.staged.some(
+    f => EDITOR_CODE_PATH.test(f) && !DOCS_ONLY_PATH.test(f))
   if (!editorCodeStaged) return { ok: true }
   if (didLiveEngineTestRun(ctx.transcript, ctx.lastUserIdx, ctx.cwd)) return { ok: true }
   return { ok: false, block: () => emit(ctx.staged) }
@@ -46,7 +47,7 @@ function run(ctx) {
 
 function emit(staged) {
   const filesList = staged.length
-    ? staged.filter(f => EDITOR_CODE_PATH.test(f)).slice(0, 10).map(f => '  ' + f).join('\n')
+    ? staged.filter(f => EDITOR_CODE_PATH.test(f) && !DOCS_ONLY_PATH.test(f)).slice(0, 10).map(f => '  ' + f).join('\n')
     : '  (no editor code detected — bug?)'
   process.stderr.write([
     '',

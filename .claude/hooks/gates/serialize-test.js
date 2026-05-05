@@ -5,7 +5,7 @@
 // SERIALIZER_CODE_PATH matches a staged file.
 
 const {
-  SERIALIZER_CODE_PATH, firstArray,
+  SERIALIZER_CODE_PATH, DOCS_ONLY_PATH, firstArray,
 } = require('../lib/common')
 
 const SERIALIZE_TEST_RE = /Main\.exe\b[^|&;]*-serialize_test\b/
@@ -24,7 +24,8 @@ function didSerializeTestRun(transcript, lastUserIdx) {
 }
 
 function run(ctx) {
-  const serializerStaged = ctx.staged.some(f => SERIALIZER_CODE_PATH.test(f))
+  const serializerStaged = ctx.staged.some(
+    f => SERIALIZER_CODE_PATH.test(f) && !DOCS_ONLY_PATH.test(f))
   if (!serializerStaged) return { ok: true }
   if (didSerializeTestRun(ctx.transcript, ctx.lastUserIdx)) return { ok: true }
   return { ok: false, block: () => emit(ctx.staged) }
@@ -32,7 +33,7 @@ function run(ctx) {
 
 function emit(staged) {
   const filesList = staged.length
-    ? staged.filter(f => SERIALIZER_CODE_PATH.test(f)).slice(0, 10).map(f => '  ' + f).join('\n')
+    ? staged.filter(f => SERIALIZER_CODE_PATH.test(f) && !DOCS_ONLY_PATH.test(f)).slice(0, 10).map(f => '  ' + f).join('\n')
     : '  (no serializer code detected — bug?)'
   process.stderr.write([
     '',
