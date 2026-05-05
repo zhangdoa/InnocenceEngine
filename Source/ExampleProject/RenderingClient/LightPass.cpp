@@ -331,19 +331,21 @@ bool LightPass::PrepareCommandList(IRenderingContext* renderingContext)
 	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute,
 	    SunShadowRTPass::Get().GetStatus() == ObjectStatus::Activated ? SunShadowRTPass::Get().GetResult() : nullptr, 19);
 
-	// Scene TLAS (t14). Same pattern as SunShadowRTPass. The TLAS is built
-	// once per frame; binding it on every pass that traces against it is
-	// fine. SunShadowRTPass + RadianceCacheRaytracingPass also consume it.
-	l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 20);
-
-	// TASK-140 sample integration: wrap the dispatch in a paired GPU timer +
-	// PIX event so PIX shows "LightPass" on the timeline and GetGpuTimings()
-	// returns the per-frame ms cost. Pattern for further pass instrumentation
-	// (TASK-138 RT sun shadows decision et al.) lives on GraphicsHardwareService.
 	auto l_hwService = g_Engine->Get<GraphicsHardwareService>();
 	l_hwService->BeginGpuPass(m_CommandListComp_Compute, "LightPass", GPUEngineType::Compute);
 
-	l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	// Scene TLAS bind + dispatch are skipped until the async TLAS build
+	// commits — lightPass.comp inline-RayQueries SceneAS per pixel and would
+	// otherwise trace against an unbuilt acceleration structure (UB).
+	if (g_Engine->Get<GPUBufferResourceService>()->IsTLASReady())
+	{
+		l_fmService->BindGPUResource(m_RenderPassComp, m_CommandListComp_Compute, ShaderStage::Compute, g_Engine->Get<GPUBufferResourceService>()->GetTLASBuffer(), 20);
+		l_fmService->Dispatch(m_RenderPassComp, m_CommandListComp_Compute, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	}
+	else
+	{
+		Log(Warning, "LightPass: TLAS not ready, skipping dispatch.");
+	}
 
 	l_hwService->EndGpuPass(m_CommandListComp_Compute, "LightPass", GPUEngineType::Compute);
 
