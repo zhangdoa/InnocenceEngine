@@ -82,7 +82,7 @@ if (-not (Test-Path $IndexDir)) {
 # the background. Costs minutes of CPU off the user's interactive path;
 # correctness benefit is deterministic. The orphan-source heuristic is
 # left in place for the cheap case below; -PurgeAll is the escape hatch
-# documented in Scripts/README.md.
+# documented in Scripts/CLAUDE.md.
 if ($PurgeAll) {
     $indexDirResolved = (Resolve-Path $IndexDir).Path
     $idxFiles = Get-ChildItem -LiteralPath $indexDirResolved -File -Filter '*.idx'

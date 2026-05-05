@@ -14,7 +14,7 @@
 # (see TASK-214 / TASK-213 CL C: HLSL edited 20:08, DXIL last compiled 20:03).
 # Loud-fail with a "DXIL stale" diagnostic was the rejected alternative —
 # would have required a second timestamp check in this script that drifts
-# from the real compile policy. Rationale: Scripts/README.md.
+# from the real compile policy. Rationale: Scripts/CLAUDE.md.
 #
 # Pass -SkipShaderCompile to skip the shader pre-step (rare: bisecting a
 # known-good DXIL set against a C++-only change). The default is to compile.

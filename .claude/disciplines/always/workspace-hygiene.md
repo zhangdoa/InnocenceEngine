@@ -14,10 +14,18 @@ Do not create new `*.md`, `README`, design doc, roadmap, spec, or architecture n
 
 - `.claude/agents/`, `.claude/disciplines/` — agent manifests and disciplines.
 - `.backlog/tasks/` — backlog tasks.
-- Subtree `CLAUDE.md` — ownership / scope declarations.
+- Subtree `CLAUDE.md` — the venue for **all** subtree-level conventions: ownership, scope, policies, build-tool quirks, naming rules, inventory tables. Anything a future agent entering the subtree needs to know.
 - `.alignments/` — paper-alignment audits.
 
 Cross-session context goes in backlog task `## Implementation Notes`, not a standalone doc.
+
+### No subtree README.md
+
+`README.md` files inside tracked subtrees are **not allowed**. CLAUDE.md auto-loads when an agent enters the subtree; README.md does not. In a single-user-Claude project, the only readers are Claude and the user, and neither benefits from the split. Splitting "ownership" into CLAUDE.md and "policy" into README.md leaves the policy invisible to auto-load.
+
+A task brief that asks for a `Scripts/README.md` (or any other subtree README) is wrong — push back and route the content into `Scripts/CLAUDE.md` instead. The repo-root `README.md` is exempt (it's the GitHub landing page); subtree READMEs are not.
+
+If you find an existing subtree README.md, the cleanup is mechanical: absorb the content into the sibling CLAUDE.md, delete the README, update any in-script cross-refs.
 
 ## Cross-references
 
