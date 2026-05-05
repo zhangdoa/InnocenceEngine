@@ -1,1 +1,1 @@
-Render-pass C++ files (`*Pass.cpp`, `*Pass.h`) here are owned by the `rendering-researcher` agent. Non-pass files may belong to other agents — see `.claude/team.md`.
+Owned by the `code-impl` stage (render-pass C++ — `*Pass.cpp`, `*Pass.h` — plus rendering-client orchestration). See `.claude/agents/code-impl.md` and `.claude/team.md`.

@@ -1,4 +1,4 @@
-Owned by the `harness-impl` stage (hooks, agent manifests, disciplines, project-state snapshots, commit-gate, team roster, references map). See `.claude/agents/harness-impl.md` and `.claude/team.md`.
+Owned by the `harness-impl` stage (hooks, stage manifests, disciplines, project-state snapshots, commit-gate, team roster, references map). See `.claude/agents/harness-impl.md` and `.claude/team.md`.
 
 ## Subtree map
 

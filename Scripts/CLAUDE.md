@@ -1,4 +1,4 @@
-Owned by the `ci-build-expert` agent (build, shader-compile, test-runner, automation scripts). See `.claude/agents/ci-build-expert.md`.
+Owned by the `ci-build-impl` stage (build, shader-compile, test-runner, automation scripts). See `.claude/agents/ci-build-impl.md` and `.claude/team.md`.
 
 ## BuildWin.ps1
 

@@ -1,1 +1,1 @@
-Owned by the `platform-expert` agent (OS / windowing / HID / process lifecycle / platform entry points). See `.claude/agents/platform-expert.md`.
+Owned by the `code-impl` stage (OS / windowing / HID / process lifecycle / platform entry points). See `.claude/agents/code-impl.md` and `.claude/team.md`.

@@ -1,1 +1,1 @@
-Owned by the `producer` agent. See `.claude/agents/producer.md` and `.claude/team.md`.
+Owned by the `task-mgmt` stage (backlog ops, task closure, cross-stage coordination). See `.claude/agents/task-mgmt.md` and `.claude/team.md`.
