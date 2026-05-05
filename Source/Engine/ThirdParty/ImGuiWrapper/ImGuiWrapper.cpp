@@ -290,7 +290,10 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	}
 	if (ImGui::Button("Load scene"))
 	{
-		g_Engine->Get<SceneService>()->Load(scene_filePath, false);
+		// AsyncLoad=true: ImGui callback fires mid-frame after pass commands
+		// have been recorded; LoadSync here races the DX12 resource-state
+		// tracker. (.claude/state/engine-invariants.md)
+		g_Engine->Get<SceneService>()->Load(scene_filePath, true);
 	}
 
 	ImGui::End();
