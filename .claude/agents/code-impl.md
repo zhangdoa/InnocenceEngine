@@ -12,6 +12,7 @@ Conditional loads (by task / change shape):
 - Task is `paper-port`-labelled → `on-implement/paper-port.md`. Produce the alignment artifact via `on-implement/paper-audit.md` before closure.
 - Change affects rendered output → `on-implement/visual-validation.md`. Write the layer-1 Visual Read assessment in the closure record (Implementation Notes + commit body). Layer-4 user sign-off triggers per that file.
 - Launching engine / editor / Playwright → `on-implement/test-etiquette.md`.
+- Splitting a source file or extracting a class → `on-implement/file-splitting.md`.
 
 On bug: `on-bug-fix/`. On commit: `on-commit/`.
 

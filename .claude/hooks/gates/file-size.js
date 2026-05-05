@@ -1,8 +1,8 @@
-// File-size gate — soft ratchet on code/script files.
+// File-size gate — strict block on code/script files past the limit.
 // For each staged file matching FILE_SIZE_EXT_RE (and not excluded by
-// FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT` AND
-// `new_lines > old_lines`. Files already over the limit keep working;
-// they just can't grow. No commit-message escape — split or shrink.
+// FILE_SIZE_EXCLUDE_RE), block if `new_lines > FILE_SIZE_LIMIT`.
+// No grandfathering — touching an oversized file forces it under the limit
+// in the same CL. Split per `disciplines/on-implement/file-splitting.md`.
 
 const {
   FILE_SIZE_LIMIT, FILE_SIZE_EXT_RE, FILE_SIZE_EXCLUDE_RE,
@@ -17,7 +17,7 @@ function findViolations(cwd, staged) {
     const newLines = blobLineCount(cwd, `:${f}`)
     if (newLines <= FILE_SIZE_LIMIT) continue
     const oldLines = blobLineCount(cwd, `HEAD:${f}`)
-    if (newLines > oldLines) violations.push({ file: f, oldLines, newLines })
+    violations.push({ file: f, oldLines, newLines })
   }
   return violations
 }
@@ -30,32 +30,26 @@ function run(ctx) {
 
 function emit(violations) {
   const list = violations.slice(0, 10).map(v =>
-    `  ${v.file}: ${v.oldLines} → ${v.newLines} (+${v.newLines - v.oldLines})`
+    `  ${v.file}: ${v.oldLines} → ${v.newLines}`
   ).join('\n')
   const more = violations.length > 10
     ? `\n  …and ${violations.length - 10} more` : ''
   process.stderr.write([
     '',
-    `[commit-gate] git commit blocked — code/script file(s) grew past the ${FILE_SIZE_LIMIT}-line soft ratchet.`,
+    `[commit-gate] git commit blocked — file(s) over the ${FILE_SIZE_LIMIT}-line limit.`,
     '',
-    'Files over limit that grew in this CL:',
+    'Files in this CL exceeding the limit:',
     list + more,
     '',
-    'A growing oversized file usually means the responsibility belongs in a',
-    'separate translation unit. Common responses:',
-    '  • Split into multiple files (#include-based for shaders; new .cpp/.h for C++).',
-    '  • Extract helper functions or pass objects into a common header.',
-    '  • If the addition itself is small but the file is already way over,',
-    '    shrink the file first (delete dead code, inline one-shot utilities, etc).',
-    '',
-    `Already-oversized files are grandfathered — as long as they don't GROW`,
-    'the commit passes. The threshold only pressures files that are both',
-    'over and getting larger.',
+    'Touching a file makes you responsible for its size. Split per',
+    '`.claude/disciplines/on-implement/file-splitting.md`:',
+    '  • Same class, different responsibility cluster → Foo_SubsectionName.cpp.',
+    '  • Separate concern → new class; original holds an instance.',
+    '  • Free-function header → split by domain; umbrella header includes parts.',
     '',
     'No string-based escape exists. If a path legitimately requires exemption',
     '(third-party drop, generated output), add it to FILE_SIZE_EXCLUDE_RE in',
-    `.claude/hooks/lib/common.js. Otherwise: split (Foo_FeatureBar.cpp), shrink`,
-    '(delete dead code, inline one-shot utilities), or refactor responsibilities.',
+    '.claude/hooks/lib/common.js.',
     '',
   ].join('\n'))
   process.exit(2)
