@@ -1,11 +1,10 @@
 ---
 id: TASK-217
-title: >-
-  HIDService::Update intermittent AV at HIDService.cpp:66 (+0x110) on first-tick
-  path
+title: 'HIDService::Update intermittent AV at HIDService.cpp:66 (+0x110)'
 status: To Do
 assignee: []
 created_date: '2026-05-05 08:00'
+updated_date: '2026-05-05 10:24'
 labels:
   - bug
   - intermittent
@@ -16,7 +15,7 @@ references:
   - >-
     .backlog/tasks/task-215 -
     ImGuiWrapper-Load-scene-button-uses-sync-Load-engine-invariants.md-violation.md
-priority: medium
+priority: high
 ---
 
 ## Description
@@ -58,6 +57,27 @@ Surfaced during TASK-215 closure as a pre-existing flake the test-expert peer-re
 - [ ] #4 Regression coverage — the fixed code is exercised by an integration test that would have caught the original failure shape (engine startup → HID callback registration → first Update tick).
 - [ ] #5 engine-invariants.md updated if the fix surfaces a load-bearing threading contract that should be anchored for future dispatchers.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+### 2026-05-05 — evidence amplified during TASK-213 CL D closure validation
+
+**Hit rate observed:** ~33-67% of engine launches in the first 10 minutes of a session, rate higher when launches were closely spaced (`binA-run2` hit ALL 3 scenes consecutively in the second wave). After rebuild + delay, `binB-run1 + binB-run2` produced 6/6 clean launches in a row — suggesting the fault correlates with rapid-launch state, not just first-tick. **Total observed across the closure run: ~5 faults / ~12+ launch attempts.**
+
+**Same fault signature as the original filing** (HIDService.cpp:66, offset +0x110, reading from low-numerical or all-FFFF address inside `m_ButtonEvents.find()`). — confirms not a new failure mode.
+
+**Hypothesis correction.** The original filing hypothesised "first-tick race against `HIDService::Setup` callback registration." The TASK-213 CL D run observed faults **during deferred-init drain after extensive texture loads** — NOT at first-tick. Engine had already initialised HID, loaded scenes, started rendering frames; the AV fired mid-session during the texture-streaming hot path. So the actual fault window is broader than "first tick" and may involve concurrent mutation of `m_ButtonEvents` during HID-event dispatch (callback registration is just one possible writer).
+
+**Recommended fix path (path-of-least-resistance):** offscreen-mode-aware `HIDService::Update` guard. In `-offscreen` mode (set when `-test` or capture-mode flags are present), the test path doesn't drive any real input; the entire `HIDService::Update` body should be a no-op or short-circuited at the top. This sidesteps the race entirely for the test/capture surface and makes the closure-grade test runs reliable, while preserving full HID semantics for interactive mode. Path-of-least-resistance because:
+- (a) test mode genuinely doesn't need HID dispatch (no human input is being driven);
+- (b) the structural race (concurrent mutation of `m_ButtonEvents` from registration / Win32 message thread / `Update`) requires a deeper threading-contract fix that is not blocked by the test-mode short-circuit;
+- (c) it un-blocks closure-grade testing TODAY, while the deeper fix can land later as a separate CL.
+
+The deeper fix is presumably a `std::shared_mutex` / per-key snapshot of the relevant subset of `m_ButtonEvents` so that `Update` reads a stable view. That's structurally cleaner but takes longer to validate. Recommend the offscreen-guard ships first.
+
+**Promoted to Priority: high.** Original filing was Medium when the rate looked ~10-20%; the closure-grade run pushed observed hit rate to 33-67%. Now actively blocking any agent driving 3-scene capture work.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
