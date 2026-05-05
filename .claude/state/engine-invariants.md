@@ -23,3 +23,15 @@ Audit reference — keep current when adding or moving call sites. Grep: `SceneS
 | `Source/Engine/ThirdParty/ImGuiWrapper/ImGuiWrapper.cpp:296` ("Load scene" ImGui button) | Render thread (`GUIService::Update` inside FMS) | `true` | ImGui callback fires mid-frame after pass commands recorded; sync LoadSync races the DX12 resource-state tracker. (TASK-215.) |
 
 No sync `Load()` callers remain. If a new call site must be sync (render-thread context, before any pass commands have been recorded that frame), document the rationale in-place at the call site.
+
+## HIDService::m_ButtonEvents access is shared_mutex-synchronised
+
+`HIDService::m_ButtonEvents` is read on the engine main tick (`HIDService::Update`, `HIDService::ButtonStateCallback` invoked from inside `Update`) and written on the logic-client thread (`HIDService::AddButtonStateCallback`, called from `Player::Setup` / `World::Setup` / `PhysXWrapper::Setup` / `GUIService::Setup` / etc. during scene init or deferred logic update). Without synchronisation the reader's `unordered_map::find` bucket walk can torn-read mid-rehash and AV at `0xC0000005` inside the `find` (TASK-217 / TASK-218 failure shape).
+
+Synchronisation: `mutable std::shared_mutex m_ButtonEventsMutex` member of `HIDService`. Readers (`Update`, `ButtonStateCallback`) take `std::shared_lock`; writer (`AddButtonStateCallback`) takes `std::unique_lock`. The reader path snapshots matching events into a local vector under shared_lock and dispatches `ExecuteEvent` outside the critical section so user callbacks cannot deadlock against the writer side (MSVC SRW-backed `std::shared_mutex` does not allow a thread holding shared_lock to acquire unique_lock; same constraint as `Engine::singletons_mutex_`).
+
+`HIDService::Update` retains the offscreen / capture-mode early-return guard (`isOffscreen || totalFrames > 0`) as defensive defense-in-depth — capture runs never enter the input dispatch path at all.
+
+`m_MouseMovementEvents` has the same write/read split (writer: `AddMouseMovementCallback` from logic-client thread; reader: `Update` on engine tick) but is not currently observed to AV — the engine's example clients only mutate it during single-shot `Setup` and not while `Update` is iterating. If a future caller re-registers mouse callbacks mid-session, extend the same shared_mutex pattern to `m_MouseMovementEvents`.
+
+Files: `Source/Engine/Services/HIDService.{cpp,h}`. Anchor this contract into any dispatch brief that touches HID callback registration or the HID dispatch tick.

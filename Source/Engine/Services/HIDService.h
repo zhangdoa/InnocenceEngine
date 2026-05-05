@@ -73,6 +73,11 @@ namespace Inno
 
 		std::vector<ButtonState> m_PreviousFrameButtonStates;
 
+		// Synchronises m_ButtonEvents: writers (AddButtonStateCallback) come from
+		// the logic-client thread; readers (Update tick, ButtonStateCallback) come
+		// from the engine main thread. Reader/writer pattern keeps the per-frame
+		// read on the uncontended path cheap.
+		mutable std::shared_mutex m_ButtonEventsMutex;
 		ButtonEventMap m_ButtonEvents;
 		MouseMovementEventMap m_MouseMovementEvents;
 

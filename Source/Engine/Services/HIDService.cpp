@@ -46,9 +46,10 @@ bool HIDService::Update()
 		return false;
 	}
 
-	// Example-client callback registrations mutate m_ButtonEvents off-thread mid-session.
-	// Offscreen / capture-mode runs drive no real input, so the dispatch is skipped until
-	// m_ButtonEvents access is made thread-safe.
+	// Offscreen / capture-mode runs drive no real input. The shared_mutex on
+	// m_ButtonEvents now makes the dispatch path thread-safe; this guard is
+	// retained as defensive defense-in-depth (near-zero cost) so capture runs
+	// never enter the input dispatch path at all.
 	const auto& l_initConfig = g_Engine->getInitConfig();
 	if (l_initConfig.isOffscreen || l_initConfig.totalFrames > 0)
 		return true;
@@ -70,23 +71,34 @@ bool HIDService::Update()
 			}
 		});
 
-	if (m_ButtonEvents.size() != 0)
+	// Snapshot continuous-lifetime events under shared lock, then dispatch
+	// outside the critical section so user callbacks cannot deadlock against
+	// the writer side (re-entrant AddButtonStateCallback would take unique_lock
+	// while the same thread holds shared_lock — undefined on MSVC SRW-backed
+	// std::shared_mutex).
+	std::vector<ButtonEvent> l_PendingContinuousEvents;
 	{
-		for (auto& l_previousButtonState : m_PreviousFrameButtonStates)
+		std::shared_lock<std::shared_mutex> l_Lock(m_ButtonEventsMutex);
+		if (m_ButtonEvents.size() != 0)
 		{
-			auto l_pair = m_ButtonEvents.find(l_previousButtonState);
-			if (l_pair != m_ButtonEvents.end())
+			for (auto& l_previousButtonState : m_PreviousFrameButtonStates)
 			{
-				for (auto& l_event : l_pair->second)
+				auto l_pair = m_ButtonEvents.find(l_previousButtonState);
+				if (l_pair != m_ButtonEvents.end())
 				{
-					if (l_event.m_eventLifeTime != EventLifeTime::Continuous)
-						continue;
+					for (auto& l_event : l_pair->second)
+					{
+						if (l_event.m_eventLifeTime != EventLifeTime::Continuous)
+							continue;
 
-					ExecuteEvent(l_event);
+						l_PendingContinuousEvents.push_back(l_event);
+					}
 				}
 			}
 		}
 	}
+	for (auto& l_event : l_PendingContinuousEvents)
+		ExecuteEvent(l_event);
 
 	if (m_MouseMovementEvents.size() != 0)
 	{
@@ -124,6 +136,7 @@ bool HIDService::Terminate()
 
 void HIDService::AddButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
+	std::unique_lock<std::shared_mutex> l_Lock(m_ButtonEventsMutex);
 	auto l_result = m_ButtonEvents.find(buttonState);
 	if (l_result != m_ButtonEvents.end())
 		l_result->second.emplace(buttonEvent);
@@ -148,20 +161,29 @@ Vec2 HIDService::GetMousePosition()
 void HIDService::ButtonStateCallback(const ButtonState& buttonState)
 {
 	auto& l_previousFrameButtonState = m_PreviousFrameButtonStates[buttonState.m_Code];
-	auto l_result = m_ButtonEvents.find(buttonState);
-	if (l_result != m_ButtonEvents.end())
-	{
-		for (auto& l_event : l_result->second)
-		{
-			if (l_event.m_eventLifeTime == EventLifeTime::Continuous)
-				continue;
+	const bool l_StateChanged = (l_previousFrameButtonState.m_isPressed != buttonState.m_isPressed);
 
-			if (l_previousFrameButtonState.m_isPressed != buttonState.m_isPressed)
-				ExecuteEvent(l_event);
+	std::vector<ButtonEvent> l_PendingOneShotEvents;
+	if (l_StateChanged)
+	{
+		std::shared_lock<std::shared_mutex> l_Lock(m_ButtonEventsMutex);
+		auto l_result = m_ButtonEvents.find(buttonState);
+		if (l_result != m_ButtonEvents.end())
+		{
+			for (auto& l_event : l_result->second)
+			{
+				if (l_event.m_eventLifeTime == EventLifeTime::Continuous)
+					continue;
+
+				l_PendingOneShotEvents.push_back(l_event);
+			}
 		}
 	}
 
 	l_previousFrameButtonState.m_isPressed = buttonState.m_isPressed;
+
+	for (auto& l_event : l_PendingOneShotEvents)
+		ExecuteEvent(l_event);
 }
 
 void HIDService::WindowResizeCallback(int32_t width, int32_t height)
