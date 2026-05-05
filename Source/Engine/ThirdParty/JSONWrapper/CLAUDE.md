@@ -1,1 +1,1 @@
-Owned by the `code-impl` stage (code-data coupling: JSON round-trip, scene serialization, schema evolution). `AssetService.*` and `SceneService.*` in `Source/Engine/Services/` are part of the same ownership cluster. See `.claude/agents/code-impl.md` and `.claude/team.md`.
+Round-trip / schema-evolution changes here typically also touch `Source/Engine/Services/AssetService.*` and `Source/Engine/Services/SceneService.*` — keep them in sync within the same CL.

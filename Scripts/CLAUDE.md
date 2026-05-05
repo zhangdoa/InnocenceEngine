@@ -1,5 +1,3 @@
-Owned by the `ci-build-impl` stage (build, shader-compile, test-runner, automation scripts). See `.claude/agents/ci-build-impl.md` and `.claude/team.md`.
-
 ## BuildWin.ps1
 
 Orchestrates the engine build. Invariants:
