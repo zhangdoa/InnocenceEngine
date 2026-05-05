@@ -70,14 +70,14 @@ namespace
 		const std::string&                           l_compDirPath,
 		const std::map<std::string, std::string>&    l_origComps)
 	{
-		bool l_passed = true;
+		size_t l_diffCount = 0;
 
 		// Check scene file
 		std::string l_savedScene = ReadFileContent(l_sceneFilePath);
 		if (l_savedScene != l_origScene)
 		{
-			Log(Error, "[serialize-test] DIFF: ", l_sceneFilePath.c_str());
-			l_passed = false;
+			Log(Warning, "[serialize-test] DIFF: ", l_sceneFilePath.c_str());
+			++l_diffCount;
 		}
 
 		// Check component directory
@@ -87,33 +87,37 @@ namespace
 			auto it = l_origComps.find(path);
 			if (it == l_origComps.end())
 			{
-				Log(Error, "[serialize-test] NEW file created by save: ", path.c_str());
-				l_passed = false;
+				Log(Warning, "[serialize-test] NEW file created by save: ", path.c_str());
+				++l_diffCount;
 			}
 			else if (it->second != saved)
 			{
-				Log(Error, "[serialize-test] DIFF: ", path.c_str());
-				l_passed = false;
+				Log(Warning, "[serialize-test] DIFF: ", path.c_str());
+				++l_diffCount;
 			}
 		}
 		for (auto& [path, _] : l_origComps)
 		{
 			if (!l_savedComps.count(path))
 			{
-				Log(Error, "[serialize-test] DELETED by save: ", path.c_str());
-				l_passed = false;
+				Log(Warning, "[serialize-test] DELETED by save: ", path.c_str());
+				++l_diffCount;
 			}
 		}
 
-		// Restore originals so the working tree stays clean.
-		if (!l_passed)
+		// Restore originals so the working tree stays clean. The aggregate
+		// Error is emitted after restore — LogService _Exit(1) on Error in
+		// test mode would otherwise kill the process before the restore loop
+		// runs, leaving Bin/Data drifted across runs.
+		if (l_diffCount > 0)
 		{
 			RestoreFile(l_sceneFilePath, l_origScene);
 			for (auto& [path, content] : l_origComps)
 				RestoreFile(path, content);
-			Log(Error, "[serialize-test] FAILED — source files restored.");
+			Log(Error, "[serialize-test] FAILED: ", l_diffCount,
+				" file(s) diffed/missing — see Warning lines above. Source files restored.");
 		}
-		return l_passed;
+		return l_diffCount == 0;
 	}
 
 	void RunSerializeTest(const char* l_sceneRelPath)
