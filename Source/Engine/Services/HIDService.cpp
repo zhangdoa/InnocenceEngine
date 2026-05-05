@@ -25,6 +25,10 @@ bool HIDService::Initialize()
 		m_ObjectStatus = ObjectStatus::Activated;
 		Log(Success, "HIDService has been initialized.");
 
+		const auto& l_initConfig = g_Engine->getInitConfig();
+		if (l_initConfig.isOffscreen || l_initConfig.totalFrames > 0)
+			Log(Success, "HIDService::Update dispatch suppressed in offscreen/capture mode.");
+
 		return true;
 	}
 	else
@@ -41,6 +45,13 @@ bool HIDService::Update()
 		HIDService::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
+
+	// Example-client callback registrations mutate m_ButtonEvents off-thread mid-session.
+	// Offscreen / capture-mode runs drive no real input, so the dispatch is skipped until
+	// m_ButtonEvents access is made thread-safe.
+	const auto& l_initConfig = g_Engine->getInitConfig();
+	if (l_initConfig.isOffscreen || l_initConfig.totalFrames > 0)
+		return true;
 
 	g_Engine->getWindowService()->ConsumeEvents([this](const std::vector<IWindowEvent*>& l_events)
 		{
