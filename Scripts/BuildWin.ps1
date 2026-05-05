@@ -18,9 +18,24 @@
 #
 # Pass -SkipShaderCompile to skip the shader pre-step (rare: bisecting a
 # known-good DXIL set against a C++-only change). The default is to compile.
+#
+# clangd compile_commands.json is regenerated AFTER msbuild succeeds. The
+# Visual Studio generator that drives msbuild does not emit the database;
+# Scripts/RegenClangdIndex.ps1 runs a parallel Ninja configure (no compile)
+# to produce it, then chains Scripts/PurgeStaleClangdIndex.ps1 to drop
+# orphan .idx entries for deleted sources. Wiring this in here means the
+# CDB never lags the on-disk file set across a build cycle (TASK-199:
+# stale CDB referencing TASK-138 / TASK-177-deleted .cpp files surfaced
+# as phantom diagnostics in clangd every session). Post-build placement,
+# not pre-build: the CDB is IDE state, not build correctness — running it
+# before msbuild would just delay msbuild on a no-CDB-change cycle.
+#
+# Pass -SkipClangdIndexRefresh to skip the post-step (rare: working
+# without a clangd-aware editor, or bisecting a CMake configure issue).
 
 param(
-    [switch]$SkipShaderCompile
+    [switch]$SkipShaderCompile,
+    [switch]$SkipClangdIndexRefresh
 )
 
 $ErrorActionPreference = 'Stop'
@@ -77,4 +92,36 @@ finally {
 }
 
 Get-Content $outFile | Select-Object -Last 5
+
+# Post-build clangd index refresh. Only runs if msbuild succeeded — a
+# failed engine build implies a source-tree state that clangd's CDB
+# regenerator (CMake configure) would also fail on, and surfacing that
+# under a misleading "post-step failed" framing would obscure the real
+# failure. The HLSL pre-step uses the same gate.
+if ($exitCode -eq 0) {
+    if ($SkipClangdIndexRefresh) {
+        Write-Host '[BuildWin] -SkipClangdIndexRefresh set — skipping clangd CDB regen.'
+    } else {
+        Write-Host '[BuildWin] Refreshing clangd compile_commands.json (post-build)...'
+        $regenScript = Join-Path $PSScriptRoot 'RegenClangdIndex.ps1'
+        # RegenClangdIndex.ps1 sets $ErrorActionPreference = 'Stop' and uses
+        # Write-Error on its failure paths, which throws a terminating error.
+        # That error propagates through `& $regenScript` and, under this
+        # script's own Stop preference, would exit BuildWin.ps1 with a
+        # non-zero code — masking the successful engine build under a
+        # post-step failure. Catch it here so the documented warn-don't-fail
+        # posture actually fires: the clangd CDB may be stale, but the
+        # engine binary the user just built is fine and they should know it.
+        try {
+            & $regenScript
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "[BuildWin] clangd CDB regen exited $LASTEXITCODE. Engine build is fine; clangd index may be stale until next refresh."
+            }
+        }
+        catch {
+            Write-Warning "[BuildWin] clangd CDB regen failed: $_. Engine build is fine; clangd index may be stale until next refresh."
+        }
+    }
+}
+
 exit $exitCode

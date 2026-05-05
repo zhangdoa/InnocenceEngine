@@ -70,6 +70,94 @@ bisect of a C++-only change against a known-good DXIL set; never the default.
   compiled 20:03, PSO `E_INVALIDARG` at runtime until manual
   `HLSL2DXIL_NoPause.ps1` run.
 
+## BuildWin.ps1 — clangd index refresh policy (TASK-199)
+
+`BuildWin.ps1` invokes `RegenClangdIndex.ps1` *after* `msbuild` succeeds.
+The Visual Studio generator that drives msbuild does not emit
+`compile_commands.json`; the regen script runs a parallel Ninja configure
+(no compile) to produce it, then chains `PurgeStaleClangdIndex.ps1` to
+drop `.idx` cache entries for sources deleted from the tree.
+
+### Why auto-trigger (option a), not a manual SOP (option c)
+
+The task offered three paths:
+
+- **(a) Build-time auto-trigger** — `BuildWin.ps1` calls
+  `RegenClangdIndex.ps1` post-build; the regen script reconfigures CMake
+  and chains the orphan-purge.
+- **(b) `.clangd` config tweak** — set an "index-purge-on-mismatch" or
+  similar directive.
+- **(c) Manual reset SOP** — document a sequence the developer runs
+  after deletions / branch switches.
+
+Option (b) was rejected because no such `.clangd` directive exists.
+clangd's `Index:` block has `Background: Build`, `External:`, and
+`StandardLibrary:` knobs but nothing that purges cached translation
+units when the underlying source disappears or when CDB compile flags
+change. The actual root cause was a stale `compile_commands.json` at
+the repo root (dated 2026-04-19; deletions in TASK-138 phase 2 and
+TASK-177 happened later in May), so the CDB still listed
+`SunShadowGeometryProcessPass.cpp` and `PointShadowGeometryProcessPass.cpp`
+as TUs to compile. No `.clangd` directive can fix a stale CDB.
+
+Option (a) was chosen over (c) for the same reason auto-trigger beat
+loud-fail in the DXIL section: the existing scripts are idempotent,
+the cost on a no-change cycle is bounded (~10 s end-to-end on this
+machine: `VsDevCmd.bat`'s MSVC-environment probe runs unconditionally
+at ~6 s, plus a ~4 s CMake reconfigure that stamps unchanged build
+files — the configure phase is fast because CMake skips regeneration
+when the input tree is unchanged, but the VsDevCmd probe is not
+short-circuitable), and a manual SOP rots — the team learns to
+ignore the diagnostic noise instead of running the command.
+`disciplines/always/feedback_no_dismissing_tool_noise.md`
+operationalises the rule. Option (b) has no working knob to compare
+against in the first place; option (c)'s SOP rots regardless of how
+fast the underlying command would run, so the cost differential
+between (a) and (c) on a no-change cycle is not the deciding axis.
+
+### What gets refreshed
+
+`RegenClangdIndex.ps1`:
+
+1. Runs `cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON` against
+   `Build/clangd/`. CMake walks the live `CMakeLists.txt` tree and emits
+   a `compile_commands.json` matching the on-disk source set.
+2. Copies `Build/clangd/compile_commands.json` to the repo root where
+   clangd's upward search picks it up.
+3. Invokes `PurgeStaleClangdIndex.ps1` (no flags) — drops `.idx` files
+   whose primary source URI no longer exists on disk.
+
+### Failure handling
+
+The regen step runs only when msbuild succeeded. If regen itself exits
+non-zero (rare: CMake configure failure on a transient state), the
+script emits a `Write-Warning` and lets the build's exit code stand —
+the engine binary is fine; the clangd index is just stale until the
+next refresh.
+
+### Escape hatches
+
+- `BuildWin.ps1 -SkipClangdIndexRefresh` skips the post-step. Reserved
+  for working without a clangd-aware editor or bisecting a CMake
+  configure issue.
+- `Scripts/PurgeStaleClangdIndex.ps1 -PurgeAll` nukes every `.idx` file.
+  The orphan-source heuristic in the no-flag mode cannot detect a TU
+  whose source still exists but whose cached preprocessor / token state
+  is corrupt (observed once on `Engine.cpp` —
+  "Pasting formed '<HIDService' invalid preprocessing token" on lines
+  that compile cleanly). `-PurgeAll` is the deterministic recovery: drop
+  every cached TU and let clangd rebuild from scratch in the background.
+  Costs minutes of CPU off the user's interactive path.
+
+### Related work
+
+- **TASK-146** — orphan-DXIL mirror semantics; the precedent for
+  "delete the artefact when the source is gone."
+- **TASK-151** — original wiring of `PurgeStaleClangdIndex.ps1` into
+  `RegenClangdIndex.ps1` (the orphan-source heuristic itself).
+- **TASK-214** — DXIL pre-step auto-trigger; same auto-trigger
+  rationale, different artefact.
+
 ## Script inventory
 
 | Script                       | Role                                                                  |

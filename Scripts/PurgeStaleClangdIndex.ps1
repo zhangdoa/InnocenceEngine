@@ -44,7 +44,8 @@
 param(
     [string]$IndexDir,
     [switch]$DryRun,
-    [switch]$ShowEachIdx
+    [switch]$ShowEachIdx,
+    [switch]$PurgeAll
 )
 
 $ErrorActionPreference = 'Stop'
@@ -66,6 +67,37 @@ if ([string]::IsNullOrEmpty($IndexDir)) {
 
 if (-not (Test-Path $IndexDir)) {
     Write-Host "Clangd index dir not found: $IndexDir (nothing to purge)."
+    exit 0
+}
+
+# -PurgeAll: nuclear reset for the rare stale-but-live-source case
+# (TASK-199). The orphan-source heuristic below cannot detect a TU whose
+# source still exists but whose cached preprocessor / token state is
+# corrupt -- the symptom we observed in Engine.cpp where clangd reported
+# "Pasting formed '<HIDService' invalid preprocessing token" on lines
+# that compile cleanly. Mtime comparison cannot catch this either: the
+# .idx is newer than the source, but its contents are wrong.
+#
+# Recovery is to drop every .idx and let clangd rebuild from scratch in
+# the background. Costs minutes of CPU off the user's interactive path;
+# correctness benefit is deterministic. The orphan-source heuristic is
+# left in place for the cheap case below; -PurgeAll is the escape hatch
+# documented in Scripts/README.md.
+if ($PurgeAll) {
+    $indexDirResolved = (Resolve-Path $IndexDir).Path
+    $idxFiles = Get-ChildItem -LiteralPath $indexDirResolved -File -Filter '*.idx'
+    $count = $idxFiles.Count
+    $bytes = ($idxFiles | Measure-Object -Property Length -Sum).Sum
+    if (-not $bytes) { $bytes = 0 }
+    $kb = [Math]::Round($bytes / 1KB, 1)
+    if ($DryRun) {
+        Write-Host "[dry-run] -PurgeAll would delete $count .idx files ($kb KB) from $indexDirResolved"
+    } else {
+        foreach ($idx in $idxFiles) {
+            Remove-Item -LiteralPath $idx.FullName -Force
+        }
+        Write-Host "Purged $count .idx files ($kb KB) from $indexDirResolved (-PurgeAll)."
+    }
     exit 0
 }
 

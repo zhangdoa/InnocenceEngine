@@ -29,6 +29,7 @@ if (-not (Test-Path $vswhere)) {
     Write-Error "vswhere.exe not found at $vswhere. Is Visual Studio installed?"
     exit 1
 }
+$vsWhereDir = Split-Path -Parent $vswhere
 $vsInstall = & $vswhere -latest -property installationPath
 if (-not $vsInstall) {
     Write-Error "vswhere returned no Visual Studio installation."
@@ -47,9 +48,18 @@ New-Item -ItemType Directory -Force -Path $indexDir | Out-Null
 # LIB, PATH, etc.) for one cmd.exe session. Chain the cmake configure into
 # the same session so it inherits that environment. cmd.exe's exit code
 # propagates back via $LASTEXITCODE.
+#
+# VsDevCmd.bat internally invokes bare `vswhere.exe` (no fully qualified
+# path). If the user's interactive PATH does not contain the VS Installer
+# directory, that lookup fails and VsDevCmd.bat aborts before configuring
+# the MSVC environment, leaving cmake without cl.exe / include / lib.
+# Prepend the resolved $vsWhereDir to the cmd.exe sub-shell PATH so the
+# probe is self-contained. We already located vswhere.exe at an absolute
+# path above; this just makes that location visible to VsDevCmd.bat's
+# internal lookup, no parallel "is vswhere available?" predicate needed.
 $repoRootStr = $repoRoot.Path
 $indexDirStr = $indexDir
-$cmdLine = "`"$vsDevCmd`" -arch=x64 -no_logo && cd /d `"$indexDirStr`" && cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `"$repoRootStr`""
+$cmdLine = "set `"PATH=$vsWhereDir;%PATH%`" && `"$vsDevCmd`" -arch=x64 -no_logo && cd /d `"$indexDirStr`" && cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `"$repoRootStr`""
 & cmd.exe /c $cmdLine
 if ($LASTEXITCODE -ne 0) {
     Write-Error "cmake configure failed (exit $LASTEXITCODE)"
