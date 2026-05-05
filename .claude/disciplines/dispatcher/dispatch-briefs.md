@@ -52,6 +52,20 @@ This is `../on-design/split-before-grow.md` applied to CL bundling.
 
 Reviewer-only lines like "Code-AI-Generated-By does not apply" → phrase as *"you (the reviewer) do not author code; do not add `Code-AI-Generated-By:` to your review notes."* Unambiguous about audience. The reviewer reads only their own brief.
 
+## Build / CI script CLs verify in the user's shell, not the sub-agent's sandbox
+
+For CLs touching user-shell-invoked scripts (`Scripts/*.ps1`, `BuildWin.ps1`, automation drivers, anything the user runs from their interactive prompt), the brief must explicitly require verification by running the script from main-session, not only from inside the sub-agent's execution.
+
+Failure mode: a sub-agent's shell often inherits environment state — PATH entries, DEV-tool installer dirs, registry-derived variables — that the user's interactive shell does not. A script that "works in the sandbox" can silently fail on every user invocation.
+
+Concrete incident: a `BuildWin.ps1` post-step invoked `VsDevCmd.bat`, which internally probed bare `vswhere.exe`. The implementer's sub-agent shell had `Microsoft Visual Studio\Installer` on PATH; the user's interactive shell did not. Sub-agent verification reported success; user's actual builds failed and exited 1 on every run. Reviewer reproduced the failure live in the user's shell and BLOCKED the CL.
+
+How to apply:
+
+- Brief includes a "verify in main-session shell" line for any CL whose deliverable is invoked from an interactive prompt.
+- Reviewer's brief inherits this — peer review of build/CI scripts re-runs the script from main-session as part of the verdict.
+- Self-contained scripts (no PATH dependencies, no inherited env) are exempt; flag the inheritance audit explicitly when claiming the exemption.
+
 ## Stop-the-line on accumulating carry-forward advisories
 
 Carry-forward advisories under the same backlog cross-reference are a degradation signal.
