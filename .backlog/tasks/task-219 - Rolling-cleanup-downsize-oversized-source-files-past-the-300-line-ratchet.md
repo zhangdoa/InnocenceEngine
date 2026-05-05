@@ -130,6 +130,72 @@ Total new TU lines: 1984. Largest TU: 273 (DescriptorHeaps). All under the 300-l
 
 - 19+ other oversized files in the inventory still pending. Task stays open.
 
+## CL: ExampleRenderingClient.cpp split (2026-05-05)
+
+Split `Source/ExampleProject/RenderingClient/ExampleRenderingClient.cpp` (1518 lines) into 9 sibling TUs + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same partial-class TU shape as the prior DX12GraphicsHardwareService CL — `ExampleRenderingClientImpl` declared once in `_Internal.h`, definitions distributed across sibling `.cpp` slices.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `ExampleRenderingClient.cpp` (umbrella) | 284 | Outer-class trampolines + `Initialize`, `Update`, `FinalizeGPUResults`, `Terminate`, `GetStatus`, `GetDispatchedPasses` |
+| `ExampleRenderingClient_Internal.h` | 95 | `Impl` class declaration + private helper decls |
+| `ExampleRenderingClient_Setup.cpp` | 272 | `Setup` + `RegisterDevToggles` (toggle registration + env-var overrides) |
+| `ExampleRenderingClient_Bootstrap.cpp` | 53 | `BootstrapAmbientCGTextures` (PBR set import) |
+| `ExampleRenderingClient_PrepareCommands.cpp` | 162 | `PrepareCommands` |
+| `ExampleRenderingClient_ExecuteCommands.cpp` | 208 | `ExecuteCommands` orchestrator: BRDF one-shot + PT chain dispatch + Luminance/FinalBlend tail + screenshot/auto-capture/audit method calls |
+| `ExampleRenderingClient_ExecuteCommands_Rasterizer.cpp` | 185 | `ExecuteRasterizerPasses`: opaque + sun shadow + SSAO + tiled frustum + light culling + LightPass + Sky + PreTAA + TAA |
+| `ExampleRenderingClient_ExecuteCommands_GI.cpp` | 158 | `ExecuteGIPasses`: RadianceCache (reproject/raytrace/filter*/integrate) + GIDenoise + GIFilter*  |
+| `ExampleRenderingClient_Capture.cpp` | 261 | `HandleScreenCapture`, `HandleAutoCaptureTriggers`, `WriteCaptureToFile`, `TryWriteAutoCapture` |
+| `ExampleRenderingClient_AuditDump.cpp` | 103 | `AuditDump` |
+| `ExampleRenderingClient_Bypass.inl` | 70 | (existing) anonymous-namespace helpers — now per-TU `#include`d wherever `DispatchOrBypass` / `IsBypassed` / `WaitIfActive` are used |
+
+Total new TU lines: 1851 (incl. unchanged `_Bypass.inl` and unchanged `ExampleRenderingClient.h`). Largest TU: 284 (umbrella `.cpp`). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **Setup section over budget — extracted helper into a sibling TU.** Original `Setup` body alone was ~258 lines; adding `BootstrapAmbientCGTextures` and `RegisterDevToggles` as helpers in `_Setup.cpp` totalled 314 lines (over the 300 ratchet by 14). Resolution: pulled `BootstrapAmbientCGTextures` out into its own `_Bootstrap.cpp`. `RegisterDevToggles` stayed in `_Setup.cpp` because it's tightly bound to Setup's invocation flow (the `Get<PerFrameDataService>()` env-var overrides have to land before any pass `Setup()` reads them).
+- **Rasterizer section over budget — sub-split the GI cluster.** `ExecuteRasterizerPasses` initially totalled 317 lines (over by 17). Resolution: extracted the RadianceCache + GIDenoise + GIFilter cluster (8 passes, the only tight intra-cluster sequencing) into `ExecuteGIPasses` in `_ExecuteCommands_GI.cpp`. The original dispatch order is preserved (GI block sits between SunShadowRT and SSAO).
+- **Three new private methods on `Impl`.** `RegisterDevToggles`, `BootstrapAmbientCGTextures`, `ExecuteRasterizerPasses`, `ExecuteGIPasses`, `HandleScreenCapture`, `HandleAutoCaptureTriggers` — all extracted from inline blocks in the original `Setup` / `ExecuteCommands`. Pure inlined-statement-block-to-method moves; no captured locals other than `this`. The brief's hint "ExtractRasterizerPasses, HandleScreenCapture, HandleAutoCaptureTriggers" mapped 1:1 to this set.
+- **`_Bypass.inl` is now per-TU included.** The original was included once at the top of the umbrella `.cpp` (single anonymous namespace). With the split, four TUs need the helpers: `_PrepareCommands.cpp`, `_ExecuteCommands.cpp`, `_ExecuteCommands_Rasterizer.cpp`, `_ExecuteCommands_GI.cpp`. Each does `#include "ExampleRenderingClient_Bypass.inl"` inside `namespace Inno { ... }` so the anonymous-namespace helpers stay TU-local. The brief flagged this pattern and the comment in the .inl is unchanged.
+- **CMake auto-glob picked up new files** — `Source/ExampleProject/RenderingClient/CMakeLists.txt` uses `file(GLOB *.cpp *.h)` so no edit was needed. **However: `Scripts/BuildWin.ps1` does NOT run cmake-configure**; the existing VS solution still listed only `ExampleRenderingClient.cpp`, producing LNK2001 unresolved-externals on the first build. Resolution: ran `cmake .` from `Build/` to regenerate the .vcxproj entries, then rebuilt. Generic gotcha for any sibling-TU split in this tree.
+- **Include graph subset.** Each new TU's `#include` set is a strict subset of the original umbrella's. The new `_Internal.h` is the only intra-tree addition — it forward-declares `GPUResourceComponent` and `RenderPassComponent` and includes `IRenderingClient.h` (originally pulled in transitively via `ExampleRenderingClient.h`). No new external dependencies.
+
+### Build + test
+
+- `cmake .` (from `Build/`, to refresh the VS solution after adding files) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `Main.exe` and `RenderTest.exe` linked. No compile errors, no link errors after cmake configure.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\` so shaders resolve) — exit 0. Engine completed full init → 1 frame → graceful Terminate. No regression.
+  - Pre-existing `mipmapGenerator3D.comp.dxil` shader-load error is reproducible from any working tree state on this branch (called out in the brief as not-a-regression).
+
+### Out of scope (not done)
+
+- 18+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-05) — ExampleRenderingClient split
+
+Verdict: PASS
+
+Mechanical refactor with a single deterministic transformation; build green; no behavior change observed.
+
+- **Same-class partial-TU pattern.** All extracted methods belong to `ExampleRenderingClientImpl` (member fns) or `ExampleRenderingClient` (outer trampolines). One forward decl in `ExampleRenderingClient.h:8`, single full decl in `_Internal.h:19`, definitions distributed across 8 sibling TUs. No new classes. Matches `disciplines/on-implement/file-splitting.md` "same class, different responsibility cluster" → `Foo_SubsectionName.cpp` rule.
+- **Method bijection.** Original cpp had 11 `Impl::*` defs (lines 125, 384, 433, 454, 570, 1182, 1226, 1266, 1283, 1362, 1416 of `git show HEAD`) + 9 outer-class defs (lines 1422..1516). The split reproduces all 20 exactly once, plus 6 newly-extracted private member fns (`RegisterDevToggles`, `BootstrapAmbientCGTextures`, `ExecuteRasterizerPasses`, `ExecuteGIPasses`, `HandleScreenCapture`, `HandleAutoCaptureTriggers`). No double-definition; none missing.
+- **Spot-check byte-equality.**
+  - `BootstrapAmbientCGTextures`: `diff` of original `Setup` body lines 273..308 vs `_Bootstrap.cpp:16..51` → identical.
+  - `PrepareCommands`: `diff` of original 454..567 vs `_PrepareCommands.cpp:47..161` → identical (the one extra closing brace is the new TU's `namespace Inno` close).
+  - `ExecuteGIPasses`: `diff` of original 730..861 (RadianceCacheReprojection..GIFilterVertical block) vs `_GI.cpp:26..156` → identical (only a trailing-blank-line diff).
+  - `HandleScreenCapture`: original `if (m_saveScreenCapture) { ... if (l_dirEc) {set false;} else {steps2-4; set false;} }` → new `if (!m_saveScreenCapture) return; ... if (l_dirEc) {set false; return;} steps2-4; set false;`. Equivalent control flow — both branches still set `m_saveScreenCapture = false` exactly once and the dir-failure path still skips the readback. No silent behavior change.
+- **`_Internal.h` surface.** Holds the `Impl` class + 6 private helper member-fn decls. Discipline-correct: every cross-TU member-fn call (defined in TU A, called from TU B) needs a class-level decl since C++ has no other partial-class glue. `RegisterDevToggles` is the borderline case — defined and called only inside `_Setup.cpp:189`, so it could have been a file-static free fn taking `Impl*`. Promoting to a private member is harmless (one extra decl line) and preserves the "all `Impl::` extracted helpers live on `Impl`" pattern. **No finding.**
+- **`_Bypass.inl` per-TU inclusion.** Four TUs `#include` the .inl inside `namespace Inno {}`: `_PrepareCommands.cpp:45`, `_ExecuteCommands.cpp:24`, `_ExecuteCommands_Rasterizer.cpp:23`, `_ExecuteCommands_GI.cpp:20`. Each genuinely uses ≥ 1 helper (`grep -nE "DispatchOrBypass|IsBypassed|WaitIfActive"` returns hits in all four). `_PrepareCommands.cpp` only uses `DispatchOrBypass`; the other two helpers are dead in that TU but stripped by anonymous-namespace static elimination. No macro definitions or static state in the .inl, so anonymous-namespace per-TU placement is collision-free as the brief notes.
+- **`#include` graph subset.** Each new TU's includes are a strict subset of the original umbrella's, plus the necessary `_Internal.h`. `_Capture.cpp` newly direct-includes `<cmath>`, `<cstring>`, `<vector>`; `_Bootstrap.cpp` adds `<string>`. These symbols (`sqrtf`, `strcmp`, `std::vector<uint8_t>`, `std::string`) were used in the original via transitive includes — making them direct is a correctness improvement, but raw `<vector>` and `<string>` violate `cpp-style.md` § "No raw equivalents" (should use `STL14.h`/`STL17.h`). The original umbrella already used raw `<chrono>`, `<filesystem>`, `<iomanip>`, `<sstream>` (lines 58-62 of HEAD), so the split inherits the existing convention violation rather than introducing a new pattern. **ADVISORY-class** — separate cleanup CL, not this split's blocker.
+- **CMake configure.** `Source/ExampleProject/RenderingClient/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`; no edit staged. `Build/Source/ExampleProject/RenderingClient/ExampleRenderingClient.vcxproj` lists all 9 new files (lines 315, 356-363) — the implementer's manual `cmake .` reran configure and `.vcxproj` is current. Verified.
+- **Sub-split decisions.**
+  - **Setup → Bootstrap.** `BootstrapAmbientCGTextures` is one-shot asset import with no shared local state with Setup's pass-init or DevToggleRegistry chain. The 53-line `_Bootstrap.cpp` is self-contained; the call site (`_Setup.cpp:197`) sits between the test-case branch and the `*Pass::Setup()` chain — natural insertion point. Cohesive seam.
+  - **Rasterizer → GI.** `ExecuteGIPasses` is exactly the rasterized-GI cluster: RadianceCache (Reproject/Raytrace/FilterH/V/Integrate) + GIDenoise + GIFilterH/V — the same 8-pass set gated by the `RasterizedGI` DevToggle (`_Setup.cpp:58-72`). Same coherent unit at runtime + dispatch. Call site at `_Rasterizer.cpp:71` preserves the original SunShadowRT → GI → SSAO order. Cohesive seam.
+- **File-size gate.** Largest TU is the umbrella `.cpp` at 284 lines. All 11 files ≤ 300. Ratchet held.
+- **Build verification.** `cmake --build Build --config Debug --target ExampleRenderingClient` — green; all 9 new TUs compile cleanly; final artifact is `Build/LibArchive/Debug/ExampleRenderingClient.lib`. No warnings on the split TUs.
+- **Pre-existing dead state, NOT a finding.** `m_drawBRDFTest` (declared `_Internal.h:49`, never read/written anywhere in `Source/`) and `l_canvas`/`l_canvasOwner` (declared `_ExecuteCommands.cpp:31-32`, never used) were carried over verbatim from the original. Pre-existing dead code; out of scope for a mechanical split.
+
 ## Review (code-impl, 2026-05-05)
 
 Verdict: PASS
