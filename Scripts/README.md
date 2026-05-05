@@ -155,8 +155,39 @@ next refresh.
   "delete the artefact when the source is gone."
 - **TASK-151** — original wiring of `PurgeStaleClangdIndex.ps1` into
   `RegenClangdIndex.ps1` (the orphan-source heuristic itself).
+- **TASK-202** — same hazard on the `cmake --build` invocation path;
+  not addressed by this change. `BuildWin.ps1` is the PowerShell driver;
+  the cmake-direct path bypasses both this auto-trigger and the DXIL
+  one (parallel surface), and remains a separate fix surface.
 - **TASK-214** — DXIL pre-step auto-trigger; same auto-trigger
   rationale, different artefact.
+
+## PowerShell 5.1 string conventions
+
+Files in this directory are read by Windows PowerShell 5.1
+(`powershell.exe`), which decodes `.ps1` source as Windows-1252 unless
+a UTF-8 BOM is present. None of the scripts here carry a BOM.
+
+Practical rule: **double-quoted strings in `.ps1` files must be
+pure ASCII.** A non-ASCII byte (em-dash, smart quotes, etc.) inside a
+double-quoted string gets re-decoded through CP1252 and can mangle the
+string-terminator byte, producing cascading parser errors that look
+unrelated to the actual line.
+
+Em-dashes, smart quotes, and other non-ASCII glyphs are safe in:
+
+- `# comment lines`
+- `'single-quoted strings'` (the parser doesn't process content)
+- here-docs and other non-evaluated literals
+
+Failure mode: `Write-Warning "engine build is fine — index may be stale"`
+in PS 5.1 + UTF-8-without-BOM source produces a "string is missing the
+terminator" parse error with bracket-mismatch cascades. Replace the
+em-dash with `.` (period), `:`, or a single-quoted concatenation
+(`"... " + 'fine — stale.'`).
+
+This applies to every `.ps1` file in this tree until the project moves
+to PowerShell 7+ or commits to UTF-8-with-BOM source encoding.
 
 ## Script inventory
 
