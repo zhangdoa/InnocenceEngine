@@ -143,6 +143,10 @@ namespace Inno
 		InitConfig ParseInitConfig(const std::string& arg);
 		bool CreateServices(void* appHook, void* extraHook, char* pScmdline);
 		bool ExecuteDefaultTask();
+		// Wires the FrameManagementService update / prepare / execute callbacks
+		// and the capture pre/post-frame triggers. Called from Setup; extracted
+		// to keep Engine_Setup.cpp under the file-size ratchet.
+		void WireRenderingCallbacks();
 
 		template<typename T>
 		T* GetSystemWithDependencies();
