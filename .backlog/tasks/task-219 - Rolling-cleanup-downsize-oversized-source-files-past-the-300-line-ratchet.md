@@ -758,6 +758,65 @@ Verdict: PASS
 - CMake: not edited. CMakeLists.txt uses `file(GLOB SOURCES "*.cpp")` — new TUs picked up automatically; deleted TU drops out automatically.
 
 No findings.
+
+## CL: FrameManagementServiceImpl.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/Common/FrameManagementServiceImpl.cpp` (660 lines) into 4 sibling TUs by responsibility cluster, per `disciplines/on-implement/file-splitting.md` same-class partial-TU pattern. Header `Source/Engine/Services/FrameManagementService.h` unchanged. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `FrameManagementServiceImpl.cpp` (anchor) | 246 | Lifecycle: `Setup`, `Initialize`, `InitializeSwapChainRenderPassComponent`, `Update`, `Terminate` |
+| `FrameManagementServiceImpl_FrameQueries.cpp` | 188 | Frame-index queries (`GetCurrentFrame`/`GetPreviousFrame`/`GetNextFrame`/`GetSwapChainImageCount`/`GetFrameCountSinceLaunch`), TASK-213 steady-state predicate (`IsSteadyState`, `GetSteadyStateRelativeFrameCount`), callback setters, `GetSwapChainRenderPassComponent`, `SetUserPipelineOutput`/`GetUserPipelineOutput`, `GetGlobalSemaphore` |
+| `FrameManagementServiceImpl_Commands.cpp` | 113 | `PrepareGlobalCommands`, `ExecuteGlobalCommands`, `PrepareSwapChainCommands`, `ExecuteSwapChainCommands` |
+| `FrameManagementServiceImpl_Resize.cpp` | 147 | `Present`, `WaitForGPUIdle`, `Resize`, `ExecuteResize`, `PreResize`/`PostResize` (both overloads each) |
+
+Total new TU lines: 694 (+34 vs original 660, accounted for entirely by 3× extra include-block + `using namespace Inno;` preambles in the new sibling TUs). Largest TU: 246 (anchor). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **No internal header introduced — none needed.** Original had zero `static`-at-file-scope helpers, zero anon-namespace blocks, zero TU-local state. The two `static constexpr` constants inside `IsSteadyState` (`TLASStabilityWindowFrames`, `SteadyStateTimeoutFrames`) are function-local — they move with `IsSteadyState` into `_FrameQueries.cpp` and stay function-local. Cross-TU references go through public/protected/private member access on `FrameManagementService`, which is identical pre/post split (every TU sees the same class definition via the unchanged header).
+- **Anchor file retained, not deleted.** `Setup`/`Initialize`/`Update`/`Terminate` is the canonical class-lifecycle cluster; keeping it in the eponymous `FrameManagementServiceImpl.cpp` matches sibling convention (`EditorService.cpp` + `EditorService_*.cpp`, `AssetService.cpp` + `AssetService_*.cpp`, `TemplateAssetService.cpp` + `TemplateAssetService_*.cpp`).
+- **Per-TU include subsetting.** Anchor keeps the original wide include set (Lifecycle touches every sibling resource service via `g_Engine->Get<...>`). FrameQueries narrows to `GPUBufferResourceService` / `MeshResourceService` / `SceneService` (only the IsSteadyState dependencies). Commands narrows to `GPUBufferResourceService` + `TemplateAssetService` (PrepareSwapChainCommands' `GetMeshComponent` call). Resize narrows to `RenderPassResourceService` + `RenderingConfigurationService`. Each new TU's include graph is a strict subset of the original.
+- **`Engine.h` and `LogService*` kept in every TU.** All four TUs call `Log(...)` at least once and use `g_Engine->Get<...>()`, so all four need both `LogService.h` + `LogServiceSpecialization.h` + `Engine.h`. Same chain as DX12Helper_Texture's Desc/View TUs.
+- **CMake auto-glob picked up the 3 new files** — `Source/Engine/Services/Common/CMakeLists.txt` uses `file(GLOB *.cpp)` + `file(GLOB *.h)`. Ran `cmake .` from `Build/` to refresh the stale `GraphicsServiceCommon.vcxproj` (originally listed only `FrameManagementServiceImpl.cpp` at line 300; post-reconfigure it lists all four TUs at lines 300-303).
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green. Configuration completed in 4.3s; reconfigure picks up the 3 new TUs in `GraphicsServiceCommon.vcxproj`.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. All four TUs (`FrameManagementServiceImpl.cpp`, `_FrameQueries.cpp`, `_Commands.cpp`, `_Resize.cpp`) compile. `GraphicsServiceCommon.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin/RelWithDebInfo/` working dir, where the deployed shader tree lives) — exit 0. Engine completed full init → 1 frame → graceful Terminate. Log evidence:
+  - `[Inno::FrameManagementService::Setup] Global Graphics CommandLists have been created.`
+  - `[Inno::FrameManagementService::Setup] FrameManagementService Setup finished.`
+  - `[Inno::FrameManagementService::Initialize] FrameManagementService has been initialized.`
+  - `[Inno::FrameManagementService::Terminate] FrameManagementService has been terminated.`
+  Lifecycle covers `Setup` (anchor), `Initialize` + `InitializeSwapChainRenderPassComponent` (anchor), `Update` (anchor → exercises `PrepareGlobalCommands`/`ExecuteGlobalCommands` from `_Commands.cpp` + `IsSteadyState` from `_FrameQueries.cpp`), `Present` (`_Resize.cpp`), `Terminate` (anchor). All four TUs exercised in a single frame.
+
+### Function bijection check
+
+Out-of-line definitions in HEAD `FrameManagementServiceImpl.cpp`: 33 (`grep -cE '^(bool|void|uint32_t|RenderPassComponent\*|GPUResourceComponent\*|ISemaphore\*) FrameManagementService::'`). Same 33 distributed across the 4 split TUs:
+- Anchor (5): `Setup`, `Initialize`, `InitializeSwapChainRenderPassComponent`, `Update`, `Terminate`
+- _FrameQueries (16): `GetCurrentFrame`, `GetPreviousFrame`, `GetNextFrame`, `GetSwapChainImageCount`, `GetFrameCountSinceLaunch`, `IsSteadyState`, `GetSteadyStateRelativeFrameCount`, `SetUploadHeapPreparationCallback`, `SetCommandPreparationCallback`, `SetCommandExecutionCallback`, `SetPreFrameCallback`, `SetPostFrameCallback`, `GetSwapChainRenderPassComponent`, `SetUserPipelineOutput`, `GetUserPipelineOutput`, `GetGlobalSemaphore`
+- _Commands (4): `PrepareGlobalCommands`, `ExecuteGlobalCommands`, `PrepareSwapChainCommands`, `ExecuteSwapChainCommands`
+- _Resize (8): `Present`, `WaitForGPUIdle`, `Resize`, `ExecuteResize`, `PreResize()`, `PreResize(RenderPassComponent*)`, `PostResize()`, `PostResize(const TVec2<uint32_t>&, RenderPassComponent*)`
+
+Sum: 5 + 16 + 4 + 8 = 33. No function body modified, no member added, no member access promoted.
+
+### Out of scope (not done)
+
+- Several oversized files remain in the inventory (`DX12FrameManagementService.cpp` 1231 lines, `Engine.cpp` 1264 lines, `Math.h` 1241 lines, `MathHelper.h` 1633 lines, `ExampleRenderingClient.cpp` 1518 lines, others). Task stays open per AC #4.
+
+## Review (code-impl, 2026-05-06) — FrameManagementServiceImpl split
+
+Verdict: PASS
+
+- **Bijection 33→33 confirmed.** Grepped `^\w[\w:* &<>]*FrameManagementService::\w+\(` against HEAD `FrameManagementServiceImpl.cpp` (33 hits) and against the 4 post-split TUs combined (5 anchor + 16 _FrameQueries + 4 _Commands + 8 _Resize = 33). Function set identical; no overload lost; both `PreResize` overloads and both `PostResize` overloads land together in `_Resize.cpp`.
+- **Byte-equivalence on 4 sampled functions.** `diff` against HEAD on `Update` (anchor 125-230 ↔ orig 126-231), `IsSteadyState` body (`_FrameQueries` 42-135 ↔ orig 278-371), `ExecuteGlobalCommands` (`_Commands` 48-58 ↔ orig 511-521), `Resize` (`_Resize` 58-64 ↔ orig 470-476): all identical.
+- **No internal header justified.** HEAD `FrameManagementServiceImpl.cpp` has zero file-scope `static` decls, zero anon-namespace blocks (verified via grep `^(static|namespace\s*\{|namespace\s+\w+\s*\{)` — no matches). The two `static constexpr` constants (`TLASStabilityWindowFrames`, `SteadyStateTimeoutFrames`) are function-local inside `IsSteadyState` (lines 51, 56 of `_FrameQueries.cpp`, within the 42-134 body); they travel with the function. No shared TU-local state to extract.
+- **No CMake edit.** `git diff HEAD` clean for `*.cmake` and `CMakeLists.txt`. Auto-glob in `Source/Engine/Services/Common/CMakeLists.txt` (`file(GLOB SOURCES "*.cpp")`) picks up the 3 new TUs without manifest churn — consistent with prior splits in this task.
+
+No findings.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
