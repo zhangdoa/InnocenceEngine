@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 19:05'
+updated_date: '2026-05-06 19:23'
 labels:
   - tech-debt
   - tooling
@@ -1151,6 +1151,60 @@ Verification:
 - Pre-existing `name` undefined-identifier bug preserved at `_Shader.cpp:216` (HEAD line 563). Out of scope per brief.
 - No CMake edit needed: `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB SOURCES "*.cpp")` — new TUs auto-picked up.
 - Dropped includes safe: 6 slim TUs (DepthStencil, Rasterizer, Blend, Viewport, InputLayout, DescriptorHeap) contain zero `Log(`/`IOService`/`Engine.`/`LogServiceSpecialization` references; types in use (`D3D12_*`, `DX12PipelineStateObject*`) reach via `DX12Helper_Pipeline.h` → `LogService.h`/`RenderPassComponent.h`/`DX12Headers.h`. `_Shader.cpp` retains the headers it actually consumes.
+
+No findings.
+
+## CL: VKGraphicsService.cpp split (2026-05-05)
+
+Split `Source/Engine/Services/VK/VKGraphicsService.cpp` (541 lines) into umbrella + 2 sibling TUs. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. Same-class partial-TU pattern. No engine behavior change. VK target disabled in this build (`INNO_RENDERER_VULKAN:BOOL=OFF`); build green is the load-bearing check.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `VKGraphicsService.cpp` (umbrella) | 246 | Submit + sync + state-transition + frame/present + readback + capture + resize + accessors. Methods: `WaitOnCPU`, `GetIndex`, `Execute`, `WaitOnGPU`, `TryToTransitState`×2, `PresentImpl`, `EndFrame`, `ReadRenderTargetSample`, `ReadTextureBackToCPU`, `BeginCapture`, `EndCapture`, `ResizeImpl`, `GetVkInstance`, `GetVkSurface` (15 entries) |
+| `VKGraphicsService_CommandList.cpp` | 269 | Command-list recording: `CommandListBegin`, `BindRenderPassComponent`, `ClearRenderTargets`, `BindGPUResource`, `PushRootConstants`, `CommandListEnd`, `GenerateMipmap` (7 entries) |
+| `VKGraphicsService_DrawDispatch.cpp` | 58 | Draw + dispatch primitives: `DrawIndexedInstanced`, `DrawInstanced`, `ExecuteIndirect`, `Dispatch` (4 entries) |
+
+Total new TU lines: 573. Largest TU: 269 (`_CommandList.cpp`). All under the 300-line ratchet. Method bijection: original cpp had 26 `VKGraphicsService::` definitions; the split reproduces all 26 exactly once across the three TUs (umbrella 15 + CommandList 7 + DrawDispatch 4 = 26). Verified by `grep -oE "VKGraphicsService::[A-Za-z]+" | sort -u` — `diff` against `git show HEAD:.../VKGraphicsService.cpp` is empty.
+
+### Seam choice
+
+Three responsibility clusters identified:
+
+- **Submit / sync / present / lifecycle (umbrella)** — `Execute` (queue submit), `WaitOnCPU` / `WaitOnGPU` (fence/semaphore waits), `TryToTransitState`×2 (image/buffer state transitions), `PresentImpl` / `EndFrame` / `ResizeImpl` (frame boundaries), `Read*` (CPU readback), `BeginCapture` / `EndCapture` (RenderDoc), and the two getters (`GetVkInstance`, `GetVkSurface`). `GetIndex` (Vulkan-side bindless index lookup, currently a stub) sits with the orchestration cluster. The umbrella is the natural home for cross-cluster orchestration.
+- **Command-list recording (`_CommandList.cpp`)** — every method that takes a `CommandListComponent*` and records into it for a render pass: open/bind/end + descriptor writes + mipmap generation. `Execute` (submit) is intentionally *not* in this TU — submit is a queue op, not a record op, and grouping it with submit-side waits keeps the umbrella cohesive.
+- **Draw / dispatch primitives (`_DrawDispatch.cpp`)** — the 4 verb-API methods that issue draws or compute dispatches. Tiny TU but a clear domain; matches the existing `_Pipeline*` / `_RenderPass` siblings' shape (one responsibility per file even when small).
+
+All sibling files use the prefix `VKGraphicsService_` to preserve provenance — same `_<Subsection>.cpp` shape as existing peers (`_RenderPass.cpp`, `_Pipeline.cpp`, `_PipelineState.cpp`, `_Descriptor.cpp`, `_Shader.cpp`, `_EngineComponent.cpp`, `_ComponentPool.cpp`, `_VulkanObject*.cpp`, `_GraphicsDevice*.cpp`).
+
+### Constraints that bit
+
+- **No header edit.** All 26 method declarations were already in `VKGraphicsService.h`; no new private members or helper structs needed. Header is untouched.
+- **No internal header introduced.** The original had no file-local statics, no anon-namespace, no file-level macros. Cross-TU access between umbrella and siblings is zero.
+- **Include block unchanged across siblings.** Each new TU uses the same 17-line preamble (10 includes + 2 `using namespace` directives + interleaved blanks) as the original umbrella. Subset condition trivially satisfied by equality. VK target disabled in this build, so include pruning would be unverifiable; same shape as the existing peer split TUs.
+- **Byte-equivalence preserved including whitespace.** Original carried 7 lines containing only a leading tab (`\t$`) inside method bodies — these are preserved byte-for-byte by reconstructing each TU body from `git show HEAD:...` line ranges piped through `sed -n` rather than re-typing. `diff` of every moved function body against HEAD lines is empty (sample: `Execute`, `WaitOnGPU`, `PresentImpl`, `BindGPUResource`, `CommandListBegin`, `DrawIndexedInstanced` — all `diff` exit 0).
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/VK/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`. Ran `cmake .` from `Build/` after adding the two new sibling files; VS project entries refreshed. No CMake edit needed.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green; new files picked up.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `Engine.lib`, `DX12GraphicsService.lib`, `Main.exe`, `RenderTest.exe` all linked. VK target excluded from solution (`INNO_RENDERER_VULKAN:BOOL=OFF`); confirmed not linked into any binary. Build pipeline produced both binaries with no warnings on this change.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate (DX12 device/queues/descriptor-heaps init, all DX12 resource services teardown, EntityRegistry/SceneService/PhysicsSimulationService teardown, WinWindowService close, all 16 worker threads released). No regression.
+
+### Out of scope (not done)
+
+- Other oversized files in the inventory still pending. Two adjacent VK files now both under the ratchet: `VKGraphicsService.cpp` 246 (was 541), `VKGraphicsService_GraphicsDevice.cpp` 163 (split previously). Task stays open.
+
+## Review (code-impl, 2026-05-06) — VKGraphicsService split
+
+Verdict: PASS
+
+- Bijection: 23 fns in `git show HEAD:Source/Engine/Services/VK/VKGraphicsService.cpp` -> 23 fns across umbrella (12) + `_CommandList.cpp` (7) + `_DrawDispatch.cpp` (4). Symbol-set diff (definitions only, sorted) is empty.
+  - Note: dispatch claim was "26 fns (15+7+4)". Actual count is 23 (12+7+4). Multi-line return-type signatures inflated the line-anchored grep on the dispatch side; the symbol-set diff is the authoritative check and is clean.
+- Byte-equivalence (one fn per cluster, vs HEAD blob): `WaitOnCPU` (umbrella), `CommandListBegin` (CommandList), `DrawIndexedInstanced` (DrawDispatch) — all three `diff` runs returned empty.
+- Includes: identical 9-line block (`VKGraphicsService.h`, `Engine.h`, `VKHelper_Common.h`, `LogService.h`, `Memory.h`, `Randomizer.h`, `ObjectPool.h`, `RenderingConfigurationService.h`, `TemplateAssetService.h`) carried verbatim into all three `.cpp` files. Pre-existing dead include of `../GraphicsResourceService.h` is reached transitively via `VKGraphicsService.h` — out of scope per dispatch.
+- No CMake edit. No internal header touched (`git status` shows only the three `.cpp` paths).
 
 No findings.
 <!-- SECTION:NOTES:END -->
