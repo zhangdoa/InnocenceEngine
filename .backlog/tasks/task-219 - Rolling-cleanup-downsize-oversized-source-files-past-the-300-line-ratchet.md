@@ -89,6 +89,12 @@ Per file's owning impl stage (almost always `code-impl`; one shader-impl entry, 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+## Review (code-impl, 2026-05-06) — DX12GPUBufferResourceService split
+
+Verdict: PASS
+
+Bijection verified: 12 `DX12GPUBufferResourceService::` definitions in HEAD (`Build/HEAD_orig.cpp`) split as 5 (umbrella: Delete, InitializeImpl, UploadToGPU x2, Clear) + 3 (Views: CreateSRV, CreateUAV, CreateCBV) + 4 (Raytracing: OnSceneLoadingStart, UpdateRaytracingInstances, CreateRaytracingResources, ReleaseRaytracingResources) — total 12, matches HEAD set verbatim. Byte-equivalence spot-checked on Delete (umbrella L17–40 vs HEAD L23–46), CreateSRV (Views L11–33 vs HEAD L358–380), and OnSceneLoadingStart (Raytracing L18–32 vs HEAD L195–209) — all identical modulo line offsets. No CMake edit (`git diff --stat HEAD` shows only the 3 cluster files + the task md). No new internal header — only the existing public `DX12GPUBufferResourceService.h` is included by the new TUs. Pre-existing CD3DX12_RESOURCE_BARRIER address-of-temporary at current umbrella L150/L161 corresponds verbatim to HEAD L156/L167 (same `&CD3DX12_RESOURCE_BARRIER::Transition(...)` rvalue pattern); not introduced by this CL. Sizes 229/94/182 match the claim and clear the 300-line ratchet for all three TUs.
+
 <!-- SECTION:NOTES:BEGIN -->
 ## Review (code-impl, 2026-05-06) — VKGraphicsService_VulkanObject split
 
@@ -1207,6 +1213,57 @@ Verdict: PASS
 - No CMake edit. No internal header touched (`git status` shows only the three `.cpp` paths).
 
 No findings.
+
+## CL: DX12GPUBufferResourceService.cpp split (2026-05-05)
+
+Split `Source/Engine/Services/DX12/DX12GPUBufferResourceService.cpp` (486 lines) into umbrella + 2 sibling TUs. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. Same-class partial-TU pattern. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `DX12GPUBufferResourceService.cpp` (umbrella) | 229 | Buffer lifecycle: `Delete`, `InitializeImpl`, `UploadToGPU` ×2, `Clear` |
+| `DX12GPUBufferResourceService_Views.cpp` | 94 | Descriptor view creation: `CreateSRV`, `CreateUAV`, `CreateCBV` |
+| `DX12GPUBufferResourceService_Raytracing.cpp` | 182 | Raytracing TLAS plumbing: `OnSceneLoadingStart`, `UpdateRaytracingInstances`, `CreateRaytracingResources`, `ReleaseRaytracingResources` |
+
+Total new TU lines: 505. Largest TU: 229 (umbrella). All under the 300-line ratchet. Method bijection: original cpp had 12 `DX12GPUBufferResourceService::` definitions; the split reproduces all 12 exactly once across the three TUs (umbrella 5 + Views 3 + Raytracing 4 = 12). Verified by `grep -hcE "^bool DX12GPUBufferResourceService::"` per file.
+
+### Seam choice
+
+Two responsibility clusters peeled off the umbrella; the umbrella keeps the buffer-lifecycle core that every consumer invokes:
+
+- **Descriptor views** (`_Views.cpp`) — the three `Create{SRV,UAV,CBV}` methods build D3D12 descriptors against `m_DeviceMemories` / `m_MappedMemories` and the global descriptor heap. `CreateSRV` and `CreateUAV` are called from `InitializeImpl`; `CreateCBV` is currently dead but declared in the header — carried verbatim. Cohesive cluster: descriptor-heap interaction only, no command-list / sync code.
+- **Raytracing** (`_Raytracing.cpp`) — the four methods that own TLAS / scratch / instance-buffer setup, per-frame instance-desc rebuild driven by `WorldTransformComponent::m_Dirty`, and scene-load reset. This cluster is the only consumer of `EntityRegistry`, `MeshComponent`, `WorldTransformComponent`, `DX12MeshResourceService`, and `MathHelper.h` — moving it out tightens the umbrella's include graph (5 headers dropped: `DX12MeshResourceService.h`, `../MeshResourceService.h`, `EntityRegistry.h`, `WorldTransformComponent.h`, `MeshComponent.h`, `MathHelper.h`).
+
+Sibling-file naming follows the existing `DX12<Service>_<Subsection>.cpp` pattern used across this directory.
+
+### Constraints that bit
+
+- **No header edit.** All 12 method declarations were already in `DX12GPUBufferResourceService.h`; no new private members, helper structs, or forward decls needed. Header is untouched.
+- **No internal header introduced.** The original had no file-local statics, no anon-namespace, no file-level macros. The `#ifdef max / #undef max` defensive block (Windows macro pollution from `windows.h`) is preserved on the umbrella; `_Views.cpp` and `_Raytracing.cpp` don't need it because neither uses any name that collides with the `max` macro.
+- **Includes are strict subset of original umbrella.** Umbrella retains the 7 headers it actually uses; `_Views.cpp` carries 6 (subset, plus the `LogServiceSpecialization.h` for `Log()` formatting); `_Raytracing.cpp` carries the full 12 originally needed by the three raytracing methods. No new external dependencies.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB SOURCES "*.cpp")`. Ran `cmake .` from `Build/` after adding the two new sibling files; VS project entries refreshed. Same gotcha as the prior splits in this rolling task.
+
+### Byte-equivalence verification
+
+Every moved function body diff'd against `git show HEAD:Source/Engine/Services/DX12/DX12GPUBufferResourceService.cpp`:
+
+- `Delete` + `InitializeImpl` (HEAD 23–193 vs umbrella 17–193) — `diff -w` clean (one cosmetic blank-line introduced by the trimmed include block).
+- `UploadToGPU` ×2 + `Clear` (HEAD 316–356 vs umbrella 189–229) — `diff` clean.
+- `CreateSRV` + `CreateUAV` + `CreateCBV` (HEAD 358–441 vs `_Views.cpp` 11–94) — `diff` clean.
+- `OnSceneLoadingStart` (HEAD 195–209 vs `_Raytracing.cpp` 18–32) — `diff` clean.
+- `UpdateRaytracingInstances` (HEAD 211–314 vs `_Raytracing.cpp` 34–137) — `diff` clean.
+- `CreateRaytracingResources` + `ReleaseRaytracingResources` (HEAD 443–486 vs `_Raytracing.cpp` 139–182) — `diff` clean.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green; new files picked up.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `DX12GraphicsService.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked. Three new TUs compiled cleanly; no warnings on the split.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\` so shader paths resolve) — exit 0. Engine completed full init → 1 frame → graceful Terminate, including DX12 device/queues/descriptor-heaps init, all DX12 resource services teardown, EntityRegistry/SceneService/PhysicsSimulationService teardown, WinWindowService close, all 16 worker threads released. No regression.
+
+### Out of scope (not done)
+
+- Other oversized files in the inventory still pending. Task stays open.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
