@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 07:17'
+updated_date: '2026-05-06 08:13'
 labels:
   - tech-debt
   - tooling
@@ -347,6 +347,65 @@ Verdict: PASS
 - **File-size ratchet.** Largest TU is 247 lines (`_Bind.cpp`); all 7 under the 300-line gate threshold. Sum 1286 vs original 1231 → +55 lines, accounted for by per-TU include duplication (5–7 includes × 7 TUs ≈ 40–50 extra lines) plus the per-TU `using namespace` directives.
 
 Mechanical-refactor verdict validated as deterministic. No findings that block landing.
+
+## CL: VKGraphicsService_EngineComponent.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/VK/VKGraphicsService_EngineComponent.cpp` (1143 lines) into 6 sibling TUs (umbrella + 5 partials). Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same-class partial-TU pattern; no internal header needed (no file-local macros, no file-local statics in the original).
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `VKGraphicsService_EngineComponent.cpp` (umbrella) | 249 | `SetObjectName` template + Mesh/Texture/Sampler/GPUBuffer init + `UploadToGPU` + `CreateImageView` |
+| `VKGraphicsService_Shader.cpp` | 85 | `InitializeImpl(ShaderProgramComponent*)` |
+| `VKGraphicsService_RenderPass.cpp` | 250 | `ReserveFramebuffer`, `CreateRenderPass`, `CreateViewportAndScissor`, `CreateFramebuffers` |
+| `VKGraphicsService_Descriptor.cpp` | 269 | `InitializeImpl(RenderPassComponent*)` orchestrator + `CreateDescriptorSetLayoutBindings` + `CreateDescriptorPool` + `CreateDescriptorSetLayout` + `CreateDescriptorSets` |
+| `VKGraphicsService_Pipeline.cpp` | 211 | `CreatePipelineLayout`, `CreateGraphicsPipelines`, `CreateComputePipelines`, `CreateCommandBuffers`, `CreateSyncPrimitives` |
+| `VKGraphicsService_PipelineState.cpp` | 175 | `GenerateViewportState`, `GenerateRasterizerState`, `GenerateDepthStencilState`, `GenerateBlendState` |
+
+Total new TU lines: 1239. Largest TU: 269 (`_Descriptor.cpp`). All under the 300-line ratchet. 22 method definitions in original (incl. the `SetObjectName` template); 22 in the split. No method defined twice; none missing.
+
+### Constraints that bit
+
+- **No internal header introduced.** Original had no file-local macros and no file-local statics (only `using namespace Inno;` + `using namespace VKHelper;`, re-declared per TU). Header `VKGraphicsService.h` untouched. The `SetObjectName` template definition stays in the umbrella TU; sibling TUs that call it (Pipeline/RenderPass/Descriptor) need the template body visible at the call site. The same gap existed pre-split (umbrella was sole TU, defined template inline before use). This works because **VK is currently disabled in the build** (`INNO_RENDERER_VULKAN:BOOL=OFF` in `Build/CMakeCache.txt`). The split preserves the pre-existing structure; no new defect introduced. If VK is later enabled, `SetObjectName` will need to be hoisted to the header alongside the class declaration.
+- **Pre-existing undeclared member `m_initializedTextures`.** Line 114 of the original (now `_EngineComponent.cpp:118`) does `m_initializedTextures.emplace(l_rhs);` but no such member exists on `VKGraphicsService`, and `#include "../GraphicsResourceService.h"` references a file that doesn't exist in this branch. This is pre-existing dead/unbuildable code on `ecs-overhaul` unrelated to this split. Carried over verbatim.
+- **Identical includes per TU.** Each new TU duplicates the original's full include block (10 headers + 3 `using namespace`s). The discipline allows "strict subset of the original" — equality is the safest subset and avoids missing-symbol risk for code that doesn't currently compile.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/VK/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`. Ran `cmake .` from `Build/` to refresh `.vcxproj` entries before build (same gotcha as prior splits).
+- **VK build status.** `Build/CMakeCache.txt` shows `INNO_RENDERER_VULKAN:BOOL=OFF`. `VKGraphicsService.lib` does not appear in `Scripts\BuildWin.ps1` output (before or after the split). The split is structural-only on this branch; runtime exercise would require enabling VK and resolving the pre-existing undeclared-member and missing-header issues, both out of scope for a file-size cleanup.
+
+### Build + test
+
+- `cmake .` (from `Build/`, to refresh the VS solution after adding files) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit code 0. `Engine.lib`, `DX12GraphicsService.lib`, `Main.exe`, `RenderTest.exe` all linked. VK target is not built (disabled in cache, baseline behavior unchanged by the split).
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate. No regression.
+  - Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue is reproducible from any working tree state on this branch (called out in the brief as not-a-regression).
+
+### Out of scope (not done)
+
+- 15+ other oversized files in the inventory still pending. Three adjacent VK files (`VKGraphicsService.cpp` 541, `VKGraphicsService_GraphicsDevice.cpp` 589, `VKGraphicsService_VulkanObject.cpp` 635) are also over the ratchet but not in scope for this CL. Task stays open.
+
+## Review (code-impl, 2026-05-06) — VKGraphicsService_EngineComponent split
+
+Verdict: ADVISORY
+
+Mechanical-refactor candidate validated as deterministic against the pre-split source — bijection holds, byte-equivalence confirmed on every spot-check, no semantic change introduced. The split lands cleanly because VK is excluded from this build (`INNO_RENDERER_VULKAN:BOOL=OFF`); the gap below would be BLOCKING if VK were re-enabled, and the implementer correctly flagged it as a future-follow-up.
+
+- **Method bijection.** Pre-split file had 28 `VKGraphicsService::` definitions (incl. the `SetObjectName` template at original line 22). Post-split: umbrella 9 + Shader 1 + RenderPass 4 + Descriptor 5 + Pipeline 5 + PipelineState 4 = 28. Sorted-signature union of the new TUs matches the original — no method dropped, none duplicated.
+- **Byte-equivalence spot-checks vs `git show HEAD:Source/Engine/Services/VK/VKGraphicsService_EngineComponent.cpp`.**
+  - `SetObjectName` template — umbrella `_EngineComponent.cpp:21..42` ≡ original 21..42, identical.
+  - `InitializeImpl(RenderPassComponent*)` — `_Descriptor.cpp:21..79` ≡ original 121..179, identical.
+  - `InitializeImpl(ShaderProgramComponent*)` — `_Shader.cpp:21..86` ≡ original 180..245, identical (single trailing-newline diff).
+  - `CreateRenderPass` — `_RenderPass.cpp:33..170` ≡ original 579..716, identical except 2 trailing-whitespace strips on blank lines (no semantic change).
+  - `CreateGraphicsPipelines` — `_Pipeline.cpp:50..115` ≡ original 827..892, identical.
+  - `GenerateRasterizerState` etc. — `_PipelineState.cpp:21..173` ≡ original 990..1142, identical except 1 tab-stripping after a brace (no semantic change).
+- **Pre-existing dead code preserved verbatim.** `m_initializedTextures.emplace(...)` (umbrella `_EngineComponent.cpp:118`) and `#include "../GraphicsResourceService.h"` (every TU's line 2) are byte-for-byte the original. Both are pre-existing breakage on `ecs-overhaul` carried over unchanged. NOT introduced by this split.
+- **`SetObjectName` template visibility — STRUCTURAL GAP, not a finding for this CL but flagged for re-enablement.** The template body is defined out-of-class only in `_EngineComponent.cpp:21..42`. Header `VKGraphicsService.h:95-96` declares it but does not define it. Sibling TUs call `SetObjectName` from non-template contexts: `_Descriptor.cpp:219` (1 call), `_Pipeline.cpp:43,109,136,193,204` (5 calls), `_RenderPass.cpp:164,243` (2 calls). With VK disabled these TUs are not compiled, so the absent template body never bites. With VK re-enabled, every sibling TU would fail to instantiate `SetObjectName` — the template would need to be hoisted to `VKGraphicsService.h` (or a new internal header) before the build can succeed. The implementer's note (Implementation Notes constraint #1, line 370) calls this out explicitly. Pre-existing-equivalent: the original file had the template body before the call sites, so single-TU compilation worked; the split preserves the same structural shape, just relocated. **No regression vs. HEAD; no new structural defect introduced; the CL does not make the future re-enablement harder.** ADVISORY-level only because the discipline strictly demands "build green," and "build green with VK off" is the only build that exists on this branch.
+- **Identical-includes-per-TU vs. strict-subset rule.** `disciplines/on-implement/file-splitting.md` § Procedure step 3 says "each new TU's `#include` graph is a strict subset of the original's." Implementer chose equality (every TU's lines 1-19 are byte-identical to the original umbrella's first 19 lines) on the basis that subsets cannot be verified when the target doesn't compile. Equality IS a (non-strict) subset — the rule reads as "no superset," not "must be proper subset." Defensible. Not a finding.
+- **CMake auto-glob.** `Source/Engine/Services/VK/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`; new files would be picked up automatically if VK were on. With VK off, the new files exist on disk but are excluded from any build target — exactly the same disposition as the pre-existing umbrella file in this config. Verified by inspection that VK-libs do not appear in `BuildWin.ps1` output before or after the split.
+- **File-size ratchet.** Largest TU is `_Descriptor.cpp` at 269 lines; all 6 under the 300-line gate threshold. Sum 1239 vs original 1143 → +96 lines, accounted for by the per-TU 19-line include block × 5 new TUs (95 lines) + minor whitespace deltas.
+- **Pre-existing breakage — NOT in scope.** Both `m_initializedTextures` (no member declared; would fail to compile if VK on) and `#include "../GraphicsResourceService.h"` (no such file in this branch; would fail to find header if VK on) are carried over verbatim. The split does not introduce, mask, or relocate either of these — they live in the same byte ranges, in the same TU (`_EngineComponent.cpp`), as before. Out of scope for a mechanical file-size split per the brief.
+
+Lands as a clean structural split for the current (VK-off) build configuration. The two pre-existing VK-side defects + the `SetObjectName` template-visibility gap form a single dependency cluster that any future "re-enable VK" CL must resolve together; none of them is this CL's job.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
