@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 17:00'
+updated_date: '2026-05-06 17:20'
 labels:
   - tech-debt
   - tooling
@@ -881,6 +881,46 @@ Line accounting: 248+278+63+68+34 = 691 vs 678 original; +13 matches 5× (`#incl
 CMake: `git diff HEAD -- '**/CMakeLists.txt'` empty — confirmed no build-system edit (relies on existing `file(GLOB)` discipline).
 
 VK target disabled (`INNO_RENDERER_VULKAN:BOOL=OFF`) noted; clangd `vulkan/vulkan.h not found` is a compile_commands.json artefact, not a real diagnostic. No findings.
+
+## CL: Reflector.cpp split (2026-05-06)
+
+Split `Source/Tool/Reflector/Reflector.cpp` (673 lines) into 4 sibling TUs + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `Reflector.cpp` (umbrella) | 126 | `writeSector`, `writeFile`, `parseContent` orchestration + `main` + filesystem-namespace alias |
+| `Reflector_Internal.h` | 59 | `FileWriter` + `ClangMetadata` types, `inline` shared module state (`m_clangMetadata`, `m_includedFileSourceLocation`, `m_includedFileName`), forward decls grouped by domain |
+| `Reflector_Parse.cpp` | 117 | `inclusionVisitor`, libclang `visitor` (cursor-kind dispatch + parent linking), `assignBase` |
+| `Reflector_EnumWriters.cpp` | 168 | `writeCursorKind`, `writeAccessSpecifier`, `writeTypeKind` (libclang enum -> `Metadata::*` string switches) |
+| `Reflector_MetadataWriters.cpp` | 243 | `flattenClangTypeName`, `writeMetadataMember/Defi/ChildrenMetadataDefi/Getter`, `writeSerializerDefi`, `writeDeserializerDefi`, `writeIncludedHeaders` (`.refl` codegen) |
+
+Total new TU lines: 713 vs 673 original; +40 from `#include "Reflector_Internal.h"` + namespace-open scaffolding across 4 files. Largest TU: 243 (MetadataWriters). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **No anchor class — domain split per file-splitting.md "free-function" rule.** Original was namespace-scope free functions sharing TU-private vector globals. Resolution: gather types, shared state, and forward decls into `Reflector_Internal.h` keyed by domain (`// --- Parse ---`, `// --- Enum writers ---`, `// --- Metadata writers ---`). Sibling TUs include the header and re-open `namespace Reflector`.
+- **Module state via `inline` variables (C++17).** The three vectors moved from TU-local namespace-scope into the header as `inline std::vector<...>`. Single ODR-clean program-wide definition, identical observable behavior. Project is C++17 (`CMakeLists.txt:29`).
+- **Co-location: `parseContent` + `writeFile` + `writeSector` stayed in the umbrella.** They are orchestration over the writer/parser primitives — declaring them in the umbrella TU keeps `main` next to its single call target.
+- **CMake explicit listing — edit required.** `Source/Tool/Reflector/CMakeLists.txt` lists sources by name (no `file(GLOB)`). Updated `add_executable(Reflector ...)` to enumerate all 4 cpp + the internal header.
+- **Include graph subset.** Each new TU's `#include` is `Reflector_Internal.h` only; the umbrella additionally includes `<filesystem>` / `<experimental/filesystem>` for `fs::path` (`main` only). `Reflector_Internal.h` carries the original umbrella's includes (`STL14.h`, `STL17.h`, `Metadata.h`, `clang-c/Index.h`).
+
+### Build + test
+
+- Reflector is gated behind `INNO_BUILD_TOOLS` (`Source/CMakeLists.txt:39,44,49`), which is hard-`set(... OFF)` at line 44 in the engine baseline — the Reflector subdir is not configured by the standard build. To verify the split, temporarily commented out the override locally, ran `cmake -DINNO_BUILD_TOOLS=ON ..` in `Build/`, and built `Source\Tool\Reflector\Reflector.vcxproj` directly. Reverted the line and re-ran configure to restore baseline. The `Source/CMakeLists.txt` edit was not staged.
+- `msbuild Reflector.vcxproj /p:Configuration=RelWithDebInfo` — green. All 4 TUs compiled cleanly; `Bin\RelWithDebInfo\Reflector.exe` produced. Exit 0.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\` so shaders resolve) — exit 0. Engine unchanged by this CL (Reflector is a build-time tool, not linked into the engine binary); included as the standard non-regression smoke check for the rolling-cleanup tracker.
+
+### Out of scope (not done)
+
+- 17+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — Reflector split
+
+Verdict: PASS
+
+Bijection verified: HEAD `Reflector.cpp` (673 lines) defines 18 named functions + `main`; new layout assigns all of them to one of the four TUs with no losses or duplicates (Parse: 3, EnumWriters: 3, MetadataWriters: 8, Reflector.cpp umbrella: 3 + `main`). Byte-equivalence sampled per cluster — `writeCursorKind` (EnumWriters), `assignBase` (Parse), `flattenClangTypeName` (MetadataWriters), `parseContent` (umbrella) — all match HEAD modulo a single trailing-tab-on-empty-line strip in `flattenClangTypeName` (cosmetic, semantic-identical). Inline-variable promotion is correct: project sets `CMAKE_CXX_STANDARD 17` at `CMakeLists.txt:29`, header uses `inline std::vector<...>` for the three previously TU-private namespace-scope vectors, ODR-safe across all four including TUs. `Reflector_Internal.h` surface is minimal — only the two structs, three shared vectors, and forward decls grouped by sibling TU; no leakage of caller-specific knowledge. CMake `add_executable(Reflector ...)` enumerates the new file inventory exactly. Working tree clean of the INNO_BUILD_TOOLS verification flip (`git diff HEAD -- Source/CMakeLists.txt` empty). No findings.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

@@ -3,7 +3,13 @@ if(LLVM_BIN)
 get_filename_component(LLVM_BIN_DIR ${LLVM_BIN} DIRECTORY)
 message(STATUS "Found LLVM ${LLVM_BIN_DIR}")
 if (NOT INNO_PLATFORM_MAC)
-add_executable(Reflector Reflector.cpp)
+add_executable(Reflector
+	Reflector.cpp
+	Reflector_Parse.cpp
+	Reflector_EnumWriters.cpp
+	Reflector_MetadataWriters.cpp
+	Reflector_Internal.h
+)
 set_target_properties(Reflector PROPERTIES FOLDER Tool)
 target_link_libraries(Reflector Common)
 target_include_directories(Reflector PRIVATE "${INNO_SUBMODULE_DIRECTORIES}/json/include")
