@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 08:36'
+updated_date: '2026-05-06 09:31'
 labels:
   - tech-debt
   - tooling
@@ -533,6 +533,53 @@ Out of scope per the brief: pre-existing dead `STBWrapper.h` include carried int
 ### Out of scope (not done)
 
 - 13+ other oversized files in the inventory still pending. Task stays open.
+
+## CL: GPUPathTracerPass.cpp split (2026-05-06)
+
+Split `Source/ExampleProject/RenderingClient/GPUPathTracerPass.cpp` (804 lines) into 6 sibling TUs. Pure mechanical split per `disciplines/on-implement/file-splitting.md` — same-class partial-TU pattern (`Foo_SubsectionName.cpp`). Singleton with all members already declared in `GPUPathTracerPass.h`, so no `_Internal.h` was needed. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `GPUPathTracerPass.cpp` (umbrella) | 108 | `Terminate`, `GetStatus`, `GetRenderPassComp`, `GetResult`, `ResetAccumulation`, `CreateAccumulationBuffer`, `OnResize` |
+| `GPUPathTracerPass_Setup.cpp` | 253 | `Setup` — SPC + render-pass + 12-or-19 binding-layout descs + sampler/CL setup + scene callbacks |
+| `GPUPathTracerPass_Initialize.cpp` | 114 | `Initialize` — service-resource Initialize chain + FrameCount/LightCount/HashGridCache buffer alloc |
+| `GPUPathTracerPass_Update.cpp` | 119 | `Update` — material-rebuild trigger, view-matrix accumulation reset, CB uploads (frame count, light count, HashGridCache constants) |
+| `GPUPathTracerPass_Dispatch.cpp` | 78 | `PrepareCommandList` — Graphics-CL transition + Compute-CL bind & DispatchRays + cache pending-clear |
+| `GPUPathTracerPass_MaterialBuffer.cpp` | 180 | `RebuildMaterialBuffer` + `RefreshMaterialTextureIndices` |
+
+Total new TU lines: 852 (vs. original 804 — delta is per-TU `#include` headers + `using namespace Inno;` repeats). Largest TU: 253 (Setup). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **No `_Internal.h` needed.** Unlike the prior `ExampleRenderingClient` / `DX12GraphicsHardwareService` splits, `GPUPathTracerPass` is a singleton whose public + private member-fn decls all already live in `GPUPathTracerPass.h`. The 6 sibling TUs share that single header — no additional cross-TU symbols (no anonymous-namespace helpers, no file-static state, no nested-struct decls beyond the existing `PathTracerLightCountData` private-nested struct which is referenced by name in `Initialize` + `Update` and resolves via the class-scope decl). The `_Internal.h` pattern is reserved for the cases that need it (cross-TU helper decls, file-shared anonymous-namespace promotion, partial-class member-fn extraction); pulling one in here would have been ceremony with no carrier.
+- **`PTHashGridCache::ENABLED` include in umbrella TU.** First build attempt failed because `Terminate` (which now lives in the umbrella) references `Inno::PTHashGridCache::ENABLED` for the cache-buffer cleanup branch but I'd dropped `HashGridCacheConstants.h` from the umbrella's include set. Added it back. Same `if constexpr (Inno::PTHashGridCache::ENABLED)` pattern appears in 4 of the 6 TUs (Setup / Initialize / Update / Dispatch / Terminate-in-umbrella); each pulls `HashGridCacheConstants.h` directly. Initialize additionally `using namespace Inno::PTHashGridCache;` inside the constexpr block so it can name `NUM_TILES`, `NUM_CELLS`, etc., per the original; Update repeats the inner `using` for `NUM_BUCKETS`, `CELL_SIZE_KNOB`, `MAX_SAMPLE_COUNT`, etc.
+- **`m_CommandListComp_*` not in the class header.** They live in the `IRenderPass` base class (`Source/Engine/Interface/IRenderPass.h:84-85`), so all sibling TUs see them via the `GPUPathTracerPass.h` → `IRenderPass.h` chain. No special-casing needed.
+- **`#include` graph subset per TU.** Each new TU's `#include` set is a strict subset of the original's, redistributed by section. Only one new direct addition forced by the split: `Update.cpp` directly `#include <cstring>` for `std::memcmp` (the original pulled it transitively through one of the engine headers — the original `.cpp` did not list `<cstring>` directly but `std::memcmp` resolved). Making it direct is a correctness improvement; not a graph extension.
+- **CMake auto-glob picked up new files.** `Source/ExampleProject/RenderingClient/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`. Re-ran `cmake .` from `Build/` to refresh `.vcxproj` entries before the build (BuildWin.ps1 doesn't run cmake-configure). After regen, all 6 TUs compiled into `ExampleRenderingClient.lib`.
+
+### Build + test
+
+- `cmake .` (from `Build/`, to refresh `.vcxproj`) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. Both `Main.exe` and `RenderTest.exe` linked. One iteration of header-fix needed (umbrella `HashGridCacheConstants.h`); rebuild thereafter clean, no warnings on the split TUs.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` — exit 0. Engine completed full init → 1 frame → graceful Terminate. No regression. Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue called out in the task brief is unrelated.
+
+### Out of scope (not done)
+
+- 17+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — GPUPathTracerPass split
+
+Verdict: PASS
+
+- **Bijection.** 13 `GPUPathTracerPass::*` member-fn definitions in HEAD; 13 across the 6 split TUs. Sorted-signature diff: identical sets — `CreateAccumulationBuffer`, `GetRenderPassComp`, `GetResult`, `GetStatus`, `Initialize`, `OnResize`, `PrepareCommandList(IRenderingContext*)`, `RebuildMaterialBuffer`, `RefreshMaterialTextureIndices`, `ResetAccumulation`, `Setup(IServiceConfig*)`, `Terminate`, `Update`. Distribution: umbrella owns the small leaf-fns (`Terminate`, `GetStatus`, `GetRenderPassComp`, `GetResult`, `ResetAccumulation`, `CreateAccumulationBuffer`, `OnResize`); the 5 sibling TUs each own one heavy lifecycle/feature method (Setup / Initialize / Update / PrepareCommandList / RebuildMaterialBuffer+RefreshMaterialTextureIndices). Implementation Notes line 545 description matches the actual layout exactly.
+- **Byte-equivalence spot-check.** `diff` of `Setup` body (HEAD lines 37–275 vs `_Setup.cpp:16–253`): only diff is one trailing blank line dropped at the partition boundary (cosmetic — no following function in the split TU to separate from). `diff` of `PrepareCommandList` body (HEAD 524–600 vs `_Dispatch.cpp:13–78`): no diff — the apparent mismatch was the truncation boundary including `GetRenderPassComp`+`GetResult` from the *next* HEAD section, both of which are correctly relocated to the umbrella. `diff` of `RebuildMaterialBuffer`+`RefreshMaterialTextureIndices` body (HEAD 642–end vs `_MaterialBuffer.cpp:18–180`): bodies are byte-identical; the offset I saw initially was just my window mis-alignment. No silent edits.
+- **Includes — transitive→direct conversion is sound, not a regression.** Implementation Notes claims "strict subset" of the original include graph; this is overstated in the same way as the Engine.cpp split review previously flagged. `_MaterialBuffer.cpp` adds direct `#include` for `EntityRegistry.h`, `AssetService.h`, `MeshComponent.h`, `MaterialComponent.h`, `LogService.h`, `MeshResourceService.h`, `DX12MeshResourceService.h`, `<vector>` — all of which the original .cpp also listed (lines 6, 9–13, 26–27 of HEAD). Strict subset, confirmed. `_Update.cpp` adds `<algorithm>`, `<cmath>`, `<cstring>`, `EntityRegistry.h`, `MeshComponent.h`, `LightDataService.h`, `PerFrameDataService.h` — original had all except `<cstring>`, which Implementation Notes line 559 explicitly flags as a transitive→direct upgrade for `std::memcmp`. Sound. `HashGridCacheConstants.h` is in 5 TUs (umbrella, Setup, Initialize, Update, Dispatch) — implementer's note said "4", off-by-one but each of the 5 TUs does reference `Inno::PTHashGridCache::ENABLED` (verified by grep), so the include is justified in every place it appears. Not a finding.
+- **No CMake edit, correctly so.** `Source/ExampleProject/RenderingClient/CMakeLists.txt` is `file(GLOB *.cpp *.h)`; the 5 new TUs auto-pick-up. `git diff --stat HEAD -- '*.cmake' 'CMakeLists.txt' '**/CMakeLists.txt'` empty; no untracked CMake files.
+- **Build + run evidence.** Implementation Notes documents `cmake .` regen → `BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` green → `Main.exe -total_frames 1` exit 0. Sufficient for a mechanical-split CL on a singleton render pass with no behavior change.
+
+No blocking findings. No advisory findings beyond the pre-existing "strict subset" overstatement pattern noted in prior reviews of this task series — does not need fixing in this CL.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
