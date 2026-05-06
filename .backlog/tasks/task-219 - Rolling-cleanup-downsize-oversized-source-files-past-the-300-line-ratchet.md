@@ -999,7 +999,48 @@ Total new TU lines: 688. Largest TU: 267 (Memory). All under the 300-line ratche
 
 - 14+ other oversized files in the inventory still pending. Two adjacent VK files (`VKGraphicsService.cpp` 541, `VKGraphicsService_GraphicsDevice.cpp` 589) remain over the ratchet. Task stays open.
 
-<!-- SECTION:NOTES:END -->
+## CL: RayTracer.cpp split (2026-05-06)
+
+Split `Source/Engine/RayTracer/RayTracer.cpp` (603 lines) into 4 sibling TUs + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Implementer agent ran out of usage before appending these notes; reconstructed from working-tree evidence by the reviewing peer.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `RayTracer.cpp` (umbrella) | 104 | Namespace-scope state definitions + `RayTracer::{Setup, Initialize, Execute, Terminate, GetStatus}` |
+| `RayTracer_Internal.h` | 171 | `extern` decls for namespace state + domain types (`HitResult`, `Material`, `Lambertian`, `Metal`, `Emissive`, `Hitable`, `HitableCube`, `HitableSphere`, `HitableList`, `RayTracingCamera`) + forward decls for the 7 free functions defined across siblings |
+| `RayTracer_Random.cpp` | 36 | `RandomDirectionInUnitDisk` / `RandomDirectionInUnitSphere` / `RandomUnitVector` / `Reflect` |
+| `RayTracer_Hitables.cpp` | 115 | `HitableCube::Hit` / `HitableSphere::Hit` / `HitableList::Hit` |
+| `RayTracer_Shading.cpp` | 46 | `SkyColor` / `CalcRadiance` |
+| `RayTracer_Scene.cpp` | 199 | `BuildWorldAABB` (static) + `ExecuteRayTracing` orchestrator |
+
+Total new TU + header lines: 671. Largest TU: 199 (Scene). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **Internal header introduced.** Original `RayTracer.cpp` carried domain types (`HitResult`, `Material` hierarchy, `Hitable*` hierarchy, `RayTracingCamera`) and namespace state inline. Sibling TUs need both the types and the state — moved into `RayTracer_Internal.h` with `extern` declarations for state and full type definitions for the structs/class. No leakage of caller-specific knowledge.
+- **`SkyColor` linkage promotion.** Original was `static Vec4 SkyColor(...)` (file-local). After split it sits in `_Shading.cpp` with no `static` and is forward-declared in `_Internal.h:44`. External linkage now; only `CalcRadiance` (same TU) calls it, so the promotion is observable in principle only — same precedent as `m_isPassA` in the prior VolumetricPass split. `BuildWorldAABB` correctly preserved as `static` in `_Scene.cpp` (single sibling, no header decl).
+- **Per-TU includes are strict subsets of the original umbrella.** `_Internal.h` carries `STL14.h`, `MathHelper.h`, `TaskScheduler.h` (the always-needed surface). `_Random.cpp` / `_Hitables.cpp` / `_Shading.cpp` include only `_Internal.h`. `_Scene.cpp` adds `LogService.h`, `AssetService.h`, `CameraService.h`, `EntityRegistry.h`, plus the 5 Component headers (the surface only `ExecuteRayTracing` needs). Umbrella adds `TaskScheduler.h`, `RenderingConfigurationService.h`, `TextureResourceService.h`, `Engine.h` (the surface only the lifecycle methods need). Union of all sibling includes equals the original umbrella's include block.
+- **Umbrella references state via `RayTracerNS::` qualification.** Original `RayTracer.cpp:Initialize()` wrote `m_TextureComp = ...` (unqualified, resolved by enclosing `using namespace RayTracerNS` outside any function). New umbrella has no top-level `using namespace RayTracerNS`, so `Initialize()` writes `RayTracerNS::m_TextureComp = ...` (lines 61-68). Semantic identical.
+- **CMake auto-glob picked up new files** — `Source/Engine/RayTracer/CMakeLists.txt` uses `file(GLOB *.h *.cpp)`. No CMake edit. Standard `cmake .` regen needed before MSBuild.
+
+### Build + test
+
+(Run by the dispatcher after the implementer agent stopped.)
+
+- `cmake .` from `Build/` — green; new files picked up.
+- `Scripts\BuildWin.ps1` — green; `RayTracer.lib` linked.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (cwd=`Bin\RelWithDebInfo\`) — exit 0; engine ran one frame, wrote outputs, terminated cleanly. No regression.
+
+### Out of scope (not done)
+
+- 13+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — RayTracer split
+
+Verdict: PASS
+
+Bijection holds (16 free-fn / member-fn definitions in HEAD `RayTracer.cpp`, 16 across the split: Random 4, Hitables 3, Shading 2, Scene 2, umbrella 5). All 10 types preserved in `_Internal.h` with body-identical definitions. Byte-equivalence sampled per cluster — `RandomUnitVector` (Random), `HitableSphere::Hit` (Hitables), `CalcRadiance` (Shading), `BuildWorldAABB` (Scene), `RayTracer::Terminate` (umbrella) — all match HEAD modulo whitespace. `_Internal.h` surface is minimal: types + extern state + 7 forward decls grouped by sibling TU; no implementation leakage. CMake auto-glob — no edit (`git status` shows `CMakeLists.txt` unmodified). Per-TU `#include` subsets check out: union of sibling includes equals original umbrella's include block, and clangd's earlier "Vec4 not found" complaint resolves because `_Internal.h` pulls `MathHelper.h` directly. Linkage promotion of `SkyColor` and the 4 random helpers from implicit/static to external is observable in principle only — project-wide grep confirms the only consumers are sibling TUs in the same library; no other TU references these names. Implementer's notes for this CL were absent in TASK-219; reviewer reconstructed the CL block above from working-tree evidence so the rolling tracker stays auditable. No findings.
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
