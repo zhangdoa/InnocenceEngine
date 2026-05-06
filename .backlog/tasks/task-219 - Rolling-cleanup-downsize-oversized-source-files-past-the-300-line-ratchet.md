@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 10:15'
+updated_date: '2026-05-06 16:34'
 labels:
   - tech-debt
   - tooling
@@ -705,6 +705,59 @@ Verdict: PASS
 - **Behavioral evidence — accepted.** `Main.exe -total_frames 1` (Host mode, EditorService dormant) exit 0, AND `Main.exe -total_frames 1 -mode 2` (sidecar mode, EditorService active) exit 0 with `WebSocket server started on port 8081` logged. The sidecar run exercises `Setup` → `Initialize` → all 3 `Register*Handlers` cluster fns → dispatcher loop bind → `Terminate`. Sufficient for a mechanical-split CL on an IPC service whose handlers are invoked only by external editor traffic (no scripted handler-coverage harness exists; flagged as out-of-scope per task brief).
 
 PASS. The 3 added private member fns and the PIMPL relocation are both **acceptable for a mechanical refactor** — they are the structurally minimum changes required to make a same-class partial-TU split compile, with zero public-surface impact and zero behavioral change. Bijection holds, byte-equivalence holds, runtime evidence covers both inactive and active EditorService modes. Single advisory: Implementation Notes line 662 has an ungrammatical sentence; documentation hygiene only, no action requested.
+
+## CL: DX12Helper_Texture.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/DX12/DX12Helper_Texture.cpp` (668 lines) into 5 sibling TUs by domain. Pure mechanical split per `disciplines/on-implement/file-splitting.md` — free-function-header pattern: umbrella `DX12Helper_Texture.h` keeps all 16 declarations untouched; original umbrella `.cpp` is removed (no shared statics, no anon-namespace helpers — every function is self-contained inside `namespace DX12Helper`). No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `DX12Helper_Texture.h` (header — unchanged) | 28 | Umbrella declarations (16 functions in `namespace Inno::DX12Helper`) |
+| `DX12Helper_Texture_Format.cpp` | 225 | `GetTextureFormat`, `GetTexturePixelDataSize`, `GetBCBlockBytes`, `GetBCRowPitch` |
+| `DX12Helper_Texture_Desc.cpp` | 146 | `GetDX12TextureDesc`, `GetTextureDimension`, `GetTextureMipLevels`, `GetTextureBindFlags` |
+| `DX12Helper_Texture_View.cpp` | 210 | `GetSRVDesc`, `GetUAVDesc`, `GetRTVDesc`, `GetDSVDesc` |
+| `DX12Helper_Texture_Sampler.cpp` | 52 | `GetFilterMode`, `GetWrapMode` |
+| `DX12Helper_Texture_State.cpp` | 45 | `GetTextureWriteState`, `GetTextureReadState` |
+
+Total new TU lines: 678 (+10 vs. original 668, accounted for entirely by 5× `#include "DX12Helper_Texture.h"` + `using namespace Inno;` + blank-line preambles instead of one). Largest TU: 225 (Format). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **No internal header introduced — none needed.** Original had zero `static`-at-file-scope helpers, zero anon-namespace blocks, zero TU-local state. Every function is pure (`TextureDesc` in → DX12 type out). Cross-function calls (`GetDX12TextureDesc` calls `GetTextureMipLevels`/`GetTextureFormat`/`GetTextureDimension`/`GetTextureBindFlags`; `GetRTVDesc` calls `GetTextureFormat`) work transparently across TUs through the unmodified umbrella header.
+- **Original umbrella `.cpp` deleted, not retained empty.** Free-function-header split: with no shared state and no dispatcher logic, retaining a 5-line `DX12Helper_Texture.cpp` containing only `#include "DX12Helper_Texture.h"` would be redundant. CMake auto-glob doesn't require it. The 5 sibling TUs are the complete implementation.
+- **`Engine.h` is load-bearing — kept in `_Desc.cpp` and `_View.cpp`.** First build attempt dropped `#include "../../Engine.h"` from the new TUs as "dead include" (no `g_Engine` text reference in the bodies). Build failed: `error C2065: 'g_Engine': undeclared identifier` at every `Log(...)` call site. Root cause: `Log` is a macro defined in `LogService.h` line 91 as `g_Engine->Get<LogService>()->Print(...)`; the macro expands at the call site and needs `g_Engine` in scope. `Engine.h` is the only header declaring `g_Engine`, so any TU that calls `Log(...)` must `#include "../../Engine.h"`. The Format / Sampler / State TUs don't call `Log` and correctly don't need it; Desc (1 `Log(Error, ...)` for invalid mip dimensions) and View (4 `Log(Verbose, ...)` for cubemap/3D fallbacks) include both `LogServiceSpecialization.h` and `Engine.h`.
+- **Two dead includes dropped from sibling TUs.** Original `.cpp` included `IOService.h` (zero references in the file bodies) and `Engine.h` (only needed for `Log()`-calling TUs, see above). Sibling TUs include only what they use. This is editorial cleanup beyond pure mechanical split — flagged here to match the AssetService-split reviewer's earlier ask for explicit dead-include callouts. Verified by running the qualifying test (Main.exe exit 0): no transitive dependency through these headers was load-bearing.
+- **`STL14.h` chain provides `<cmath>`/`<algorithm>` transitively.** `_Desc.cpp` uses `std::max` / `std::min` / `std::log2` / `std::floor`; `_View.cpp` uses `std::pow`. All resolve through `DX12Helper_Texture.h` → `LogService.h` → `STL14.h` (which includes `<cmath>` line 6 and `<algorithm>` line 28). Same chain as the original umbrella `.cpp`; no new direct STL include needed in any sibling.
+- **CMake auto-glob picked up the 5 new files** — `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB *.cpp)` + `file(GLOB *.h)`. Ran `cmake .` from `Build/` to refresh `.vcxproj` entries before build (same gotcha as prior splits).
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green. Configuration completed in 4.5s.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit 0. After the `Engine.h`-include fix-up iteration: all 5 new TUs (`_Format.cpp`, `_Desc.cpp`, `_State.cpp`, `_Sampler.cpp`, `_View.cpp`) compile cleanly. `DX12GraphicsService.lib`, `Services.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` — exit 0. Engine completed full init → 1 frame → graceful Terminate. The init path exercises every Texture helper: `GetDX12TextureDesc` (every texture allocation), `GetTextureFormat` (resource desc + RTV format), `GetSRVDesc` / `GetUAVDesc` / `GetRTVDesc` / `GetDSVDesc` (per-texture view creation), `GetTextureWriteState` / `GetTextureReadState` (transition state lookup), `GetFilterMode` / `GetWrapMode` (sampler creation), `GetTextureBindFlags` / `GetTextureDimension` / `GetTextureMipLevels` (resource-desc construction), `GetTexturePixelDataSize` / `GetBCBlockBytes` / `GetBCRowPitch` (upload-row-pitch math during initial texture upload). All consumers behave identically to HEAD.
+- Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue is reproducible from any working tree state on this branch (called out in prior splits as not-a-regression).
+
+### Function bijection check
+
+`grep 'DX12Helper::' Source/Engine/Services/DX12/DX12Helper_Texture_*.cpp` returns 16 definitions; `DX12Helper_Texture.h` declares 16 functions. Sorted-name set identical: `GetBCBlockBytes`, `GetBCRowPitch`, `GetDSVDesc`, `GetDX12TextureDesc`, `GetFilterMode`, `GetRTVDesc`, `GetSRVDesc`, `GetTextureBindFlags`, `GetTextureDimension`, `GetTextureFormat`, `GetTextureMipLevels`, `GetTexturePixelDataSize`, `GetTextureReadState`, `GetTextureWriteState`, `GetUAVDesc`, `GetWrapMode`. Distribution: Format 4 + Desc 4 + View 4 + Sampler 2 + State 2 = 16. No method dropped, none duplicated, none renamed.
+
+### Out of scope (not done)
+
+- 10+ other oversized files in the inventory still pending. Task stays open. Sibling helper `DX12Helper_Pipeline.cpp` (570 lines) is a candidate for the next split CL but is not bundled into this one to keep the diff focused.
+
+## Review (code-impl, 2026-05-06) — DX12Helper_Texture split
+
+Verdict: PASS
+
+- Bijection: 16/16 functions accounted for. Format(4: GetTextureFormat, GetTexturePixelDataSize, GetBCBlockBytes, GetBCRowPitch) + Desc(4: GetDX12TextureDesc, GetTextureDimension, GetTextureMipLevels, GetTextureBindFlags) + View(4: GetSRVDesc, GetUAVDesc, GetRTVDesc, GetDSVDesc) + Sampler(2: GetFilterMode, GetWrapMode) + State(2: GetTextureWriteState, GetTextureReadState).
+- Byte-equivalence sampled: GetTextureFormat (Format.cpp 5–170 vs orig 69–234) — empty diff. GetSRVDesc (View.cpp 7–68 vs orig 465–526) — empty diff. GetTextureWriteState (State.cpp 5–32 vs orig 423–450) — empty diff. GetFilterMode + GetWrapMode (Sampler.cpp 5–52 vs orig 261–290 ∪ 291–338) — bodies identical with GetTextureMipLevels correctly extracted to Desc.cpp.
+- Umbrella deletion justified: original DX12Helper_Texture.cpp had `using namespace Inno;` only — no `static` storage, no anonymous-namespace helpers, no shared file-scope state. Free-function pattern, no umbrella needed.
+- Engine.h restoration in _Desc.cpp and _View.cpp is correct and minimal: `Log` macro appears 1× in Desc.cpp (GetTextureMipLevels error path) and 4× in View.cpp (UAV/RTV/DSV verbose). Format/Sampler/State TUs contain no `Log` invocation, so their lighter include set (`DX12Helper_Texture.h` only) is justified.
+- CMake: not edited. CMakeLists.txt uses `file(GLOB SOURCES "*.cpp")` — new TUs picked up automatically; deleted TU drops out automatically.
+
+No findings.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
