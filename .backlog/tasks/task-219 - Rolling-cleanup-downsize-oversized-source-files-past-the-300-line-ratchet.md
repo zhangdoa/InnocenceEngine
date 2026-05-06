@@ -89,6 +89,12 @@ Per file's owning impl stage (almost always `code-impl`; one shader-impl entry, 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+## Review (code-impl, 2026-05-06) — VKGraphicsService_VulkanObject split
+
+Verdict: PASS
+
+Bijection 32 = 11 (umbrella) + 13 (Memory) + 8 (DescriptorAndShader) confirmed by definition-line enumeration against `git show HEAD:`. All 32 functions in HEAD accounted for, zero duplicates across TUs (`grep -n "^[a-zA-Z].*VKGraphicsService::.*("` over the three files). Byte-equivalence spot-checks: `FindQueueFamilies` (umbrella), `FindMemoryType` (Memory), and `CreateShaderModule` (DescriptorAndShader) all body-identical to HEAD. The only byte difference anywhere is a trailing `\n` appended at EOF of `_DescriptorAndShader.cpp` (HEAD's last function lacked it) — cosmetic POSIX-text-file fix, not a content change. `m_shaderRelativePath` defined exactly once (`_DescriptorAndShader.cpp:32`, anonymous namespace) alongside its sole consumer at line 147 — single-definition site verified by repo-wide grep. Naming `_DescriptorAndShader.cpp` cleanly avoids collision with the pre-existing siblings `VKGraphicsService_Descriptor.cpp` and `VKGraphicsService_Shader.cpp` (different concern, from earlier `_EngineComponent.cpp` split); the `_VulkanObject_` prefix preserves provenance. No CMake edit (`git status` clean for `CMakeLists.txt`). Pre-existing VK breakage (clangd `'../GraphicsResourceService.h' file not found`, `m_initializedTextures`) is carried over verbatim and out of scope per the dispatch.
+
 ## CL: DX12GraphicsHardwareService.cpp split (2026-05-05)
 
 Split `Source/Engine/Services/DX12/DX12GraphicsHardwareService.cpp` (1873 lines) into 13 sibling TUs + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change.
@@ -960,6 +966,39 @@ Verdict: ADVISORY
 - **No CMake edit — confirmed.** `git status` shows only the 3 new source files + 1 modified umbrella + the task file. No `CMakeLists.txt` changes. The project uses glob-based source enumeration (verified by `Source/ExampleProject/CMakeLists.txt` not enumerating `VolumetricPass*`), so the new TUs will be picked up after the documented `cmake .` regen step. Implementation Notes line 948 documents the regen.
 
 ADVISORY. The split is structurally correct: bijection holds (14 → 14), `m_isPassA` linkage promotion is the minimum required change for the split to compile and carries no semantic risk, `_Internal.h` surface is minimal, and no CMake change is needed. **One advisory:** the 6 East-pointer → West-pointer edits in `rayMarching` and the function signatures of `visualization`, `GetRayMarchingResult`, `GetVisualizationResult` are non-mechanical and should have been called out in Implementation Notes. The edits themselves are correct (consistent with project style) and do not affect verdict — but a "pure mechanical split" claim is slightly overstated. No action requested for this CL; documentation hygiene only for the next reviewer.
+
+## CL: VKGraphicsService_VulkanObject.cpp split (2026-05-05)
+
+Split `Source/Engine/Services/VK/VKGraphicsService_VulkanObject.cpp` (635 lines) into 3 sibling TUs (umbrella + 2 partials). Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same-class partial-TU pattern; no internal header needed (no file-local macros; the single file-local namespace-scope global `m_shaderRelativePath` moves wholesale into the TU that uses it).
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `VKGraphicsService_VulkanObject.cpp` (umbrella) | 258 | Debug-utils EXT pointer trampolines + validation/extension capability checks + `FindQueueFamilies` + swapchain surface-format / present-mode / extent / support-query helpers + `IsDeviceSuitable` |
+| `VKGraphicsService_VulkanObject_Memory.cpp` | 267 | Host/device-local buffer creation + map/copy + temporary command buffer open/close + `FindMemoryType` + `CreateCommandPool` + `CreateBuffer` / `CopyBuffer` + `CreateImage` / `TransitImageLayout` / `CopyBufferToImage` |
+| `VKGraphicsService_VulkanObject_DescriptorAndShader.cpp` | 163 | `m_shaderRelativePath` definition + `CreateDescriptorPool` / `CreateDescriptorSetLayout` / `CreateDescriptorSets` / `UpdateDescriptorSet` + 3× `GetWriteDescriptorSet` overloads + `CreateShaderModule` |
+
+Total new TU lines: 688. Largest TU: 267 (Memory). All under the 300-line ratchet. Original had 32 `VKGraphicsService::` member-function definitions; post-split: umbrella 11 + Memory 13 + DescriptorAndShader 8 = 32. Bijection verified by `grep -oE "VKGraphicsService::[A-Za-z]+" | sort -u`, zero diff against `git show HEAD:.../VKGraphicsService_VulkanObject.cpp`. Non-preamble content diff (filtering `#include`, `using namespace`, the relocated `namespace Inno { namespace VKHelper { … } }` block, and blanks) — clean.
+
+### Constraints that bit
+
+- **No internal header introduced.** Original carried only one file-local global, `Inno::VKHelper::m_shaderRelativePath` (originally external linkage at namespace scope, single consumer: `CreateShaderModule`). Moved its definition wholesale into `_DescriptorAndShader.cpp` alongside its sole consumer; no header surface needed because no other TU references it project-wide (`grep m_shaderRelativePath Source/Engine/Services/VK` finds only the original definition + use). Header `VKGraphicsService.h` untouched.
+- **Naming choice — `_DescriptorAndShader.cpp` not `_Descriptor.cpp`.** Sibling `VKGraphicsService_Descriptor.cpp` already exists in the same directory (added by the prior `_EngineComponent.cpp` split, contains `InitializeImpl(RenderPassComponent*)` + descriptor-set-bindings construction — different responsibility, same word). Picked the compound name to keep both TUs distinct. Post-split file inventory in this directory now has: `_Descriptor.cpp` (RenderPass orchestrator), `_VulkanObject_DescriptorAndShader.cpp` (low-level VK descriptor / shader-module creation helpers). Two-word disambiguation deemed cleaner than renaming the pre-existing file.
+- **Identical includes per TU.** Each new TU duplicates the original's full include block (10 headers + 3 `using namespace`s). Same precedent as the prior `_EngineComponent.cpp` split — equality is the safest subset and avoids missing-symbol risk for code that doesn't currently compile (VK target disabled).
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/VK/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`. Ran `cmake .` from `Build/` to refresh `.vcxproj` entries before build (same gotcha as prior splits).
+- **VK build status.** `Build/CMakeCache.txt` confirms `INNO_RENDERER_VULKAN:BOOL=OFF`. `VKGraphicsService.lib` does not appear in `Scripts\BuildWin.ps1` output. Pre-split structural defects called out in the prior `_EngineComponent.cpp` split (template visibility of `SetObjectName`; missing `m_initializedTextures` member; missing `../GraphicsResourceService.h`) are unrelated to this file and unaffected by this split. The split is structural-only on this branch.
+
+### Build + test
+
+- `cmake .` (from `Build/`, to refresh the VS solution after adding files) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `Engine.lib`, `DX12GraphicsService.lib`, `Main.exe`, `RenderTest.exe` all linked. VK target not built (disabled in cache, baseline behavior unchanged by the split).
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate. No regression.
+
+### Out of scope (not done)
+
+- 14+ other oversized files in the inventory still pending. Two adjacent VK files (`VKGraphicsService.cpp` 541, `VKGraphicsService_GraphicsDevice.cpp` 589) remain over the ratchet. Task stays open.
+
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
