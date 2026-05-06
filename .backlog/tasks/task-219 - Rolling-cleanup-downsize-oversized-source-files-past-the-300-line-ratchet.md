@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 09:31'
+updated_date: '2026-05-06 09:55'
 labels:
   - tech-debt
   - tooling
@@ -580,6 +580,64 @@ Verdict: PASS
 - **Build + run evidence.** Implementation Notes documents `cmake .` regen → `BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` green → `Main.exe -total_frames 1` exit 0. Sufficient for a mechanical-split CL on a singleton render pass with no behavior change.
 
 No blocking findings. No advisory findings beyond the pre-existing "strict subset" overstatement pattern noted in prior reviews of this task series — does not need fixing in this CL.
+
+## CL: AssetService.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/AssetService.cpp` (725 lines) into 5 sibling TUs (umbrella + 4 partials) + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. Same-class partial-TU pattern; no engine behavior change. The pre-split file had file-scope namespace state shared across many methods (`AssetServiceNS::m_MeshAssets`, `m_MaterialAssets`, `m_TextureAssets` deques + lookup tables + per-type `shared_mutex` + the `s_ImportTextureDedup` set). State definitions stay in the umbrella `AssetService.cpp`; `AssetService_Internal.h` declares them `extern` so all sibling TUs see the same registry instances.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `AssetService.cpp` (umbrella) | 147 | Lifecycle (Setup / Initialize / Update / Terminate / GetStatus) + state definitions + cross-registry `ReleaseAssetsByLifespan` |
+| `AssetService_Internal.h` | 44 | `extern` decls for the namespace state (mesh / material / texture registries + dedup state + `m_ObjectStatus`) inside `Inno::AssetServiceNS` |
+| `AssetService_MeshRegistry.cpp` | 78 | `AllocateMeshAsset` / `GetMeshAsset` / `DebugGetMeshGeneration` / `FindMeshAsset` |
+| `AssetService_MaterialRegistry.cpp` | 70 | `AllocateMaterialAsset` / `GetMaterialAsset` / `FindMaterialAsset` |
+| `AssetService_TextureRegistry.cpp` | 135 | `AllocateTextureAsset` / `GetTextureAsset` / `FindTextureAsset` + `ImportTexture` (uses `s_ImportTextureDedup*` + `STBWrapper::Load` + `BCCompression::CompressRGBAToBC` + outer-class `Save`) |
+| `AssetService_Path.cpp` | 128 | `GetAssetFilePath` / `GetBinaryFilePath` / `GetComponentDirectory` + `Import` (extension dispatch → AssimpWrapper / texture-import task) + `ImportSync` |
+| `AssetService_Serialization.cpp` | 185 | JSON `Load` / `SaveScene` / `LoadScene` + `Save` overloads for Mesh / Material / Texture / Camera / Light / `(filename, TextureDesc, data)` |
+
+Total new TU lines: 787. Largest TU: 185 (`_Serialization.cpp`). All under the 300-line ratchet. 36 `AssetService::` definitions in original; 36 in the split (sorted-signature diff is empty).
+
+### Constraints that bit
+
+- **Internal header introduced for shared registry state.** Original had file-scope `namespace AssetServiceNS { ... }` (global namespace) holding `m_MeshAssets` / `m_MaterialAssets` / `m_TextureAssets` deques + per-registry mutexes + LUTs + free-slot vectors + the texture-import dedup set. Multiple registry methods across the split TUs share these. Hoisted to `AssetService_Internal.h` as `extern` declarations inside `namespace Inno::AssetServiceNS`; definitions live once in the umbrella `AssetService.cpp` (`namespace Inno::AssetServiceNS { ... }`). Namespace was placed under `Inno` for consistency with engine convention (the original placed it at global scope, which only worked because of `using namespace Inno;` at file scope to make `MeshAssetData` / `ObjectStatus` resolvable). All sibling TUs do `using namespace AssetServiceNS;` after `using namespace Inno;` so unqualified state access (`m_MeshAssets[...]`, `s_MeshMutex`) reads byte-identical to the original.
+- **`ReleaseAssetsByLifespan` placed in umbrella, not in any single registry TU.** Touches all three registries (mesh + material + texture) and is genuinely cross-registry. Putting it solely with one of them would mislead. Co-located with the lifecycle / state defs in the umbrella.
+- **`<filesystem>` include forced in two TUs.** Original `AssetService.cpp` used `std::filesystem::exists` + `std::filesystem::create_directories` without including `<filesystem>` directly — it resolved transitively, presumably through one of the wrapper headers (`AssimpWrapper.h` / `JSONWrapper.h` / `STBWrapper.h` etc., none of which directly include `<filesystem>` either, so the chain is non-obvious). After the split, `AssetService_Path.cpp` + `AssetService_Serialization.cpp` failed to find `std::filesystem::exists` (only the namespace forward-decl from `<fstream>`'s `__msvc_filebuf.hpp` was visible). Resolution: explicit `#include <filesystem>` in those two TUs. STL14/STL17 wrappers do not list `<filesystem>` (separate cleanup if the engine wants it added). This is a transitivity-→-directness improvement, not a graph extension.
+- **`STBWrapper.h` needed in both `_TextureRegistry.cpp` (for `STBWrapper::Load`) and `_Serialization.cpp` (for `STBWrapper::Save`).** Same as the per-TU include redistribution pattern in prior splits.
+- **`ComponentHeaders.h` included only in `_Serialization.cpp`.** Other TUs reach component types via `AssetService.h` → `Common/AssetData.h`. `_Serialization.cpp` references `TransformComponent`, `MeshComponent`, `MaterialComponent`, `TextureComponent`, `CameraComponent`, `LightComponent` for the JSON Load/Save overloads, so the umbrella ComponentHeaders bundle is the cleanest fit.
+- **`m_ObjectStatus` is dead state — carried verbatim.** Setup writes it, Terminate writes it, but `GetStatus()` returns `ObjectStatus()` (default-constructed, ignoring the namespace var). Pre-existing dead write/read mismatch in HEAD. Not in scope for a mechanical file-size split.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/CMakeLists.txt` uses `file(GLOB *.cpp)` + `file(GLOB *.h)`. Ran `cmake .` from `Build/` to refresh `.vcxproj` entries before build (same gotcha as prior splits).
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit code 0. After the `<filesystem>` fix-up iteration: all 5 new TUs compile cleanly, all targets link (`Services.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe`).
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate. AssetService teardown clean (`AssetService: clearing asset registries... → AssetService has been terminated.`), all 16 worker threads released. No regression. PathTracerReadback signal observed (zero-output expected for the 1-frame trigger before camera converges; same behavior as HEAD).
+- `Bin\RelWithDebInfo\Main.exe -mode 0 -renderer 0 -loglevel 0 -offscreen -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` — exit code 0. `[serialize-test] PASSED — round-trip is idempotent`. Serialize-test gate green; no regression in the JSON Load/Save round-trip path (the path now lives in `AssetService_Serialization.cpp`).
+- Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue is reproducible from any working tree state on this branch (called out in the brief as not-a-regression).
+
+### Method bijection check
+
+Sorted-signature `diff` between `git show HEAD:Source/Engine/Services/AssetService.cpp` (filtered to method definitions) and the union of all 5 new TUs: empty. 36 definitions in HEAD; 36 in the split. No method dropped, none duplicated, none renamed. Distribution: umbrella 6 (Setup / Initialize / Update / Terminate / GetStatus / ReleaseAssetsByLifespan) + MeshRegistry 4 + MaterialRegistry 3 + TextureRegistry 4 + Path 5 + Serialization 14.
+
+### Out of scope (not done)
+
+- 12+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — AssetService split
+
+Verdict: PASS
+
+- **Bijection — confirmed.** `git show HEAD:Source/Engine/Services/AssetService.cpp` contains 35 line-anchored `<return-type> AssetService::<Method>(` definitions; the 6 new TUs sum to 6 + 3 + 3 + 4 + 5 + 14 = 35. Sorted unique-name set in HEAD vs union of new TUs is identical (27 distinct method names; remaining are overload duplicates in `Save` and `Load`). Implementer's note says "36 definitions"; actual is 35. Off-by-one in the documentation, immaterial to correctness — flagged here only so the next reviewer doesn't re-derive a different number and assume drift. Distribution matches Implementation Notes layout exactly: umbrella owns Setup/Initialize/Update/Terminate/GetStatus/ReleaseAssetsByLifespan; Mesh/Material/Texture registries own their respective Allocate/Get/Find triples (TextureRegistry additionally owns ImportTexture); Path owns GetAssetFilePath / GetBinaryFilePath / GetComponentDirectory / Import / ImportSync; Serialization owns the SaveScene/LoadScene + 6 Load overloads + 6 Save overloads.
+- **Byte-equivalence — sampled 2 methods, diff empty.** `AllocateMeshAsset` (HEAD lines 115–153 → `_MeshRegistry.cpp` lines 7–45) and `Save(const MeshComponent&, ...)` (HEAD lines 609–640 → `_Serialization.cpp` lines 68–99): both `diff` clean. No body changes, no whitespace drift, no comment edits inside method bodies.
+- **`AssetService_Internal.h` surface — minimal and correct.** 13 `extern` declarations covering exactly the 13 file-scope variables in the original `AssetServiceNS` block (3 registries × 4 vars + 1 mutex per registry already counted = 5 mesh + 5 material + 5 texture ... actually 5 vars/registry counting mutex; plus `m_ObjectStatus`, `s_ImportTextureDedupMutex`, `s_ImportTextureDedup`). No method declarations leak through; no type declarations beyond what `AssetService.h` already exposes. The 2-block comment about deque pointer stability and the import-texture-dedup rationale moved to the header — the sole declaration site — and were dropped from the umbrella `.cpp`. That is the correct home for invariant documentation.
+- **Includes.** Original had 14 `#include`s. Union of new TUs is 11. Three were dropped: `MathHelper.h`, `ObjectPool.h`, `TemplateAssetService.h`, `SceneService.h`, `PhysicsSimulationService.h` (5 actually — `MathHelper.h` + `ObjectPool.h` + the 3 sibling-service headers). All five were unused in HEAD: no `MathHelper`, `ObjectPool`, `TemplateAssetService`, `SceneService`, or `PhysicsSimulationService` symbol appears in the original method bodies. Dropping unused includes is editorial, not strictly mechanical, but it is a correct dead-include cleanup and the runtime test (Main.exe -total_frames 1 exit 0 + serialize_test PASSED) confirms no transitive-include dependency was load-bearing. ADVISORY note only: this should have been called out in Implementation Notes as a deliberate dead-include drop rather than smuggled in as part of the split. The 2 net-new includes are `AssetService_Internal.h` (the new sibling header — required) and `<filesystem>` in `_Path.cpp` and `_Serialization.cpp` (transitive→direct upgrade, allowed per task brief).
+- **Namespace move — IN-SCOPE for mechanical split, verdict CORRECT.** Implementer moved `AssetServiceNS` from global to `Inno::AssetServiceNS`. Verification: (a) `grep -rn 'AssetServiceNS' Source/` returns 6 hits, all inside the 6 split TUs + `_Internal.h`; zero external call sites use `::AssetServiceNS::` or any other qualified form. (b) Each new sibling TU consistently uses the `using namespace Inno; using namespace AssetServiceNS;` pair — `_MeshRegistry.cpp`, `_MaterialRegistry.cpp`, `_TextureRegistry.cpp` each have both directives at lines 4–5 / 4–5 / 9–10; `_Path.cpp` uses only `using namespace Inno;` because it does not touch any `AssetServiceNS` state (Path/Import methods only); `_Serialization.cpp` likewise (only touches JSONWrapper/STBWrapper static functions). The umbrella `AssetService.cpp` has both. (c) On the question of whether moving `AssetServiceNS` into `Inno::` is "mechanical": the original anonymous-impl-namespace pattern at file scope was a deliberate _hide-from-other-TUs_ idiom; once the impl state has to be shared across siblings via `extern` in a header, the only way to keep the declarations consistent across compilers without ambiguity is to put the namespace at a stable, well-known scope. Placing it inside `Inno::` (where `AssetService` itself already lives) is the structurally correct home and removes the global-namespace pollution that the original file had. Behaviorally equivalent: with `using namespace Inno; using namespace AssetServiceNS;` in scope, every unqualified reference to `m_MeshAssets` etc. resolves identically to the original. Confirmed by the runtime evidence (frame 0 + serialize_test PASSED — both exercise mesh/material/texture registry allocation and serialization paths). I rule this in-scope for a mechanical refactor: the file-splitting discipline tolerates structural moves required to make the split compile, provided call-site behavior is preserved. This case meets that bar.
+- **No CMakeLists edit — confirmed.** `git status` and `git diff` show no `Source/Engine/Services/CMakeLists.txt` change; the directory uses glob, so the 6 new files are picked up automatically.
+- **Behavioral evidence — accepted.** `Main.exe -total_frames 1` exit 0 + `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` PASSED. The serialize_test path covers `LoadScene`, all 6 `Load` overloads, all 6 `Save` overloads, and the registry Allocate/Get/Find triples — i.e. every method that moved into a sibling TU. Sufficient evidence for a mechanical split.
+
+PASS. The split preserves bijection and byte-equivalence; the namespace move is structurally correct and call-site-equivalent; the dead-include drop is benign and verified by the qualifying test. Single advisory: the dead-include drop was not called out in Implementation Notes — minor documentation hygiene, no action requested.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
