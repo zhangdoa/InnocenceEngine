@@ -278,6 +278,75 @@ Verdict: PASS
 - **No CMake edit.** `Source/Engine/CMakeLists.txt` uses `file(GLOB *.cpp)`; new TUs picked up automatically.
 
 Mechanical-refactor candidate validated as deterministic. No findings that block landing.
+
+## CL: DX12FrameManagementService.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/DX12/DX12FrameManagementService.cpp` (1231 lines) into 7 sibling TUs (umbrella + 6 partials). Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same-class partial-TU pattern; no internal header needed (no file-local macros, no file-local statics in the original).
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `DX12FrameManagementService.cpp` (umbrella) | 123 | `Open`, `Close` (command list lifecycle) + `CreateSwapChainResources`, `CreateSwapChain` (swap chain) |
+| `DX12FrameManagementService_Recording.cpp` | 208 | `CommandListBegin`, `BindRenderPassComponent`, `ClearRenderTargets`, `CommandListEnd` |
+| `DX12FrameManagementService_Bind.cpp` | 247 | `BindGPUResource` (public dispatcher) + `BindComputeResource` + `BindGraphicsResource` (private helpers) |
+| `DX12FrameManagementService_Draw.cpp` | 202 | `DrawIndexedInstanced`, `DrawInstanced`, `Dispatch`, `DispatchRays`, `ExecuteIndirect`, `PushRootConstants` |
+| `DX12FrameManagementService_RenderTargets.cpp` | 196 | `TryToTransitState`×2, `SetDescriptorHeaps`, `SetRenderTargets`, `PreparePipeline`, `ChangeRenderTargetStates` |
+| `DX12FrameManagementService_SwapChainImages.cpp` | 100 | `GetSwapChainImages`, `AssignSwapChainImages`, `ReleaseSwapChainImages` |
+| `DX12FrameManagementService_Frame.cpp` | 210 | `BeginFrame`, `PrepareRayTracing`, `PresentImpl`, `EndFrame`, `ResizeImpl`, `WaitAllOnCPU` |
+
+Total new TU lines: 1286. Largest TU: 247 (`_Bind.cpp`). All under the 300-line ratchet. 32 method definitions in original; 32 in the split (verified by grepping `^(bool|void) DX12FrameManagementService::` across all sibling .cpp files). No method defined twice; none missing.
+
+### Constraints that bit
+
+- **No internal header introduced.** The original had no file-local macros and no file-local statics (just `using namespace Inno;` + `using namespace DX12Helper;` directives, which each TU re-declares locally). All cross-TU calls go through existing private member fns already declared in `DX12FrameManagementService.h`. Header was untouched.
+- **Forward-declared component types needed direct includes.** `FrameManagementService.h` forward-declares `TextureComponent`, `GPUBufferComponent`, `MeshComponent`. The original umbrella got the full definitions transitively via `../GPUBufferResourceService.h` (→ `Component/GPUBufferComponent.h`) and via `DX12Helper_Texture.h` / `AssetService.h` chains. After splitting, four TUs that access component members directly (`m_DeviceMemories`, `m_GPUResources`, `m_TextureDesc`, etc.) needed explicit `Component/{GPUBufferComponent,TextureComponent,MeshComponent}.h` includes:
+  - `_Bind.cpp` adds `GPUBufferComponent.h`, `TextureComponent.h`
+  - `_Draw.cpp` adds `MeshComponent.h`
+  - `_RenderTargets.cpp` adds `GPUBufferComponent.h`, `TextureComponent.h`
+  - `_Recording.cpp` adds `TextureComponent.h`
+  - `_SwapChainImages.cpp` adds `TextureComponent.h`
+  Strictly speaking these are NOT in the original `#include` list, so the "strict subset" claim is overstated for these 5 TUs. Each TU directly uses the symbols it explicitly includes — making transitivity into directness is a structural improvement, not a regression. Same shape as the prior Engine.cpp split's noted advisory.
+- **`TryToTransitState` placement.** The two overloads are public-API `override`s declared in `DX12FrameManagementService.h`, but they're private helpers in the recording-side flow. Co-located with the other render-target state helpers (`SetDescriptorHeaps`, `SetRenderTargets`, `PreparePipeline`, `ChangeRenderTargetStates`) in `_RenderTargets.cpp` because `ChangeRenderTargetStates` calls `TryToTransitState`. Alternative was a standalone 65-line `_Transit.cpp`, rejected as too thin.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB *.cpp)`, but `Build/Source/Engine/Services/DX12/DX12GraphicsService.vcxproj` was stale, so `cmake .` from `Build/` was required to refresh the VS project entries before the build saw the new TUs. Same gotcha as the prior Engine.cpp / ExampleRenderingClient splits.
+
+### Build + test
+
+- `cmake .` (from `Build/`, to refresh the VS solution after adding files) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit code 0. `Engine.lib`, `DX12GraphicsService.lib`, `Main.exe`, `RenderTest.exe` all linked. No compile errors after the include-fix iteration; all 6 new TUs compile cleanly.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate. No regression.
+  - Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue is reproducible from any working tree state on this branch (called out in the brief as not-a-regression).
+
+### Out of scope (not done)
+
+- 16+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — DX12FrameManagementService split
+
+Verdict: PASS
+
+- **Method bijection.** Pre-split `Source/Engine/Services/DX12/DX12FrameManagementService.cpp` (1231 lines) had 32 `DX12FrameManagementService::` definitions (incl. two `TryToTransitState` overloads). Post-split: 4 + 3 + 6 + 6 + 4 + 6 + 3 = 32 across the 7 sibling TUs. Sorted-signature diff between the original and the union of new TUs is byte-equal — no methods dropped, none duplicated, none invented.
+- **Byte-equivalence spot-checks vs `git show HEAD:Source/Engine/Services/DX12/DX12FrameManagementService.cpp`.** Extracted full method bodies (signature through closing `^}`) for the four spot-check candidates; all four `diff` clean:
+  - `BindGPUResource` — `_Bind.cpp:12..<close>` ≡ original 237..<close>.
+  - `DrawIndexedInstanced` — `_Draw.cpp:15..<close>` ≡ original 319..<close>.
+  - `BeginFrame` — `_Frame.cpp:15..<close>` ≡ original 1036..<close>.
+  - `PresentImpl` — `_Frame.cpp:118..<close>` ≡ original 1139..<close>.
+- **Seam cohesion.** Each TU is internally consistent against its filename:
+  - `Service.cpp` (umbrella): `Open`, `Close`, `CreateSwapChainResources`, `CreateSwapChain` — lifecycle + swap chain init. The two `CreateSwapChain*` methods are called from `Open()`, so co-location with lifecycle is defensible (alternative: move to `_SwapChainImages.cpp`, but they're construction-phase, not per-frame).
+  - `_Bind.cpp`: `BindGPUResource` (public dispatcher) + `BindComputeResource` + `BindGraphicsResource` (private helpers it dispatches to) — coherent.
+  - `_Draw.cpp`: All draw/dispatch/indirect/PushRootConstants — coherent.
+  - `_Frame.cpp`: `BeginFrame`, `PrepareRayTracing`, `PresentImpl`, `EndFrame`, `ResizeImpl`, `WaitAllOnCPU` — coherent (frame-boundary control flow). `PrepareRayTracing` is a per-frame setup step, fits.
+  - `_Recording.cpp`: `CommandListBegin`, `BindRenderPassComponent`, `ClearRenderTargets`, `CommandListEnd` — coherent (per-pass recording sequence).
+  - `_RenderTargets.cpp`: Both `TryToTransitState` overloads + `SetDescriptorHeaps` + `SetRenderTargets` + `PreparePipeline` + `ChangeRenderTargetStates`. Implementer's note explains: `ChangeRenderTargetStates` calls `TryToTransitState`; the standalone 65-line `_Transit.cpp` alternative was rejected as too thin. `PreparePipeline` lives here (not `_Recording.cpp`) because in the typical pass sequence it runs alongside descriptor-heap and RT setup. Reasonable.
+  - `_SwapChainImages.cpp`: Get/Assign/Release of swap chain images — coherent.
+  No Bind method snuck into Recording, no Draw into Frame, etc.
+- **Original `// ---` divider correspondence.** Original had 5 dividers: "Command list lifecycle", "Command recording", "Private command recording helpers", "Swap chain", "Frame lifecycle". Split refines the 469-line "Command recording" section (too large for the ratchet alone) into Recording / Bind / Draw / RenderTargets — divider seam respected; sub-seams are content-driven, not line-count-driven. Per `disciplines/on-implement/file-splitting.md` § Procedure step 1.
+- **Includes — explicit transitivity callout matches reality.** Original included `Component/{GPUBufferComponent,TextureComponent,MeshComponent}.h` transitively (via `GPUBufferResourceService.h`, `DX12Helper_Texture.h`, `AssetService.h`). `grep` of original confirms zero direct `Component/...Component.h` includes. The 5 new TUs that access component members add explicit includes for the symbols they actually reference. Same pattern flagged in the prior Engine.cpp split — strictly speaking not a "subset" of the original include list, but transitivity-→-directness is a structural improvement. No new external dependencies introduced. ADVISORY-class observation, no action.
+- **No internal header introduced.** Verified: original had no file-local macros and no file-local statics (only `using namespace Inno;` + `using namespace DX12Helper;`, which each TU re-declares locally). Header `DX12FrameManagementService.h` untouched. Confirmed via `git diff HEAD -- Source/Engine/Services/DX12/DX12FrameManagementService.h`: empty.
+- **No CMake edit.** `git diff HEAD -- '*.cmake' '**/CMakeLists.txt'` empty. `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB *.cpp)` — auto-pickup correct.
+- **File-size ratchet.** Largest TU is 247 lines (`_Bind.cpp`); all 7 under the 300-line gate threshold. Sum 1286 vs original 1231 → +55 lines, accounted for by per-TU include duplication (5–7 includes × 7 TUs ≈ 40–50 extra lines) plus the per-TU `using namespace` directives.
+
+Mechanical-refactor verdict validated as deterministic. No findings that block landing.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
