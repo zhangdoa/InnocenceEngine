@@ -474,6 +474,65 @@ Mechanical-refactor candidate validated as deterministic. Bijection holds, byte-
 - **Header / partial-class shape.** `DX12TextureResourceService.h` untouched; same-class partial-TU pattern (correct choice per `disciplines/on-implement/file-splitting.md` § Rule, "Yes — same class, different responsibility cluster"). No `friend` introduced. No internal header needed (original had no file-local macros / statics / anonymous namespace; the function-local `DWParam` helper struct stays inside `GenerateMipmap` in `_Mipmap.cpp`).
 
 Lands as a clean structural split. The 11 → 11 vs 9 → 9 tally typo in the implementer's CL notes is the only discrepancy and does not affect the diff itself.
+
+## CL: TemplateAssetService.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/TemplateAssetService.cpp` (852 lines) into 5 sibling TUs (umbrella + 4 partials) + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same-class partial-TU pattern; `TemplateAssetServiceImpl` struct definition hoisted to `_Internal.h` so all sibling TUs see the same layout.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `TemplateAssetService.cpp` (umbrella) | 135 | Outer-class trampolines (`Setup` / `Initialize` / `Update` / `Terminate` / `GetStatus` / `GetMeshComponent` / `GetTextureComponent` / `GetDefaultMaterialComponent` / `GenerateMesh` / `FulfillVerticesAndIndices`) + `Impl::GenerateMesh` shape-dispatcher |
+| `TemplateAssetService_Internal.h` | 63 | `TemplateAssetServiceImpl` struct (member fn decls + EntityID / map state) |
+| `TemplateAssetService_Lifecycle.cpp` | 242 | `Impl::LoadTemplateAssets` + `Impl::UnloadTemplateAssets` (texture / material / mesh template entity wiring + teardown) |
+| `TemplateAssetService_PrimitiveHelpers.cpp` | 118 | `generateVerticesForPolygon` / `generateIndicesForPolygon` / `generateVertexBasedNormal` / `generateFaceBasedNormal` / `FulfillVerticesAndIndices` |
+| `TemplateAssetService_PolygonMeshes.cpp` | 76 | `addTriangle` / `addSquare` / `addPentagon` / `addHexagon` |
+| `TemplateAssetService_SolidMeshes.cpp` | 239 | `addTetrahedron` / `addCube` / `addOctahedron` / `addDodecahedron` / `addIcosahedron` / `addSphere` / `addTerrain` |
+
+Total new TU lines: 873. Largest TU: 242 (`_Lifecycle.cpp`). All under the 300-line ratchet. 19 `Impl::*` definitions in original; 19 in the split (verified by sorted-signature diff). 10 outer-class `TemplateAssetService::*` definitions in original; 10 in the new umbrella.
+
+### Constraints that bit
+
+- **Internal header introduced.** The `TemplateAssetServiceImpl` struct was defined inside `namespace Inno {}` in the original `.cpp` (lines 16-71). Moving it to `_Internal.h` was required because every sibling TU defines `Impl::*` member fns, which need the full class layout visible. Header includes `TemplateAssetService.h` (for `MeshComponent`/`TextureComponent`/`MaterialComponent` definitions and `Vertex`/`Vec3`/`Vec2`/`Index` via the `GPUDataStructure.h` → `MathHelper.h` chain) and `EntityRegistry.h` (for `EntityID` + `INVALID_ENTITY`).
+- **No file-local macros, no statics, no anonymous namespace.** Original `.cpp` had only `using namespace Inno;` after includes. Each sibling TU re-declares it locally. No hoisting of file-local state needed beyond the `Impl` struct.
+- **Includes per TU = strict subset of the original.** Original umbrella had 10 `#include`s (`TemplateAssetService.h`, `../Common/TaskScheduler.h`, `AssetService.h`, `EntityRegistry.h`, `../Common/IOService.h`, `../ThirdParty/STBWrapper/STBWrapper.h`, `../Engine.h`, `TextureResourceService.h`, `MeshResourceService.h`, `MaterialResourceService.h`). Per-TU distribution:
+  - Umbrella: `TemplateAssetService.h`, `_Internal.h`, `EntityRegistry.h`, `../Engine.h` (for `g_Engine` in the trampolines).
+  - `_Lifecycle.cpp`: all 10 originals + `_Internal.h`. The Load/Unload bodies use the full set (TaskScheduler / AssetService / IOService / TextureResourceService / MeshResourceService / MaterialResourceService).
+  - `_PrimitiveHelpers.cpp`, `_PolygonMeshes.cpp`, `_SolidMeshes.cpp`: only `TemplateAssetService.h` + `_Internal.h`. Mesh-construction bodies use only `MeshComponent`, `Vertex`, `Vec3`, `Vec2`, `Index`, `PI<float>`, `sinf`/`cosf` — all available transitively through `TemplateAssetService.h`.
+  - **`STBWrapper.h` is dead in the codebase as of HEAD** (no `STB_*` / `stbi_*` references in `TemplateAssetService.cpp`). Carried forward into `_Lifecycle.cpp` verbatim because the brief specified pure mechanical split — eliminating dead includes is a separate cleanup pass.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/CMakeLists.txt` uses `file(GLOB *.cpp)` + `file(GLOB *.h)`, but `.vcxproj` was stale, so `cmake .` from `Build/` was required to refresh project entries before the build saw the new TUs. Same gotcha as prior splits.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green, 4.1s configure + 0.9s generate.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit code 0. Build output shows all 5 TUs compiled (`TemplateAssetService.cpp`, `TemplateAssetService_Lifecycle.cpp`, `TemplateAssetService_PolygonMeshes.cpp`, `TemplateAssetService_PrimitiveHelpers.cpp`, `TemplateAssetService_SolidMeshes.cpp`). `Services.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked. No compile errors, no link errors.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate. `TextureResourceService`, `ShaderProgramResourceService`, `SamplerResourceService`, `CommandListResourceService`, `PhysicsSimulationService`, `SceneService`, `AssetService`, `EntityRegistry`, `WinWindowService`, `HIDService` all reported terminated. 16 worker threads released. No regression.
+- **Byte-equivalence spot-checks vs `git show HEAD:Source/Engine/Services/TemplateAssetService.cpp`.** Four method bodies extracted by line range and `diff`'d against the new TU contents:
+  - `LoadTemplateAssets` — original 73..242 ≡ `_Lifecycle.cpp:15..184`. **IDENTICAL.**
+  - `UnloadTemplateAssets` — original 244..300 ≡ `_Lifecycle.cpp:186..242`. **IDENTICAL.**
+  - `addSphere` — original 600..668 ≡ `_SolidMeshes.cpp:115..183`. **IDENTICAL.**
+  - `FulfillVerticesAndIndices` — original 454..488 ≡ `_PrimitiveHelpers.cpp:84..118`. **IDENTICAL.**
+
+### Peer review — TemplateAssetService.cpp split (2026-05-06)
+
+**Verdict: PASS.**
+
+Mechanical-split bijection independently re-verified by sorted-signature diff. HEAD `TemplateAssetService.cpp` exposes 19 `Impl::*` definitions + 10 outer-class `TemplateAssetService::*` definitions = 29 total. The split exposes the identical 29 (umbrella 10 + `_Lifecycle` 3 + `_PrimitiveHelpers` 5 + `_PolygonMeshes` 4 + `_SolidMeshes` 7). `diff` of the sorted signature lists is empty — no method dropped, none added, none renamed.
+
+Byte-equivalence spot-check on `addSphere` (HEAD lines 600..668 vs `_SolidMeshes.cpp:115..183`): `diff` returns empty. Confirms implementer's claim of pure mechanical split for that method body.
+
+`_Internal.h` content (lines 8-62) is line-for-line identical to the `TemplateAssetServiceImpl` struct in HEAD's `.cpp` (lines 16-70) — same 19 method declarations, same 23 data members in the same order, same default initializers. Hoisting was required (every sibling TU defines `Impl::*` member fns and needs the full layout).
+
+`Source/Engine/Services/CMakeLists.txt` is unmodified and uses `file(GLOB SOURCES "*.cpp")` — new TUs are picked up automatically. All 5 .cpp files include `_Internal.h` (verified by grep).
+
+Line counts: 135 / 242 / 118 / 76 / 239 — all under the 300-line ratchet. Total 873 (vs 852 in HEAD; the +21 is the umbrella-trampoline + `_Internal.h` `#pragma once` / `#include` overhead, expected and acceptable).
+
+Out of scope per the brief: pre-existing dead `STBWrapper.h` include carried into `_Lifecycle.cpp`; other oversized files. Both correctly deferred.
+
+### Out of scope (not done)
+
+- 13+ other oversized files in the inventory still pending. Task stays open.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
