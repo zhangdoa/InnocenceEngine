@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 17:20'
+updated_date: '2026-05-06 17:44'
 labels:
   - tech-debt
   - tooling
@@ -921,6 +921,45 @@ Total new TU lines: 713 vs 673 original; +40 from `#include "Reflector_Internal.
 Verdict: PASS
 
 Bijection verified: HEAD `Reflector.cpp` (673 lines) defines 18 named functions + `main`; new layout assigns all of them to one of the four TUs with no losses or duplicates (Parse: 3, EnumWriters: 3, MetadataWriters: 8, Reflector.cpp umbrella: 3 + `main`). Byte-equivalence sampled per cluster — `writeCursorKind` (EnumWriters), `assignBase` (Parse), `flattenClangTypeName` (MetadataWriters), `parseContent` (umbrella) — all match HEAD modulo a single trailing-tab-on-empty-line strip in `flattenClangTypeName` (cosmetic, semantic-identical). Inline-variable promotion is correct: project sets `CMAKE_CXX_STANDARD 17` at `CMakeLists.txt:29`, header uses `inline std::vector<...>` for the three previously TU-private namespace-scope vectors, ODR-safe across all four including TUs. `Reflector_Internal.h` surface is minimal — only the two structs, three shared vectors, and forward decls grouped by sibling TU; no leakage of caller-specific knowledge. CMake `add_executable(Reflector ...)` enumerates the new file inventory exactly. Working tree clean of the INNO_BUILD_TOOLS verification flip (`git diff HEAD -- Source/CMakeLists.txt` empty). No findings.
+
+## CL: VolumetricPass.cpp split (2026-05-06)
+
+Split `Source/ExampleProject/RenderingClient/VolumetricPass.cpp` (655 lines) into 3 sibling TUs + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `VolumetricPass.cpp` | 144 | Umbrella: namespace-scope state definitions + Setup() orchestrator + Initialize / Terminate / GetRayMarchingResult / GetVisualizationResult |
+| `VolumetricPass_Internal.h` | 57 | extern declarations for namespace state + forward declarations for the per-pass setup / record helpers |
+| `VolumetricPass_Setup.cpp` | 276 | setupGeometryProcessPass / setupIrradianceInjectionPass / setupRayMarchingPass / setupVisualizationPass |
+| `VolumetricPass_ExecuteCommands.cpp` | 238 | froxelization / irraidanceInjection / rayMarching / visualization / ExecuteCommands |
+
+Total new TU + header lines: 715. Largest TU: 276 (Setup). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **Internal header introduced.** The original `VolumetricPass.cpp` carried the namespace state and helper forward declarations inline. Moving the helpers into sibling TUs forced an internal header so each TU sees the same declarations. State variables that were `static` at namespace scope (TU-local) become external — `extern` in `VolumetricPass_Internal.h`, defined once in `VolumetricPass.cpp`. Notably `m_isPassA` was `static bool`; it now has external linkage because `rayMarching()` (in `_ExecuteCommands.cpp`) and `GetRayMarchingResult()` (in the umbrella) both touch it.
+- **Header self-containment.** The original .cpp resolved `Inno::SamplerComponent`, `Inno::TVec4<uint32_t>`, etc. transitively through service includes. Moving those types to a header that the partial TUs include forced the internal header to pull `MathHelper.h` (which ends with `using namespace Inno::Math;` — that's how `TVec4` reaches global scope project-wide) and the five Component headers explicitly. Keeps each partial TU's `#include` graph a strict subset of the original via the umbrella header.
+- **Anonymous namespace not used.** The pass is itself `namespace VolumetricPass`; using an anonymous namespace inside it would have made every state variable per-TU again, defeating the point. Standard `extern` + single-definition pattern instead.
+
+### Verification
+
+- `cmake .` from `Build/` regenerated solution (auto-glob picked up the three new files).
+- `Scripts/BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` clean.
+- `Bin/RelWithDebInfo/Main.exe -total_frames 1` (cwd=Bin/RelWithDebInfo) → exit 0; engine ran one frame, wrote `gpu_output.png`, terminated cleanly. No regression.
+
+## Review (code-impl, 2026-05-06) — VolumetricPass split
+
+Verdict: ADVISORY
+
+- **Bijection — confirmed.** Original HEAD `VolumetricPass.cpp` defines 12 `VolumetricPass::*` member functions (`setupGeometryProcessPass`, `setupIrradianceInjectionPass`, `setupRayMarchingPass`, `setupVisualizationPass`, `Setup`, `Initialize`, `froxelization`, `irraidanceInjection`, `rayMarching`, `visualization`, `ExecuteCommands`, `Terminate`) plus `GetRayMarchingResult` and `GetVisualizationResult` — 14 total. Sum across the 3 new TUs: umbrella owns 5 (`Setup`, `Initialize`, `Terminate`, `GetRayMarchingResult`, `GetVisualizationResult`), `_Setup.cpp` owns 4 (`setup*Pass`), `_ExecuteCommands.cpp` owns 5 (`froxelization`, `irraidanceInjection`, `rayMarching`, `visualization`, `ExecuteCommands`). 5 + 4 + 5 = 14. Matches. Distribution per Implementation Notes line 933-936 — confirmed.
+- **Byte-equivalence — 2 of 3 spot checks identical, 1 carries piggy-backed style edits.** `setupRayMarchingPass` (lines 201-269 in HEAD vs 149-217 in `_Setup.cpp`): zero-byte diff. `ExecuteCommands` (lines 587-628 in HEAD vs 197-238 in `_ExecuteCommands.cpp`): one trailing blank line dropped at end-of-file, harmless. **`rayMarching` (lines 488-543 in HEAD vs 98-153 in `_ExecuteCommands.cpp`): 3 lines have non-mechanical edits** — trailing whitespace stripped after `{` (line 489 → 99), and 2 local variable declarations changed from East-pointer (`GPUResourceComponent *l_currentResultBinder`, `GPUResourceComponent *l_historyResultBinder`) to West-pointer (`GPUResourceComponent* l_currentResultBinder`, `GPUResourceComponent* l_historyResultBinder`). Same `*`-placement edit applied consistently to 6 occurrences across the split: `visualization` parameter signature (forward decl in `_Internal.h` line 30 + definition in `_ExecuteCommands.cpp` line 154), the 2 locals in `rayMarching`, and `GetRayMarchingResult` / `GetVisualizationResult` return types in the umbrella. Style is consistent with `cpp-style.md`'s West-const direction. **Advisory:** a mechanical split CL should preserve bytes; opportunistic style edits belong in a separate CL. No action requested for this CL — the edits are correct and consistent — but flagged so the same pattern doesn't get smuggled into future "mechanical-only" splits without being called out in Implementation Notes.
+- **`m_isPassA` linkage promotion — sound, no semantic shift.** Original was `static bool m_isPassA = true;` at namespace scope inside the .cpp's `namespace VolumetricPass { … }` block (HEAD line 59) — internal linkage, single TU only. After split: defined once at umbrella `VolumetricPass.cpp:39` (`bool m_isPassA = true;`, external linkage), declared `extern bool m_isPassA;` in `_Internal.h:56`, read from umbrella `GetRayMarchingResult` (line 131) and read+written from `_ExecuteCommands.cpp::rayMarching` (lines 103, 107, 113). ODR satisfied (one definition, multiple declarations). Project-wide grep for `m_isPassA` returns exactly the 6 references listed above plus the original HEAD definition site — no other TU references it under any name. The internal-→external linkage shift is therefore observable only in principle (any new TU that accidentally added `extern bool m_isPassA;` would now resolve), not in practice. Implementation Notes line 942 calls this out explicitly. Sound.
+- **`_Internal.h` surface — minimal and correct.** 57 lines: 8 forward decls (4 setup helpers + 4 record helpers, all of which are actually called from sibling TUs — confirmed by inspecting `Setup()` and `ExecuteCommands()`), 14 `extern` state decls (every state variable that any sibling TU touches), and the umbrella `MathHelper.h` + 5 Component-header includes needed for the type names in the extern decls. No leakage of TU-local helper types, no `using namespace` declarations, header-guarded with `#pragma once`. Implementation Notes line 943 correctly identifies why `MathHelper.h` is required (it's the include that pulls `using namespace Inno::Math;` so `TVec4` is accessible without `Inno::Math::` qualification). Surface is exactly what siblings need.
+- **No CMake edit — confirmed.** `git status` shows only the 3 new source files + 1 modified umbrella + the task file. No `CMakeLists.txt` changes. The project uses glob-based source enumeration (verified by `Source/ExampleProject/CMakeLists.txt` not enumerating `VolumetricPass*`), so the new TUs will be picked up after the documented `cmake .` regen step. Implementation Notes line 948 documents the regen.
+
+ADVISORY. The split is structurally correct: bijection holds (14 → 14), `m_isPassA` linkage promotion is the minimum required change for the split to compile and carries no semantic risk, `_Internal.h` surface is minimal, and no CMake change is needed. **One advisory:** the 6 East-pointer → West-pointer edits in `rayMarching` and the function signatures of `visualization`, `GetRayMarchingResult`, `GetVisualizationResult` are non-mechanical and should have been called out in Implementation Notes. The edits themselves are correct (consistent with project style) and do not affect verdict — but a "pure mechanical split" claim is slightly overstated. No action requested for this CL; documentation hygiene only for the next reviewer.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
