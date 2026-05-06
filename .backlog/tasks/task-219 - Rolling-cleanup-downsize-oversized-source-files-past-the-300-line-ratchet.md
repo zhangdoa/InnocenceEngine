@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 08:13'
+updated_date: '2026-05-06 08:36'
 labels:
   - tech-debt
   - tooling
@@ -406,6 +406,74 @@ Mechanical-refactor candidate validated as deterministic against the pre-split s
 - **Pre-existing breakage — NOT in scope.** Both `m_initializedTextures` (no member declared; would fail to compile if VK on) and `#include "../GraphicsResourceService.h"` (no such file in this branch; would fail to find header if VK on) are carried over verbatim. The split does not introduce, mask, or relocate either of these — they live in the same byte ranges, in the same TU (`_EngineComponent.cpp`), as before. Out of scope for a mechanical file-size split per the brief.
 
 Lands as a clean structural split for the current (VK-off) build configuration. The two pre-existing VK-side defects + the `SetObjectName` template-visibility gap form a single dependency cluster that any future "re-enable VK" CL must resolve together; none of them is this CL's job.
+
+## CL: DX12TextureResourceService.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/DX12/DX12TextureResourceService.cpp` (878 lines) into 4 sibling TUs (umbrella + 3 partials). Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same-class partial-TU pattern; no internal header needed (no file-local macros, no file-local statics, no anonymous namespace in the original).
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `DX12TextureResourceService.cpp` (umbrella) | 202 | `Delete`, `Clear`, `Copy`, `CreateSRV`, `CreateUAV`, `GetIndex` — short accessor / per-pass ops |
+| `DX12TextureResourceService_Initialize.cpp` | 247 | `InitializeImpl` (3-phase: default-heap create → upload → mipmap-gen → state transition) |
+| `DX12TextureResourceService_Mipmap.cpp` | 240 | `GenerateMipmap` + `CreateMipmapGenerator` + `ReleaseMipmapGenerator` (mipmap pipeline cluster) |
+| `DX12TextureResourceService_Readback.cpp` | 223 | `ReadTextureBackToCPU` |
+
+Total new TU lines: 912. Largest TU: 247 (`_Initialize.cpp`). All under the 300-line ratchet. 9 method definitions in original; 9 in the split (verified by sorted-signature diff between `git show HEAD:Source/Engine/Services/DX12/DX12TextureResourceService.cpp` and the union of new TUs — RC=0).
+
+### Constraints that bit
+
+- **No internal header introduced.** Original had no file-local macros and no file-local statics (just `using namespace Inno;` + `using namespace DX12Helper;` directives, plus a `#ifdef max #undef max #endif` at file scope). The function-local `DWParam` helper struct inside `GenerateMipmap` stays inside that function body in `_Mipmap.cpp`. Header `DX12TextureResourceService.h` untouched.
+- **`#undef max` localised to `_Mipmap.cpp`.** The original guarded against the Windows `max` macro because `GenerateMipmap` calls `std::max(..., 1u)` extensively. Only `_Mipmap.cpp` needs the guard; the umbrella, `_Initialize.cpp`, and `_Readback.cpp` don't call `std::max`. Keeping the `#undef max` in the umbrella (as a "just in case") would have been a pessimization — guard is now placed where it's actually needed.
+- **Per-TU include redistribution.** Original umbrella had 11 includes. After split:
+  - Umbrella drops `DX12Helper_Pipeline.h` (only `CreateMipmapGenerator` used `LoadShaderFile`/`ShaderFilePath`), `GraphicsHardwareService.h` (only `InitializeImpl` + `ReadTextureBackToCPU` use it), and `MathHelper.h` (only `_Mipmap.cpp` + `_Readback.cpp` need it). Down to 8 includes.
+  - `_Initialize.cpp` keeps `GraphicsHardwareService.h` + `DX12Helper_Texture.h` (for `GetDX12TextureDesc`/`GetBCRowPitch`/`GetTexturePixelDataSize`), drops `MathHelper.h` + `Pipeline.h`.
+  - `_Mipmap.cpp` keeps `MathHelper.h` (for `std::max` via `STL14.h`), `DX12Helper_Pipeline.h` (for `LoadShaderFile`), drops `DX12Helper_Texture.h` + `GraphicsHardwareService.h`.
+  - `_Readback.cpp` keeps `DX12Helper_Texture.h` (for `GetTextureFormat`/`GetTexturePixelDataSize`), `MathHelper.h` (for `Vec4` and `Math::float16ToFloat32`), `GraphicsHardwareService.h`. Drops `Pipeline.h`.
+  Each new TU's include set is a strict subset of the original umbrella's. No new external dependencies.
+- **`Vec4` resolves at global scope via `MathHelper.h:1634` `using namespace Inno::Math;`.** `_Readback.cpp` includes `MathHelper.h`; the unqualified `Vec4` works because that header has a top-level `using namespace Inno::Math;` after the `Inno::Math` definitions. Pre-existing convention; preserved verbatim.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB *.cpp)`. Ran `cmake .` from `Build/` to refresh `.vcxproj` entries before build (same gotcha as prior splits).
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit code 0. `Engine.lib`, `DX12GraphicsService.lib`, `Main.exe`, `RenderTest.exe` all linked. The pre-existing C4003 `MathHelper.h(21,*)` and `MathHelper.h(24,*)` "not enough arguments for function-like macro 'max'" warnings reproduce from `_Initialize.cpp` and `_Readback.cpp` translation units (same warnings reproduce on master against the umbrella TU — pre-existing, unrelated to this split).
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit code 0. Engine completed full init → 1 frame → graceful Terminate. All DX12 services teardown clean (TextureResourceService, ShaderProgramResourceService, SamplerResourceService, CommandListResourceService all reported terminated). 16 worker threads released. No regression.
+  - Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue is reproducible from any working tree state on this branch (called out in the brief as not-a-regression).
+
+### Out of scope (not done)
+
+- 14+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — DX12TextureResourceService split
+
+Verdict: PASS
+
+Mechanical-refactor candidate validated as deterministic. Bijection holds, byte-equivalence confirmed on every spot-check, no semantic change introduced. Implementer's claim of 9 → 9 method bijection was a tally typo; the actual count is **11 → 11** (Delete, InitializeImpl, Clear, Copy, GenerateMipmap, CreateSRV, CreateUAV, GetIndex, ReadTextureBackToCPU, CreateMipmapGenerator, ReleaseMipmapGenerator). All 11 are accounted for; no method dropped, none duplicated. The miscount is in the closure note only, not the diff.
+
+- **Bijection.** `git show HEAD:Source/Engine/Services/DX12/DX12TextureResourceService.cpp` defines 11 `DX12TextureResourceService::` methods. Post-split: umbrella 6 (Delete, Clear, Copy, CreateSRV, CreateUAV, GetIndex) + `_Initialize.cpp` 1 (InitializeImpl) + `_Mipmap.cpp` 3 (GenerateMipmap, CreateMipmapGenerator, ReleaseMipmapGenerator) + `_Readback.cpp` 1 (ReadTextureBackToCPU) = 11. Sorted-signature union matches.
+- **Byte-equivalence spot-checks vs HEAD.**
+  - `InitializeImpl` — `_Initialize.cpp:18..247` ≡ original 52..285, identical except (a) one trailing-whitespace strip on a blank line, (b) the trailing `// --- Clear ---` divider that was at the end of `InitializeImpl` in the original is now relocated into the umbrella (where Clear lives).
+  - `GenerateMipmap` — `_Mipmap.cpp:22..153` ≡ original 354..489, identical except the trailing `// --- SRV / UAV creation ---` divider was relocated to the umbrella.
+  - `CreateMipmapGenerator` + `ReleaseMipmapGenerator` — `_Mipmap.cpp:159..240` ≡ original 797..878, identical (sed-range artifact only).
+  - `ReadTextureBackToCPU` — `_Readback.cpp:19..223` ≡ original 587..795, identical except the trailing `// --- CreateMipmapGenerator ---` divider was relocated to `_Mipmap.cpp`.
+  - Umbrella's Delete / Clear / Copy / CreateSRV / CreateUAV / GetIndex — all bit-identical to HEAD's bodies; only inter-function `// --- <Section> ---` divider placement changed.
+- **`#undef max` correctly localised.** `_Mipmap.cpp` is the only post-split TU that uses `std::max` (verified across all four TUs — only `_Mipmap.cpp` matches at lines 117, 118, 126, 139, 140, 141). Umbrella, `_Initialize.cpp`, and `_Readback.cpp` correctly omit both the `#undef max` block and (for the umbrella) `MathHelper.h`. `_Readback.cpp` uses `MathHelper.h` only for `Vec4` and `Math::float16ToFloat32`, neither of which trips the `max`-macro shadowing. No silent reliance on the original's file-scope `#undef max`.
+- **Includes per TU = strict subset.** Original had 11 includes. After split:
+  - umbrella: 9 (drops `DX12Helper_Pipeline.h`, `GraphicsHardwareService.h`, `MathHelper.h`).
+  - `_Initialize.cpp`: 9 (drops `DX12Helper_Pipeline.h`, `MathHelper.h`).
+  - `_Mipmap.cpp`: 9 (drops `DX12Helper_Texture.h`, `GraphicsHardwareService.h`).
+  - `_Readback.cpp`: 10 (drops `DX12Helper_Pipeline.h`).
+  All retained includes are used: umbrella uses `DX12Helper_Texture.h` for `GetDX12TextureDesc`/`GetSRVDesc`/`GetUAVDesc` (lines 114, 115, 141, 142); `_Readback.cpp` uses `MathHelper.h` for `Math::float16ToFloat32` (line 205); `_Initialize.cpp` uses `DX12Helper_Texture.h` for `GetDX12TextureDesc`/`GetTextureWriteState`/`GetTextureReadState`/`GetBCRowPitch`/`GetTexturePixelDataSize`. Clangd's spurious "unused" hints are header-fanout artifacts, not real dead includes.
+- **Pre-existing diagnostics inherited, not introduced.**
+  - `&CD3DX12_RESOURCE_BARRIER::Transition(...)` temp-address pattern at HEAD: 5 occurrences (lines 172, 178, 262, 634, 652). Post-split: `_Initialize.cpp:138, 144, 228` + `_Readback.cpp:66, 84` = 5 occurrences, byte-identical. The `&l_uavBarrier` in `_Mipmap.cpp:146` addresses a named local, not a temp — same shape as original line 478. Diagnostic carried over verbatim, not introduced.
+  - `MathHelper.h(21,*)` / `MathHelper.h(24,*)` "too few arguments for function-like macro 'max'" C4003 reproduces from any TU including `MathHelper.h` after Windows headers — same warnings appear on HEAD against the umbrella, pre-existing.
+- **No CMake edit.** `Source/Engine/Services/DX12/CMakeLists.txt` uses `file(GLOB *.cpp *.h)` — auto-pickup confirmed. No staged or unstaged CMake delta.
+- **File-size ratchet.** Largest TU is `_Initialize.cpp` at 247 lines; all four under the 300-line gate. Sum 912 vs original 878 → +34 lines, accounted for by per-TU include redistribution and `using namespace` repetition.
+- **Header / partial-class shape.** `DX12TextureResourceService.h` untouched; same-class partial-TU pattern (correct choice per `disciplines/on-implement/file-splitting.md` § Rule, "Yes — same class, different responsibility cluster"). No `friend` introduced. No internal header needed (original had no file-local macros / statics / anonymous namespace; the function-local `DWParam` helper struct stays inside `GenerateMipmap` in `_Mipmap.cpp`).
+
+Lands as a clean structural split. The 11 → 11 vs 9 → 9 tally typo in the implementer's CL notes is the only discrepancy and does not affect the diff itself.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
