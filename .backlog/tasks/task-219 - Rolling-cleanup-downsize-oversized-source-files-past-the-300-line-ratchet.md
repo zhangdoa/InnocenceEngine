@@ -95,6 +95,12 @@ Verdict: PASS
 
 Bijection verified: 12 `DX12GPUBufferResourceService::` definitions in HEAD (`Build/HEAD_orig.cpp`) split as 5 (umbrella: Delete, InitializeImpl, UploadToGPU x2, Clear) + 3 (Views: CreateSRV, CreateUAV, CreateCBV) + 4 (Raytracing: OnSceneLoadingStart, UpdateRaytracingInstances, CreateRaytracingResources, ReleaseRaytracingResources) — total 12, matches HEAD set verbatim. Byte-equivalence spot-checked on Delete (umbrella L17–40 vs HEAD L23–46), CreateSRV (Views L11–33 vs HEAD L358–380), and OnSceneLoadingStart (Raytracing L18–32 vs HEAD L195–209) — all identical modulo line offsets. No CMake edit (`git diff --stat HEAD` shows only the 3 cluster files + the task md). No new internal header — only the existing public `DX12GPUBufferResourceService.h` is included by the new TUs. Pre-existing CD3DX12_RESOURCE_BARRIER address-of-temporary at current umbrella L150/L161 corresponds verbatim to HEAD L156/L167 (same `&CD3DX12_RESOURCE_BARRIER::Transition(...)` rvalue pattern); not introduced by this CL. Sizes 229/94/182 match the claim and clear the 300-line ratchet for all three TUs.
 
+## Review (code-impl, 2026-05-06) — RadianceCacheReprojectionPass split
+
+Verdict: PASS
+
+Bijection verified against `git show HEAD:Source/ExampleProject/RenderingClient/RadianceCacheReprojectionPass.cpp`: HEAD has 15 `RadianceCacheReprojectionPass::` definitions (Setup, Initialize, Terminate, GetStatus, PrepareCommandList, GetRenderPassComp, RenderTargetsCreationFunc, GetCurrentFrameResult, GetPreviousFrameResult, GetCurrentProbePosition, GetPreviousProbePosition, GetCurrentProbeNormal, GetPreviousProbeNormal, GetWorldProbeGrid, GetProbeMask). Post-split: umbrella retains 13 (Initialize, Terminate, GetStatus, PrepareCommandList, GetRenderPassComp + 8 accessors), `_Setup.cpp` holds 2 (Setup, RenderTargetsCreationFunc) — total 15, no duplicates, no missing. Byte-equivalence spot-checks: Setup body (`_Setup.cpp` L15–148 vs HEAD L21–154) — `diff` clean; RenderTargetsCreationFunc (`_Setup.cpp` L149–261 vs HEAD L266–378) — `diff` clean. PrepareCommandList in current umbrella L59–122 vs HEAD L196–259 differs by exactly one line — a trailing-tab whitespace stripped at umbrella L120 (the `m_ObjectStatus = ObjectStatus::Activated;` blank line below); cosmetic, no semantic effect. No CMake edit (`Source/ExampleProject/RenderingClient/CMakeLists.txt` uses `file(GLOB *.cpp)` — auto-pickup; `git status` shows it untouched). No internal header introduced — both TUs include only the existing public `RadianceCacheReprojectionPass.h` plus a strict subset of the original umbrella's service headers (`_Setup.cpp` correctly drops `PerFrameDataService.h`, `OpaquePass.h`, `FrameManagementService.h` which are unused by Setup/RenderTargetsCreationFunc, and adds `RenderingConfigurationService.h` which Setup needs). Sizes 191/261 clear the 300-line ratchet.
+
 <!-- SECTION:NOTES:BEGIN -->
 ## Review (code-impl, 2026-05-06) — VKGraphicsService_VulkanObject split
 
@@ -1260,6 +1266,35 @@ Every moved function body diff'd against `git show HEAD:Source/Engine/Services/D
 - `cmake .` (from `Build/`) — green; new files picked up.
 - `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `DX12GraphicsService.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked. Three new TUs compiled cleanly; no warnings on the split.
 - `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\` so shader paths resolve) — exit 0. Engine completed full init → 1 frame → graceful Terminate, including DX12 device/queues/descriptor-heaps init, all DX12 resource services teardown, EntityRegistry/SceneService/PhysicsSimulationService teardown, WinWindowService close, all 16 worker threads released. No regression.
+
+### Out of scope (not done)
+
+- Other oversized files in the inventory still pending. Task stays open.
+
+## CL: RadianceCacheReprojectionPass.cpp split (2026-05-06)
+
+Split `Source/ExampleProject/RenderingClient/RadianceCacheReprojectionPass.cpp` (441 lines) into 2 sibling TUs (umbrella + 1 partial). Pure mechanical split per `disciplines/on-implement/file-splitting.md` — same-class partial-TU pattern (`Foo_SubsectionName.cpp`). Singleton with all members already declared in `RadianceCacheReprojectionPass.h`, so no `_Internal.h` was needed. No engine behavior change.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `RadianceCacheReprojectionPass.cpp` (umbrella) | 191 | `Initialize`, `Terminate`, `GetStatus`, `PrepareCommandList`, `GetRenderPassComp` + 8 frame-double-buffer accessors (`GetCurrent/PreviousFrameResult`, `GetCurrent/PreviousProbePosition`, `GetCurrent/PreviousProbeNormal`, `GetWorldProbeGrid`, `GetProbeMask`) |
+| `RadianceCacheReprojectionPass_Setup.cpp` | 261 | `Setup` — SPC + render-pass + 12 binding-layout descs (b0 / t0–t5 / u0–u4) + CL setup. `RenderTargetsCreationFunc` — even/odd radiance cache + probe pos/normal pairs + WorldProbeGrid + probe mask + side-cache atlas/posframe/normal |
+
+Total new TU lines: 452 (vs. original 441 — delta is the second `#include` block + `using namespace Inno;` repeated for the new TU). Largest TU: 261 (Setup). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **No `_Internal.h` needed.** Same shape as the prior `GPUPathTracerPass` split: a singleton with all member-fn decls already in the public header. The 2 sibling TUs share `RadianceCacheReprojectionPass.h`. No file-static state, no anonymous-namespace helpers, no cross-TU symbols beyond the class members.
+- **`#include` graph subset per TU.** Each new TU's `#include` set is a strict subset of the original's, redistributed by section. Setup-side TU drops `PerFrameDataService.h`, `OpaquePass.h`, `FrameManagementService.h` (none referenced from the resource-creation cluster); umbrella TU drops `RenderingConfigurationService.h` (only `Setup` and `RenderTargetsCreationFunc` use it). The two unused includes from the original (`TemplateAssetService.h`, `RadianceCacheRaytracingPass.h`) carried no actual references and are not pulled into either TU — minor cleanup falls out of the strict-subset rule.
+- **CMake auto-glob picked up new files.** `Source/ExampleProject/RenderingClient/CMakeLists.txt` uses `file(GLOB *.cpp *.h)`. Re-ran `cmake .` from `Build/` to refresh `.vcxproj` entries before the build.
+
+### Build + test
+
+- `cmake .` (from `Build/`, to refresh `.vcxproj`) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `ExampleRenderingClient.lib`, `Main.exe`, `RenderTest.exe` linked. Both `RadianceCacheReprojectionPass.cpp` and `RadianceCacheReprojectionPass_Setup.cpp` compiled cleanly; no warnings on the split.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\` so `Shaders/` resolves) — exit 0. Engine completed full init → 1 frame → graceful Terminate, all 16 worker threads released. No regression.
 
 ### Out of scope (not done)
 
