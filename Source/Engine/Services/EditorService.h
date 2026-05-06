@@ -39,6 +39,9 @@ namespace Inno
 
 	private:
 		void RegisterBuiltinHandlers();
+		void RegisterIntrospectionHandlers();
+		void RegisterDevAndSceneHandlers();
+		void RegisterEntityHandlers();
 		void BroadcastSceneUpdated();
 
 		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;

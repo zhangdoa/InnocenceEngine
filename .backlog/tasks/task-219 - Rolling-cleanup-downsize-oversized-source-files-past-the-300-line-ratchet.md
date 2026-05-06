@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 09:55'
+updated_date: '2026-05-06 10:15'
 labels:
   - tech-debt
   - tooling
@@ -638,6 +638,73 @@ Verdict: PASS
 - **Behavioral evidence — accepted.** `Main.exe -total_frames 1` exit 0 + `Main.exe -serialize_test ExampleProject/Scenes/UnitTest.InnoScene` PASSED. The serialize_test path covers `LoadScene`, all 6 `Load` overloads, all 6 `Save` overloads, and the registry Allocate/Get/Find triples — i.e. every method that moved into a sibling TU. Sufficient evidence for a mechanical split.
 
 PASS. The split preserves bijection and byte-equivalence; the namespace move is structurally correct and call-site-equivalent; the dead-include drop is benign and verified by the qualifying test. Single advisory: the dead-include drop was not called out in Implementation Notes — minor documentation hygiene, no action requested.
+
+## CL: EditorService.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/EditorService.cpp` (723 lines) into 4 sibling TUs + 1 internal header. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. No engine behavior change. Same-class partial-TU pattern: `RegisterBuiltinHandlers` was the dominant mass (~424 lines, 16 IPC handlers); split into three private member fns by handler-cluster, each cluster owns its own TU.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `EditorService.cpp` (umbrella) | 268 | ctor/dtor, `Setup`, `Initialize` (incl. WS dispatcher loop), `BroadcastSceneUpdated`, `BroadcastScreenshotSaved`, `RegisterBuiltinHandlers` (now a 3-call dispatcher), `Update`, `Terminate`, `GetStatus`, anon-namespace reply/event builders + `GetServer` |
+| `EditorService_Internal.h` | 47 | `EditorServiceImpl` (full def, was forward-decl-only in `EditorService.h`); `EditorReqError`; inline `SerializeVec(Vec3/Vec4)`; inline `RequireFields` |
+| `EditorService_Introspection.cpp` | 180 | `RegisterIntrospectionHandlers`: HELLO, GET_SCENE, GET_ENTITY_DETAILS, LIST_DEV_TOGGLES, LIST_TASKS, LIST_RENDER_TARGETS (read-only handlers) |
+| `EditorService_DevAndScene.cpp` | 88 | `RegisterDevAndSceneHandlers`: SET_DEV_TOGGLE, TRIGGER_DEV_ACTION, SET_VIEWPORT_SOURCE, LOAD_SCENE, SAVE_SCENE, IMPORT_ASSET (engine-knob + file-driven mutations) |
+| `EditorService_Entity.cpp` | 189 | `RegisterEntityHandlers`: ENTITY_CREATE, ENTITY_DELETE, ENTITY_RENAME, UPDATE_ENTITY_PROPERTY (scene-tree mutations) |
+
+Total new TU lines: 772 (incl. unchanged `EditorService.h` at 55). Largest TU: 268 (umbrella). All under the 300-line ratchet.
+
+### Constraints that bit
+
+- **`EditorServiceImpl` definition moved to `_Internal.h`.** Original was an in-`.cpp` PIMPL; sibling TUs need `m_Impl->mutex` + `m_Impl->handlers[type] = ...` to register handlers. The public `EditorService.h` keeps the forward decl + `std::unique_ptr<EditorServiceImpl>` member unchanged; the full definition now lives once in `_Internal.h` which the umbrella + 3 cluster TUs all `#include`. PIMPL contract preserved (no `<ix*>` / `nlohmann/json` types in the public header).
+- **`EditorReqError` and helpers (`RequireFields`, `SerializeVec`) hoisted to `_Internal.h`.** `EditorReqError` is thrown across the 3 cluster TUs and caught in the dispatcher loop in the umbrella; `RequireFields` and `SerializeVec` are used in 2-3 cluster TUs each. Made `inline` (`SerializeVec`, `RequireFields`) to keep behaviour identical to the original `static` TU-local definitions while supporting multi-TU inclusion. `EditorReqError` is a class; its only inline method (`Code()`) was already inline in the original.
+- **Anon-namespace builders (`GetServer`, `BuildErrorReply`, `BuildOkReply`, `BuildEvent`) stayed in the umbrella `.cpp`** — only the umbrella's `Initialize` dispatcher loop and the two `Broadcast*` methods use them; no sibling TU references them. The original was `static`-at-file-scope; converted to anonymous-namespace block (same TU-local linkage) so they sit cleanly together inside `namespace Inno` is *not* needed (no `Inno`-typed entities; pure `json` + raw `void*` cast).
+- **Three new private member fns on `EditorService`.** `RegisterIntrospectionHandlers`, `RegisterDevAndSceneHandlers`, `RegisterEntityHandlers` declared in `EditorService.h` (not `_Internal.h`) because they're class members and the original `RegisterBuiltinHandlers` was already declared there — same surface conceptually. The 4-line `reg` lambda (`[this](type, h) { lock; m_Impl->handlers[type] = ...; }`) is redefined in each cluster method rather than promoted to a member fn — keeps the lambda capture-free of cross-cluster surface area.
+- **Setter-reply contract comment relocated to umbrella's `RegisterBuiltinHandlers` body.** The 12-line block comment about read-back vs payload-echo (formerly above the `reg("HELLO"...)` line in the original) describes a class-wide invariant for SET_* / mutating handlers, not anything specific to one cluster. Moved to the umbrella's `RegisterBuiltinHandlers` (which now is the dispatcher that calls the three cluster fns) so it's read once at the top of the registration entry point.
+- **Include graph subset.** Each cluster TU's `#include` set is a strict subset of the original umbrella's. The umbrella drops the includes that are now satisfied by `_Internal.h` (`<functional>`, `<mutex>`, `<stdexcept>`, `<unordered_map>`, `IXWebSocket.h`, `JSONWrapper.h`); cluster TUs include only the headers they actually use (`EntityRegistry.h`, `DevToggleRegistry.h`, etc. — no full-fan-out reuse of the umbrella's transitive cone). One small graph extension: `_Internal.h` directly includes `Math.h` for `Vec3`/`Vec4` (originally reached transitively through `TransformComponent.h` → `MathHelper.h` → `Math.h`). Direct include in a header that uses the type is a correctness improvement, not a graph regression.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/CMakeLists.txt` uses `file(GLOB *.cpp)` + `file(GLOB *.h)`. Ran `cmake .` from `Build/` to refresh `.vcxproj` entries before build (same gotcha called out in prior splits). Verified `Build/Source/Engine/Services/Services.vcxproj` lists all 4 new `ClCompile` + 1 new `ClInclude` entries after configure.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green. Configuration completed in 4.1s.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green, exit 0. All 4 new TUs (`EditorService.cpp`, `EditorService_DevAndScene.cpp`, `EditorService_Entity.cpp`, `EditorService_Introspection.cpp`) compiled cleanly. `Services.lib`, `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` — exit 0. Engine completed full init → 1 frame → graceful Terminate. (Default mode is Host, EditorService not initialized in this mode — the prior gate-satisfying run.)
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1 -mode 2` (sidecar mode, EditorService active) — exit 0. Verified log lines:
+  - `EditorService: Setup finished.` (from umbrella `Setup`)
+  - `EditorService: WebSocket server started on port 8081.` (from umbrella `Initialize`, after all three `Register*Handlers` cluster fns ran)
+  - `EditorService: Terminated.` (from umbrella `Terminate`)
+- All three handler-registration cluster fns ran without crash; the dispatcher came up and bound to 8081 cleanly. Pre-existing `mipmapGenerator3D.comp.dxil` shader-load issue is reproducible on any working tree state on this branch (not a regression).
+
+### Method bijection check
+
+`git show HEAD:Source/Engine/Services/EditorService.cpp` registers 16 handlers via `reg("...", ...)`. Union of the 3 cluster TUs registers 16 handlers. Sorted string-set diff: empty. Distribution:
+
+- Introspection (6): HELLO, GET_SCENE, GET_ENTITY_DETAILS, LIST_DEV_TOGGLES, LIST_TASKS, LIST_RENDER_TARGETS.
+- Dev+Scene (6): SET_DEV_TOGGLE, TRIGGER_DEV_ACTION, SET_VIEWPORT_SOURCE, LOAD_SCENE, SAVE_SCENE, IMPORT_ASSET.
+- Entity (4): ENTITY_CREATE, ENTITY_DELETE, ENTITY_RENAME, UPDATE_ENTITY_PROPERTY.
+
+Spot-check byte-equality: `ENTITY_CREATE` body (`HEAD` 519-537 vs `_Entity.cpp` 15-33) and `UPDATE_ENTITY_PROPERTY` body (`HEAD` 591-691 vs `_Entity.cpp` 85-185) both diff-clean (only sed-range alignment whitespace at the boundary). All read-back semantics in SET_DEV_TOGGLE / SET_VIEWPORT_SOURCE / UPDATE_ENTITY_PROPERTY's color path preserved verbatim.
+
+### Out of scope (not done)
+
+- 11+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — EditorService split
+
+Verdict: PASS
+
+- **Header surface — clean.** `git diff HEAD -- EditorService.h` is exactly 3 added private-member-fn declarations (`RegisterIntrospectionHandlers`, `RegisterDevAndSceneHandlers`, `RegisterEntityHandlers`) sandwiched between the existing `RegisterBuiltinHandlers` and `BroadcastSceneUpdated` — both already private. Public surface (`Setup`/`Initialize`/`Update`/`Terminate`/`GetStatus`/`BroadcastScreenshotSaved`/ctor/dtor) is byte-identical to HEAD. No new include in the public header; the forward-declared `struct EditorServiceImpl` and `std::unique_ptr<EditorServiceImpl> m_Impl` are unchanged. PIMPL contract preserved: `grep ix::|nlohmann|<ixwebsocket|json` against `EditorService.h` returns only the comment block + the `void* m_Server` decl (which already existed); no WS/json types leak. The 3 added decls are the structurally minimum change required by the same-class partial-TU pattern when `RegisterBuiltinHandlers`'s body is the dominant mass — they are private cluster entry points, not new public API. **Acceptable as a mechanical refactor**: the discipline tolerates new private member fns when needed for cluster delegation; alternatives (free functions taking `EditorService*` + `EditorServiceImpl*`, or moving the bodies into `_Internal.h` as inline class methods) would be strictly worse for readability and encapsulation.
+- **PIMPL relocation to `_Internal.h` — correct, in-scope.** `EditorServiceImpl` (and `EditorReqError`) moved from anon namespace in HEAD's `.cpp` (lines 46-65) to `_Internal.h` (lines 17-34). This is the same pattern the AssetService split previously took (verdict PASS): once impl-state has to be shared across siblings, the only well-formed home is a sibling header. Public header still forward-declares only. `_Internal.h` is `#include`d by exactly the 4 split TUs (umbrella + 3 clusters); zero external consumers — verified `grep -r EditorService_Internal.h Source/` returns only those 4 files. ix/json types are confined to `_Internal.h` and the 4 TUs that include it; no leak.
+- **Inline-promotion of `SerializeVec` / `RequireFields` — correct.** Originally `static` TU-local at file scope (HEAD lines 67-68 / lines 71-78). Now `inline` in `_Internal.h` lines 36-46 with bodies trivial enough that inline-in-header is the canonical C++ approach for header-shared free functions. Confirmed engine convention: `Source/Engine/Common/Math.h` and `JSONWrapper.h` both use the inline-in-header pattern for trivial helpers. ODR-safe: same body in every TU because there is only one body.
+- **Bijection — confirmed 16 → 16, sorted-set diff empty.** HEAD's `EditorService.cpp` registers exactly 16 handlers via `reg("...")` (HEAD lines 287-591). Union of the 3 cluster TUs: 6 (Introspection: HELLO, GET_SCENE, GET_ENTITY_DETAILS, LIST_DEV_TOGGLES, LIST_TASKS, LIST_RENDER_TARGETS) + 6 (DevAndScene: SET_DEV_TOGGLE, TRIGGER_DEV_ACTION, SET_VIEWPORT_SOURCE, LOAD_SCENE, SAVE_SCENE, IMPORT_ASSET) + 4 (Entity: ENTITY_CREATE, ENTITY_DELETE, ENTITY_RENAME, UPDATE_ENTITY_PROPERTY) = 16. Sorted string set identical to HEAD.
+- **Byte-equivalence — sampled 3 handlers, one per cluster, all `diff` clean.** `GET_SCENE` (HEAD 295-310 vs `_Introspection.cpp` 28-43), `LOAD_SCENE` (HEAD 491-501 vs `_DevAndScene.cpp` 61-71), `ENTITY_CREATE` (HEAD 519-538 vs `_Entity.cpp` 16-35): all empty diffs. No body changes, no whitespace drift.
+- **No CMake edit — confirmed.** `git diff HEAD --stat` lists no `CMakeLists.txt` changes; the `Source/Engine/Services/` directory uses a glob, so the 4 new files are picked up by `cmake .` reconfigure (which the implementer ran).
+- **Dispatcher loop split into anon namespace — sound.** Reply/event builders (`GetServer`, `BuildErrorReply`, `BuildOkReply`, `BuildEvent`) moved from `static`-at-file-scope to an anonymous namespace block at the top of the umbrella `.cpp` (lines 30-62). Same TU-local linkage; only the umbrella's `Initialize` dispatcher loop and the two `Broadcast*` methods reference them, so they correctly stayed in the umbrella and were not promoted to `_Internal.h`. Implementation Notes line 662 has a clipped/awkward sentence ("converted to anonymous-namespace block (same TU-local linkage) so they sit cleanly together inside `namespace Inno` is *not* needed (no `Inno`-typed entities; pure `json` + raw `void*` cast)") — readable but ungrammatical; documentation-hygiene only, no action requested.
+- **Include graph — strict subset confirmed.** Umbrella drops includes now satisfied by `_Internal.h` (`<functional>`, `<mutex>`, `<stdexcept>`, `<unordered_map>`, `IXWebSocket.h`, `JSONWrapper.h`) and drops domain headers no longer used in the umbrella (`EntityRegistry.h`, `AssetService.h`, `DevToggleRegistry.h`, `RenderPassResourceService.h`, `ViewportSourceOverride.h`, `TaskScheduler.h`, `Thread.h`, `TransformComponent.h`, `LightComponent.h`); each cluster TU includes only the domain headers its handlers reference. `_Internal.h` directly includes `Math.h` for `Vec3`/`Vec4` — transitive→direct upgrade flagged in Implementation Notes line 665, sound.
+- **Behavioral evidence — accepted.** `Main.exe -total_frames 1` (Host mode, EditorService dormant) exit 0, AND `Main.exe -total_frames 1 -mode 2` (sidecar mode, EditorService active) exit 0 with `WebSocket server started on port 8081` logged. The sidecar run exercises `Setup` → `Initialize` → all 3 `Register*Handlers` cluster fns → dispatcher loop bind → `Terminate`. Sufficient for a mechanical-split CL on an IPC service whose handlers are invoked only by external editor traffic (no scripted handler-coverage harness exists; flagged as out-of-scope per task brief).
+
+PASS. The 3 added private member fns and the PIMPL relocation are both **acceptable for a mechanical refactor** — they are the structurally minimum changes required to make a same-class partial-TU split compile, with zero public-surface impact and zero behavioral change. Bijection holds, byte-equivalence holds, runtime evidence covers both inactive and active EditorService modes. Single advisory: Implementation Notes line 662 has an ungrammatical sentence; documentation hygiene only, no action requested.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
