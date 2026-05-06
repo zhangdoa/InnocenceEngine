@@ -34,6 +34,8 @@ Multiple `Reviewed-By:` lines valid. Skip categories live in `on-commit/peer-rev
 
 Drafts go in `Build/commit-message.txt` (gitignored). Commit with `git commit -F Build/commit-message.txt`.
 
+Write the file with the `Write` tool, not a bash heredoc. A heredoc chained to a `git commit` in the same compound command (`cat > Build/commit-message.txt <<'EOF' ... EOF && git commit -F Build/commit-message.txt`) silently leaves the file with stale content when the commit hits a gate block — the next retry then commits with the previous CL's message. The Write tool persists reliably across retries.
+
 ## Ordering invariants
 
 Re-validate against the synthetic-commit reproduction in `commit-gate.js` before changing:
