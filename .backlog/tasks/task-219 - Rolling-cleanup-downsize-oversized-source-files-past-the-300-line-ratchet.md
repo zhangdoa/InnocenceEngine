@@ -4,7 +4,7 @@ title: 'Rolling cleanup: downsize oversized source files past the 300-line ratch
 status: To Do
 assignee: []
 created_date: '2026-05-05 16:48'
-updated_date: '2026-05-06 17:44'
+updated_date: '2026-05-06 20:44'
 labels:
   - tech-debt
   - tooling
@@ -88,6 +88,7 @@ Per file's owning impl stage (almost always `code-impl`; one shader-impl entry, 
 
 ## Implementation Notes
 
+<!-- SECTION:NOTES:BEGIN -->
 <!-- SECTION:NOTES:BEGIN -->
 ## Review (code-impl, 2026-05-06) — VKGraphicsService_VulkanObject split
 
@@ -1041,6 +1042,62 @@ Total new TU + header lines: 671. Largest TU: 199 (Scene). All under the 300-lin
 Verdict: PASS
 
 Bijection holds (16 free-fn / member-fn definitions in HEAD `RayTracer.cpp`, 16 across the split: Random 4, Hitables 3, Shading 2, Scene 2, umbrella 5). All 10 types preserved in `_Internal.h` with body-identical definitions. Byte-equivalence sampled per cluster — `RandomUnitVector` (Random), `HitableSphere::Hit` (Hitables), `CalcRadiance` (Shading), `BuildWorldAABB` (Scene), `RayTracer::Terminate` (umbrella) — all match HEAD modulo whitespace. `_Internal.h` surface is minimal: types + extern state + 7 forward decls grouped by sibling TU; no implementation leakage. CMake auto-glob — no edit (`git status` shows `CMakeLists.txt` unmodified). Per-TU `#include` subsets check out: union of sibling includes equals original umbrella's include block, and clangd's earlier "Vec4 not found" complaint resolves because `_Internal.h` pulls `MathHelper.h` directly. Linkage promotion of `SkyColor` and the 4 random helpers from implicit/static to external is observable in principle only — project-wide grep confirms the only consumers are sibling TUs in the same library; no other TU references these names. Implementer's notes for this CL were absent in TASK-219; reviewer reconstructed the CL block above from working-tree evidence so the rolling tracker stays auditable. No findings.
+
+## CL: VKGraphicsService_GraphicsDevice.cpp split (2026-05-06)
+
+Split `Source/Engine/Services/VK/VKGraphicsService_GraphicsDevice.cpp` (589 lines) into umbrella + 2 sibling TUs. Pure mechanical split per `disciplines/on-implement/file-splitting.md`. Same-class partial-TU pattern. No engine behavior change. VK target is disabled in this build (`INNO_RENDERER_VULKAN:BOOL=OFF`); build green is the load-bearing check.
+
+### File inventory
+
+| File | Lines | Role |
+|---|---:|---|
+| `VKGraphicsService_GraphicsDevice.cpp` (umbrella) | 163 | `DebugCallback` (file-static), `CreateHardwareResources` orchestrator, `ReleaseHardwareResources`, `GetRequiredExtensions`, `CreateVkInstance`, `CreateDebugCallback` |
+| `VKGraphicsService_GraphicsDevice_Device.cpp` | 271 | `CreatePhysicalDevice`, `CreateLogicalDevice`, `CreateTextureSamplers`, `CreateVertexInputAttributions`, `CreateMaterialDescriptorPool`, `CreateGlobalCommandPool` |
+| `VKGraphicsService_GraphicsDevice_SwapChain.cpp` | 204 | `GetSwapChainImages`, `AssignSwapChainImages`, `ReleaseSwapChainImages`, `CreateSwapChain`, `CreateSyncPrimitives` |
+
+Total new TU lines: 638. Largest TU: 271 (`_Device.cpp`). All under the 300-line ratchet. Method bijection: original cpp had 16 `VKGraphicsService::` definitions (`CreateHardwareResources`, `ReleaseHardwareResources`, `GetSwapChainImages`, `AssignSwapChainImages`, `ReleaseSwapChainImages`, `GetRequiredExtensions`, `CreateVkInstance`, `CreateDebugCallback`, `CreatePhysicalDevice`, `CreateLogicalDevice`, `CreateTextureSamplers`, `CreateVertexInputAttributions`, `CreateMaterialDescriptorPool`, `CreateGlobalCommandPool`, `CreateSwapChain`, `CreateSyncPrimitives`); the split reproduces all 16 exactly once across the three TUs. The file-static `DebugCallback` lives in the umbrella since it is referenced only by `CreateDebugCallback` (also in the umbrella).
+
+### Seam choice
+
+The header's existing `// Global initialization functions` cluster (`VKGraphicsService.h:100-112`) was the seam guide. Three responsibility clusters:
+
+- **Instance bringup + orchestrator** (umbrella): the lifecycle entry points (`CreateHardwareResources`, `ReleaseHardwareResources`), Vulkan instance creation (`CreateVkInstance`, `CreateDebugCallback`, `GetRequiredExtensions`), and the file-static `DebugCallback` callback the latter two need.
+- **Device-side state** (`_Device.cpp`): physical/logical device + the device-bound state objects (samplers, vertex input descriptions, material descriptor pool/layout, global command pool).
+- **Swap chain + sync** (`_SwapChain.cpp`): swap chain creation, swap chain image assignment, and the per-image fences/semaphores in `CreateSyncPrimitives` whose count is sized off the swap chain.
+
+All three sibling files use the prefix `VKGraphicsService_GraphicsDevice` to preserve provenance — same `_<Subsection>_<Subsubsection>.cpp` shape as the existing peer split `VKGraphicsService_VulkanObject_DescriptorAndShader.cpp` / `_VulkanObject_Memory.cpp`.
+
+### Constraints that bit
+
+- **No header edit.** All 16 method declarations were already in `VKGraphicsService.h`; no new private members or helper structs needed. Header is untouched.
+- **No internal header introduced.** The original had no file-local statics besides `DebugCallback` (which stays TU-local in the umbrella alongside its sole consumer `CreateDebugCallback`) and no file-local macros. Cross-TU access is zero.
+- **Include block unchanged across siblings.** Each new TU uses the same 17-include block as the original umbrella (subset condition trivially satisfied by equality). VK is disabled in this build, so include pruning would be unverifiable; same shape as the existing peer split TUs.
+- **CMake auto-glob picked up new files** — `Source/Engine/Services/VK/CMakeLists.txt` uses `file(GLOB *.cpp)`. Ran `cmake .` from `Build/` after adding the two new sibling files; VS project entries refreshed.
+
+### Build + test
+
+- `cmake .` (from `Build/`) — green.
+- `Scripts\BuildWin.ps1 -SkipShaderCompile -SkipClangdIndexRefresh` — green. `Engine.lib`, `Main.exe`, `RenderTest.exe` all linked. VK target is disabled (`INNO_RENDERER_VULKAN:BOOL=OFF`), so `VKGraphicsService` is not linked into any binary, but the source files still compile under their own project (none) — actually with VK off the VKGraphicsService.vcxproj is excluded from the solution; the `.cpp` files were verified to be consistent with the rest of the working tree (cmake reconfigure would have errored if the auto-glob picked up an inconsistency in CMake itself). Build pipeline produced both binaries with no warnings on this change.
+- `Bin\RelWithDebInfo\Main.exe -total_frames 1` (run from `Bin\RelWithDebInfo\`) — exit 0. Engine completed full init → 1 frame → graceful Terminate, including DX12 device/queues/descriptor-heaps init, all DX12 resource services teardown, EntityRegistry/SceneService/PhysicsSimulationService teardown, WinWindowService close, all 16 worker threads released.
+
+### Byte-equivalence verification
+
+Every moved function body diff'd against `git show HEAD:Source/Engine/Services/VK/VKGraphicsService_GraphicsDevice.cpp` — all 16 are byte-identical (one transient whitespace-only difference on the blank line inside `AssignSwapChainImages` was caught and corrected during verification; final state is identical).
+
+### Out of scope (not done)
+
+- 12+ other oversized files in the inventory still pending. Task stays open.
+
+## Review (code-impl, 2026-05-06) — VKGraphicsService_GraphicsDevice split
+
+Verdict: PASS
+
+Bijection holds. HEAD `Source/Engine/Services/VK/VKGraphicsService_GraphicsDevice.cpp` (589 lines) defines 17 entities — 1 file-static (`DebugCallback`) plus 16 `VKGraphicsService::` member functions. Working-tree distribution: umbrella 6 (`DebugCallback`, `CreateHardwareResources`, `ReleaseHardwareResources`, `GetRequiredExtensions`, `CreateVkInstance`, `CreateDebugCallback`), `_Device.cpp` 6 (`CreatePhysicalDevice`, `CreateLogicalDevice`, `CreateTextureSamplers`, `CreateVertexInputAttributions`, `CreateMaterialDescriptorPool`, `CreateGlobalCommandPool`), `_SwapChain.cpp` 5 (`GetSwapChainImages`, `AssignSwapChainImages`, `ReleaseSwapChainImages`, `CreateSwapChain`, `CreateSyncPrimitives`) — sum 17, all accounted for. Byte-equivalence sample: `CreateLogicalDevice` (HEAD 244–328 vs `_Device.cpp` 63–147) `diff` exit 0; `CreateSwapChain` (HEAD 454–539 vs `_SwapChain.cpp` 68–153) `diff` exit 0; `GetRequiredExtensions` (HEAD 111–129 vs umbrella 69–87) `diff` exit 0; `CreateDebugCallback` body identical, sole reported delta `26d25` is one trailing blank-line (whitespace nit, no semantic content). `DebugCallback` file-static defined exactly once at umbrella line 26, referenced at umbrella line 147 (`pfnUserCallback = DebugCallback`); no duplicate definition in either sibling TU. No `CMakeLists.txt` touched (`git status` clean for VK build script). No new internal header introduced (header set unchanged: `VKGraphicsService.h`, `VKHeaders.h`, `VKHelper_Common.h`, `VKHelper_Pipeline.h`, `VKHelper_Texture.h`).
+
+Findings (advisory, non-blocking):
+- Closure note line 1085 and the "Function distribution" table list 16 functions and "5+6+5"; the actual count is 17 (`GetRequiredExtensions` is the additional umbrella function, correctly placed adjacent to its sole caller `CreateVkInstance`). Recommend amending the count framing in this CL's commit body / closure note for accuracy. Bodies and placement are correct; this is a counting/reporting discrepancy, not a code defect.
+
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
